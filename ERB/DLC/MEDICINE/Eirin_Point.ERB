@@ -1,0 +1,170 @@
+﻿;素材兑换永琳点数
+@Eirin_Point_Exchange
+#DIM Item_ID
+#DIM Amount
+#DIM Total_Price
+
+$E_P_E_RESTART
+;Item_ID = 0
+;Amount = 0
+
+WHILE 1
+	CALL Madical_interface_top
+	CALL Medical_Assistant
+	DRAWLINE
+	FOR LOCAL, 600,699
+		;打印永琳愿意收购的物品，并且物品只是有一个。
+		SIF UNIQUE_COM_HARBAL_SALES(LOCAL) && ITEM:LOCAL
+			PRINTFORM [{LOCAL}] %ITEMNAME:(LOCAL), 13, LEFT%×{ITEM:(LOCAL), 3, RIGHT}    
+	NEXT
+	PRINTL
+	DRAWLINE
+	CALL Message_Box_mk2("准备兑换什么呢？", "PINK")
+	PRINTL
+	PRINTL [0]返回
+	
+	INPUT
+	IF RESULT == 0
+		RETURN
+	ELSEIF UNIQUE_COM_HARBAL_SALES(RESULT) && RESULT >= 600 && RESULT < 699
+		;记录物品ID，用于查询名称和价格
+		Item_ID = RESULT
+		;记录物品总数量
+		Amount = ITEM:RESULT
+		;PRINTFORML %ITEMNAME:(RESULT)%每个可兑换{ITEMPRICE:RESULT}EP。
+		CALL Message_Box_mk2(@"%ITEMNAME:RESULT%每个可兑换{ITEMPRICE:RESULT}EP。", "PINK")
+	ELSE
+		;PRINTW 无法兑换该物品！！！
+		CALL Message_Box_mk2("这件物品不在永琳大人给的收购清单中哦！", "PINK")
+		WAITANYKEY
+		GOTO E_P_E_RESTART
+	ENDIF
+
+	CALL Message_Box_mk2("需要兑换几个？", "PINK")
+	PRINTL
+	PRINT [1]兑换一个    
+	SIF Amount > 1
+		PRINTBUTTON "兑换一半    ",-1
+	PRINTBUTTON "兑换全部    ",-2
+	PRINTL [0]取消兑换
+	
+	INPUT
+
+	IF RESULT == 0
+		GOTO E_P_E_RESTART
+	ELSEIF	RESULT > Amount
+		CALL Medical_Assistant(1)
+		CALL Message_Box_mk2(@"%CALLNAME:MASTER%给的物品与登记的数量不符呢。", "PINK")
+		PRINTL 兔耳售货员干练的摆出营业式微笑。
+		PRINTL 啧！看来不好糊弄。
+	ELSEIF RESULT < -2
+		CALL Medical_Assistant(2)
+		CALL Message_Box_mk2("不许捣乱！", "PINK")
+		PRINTFORML 兔耳售货员不忍直视，感叹%CALLNAME:MASTER%的算学造诣未来可期！！！
+	ELSE
+		;拦截并预处理返回值，-1 == hlaf，大于0就赋值RESULT
+		IF RESULT == -1
+			Amount /= 2
+		ELSEIF RESULT > 0
+			Amount = RESULT
+		ENDIF
+		Total_Price = (ITEMPRICE:(Item_ID) * Amount)
+		Eirin_Point += Total_Price
+		ITEM:(Item_ID) -= Amount
+		;PRINTFORML 兑换了{Amount}个%ITEMNAME:(Item_ID)%，共计获得{Total_Price}EP。
+		CALL Message_Box_mk2(@"兑换了{Amount}个%ITEMNAME:(Item_ID)%，共计获得{Total_Price}EP", "PINK")
+	ENDIF
+	
+	WAITANYKEY
+	
+WEND
+
+;货币兑换永琳点数
+@Eirin_Point_Exchange_For_Money
+#DIM Amount
+
+$E_P_E_F_M_RESTART
+CALL Madical_interface_top
+CALL Medical_Assistant
+CALL Message_Box_mk2("需要兑换货币还是EP点数呢？", "PINK")
+PRINTL
+PRINT [1]EP点数兑换货币    
+PRINT [2]货币兑换EP点数    
+PRINTL [0]返回
+PRINTL
+
+INPUT
+
+;记录兑换的是货币还是EP点数
+LOCAL = RESULT
+
+IF RESULT == 1
+	;PRINTL 请输入要兑换的EP点数。（兑换比例  2 EP ： 1 货币）
+	CALL Message_Box_mk2("请登记需要兑换的EP点数。", "PINK")
+	PRINTL （兑换比例  2 EP ： 1 货币）
+ELSEIF RESULT == 2
+	;PRINTL 请输入要兑换的货币数额。（兑换比例  3 货币 ： 1 EP）
+	CALL Message_Box_mk2("请登记需要兑换的货币数额。", "PINK")
+	PRINTL （兑换比例  3 货币 ： 1 EP）
+ELSE
+	RETURN
+ENDIF
+
+PRINTL
+PRINTBUTTON "兑换一半    ",-1
+PRINTBUTTON "兑换全部    ",-2
+PRINTL [0]返回
+
+INPUT
+
+IF RESULT == 0
+	GOTO E_P_E_F_M_RESTART
+ELSEIF RESULT < -2
+	;PRINTL 输入错误，兑换失败！！！
+	CALL Medical_Assistant(2)
+	CALL Message_Box_mk2("不许捣乱！", "PINK")
+	PRINTFORML 兔耳售货员不忍直视，感叹%CALLNAME:MASTER%的算学造诣未来可期！！！
+ELSEIF LOCAL == 1 && RESULT > Eirin_Point
+	;PRINTL EP点数不足兑换失败！
+	CALL Medical_Assistant(1)
+	CALL Message_Box_mk2(@"%CALLNAME:MASTER%的EP点数似乎不太够呢。", "PINK")
+	PRINTL 兔耳售货员干练的摆出营业式微笑。
+	PRINTL 啧！看来不好糊弄。
+ELSEIF LOCAL == 2 && RESULT > MONEY
+	;PRINTL 货币不足兑换失败！
+	CALL Medical_Assistant(1)
+	CALL Message_Box_mk2(@"%CALLNAME:MASTER%的货币似乎不太够呢。", "PINK")
+	PRINTL 兔耳售货员干练的摆出营业式微笑。
+	PRINTL 啧！看来不好糊弄。
+ELSE
+	IF LOCAL == 1
+		SIF RESULT == -1
+			;RESULT /= 2
+			Amount = (Eirin_Point / 2)
+		SIF RESULT == -2
+			;RESULT = Eirin_Point
+			Amount = Eirin_Point
+		;Eirin_Point -= RESULT
+		Eirin_Point -= Amount
+		;MONEY += (RESULT / 2)
+		MONEY += (Amount / 2)
+		;PRINTFORML 兑换完成，共计花费{RESULT}EP点数，获得{(RESULT / 2)}货币。
+		CALL Message_Box_mk2(@"兑换完成，共计花费{Amount}EP点数，获得{(Amount / 2)}货币。", "PINK")
+	ELSEIF LOCAL == 2
+		SIF RESULT == -1
+			;RESULT /= 2
+			Amount = (MONEY / 2)
+		SIF RESULT == -2
+			;RESULT = MONEY
+			Amount = MONEY
+		;MONEY -= RESULT
+		MONEY -= Amount
+		;Eirin_Point += (RESULT / 3)
+		Eirin_Point += (Amount / 3)
+		;PRINTFORML 兑换完成，共计花费{RESULT}货币，获得{(RESULT / 3)}EP点数。
+		CALL Message_Box_mk2(@"兑换完成，共计花费{Amount}货币，获得{(Amount / 3)}EP点数。", "PINK")
+	ENDIF
+ENDIF
+
+PRINTW
+GOTO E_P_E_F_M_RESTART
