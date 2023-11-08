@@ -1,0 +1,97 @@
+﻿;ARG接收药品类型编号
+@Drug_Calculation(ARG)
+
+;用于存储计算出的最强医疗效果数值
+LOCAL:3 = 0
+
+;用于存储当前步长的医疗效果数值
+LOCAL:1 = 0
+LOCAL:2 = 0
+
+LOCALS = 无效
+
+;清空药效数据
+VARSET TFLAG, 0, 900, 936
+
+;重新导入药效变量
+CALL DRUG_TYPE(ARG)
+
+;0~35递进,分别引用各项数据，如果忘记了就直接去看XXXX.csv。
+FOR LOCAL:0, 0, 36
+	LOCAL:1 = TFLAG:(LOCAL:0 + 900) * BASE:M_C_ID:(LOCAL:0 + 50) / 100
+	;L1和L2对比，如果L1药效更强，则将L1赋值到L2进行记录，并将当前L0步长的药效值和在STR中对应的字符串保存到本地。
+	IF LOCAL:1 > LOCAL:2
+		LOCAL:2 = LOCAL:1
+		LOCAL:3 = TFLAG:(LOCAL:0 + 900)
+		LOCALS = %STR:(LOCAL:0 + 19550)%
+	ENDIF
+NEXT
+
+;----------------治疗演出----------------
+;CALL Patient_Feedback(ARG)
+PRINTL
+PRINTFORML 对%CALLNAME:M_C_ID%使用%STR:(ARG + 18000)%进行治疗。
+PRINTL
+PRINTFORML 医生：%CALLNAME:MASTER%  ↓体力-100↓  ↓气力-100↓
+BASE:MASTER:体力 -= 100
+BASE:MASTER:気力 -= 100
+PRINTL
+PRINTFORML 疾病防御：{BASE:M_C_ID:疾病防御}   药效【%LOCALS%】：{LOCAL:2}
+PRINTL
+
+;如果疾病防御被击穿，就会降低防御值，最低降到25。
+IF LOCAL:2 >= BASE:M_C_ID:疾病防御
+	PRINTL 击穿疾病防御！！！
+	PRINTL
+	IF BASE:M_C_ID:疾病防御 > 25
+		PRINTL 疾病防御被削弱！！！
+		PRINTL
+		PRINTFORML 疾病防御：{BASE:M_C_ID:疾病防御}
+		PRINTL ↓↓↓↓
+		BASE:M_C_ID:疾病防御 -= 25
+		PRINTFORML 疾病防御：{BASE:M_C_ID:疾病防御}
+		PRINTL
+	ENDIF
+	;结算药品对患者体力消耗
+	PRINTFORML 患者体力：{BASE:M_C_ID:患者体力}
+	BASE:M_C_ID:患者体力 = BASE:M_C_ID:患者体力 + DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)
+	IF (DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)) > 0
+		PRINTL  恢复  ↑↑↑↑
+	ELSEIF (DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)) < 0
+		PRINTL  下降  ↓↓↓↓
+	ELSE
+		PRINTL  平稳  ●●●●
+	ENDIF
+	PRINTFORML 患者体力：{BASE:M_C_ID:患者体力}
+	PRINTL
+	PRINTFORML 病症残余：{BASE:M_C_ID:病症残余} - {LOCAL:3}
+	PRINTL ↓↓↓↓
+	BASE:M_C_ID:病症残余 -= LOCAL:3
+	PRINTFORML 病症残余：{BASE:M_C_ID:病症残余}
+	PRINTL
+ELSE
+	PRINTL 没有击穿疾病的防御！！！
+	PRINTL
+	PRINTFORML 患者体力：{BASE:M_C_ID:患者体力}
+	BASE:M_C_ID:患者体力 = BASE:M_C_ID:患者体力 + DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)
+	IF (DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)) > 0
+		PRINTL  恢复  ↑↑↑↑
+	ELSEIF (DRUG_REJUVENATION(ARG) - DRUG_CONSUMPTION(ARG)) < 0
+		PRINTL  下降  ↓↓↓↓
+	ELSE
+		PRINTL  平稳  ●●●●
+	ENDIF
+	PRINTFORML 患者体力：{BASE:M_C_ID:患者体力}
+	PRINTL
+ENDIF
+
+IF BASE:M_C_ID:诊断完成 == 0
+	BASE:M_C_ID:诊断完成 = 1
+	PRINTFORML 在治疗过程中%CALLNAME:MASTER%对%CALLNAME:M_C_ID%的症状，已经有了大致的判断。
+	PRINTL
+ENDIF
+
+;添加用药耗时
+TIME += 10
+
+PRINTW

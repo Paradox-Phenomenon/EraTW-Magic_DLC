@@ -1,0 +1,219 @@
+﻿;医疗事件
+@Medicine_Event
+
+;今日患者总人数
+#DIM DYNAMIC MAX_PATIENTS
+
+IF EIRIN_POINT <= 0
+	CALL Message_Box_mk2("药品不足没法正常开业的哦！", "PINK", 20)
+	PRINTW 请兑换足额的EP点数...
+	RETURN
+ELSEIF OPEN_TODAY != 0
+	CALL Message_Box_mk2(@"%CALLNAME:MASTER%，患者们已经离开了。", "PINK", 20)
+	PRINTW 今天已经营业过了...
+	RETURN
+ELSE
+	;PRINTL 要开始今天的营业吗？一天只能开业一次哦！
+	CALL Message_Box_mk2("要开始今天的营业吗？一天只能开业一次哦！", "PINK", 20)
+	PRINTL
+	PRINTL [1]是    [0]否
+	INPUT
+
+	SIF RESULT != 1
+		RETURN
+	OPEN_TODAY = 1
+ENDIF
+
+;--------------------------------------------
+
+;基础随机1~3个人+名望奖励随机人数
+MAX_PATIENTS = (RAND:3 + 1) + RAND:(1 + POPULARITY_BONUS(POPULARITY))
+;PRINTFORML 今天来了{MAX_PATIENTS}位患者的样子。
+CALL Message_Box(@"今天来了{MAX_PATIENTS}位患者的样子。")
+
+PRINTL
+
+$MEDICINE_EVENT_RESTART
+
+;每次生成患者，最大患者数-1。
+IF MAX_PATIENTS <= 0
+	;PRINTL 没有更多患者了，今天营业结束。
+	CALL Message_Box("没有更多患者了，今天营业结束。")
+	PRINTL
+	RETURN
+ENDIF
+
+CALL Generate_Patient
+
+;随机生成病症，如果旧病没有治好就跳过并恢复体力。
+IF BASE:M_C_ID:患病 <= 0 && BASE:M_C_ID:今日问诊 <= 0 && BASE:M_C_ID:近期问诊 <= 0
+	BASE:M_C_ID:症状类型 = RAND:70 + 19000
+	BASE:M_C_ID:患者体力 = RAND:1001 + 200
+	BASE:M_C_ID:病症大小 = (RAND:15 + 1) * 100
+	BASE:M_C_ID:病症残余 = BASE:M_C_ID:病症大小
+	BASE:M_C_ID:疾病防御 = (RAND:7 + 1) * 25
+	BASE:M_C_ID:医疗费 = ((BASE:M_C_ID:病症大小 * 10) + 2000 + (RAND:1001))
+	;依据病症难度进行适当奖励修正
+	SIF BASE:M_C_ID:病症大小 >= 1200
+		BASE:M_C_ID:医疗费 += 3000
+	SIF BASE:M_C_ID:疾病防御 >= 150
+		BASE:M_C_ID:医疗费 += 3000
+	SIF BASE:M_C_ID:患者体力 <= 300
+		BASE:M_C_ID:医疗费 += 1000
+	
+	;生成疾病详细数据
+	CALL DISEASE_TYPE
+	
+	;记录本次治疗前的疾病大小用于结算费用。
+	Disease_History = BASE:M_C_ID:病症残余
+	
+	;添加患者添加患病随机数和今日问诊次数
+	BASE:M_C_ID:患病 = RAND:16 + 15
+	BASE:M_C_ID:今日问诊 ++
+	
+	;放行，最大患者数量-1，明日再来复位
+	MAX_PATIENTS --
+	BASE:LOCAL:明日再来 = 0
+	
+	PRINTFORML 患者%CALLNAME:M_C_ID%进来了...
+	PRINTW
+ELSEIF BASE:M_C_ID:患病 >= 1 && BASE:M_C_ID:今日问诊 <= 0 && BASE:M_C_ID:近期问诊 <= 0
+	;记录本次治疗前的疾病大小用于结算费用。
+	Disease_History = BASE:M_C_ID:病症残余
+	;为患者恢复体力，并添今日问诊次数
+	BASE:M_C_ID:患者体力 += RAND:1001 + 200
+	BASE:M_C_ID:今日问诊 ++
+
+	;放行，最大患者数量-1，明日再来复位
+	MAX_PATIENTS --
+	BASE:LOCAL:明日再来 = 0
+	
+	PRINTFORML %CALLNAME:M_C_ID%又回来接受治疗了...
+	PRINTW
+ELSE
+	;终极兜底，防止循环卡死，平时无视。
+	LOCAL:1 ++
+	SIF LOCAL:1 <= 1000
+		GOTO MEDICINE_EVENT_RESTART
+	PRINTL
+	PRINTW 奇怪，人呢？总之今天没有更多病人了，营业结束。
+	RETURN
+ENDIF
+
+WHILE 1
+	;首先打印出病人信息
+	CALL Madical_interface_top
+	CALL Patient_Information
+	
+	PRINTL
+	PRINTL 请选择要执行的项目。
+	PRINT [1]进行诊断
+	PRINT_SPACE 100
+	PRINT [2]开始治疗
+	PRINT_SPACE 100
+	PRINT [3]劝离
+	PRINT_SPACE 100
+	PRINT [0]终止营业
+	INPUT
+	
+	IF RESULT == 1
+		IF BASE:M_C_ID:诊断完成 != 1
+			PRINTW 开始进行诊断。
+			BASE:M_C_ID:诊断完成 = 1
+			;添加诊断耗时
+			TIME += 10
+		ELSE
+			PRINTW 已经诊断过了。
+		ENDIF
+	ELSEIF RESULT == 2
+		CALL DRUG_MENU
+		IF BASE:M_C_ID:病症残余 <= 0
+			PRINTL 闪~闪~发~光~！
+			PRINTL
+			PRINTFORML %CALLNAME:M_C_ID%康复了！！！
+			CALL MEDICAL_BILLS
+			;患者康复，重置疾病数据，保留问诊和住院数据用于其它结算。
+			VARSET BASE:M_C_ID:40, 0, 40, 86
+			;给康复的患者生成0~5天随机问诊间隔
+			BASE:M_C_ID:近期问诊 = RAND:6
+			PRINTW
+			GOTO MEDICINE_EVENT_RESTART
+		ELSE
+			CALL MEDICAL_BILLS
+			GOTO MEDICINE_EVENT_RESTART
+		ENDIF
+	ELSEIF RESULT == 3
+		PRINTL
+		;PRINTFORML 确定要让%CALLNAME:M_C_ID%离开吗？这样会导致名望下降哦。
+		CALL Message_Box_mk2(@"确定要让%CALLNAME:M_C_ID%离开吗？这样会导致名望下降哦。", "PINK", 20)
+		PRINTL
+		PRINTL [1]是    [0]否
+		INPUT
+		IF RESULT == 1
+			PRINTFORML %CALLNAME:M_C_ID%走了。
+			PRINTL
+			LOCAL = RAND:5 + 1
+			PRINTFORML %CALLNAME:MASTER% 名望 - {LOCAL}
+			PRINTW
+			POPULARITY -= LOCAL
+			;添加劝离耗时
+			TIME += 10
+			GOTO MEDICINE_EVENT_RESTART
+		ENDIF
+	ELSE
+		;PRINTFORML 还有{MAX_PATIENTS + 1}位患者等待治疗呢，确定要终止营业吗？这样会导致名望下降哦。
+		CALL Message_Box_mk2(@"还有{MAX_PATIENTS + 1}位患者等待治疗呢，确定要终止营业吗？这样会导致名望下降哦", "PINK", 20)
+		PRINTL
+		PRINTL [1]是    [0]否
+		INPUT
+		IF RESULT == 1
+			LOCAL = (RAND:5 + 1) * (MAX_PATIENTS + 1)
+			PRINTFORML %CALLNAME:MASTER% 名望 - {LOCAL}
+			PRINTW
+			RETURN
+		ENDIF
+	ENDIF
+WEND
+
+
+;生成患者
+@Generate_Patient
+;检查所有角色的明日再来标志，并赋值跳出循环，如果都没有，就随机生成患者。
+FOR LOCAL, 1, CHARANUM
+	IF BASE:LOCAL:明日再来 == 1 && BASE:LOCAL:今日问诊 <= 0 && BASE:LOCAL:近期问诊 <= 0
+		M_C_ID = LOCAL
+		RETURN
+	ELSEIF CHARANUM >= LOCAL
+		M_C_ID = RAND:(CHARANUM - 2) + 1
+	ENDIF
+NEXT
+
+;依据名望多寡获得问诊人数奖励。
+@POPULARITY_BONUS(ARG)
+#FUNCTION
+
+SELECTCASE ARG
+
+	CASE 900 TO 1000
+		RETURNF 10
+	CASE 800 TO 899
+		RETURNF 9
+	CASE 700 TO 799
+		RETURNF 8
+	CASE 600 TO 899
+		RETURNF 7
+	CASE 500 TO 599
+		RETURNF 6
+	CASE 400 TO 499
+		RETURNF 5
+	CASE 300 TO 399
+		RETURNF 4
+	CASE 200 TO 299
+		RETURNF 3
+	CASE 100 TO 199
+		RETURNF 2
+
+	CASEELSE
+		RETURNF 0
+
+ENDSELECT
