@@ -29,9 +29,22 @@ IF LOCAL
 	;-------------------------------------------------
 	;EVENT_1103 多日不见
 	;-------------------------------------------------
-	IF CFLAG:49:1103 >= 7;会面事件最优先
+	IF CFLAG:49:1103 >= 3;会面事件最优先
 		CALL EVENT_49_1103
 		RETURN 0
+	ENDIF
+	;==================================================
+	;杂谈集系事件
+	IF LOCAL
+		CFLAG:49:1500 = 1;确保一次只触发一个
+		;==================================================
+		;1544，觉妖怪与地灵殿的陷阱
+		IF !CFLAG:49:1544 && CFLAG:49:1500 == 1 && 陥落状態() >= 3 && GET_MAPID(CFLAG:38:現在位置) == 9 && CFLAG:38:好感度>= 500 && GET_MAPID(CFLAG:36:現在位置) == 9 && CFLAG:36:好感度>= 100 && TIME < 420 && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP && MAIN_MAP == 9 && !RAND:5
+			CALL EVENT_49_1500(1)
+			CFLAG:49:1501 = 999
+			CFLAG:49:1500 = 0
+		ENDIF
+		;==================================================
 	ENDIF
 	;-------------------------------------------------
 	;小分岐
@@ -435,7 +448,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;その他
-	
+PRINTW
 ENDIF
 RESETCOLOR
 RETURN 1
@@ -490,7 +503,7 @@ IF (BASE:酒気 > (MAXBASE:酒気 / 10) * 4)
 	CALL DRUNKER49(20)
 ELSEIF GETBIT (CFLAG:1491,1)
 	CALL EVENT_49_1491(1)
-ELSEIF CFLAG:49:1010 == 1 || CFLAG:49:1011 == 1 || CFLAG:49:1012 == 1 || CFLAG:49:1012 == 3
+ELSEIF CFLAG:49:1010 == 1 || CFLAG:49:1011 == 1 || CFLAG:49:1012 == 1 || CFLAG:49:1012 == 3 || CFLAG:49:1009 == 1
 	IF CFLAG:49:1010 == 1
 		;阿燐
 		CALL EVENT_49_1010(0)
@@ -503,6 +516,9 @@ ELSEIF CFLAG:49:1010 == 1 || CFLAG:49:1011 == 1 || CFLAG:49:1012 == 1 || CFLAG:4
 	ELSEIF CFLAG:49:1012 == 3
 		;恋，忘记你了
 		CALL EVENT_49_1010(3)
+	ELSEIF CFLAG:49:1009 == 1
+		;蕾咪
+		CALL EVENT_49_1010(4)
 	ENDIF
 ELSEIF CFLAG:被掌握把柄 && !GETBIT (CFLAG:1490,5) && 陥落状態() >= 3 && !MARK:49:反発刻印
 	IF 陥落状態() >= 4
@@ -671,6 +687,7 @@ ELSE
 	PRINTFORML 「...」
 	PRINTFORMDL  觉面带冷淡的表情低着头、不知在想什么...
 ENDIF
+PRINTW
 ;-------------------------------------------------
 ;EVENT_1019 宴席の戯れに
 SIF CFLAG:49:1019 != 999
