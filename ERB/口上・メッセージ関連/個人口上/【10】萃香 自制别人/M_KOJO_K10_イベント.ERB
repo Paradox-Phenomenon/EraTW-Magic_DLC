@@ -24,6 +24,77 @@ RETURN 1
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_MOMO_UPDATE_K10
+SIF MOMO_LOOPS_MARK_OF_SUIKA != FLAG:周回数
+	MOMO_UPDATE_MARK_OF_SUIKA = 0
+IF !CFLAG:面識
+	IF !MOMO_UPDATE_MARK_OF_SUIKA
+		PRINTFORMDL 为了适配部分内容，活了不知道多久的四大鬼王之一的伊吹萃香将仍然是处女
+		SETCOLOR C_RED
+		PRINTFORML 注意：
+		PRINTFORML 在您和萃香初次见面之前，您都可以对本update的选项进行修改
+		PRINTFORML 一旦您与萃香初见，本周目内您将无法再次对您的选择进行修改
+		PRINTFORMW
+		RESETCOLOR
+		WHILE 1
+			CALL CHOICE("现在将萃香设定为处女，请问可以吗？", "没问题", "不要")
+			SELECTCASE RESULT
+				CASE 0
+					CALL CHOICE("确定要进行修改吗？", "是", "否")
+					SELECTCASE RESULT
+						CASE 0
+							TALENT:処女 = 1
+							ABL:Ｃ感覚 = 0
+							ABL:露出癖 = 0
+							EXP:Ｖ経験 = 0
+							EXP:絶頂経験 = 0
+							EXP:苦痛快楽経験 = 0
+							MOMO_UPDATE_MARK_OF_SUIKA = 1
+							MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
+							PRINTFORMDW 那么请爱护好这位情感上仍然青涩的鬼王吧
+							BREAK
+						CASEELSE
+							CONTINUE
+					ENDSELECT
+				CASEELSE
+					CALL CHOICE("确定不进行修改吗？", "是", "否")
+					SELECTCASE RESULT
+						CASE 0
+							TALENT:処女 = 0
+							ABL:Ｃ感覚 = 1
+							ABL:露出癖 = 1
+							EXP:Ｖ経験 = 15
+							EXP:絶頂経験 = 10
+							EXP:苦痛快楽経験 = 20
+							MOMO_UPDATE_MARK_OF_SUIKA = 2
+							MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
+							PRINTFORMDW 那么萃香还是有一定的经验的，毕竟活了那么久了对吧
+							BREAK
+						CASEELSE
+							CONTINUE
+					ENDSELECT
+			ENDSELECT
+		WEND
+	ELSE
+		PRINTFORMD 您已经进行过对本口上的update，目前您的选择是
+		SELECTCASE MOMO_UPDATE_MARK_OF_SUIKA
+			CASE 1
+				PRINTFORML 活了不知道多久的四大鬼王之一的伊吹萃香将仍然是处女
+			CASE 2
+				PRINTFORML 萃香还是有一定的经验的，毕竟活了那么久了
+		ENDSELECT
+		CALL CHOICE("需要进行重新选定吗？", "是", "否")
+		SELECTCASE RESULT
+			CASE 0
+				MOMO_UPDATE_MARK_OF_SUIKA = 0
+				PRINTFORMW 现在可以进行重新选择了
+				RESTART
+			CASEELSE
+				PRINTFORMW 那么就保持现在这样
+		ENDSELECT
+	ENDIF
+ELSE
+	PRINTFORMW 您已经与萃香见过面了，不能进行对萃香基本信息的设定
+ENDIF
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
@@ -72,7 +143,7 @@ SELECTCASE RESULTS
   PRINTFORMDL 「%CALLNAME:MASTER%么……真是一个好名字呢，说不定我们能成为朋友呢」
   PRINTFORMDL 这样说着的少女，笑着伸出了自己的手
   PRINTFORMDL %CALLNAME:MASTER%也紧紧回握住她的手
-  PRINTFORML 「嘿嘿，这样我们就是朋友了呢，所以一一要一起去喝酒么？」
+  PRINTFORMW 「嘿嘿，这样我们就是朋友了呢，所以一一要一起去喝酒么？」
    CFLAG:10:好感度 += 50
    CFLAG:10:信賴度 += 10
   CASE "1"
@@ -87,7 +158,7 @@ SELECTCASE RESULTS
    PRINTFORML 「我十分期待你成功的哪一天呢！」
    PRINTFORMDL 少女就这样一边笑着，从%CALLNAME:MASTER%的身边经过
    PRINTFORMDL 伊吹萃香么……等着吧
-   PRINTFORMDL %CALLNAME:MASTER%暗暗下定了决了心
+   PRINTFORMDW %CALLNAME:MASTER%暗暗下定了决了心
    CFLAG:10:好感度 += 50
    CFLAG:10:信賴度 += 10
 	CASEELSE
@@ -105,7 +176,7 @@ ENDSELECT
 		PRINTFORMDL 这样说着的少女，不知从哪里掏出了几瓶酒。放到了%CALLNAME:MASTER%的手中
 		CALL GET_ITEM ("鬼殺酒", 2, 2)
 		PRINTFORML 「我还有别的事情，就先走了哦！」
-		PRINTFORMDL 萃香头也不回的离開了，只留下%CALLNAME:MASTER%抱着酒瓶无奈的苦笑
+		PRINTFORMDW 萃香头也不回的离開了，只留下%CALLNAME:MASTER%抱着酒瓶无奈的苦笑
 	CASEELSE
 		PRINTL 如有报错，请在Q群寻找作者
 		RETURN 0
@@ -1461,7 +1532,7 @@ IF LOCAL
 	;立ち止まった
 	;この後遭遇口上に接続
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		IF TCVAR:媚薬 || TCVAR:発情 || CFLAG:TARGET:积攒度 > 850
@@ -1491,6 +1562,7 @@ IF LOCAL
 				PRINTFORMDL 萃香瞟了你一眼，又忙于自己的事情了
 				PRINTFORMDL 
 		ENDIF
+		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;轻轻地会釈して街道過ぎた
@@ -1498,7 +1570,11 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2		
-		ELSEIF TALENT:恋人 
+		IF TALENT:恋人 
+			IF CFLAG:积攒度 >= 800 && !RAND:5
+				LOCAL:1 ++
+				GOTO BE_CAUGHT_BY_SUIKA
+			ENDIF
 		    SELECTCASE RAND:4
 			CASE 3
 				PRINTFORML 「辛苦了。待会儿见。」
@@ -1551,9 +1627,11 @@ IF LOCAL
 				PRINTFORML 「啊、%CALLNAME:MASTER% 给我斟酒吧。不行吗？是这样啊……。」
 				PRINTFORMDL 萃香被郑重地拒绝了。 好像有点不满。
 			ENDSELECT
-	
 		ELSEIF TALENT:愛欲 
-			SELECTCASE RAND:2
+			SELECTCASE RAND:3
+			CASE 2
+				LOCAL:1 ++
+				GOTO BE_CAUGHT_BY_SUIKA
 			CASE 1
 				PRINTFORMDL 萃香用摇摇晃晃的步伐靠近了我。
 				PRINTFORMDL 她就像在旁边眯起眼睛看着我的脸，一边露出舌头笑着离去了。
@@ -1566,40 +1644,11 @@ IF LOCAL
 				PRINTFORML 「……喝吗？」
 				PRINTFORMDL 柔嫩的皮肤稍稍透过被润湿的衣服、萃香淫靡地笑了。
 			ENDSELECT
-		ELSE
-				PRINTFORMDL 萃香哼了一声鼻子，瞪了过来。
-				;同行者が居ない
-				IF !CFLAG:MASTER:同行
-					;お互い接吻経験済み
-					IF !TALENT:MASTER:無接吻経験 && !TALENT:無接吻経験
-						PRINTFORMDL 跟在暗处偷偷摸摸的萃香点点头，打算走过去。
-						PRINTFORMDL 突然被莫名其妙的力量拖住了。
-						PRINTFORMDL 下一瞬间，我禁不住要停止时间，
-						PRINTFORMDL 面红耳赤的萃香嬉笑着，贪婪的吸着嘴唇。
-						PRINTFORMDL 发出啾噜啾噜的声音、我被抱着头，舌头火辣辣的。
-						PRINTFORMDL 偶尔啾啪啾啪的放開嘴唇，又用柔和的吻来袭击。
-						PRINTFORMDL 把彼此的唾液充分交换后，把在嘴唇之间挂着的桥最后吸到嘴里。
-						PRINTFORML 「有时间的吧？，呐？」
-						PRINTFORMDL 气喘吁吁的萃香就这样開放了。
-						EXP:口淫経験 += 1
-						EXP:接吻経験 += 1
-						EXP:Ｍ経験 += 1
-						EXP:MASTER:口淫経験 += 1
-						EXP:MASTER:接吻経験 += 1
-						EXP:MASTER:Ｍ経験 += 1
-					;どちらかが無接吻経験
-					ELSE
-						PRINTFORMDL 跟在暗处偷偷摸摸的萃香点点头，打算走过去。
-						PRINTFORMDL 突然被莫名其妙的力量拖住了。
-						PRINTFORMDL 下一瞬间，我禁不住要停止时间，
-						PRINTFORMDL 面红耳赤的萃香嬉笑着、把衣服慢慢拉起来。。
-						PRINTFORMDL 白皙的肌肤，肚脐，细腰部，肋骨。小小的，但是明显膨胀的乳房的下端。
-						PRINTFORMDL 让人忘记是鬼的事，抱着那小小的身体，不由自主地伸出一只手。
-						PRINTFORMDL 从腰部抚摸起来，香香摇摇晃晃地纽动着身体.
-						PRINTFORML 「有时间的吧？，呐？」
-						PRINTFORMDL 在不知不觉间被另一只手爱抚着脸颊的萃香就这样被開放了。
-					ENDIF
 		ELSEIF TALENT:炮友
+			IF CFLAG:积攒度 >= 800 && !RAND:2
+				LOCAL:1 ++
+				GOTO BE_CAUGHT_BY_SUIKA
+			ENDIF
 			SELECTCASE RAND:4
 			CASE 3
 				PRINTFORML 「啊、嗯。」
@@ -1616,12 +1665,57 @@ IF LOCAL
 				PRINTFORML 「我也想要啊……？」
 				PRINTFORMDL 萃香扑哧一声笑了起来……。
 			ENDSELECT
+		ELSEIF MARK:反発刻印 >= 2
+			PRINTFORMDL 萃香哼了一声鼻子，瞪了过来。
+			PRINTL
 		ELSE
 			PRINTFORML 「哦嗯。」
 			PRINTFORMDL 萃香像往常一样举手招呼，返回了问候。
 		ENDIF
 		RETURN 1
 	ENDIF
+
+	$BE_CAUGHT_BY_SUIKA
+	IF LOCAL:1 == 2
+		;同行者が居ない
+		IF !CFLAG:MASTER:同行
+			;お互い接吻経験済み
+			IF !TALENT:MASTER:無接吻経験 && !TALENT:無接吻経験
+				PRINTFORMDL 跟在暗处偷偷摸摸的萃香点点头，打算走过去。
+				PRINTFORMDL 突然被莫名其妙的力量拖住了。
+				PRINTFORMDL 下一瞬间，我禁不住要停止时间，
+				PRINTFORMDL 面红耳赤的萃香嬉笑着，贪婪的吸着嘴唇。
+				PRINTFORMDL 发出啾噜啾噜的声音、我被抱着头，舌头火辣辣的。
+				PRINTFORMDL 偶尔啾啪啾啪的放開嘴唇，又用柔和的吻来袭击。
+				PRINTFORMDL 把彼此的唾液充分交换后，把在嘴唇之间挂着的桥最后吸到嘴里。
+				PRINTFORML 「有时间的吧？，呐？」
+				PRINTFORMDW 气喘吁吁的萃香就这样開放了。
+				EXP:口淫経験 += 1
+				EXP:接吻経験 += 1
+				EXP:Ｍ経験 += 1
+				EXP:MASTER:口淫経験 += 1
+				EXP:MASTER:接吻経験 += 1
+				EXP:MASTER:Ｍ経験 += 1
+			;どちらかが無接吻経験
+			ELSE
+				PRINTFORMDL 跟在暗处偷偷摸摸的萃香点点头，打算走过去。
+				PRINTFORMDL 突然被莫名其妙的力量拖住了。
+				PRINTFORMDL 下一瞬间，我禁不住要停止时间，
+				PRINTFORMDL 面红耳赤的萃香嬉笑着、把衣服慢慢拉起来。。
+				PRINTFORMDL 白皙的肌肤，肚脐，细腰部，肋骨。小小的，但是明显膨胀的乳房的下端。
+				PRINTFORMDL 让人忘记是鬼的事，抱着那小小的身体，不由自主地伸出一只手。
+				PRINTFORMDL 从腰部抚摸起来，香香摇摇晃晃地纽动着身体.
+				PRINTFORML 「有时间的吧？，呐？」
+				PRINTFORMDW 在不知不觉间被另一只手爱抚着脸颊的萃香就这样被開放了。
+			ENDIF
+		ELSE
+			PRINTFORMDL 跟在暗处偷偷摸摸的萃香点点头，走了过去。
+			PRINTFORMDW 感觉背后传来了奇怪且灼热的视线
+		ENDIF
+		RETURN 1
+	ENDIF
+
+
 	;-------------------------------------------------
 	;無視して街道過ぎた
 	;記入チェック（=0, 非表示、1, 表示）
@@ -1638,16 +1732,16 @@ IF LOCAL
 			ELSEIF TALENT:思慕
 				PRINTFORMDL 萃香用眼睛偷偷地追着%CALLNAME:MASTER%
 				PRINTFORMDL 在注意到你的目光之后便快速撇到另一边了	
-			ELSEIF TALENT:炮友 
+			ELSEIF TALENT:炮友 || TALENT:愛欲
 				PRINTFORM 看着%CALLNAME:MASTER%，一边妖艳地扭动着身体。
 			ELSE
 				PRINTFORM %CALLNAME:MASTER%无视路过的萃香的时候
-				PRINTFORMDL  感觉背后传来奇怪的视线
+				PRINTFORMDL 感觉背后传来奇怪的视线
 			ENDIF
 	ENDIF
 	RETURN 1
 	;其他
-	PRINTFORMDL  
+	;PRINTFORMDL  
 ENDIF
 RETURN 1
 ;==================================================
@@ -1658,26 +1752,6 @@ RETURN 1
 ;--------------------------------------------------
 	;-------------------------------------------------
 	;小分岐
-	;-------------------------------------------------
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 1
-	;-------------------------------------------------
-	IF LOCAL:1 && ARG
-		IF TALENT:恋人
-			PRINTFORML 「唔……真讨厌……」
-			PRINTFORMDL 看见有人进来之后萃香松開了你的手。
-			PRINTFORMDL 
-		ELSEIF TALENT:恋慕
-			PRINTFORML 「……啧」
-			PRINTFORMDL 萃香从%CALLNAME:MASTER%身边离開了。
-			PRINTFORMDL 
-		ELSEIF TALENT:思慕
-			PRINTFORML 「……你好啊」
-			PRINTFORMDL 看到有人进来后，萃香一边喝酒一边打着招呼
-		ELSE
-			PRINTFORMDL 看到有人进来，萃香点了点头
-		ENDIF
-		RETURN 0
 	;-------------------------------------------------	
 	;霊夢が入ってきた
 	;記入チェック（=0, 非表示、1, 表示）
@@ -1738,10 +1812,30 @@ RETURN 1
 			PRINTFORML 「我以为你们会主动避開鬼……真是意外啊……」
 			RETURN 1
 	ENDIF
+	;-------------------------------------------------
 	;其他
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG
+		IF TALENT:恋人
+			PRINTFORML 「唔……真讨厌……」
+			PRINTFORMDL 看见有人进来之后萃香松開了你的手。
+			PRINTFORMDL 
+		ELSEIF TALENT:恋慕
+			PRINTFORML 「……啧」
+			PRINTFORMDL 萃香从%CALLNAME:MASTER%身边离開了。
+			PRINTFORMDL 
+		ELSEIF TALENT:思慕
+			PRINTFORML 「……你好啊」
+			PRINTFORMDL 看到有人进来后，萃香一边喝酒一边打着招呼
+		ELSE
+			PRINTFORMDL 看到有人进来，萃香点了点头
+		ENDIF
+		RETURN 1
+	ENDIF
 	PRINTFORMDL  
-ENDIF
-RETURN 1
+	RETURN 1
 
 ;==================================================
 ;情事を目撃した
@@ -1751,7 +1845,7 @@ RETURN 1
 ;ARGに情事相手
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 1
+;LOCAL = 1
 ;-------------
 
 	;-------------------------------------------------
@@ -1763,12 +1857,6 @@ LOCAL = 1
 	;-------------------------------------------------
     IF LOCAL:1 && ARG:1 == 1
 		IF TALENT:恋人
-		        PRINTFORML 「哎呀？是我打扰到你了么？」
-				PRINTFORMDL 「不，我并没有再生气」
-				PRINTFORML 「只是…」
-				PRINTFORMDL 萃香好像在思索着接下来怎么继续说下去
-				PRINTFORML 「至少下次要提前和我说一声，让我知道就行了」
-				PRINTFORMDL 萃香转身离開了房间
 			IF ARG == 1
 				PRINTFORML 「哎哎哎啊？你们在做什么？」
 				PRINTFORMDL 萃香看着你和灵梦媾和，发出了震耳欲聋的尖叫声
@@ -1802,12 +1890,6 @@ LOCAL = 1
 				PRINTFORMDL 萃香看似毫不在意的离開了
 			ENDIF
 		ELSEIF TALENT:恋慕
-		        PRINTFORML 「哎呀？是我打扰到你了么？」
-				PRINTFORMDL 「不，我并没有再生气」
-				PRINTFORML 「只是…」
-				PRINTFORMDL 萃香好像在思索着接下来怎么继续说下去
-				PRINTFORML 「至少下次要提前和我说一声，让我知道就行了」
-				PRINTFORMDL 萃香转身离開了房间
 			IF ARG == 1
 				PRINTFORML 「%CALLNAME:MASTER%和……灵梦么……？」
 				PRINTFORMDL 萃香好像稍微有点惊讶于你们的行为
@@ -1835,9 +1917,19 @@ LOCAL = 1
 				PRINTFORML 「那我就先走了」
 				PRINTFORMDL 萃香看似毫不在意的离開了
 		    ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORML 「哎呀？是我打扰到你了么？」
+			PRINTFORML 「不，我并没有再生气」
+			PRINTFORML 「只是…」
+			PRINTFORMDL 萃香好像在思索着接下来怎么继续说下去
+			PRINTFORML 「至少下次要提前和我说一声，让我知道就行了」
+			PRINTFORMDL 萃香转身离開了房间
+		ELSE
+			PRINTFORML 「哎呀？是我打扰到你了么？」
+			PRINTFORMDL 萃香轻轻退出了房间
 		ENDIF
+		RETURN 1
     ENDIF
-	RETURN 1
 	
 	;-------------------------------------------------
 	;負けじと参加（亲热度:高）
@@ -1845,11 +1937,7 @@ LOCAL = 1
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 2
-	    IF TALENT:恋人
-				PRINTFORMDL
-				PRINTFORMDL 萃香不紧不慢的靠了过来，双手勾住%CALLNAME:MASTER%的脖子
-				PRINTFORML 「其实呢，你把我丢在一边的话。我也不是会有还什么怨言的说」
-				PRINTFORML 「但是啊，我现在呢。也想要和%CALLNAME:MASTER%亲热亲热呢」
+	    IF TALENT:恋人 || TALENT:恋慕
 			IF ARG == 1
 				PRINTFORML 「%CALLNAME:MASTER%…就这么想要做这种事么？」
 				PRINTFORMDL 萃香露出了那种难以捉摸的笑容
@@ -1878,41 +1966,13 @@ LOCAL = 1
 				PRINTFORML 「%CALLNAME:MASTER%，你为什么不叫上我啊！真讨厌！」
 				PRINTFORMDL 衣服褪到一半的萃香，钻入了你的怀中
 			ENDIF
-		ELSEIF TALENT:恋慕
-			  	PRINTFORMDL
-			  	PRINTFORMDL 萃香不紧不慢的靠了过来，双手勾住%CALLNAME:MASTER%的脖子
-			  	PRINTFORML 「其实呢，你把我丢在一边的话。我也不是会有还什么怨言的说」
-			  	PRINTFORML 「但是啊，我现在呢。也想要和%CALLNAME:MASTER%亲热亲热呢」
-			IF ARG == 1
-				PRINTFORML 「%CALLNAME:MASTER%…就这么想要做这种事么？」
-				PRINTFORMDL 萃香露出了那种难以捉摸的笑容
-				PRINTFORML 「呼呼，既然如此、那就让我们来一起来促进感情吧」
-			ELSEIF ARG == 2
-				PRINTFORML 「竟然在和机器人做么？真是无法理解你的脑回路呢」
-				PRINTFORML 「唔……」
-				PRINTFORMDL 萃香一步步的靠了过来，然后紧紧抱住%CALLNAME:MASTER%
-				PRINTFORML 「不带上我的话，我可是会生气的哦」
-			ELSEIF ARG == 43
-				PRINTFORML 「唔……」
-				PRINTFORMDL 萃香用奇怪的眼神看着你们两个
-				PRINTFORML 「你们两个，真的是……」
-				PRINTFORMDL 在你绞尽脑汁酝酿借口的时候，萃香直接扑了过来
-				PRINTFORML 「竟然一个人偷跑，华扇真的是太狡猾了！」
-			ELSEIF ARG == 64
-				PRINTFORML 「诶？竟然……」
-				PRINTFORMDL 萃香看起来有点惊讶，不过随即便露出了一个意味深长的笑容
-				PRINTFORML 「%CALLNAME:MASTER%，是一个喜欢追求刺激的人呢」
-				PRINTFORML 「那么，如果让两大鬼王同时侍奉你的话，有够刺激么？」
-				PRINTFORML 「不过啊……希望你的身体能够撑得住呢」
-			ELSE
-		        PRINTFORML 「%CALLNAME:MASTER%…诶？」
-				PRINTFORML 「你……」
-				PRINTFORMDL 就在你以为萃香要大发雷霆的时候，萃香却開始脱起了衣服
-				PRINTFORML 「%CALLNAME:MASTER%，你为什么不叫上我啊！真讨厌！」
-				PRINTFORMDL 衣服褪到一半的萃香，钻入了你的怀中
-			ENDIF
-		RETURN 1
+		ELSE
+			PRINTFORMDL
+			PRINTFORMDL 萃香不紧不慢的靠了过来，双手勾住%CALLNAME:MASTER%的脖子
+			PRINTFORML 「其实呢，你把我丢在一边的话。我也不是会有还什么怨言的说」
+			PRINTFORML 「但是啊，我现在呢。也想要和%CALLNAME:MASTER%亲热亲热呢」
 		ENDIF
+		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;気まずそうに立ち去る
@@ -1920,26 +1980,26 @@ LOCAL = 1
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 3
-	IF TALENT:恋人
-	PRINTFORML 「%CALLNAME:MASTER%……」
-	PRINTFORMDL 萃香的眉头紧皱了起来
-	PRINTFORML 「%CALLNAME:MASTER%，我希望今天你能玩的很開心哦」
-	PRINTFORMDL 走过的萃香凑到你的耳边，轻声说道
-	PRINTFORML 「我觉得你用得到这个，完事之后再来找我哦」
-    PRINTFORML 「如果你不来的话，呼呼」
-	CALL GET_ITEM ("運動飲料", 1, 2)
-	PRINTFORMDL 将东西塞到你手上的萃香离開了
-	ELSEIF TALENT:恋慕
-	PRINTFORML 「…………」
-	PRINTFORML 「不用在意我，我就是想学习一下技术」
-	PRINTFORMDL 突然显形的萃香把你吓了一大跳
-	PRINTFORMDL 随即你就把萃香赶了出去
-	PRINTFORML 「嘁，小气鬼」
-    ELSE
-	PRINTFORML 「…………」
-	PRINTFORML 「请稍微注意一下场合」
-	PRINTFORMDL 萃香看了你们一眼，从房间退出去了
-	ENDIF
+		IF TALENT:恋人
+			PRINTFORML 「%CALLNAME:MASTER%……」
+			PRINTFORMDL 萃香的眉头紧皱了起来
+			PRINTFORML 「%CALLNAME:MASTER%，我希望今天你能玩的很開心哦」
+			PRINTFORMDL 走过的萃香凑到你的耳边，轻声说道
+			PRINTFORML 「我觉得你用得到这个，完事之后再来找我哦」
+			PRINTFORML 「如果你不来的话，呼呼」
+			CALL GET_ITEM ("運動飲料", 1, 2)
+			PRINTFORMDL 将东西塞到你手上的萃香离開了
+		ELSEIF TALENT:恋慕
+			PRINTFORML 「…………」
+			PRINTFORML 「不用在意我，我就是想学习一下技术」
+			PRINTFORMDL 突然显形的萃香把你吓了一大跳
+			PRINTFORMDL 随即你就把萃香赶了出去
+			PRINTFORML 「嘁，小气鬼」
+		ELSE
+			PRINTFORML 「…………」
+			PRINTFORML 「请稍微注意一下场合」
+			PRINTFORMDL 萃香看了你们一眼，从房间退出去了
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1948,21 +2008,21 @@ LOCAL = 1
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 4
-	 IF TALENT:恋人
-	PRINTFORML 「想要一起侍奉你？」
-	PRINTFORML 「你还真是敢说呢……不过既然是你的要求……」
-	PRINTFORMDL 萃香褪下衣服后，乖巧的躺在了你的怀中
-	PRINTFORML 「我当然会答应你的要求了，嘿嘿」
-	ELSEIF TALENT:恋慕
-	PRINTFORML 「想要三个人一起玩？」
-	PRINTFORMDL 萃香像是看智障的眼神看着你
-	PRINTFORML 「嘛，虽然说也不是说不行……呀啊！」
-	PRINTFORMDL 在萃香还没有回答的时候，你就把她压在了身子底下
-	ELSE
-	PRINTFORML 「想要多人行？」
-	PRINTFORMDL 萃香放下了手里的酒葫芦
-	PRINTFORML 「只有这一次哦、呵呵」
-	ENDIF
+		IF TALENT:恋人
+			PRINTFORML 「想要一起侍奉你？」
+			PRINTFORML 「你还真是敢说呢……不过既然是你的要求……」
+			PRINTFORMDL 萃香褪下衣服后，乖巧的躺在了你的怀中
+			PRINTFORML 「我当然会答应你的要求了，嘿嘿」
+		ELSEIF TALENT:恋慕
+			PRINTFORML 「想要三个人一起玩？」
+			PRINTFORMDL 萃香像是看智障的眼神看着你
+			PRINTFORML 「嘛，虽然说也不是说不行……呀啊！」
+			PRINTFORMDL 在萃香还没有回答的时候，你就把她压在了身子底下
+		ELSE
+			PRINTFORML 「想要多人行？」
+			PRINTFORMDL 萃香放下了手里的酒葫芦
+			PRINTFORML 「只有这一次哦、呵呵」
+		ENDIF
 		RETURN 1
 	ENDIF
 
@@ -1974,7 +2034,7 @@ LOCAL = 1
 ;ARGに目撃者
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+;LOCAL = 0
 ;-------------
 
 	;-------------------------------------------------
@@ -1985,35 +2045,7 @@ LOCAL = 0
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 1
-		IF TALENT:恋人 
-			PRINTFORMDL
-			PRINTFORML 「哎呀……」
-			PRINTFORMDL %CALLNAME:ARG%红着脸看向这边。
-			PRINTFORMDL 萃香也那样盯着%CALLNAME:ARG%
-			PRINTFORML 「抱，抱歉！能请你出去？」
-			PRINTFORMDL  看着萃香尴尬的表情、%CALLNAME:ARG%立马转过了身体
-		IF ARG == 1
-				PRINTFORML 「灵梦么……」
-				PRINTFORMDL 萃香把眉头皱了起来
-				PRINTFORML 「还请你不要偷看的比较好哦」
-				PRINTFORMDL 萃香下达了逐客令
-			ELSEIF ARG == 2
-				PRINTFORML 「是谁？留琴……来打扫卫生的么？」
-				PRINTFORML 「唔……请出去好么？」
-				PRINTFORMDL 萃香把留琴赶了出去
-			ELSEIF ARG == 43
-				PRINTFORML 「嗯……不行，快出去！」
-				PRINTFORMDL 在華扇进来之后，萃香直接下了逐客令
-				PRINTFORML 「抱歉，现在是二人世界时间」
-				PRINTFORMDL 萃香在冷静下来之后说了一句抱歉
-				PRINTFORML 「所以能让我们两个单独待会么？」
-				ELSEIF TALENT:恋慕
-			PRINTFORMDL
-			PRINTFORML 「哎呀……」
-			PRINTFORMDL %CALLNAME:ARG%红着脸看向这边。
-			PRINTFORMDL 萃香也那样盯着%CALLNAME:ARG%
-			PRINTFORML 「抱，抱歉！能请你出去？」
-			PRINTFORMDL  看着萃香尴尬的表情、%CALLNAME:ARG%立马转过了身体
+		IF (TALENT:恋人 || TALENT:恋慕) && GROUPMATCH(ARG, 1, 2, 43)
 			IF ARG == 1
 				PRINTFORML 「灵梦么……」
 				PRINTFORMDL 萃香把眉头皱了起来
@@ -2029,17 +2061,16 @@ LOCAL = 0
 				PRINTFORML 「抱歉，现在是二人世界时间」
 				PRINTFORMDL 萃香在冷静下来之后说了一句抱歉
 				PRINTFORML 「所以能让我们两个单独待会么？」
-			ELSE
+			ENDIF
+		ELSE
 			PRINTFORMDL
 			PRINTFORML 「哎呀……」
 			PRINTFORMDL %CALLNAME:ARG%红着脸看向这边。
 			PRINTFORMDL 萃香也那样盯着%CALLNAME:ARG%
 			PRINTFORML 「抱，抱歉！能请你出去？」
 			PRINTFORMDL  看着萃香尴尬的表情、%CALLNAME:ARG%立马转过了身体
-			ENDIF
+		ENDIF
 		RETURN 1
-	ENDIF
-	ENDIF
 	ENDIF
 	;-------------------------------------------------
 	;目撃者が負けじと参加（目撃者の亲热度:高）
@@ -2047,26 +2078,26 @@ LOCAL = 0
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 2
-		 IF TALENT:恋人
+		IF TALENT:恋人
 		    PRINTFORMDL
 			PRINTFORMDL %CALLNAME:ARG%就那样走了过来，靠在了%CALLNAME:MASTER%怀中
 			PRINTFORML 「%CALLNAME:MASTER%还真是花心呢，但是……」
 			PRINTFORMDL 萃香拉着%CALLNAME:ARG%的手，笑了出来
 			PRINTFORML 「%CALLNAME:MASTER%能够同时应付我们么？……」
 			PRINTFORMDL
-			ELSEIF TALENT:恋慕
-			   PRINTFORMDL %CALLNAME:ARG%就那样走了过来，靠在了%CALLNAME:MASTER%怀中
-			   PRINTFORML 「%CALLNAME:MASTER%还真是花心呢，但是……」
-			   PRINTFORMDL 萃香拉着%CALLNAME:ARG%的手，笑了出来
-			   PRINTFORML 「%CALLNAME:MASTER%能够同时应付我们么？……」
-			   PRINTFORMDL 
-			ELSE
-		        PRINTFORML 「哦…想要一起么？」
-				PRINTFORMDL 看见有人进来之后，萃香发出了邀请
-				PRINTFORML 「为什么会邀请？」
-				PRINTFORMDL 萃香贴在你的身上，缓缓的说着
-				PRINTFORML 「这不就是你想要的么？呵呵……」
-			ENDIF
+		ELSEIF TALENT:恋慕
+			PRINTFORMDL %CALLNAME:ARG%就那样走了过来，靠在了%CALLNAME:MASTER%怀中
+			PRINTFORML 「%CALLNAME:MASTER%还真是花心呢，但是……」
+			PRINTFORMDL 萃香拉着%CALLNAME:ARG%的手，笑了出来
+			PRINTFORML 「%CALLNAME:MASTER%能够同时应付我们么？……」
+			PRINTFORMDL 
+		ELSE
+			PRINTFORML 「哦…想要一起么？」
+			PRINTFORMDL 看见有人进来之后，萃香发出了邀请
+			PRINTFORML 「为什么会邀请？」
+			PRINTFORMDL 萃香贴在你的身上，缓缓的说着
+			PRINTFORML 「这不就是你想要的么？呵呵……」
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2076,10 +2107,10 @@ LOCAL = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 3
 		IF TALENT:恋人
-		PRINTFORML 「这下子打扰的人都离開了呢……」
-		PRINTFORMDL 萃香紧紧的抱住了%CALLNAME:MASTER%
-		PRINTFORML 「中途而废的话可不是一个好习惯呢」
-		PRINTFORMDL 两具身体再次交缠而上，撞击声在房间里响起……
+			PRINTFORML 「这下子打扰的人都离開了呢……」
+			PRINTFORMDL 萃香紧紧的抱住了%CALLNAME:MASTER%
+			PRINTFORML 「中途而废的话可不是一个好习惯呢」
+			PRINTFORMDL 两具身体再次交缠而上，撞击声在房间里响起……
 		ELSEIF TALENT:恋慕
 			PRINTFORMDL
 			PRINTFORML 「呀……」
@@ -2105,7 +2136,7 @@ LOCAL = 0
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 4
-	IF PALAM:欲情 >= PALAMLV:7
+		IF PALAM:欲情 >= PALAMLV:7
 			PRINTFORML 「只有我一个人还不够么？真是过分贪心呢」
 			PRINTFORML 「虽然想着再照顾一下你的身体，但是不是对鬼有些看轻了啊」
 			PRINTFORML 「我会让你见识到的……」
@@ -2139,26 +2170,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 1
-	IF TALENT:恋慕 || ARG == 1
-			PRINTFORML 「……%CALLNAME:MASTER%…」
-			PRINTFORMDL 萃香看着%CALLNAME:MASTER%，眉头紧皱
-			PRINTFORML 「太贪恋于巫女的温柔心可是不行的」
-		ELSEIF TALENT:恋慕 || ARG == 2
-			PRINTFORML 「留琴...就连机器人也不放过么？」
-			PRINTFORMDL 萃香突然開始发难了
-			PRINTFORML 「机器人什么的....」
-			PRINTFORMDL 萃香好像心情不太好的样子
-		ELSEIF ARG == 43
-			PRINTFORML 「……%CALLNAME:MASTER%…还有華扇？」
-			PRINTFORMDL 萃香的脸一下子就拉下去了
-			PRINTFORML 「……啧」
-			PRINTFORMDL 感觉周围温度都低下去了
-		ELSEIF ARG == 64
-			PRINTFORML 「就连勇儀...」
-			PRINTFORMDL 萃香露出为难的表情
-			PRINTFORML 「烦请稍微注意一下周围人的感受」
-			PRINTFORMDL 说完的萃香便头也不回的离開了
-		ELSEIF TALENT:恋人
+		IF TALENT:恋人
+			SIF RAND:5
+				GOTO SUIKA_BLAME
 			PRINTFORML 「…啊……」
 			PRINTFORML 「我也不知道该怎么说……」
 			PRINTFORMDL 萃香又灌了两口酒
@@ -2166,10 +2180,32 @@ IF LOCAL
 			PRINTFORML 「………」
 			PRINTFORMDL 二人就这样沉默了一会
 		ELSEIF TALENT:恋慕
-			PRINTFORML 「……%CALLNAME:MASTER%？…」
-			PRINTFORML 「…啊，没事。还请继续」
-			PRINTFORMDL 萃香退出了房间
-			PRINTFORMDL 感觉她稍微有点失落……错觉么？
+			$SUIKA_BLAME
+			IF ARG == 1
+				PRINTFORML 「……%CALLNAME:MASTER%…」
+				PRINTFORMDL 萃香看着%CALLNAME:MASTER%，眉头紧皱
+				PRINTFORML 「太贪恋于巫女的温柔心可是不行的」
+			ELSEIF ARG == 2
+				PRINTFORML 「留琴...就连机器人也不放过么？」
+				PRINTFORMDL 萃香突然開始发难了
+				PRINTFORML 「机器人什么的....」
+				PRINTFORMDL 萃香好像心情不太好的样子
+			ELSEIF ARG == 43
+				PRINTFORML 「……%CALLNAME:MASTER%…还有華扇？」
+				PRINTFORMDL 萃香的脸一下子就拉下去了
+				PRINTFORML 「……啧」
+				PRINTFORMDL 感觉周围温度都低下去了
+			ELSEIF ARG == 64
+				PRINTFORML 「就连勇儀...」
+				PRINTFORMDL 萃香露出为难的表情
+				PRINTFORML 「烦请稍微注意一下周围人的感受」
+				PRINTFORMDL 说完的萃香便头也不回的离開了
+			ELSE
+				PRINTFORML 「……%CALLNAME:MASTER%？…」
+				PRINTFORML 「…啊，没事。还请继续」
+				PRINTFORMDL 萃香退出了房间
+				PRINTFORMDL 感觉她稍微有点失落……错觉么？
+			ENDIF
 		ELSE
 			PRINTFORML 「……」
 			PRINTFORMDL 萃香只是瞟了一眼，转身离開了·
@@ -2184,7 +2220,7 @@ IF LOCAL
 	IF LOCAL:1 && ARG:1 == 2
 		IF TALENT:恋人
 			PRINTFORML 「我倒不是生气于你们做这种事，作为他的恋人而言。我深知%CALLNAME:MASTER%是个怎样花心的人」
-			PRINTFORMDL  「主要是，你们真的连场合也不分的么？也太过分了」
+			PRINTFORMDL 「主要是，你们真的连场合也不分的么？也太过分了」
 			PRINTFORML 「还有，%CALLNAME:ARG%你也是，太过于娇惯他了」
 			PRINTFORML 「不要再随便跟着他在奇怪的地方做那种事了」
 			PRINTFORML 「像他这样的家伙，等哪一天收到教训了才会明白……」
@@ -2231,7 +2267,7 @@ LOCAL = 1
 			PRINTFORMDL 突然被叫住名字的你下意识的停了下来，就这一瞬间、有一道身影从身旁闪过
 			PRINTFORML 「偷这种东西可是不好的哦？」
 			PRINTFORMDL 等你转过身去，发现萃香正拿着时候自己的战利品
-			ELSE
+		ELSE
 			PRINTFORML 「请等一下」
 			PRINTFORMDL 在和萃香打过招呼之后，突然被叫住了
 			PRINTFORML 「你好像藏了不得了的东西呢」
@@ -2245,7 +2281,7 @@ LOCAL = 1
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 2
-	IF TALENT:恋人
+		IF TALENT:恋人
 			PRINTFORML 「请交出来吧！」
 			PRINTFORMDL 萃香挂着笑容，从%CALLNAME:MASTER%的兜里掏出了内裤
 			PRINTFORML 「太小看鬼的嗅觉了，还是根本没打算藏呢？」
@@ -2256,7 +2292,7 @@ LOCAL = 1
 			PRINTFORMDL 突然被叫住名字的你下意识的停了下来，就这一瞬间、有一道身影从身旁闪过
 			PRINTFORML 「偷这种东西可是不好的哦？」
 			PRINTFORMDL 等你转过身去，发现萃香正拿着时候自己的战利品
-			ELSE
+		ELSE
 			PRINTFORML 「请等一下」
 			PRINTFORMDL 在和萃香打过招呼之后，突然被叫住了
 			PRINTFORML 「你好像藏了不得了的东西呢」
@@ -2284,61 +2320,98 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-	IF EX:膣内精液 > 0 || EX:肛門内精液 > 0
-	IF TALENT:恋人
-	PRINTFORML 「......」
-	PRINTFORMDL 萃香无言的抱了上来，你试着挣脱后发现只是在白费力气
-	PRINTFORML 「抱歉……明明今天已经做过了……」
-	PRINTFORML 「但是我现在还是想要啊...」
-	PRINTFORMDL 萃香将一只手放在你的胸口来解開扣子，另一只手则死死的勒住你从而防止你逃跑
-	PRINTFORML 「把我变成这个样子，%CALLNAME:MASTER%要负起责任啊......」
-IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-	PRINTFORMDL 明明已经注入了很多、但是……
-	ENDIF
-	PRINTFORML 「抱歉、但是我还是想要啊……」
-    PRINTFORMDL 萃香一边说着道歉的话，一边控制着%CALLNAME:MASTER%……
-    PRINTFORMDL
-	ELSEIF TALENT:恋慕
-	PRINTFORML 「......」
-	PRINTFORMDL 一言未发的萃香突然抱了上来，与%CALLNAME:MASTER%用下体进行摩擦
-	PRINTFORML 「抱歉……虽然今天已经做过了……」
-	PRINTFORML 「但我还是想要啊...」
-	PRINTFORMDL 这样说着的萃香，突然用嘴堵上%CALLNAME:MASTER%的嘴唇，同时用腿夹在了%CALLNAME:MASTER%的腰上
-	PRINTFORML 「是你把我变成这个样子的呢，所以%CALLNAME:MASTER%要负起责任啊......」
-	IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-	PRINTFORMDL 明明已经注入了很多、但是……
-	ENDIF
-	PRINTFORML 「抱歉、但是我还是想要啊……」
-    PRINTFORMDL 萃香一边说着道歉的话，一边控制着%CALLNAME:MASTER%……
-    PRINTFORMDL
-	ELSEIF TALENT:思慕
-		PRINTFORML 「抱歉…………」
-	    PRINTFORMDL 这样说着的萃香，一把将%CALLNAME:MASTER%撂倒
-	    PRINTFORML 「我现在超级想要%CALLNAME:MASTER%……」
-	    PRINTFORMDL 萃香将一只手放在你的胸口来解開扣子，另一只手则死死的勒住你从而防止你逃跑
-	    PRINTFORML 「对不起…………」
-		IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-		PRINTFORMDL 我好想沉溺在精液里、萃香用舌头舔舐着%CALLNAME:MASTER%的脸。
+		IF CFLAG:积攒度 > 800
+			IF TALENT:恋人 
+				PRINTFORML 「%CALLNAME:MASTER%……」
+				PRINTFORMDL 萃香将你推倒后，用极其不自然的的眼神盯着你
+				PRINTFORMDL 滚烫的身躯就那样紧紧与你相贴
+				SIF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDL 明明今天已经交过粮了，但是依旧一幅尚未满足的样子
+				PRINTFORML 「我要、快给我……」
+				PRINTFORMDL 萃香这样说着，将裙子褪了下来
+				PRINTFORML 「请快一点……」
+				PRINTFORMDL  
+		    ELSEIF TALENT:恋慕
+				PRINTFORML 「呀啊……♥」
+				PRINTFORMDL 萃香将你推倒后，用极其不自然的的眼神盯着你
+				PRINTFORMDL 滚烫的身躯就那样紧紧与你相贴
+				SIF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDL 明明今天已经交过粮了，但是依旧一幅尚未满足的样子
+				PRINTFORML 「我还是、没有满足呢……」
+				PRINTFORMDL 萃香死死的抱住你，不让你挪动一分
+				PRINTFORML 「来做吧……」
+				PRINTFORMDL  
+		    ELSEIF TALENT:愛欲
+				PRINTFORML 「%CALLNAME:MASTER%…♥」
+				PRINTFORMDL 萃香念着你的名字，缓慢的向你靠近
+				PRINTFORMDL 那个眼神，就像是猎手看见猎物的眼神一样
+				SIF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDL 还没有满足么……
+				PRINTFORML 「我还想要……」
+				PRINTFORMDL 萃香趴在你的身上，用力的嗅着你的气味
+				PRINTFORML 「快点……继续做吧」
+				PRINTFORMDL  
+		    ELSE
+				PRINTFORML 「呜啊……」
+				PRINTFORMDL 萃香突然将你推到，同时在用湿润的目光看着你。
+				PRINTFORML 「……好热」
+				SIF EX:膣内精液 > 10 || EX:肛門内精液 > 10
+					PRINTFORMDL 还没有满足么……
+				PRINTFORMDL   萃香突然将你推到，同时用湿润的目光看着你。
+				PRINTFORML 「……好热」
 			ENDIF
-			PRINTFORMDL 明明已经注入了很多、但是……
-			PRINTFORMDL 
+		ELSEIF EX:膣内精液 > 0 || EX:肛門内精液 > 0
+			IF TALENT:恋人
+				PRINTFORML 「......」
+				PRINTFORMDL 萃香无言的抱了上来，你试着挣脱后发现只是在白费力气
+				PRINTFORML 「抱歉……明明今天已经做过了……」
+				PRINTFORML 「但是我现在还是想要啊...」
+				PRINTFORMDL 萃香将一只手放在你的胸口来解開扣子，另一只手则死死的勒住你从而防止你逃跑
+				PRINTFORML 「把我变成这个样子，%CALLNAME:MASTER%要负起责任啊......」
+				SIF EX:膣内精液 > 300 || EX:肛門内精液 > 300
+					PRINTFORMDL 明明已经注入了很多、但是……
+				PRINTFORML 「抱歉、但是我还是想要啊……」
+    			PRINTFORMDL 萃香一边说着道歉的话，一边控制着%CALLNAME:MASTER%……
+    			PRINTFORMDL
+			ELSEIF TALENT:恋慕
+				PRINTFORML 「......」
+				PRINTFORMDL 一言未发的萃香突然抱了上来，与%CALLNAME:MASTER%用下体进行摩擦
+				PRINTFORML 「抱歉……虽然今天已经做过了……」
+				PRINTFORML 「但我还是想要啊...」
+				PRINTFORMDL 这样说着的萃香，突然用嘴堵上%CALLNAME:MASTER%的嘴唇，同时用腿夹在了%CALLNAME:MASTER%的腰上
+				PRINTFORML 「是你把我变成这个样子的呢，所以%CALLNAME:MASTER%要负起责任啊......」
+				SIF EX:膣内精液 > 300 || EX:肛門内精液 > 300
+					PRINTFORMDL 明明已经注入了很多、但是……
+				PRINTFORML 「抱歉、但是我还是想要啊……」
+				PRINTFORMDL 萃香一边说着道歉的话，一边控制着%CALLNAME:MASTER%……
+				PRINTFORMDL
+			ELSEIF TALENT:思慕
+				PRINTFORML 「抱歉…………」
+				PRINTFORMDL 这样说着的萃香，一把将%CALLNAME:MASTER%撂倒
+				PRINTFORML 「我现在超级想要%CALLNAME:MASTER%……」
+				PRINTFORMDL 萃香将一只手放在你的胸口来解開扣子，另一只手则死死的勒住你从而防止你逃跑
+				PRINTFORML 「对不起…………」
+				SIF EX:膣内精液 > 300 || EX:肛門内精液 > 300
+					PRINTFORMDL 明明已经注入了很多、但是……
+				PRINTFORML 「我好想沉溺在精液里……」
+				PRINTFORMDL 萃香用舌头舔舐着%CALLNAME:MASTER%的脸。
+				PRINTFORMDL 
 			ELSE
-			PRINTFORML 「呜啊……」
-			PRINTFORMDL 萃香突然将你推到，同时在用湿润的目光看着你。
-			PRINTFORML 「……好热」
-			IF EX:膣内精液 > 10 || EX:肛門内精液 > 10
-			PRINTFORMDL 明明已经注入了很多、但是……
+				PRINTFORML 「呜啊……」
+				PRINTFORMDL 萃香突然将你推到，同时在用湿润的目光看着你。
+				PRINTFORML 「……好热」
+				SIF EX:膣内精液 > 300 || EX:肛門内精液 > 300
+					PRINTFORMDL 明明已经注入了很多、但是……
+				PRINTFORMDL 萃香将你推到了
 			ENDIF
-			PRINTFORMDL 萃香将你推到了
-			ENDIF
-			ELSEIF TALENT:恋人
+		ELSEIF TALENT:恋人
 			PRINTFORML 「......」
 	        PRINTFORMDL 萃香无言的抱了上来，你试着挣脱后发现只是在白费力气
 	        PRINTFORML 「明明我才是你的对象...而你却还要在外面沾花惹草...」
 	        PRINTFORML 「如果是平时的话，我也许会睁一只眼闭一只眼的说、但是现在...」
 	        PRINTFORMDL 萃香将一只手放在你的胸口来解開扣子，另一只手则死死的勒住你从而防止你逃跑
 	        PRINTFORML 「至少现在，不要拒绝我......」
-				ELSEIF TALENT:恋慕
+		ELSEIF TALENT:恋慕
 		    PRINTFORML 「%CALLNAME:MASTER%，过来一下」
 	        PRINTFORMDL  在路上走的时候，突然被萃香叫住了
 	        PRINTFORMDL  「嘛，%CALLNAME:MASTER%，要来做么？」
@@ -2346,60 +2419,17 @@ IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
 	        PRINTFORML 「并不是開玩笑，只是总有女孩子那种时候么...而你又是...」
 	        PRINTFORMDL 后面的话声音小到已经彻底听不清了，就在你打算靠近听清楚的时候、突然被推倒了
 	        PRINTFORML 「真的是太磨蹭了呢，希望下一次你能吸取教训哦」
-				ELSEIF TALENT:思慕
+		ELSEIF TALENT:思慕
 			PRINTFORML 「唔唔……」
 			PRINTFORMDL 将你推到的萃香涨红着脸，用极其不自然的语气说道
 			PRINTFORML 「……来做吧」
 			PRINTFORMDL 萃香看起来好像不太对劲……
-				ELSE
+		ELSE
 			PRINTFORML 「呜啊……」
 			PRINTFORMDL 萃香突然将你推到，同时用湿润的目光看着你。
 			PRINTFORML 「……好热」
-			ENDIF
-		    ELSEIF TALENT:恋人 
-			PRINTFORML 「%CALLNAME:MASTER%……」
-			PRINTFORMDL 萃香将你推倒后，用极其不自然的的眼神盯着你
-			PRINTFORMDL 滚烫的身躯就那样紧紧与你相贴
-		    IF EX:膣内精液 > 10 || EX:肛門内精液 > 10
-			PRINTFORMDL 明明今天已经交过粮了，但是依旧一幅尚未满足的样子
-			ENDIF
-			PRINTFORML 「我要、快给我……」
-			PRINTFORMDL 萃香这样说着，将裙子褪了下来
-			PRINTFORML 「请快一点……」
-			PRINTFORMDL  
-		    ELSEIF TALENT:恋慕
-			PRINTFORML 「呀啊……♥」
-			PRINTFORMDL 萃香将你推倒后，用极其不自然的的眼神盯着你
-			PRINTFORMDL 滚烫的身躯就那样紧紧与你相贴
-				IF EX:膣内精液 > 10 || EX:肛門内精液 > 10
-				PRINTFORMDL 明明今天已经交过粮了，但是依旧一幅尚未满足的样子
-				ENDIF
-			PRINTFORML 「我还是、没有满足呢……」
-			PRINTFORMDL 萃香死死的抱住你，不让你挪动一分
-			PRINTFORML 「来做吧……」
-			PRINTFORMDL  
-		    ELSEIF TALENT:愛欲
-			PRINTFORML 「%CALLNAME:MASTER%…♥」
-			PRINTFORMDL 萃香念着你的名字，缓慢的向你靠近
-	        PRINTFORMDL 那个眼神，就像是猎手看见猎物的眼神一样
-			IF EX:膣内精液 > 10 || EX:肛門内精液 > 10
-			PRINTFORMDL 还没有满足么……
-			ENDIF
-			PRINTFORML 「我还想要……」
-			PRINTFORMDL 萃香趴在你的身上，用力的嗅着你的气味
-			PRINTFORML 「快点……继续做吧」
-			PRINTFORMDL  
-		   ELSE
-			PRINTFORML 「呜啊……」
-			PRINTFORMDL 萃香突然将你推到，同时在用湿润的目光看着你。
-			PRINTFORML 「……好热」
-			IF EX:膣内精液 > 10 || EX:肛門内精液 > 10
-			PRINTFORMDL 还没有满足么……
-			ENDIF
-			PRINTFORMDL   萃香突然将你推到，同时用湿润的目光看着你。
-			PRINTFORML 「……好热」
 		ENDIF
-	RETURN 1
+		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;なだめられた（終了時）
@@ -2426,73 +2456,71 @@ IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
 			PRINTFORML 「已经结束了啊」
 			PRINTFORMDL 萃香把衣服穿好了 	
 		ENDIF
+		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL  
-RETURN 1
+	;PRINTFORMDL  
 	;-------------------------------------------------
-		;抜け出した
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && !ARG:1
-			IF TALENT:恋人
-			PRINTFORML 「这就结束了么？」
-			PRINTFORMDL 萃香盯着%CALLNAME:MASTER%。
-			PRINTFORML 「果然是因为不喜欢我这样的身材么？....」
-			PRINTFORMDL  萃香看起来有点失落
-			ELSEIF TALENT:恋慕
-			PRINTFORML 「嗯？……结束了么？」
-			PRINTFORMDL 你就这件事给萃香进行道歉
-			PRINTFORML 「嘛……毕竟人和鬼的差距还是有的呢」
-			PRINTFORMDL  萃香随意的整理了一下衣服，又拿起了酒瓶。
-			ELSE
-				PRINTL
-			ENDIF
-			RETURN 1
+	;抜け出した
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && !ARG:1
+		IF TALENT:恋人 || TALENT:恋慕
+		PRINTFORML 「这就结束了么？」
+		PRINTFORMDL 萃香盯着%CALLNAME:MASTER%。
+		PRINTFORML 「果然是因为不喜欢我这样的身材么？....」
+		PRINTFORMDL  萃香看起来有点失落
+		ELSE
+		PRINTFORML 「嗯？……结束了么？」
+		PRINTFORMDL 你就这件事给萃香进行道歉
+		PRINTFORML 「嘛……毕竟人和鬼的差距还是有的呢」
+		PRINTFORMDL 萃香随意的整理了一下衣服，又拿起了酒瓶。
+		;ELSE
+		;	PRINTL
 		ENDIF
-		;-------------------------------------------------
-		;抱き着きモード満足終了
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG:1 == 1
-			IF TALENT:恋人
-				PRINTFORML 「……哈啊……呜啊……呼呼」
-				PRINTFORMDL 体力已经耗尽的萃香趴在你的身上喘着粗气
-				PRINTFORML 「……呼，真不愧是我的男人，真厉害呢..」
-			ELSEIF TALENT:恋慕
-				PRINTFORML 「…嗯……呜…很舒服呢」
-				PRINTFORMDL 萃香紧紧贴着你的身体
-				PRINTFORML 「嘿嘿...」
-			ELSE
-				PRINTL
-			ENDIF
-			RETURN 1
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;抱き着きモード満足終了
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG:1 == 1
+		IF TALENT:恋人
+			PRINTFORML 「……哈啊……呜啊……呼呼」
+			PRINTFORMDL 体力已经耗尽的萃香趴在你的身上喘着粗气
+			PRINTFORML 「……呼，真不愧是我的男人，真厉害呢..」
+		ELSE
+			PRINTFORML 「…嗯……呜…很舒服呢」
+			PRINTFORMDL 萃香紧紧贴着你的身体
+			PRINTFORML 「嘿嘿...」
+		;ELSE
+		; 	PRINTL
 		ENDIF
-		;-------------------------------------------------
-		;抱き着きモード強制終了
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG:1 == 2
-			IF TALENT:恋人
-				PRINTFORML 「啧……」
-				PRINTFORML 「看来只能下一次再继续了呢」
-				PRINTFORMDL 萃香在你的脸上啄了一下
-			ELSEIF TALENT:恋慕
-				PRINTFORML 「这也是难以以避免的事情...」
-				PRINTFORMDL 萃香叹了口气
-				PRINTFORML 「要一起去喝酒么？」
-			ELSEIF TALENT:愛欲
-			    PRINTFORML 「唔嗯...真讨厌」
-				PRINTFORML 「明明还没有尽兴..要不...晚上再来一次？」
-				PRINTFORMDL 难顶了...
-			ELSE
-				PRINTL
-			ENDIF
-			RETURN 1
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;抱き着きモード強制終了
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG:1 == 2
+		IF TALENT:恋人 || TALENT:恋慕
+			PRINTFORML 「啧……」
+			PRINTFORML 「看来只能下一次再继续了呢」
+			PRINTFORMDL 萃香在你的脸上啄了一下
+		ELSEIF TALENT:愛欲
+			PRINTFORML 「唔嗯...真讨厌」
+			PRINTFORML 「明明还没有尽兴..要不...晚上再来一次？」
+			PRINTFORMDL 难顶了...
+		ELSE
+			PRINTFORML 「这也是难以以避免的事情...」
+			PRINTFORMDL 萃香叹了口气
+			PRINTFORML 「要一起去喝酒么？」
 		ENDIF
+		RETURN 1
+	ENDIF
 	;-------------------------------------------------
 	;摆脱失敗
 	;記入チェック（=0, 非表示、1, 表示）
@@ -2512,7 +2540,8 @@ RETURN 1
 				PRINTFORML 「呼……不会让你逃的」
 				PRINTFORML 「好好负起…把我变成这样的责任吧」
 			ELSE
-				PRINTL
+				PRINTFORMDL 当身体稍微试着和萃香拉开距离时，一股强大的力量瞬间控制住了身体
+				PRINTFORMDL 「哼哼……被鬼抓住了还想逃走吗」
 			ENDIF
 			RETURN 1
 		ENDIF
@@ -2527,70 +2556,69 @@ RETURN 1
 				PRINTFORMDL %CALLNAME:MASTER%刚刚试图逃開，就被萃香紧紧的抱住
 				PRINTFORML 「噫啊……咕……唔啊啊啊————」
 				PRINTFORMDL 在本能的促使下，萃香只是凭借着本能拼命索取着%CALLNAME:MASTER%
-			ELSEIF TALENT:恋慕
-				PRINTFORML 「…唔……咕唔……不行…还要更多……」
-				PRINTFORMDL 萃香坐在%CALLNAME:MASTER%的腰上，一边享受着性交的快感。一边压制着%CALLNAME:MASTER%的行动
-				PRINTFORML 「咕嘿……不能逃哦…你还有的吧…啾……」
-				PRINTFORMDL 还不等%CALLNAME:MASTER%说话，萃香又将身体压了下去
 			ELSEIF TALENT:愛欲
 			    PRINTFORML 「……唔……哈啊……咕……啊啊..不要停下」
 				PRINTFORMDL 萃香跨坐在%CALLNAME:MASTER%身上，疯狂的压榨着
 				PRINTFORML 「呼呼，啊哈...咕唔...」
 				PRINTFORMDL 萃香貌似已经失去理智了，变成了完全被本能所支配的鬼
 			ELSE
-				PRINTL
+				PRINTFORML 「…唔……咕唔……不行…还要更多……」
+				PRINTFORMDL 萃香坐在%CALLNAME:MASTER%的腰上，一边享受着性交的快感。一边压制着%CALLNAME:MASTER%的行动
+				PRINTFORML 「咕嘿……不能逃哦…你还有的吧…啾……」
+				PRINTFORMDL 还不等%CALLNAME:MASTER%说话，萃香又将身体压了下去
 			ENDIF
 			RETURN 1
 		ENDIF
 	ENDIF
-		;-------------------------------------------------
-		;誘ってきた（人目につかない場所に行きたがるやつ）
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 4
-			;ARG:1=TARGETの欲求不満度（最高1000）
-			;必要ならばこれで分岐を作ってください
-				IF TALENT:恋人 
-					SELECTCASE RAND:5
-						CASE 4
-							PRINTFORMDL 
-							PRINTFORML 「……%CALLNAME:MASTER%、一起去那边吧」
-						CASE 3
-							PRINTFORMDL 
-							PRINTFORML 「%CALLNAME:MASTER%、要不然……去那边么？」
-						CASE 2
-							PRINTFORMDL 
-							PRINTFORML 「…%CALLNAME:MASTER%、那个………」
-						CASE 1
-							PRINTFORMDL 
-							PRINTFORML 「……%CALLNAME:MASTER%」
-							PRINTFORMDL 萃香拉了拉你的袖子
-						CASE 0
-							PRINTFORMDL 
-							PRINTFORML 「呜呜……」
-					ENDSELECT
-				ELSEIF ABL:親密 > 5
-					SELECTCASE RAND:5
-						CASE 4
-							PRINTFORMDL 
-							PRINTFORML 「……一起去那边吧？」
-						CASE 3
-							PRINTFORMDL 
-							PRINTFORML 「现在、想去么……？」
-						CASE 2
-							PRINTFORMDL 
-							PRINTFORML 「……那个、来这边一下」
-						CASE 1
-							PRINTFORMDL 
-							PRINTFORML 「……可以给我一点时间吗？」
-						CASE 0
-							PRINTFORMDL 
-							PRINTFORML 「……这边……不跟我来吗？」
+	;-------------------------------------------------
+	;誘ってきた（人目につかない場所に行きたがるやつ）
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 4
+		;ARG:1=TARGETの欲求不満度（最高1000）
+		;必要ならばこれで分岐を作ってください
+			IF ABL:親密 > 5
+				SELECTCASE RAND:5
+					CASE 4
+						PRINTFORMDL 
+						PRINTFORML 「……一起去那边吧？」
+					CASE 3
+						PRINTFORMDL 
+						PRINTFORML 「现在、想去么……？」
+					CASE 2
+						PRINTFORMDL 
+						PRINTFORML 「……那个、来这边一下」
+					CASE 1
+						PRINTFORMDL 
+						PRINTFORML 「……可以给我一点时间吗？」
+					CASE 0
+						PRINTFORMDL 
+						PRINTFORML 「……这边……不跟我来吗？」
 				ENDSELECT
-				ENDIF
-			RETURN 1
-		ENDIF
+			ELSEIF TALENT:恋人 
+				SELECTCASE RAND:5
+					CASE 4
+						PRINTFORMDL 
+						PRINTFORML 「……%CALLNAME:MASTER%、一起去那边吧」
+					CASE 3
+						PRINTFORMDL 
+						PRINTFORML 「%CALLNAME:MASTER%、要不然……去那边么？」
+					CASE 2
+						PRINTFORMDL 
+						PRINTFORML 「…%CALLNAME:MASTER%、那个………」
+					CASE 1
+						PRINTFORMDL 
+						PRINTFORML 「……%CALLNAME:MASTER%」
+						PRINTFORMDL 萃香拉了拉你的袖子
+					CASE 0
+						PRINTFORMDL 
+						PRINTFORML 「呜呜……」
+				ENDSELECT
+			ENDIF
+		RETURN 1
+	ENDIF
+ENDIF
 ;==================================================
 ;浴場で遭遇
 ;==================================================
@@ -2610,21 +2638,21 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-	IF TALENT:恋人
-	PRINTFORML 「…哎？不行不行..快点出去啊」
-	PRINTFORMDL 在进入浴室之后，被在浴室里的萃香赶了出来
-	PRINTFORMDL 好像看见了什么
-	ELSEIF TALENT:恋慕
+		IF TALENT:恋人
+			PRINTFORML 「…哎？不行不行..快点出去啊」
+			PRINTFORMDL 在进入浴室之后，被在浴室里的萃香赶了出来
+			PRINTFORMDL 好像看见了什么
+		ELSEIF TALENT:恋慕
 			PRINTFORML 「……%CALLNAME:MASTER%…？现在是女孩子的独处时间哦」
 			PRINTFORMDL 在浴场浓密的雾气中，听到了萃香的声音
 			PRINTFORML 「所以请你出去好么？」
-	ELSEIF TALENT:愛欲
-	        PRINTFORML 「……%CALLNAME:MASTER%……%CALLNAME:MASTER%…？啊！！快点出去！」
+		ELSEIF TALENT:愛欲
+			PRINTFORML 「……%CALLNAME:MASTER%……%CALLNAME:MASTER%…？啊！！快点出去！」
 			PRINTFORMDL 进入浴室后，发现了一边念着自己名字一边自慰的萃香
 			PRINTFORMDL 被打出来了……
-	ELSE
-		PRINTFORML 「…哎？现在是女孩子的时间哦？所以请你出去吧」
-		PRINTFORMDL 被萃香抓了出来
+		ELSE
+			PRINTFORML 「…哎？现在是女孩子的时间哦？所以请你出去吧」
+			PRINTFORMDL 被萃香抓了出来
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -2649,7 +2677,7 @@ RETURN 1
 ;口上主はTARGET
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------
 
 IF LOCAL
@@ -2804,20 +2832,20 @@ IF LOCAL
 	;-------------------------------------------------
 	;持っていた食物を食べられた
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == -1
 		IF TALENT:恋人
-	    SELECTCASE RAND:2
-		CASE 1
-		PRINTFORML 「嗯？食物？多谢款待」
-		PRINTFORML 「唔，其实有点不太想吃豆子啊」
-		PRINTFORMDL 在萃香的请求下，你把所有豆子挑了出来
-		PRINTFORML 「最喜欢你了~啾~」
-	    CASE 0
-		PRINTFORML 「嗯？食物？那就多谢款待了！」
-		PRINTFORML 「让我尝尝你的手艺吧」
-		ENDSELECT
+			SELECTCASE RAND:2
+			CASE 1
+				PRINTFORML 「嗯？食物？多谢款待」
+				PRINTFORML 「唔，其实有点不太想吃豆子啊」
+				PRINTFORMDL 在萃香的请求下，你把所有豆子挑了出来
+				PRINTFORML 「最喜欢你了~啾~」
+			CASE 0
+				PRINTFORML 「嗯？食物？那就多谢款待了！」
+				PRINTFORML 「让我尝尝你的手艺吧」
+			ENDSELECT
 		ELSEIF TALENT:恋慕
 			PRINTFORML 「料理么？」
 			PRINTFORML 「虽然我平时更喜欢下酒菜，但是你做的饭菜一定会更好吃吧」
@@ -2828,14 +2856,14 @@ IF LOCAL
 			PRINTFORMDL 萃香盯着你的下体
             PRINTFORMDL .......
             PRINTFORML 「库库，多谢款待」			
-		            EXP:10:口淫経験 ++
-					EXP:10:精液経験 ++
-					EXP:MASTER:射精経験 += 2
-					EXP:MASTER:絶頂経験 += 1
+			EXP:10:口淫経験 ++
+			EXP:10:精液経験 ++
+			EXP:MASTER:射精経験 += 2
+			EXP:MASTER:絶頂経験 += 1
 		ELSE
 			PRINTFORML 「啊哈哈，多谢款待了」
 		ENDIF
-			RETURN 1
+		RETURN 1
 	ENDIF
 	;其他
 ENDIF
@@ -2894,7 +2922,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-	IF TALENT:恋人
+		IF TALENT:恋人
 			PRINTFORML 「哎呀…已经结束了吗？」
 			PRINTFORMDL 萃香毫不在意的向你展示着自己的身体
 			PRINTFORML 「 放心了，鬼是不会感冒的」
@@ -2947,25 +2975,25 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-			IF TALENT:恋人
-				PRINTFORML 「%CALLNAME:MASTER%.....」
-				PRINTFORMDL 萃香迷瞪着眼睛·
-				PRINTFORMDL 没有睡觉么？你这样怀疑着
-				PRINTFORML 「已经结束了么？陪睡什么的」
-				PRINTFORMDL 嗯了一声，你从床上起来
-				PRINTFORML 「你也有要去忙的事呢」
-				PRINTFORMDL 萃香继续说道
-				PRINTFORML 「还请去忙吧，不会多占用的你的时间哦」
-			ELSEIF TALENT:恋慕
-				PRINTFORML 「%CALLNAME:MASTER%，结束了么」
-				PRINTFORML 「还请去忙吧」
-				PRINTFORML 「不会打扰你的哦」
-			ELSE
-				PRINTL
-			ENDIF
+		IF TALENT:恋人
+			PRINTFORML 「%CALLNAME:MASTER%.....」
+			PRINTFORMDL 萃香迷瞪着眼睛·
+			PRINTFORMDL 没有睡觉么？你这样怀疑着
+			PRINTFORML 「已经结束了么？陪睡什么的」
+			PRINTFORMDL 嗯了一声，你从床上起来
+			PRINTFORML 「你也有要去忙的事呢」
+			PRINTFORMDL 萃香继续说道
+			PRINTFORML 「还请去忙吧，不会多占用的你的时间哦」
+		ELSEIF TALENT:恋慕
+			PRINTFORML 「%CALLNAME:MASTER%，结束了么」
+			PRINTFORML 「还请去忙吧」
+			PRINTFORML 「不会打扰你的哦」
+		ELSE
+			PRINTL
 		ENDIF
 		RETURN 1
 	ENDIF
+ENDIF
 	;其他
 	PRINTFORMDL  
 RETURN 1
@@ -2979,7 +3007,7 @@ RETURN 1
 ;ARG:1に射精状態
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------
 
 IF LOCAL
@@ -2992,7 +3020,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-			IF TALENT:恋人
+		IF TALENT:恋人
 			PRINTL
 			PRINTFORML 「唔？呀……」
 			PRINTFORMDL 时停结束后，萃香一下子瘫在了%CALLNAME:MASTER%的身上
@@ -3010,9 +3038,9 @@ IF LOCAL
 			PRINTFORML 「有种怪怪的感觉呢」
 			PRINTFORMDL 你注意到不明的液体顺着大腿流了出来
 		ELSE 
-		 PRINTFORML 「呜…………」
-		 PRINTFORMDL 萃香好像在压制着什么
-		 ENDIF
+			PRINTFORML 「呜…………」
+			PRINTFORMDL 萃香好像在压制着什么
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3039,9 +3067,9 @@ IF LOCAL
 			PRINTFORML 「呼呼，啊哈......」
 			PRINTFORMDL 你注意到不明的液体顺着大腿流了出来
 		ELSE 
-		 PRINTFORML 「呜…………」
-		 PRINTFORMDL 萃香一下子坐到了地上
-		 ENDIF
+			PRINTFORML 「呜…………」
+			PRINTFORMDL 萃香一下子坐到了地上
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3065,11 +3093,11 @@ IF LOCAL
 			PRINTFORML 「啧……又是那些妖精么？」
 			PRINTFORMDL 貌似并不是太在意内裤的得失
 		ELSE 
-		PRINTFORML 「――阿啦」
-		PRINTFORMDL 萃香过了一会才注意到内裤的消失
-		PRINTFORMDL 用手去摸了一下，确认消失后叹了口气
-		PRINTFORML 「到底是谁呢...」
-		 ENDIF
+			PRINTFORML 「――阿啦」
+			PRINTFORMDL 萃香过了一会才注意到内裤的消失
+			PRINTFORMDL 用手去摸了一下，确认消失后叹了口气
+			PRINTFORML 「到底是谁呢...」
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3110,7 +3138,7 @@ IF LOCAL
 			PRINTFORMDL 看来已经暴露了
 		;なんもない
 		ELSE
-		     PRINTFORML 「――呜！？」
+		    PRINTFORML 「――呜！？」
 			PRINTFORMDL 萃香因为口中的异物感而皱起眉头
 			PRINTFORMDL 无法忍耐那股味道的萃香把口中的精液吐到了脚边。
 			PRINTFORML 「这是什么啊？」
@@ -3271,7 +3299,7 @@ IF LOCAL
 			PRINTFORML 「谢谢你，%CALLNAME:MASTER%」
 		ELSEIF TALENT:恋慕
 			PRINTFORML 「……」
-			PRINTFORMDL  萃香紧紧的抱住%CALLNAME:MASTER%
+			PRINTFORMDL 萃香紧紧的抱住%CALLNAME:MASTER%
 			PRINTFORML 「如果这能让你高兴的话」
 		ELSEIF TALENT:思慕
 			PRINTFORML 「那就继续吧」
@@ -3363,33 +3391,34 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		IF TALENT:恋人
-				PRINTFORML 「呜啊，已经到这个时间了吗？」
-				PRINTFORMDL 看了眼天色，确实已经不早了
-				PRINTFORML 「那就只能回去了呢」
-				PRINTFORML 「不过在回去之前.....」
-				PRINTFORMDL 萃香在你的脸上啄了一下
-				PRINTFORML 「晚上做个好梦哦」
+			PRINTFORML 「呜啊，已经到这个时间了吗？」
+			PRINTFORMDL 看了眼天色，确实已经不早了
+			PRINTFORML 「那就只能回去了呢」
+			PRINTFORML 「不过在回去之前.....」
+			PRINTFORMDL 萃香在你的脸上啄了一下
+			PRINTFORML 「晚上做个好梦哦」
 		ELSEIF TALENT:恋慕
 			SELECTCASE RAND:4
-			CASE 3
-				PRINTFORML 「到时间了呢，我要回去了」
-				PRINTFORML 「？没有哦，只是需要有一个良好的作息时间」
-				PRINTFORML 「不会熬夜的哦」
-			CASE 2
-				PRINTFORML 「下次再一起喝酒呢」
-				PRINTFORMDL 萃香向你挥了挥手，转身离開了
-			CASE 1
-				PRINTFORML 「唔...明天再见吧」
-				PRINTFORML 「反正明天也可以再见面的，对吧」
-			CASE 0
-				PRINTFORML 「啊，到了回去的时间呢……」
-				PRINTFORML 「下次再一起喝酒吧」
+				CASE 3
+					PRINTFORML 「到时间了呢，我要回去了」
+					PRINTFORML 「？没有哦，只是需要有一个良好的作息时间」
+					PRINTFORML 「不会熬夜的哦」
+				CASE 2
+					PRINTFORML 「下次再一起喝酒呢」
+					PRINTFORMDL 萃香向你挥了挥手，转身离開了
+				CASE 1
+					PRINTFORML 「唔...明天再见吧」
+					PRINTFORML 「反正明天也可以再见面的，对吧」
+				CASE 0
+					PRINTFORML 「啊，到了回去的时间呢……」
+					PRINTFORML 「下次再一起喝酒吧」
 			ENDSELECT
 		ELSEIF TALENT:思慕
 			PRINTFORML 「啊，我该走了」
 			PRINTFORML 「下次再一起喝酒吧」
 		ELSE
-			PRINTL
+			PRINTFORML 「时间不早了啊」
+			PRINTFORMDL 萃香简单道了个别就离开了
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3401,31 +3430,31 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 2
 		IF TALENT:恋人
 			SELECTCASE RAND:3
-			CASE 0
-				PRINTFORML 「啊哈哈，真開心呢」
-				PRINTFORML 「今天也是開心的一天啊」
-			CASE 1
-				PRINTFORML 「唔啊，已经这个点了呢」
-				PRINTFORML 「明天再一起出来玩吧」」
-			CASE 2
-				PRINTFORML 「哎呀，已经这么晚了呢」
-				PRINTFORML 「果然还是不想分開啊」
+				CASE 0
+					PRINTFORML 「啊哈哈，真開心呢」
+					PRINTFORML 「今天也是開心的一天啊」
+				CASE 1
+					PRINTFORML 「唔啊，已经这个点了呢」
+					PRINTFORML 「明天再一起出来玩吧」」
+				CASE 2
+					PRINTFORML 「哎呀，已经这么晚了呢」
+					PRINTFORML 「果然还是不想分開啊」
 			ENDSELECT
 		ELSEIF TALENT:恋慕
 			SELECTCASE RAND:4
-			CASE 3
-				PRINTFORML 「哎呀，要回去了呢」
-				PRINTFORML 「毕竟时间也不早了呢」
-				PRINTFORML 「虽然我也不想走就是了...」
-			CASE 2
-				PRINTFORML 「要回去了呢，真讨厌」
-				PRINTFORML 「明天再见吧」
-			CASE 1
-				PRINTFORML 「要走了哦？明天再一起喝酒吧」
-				PRINTFORML 「嗯，明天再见吧」
-			CASE 0
-				PRINTFORML 「啊呀，到了回去的时间呢……」
-				PRINTFORML 「明天再见喽」
+				CASE 3
+					PRINTFORML 「哎呀，要回去了呢」
+					PRINTFORML 「毕竟时间也不早了呢」
+					PRINTFORML 「虽然我也不想走就是了...」
+				CASE 2
+					PRINTFORML 「要回去了呢，真讨厌」
+					PRINTFORML 「明天再见吧」
+				CASE 1
+					PRINTFORML 「要走了哦？明天再一起喝酒吧」
+					PRINTFORML 「嗯，明天再见吧」
+				CASE 0
+					PRINTFORML 「啊呀，到了回去的时间呢……」
+					PRINTFORML 「明天再见喽」
 			ENDSELECT
 		ELSEIF TALENT:思慕
 			PRINTFORML 「啊，我该走了」
@@ -3443,34 +3472,35 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 3
 		IF TALENT:恋人
 			SELECTCASE RAND:3
-			CASE 0
-				PRINTFORML 「放心啦，不会不认路的」
-				PRINTFORML 「喝再多酒也会记得路的哦」
-			CASE 1
-				PRINTFORML 「哎呀，已经到神社了呢」
-				PRINTFORML 「谢谢你把我送回来呢」
-			CASE 2
-				PRINTFORML 「已经到这了啊....」
-				PRINTFORML 「又要分离了，真讨厌...」
+				CASE 0
+					PRINTFORML 「放心啦，不会不认路的」
+					PRINTFORML 「喝再多酒也会记得路的哦」
+				CASE 1
+					PRINTFORML 「哎呀，已经到神社了呢」
+					PRINTFORML 「谢谢你把我送回来呢」
+				CASE 2
+					PRINTFORML 「已经到这了啊....」
+					PRINTFORML 「又要分离了，真讨厌...」
 			ENDSELECT
 		ELSEIF TALENT:恋慕
 			SELECTCASE RAND:3
-			CASE 2
-				PRINTFORML 「啊哈，谢谢你背我回来哦」
-				PRINTFORMDL 已经到神社门口了啊
-				PRINTFORMDL 虽然力气很大，但是意外的轻呢....
-			CASE 1
-				PRINTFORML 「明天再一起过去喝酒吧？」
-				PRINTFORML 「不要忘记了哦」
-			CASE 0
-				PRINTFORML 「哎呀，已经到这了呢」
-				PRINTFORML 「呼呼呼，你难道想要什么奖赏么」
+				CASE 2
+					PRINTFORML 「啊哈，谢谢你背我回来哦」
+					PRINTFORMDL 已经到神社门口了啊
+					PRINTFORMDL 虽然力气很大，但是意外的轻呢....
+				CASE 1
+					PRINTFORML 「明天再一起过去喝酒吧？」
+					PRINTFORML 「不要忘记了哦」
+				CASE 0
+					PRINTFORML 「哎呀，已经到这了呢」
+					PRINTFORML 「呼呼呼，你难道想要什么奖赏么」
 			ENDSELECT
 		ELSEIF TALENT:思慕
 			PRINTFORML 「多谢啦」
 			PRINTFORML 「日后再见吧」
 		ELSE
-			PRINTL
+			PRINTFORML 「谢谢你」
+			PRINTFORML 「那么下次再见了」
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3493,23 +3523,22 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-			PRINTFORML 「……%CALLNAME:MASTER%……」
-			PRINTFORMDL  每天夜间神社的屋顶上，本应该是无忧无虑的消遣时光
-			PRINTFORMDL 然而今天却感觉有些不一样，究竟是哪里不一样了呢......
-			PRINT
-			PRINT
-			PRINTFORMDL 啊，是身边少了另外一个喝酒的人
-			PRINTFORMDL 是从什么时候開始的呢
-			PRINTFORMDL 刚開始见面的时候，还稍微的戏耍了一下他
-			PRINTFORMDL 是从什么时候開始的呢...已经如此深入内心了呢？
-			PRINTFORML 「……事到如今竟然会变成这样的心情」
-			PRINTFORML 「人和鬼，会有美好的未来么？」
-			PRINTFORMDL 萃香仰头看着月亮，从眼神中流露出从未见过的忧愁
-			PRINTFORML 「如果.........」
-			PRINTFORML 「最后，我们……终究能在一起么？」
-			PRINTFORMDL 萃香摇了摇头，像是把脑海中的一切都要抛開一样
-			PRINTFORML 「以后的话，还是以后再说吧」
-				ENDIF
+		PRINTFORML 「……%CALLNAME:MASTER%……」
+		PRINTFORMDL  每天夜间神社的屋顶上，本应该是无忧无虑的消遣时光
+		PRINTFORMDL 然而今天却感觉有些不一样，究竟是哪里不一样了呢......
+		PRINTW
+		PRINTW
+		PRINTFORMDL 啊，是身边少了另外一个喝酒的人
+		PRINTFORMDL 是从什么时候開始的呢
+		PRINTFORMDL 刚開始见面的时候，还稍微的戏耍了一下他
+		PRINTFORMDL 是从什么时候開始的呢...已经如此深入内心了呢？
+		PRINTFORML 「……事到如今竟然会变成这样的心情」
+		PRINTFORML 「人和鬼，会有美好的未来么？」
+		PRINTFORMDL 萃香仰头看着月亮，从眼神中流露出从未见过的忧愁
+		PRINTFORML 「如果.........」
+		PRINTFORML 「最后，我们……终究能在一起么？」
+		PRINTFORMDL 萃香摇了摇头，像是把脑海中的一切都要抛開一样
+		PRINTFORML 「以后的话，还是以后再说吧」
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3570,6 +3599,7 @@ IF LOCAL
 		PRINTFORMDL               会如此享受呢...」
 		PRINTFORMDL 为什么呢......
 	ENDIF
+ENDIF
 RETURN 1
 ;==================================================
 ;調教終了時に自慰
@@ -3581,7 +3611,7 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
-;-------------------------------------------------
+	;-------------------------------------------------
 	;通常自慰
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
@@ -3599,7 +3629,7 @@ IF LOCAL
 		SETCOLOR 210,105,30
 		PRINTFORML 「明明你自己做的时候声音也不小啊...」
 		PRINTFORMDL 萃香无声的反驳着，但是眼下有更重要的事情...
-		ENDIF
+		RESETCOLOR
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3608,44 +3638,45 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-	  IF TALENT:恋慕
-		PRINTFORMDL  「唔…嗯，嗯啊……」
-		PRINTFORMDL  夜半时分，你迷迷糊糊的张開双眼。感觉自己的胳膊使不上力气
-		PRINTFORMDL  就在你想要努力起身的时候，突然听到了娇喘声
-		PRINTFORML 「嗯…唔…嗯啊....%CALLNAME:MASTER%…」
-		PRINTFORMDL 你偷偷睁開双眼，萃香夹着你的右手。卖力地摩擦着
-		PRINTFORMDL  就在你准备闭上眼继续装睡的时候，萃香却突然睁開眼睛
-		PRINTFORMDL 四目相对之下，此刻房间里只洋溢着数不清的尴尬
-	    PRINTFORML 「啊...哈哈...哈」
-	    PRINTFORMDL 就在这个时候，你能感到，自己手臂上的双腿一阵收紧，被温热的液体沾湿了
-		PRINTFORML 「我看你睡的那么香，就没有叫你」
-		PRINTFORMDL  拙劣借口的可无法掩饰现在情况
-		PRINTFORML 「唔……真讨厌呢.....」
-		PRINTFORMDL 萃香转了下身体，坐到了你的腰上，開始脱起了衣服
-		PRINTFORML 「本来也没有打算解释哦」
-	    PRINTFORMDL 萃香用妩媚的眼神看着你
-	    PRINTFORMDL  「…唔…！啊……唔嗯....」
-	    PRINTFORMDL 萃香跨坐下去，已经湿润好的蜜穴畅通无阻的将你的肉棒包裹起来
-	    PRINTFORML 「哈啊……哈啊……%CALLNAME:MASTER%……嗯啊……」
-	    PRINTFORMDL 萃香扭动着腰，享受着下体冲击带来的快感
-	    PRINTFORML 「咕啊！————已经———出来了！————啊哈」
-	    PRINTFORMDL 你也不甘示弱般的用力猛突，将所有的精华注入子宫深处
-	    PRINTFORMDL  「哈啊……还不够……%CALLNAME:MASTER%…再多一点」
-	    PRINTFORMDL 肆无忌惮的索取激发着你的兽性，你将她反压在身下，用劲全力的冲刺起来
-	    PRINTFORML 「…唔啊……唔嗯....呜啊..去，去了！」
-	    PRINTFORMDL 随着最后一发猛烈的冲刺，萃香和%CALLNAME:MASTER%脱力般的倒在床上，
-		PRINTFORMDL 在激烈的运动过后，困意如潮水般涌来
-	    PRINTFORMDL 当你再次睁眼时，已经是早上了
-        EXP:10:精液経験 += 10
-        EXP:10:膣射経験 += 10
-	    EXP:10:Ｖ性交経験 += 10
-		EXP:10:絶頂経験 += 10
-		EXP:MASTER:絶頂経験 += 5
-		EXP:MASTER:射精経験 += 5
-		EXP:MASTER:挿入経験 += 5	  
-	  ENDIF
+		IF TALENT:恋慕
+			PRINTFORMDL  「唔…嗯，嗯啊……」
+			PRINTFORMDL  夜半时分，你迷迷糊糊的张開双眼。感觉自己的胳膊使不上力气
+			PRINTFORMDL  就在你想要努力起身的时候，突然听到了娇喘声
+			PRINTFORML 「嗯…唔…嗯啊....%CALLNAME:MASTER%…」
+			PRINTFORMDL 你偷偷睁開双眼，萃香夹着你的右手。卖力地摩擦着
+			PRINTFORMDL  就在你准备闭上眼继续装睡的时候，萃香却突然睁開眼睛
+			PRINTFORMDL 四目相对之下，此刻房间里只洋溢着数不清的尴尬
+			PRINTFORML 「啊...哈哈...哈」
+			PRINTFORMDL 就在这个时候，你能感到，自己手臂上的双腿一阵收紧，被温热的液体沾湿了
+			PRINTFORML 「我看你睡的那么香，就没有叫你」
+			PRINTFORMDL  拙劣借口的可无法掩饰现在情况
+			PRINTFORML 「唔……真讨厌呢.....」
+			PRINTFORMDL 萃香转了下身体，坐到了你的腰上，開始脱起了衣服
+			PRINTFORML 「本来也没有打算解释哦」
+			PRINTFORMDL 萃香用妩媚的眼神看着你
+			PRINTFORMDL  「…唔…！啊……唔嗯....」
+			PRINTFORMDL 萃香跨坐下去，已经湿润好的蜜穴畅通无阻的将你的肉棒包裹起来
+			PRINTFORML 「哈啊……哈啊……%CALLNAME:MASTER%……嗯啊……」
+			PRINTFORMDL 萃香扭动着腰，享受着下体冲击带来的快感
+			PRINTFORML 「咕啊！————已经———出来了！————啊哈」
+			PRINTFORMDL 你也不甘示弱般的用力猛突，将所有的精华注入子宫深处
+			PRINTFORMDL  「哈啊……还不够……%CALLNAME:MASTER%…再多一点」
+			PRINTFORMDL 肆无忌惮的索取激发着你的兽性，你将她反压在身下，用劲全力的冲刺起来
+			PRINTFORML 「…唔啊……唔嗯....呜啊..去，去了！」
+			PRINTFORMDL 随着最后一发猛烈的冲刺，萃香和%CALLNAME:MASTER%脱力般的倒在床上，
+			PRINTFORMDL 在激烈的运动过后，困意如潮水般涌来
+			PRINTFORMDL 当你再次睁眼时，已经是早上了
+			EXP:10:精液経験 += 10
+			EXP:10:膣射経験 += 10
+			EXP:10:Ｖ性交経験 += 10
+			EXP:10:絶頂経験 += 10
+			EXP:MASTER:絶頂経験 += 5
+			EXP:MASTER:射精経験 += 5
+			EXP:MASTER:挿入経験 += 5	  
+		ENDIF
 		RETURN 1
 	ENDIF
+ENDIF
 ;==================================================
 ;浴場連れだし
 ;==================================================
@@ -3653,7 +3684,7 @@ IF LOCAL
 ;口上主はLOCAL
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 1
+LOCAL = 0
 ;-------------
 IF LOCAL
 	;-------------------------------------------------
@@ -3698,61 +3729,62 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 1
 		IF CFLAG:兒童人数
 		    SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听说你又怀孕了？那还真是恭喜呢！」
-			PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么，哈哈」
-			PRINTFORML 「所以只好将这封信交到你的手上，说起来这封信也是帕露教我写的呢！」
-			PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
-			PRINTFORML 「不知道养那么多的孩子你是怎么坚持下来的，想必也是很辛苦的吧！」
-			PRINTFORML 「而且还不能喝酒了，真是为你感到不幸啊」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子平安」
-			PRINTFORML 「                                                                       友：華扇敬上 」
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听说你又怀孕了？那还真是恭喜呢！」
+					PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么，哈哈」
+					PRINTFORML 「所以只好将这封信交到你的手上，说起来这封信也是帕露教我写的呢！」
+					PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
+					PRINTFORML 「不知道养那么多的孩子你是怎么坚持下来的，想必也是很辛苦的吧！」
+					PRINTFORML 「而且还不能喝酒了，真是为你感到不幸啊」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+				CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子平安」
+					PRINTFORML 「                                                                       友：華扇敬上 」
 		    ENDSELECT
 		ELSE
-			  SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听说你怀孕了？那还真是恭喜呢！」
-			PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么呢，只能明天去看望你了」
-			PRINTFORML 「说起来就连这封信也是帕露教我写的呢！」
-			PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
-			PRINTFORML 「养育孩子什么的，应该会很辛苦吧？」
-			PRINTFORML 「而且好像还不能喝酒了，真是，感觉有些，听起来就感觉火大啊」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你喜得一子，先道一声恭喜」
-			PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子平安」
-			PRINTFORML 「                                                                       友：華扇敬上 」
+			SELECTCASE RAND:2	
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听说你怀孕了？那还真是恭喜呢！」
+					PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么呢，只能明天去看望你了」
+					PRINTFORML 「说起来就连这封信也是帕露教我写的呢！」
+					PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
+					PRINTFORML 「养育孩子什么的，应该会很辛苦吧？」
+					PRINTFORML 「而且好像还不能喝酒了，真是，感觉有些，听起来就感觉火大啊」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+				CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你喜得一子，先道一声恭喜」
+					PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子平安」
+					PRINTFORML 「                                                                       友：華扇敬上 」
 		    ENDSELECT
+			RESETCOLOR
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3763,33 +3795,34 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && (ARG == 2 || ARG == 3)
 		IF CFLAG:兒童人数
-			  SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听说你又怀孕了？那还真是恭喜呢！」
-			PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么，哈哈」
-			PRINTFORML 「所以只好将这封信交到你的手上，说起来这封信也是帕露教我写的呢！」
-			PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
-			PRINTFORML 「不知道养那么多的孩子你是怎么坚持下来的，想必也是很辛苦的吧！」
-			PRINTFORML 「而且还不能喝酒了，真是为你感到不幸啊」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子平安」
-			PRINTFORML 「                                                                       友：華扇敬上 」
-		    ENDSELECT
+			SELECTCASE RAND:2	
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听说你又怀孕了？那还真是恭喜呢！」
+					PRINTFORML 「本来想着今天去看望一下你，但是地底这边确实还有别的事情要忙么，哈哈」
+					PRINTFORML 「所以只好将这封信交到你的手上，说起来这封信也是帕露教我写的呢！」
+					PRINTFORML 「哎呀！！一下子就跑题了呢！真是不小心啊」
+					PRINTFORML 「不知道养那么多的孩子你是怎么坚持下来的，想必也是很辛苦的吧！」
+					PRINTFORML 「而且还不能喝酒了，真是为你感到不幸啊」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，孩子出生之后，一定要带到地底过来来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+				CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORML 「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORML 「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子平安」
+					PRINTFORML 「                                                                       友：華扇敬上 」
+			ENDSELECT
+			RESETCOLOR
 		ELSE
 			PRINTFORMDL 「啊，是你啊，正好有一些事要去找你说说」
 			PRINTFORMDW %CALLNAME:MASTER%被萃香拉进了房间里，两个人就这样面对面的坐在床上
@@ -3841,64 +3874,65 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		IF CFLAG:兒童人数
-			   SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
-			PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
-			PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
-			PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
-			PRINTFORML 「话说这应该不是第一个孩子了吧？多了个弟弟妹妹应该会很開心吧」
-			PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORML 「剩余内容已附书信之上，应已查收」
-			PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子安康」
-			PRINTFORML 「                                                                       友：華扇敬上 」
-		    ENDSELECT
-			ENDIF
+			SELECTCASE RAND:2	
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
+					PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
+					PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
+					PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
+					PRINTFORML 「话说这应该不是第一个孩子了吧？多了个弟弟妹妹应该会很開心吧」
+					PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+			  	CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORML 「剩余内容已附书信之上，应已查收」
+					PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子安康」
+					PRINTFORML 「                                                                       友：華扇敬上 」
+			ENDSELECT
+			RESETCOLOR
 		ELSE
-			  SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
-			PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
-			PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
-			PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
-			PRINTFORML 「话说这是第一个孩子吧？有没很惊喜的感觉啊」
-			PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你喜得一子，先道一声恭喜」
-			PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子平安」
-			PRINTFORML 「                                                                       友：華扇敬上 」
+			SELECTCASE RAND:2	
+			  	CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
+					PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
+					PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
+					PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
+					PRINTFORML 「话说这是第一个孩子吧？有没很惊喜的感觉啊」
+					PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+			 	CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你喜得一子，先道一声恭喜」
+					PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子平安」
+					PRINTFORML 「                                                                       友：華扇敬上 」
 		    ENDSELECT
+			RESETCOLOR
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3909,66 +3943,68 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && (ARG == 2 || ARG == 3)
 		IF CFLAG:兒童人数
-			   SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
-			PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
-			PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
-			PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
-			PRINTFORML 「话说这应该不是第一个孩子了吧？多了个弟弟妹妹应该会很開心吧」
-			PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORML 「剩余内容已附书信之上，应已查收」
-			PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子安康」
-			PRINTFORML 「                                                                       友：華扇敬上 」
-		    ENDSELECT
-			ENDIF
+			SELECTCASE RAND:2	
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
+					PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
+					PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
+					PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
+					PRINTFORML 「话说这应该不是第一个孩子了吧？多了个弟弟妹妹应该会很開心吧」
+					PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+			  	CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你再得一子，作为挚友。不得不再多叨扰两句」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORML 「剩余内容已附书信之上，应已查收」
+					PRINTFORMDL  「虽已育子女，但经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子安康」
+					PRINTFORML 「                                                                       友：華扇敬上 」
+			ENDSELECT
+			RESETCOLOR
 		ELSE
-			  SELECTCASE RAND:2	
-			  CASE 1
-			SETCOLOR 255,222,184
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
-			PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
-			PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
-			PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
-			PRINTFORML 「话说这是第一个孩子吧？有没很惊喜的感觉啊」
-			PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
-			PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
-			PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
-			PRINTFORML 「                                                                      你的挚友：勇儀 」
-			  CASE 0
-			  	SETCOLOR 255,105,180
-			PRINTFORML 「致萃香：」
-			PRINTFORML 「听闻你喜得一子，先道一声恭喜」
-			PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
-			PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
-			PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
-			PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
-			PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
-			PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
-			PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
-			PRINTFORML 「祝」
-			PRINTFORML 「母子平安」
-			PRINTFORML 「                                                                       友：華扇敬上 」
+			SELECTCASE RAND:2	
+				CASE 1
+					SETCOLOR 255,222,184
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「孩子已经顺利生下来了么？那还真是让人開心啊」
+					PRINTFORML 「本想着今天去陪着你的，但是地底这边还有别的事情要忙么，真是抱歉啊」
+					PRINTFORML 「说起来啊，你的男人有去陪着你么？如果没有的话，一定要告诉我。我会把他打得满地找牙」
+					PRINTFORML 「对了，你会在孩子的奶粉里兑上酒的吧。这可是传统啊，哈哈」
+					PRINTFORML 「话说这是第一个孩子吧？有没很惊喜的感觉啊」
+					PRINTFORML 「说实话还是有些羡慕你呢，哈哈哈」
+					PRINTFORML 「哎呀，这边有别的事要去处理了呢，所以只能写到这里了啊」
+					PRINTFORML 「对了，有空的话。一定要带到地底过来让我看看我的小侄女或者小侄子哦！」
+					PRINTFORML 「                                                                      你的挚友：勇儀 」
+			  	CASE 0
+					SETCOLOR 255,105,180
+					PRINTFORML 「致萃香：」
+					PRINTFORML 「听闻你喜得一子，先道一声恭喜」
+					PRINTFORML 「吾查阅一些养胎书籍后，本想亲自前往叮嘱。奈何多事缠身，只好以信代之。莫要见怪」
+					PRINTFORML 「先，孕期注重身体，莫要纵欲过度。于己于子，皆非善事」
+					PRINTFORML 「怀孕期间也莫要再饮酒，对胎儿伤害极大。切记」
+					PRINTFORMDL  「吃喝用度，切记一切要按孕妇行事。莫再胡闹」
+					PRINTFORMDL  「汝首育子女，经验尚是不足，不懂之事皆可写信告知」
+					PRINTFORML 「虽然名为挚友，却不常走动。实乃失职，他日必前去探望」
+					PRINTFORML 「今日信中，不善详谈。他日面见，悉数告知」
+					PRINTFORML 「祝」
+					PRINTFORML 「母子平安」
+					PRINTFORML 「                                                                       友：華扇敬上 」
 		    ENDSELECT
+			RESETCOLOR
 		ENDIF
 		RETURN 1
+	ENDIF
 	;-------------------------------------------------
 	;無自覚
 	;記入チェック（=0, 非表示、1, 表示）
@@ -3978,8 +4014,9 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL  
-RETURN 1
+	;PRINTFORMDL  
+	RETURN 1
+ENDIF
 ;==================================================
 ;オナバレ
 ;==================================================
@@ -4066,156 +4103,156 @@ LOCAL = 1
 ;-------------
 IF LOCAL
 	SELECTCASE ARG
-	CASE 0
-		;-------------------------------------------------
-		;誘い文句
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人 
-				PRINTFORML 「要一起出去转转么？」
+		CASE 0
+			;-------------------------------------------------
+			;誘い文句
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人 
+					PRINTFORML 「要一起出去转转么？」
 					SELECTCASE STR:(5000 + ARG:1)
-					CASE "博麗神社"
-						PRINTFORML 「不是想去太远的地方呢……」
-					CASE "命蓮寺"
-						PRINTFORML 「想去命莲寺看看啊……」
-					CASE "人間之里"
-						PRINTFORML 「要去人間之里喝酒么……」
-					CASE "霧之湖～紅魔館"
-						PRINTFORML 「唔……要去雾之湖看风景么？」
-					CASE "迷途竹林"
-						PRINTFORML 「竹林的话……，好像有家摊位不错」
-					CASE "魔法之森"
-						PRINTFORML 「嘿嘿、去魔法之森里摘点蘑菇吧……」
-					CASE "三途之川～冥界"
-						PRINTFORML 「要不去三途川、坐渡船观观光……」
-					CASE "妖怪之山 (山麓)"
-						PRINTFORML 「想去妖怪之山么？……」
-					CASE "妖怪之山 (山頂)"
-						PRINTFORML 「我想去景色优美的地方……」
-					CASE "地底"
-						PRINTFORML 「要不然去地底吧，正好见见勇儀她们」
-					CASE "夢之世界～月"
-						PRINTFORML 「去哪个什么，月之都吧……」
+						CASE "博麗神社"
+							PRINTFORML 「不是想去太远的地方呢……」
+						CASE "命蓮寺"
+							PRINTFORML 「想去命莲寺看看啊……」
+						CASE "人間之里"
+							PRINTFORML 「要去人間之里喝酒么……」
+						CASE "霧之湖～紅魔館"
+							PRINTFORML 「唔……要去雾之湖看风景么？」
+						CASE "迷途竹林"
+							PRINTFORML 「竹林的话……，好像有家摊位不错」
+						CASE "魔法之森"
+							PRINTFORML 「嘿嘿、去魔法之森里摘点蘑菇吧……」
+						CASE "三途之川～冥界"
+							PRINTFORML 「要不去三途川、坐渡船观观光……」
+						CASE "妖怪之山 (山麓)"
+							PRINTFORML 「想去妖怪之山么？……」
+						CASE "妖怪之山 (山頂)"
+							PRINTFORML 「我想去景色优美的地方……」
+						CASE "地底"
+							PRINTFORML 「要不然去地底吧，正好见见勇儀她们」
+						CASE "夢之世界～月"
+							PRINTFORML 「去哪个什么，月之都吧……」
 					ENDSELECT
-			ELSE
-				PRINTFORML 「无聊的话要不陪我出去转转？」
+				ELSE
+					PRINTFORML 「无聊的话要不陪我出去转转？」
 					SELECTCASE STR:(5000 + ARG:1)
-				CASE "博麗神社"
-						PRINTFORML 「不是想去太远的地方呢……」
-					CASE "命蓮寺"
-						PRINTFORML 「想去命莲寺看看啊……」
-					CASE "人間之里"
-						PRINTFORML 「要去人間之里喝酒么……」
-					CASE "霧之湖～紅魔館"
-						PRINTFORML 「唔……要去雾之湖看风景么？」
-					CASE "迷途竹林"
-						PRINTFORML 「竹林的话……，好像有家摊位不错」
-					CASE "魔法之森"
-						PRINTFORML 「嘿嘿、去魔法之森里摘点蘑菇吧……」
-					CASE "三途之川～冥界"
-						PRINTFORML 「要不去三途川、坐渡船观观光……」
-					CASE "妖怪之山 (山麓)"
-						PRINTFORML 「想去妖怪之山么？……」
-					CASE "妖怪之山 (山頂)"
-						PRINTFORML 「我想去景色优美的地方……」
-					CASE "地底"
-						PRINTFORML 「要不然去地底吧，正好见见勇儀她们」
-					CASE "夢之世界～月"
-						PRINTFORML 「去哪个什么，月之都吧……」
+						CASE "博麗神社"
+							PRINTFORML 「不是想去太远的地方呢……」
+						CASE "命蓮寺"
+							PRINTFORML 「想去命莲寺看看啊……」
+						CASE "人間之里"
+							PRINTFORML 「要去人間之里喝酒么……」
+						CASE "霧之湖～紅魔館"
+							PRINTFORML 「唔……要去雾之湖看风景么？」
+						CASE "迷途竹林"
+							PRINTFORML 「竹林的话……，好像有家摊位不错」
+						CASE "魔法之森"
+							PRINTFORML 「嘿嘿、去魔法之森里摘点蘑菇吧……」
+						CASE "三途之川～冥界"
+							PRINTFORML 「要不去三途川、坐渡船观观光……」
+						CASE "妖怪之山 (山麓)"
+							PRINTFORML 「想去妖怪之山么？……」
+						CASE "妖怪之山 (山頂)"
+							PRINTFORML 「我想去景色优美的地方……」
+						CASE "地底"
+							PRINTFORML 「要不然去地底吧，正好见见勇儀她们」
+						CASE "夢之世界～月"
+							PRINTFORML 「去哪个什么，月之都吧……」
 					ENDSELECT
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
-	CASE 1
-		;-------------------------------------------------
-		;受けた
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人 
-				PRINTFORML 「嘿嘿、那么、就这么定下来了呢」
-			ELSEIF TALENT:恋慕
-				PRINTFORML 「嗯，那就这样吧」
+		CASE 1
+			;-------------------------------------------------
+			;受けた
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人 
+					PRINTFORML 「嘿嘿、那么、就这么定下来了呢」
+				ELSEIF TALENT:恋慕
+					PRINTFORML 「嗯，那就这样吧」
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
-	CASE 2
-		;-------------------------------------------------
-		;断った
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人 
-				PRINTFORML 「……是吗，那之后下次一定要去哦」
-				PRINTFORMDL 萃香装作满不在乎的样子说到
-			ELSE
-				PRINTFORML 「……不想去的话，那就算了」
-				PRINTFORMDL 萃香装作满不在乎的样子说到
+		CASE 2
+			;-------------------------------------------------
+			;断った
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人 
+					PRINTFORML 「……是吗，那之后下次一定要去哦」
+					PRINTFORMDL 萃香装作满不在乎的样子说到
+				ELSE
+					PRINTFORML 「……不想去的话，那就算了」
+					PRINTFORMDL 萃香装作满不在乎的样子说到
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
-	CASE 3
-		;-------------------------------------------------
-		;部屋に誘われた
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人
-				PRINTFORML 「……%CALLNAME:MASTER%」
+		CASE 3
+			;-------------------------------------------------
+			;部屋に誘われた
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人
+					PRINTFORML 「……%CALLNAME:MASTER%」
 					SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「要来我的房间一起喝酒么？」
-					CASE 1
-						PRINTFORML 「要不要来我的房间坐一会儿？」
-					CASEELSE
-						PRINTFORML 「那个、要不要……来我的房间坐一会啊……」
+						CASE 0
+							PRINTFORML 「要来我的房间一起喝酒么？」
+						CASE 1
+							PRINTFORML 「要不要来我的房间坐一会儿？」
+						CASEELSE
+							PRINTFORML 「那个、要不要……来我的房间坐一会啊……」
 					ENDSELECT
-			ELSE
-				PRINTFORML 「……哎呀」
+				ELSE
+					PRINTFORML 「……哎呀」
 					SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「要不去我的房间喝点酒？」
-					CASE 1
-						PRINTFORML 「来我的房间休息一会吧？」
-					CASEELSE
-						PRINTFORML 「那个、要不要……来我的房间坐一会啊……」
+						CASE 0
+							PRINTFORML 「要不去我的房间喝点酒？」
+						CASE 1
+							PRINTFORML 「来我的房间休息一会吧？」
+						CASEELSE
+							PRINTFORML 「那个、要不要……来我的房间坐一会啊……」
 					ENDSELECT
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
-	CASE 4
-		;-------------------------------------------------
-		;部屋に誘われたのを受けた
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人 
-				PRINTFORML 「……呼呼、那就走吧」
-			ELSE
-				PRINTFORML 「……呼呼、那就走吧」
+		CASE 4
+			;-------------------------------------------------
+			;部屋に誘われたのを受けた
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人 
+					PRINTFORML 「……呼呼、那就走吧」
+				ELSE
+					PRINTFORML 「……呼呼、那就走吧」
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
-	CASE 5
-		;-------------------------------------------------
-		;部屋に誘われたのを断った
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1
-			IF TALENT:恋人 
-				PRINTFORML 「……呼。……好吧」
-			ELSE
-				PRINTFORML 「……行吧」
+		CASE 5
+			;-------------------------------------------------
+			;部屋に誘われたのを断った
+			;記入チェック（=0, 非表示、1, 表示）
+			LOCAL:1 = 1
+			;-------------------------------------------------
+			IF LOCAL:1
+				IF TALENT:恋人 
+					PRINTFORML 「……呼。……好吧」
+				ELSE
+					PRINTFORML 「……行吧」
+				ENDIF
+				RETURN 1
 			ENDIF
-			RETURN 1
-		ENDIF
 	ENDSELECT
 ENDIF
 RETURN 1
@@ -4334,7 +4371,7 @@ RETURN 1
 ;ARGはTARGETの胆量で分岐
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------
 IF LOCAL
 	;-------------------------------------------------
@@ -4342,7 +4379,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;怒らせてしまった
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 			IF TALENT:恋人 
@@ -4375,7 +4412,7 @@ LOCAL = 1
 IF LOCAL
 	;-------------------------------------------------
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 1
+	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 	;疲惫（多分萃香の場合死に分岐）
@@ -4388,50 +4425,46 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 	;満足して解放
-			IF TALENT:恋人 
-				;恋人萃香は全部注がれたい（精力判定３００
-				SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「%CALLNAME:MASTER%……这不是很能干的么……」
-						PRINTFORMDL 躺在%CALLNAME:MASTER%的怀中，用手轻抚着%CALLNAME:MASTER%的脸颊。
-						PRINTFORMDL  「嘿嘿………」
-					IF BASE:MASTER:勃起 >= 1000
+		IF TALENT:恋人 
+			;恋人萃香は全部注がれたい（精力判定３００
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%……这不是很能干的么……」
+					PRINTFORMDL 躺在%CALLNAME:MASTER%的怀中，用手轻抚着%CALLNAME:MASTER%的脸颊。
+					PRINTFORMDL  「嘿嘿………」
+					SIF BASE:MASTER:勃起 >= 1000
 						PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
-					ENDIF
 					IF BASE:MASTER:精力 > 300
 						PRINTFORML 「%CALLNAME:MASTER%…………？　我还想要啦……♥」
-						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
+						PRINTFORMDL 看出你尚有余力的萃香发出了再一轮的邀请
 					ENDIF
-					
-					CASE 1
-						PRINTFORML 「对不起啦……　但是、%CALLNAME:MASTER%……」
-						PRINTFORML 「但是、%CALLNAME:MASTER%……也想要做的吧！」
-						PRINTFORML 「%CALLNAME:MASTER%真是个大笨蛋呢……」
-					IF BASE:MASTER:勃起 >= 1000
+				CASE 1
+					PRINTFORML 「对不起啦……　但是、%CALLNAME:MASTER%……」
+					PRINTFORML 「但是、%CALLNAME:MASTER%……也想要做的吧！」
+					PRINTFORML 「%CALLNAME:MASTER%真是个大笨蛋呢……」
+					SIF BASE:MASTER:勃起 >= 1000
 						PRINTFORMDL 这样说着的萃香，用手轻抚起你的肉棒
-					ENDIF
 					IF BASE:MASTER:精力 > 300
 						PRINTFORML 「%CALLNAME:MASTER%…………？　我还想要啦……♥」
 						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
 					ENDIF
-					CASE 2
-						PRINTFORML 「%CALLNAME:MASTER%……%CALLNAME:MASTER%…………♥」
-						PRINTFORMDL 萃香抱着你的脖子。
-					IF BASE:MASTER:勃起 >= 1000
+				CASE 2
+					PRINTFORML 「%CALLNAME:MASTER%……%CALLNAME:MASTER%…………♥」
+					PRINTFORMDL 萃香抱着你的脖子。
+					SIF BASE:MASTER:勃起 >= 1000
 						PRINTFORMDL 然后她轻轻地抚摸着再度勃起的男根。
-					ENDIF
 					IF BASE:MASTER:精力 > 300
 						PRINTFORML 「%CALLNAME:MASTER%…………？　还要在来么……？」
 						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
 					ENDIF
-				ENDSELECT
-			ELSEIF TALENT:恋慕
-				;恋慕萃香はちゃんと你に満足して欲しい（精力判定５００
-				SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「……呼呼、呼啊、大满足了呢……」
-						PRINTFORMDL 萃香趴在你的身上，大满足的放松着身体
-						PRINTFORML 「呐，%CALLNAME:MASTER%满足了么……」
+			ENDSELECT
+		ELSEIF TALENT:恋慕
+			;恋慕萃香はちゃんと你に満足して欲しい（精力判定５００
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「……呼呼、呼啊、大满足了呢……」
+					PRINTFORMDL 萃香趴在你的身上，大满足的放松着身体
+					PRINTFORML 「呐，%CALLNAME:MASTER%满足了么……」
 					IF BASE:MASTER:勃起 >= 1000
 						PRINTFORML 「……呼呼，看来没有呢……」
 						PRINTFORMDL 然后她轻轻地抚摸着再度勃起的男根。
@@ -4440,71 +4473,64 @@ IF LOCAL
 						PRINTFORML 「%CALLNAME:MASTER%…………？　你还想来么……♥」
 						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
 					ENDIF
-					
-					CASE 1
-						PRINTFORML 「……呜呜」
-						PRINTFORML 「真爽啊……嘿嘿」
-						PRINTFORML 「让人家忍耐了那么久……，这只能算是一点点惩罚哦」
-						PRINTFORMDL  「……嘿嘿」
-					IF BASE:MASTER:勃起 >= 1000
-					    PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
-					ENDIF
+				CASE 1
+					PRINTFORML 「……呜呜」
+					PRINTFORML 「真爽啊……嘿嘿」
+					PRINTFORML 「让人家忍耐了那么久……，这只能算是一点点惩罚哦」
+					PRINTFORMDL  「……嘿嘿」
+					SIF BASE:MASTER:勃起 >= 1000
+						PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
 					IF BASE:MASTER:精力 > 500
 						PRINTFORML 「%CALLNAME:MASTER%…………？　你还想来么……♥」
-						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
+						PRINTFORMDL 看出你尚有余力的萃香发出了再一轮的邀请
 					ENDIF
-					CASE 2
-						PRINTFORML 「哈啊……真是的」
-						PRINTFORML 「你喜欢么……」
-					IF BASE:MASTER:勃起 >= 1000
-					    PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
-					ENDIF
+				CASE 2
+					PRINTFORML 「哈啊……真是的」
+					PRINTFORML 「你喜欢么……」
+					SIF BASE:MASTER:勃起 >= 1000
+						PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
 					IF BASE:MASTER:精力 > 500
 						PRINTFORML 「%CALLNAME:MASTER%…………？　你还想来么……♥」
-						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
+						PRINTFORMDL 看出你尚有余力的萃香发出了再一轮的邀请
 					ENDIF
-				ENDSELECT
-			ELSE
-				;流石に満足出来ていないのは可哀想（精力判定８００
-				SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「……嘿嘿」
-						PRINTFORMDL 萃香趴在你的身上休息着
-						PRINTFORML 「呜呜……你怎么样啊」
-					IF BASE:MASTER:勃起 >= 1000
-					    PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
-					ENDIF
+			ENDSELECT
+		ELSE
+			;流石に満足出来ていないのは可哀想（精力判定８００
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「……嘿嘿」
+					PRINTFORMDL 萃香趴在你的身上休息着
+					PRINTFORML 「呜呜……你怎么样啊」
+					SIF BASE:MASTER:勃起 >= 1000
+						PRINTFORMDL 似乎是注意到你的再次勃起，萃香嘿嘿的笑了出来
 					IF BASE:MASTER:精力 > 500
 						PRINTFORML 「%CALLNAME:MASTER%…………？还想再来一次么？」
-						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请
+						PRINTFORMDL 看出你尚有余力的萃香发出了再一轮的邀请
 					ENDIF
-					
-					CASE 1
-						PRINTFORML 「呜呜……没力气了」
-						PRINTFORML 「%CALLNAME:MASTER%……是真的变态」
-						PRINTFORML 「但是我好像也不逞多让呢，嘿嘿……」
-					IF BASE:MASTER:勃起 >= 1000
+				CASE 1
+					PRINTFORML 「呜呜……没力气了」
+					PRINTFORML 「%CALLNAME:MASTER%……是真的变态」
+					PRINTFORML 「但是我好像也不逞多让呢，嘿嘿……」
+					SIF BASE:MASTER:勃起 >= 1000
 						PRINTFORMDL 嘿嘿傻笑的萃香、自然地抚摸起你再度勃起的男根。
-					ENDIF
 					IF BASE:MASTER:精力 > 800
 						PRINTFORML 「%CALLNAME:MASTER%…………？还想再来一次么？」
 						PRINTFORMDL 似乎是看出你尚有余力，萃香发出了再一轮的邀请。
 					ENDIF
-					CASE 2
-						PRINTFORML 「哈啊……呼呼」
-						PRINTFORML 「%CALLNAME:MASTER%……真厉害呢」
-						PRINTFORMDL 看来是满足了呢
-					IF BASE:MASTER:勃起 >= 1000
+				CASE 2
+					PRINTFORML 「哈啊……呼呼」
+					PRINTFORML 「%CALLNAME:MASTER%……真厉害呢」
+					PRINTFORMDL 看来是满足了呢
+					SIF BASE:MASTER:勃起 >= 1000
 						PRINTFORMDL 轻轻地抚摸着再度勃起的男根、她的目光转向这里。
-					ENDIF
 					IF BASE:MASTER:精力 > 800
 						PRINTFORMDL 好像是注意到了你还没有满足的样子、
 						PRINTFORML 「……还想做吗？」
 						PRINTFORML 「……可以哦」
 					ENDIF
-				ENDSELECT
-			ENDIF
-				TCVAR:10:353 ++
+			ENDSELECT
+		ENDIF
+		;TCVAR:10:353 ++
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -4513,101 +4539,98 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
 	;満足したところを被逆推た
-		TCVAR:10:370 = 0
-			IF TALENT:恋人 
-			;ここは恋人も５００。恋人だけ自分が満足しても求められて興奮してる設定。
+		;TCVAR:10:370 = 0
+		IF TALENT:恋人 
+		;ここは恋人も５００。恋人だけ自分が満足しても求められて興奮してる設定。
 			SELECTCASE RAND:3
 				CASE 0
 					PRINTFORML 「%CALLNAME:MASTER%……」
 					PRINTFORMDL 萃香躺在你的怀中，用手轻抚起你的脸庞
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「快来吧……做所有你想做的事情……」
-				ELSE
-					PRINTFORML 「将你体内所有的兽欲发泄出来吧……」
-				ENDIF
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「快来吧……做所有你想做的事情……」
+					ELSE
+						PRINTFORML 「将你体内所有的兽欲发泄出来吧……」
+					ENDIF
 					PRINTFORML 「不用担心我的身体能不能撑住……」
 					PRINTFORML 「就这样……继续做吧♥　疯狂的……侵犯着我」
-				
 				CASE 1
 					PRINTFORML 「%CALLNAME:MASTER%　%CALLNAME:MASTER%……」
 					PRINTFORMDL 萃香在念着你的名字时候将身体靠了过来
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「快来吧……做所有你想做的事情……」
-				ELSE
-					PRINTFORML 「不要磨蹭了，做你想做的事吧……」
-				ENDIF
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「快来吧……做所有你想做的事情……」
+					ELSE
+						PRINTFORML 「不要磨蹭了，做你想做的事吧……」
+					ENDIF
 					PRINTFORML 「就像你平时做的那样就好，就像那样……」
 					PRINTFORML 「我绝对不会叛逆，所以来吧……」
 				CASE 2
 					PRINTFORML 「%CALLNAME:MASTER%……」
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「继续吧……做你想做的事♥」
-				ELSE
-					PRINTFORML 「像平时那样……疯狂的……侵犯着我♥」
-				ENDIF
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「继续吧……做你想做的事♥」
+					ELSE
+						PRINTFORML 「像平时那样……疯狂的……侵犯着我♥」
+					ENDIF
 					PRINTFORML 「就像你平时做的那样就好，就像那样……」
 					PRINTFORML 「我绝对不会叛逆，所以来吧……」
 			ENDSELECT
-			ELSEIF TALENT:恋慕
+		ELSEIF TALENT:恋慕
 			SELECTCASE RAND:3
 				CASE 0
 					PRINTFORML 「唔　%CALLNAME:MASTER%……真讨厌♥」
 					PRINTFORMDL 萃香红着脸抱了过来
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「那个、%CALLNAME:MASTER%也想做了吧…………」
-					PRINTFORML 「所以……我……嘿嘿……」
-				ELSE
-					PRINTFORML 「全部射出来吧、直到一滴也不剩下……」
-				ENDIF
-				
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「那个、%CALLNAME:MASTER%也想做了吧…………」
+						PRINTFORML 「所以……我……嘿嘿……」
+					ELSE
+						PRINTFORML 「全部射出来吧、直到一滴也不剩下……」
+					ENDIF
 				CASE 1
 					PRINTFORML 「唔　%CALLNAME:MASTER%……真讨厌♥」
 					PRINTFORMDL 萃香红着脸抱了过来
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「那个、%CALLNAME:MASTER%也想做了吧…………」
-					PRINTFORML 「所以……我……嘿嘿……」
-				ELSE
-					PRINTFORML 「全部射出来吧、直到一滴也不剩下……」
-				ENDIF
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「那个、%CALLNAME:MASTER%也想做了吧…………」
+						PRINTFORML 「所以……我……嘿嘿……」
+					ELSE
+						PRINTFORML 「全部射出来吧、直到一滴也不剩下……」
+					ENDIF
 				CASE 2
 					PRINTFORML 「呼呼　还是有些，没有满足呢……」
 					PRINTFORMDL 萃香用充满暗示性的语言说到
-				IF BASE:MASTER:精力 > 500
-					PRINTFORML 「要继续做了么……呼呼」
-				ELSE
-					PRINTFORML 「按照你想那样……做吧」
-				ENDIF
+					IF BASE:MASTER:精力 > 500
+						PRINTFORML 「要继续做了么……呼呼」
+					ELSE
+						PRINTFORML 「按照你想那样……做吧」
+					ENDIF
 			ENDSELECT
-			ELSE
+		ELSE
 			SELECTCASE RAND:3
 				CASE 0
 					PRINTFORML 「唔……已经满足了呢……」
 					PRINTFORMDL  「还想要么……？」
-				IF BASE:MASTER:精力 > 800
-					PRINTFORML 「唔唔……」
-				ELSE
-					PRINTFORML 「稍微休息一下吧」
-				ENDIF
-				
+					IF BASE:MASTER:精力 > 800
+						PRINTFORML 「唔唔……」
+					ELSE
+						PRINTFORML 「稍微休息一下吧」
+					ENDIF
 				CASE 1
 					PRINTFORML 「唔唔，没力气了……」
 					PRINTFORML 「稍微休息一下吧」
-				IF BASE:MASTER:精力 > 800
-					PRINTFORML 「什么嘛……就那么饥渴难耐吗？」
-					PRINTFORML 「你真是不折不扣的种马啊……」
-				ELSE
-					PRINTFORML 「……会做到让你没办法和其他人做为止哦」
-				ENDIF
+					IF BASE:MASTER:精力 > 800
+						PRINTFORML 「什么嘛……就那么饥渴难耐吗？」
+						PRINTFORML 「你真是不折不扣的种马啊……」
+					ELSE
+						PRINTFORML 「……会做到让你没办法和其他人做为止哦」
+					ENDIF
 				CASE 2
 					PRINTFORML 「喂喂……」
 					PRINTFORML 「稍微休息一下，好吧」
-				IF BASE:MASTER:精力 > 800
-					PRINTFORML 「……看起来你完全没有满足呢、我就忍一下吧」
-				ELSE
-					PRINTFORML 「稍微休息一下吧，拜托了……」
-				ENDIF
+					IF BASE:MASTER:精力 > 800
+						PRINTFORML 「……看起来你完全没有满足呢、我就忍一下吧」
+					ELSE
+						PRINTFORML 「稍微休息一下吧，拜托了……」
+					ENDIF
 			ENDSELECT
-			ENDIF
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -4616,7 +4639,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
 	;壊れるまでしてあげる
-			IF TALENT:恋人
+		IF TALENT:恋人
 			;恋人と恋慕は欲望１０以上で発情。愛で箍が外れる姫様。愛欲では発動しない。
 			SELECTCASE RAND:3
 				CASE 0
@@ -4627,11 +4650,6 @@ IF LOCAL
 					PRINTFORMDL 这样说着的萃香看起来比平常更加奇怪、看向你的眼神中尽是情欲迷离的感觉
 					PRINTFORML 「所以、接下来的事情你要全权负责哦……」
 					PRINTFORMDL 萃香突然将你扑倒在地！
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-					PRINTFORMDL
-					PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
 				CASE 1
 					PRINTFORMDL
 					PRINTFORML 「……呜呜~~哈啊……♥」
@@ -4640,11 +4658,6 @@ IF LOCAL
 					PRINTFORMDL 已经近若疯狂的萃香，躁动的扭着身体
 					PRINTFORMDL 好……
 					PRINTFORMDL 萃香完全没有等到你的回答，直接粗暴的推倒了你
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-					PRINTFORMDL
-					PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
 				CASE 2
 					PRINTFORMDL
 					PRINTFORML 「%CALLNAME:MASTER%…………」
@@ -4653,27 +4666,23 @@ IF LOCAL
 					PRINTFORMDL 在狩猎猎物时才会露出的表情
 					PRINTFORML 「%CALLNAME:MASTER%……♥」
 					PRINTFORMDL 那混杂着情欲的声音将你拉回了现实，而萃香早已在你愣神之际将你推倒
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-				PRINTFORMDL
-					PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
 			ENDSELECT
-			ELSEIF TALENT:恋慕
+			IF ABL:10:欲望 > 14
+				PRINTFORMDL 完全沉溺于云雨之情的萃香，此时的状态似乎有些许不同
+				TCVAR:TARGET:発情 = 1
+				PRINTFORML 「呼啊……哈哈……♥」
+				PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
+			ENDIF
+		ELSEIF TALENT:恋慕
 			SELECTCASE RAND:3
 				CASE 0
-				PRINTFORMDL
+					PRINTFORMDL
 					PRINTFORML 「……在认识你之前的我绝对不会想到呢」
 					PRINTFORML 「原来做这种事情是这样的……快乐」
 					PRINTFORML 「是你，让我体会到这样的快乐呢……」
 					PRINTFORMDL 这样说着的萃香看起来比平常更加奇怪、看向你的眼神中尽是情欲迷离的感觉
 					PRINTFORML 「所以、接下来的事情你要全权负责哦……」
 					PRINTFORMDL 萃香突然将你扑倒在地！
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-					PRINTFORMDL
-				    PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
 				CASE 1
 					PRINTFORMDL
 					PRINTFORML 「%CALLNAME:MASTER%…………」
@@ -4682,25 +4691,21 @@ IF LOCAL
 					PRINTFORMDL 在狩猎猎物时才会露出的表情
 					PRINTFORML 「%CALLNAME:MASTER%……♥」
 					PRINTFORMDL 那混杂着情欲的声音将你拉回了现实，而萃香早已在你愣神之际将你推倒
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-					PRINTFORMDL
-					PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
 				CASE 2
 					PRINTFORML 「……在认识你之前的我绝对不会想到呢」
 					PRINTFORML 「原来做这种事情是这样的……快乐」
 					PRINTFORML 「是你，让我体会到这样的快乐呢……」
 					PRINTFORMDL 这样说着的萃香看起来比平常更加奇怪、看向你的眼神中尽是情欲迷离的感觉
 					PRINTFORML 「所以、接下来的事情你要全权负责哦……」
-					PRINTFORMDL 萃香突然将你扑倒在地！。
-				IF ABL:10:欲望 > 14
-					TCVAR:TARGET:発情 = 1
-					PRINTFORMDL
-					PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
-				ENDIF
+					PRINTFORMDL 萃香突然将你扑倒在地！
 			ENDSELECT
-			ELSE
+			IF ABL:10:欲望 > 14
+				PRINTFORMDL 完全沉溺于云雨之情的萃香，此时的状态似乎有些许不同
+				TCVAR:TARGET:発情 = 1
+				PRINTFORML 「呼啊……哈哈……♥」
+				PRINTFORMDL 看来发情的状态影响了萃香的理智，使她无法说出完整的话来
+			ENDIF
+		ELSE
 			SELECTCASE RAND:3
 				CASE 0
 					PRINTFORMDL
@@ -4725,7 +4730,7 @@ IF LOCAL
 					PRINTFORML 「让我们，再继续吧……」
 					PRINTFORMDL 没有等到你的回答，萃香已经推了过来。
 			ENDSELECT
-			ENDIF
+		ENDIF
 		RETURN 1
 	ENDIF
 ENDIF
@@ -4830,9 +4835,11 @@ ENDIF
 ;口上角色のOMANEKIBEYAか拠点の描写に使います
 ;記入する際はコメントアウトを外してください
 ;-------------------------------------------------
-@K10_ROOM_DESCRIPTION
-PRINTFORMDL 华丽さこそないが、落ち着きのある品の良い和室だ。
-PRINTFORMDL 重厚な歴史を感じさせる調度品がいくつも飾られている。
+@K10_MOMO_ROOM_DESCRIPTION
+; PRINTFORMDL 华丽さこそないが、落ち着きのある品の良い和室だ。
+PRINTFORMDL 并不华丽，但透露着沉稳优雅气质的和室。
+; PRINTFORMDL 重厚な歴史を感じさせる調度品がいくつも飾られている。
+PRINTFORMDL 摆放在其中的家具带给人以厚重的历史感。
 ;-------------------------------------------------
 
 ;==================================================
@@ -4908,8 +4915,8 @@ ELSEIF ARG == 2
 		PRINTFORMDL 萃香看着%CALLNAME:MASTER%赠送的%GIFT_NAME%，露出了爱不释手的样子
 		PRINTFORMDL %CALLNAME:MASTER%也是下了一番苦功夫呢
 		IF TALENT:迷信 && TALENT:MASTER:追加種族 == 4
-		PRINTFORMDL 
-		IF STRCOUNT(GIFT_NAME, "(鬼の|鬼力の)")
+			PRINTFORMDL 
+			IF STRCOUNT(GIFT_NAME, "(鬼の|鬼力の)")
 				PRINTFORML 「……有一种，睹物思人的感觉呢」
 			ELSE
 				PRINTFORMDL 不仅仅只是为了怀念，还有别的深意
@@ -4944,7 +4951,7 @@ ELSEIF ARG == 2
 		ELSE
 			SELECTCASE RAND:4
 				CASE 3
-					PRINTFORML 「……哈啊，这不是很棒么》」
+					PRINTFORML 「……哈啊，这不是很棒么！」
 				CASE 2
 					PRINTFORML 「太谢谢你了……」
 				CASE 1
@@ -4962,23 +4969,23 @@ ELSEIF ARG == 2
 ELSEIF ARG == 3
 	;上からの続きなので地文処理
 	SIF STRCOUNT(SENSE, "穿戴/")
-			PRINTFORMDL 萃香似乎决定把%GIFT_NAME%礼物作为饰品戴在身上。
+		PRINTFORMDL 萃香似乎决定把%GIFT_NAME%礼物作为饰品戴在身上。
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日获得的礼物をとりあえず保管する（400～699点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 4
-		SELECTCASE RAND:4
-			CASE 3
-				PRINTFORML 「……把它放在床头吧」
-			CASE 2
-				PRINTFORML 「还是挂在哪里比较好呢……」
-			CASE 1
-				PRINTFORML 「……这个要装饰在哪里比较好呢」
-			CASE 0
-				PRINTFORML 「……就放在这里那里吧」
-		ENDSELECT
-		PRINTFORMDL 萃香将今天收到的礼物挂在了自己的卧室里
+	SELECTCASE RAND:4
+		CASE 3
+			PRINTFORML 「……把它放在床头吧」
+		CASE 2
+			PRINTFORML 「还是挂在哪里比较好呢……」
+		CASE 1
+			PRINTFORML 「……这个要装饰在哪里比较好呢」
+		CASE 0
+			PRINTFORML 「……就放在这里那里吧」
+	ENDSELECT
+	PRINTFORMDL 萃香将今天收到的礼物挂在了自己的卧室里
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日获得的礼物をこっそり質に入れる（400点未満）
@@ -4998,7 +5005,6 @@ ELSEIF ARG == 5
 	ENDIF
 	RETURN 1
 ENDIF
-RETURN 1
 
 ;==================================================
 ;斗虫
@@ -5022,18 +5028,18 @@ CASE "試合前"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:6
-		CASE 0
-			RESULTS = 「嘿嘿！无论怎样，我都会取得最后的胜利！」
-		CASE 1
-			RESULTS = 「即使是斗虫，我也会全力以赴的！」
-		CASE 2
-			RESULTS = 「相比于胜负，还是更看中快乐啊！」
-		CASE 3
-			RESULTS = 「小虫子也会喜欢喝酒么？」
-		CASE 4
-			RESULTS = 「终于，可以不那么无聊了呢」
-		CASE 5
-			RESULTS = 「啊啊，斗虫……」
+			CASE 0
+				RESULTS = 「嘿嘿！无论怎样，我都会取得最后的胜利！」
+			CASE 1
+				RESULTS = 「即使是斗虫，我也会全力以赴的！」
+			CASE 2
+				RESULTS = 「相比于胜负，还是更看中快乐啊！」
+			CASE 3
+				RESULTS = 「小虫子也会喜欢喝酒么？」
+			CASE 4
+				RESULTS = 「终于，可以不那么无聊了呢」
+			CASE 5
+				RESULTS = 「啊啊，斗虫……」
 		ENDSELECT
 ;		 RESULTS = 「我会全力以赴的！」
 	ENDIF
@@ -5047,20 +5053,20 @@ CASE "戦場に出した"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:7
-		CASE 0
-			RESULTS = 「聚集的祈愿将成为新生的闪耀之星，化作光芒闪耀的道路吧！」
-		CASE 1
-			RESULTS = 「一个灵魂引导光明，一个灵魂引导黑暗，我   打開了混沌之门！降临吧！！！！！」
-		CASE 2
-			RESULTS = 「这不是普通的虫子！！它是真正的虫王！！降临吧！！！！」
-		CASE 3
-			RESULTS = 「我的目标，可是斗虫大赛的冠军！！去吧！！  %MUSHI_NAME%！」
-		CASE 4
-			RESULTS = 「现在，为我带来胜利吧！！！」
-		CASE 5
-			RESULTS = 「从密林的深处，扫倒阻碍出现吧，君临未開荒王国的虫族之王！」
-		CASE 6
-			RESULTS = 「蕴藏在无穷时间之源的纯白之力，扬起在灵魂的交错回响中震颤的双翼，从青色的深渊中现身吧！出现吧！！」
+			CASE 0
+				RESULTS = 「聚集的祈愿将成为新生的闪耀之星，化作光芒闪耀的道路吧！」
+			CASE 1
+				RESULTS = 「一个灵魂引导光明，一个灵魂引导黑暗，我   打開了混沌之门！降临吧！！！！！」
+			CASE 2
+				RESULTS = 「这不是普通的虫子！！它是真正的虫王！！降临吧！！！！」
+			CASE 3
+				RESULTS = 「我的目标，可是斗虫大赛的冠军！！去吧！！  %MUSHI_NAME%！」
+			CASE 4
+				RESULTS = 「现在，为我带来胜利吧！！！」
+			CASE 5
+				RESULTS = 「从密林的深处，扫倒阻碍出现吧，君临未開荒王国的虫族之王！」
+			CASE 6
+				RESULTS = 「蕴藏在无穷时间之源的纯白之力，扬起在灵魂的交错回响中震颤的双翼，从青色的深渊中现身吧！出现吧！！」
 		ENDSELECT
 		;RESULTS = 「すぐ楽にしてあげる♪」
 	ENDIF
@@ -5076,247 +5082,247 @@ CASE "攻撃時"
 	IF LOCAL:1
 		IF GROUPMATCH(MUSHI_NAME, "菜粉蝶","豆粉蝶","燕尾蝶","碧凤蝶","青鳳蝶","大帛斑蝶","大紫蛺蝶","綠弄蝶",)
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　发动睡眠の鱗粉！！！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　翅膀挥击！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　发动睡眠の鱗粉！！！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　翅膀挥击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "閃蝶","亞歷珊卓皇后鳥翼蝶")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　　使用睡眠の鱗粉！！！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　快使用蝴蝶特技！！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　　使用睡眠の鱗粉！！！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　快使用蝴蝶特技！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "三色立翅")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　使用蝶舞纷飞！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　使用大音波！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　使用蝶舞纷飞！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　使用大音波！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "茶毒蛾","孔雀天蠶蛾")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「猛毒挥舞！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　快使用毒鳞粉！」
+				CASE 0
+					RESULTS = 「猛毒挥舞！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　快使用毒鳞粉！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "大水青")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　拟态攻击！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　水蝶乱舞！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　拟态攻击！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　水蝶乱舞！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "雀蛾")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　全力攻击！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　加油啊！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　全力攻击！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　加油啊！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "皇蛾")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%  快点使用主宰技能啊？」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！　拿出与名字相符的实力吧！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%  快点使用主宰技能啊？」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！　拿出与名字相符的实力吧！」
 			ENDSELECT
 		;草蜢
 		ELSEIF GROUPMATCH(MUSHI_NAME, "剑角蝗","殿様飛蝗","負飛蝗","蝗蟲")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　强力一击！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！  九天雷霆双脚蹬！！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　强力一击！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！  九天雷霆双脚蹬！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "螽蟖","轡虫","油葫蘆","鈴蟲","松虫","馬追")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　　快用强力一击！」
-			CASE 1
-				RESULTS = 「 使用九天雷霆双脚蹬吧！！ %MUSHI_NAME%！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　　快用强力一击！」
+				CASE 1
+					RESULTS = 「 使用九天雷霆双脚蹬吧！！ %MUSHI_NAME%！」
 			ENDSELECT
 		;怪物旱地沙螽
 		ELSEIF GROUPMATCH(MUSHI_NAME, "怪物旱地沙螽")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　猛烈一击！」
-			CASE 1
-				RESULTS = 「使用九天雷霆双脚蹬、%MUSHI_NAME%！」
-			CASE 2
-				RESULTS = 「使用你最厉害的招数吧、%MUSHI_NAME%！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　猛烈一击！」
+				CASE 1
+					RESULTS = 「使用九天雷霆双脚蹬、%MUSHI_NAME%！」
+				CASE 2
+					RESULTS = 「使用你最厉害的招数吧、%MUSHI_NAME%！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "棕静螳","大刀螳")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%の可是最强的昆虫呢！」
-			CASE 1
-				RESULTS = 「螳螂拳法！！！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%拥有着极强的力量哦！！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%の可是最强的昆虫呢！」
+				CASE 1
+					RESULTS = 「螳螂拳法！！！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%拥有着极强的力量哦！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "花螳螂","枯叶螳螂")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%の可是最强的昆虫呢！」
-			CASE 1
-				RESULTS = 「螳螂拳法！！！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%拥有着极强的力量哦！！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%の可是最强的昆虫呢！」
+				CASE 1
+					RESULTS = 「螳螂拳法！！！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%拥有着极强的力量哦！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "蜜蜂","西洋大丸花蜂","熊蜂","脚長蜂")
 			SELECTCASE RAND:4
-			CASE 0
-				RESULTS = 「它的毒刺攻击，你的虫子能承受的住么！」
-			CASE 1
-				RESULTS = 「野蜂飞舞！！！」
-			CASE 2
-				RESULTS = 「超必殺忍蜂ー！」
-			CASE 3
-				RESULTS = 「突刺攻击！！！」
+				CASE 0
+					RESULTS = 「它的毒刺攻击，你的虫子能承受的住么！」
+				CASE 1
+					RESULTS = 「野蜂飞舞！！！」
+				CASE 2
+					RESULTS = 「超必殺忍蜂ー！」
+				CASE 3
+					RESULTS = 「突刺攻击！！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "似我蜂")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「对准要害发动攻击吧！」
-			CASE 1
-				RESULTS = 「狩猎一击、%MUSHI_NAME%！」
-			CASE 2
-				RESULTS = 「发动猛毒一击！」
+				CASE 0
+					RESULTS = 「对准要害发动攻击吧！」
+				CASE 1
+					RESULTS = 「狩猎一击、%MUSHI_NAME%！」
+				CASE 2
+					RESULTS = 「发动猛毒一击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "黑尾胡蜂")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「对准要害发动攻击吧！」
-			CASE 1
-				RESULTS = 「狩猎一击、%MUSHI_NAME%！」
-			CASE 2
-				RESULTS = 「发动致命一击！」
+				CASE 0
+					RESULTS = 「对准要害发动攻击吧！」
+				CASE 1
+					RESULTS = 「狩猎一击、%MUSHI_NAME%！」
+				CASE 2
+					RESULTS = 「发动致命一击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "大雀蜂")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%  使用麻痹攻击！」
-			CASE 1
-				RESULTS = 「狩猎时间到了、%MUSHI_NAME%！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%  猛毒指针！！」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%  使用麻痹攻击！」
+				CASE 1
+					RESULTS = 「狩猎时间到了、%MUSHI_NAME%！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%  猛毒指针！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "油蟬","蛁蟟","熊蟬","寒蟬","日暮")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%！　声波冲刺！」
-			CASE 1
-				RESULTS = 「发出最大音量吧！」
-			CASE 2
-				RESULTS = 「唔唔……耳朵……」
+				CASE 0
+					RESULTS = 「%MUSHI_NAME%！　声波冲刺！」
+				CASE 1
+					RESULTS = 「发出最大音量吧！」
+				CASE 2
+					RESULTS = 「唔唔……耳朵……」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "銀蜻蜓","瑠璃星蜻蜒","塩辛蜻蛉","羽黒蜻蛉","秋茜")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「拿出作为食肉昆虫的荣耀吧！」
-			CASE 1
-				RESULTS = 「普通的虫子根本逃不过它们的尖嘴！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%！环绕攻击！」
+				CASE 0
+					RESULTS = 「拿出作为食肉昆虫的荣耀吧！」
+				CASE 1
+					RESULTS = 「普通的虫子根本逃不过它们的尖嘴！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%！环绕攻击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "糸蜻蛉")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「拿出作为食肉昆虫的荣耀吧！」
-			CASE 1
-				RESULTS = 「回避攻击！！！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%！环绕攻击！」
+				CASE 0
+					RESULTS = 「拿出作为食肉昆虫的荣耀吧！」
+				CASE 1
+					RESULTS = 「回避攻击！！！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%！环绕攻击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "鬼蜻蜓")
 			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「作为食肉昆虫，你的荣耀在何处呢？」
-			CASE 1
-				RESULTS = 「回避攻击！！！」
-			CASE 2
-				RESULTS = 「%MUSHI_NAME%！环绕攻击！」
+				CASE 0
+					RESULTS = 「作为食肉昆虫，你的荣耀在何处呢？」
+				CASE 1
+					RESULTS = 「回避攻击！！！」
+				CASE 2
+					RESULTS = 「%MUSHI_NAME%！环绕攻击！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "水黽")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「水陆两栖的王者！」
-			CASE 1
-				RESULTS = 「不要被这个孩子吓着了哦！」
+				CASE 0
+					RESULTS = 「水陆两栖的王者！」
+				CASE 1
+					RESULTS = 「不要被这个孩子吓着了哦！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "竜蝨")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「这个家伙可是很厉害的哦！」
-			CASE 1
-				RESULTS = 「真正做到攻防一体的存在！」
+				CASE 0
+					RESULTS = 「这个家伙可是很厉害的哦！」
+				CASE 1
+					RESULTS = 「真正做到攻防一体的存在！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "田鼈")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「这家伙要是在水里的话会更猛的哦！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%！看招吧！！」
+				CASE 0
+					RESULTS = 「这家伙要是在水里的话会更猛的哦！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%！看招吧！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "螳蝎蝽")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「这家伙可是不好惹的呢！！」
-			CASE 1
-				RESULTS = 「%MUSHI_NAME%是不会退缩的！！」
+				CASE 0
+					RESULTS = 「这家伙可是不好惹的呢！！」
+				CASE 1
+					RESULTS = 「%MUSHI_NAME%是不会退缩的！！」
 			ENDSELECT
 		ELSEIF GROUPMATCH(MUSHI_NAME, "異色瓢蟲","七星瓢蟲")
 			SELECTCASE RAND:2
-			CASE 0
-				RESULTS = 「真正的肉食霸王，登场！」
-			CASE 1
-				RESULTS = 「必秒好吧  必秒怎么说！」
+				CASE 0
+					RESULTS = 「真正的肉食霸王，登场！」
+				CASE 1
+					RESULTS = 「必秒好吧  必秒怎么说！」
 			ENDSELECT
 		ELSE
 			SELECTCASE RAND:20
-			CASE 0
-				RESULTS = 「决一胜负吧！」
-			CASE 1
-				RESULTS = 「全速前进！」
-			CASE 2
-				RESULTS = 「游戏就要结束了！」
-			CASE 3
-				RESULTS = 「胜利属于我和我的虫子！」
-			CASE 4
-				RESULTS = 「攻击！」
-			CASE 5
-				RESULTS = 「%MUSHI_NAME% 使出全力吧！！」
-			CASE 6
-				RESULTS = 「这是，最后一招！」
-			CASE 7
-				RESULTS = 「绝死！」
-			CASE 8
-				RESULTS = 「全力猛冲！？」
-			CASE 9
-				RESULTS = 「这不可能ー！」
-			CASE 10
-				RESULTS = 「加速加速加速ー！」
-			CASE 11
-				RESULTS = 「不要让我失望！！」
-			CASE 12
-				RESULTS = 「使出全力吧！」
-			CASE 13
-				RESULTS = 「快！进攻！！」
-			CASE 14
-				RESULTS = 「%MUSHI_NAME%  加油！」
-			CASE 15
-				RESULTS = 「全军突击！！！！」
-			CASE 16
-				RESULTS = 「哼！！  定叫他有来无回！！」
-			CASE 17
-				RESULTS = 「冲啊、干翻对面！」
-			CASE 18
-				RESULTS = 「呼呼呼ー！」
-			CASE 19
-				RESULTS = 「%MUSHI_NAME%ー！！用必杀技！！」
+				CASE 0
+					RESULTS = 「决一胜负吧！」
+				CASE 1
+					RESULTS = 「全速前进！」
+				CASE 2
+					RESULTS = 「游戏就要结束了！」
+				CASE 3
+					RESULTS = 「胜利属于我和我的虫子！」
+				CASE 4
+					RESULTS = 「攻击！」
+				CASE 5
+					RESULTS = 「%MUSHI_NAME% 使出全力吧！！」
+				CASE 6
+					RESULTS = 「这是，最后一招！」
+				CASE 7
+					RESULTS = 「绝死！」
+				CASE 8
+					RESULTS = 「全力猛冲！？」
+				CASE 9
+					RESULTS = 「这不可能ー！」
+				CASE 10
+					RESULTS = 「加速加速加速ー！」
+				CASE 11
+					RESULTS = 「不要让我失望！！」
+				CASE 12
+					RESULTS = 「使出全力吧！」
+				CASE 13
+					RESULTS = 「快！进攻！！」
+				CASE 14
+					RESULTS = 「%MUSHI_NAME%  加油！」
+				CASE 15
+					RESULTS = 「全军突击！！！！」
+				CASE 16
+					RESULTS = 「哼！！  定叫他有来无回！！」
+				CASE 17
+					RESULTS = 「冲啊、干翻对面！」
+				CASE 18
+					RESULTS = 「呼呼呼ー！」
+				CASE 19
+					RESULTS = 「%MUSHI_NAME%ー！！用必杀技！！」
 			ENDSELECT
 		ENDIF
 ;RESULTS = 「ぶっとばせ！%MUSHI_NAME%！」
@@ -5331,44 +5337,43 @@ CASE "倒れた時"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE 残りムシ数
-		CASE 2
-			SELECTCASE RAND:4
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%～～！」
-			CASE 1
-				RESULTS = 「不ーーー！！　%MUSHI_NAME%が～～～～！！」
 			CASE 2
-				RESULTS = 「怎么ー！？」
-			CASE 3
-				RESULTS = 「这不可能！！！」
-			CASE 4
-				RESULTS = 「我！   输了？」
-			ENDSELECT
-		CASE 1
-			SELECTCASE RAND:4
-			CASE 0
-				RESULTS = 「%MUSHI_NAME%～～！」
+				SELECTCASE RAND:4
+					CASE 0
+						RESULTS = 「%MUSHI_NAME%～～！」
+					CASE 1
+						RESULTS = 「不ーーー！！　%MUSHI_NAME%が～～～～！！」
+					CASE 2
+						RESULTS = 「怎么ー！？」
+					CASE 3
+						RESULTS = 「这不可能！！！」
+					CASE 4
+						RESULTS = 「我！   输了？」
+				ENDSELECT
 			CASE 1
-				RESULTS = 「这！　这不是我的终点！」
-			CASE 2
-				RESULTS = 「怎么！？」
-			CASE 3
-				RESULTS = 「这！？　这就是失败的滋味么！」
-			CASE 4
-				RESULTS = 「这不可能…这不可能ー！！！」
-			ENDSELECT
-		CASE 0
-			SELECTCASE RAND:3
+				SELECTCASE RAND:4
+					CASE 0
+						RESULTS = 「%MUSHI_NAME%～～！」
+					CASE 1
+						RESULTS = 「这！　这不是我的终点！」
+					CASE 2
+						RESULTS = 「怎么！？」
+					CASE 3
+						RESULTS = 「这！？　这就是失败的滋味么！」
+					CASE 4
+						RESULTS = 「这不可能…这不可能ー！！！」
+				ENDSELECT
 			CASE 0
-				RESULTS = 「%MUSHI_NAME%～～！」
-			CASE 1
-				RESULTS = 「这！　这不是我的终点！」
-			CASE 2
-				RESULTS = 「怎么！？」
-			CASE 3
-				RESULTS = 「这！？　这就是失败的滋味么！」
-			ENDSELECT
-
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 「%MUSHI_NAME%～～！」
+					CASE 1
+						RESULTS = 「这！　这不是我的终点！」
+					CASE 2
+						RESULTS = 「怎么！？」
+					CASE 3
+						RESULTS = 「这！？　这就是失败的滋味么！」
+				ENDSELECT
 		ENDSELECT
 ;		RESULTS = 「ああっ！私の%MUSHI_NAME%がっ！」
 	ENDIF
@@ -5382,12 +5387,12 @@ CASE "敗退時"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:3
-		CASE 0
-			RESULTS = 「不ーーー～～～～～」
-		CASE 1
-			RESULTS = 「这不可能ーーー！！　不可能～～～～！！          好吧，我输了呢」
-		CASE 2
-			RESULTS = 「这！？　这就是失败的滋味么！」
+			CASE 0
+				RESULTS = 「不ーーー～～～～～」
+			CASE 1
+				RESULTS = 「这不可能ーーー！！　不可能～～～～！！          好吧，我输了呢」
+			CASE 2
+				RESULTS = 「这！？　这就是失败的滋味么！」
 		ENDSELECT
 ;		RESULTS = 「私のムシが全滅めつめつ……」
 	ENDIF
@@ -5401,24 +5406,24 @@ CASE "タイマン：勝ち"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:9
-		CASE 0
-			RESULTS = 「今日胜者！伊吹萃香是也！！」
-		CASE 1
-			RESULTS = 「啊哈哈♪大获全胜！！」
-		CASE 2
-			RESULTS = 「你回去再练一练吧♪」
-		CASE 3
-			RESULTS = 「耶耶～♪」
-		CASE 4
-			RESULTS = 「大获全胜之日一～♪」
-		CASE 5
-			RESULTS = 「%CALLNAME:MASTER%再回去练一练吧」
-		CASE 6
-			RESULTS = 「啊哈哈～！」
-		CASE 7
-			RESULTS = 「现在，谁是胜者！」
-		CASE 8
-			RESULTS = 「呼呼　还是没有满足呢……！」
+			CASE 0
+				RESULTS = 「今日胜者！伊吹萃香是也！！」
+			CASE 1
+				RESULTS = 「啊哈哈♪大获全胜！！」
+			CASE 2
+				RESULTS = 「你回去再练一练吧♪」
+			CASE 3
+				RESULTS = 「耶耶～♪」
+			CASE 4
+				RESULTS = 「大获全胜之日一～♪」
+			CASE 5
+				RESULTS = 「%CALLNAME:MASTER%再回去练一练吧」
+			CASE 6
+				RESULTS = 「啊哈哈～！」
+			CASE 7
+				RESULTS = 「现在，谁是胜者！」
+			CASE 8
+				RESULTS = 「呼呼　还是没有满足呢……！」
 		ENDSELECT
 	ENDIF
 CASE "タイマン：負け"
@@ -5432,35 +5437,35 @@ CASE "タイマン：負け"
 	IF LOCAL:1
 		IF TALENT:恋慕
 			SELECTCASE RAND:7
-			CASE 0
-				RESULTS = 「今天的友谊战也很開心呢！」
-			CASE 1
-				RESULTS = 「等一会要一起去喝酒么？」
-			CASE 2
-				RESULTS = 「下次就不会输给你咯！」
-			CASE 3
-				RESULTS = 「不愧是你呢！」
-			CASE 4
-				RESULTS = 「下一次在一起玩吧」
-			CASE 5
-				RESULTS = 「这种东西真是太有趣了呢」
-			CASE 6
-				RESULTS = 「嘿嘿……下次一定要赢你！」
+				CASE 0
+					RESULTS = 「今天的友谊战也很開心呢！」
+				CASE 1
+					RESULTS = 「等一会要一起去喝酒么？」
+				CASE 2
+					RESULTS = 「下次就不会输给你咯！」
+				CASE 3
+					RESULTS = 「不愧是你呢！」
+				CASE 4
+					RESULTS = 「下一次在一起玩吧」
+				CASE 5
+					RESULTS = 「这种东西真是太有趣了呢」
+				CASE 6
+					RESULTS = 「嘿嘿……下次一定要赢你！」
 			ENDSELECT
 		ELSE
 			SELECTCASE RAND:6
-			CASE 0
-				RESULTS = 「虽然输了！但是玩得很開心」
-			CASE 1
-				RESULTS = 「呼呼，真開心呢」
-			CASE 2
-				RESULTS = 「你知道哪里有更好的虫子么…」
-			CASE 3
-				RESULTS = 「一定要再来一次！」
-			CASE 4
-				RESULTS = 「这次输给你只是暂时的…」
-			CASE 5
-				RESULTS = 「只是这一次哦！」
+				CASE 0
+					RESULTS = 「虽然输了！但是玩得很開心」
+				CASE 1
+					RESULTS = 「呼呼，真開心呢」
+				CASE 2
+					RESULTS = 「你知道哪里有更好的虫子么…」
+				CASE 3
+					RESULTS = 「一定要再来一次！」
+				CASE 4
+					RESULTS = 「这次输给你只是暂时的…」
+				CASE 5
+					RESULTS = 「只是这一次哦！」
 			ENDSELECT
 		ENDIF
 ;		RESULTS = 「%CALLNAME:MASTER%つよーい！」
@@ -5475,26 +5480,26 @@ CASE "バトルロイヤル：優勝"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:10
-		CASE 0
-			RESULTS = 「优胜者！」
-		CASE 1
-			RESULTS = 「我赢了，哈哈！」
-		CASE 2
-			RESULTS = 「真的赢了呢！」
-		CASE 3
-			RESULTS = 「我玩的很開心哦！」
-		CASE 4
-			RESULTS = 「嘿嘿！一定要比过灵梦！1」
-		CASE 5
-			RESULTS = 「真的好開心呢！」
-		CASE 6
-			RESULTS = 「斗虫，真快乐啊！」
-		CASE 7
-			RESULTS = 「呼呼，我赢了呢！」
-		CASE 8
-			RESULTS = 「哈哈！胜利属于我和我的虫子！」
-		CASE 9
-			RESULTS = 「胜利！！！」
+			CASE 0
+				RESULTS = 「优胜者！」
+			CASE 1
+				RESULTS = 「我赢了，哈哈！」
+			CASE 2
+				RESULTS = 「真的赢了呢！」
+			CASE 3
+				RESULTS = 「我玩的很開心哦！」
+			CASE 4
+				RESULTS = 「嘿嘿！一定要比过灵梦！1」
+			CASE 5
+				RESULTS = 「真的好開心呢！」
+			CASE 6
+				RESULTS = 「斗虫，真快乐啊！」
+			CASE 7
+				RESULTS = 「呼呼，我赢了呢！」
+			CASE 8
+				RESULTS = 「哈哈！胜利属于我和我的虫子！」
+			CASE 9
+				RESULTS = 「胜利！！！」
 		ENDSELECT
 ;		RESULTS = 「やったー！」
 	ENDIF
@@ -5508,33 +5513,33 @@ CASE "バトルロイヤル：２位以下"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE 順位
-		CASE 2
-			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「呜呜……」
-			CASE 1
-				RESULTS = 「看来今天状态不佳呢～」
 			CASE 2
-				RESULTS = 「嘿嘿………」
-			ENDSELECT
-		CASE 3
-			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「残念ー」
-			CASE 1
-				RESULTS = 「唔！」
-			CASE 2
-				RESULTS = 「要加强训练啦！」
-			ENDSELECT
-		CASE 4
-			SELECTCASE RAND:3
-			CASE 0
-				RESULTS = 「呜呜~~」
-			CASE 1
-				RESULTS = 「好讨厌啊」
-			CASE 2
-				RESULTS = 「真是的…」
-			ENDSELECT
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 「呜呜……」
+					CASE 1
+						RESULTS = 「看来今天状态不佳呢～」
+					CASE 2
+						RESULTS = 「嘿嘿………」
+				ENDSELECT
+			CASE 3
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 「残念ー」
+					CASE 1
+						RESULTS = 「唔！」
+					CASE 2
+						RESULTS = 「要加强训练啦！」
+				ENDSELECT
+			CASE 4
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 「呜呜~~」
+					CASE 1
+						RESULTS = 「好讨厌啊」
+					CASE 2
+						RESULTS = 「真是的…」
+				ENDSELECT
 		ENDSELECT
 ;		RESULTS = 「くやし～！」
 	ENDIF
@@ -5548,12 +5553,12 @@ CASE "チーム戦：勝ち"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:3
-		CASE 0
-			RESULTS = 「我会夺得斗虫大赛的冠军的！」
-		CASE 1
-			RESULTS = 「呼呼？感觉如何？」
-		CASE 2
-			RESULTS = 「我是最强的！我的虫子也是最强的」
+			CASE 0
+				RESULTS = 「我会夺得斗虫大赛的冠军的！」
+			CASE 1
+				RESULTS = 「呼呼？感觉如何？」
+			CASE 2
+				RESULTS = 「我是最强的！我的虫子也是最强的」
 		ENDSELECT
 ;		RESULTS = 「私のおかげね！」
 	ENDIF
@@ -5567,12 +5572,12 @@ CASE "チーム戦：負け"
 	;-------------------------------------------------
 	IF LOCAL:1
 		SELECTCASE RAND:3
-		CASE 0
-			RESULTS = 「所有人一起上，还是输了呢」
-		CASE 1
-			RESULTS = 「真讨厌」
-		CASE 2
-			RESULTS = 「我一定会回来的！！」
+			CASE 0
+				RESULTS = 「所有人一起上，还是输了呢」
+			CASE 1
+				RESULTS = 「真讨厌」
+			CASE 2
+				RESULTS = 「我一定会回来的！！」
 		ENDSELECT
 ;		RESULTS = 「味方が弱い！！」
 	ENDIF
