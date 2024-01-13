@@ -306,97 +306,77 @@ VARSET 前回の胖次
 #DIM DYNAMIC 口上カウント
 #DIM DYNAMIC 口上数
 #DIM DYNAMIC 口上実装数
+#DIMS DYNAMIC kojoNamesList, 10
+#DIM DYNAMIC kojoIdList, 10
+#DIM DYNAMIC vernier
 #DIM DYNAMIC SUM_FOR_DEBUG
-;同角色口上複数確認
+;同角色口上複数確認 and record the name of kojo
 FOR 口上カウント,0,5
+	RESULT = 0
 	IF 口上カウント
-		RESULT = 0
 		TRYCALLFORM M_KOJO_K{C_ID}_{口上カウント}
-		IF RESULT
-			IF !GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-				口上数 += 1
-				口上実装数 += 1
-				SETBIT CFLAG:C_ID:口上実装状況,口上カウント
-			ELSEIF GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-				口上実装数 += 1
-			ENDIF
-		ENDIF
 	ELSE
-		RESULT = 0
 		TRYCALLFORM M_KOJO_K{C_ID}
-		IF RESULT
-			IF !GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-				口上数 += 1
-				口上実装数 += 1
-				SETBIT CFLAG:C_ID:口上実装状況,口上カウント
-			ELSEIF GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-				口上実装数 += 1
-			ENDIF
-		;ELSE
-		;	CFLAG:C_ID:口上実装状況 = 0
+	ENDIF
+	IF RESULT
+		SIF RESULTS:1 == ""
+			RESULTS:1 = 初期
+		kojoNamesList:vernier = %CALLNAME:C_ID%%RESULTS:1%口上
+		kojoIdList:vernier = 口上カウント
+		vernier ++
+		IF !GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
+			口上数 += 1
+			口上実装数 += 1
+			SETBIT CFLAG:C_ID:口上実装状況,口上カウント
+		ELSEIF GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
+			口上実装数 += 1
 		ENDIF
 	ENDIF
-	SIF GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-		SUM_FOR_DEBUG ++
+	;检测口上存在情况是否冲突
+	IF GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
+		IF 口上カウント
+			TRYCALLFORM M_KOJO_K{C_ID}_{口上カウント}
+		ELSE
+			TRYCALLFORM M_KOJO_K{C_ID}
+		ENDIF
+		SIF RESULT
+			SUM_FOR_DEBUG ++
+	ENDIF
 	SIF 口上カウント == 4 && !SUM_FOR_DEBUG
 		CFLAG:C_ID:口上実装状況 = 0
-;	SIF !RESULT
-;		BREAK
 NEXT
 ;口上存在判定
-IF 口上数
+IF !口上数
+	SIF 口上実装数
+		RETURN 1
+	RETURN 0
+ENDIF
 	;新規別人口上追加
-	IF 口上実装数 == 1
+IF 口上実装数 == 1
+;只存在一个口上时，寻找口上编号
 	FOR 口上カウント,0,5
 		SIF	GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
 			CFLAG:C_ID:口上セレクタ = 口上カウント
 	NEXT
-	ENDIF
-	IF 口上実装数 > 1
-		RESULTS:1 = 
-		LOCALS:0 = 
-		LOCALS:1 = 
-		LOCALS:2 =  
-		LOCALS:3 =
-		LOCALS:4 =
-		LOCALS:5 =
-		;口上名の保存及び実装状況の上書き
-		FOR 口上カウント,0,5
-			RESULT = 0
-			IF 口上カウント
-				RESULT = 0
-				TRYCALLFORM M_KOJO_K{C_ID}_{口上カウント}
-			ELSE
-				TRYCALLFORM M_KOJO_K{C_ID}
-			ENDIF
-;			SIF !RESULT
-;				BREAK
-			SIF 口上カウント == 0 && RESULTS:1 == ""
-				RESULTS:1 = 初期
-			IF RESULT
-				LOCALS:(口上カウント + 1) = %CALLNAME:C_ID%%RESULTS:1%口上
-				RESULT = 0
-			ENDIF
-		NEXT
-		PRINTFORML %CALLNAME:C_ID%存在複数个口上
-		PRINTFORML 要変更吗
-		CALL ASK_YN
-		;口上選択
-		IF !RESULT
-			LOCALS:0 = 要使用哪个口上呢
-			CALL CHOICE(LOCALS:0, LOCALS:1, LOCALS:2, LOCALS:3, LOCALS:4, LOCALS:5)
-			CFLAG:C_ID:口上セレクタ = RESULT
-			RETURN 2
-		ELSE
-			PRINTFORML 未进行変更
-			RETURN 1
-		ENDIF
-	ELSE
+ELSEIF 口上実装数 > 1
+	PRINTFORML %CALLNAME:C_ID%存在複数个口上
+	PRINTFORML 要変更吗
+	CALL ASK_YN
+	;口上選択
+	IF !RESULT
+		LOCALS:0 = 要使用哪个口上呢
+		CALL CHOICE(LOCALS:0, kojoNamesList:0, kojoNamesList:1, kojoNamesList:2, kojoNamesList:3, kojoNamesList:4)
+		CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
 		RETURN 2
+	ELSE
+		PRINTFORML 未进行変更
+		RETURN 1
 	ENDIF
+ELSE
+	RETURN 2
 ENDIF
-SIF 口上実装数
-	RETURN 1
+; SIF 口上実装数
+; 	RETURN 1
 RETURN 0
 
 ;-----------------------------------------------------------

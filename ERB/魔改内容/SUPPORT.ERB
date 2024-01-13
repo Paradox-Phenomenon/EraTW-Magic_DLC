@@ -21,3 +21,228 @@
 	; ;eratohoYM AE M 4284 → eratohoYM AE M 4285の存档変換処理
 	; SIF LASTLOAD_VERSION < 4285
 	; 	CALL SAVE_SUPPORT_VERSION_4285
+	CALL UPDATE
+@UPDATE_OF_KOJO_ORIGIN
+
+;口上の存在判定 and RESULTSに文字列代入
+FOR LOCAL, 1, CHARANUM
+	VARSET RESULTS
+	IF CFLAG:LOCAL:口上セレクタ
+		TRYCALLFORM M_KOJO_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}
+	ELSE
+		TRYCALLFORM M_KOJO_K{LOCAL}
+	ENDIF
+	PRINTFORML 正在確認%CALLNAME:LOCAL%%RESULTS%的口上是否存在UPDATE
+	TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{LOCAL}
+	PRINTL 
+NEXT
+WAIT
+
+@UPDATE_OF_KOJO_MODDING
+#DIM DYNAMIC MAXPAGE_MODE_0
+#DIM DYNAMIC MAXPAGE_MODE_1
+#DIM DYNAMIC MAXPAGE
+#DIM DYNAMIC PAGE
+#DIM DYNAMIC MARK_KOJO_AVAILABLE, 人物数量上限
+#DIM DYNAMIC NUM_OF_CHARA_WITH_KOJO
+#DIM DYNAMIC LIST_OF_CHARA_WITH_KOJO, 人物数量上限
+#DIM DYNAMIC LIST_OF_CHARA_ALTERED_BY_TOUHOU, 人物数量上限
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC LINE_RECORD
+#DIM DYNAMIC CHOOSE_COMMAND
+#DIMS DYNAMIC HTML
+#DIMS DYNAMIC COLOR
+#DIM DYNAMIC REDRAW_RECORD
+#DIM UPDATE_OF_KOJO_OPERATE_MODE = 1
+CURRENTREDRAW
+REDRAW_RECORD = RESULT
+REDRAW 0
+;确认角色口上存在情况
+VARSET RESULT
+FOR LOCAL, 1, CHARANUM
+	IF CFLAG:LOCAL:口上セレクタ
+		TRYCCALLFORM M_KOJO_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}
+		CATCH
+			VARSET RESULT
+		ENDCATCH
+	ELSE
+		TRYCCALLFORM M_KOJO_K{LOCAL}
+		CATCH
+			VARSET RESULT
+		ENDCATCH
+	ENDIF
+	;有口上角色标记
+	IF RESULT
+		MARK_KOJO_AVAILABLE:LOCAL = RESULT
+		NUM_OF_CHARA_WITH_KOJO ++ 
+	ENDIF
+NEXT
+;不过滤无口上角色时的最多页数
+MAXPAGE_MODE_0 = (CHARANUM - 1) / 20 + 1
+;过滤无口上角色时的最多页数
+MAXPAGE_MODE_1 = (NUM_OF_CHARA_WITH_KOJO - 1) / 20 + 1
+;制作以原作顺序排列的人物列表
+VARSET RESULT
+IF FLAG:並び替え
+	CALL CHARASORT_EX
+	LOCAL:1 = 1
+	FOR LOCAL, 1, EX_CHARANUM
+		SIF RESULT:LOCAL < 0 
+			CONTINUE
+		LIST_OF_CHARA_ALTERED_BY_TOUHOU:(LOCAL:1) = RESULT:LOCAL
+		LOCAL:1 ++
+	NEXT
+ENDIF
+;制作过滤无口上角色时的角色列表
+LOCAL:2 = 1
+FOR LOCAL, 1, CHARANUM
+	SIF !MARK_KOJO_AVAILABLE:LOCAL
+		CONTINUE
+	IF FLAG:並び替え
+		LIST_OF_CHARA_WITH_KOJO:(FINDELEMENT(LIST_OF_CHARA_ALTERED_BY_TOUHOU, LOCAL, 1, CHARANUM)) = LOCAL
+	ELSE
+		LIST_OF_CHARA_WITH_KOJO:(LOCAL:2) = LOCAL
+	ENDIF
+	LOCAL:2 ++
+NEXT
+WAIT
+
+IF FLAG:並び替え
+	FOR LOCAL, 1, NUM_OF_CHARA_WITH_KOJO + 1
+		IF !LIST_OF_CHARA_WITH_KOJO:LOCAL
+			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJO, -1, 0, LOCAL
+			LOCAL --
+		ENDIF
+	NEXT
+ENDIF
+
+
+
+LINE_RECORD = LINECOUNT
+
+WHILE 1
+	DRAWLINE
+	DRAWLINE
+	HTML_PRINT @"<i><b><u>　　　　角色口上ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
+	HTML_PRINT @"<i>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</i>"
+	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有口上角色'>　　过滤无口上角色功能开启　　</nonbutton></i>"
+	ELSE
+		HTML_PRINT @"<i><nonbutton title = '已显示全部角色，包括无口上角色'>　　过滤无口上角色功能关闭　　</nonbutton></i>"
+	ENDIF
+	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+		MAXPAGE = MAXPAGE_MODE_1
+	ELSE
+		MAXPAGE = MAXPAGE_MODE_0
+	ENDIF
+	IF PAGE >= MAXPAGE
+		PAGE = MAXPAGE - 1
+	ELSEIF PAGE < 0 
+		PAGE = 0
+	ENDIF
+	FOR LOCAL, PAGE * 20 + 1, (PAGE + 1) * 20 + 1
+		VARSET HTML
+		VARSET RESULT
+		VARSET RESULTS
+		IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+			SIF LOCAL > NUM_OF_CHARA_WITH_KOJO
+				BREAK
+			SIF LIST_OF_CHARA_WITH_KOJO:LOCAL
+				C_ID = LIST_OF_CHARA_WITH_KOJO:LOCAL
+		ELSE 
+			SIF LOCAL > CHARANUM - 1
+				BREAK
+			IF FLAG:並び替え
+				C_ID = LIST_OF_CHARA_ALTERED_BY_TOUHOU:LOCAL
+			ELSE
+				C_ID = LOCAL
+			ENDIF
+		ENDIF
+		IF CFLAG:C_ID:口上セレクタ
+				TRYCALLFORM M_KOJO_K{C_ID}_{CFLAG:C_ID:口上セレクタ}
+			ELSE
+				TRYCALLFORM M_KOJO_K{C_ID}
+		ENDIF
+		SIF !STRLENS(RESULTS:1)
+			RESULTS:1 = 初期
+		RESETCOLOR
+		VARSET COLOR
+		TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
+		COLOR '= "0x" + hex_to_str(GETCOLOR())
+		HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{LOCAL, 4, LEFT}"
+		HTML += @"]  -  %CALLNAME:C_ID, 8, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
+		IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > 0 
+			HTML += @"<br>     %"", 80, LEFT%----------------%CALLNAME:C_ID%%RESULTS:1%口上</font></button><br>"
+		ELSE
+			HTML += @"<br>     %"", 80, LEFT%----------------无口上</font></button><br>"
+		ENDIF
+		HTML_PRINT HTML
+		RESETCOLOR
+	NEXT
+	IF PAGE == 0
+		{
+		HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜　］　　</nonbutton>
+		<nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
+		<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
+		<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+		}
+	ELSEIF PAGE == MAXPAGE - 1
+		{
+		HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
+		<button value = '1001' title = '上一页'>　　［　＜　］　　</button>	
+		<nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
+		<nonbutton title = '跳转至尾页'>　　［　＞＞　］　　</nonbutton>"
+		}
+	ELSEIF INRANGE(PAGE, 0, MAXPAGE - 1)
+		{
+		HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
+		<button value = '1001' title = '上一页'>　　［　＜　］　　</button>
+		<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
+		<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+		}
+	ENDIF
+	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+		HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有口上角色'>　　［过滤功能：开启］　　</button>"
+	ELSE
+		HTML_PRINT @"<button value = '1004' title = '已显示全部角色，包括无口上角色'>　　［过滤功能：关闭］　　</button>"
+	ENDIF
+	HTML_PRINT @"<button value = '1005' title = '经典模式，一次性全过一遍'>　　［ＵＰＤＡＴＥ全体进行］　　</button>"
+	HTML_PRINT @"<button value = '1100'>　　［不进行口上ＵＰＤＡＴＥ］　　</button>"
+	DRAWLINE
+	DRAWLINE
+	VARSET RESULT
+	INPUT
+	CHOOSE_COMMAND = RESULT
+	SELECTCASE CHOOSE_COMMAND
+		CASE 1000
+			PAGE = 0
+		CASE 1001
+			PAGE -= 1
+		CASE 1002
+			PAGE += 1
+		CASE 1003
+			PAGE = MAXPAGE - 1
+		CASE 1004
+			UPDATE_OF_KOJO_OPERATE_MODE = !UPDATE_OF_KOJO_OPERATE_MODE
+		CASE 1 TO 500
+			VARSET RESULTS
+			IF CFLAG:CHOOSE_COMMAND:口上セレクタ
+				TRYCALLFORM M_KOJO_K{CHOOSE_COMMAND}_{CFLAG:CHOOSE_COMMAND:口上セレクタ}
+			ELSE
+				TRYCALLFORM M_KOJO_K{CHOOSE_COMMAND}
+			ENDIF
+			PRINTFORML 正在確認%CALLNAME:CHOOSE_COMMAND%%RESULTS%的口上是否存在UPDATE
+			TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{CHOOSE_COMMAND}
+			WAIT
+			PRINTL
+		CASE 1005
+			CALL UPDATE_OF_KOJO_ORIGIN
+		CASE 1100
+			CLEARLINE LINECOUNT - LINE_RECORD
+			BREAK
+	ENDSELECT
+	CLEARLINE LINECOUNT - LINE_RECORD
+	CONTINUE
+WEND
+
+REDRAW REDRAW_RECORD

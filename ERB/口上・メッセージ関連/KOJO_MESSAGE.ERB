@@ -162,8 +162,8 @@ SELECTCASE ARGS
 		ENDIF
 		;口球時
 		IF TEQUIP:(ARG:2):20 && SELECTCOM != 107
-			SIF CFLAG:(ARG:2):口球口上有
-				GOTO 口球口上有_1
+			; SIF CFLAG:(ARG:2):口球口上有
+			; 	GOTO 口球口上有_1
 			SIF FLAG:6 > 0
 				CALL TRAIN_MESSAGE
 			CALL DISPLAY_COM_IMAGE(SELECTCOM)
@@ -172,7 +172,7 @@ SELECTCASE ARGS
 				CALL TRAIN_MESSAGE
 			CALL DISPLAY_COM_IMAGE(SELECTCOM)
 		ELSE
-			$口球口上有_1
+			; $口球口上有_1
 			RESULT = 0
 			RESULTS =
 			;口上の存在判定 and RESULTSに文字列代入
@@ -239,14 +239,14 @@ SELECTCASE ARGS
 		
 		;口球
 		IF TEQUIP:(ARG:2):20 && FLAG:6 > 0
-			SIF CFLAG:(ARG:2):口球口上有
-				GOTO 口球口上有_2
+			; SIF CFLAG:(ARG:2):口球口上有
+			; 	GOTO 口球口上有_2
 			CALL EVENT_COUNTER_MESSAGE
 			TARGET = LOCAL
 		ELSE
-			$口球口上有_2
-			RESULT = 0
+			; $口球口上有_2
 			RESULTS =	
+			RESULT = 0
 			;口上の存在判定 and RESULTSに文字列代入
 			IF CFLAG:TARGET:口上セレクタ
 				TRYCALLFORM M_KOJO_K{NO:TARGET}_{CFLAG:TARGET:口上セレクタ}
@@ -455,20 +455,20 @@ SELECTCASE ARGS
 		ENDIF
 		TRYCCALLFORM M_KOJO%RESULTS%_MESSAGE_MARKCNG_K{NO:TARGET}
 		CATCH
-			CALL MARK_MESSAGE
 		ENDCATCH
 		RESETCOLOR
 	;指令系直接呼び出し
 	CASE "DIRECT"
+			CALL MARK_MESSAGE
 		SELECTCASE ARG:1
 			CASE 351
 				;口球
 				IF TEQUIP:(ARG:2):20 && SELECTCOM != 107 && FLAG:情景文本設定 > 0
-					SIF CFLAG:(ARG:2):口球口上有
-						GOTO 口球口上有_3
+					; SIF CFLAG:(ARG:2):口球口上有
+					; 	GOTO 口球口上有_3
 					RETURN 1
 				ELSE
-					$口球口上有_3
+					; $口球口上有_3
 					RESULT = 0
 					RESULTS =
 					;口上の存在判定 and RESULTSに文字列代入
@@ -979,7 +979,7 @@ SELECTCASE ARGS
 	CASE "SHOP_BUTTON_CONDITION"
 		RESULTS =
 		;TARGET退让
-		OldTarget = TARGET
+		OriginTarget = TARGET
 		TARGET = ARG:2
 		IF CFLAG:口上セレクタ
 			TRYCALLFORM M_KOJO_K{NO:TARGET}_{CFLAG:口上セレクタ}
@@ -987,17 +987,17 @@ SELECTCASE ARGS
 			TRYCALLFORM M_KOJO_K{NO:TARGET}
 		ENDIF
 		TRYCCALLFORM KOJO%RESULTS%_CUSTOM_BUTTON_CONDITION_K{NO:TARGET}_{ARG:1}
-			TARGET = OldTarget
+			TARGET = OriginTarget
 			RETURN RESULT
 		CATCH
-			TARGET = OldTarget
+			TARGET = OriginTarget
 			RETURN 0
 		ENDCATCH
 	;自定义SHOP指令执行
 	CASE "SHOP_BUTTON"
 		RESULTS =
 		;TARGET退让
-		OldTarget = TARGET
+		OriginTarget = TARGET
 		TARGET = ARG:2
 		IF CFLAG:口上セレクタ
 			TRYCALLFORM M_KOJO_K{NO:TARGET}_{CFLAG:口上セレクタ}
@@ -1005,10 +1005,10 @@ SELECTCASE ARGS
 			TRYCALLFORM M_KOJO_K{NO:TARGET}
 		ENDIF
 		TRYCALLFORM KOJO%RESULTS%_CUSTOM_BUTTON_K{NO:TARGET}_{ARG:1}
-		TARGET = OldTarget
+		TARGET = OriginTarget
 	;口上更新
 	CASE "KOJO_VERSION"
-		OldTarget = TARGET
+		OriginTarget = TARGET
 		TARGET = ARG:2
 		IF CFLAG:口上セレクタ
 			TRYCALLFORM M_KOJO_K{NO:TARGET}_{CFLAG:口上セレクタ}
@@ -1027,7 +1027,7 @@ SELECTCASE ARGS
 		CATCH
 			CFLAG:kojo_version = 0
 		ENDCATCH
-		TARGET = OldTarget
+		TARGET = OriginTarget
 ;------------------------------------------------------------
 ;口上自定义COM
 ;------------------------------------------------------------
@@ -1409,10 +1409,11 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 ;使用口上自定义shop指令
 @useKojoShopButton, comId
 	#DIM comId
+	;PRINTFORML comid {comId} ShopButtonTarget{ShopButtonTarget}
 	CALL KOJO_MESSAGE_SEND("SHOP_BUTTON_CONDITION", comId, ShopButtonTarget)
 	SIF RESULT
 		CALL KOJO_MESSAGE_SEND("SHOP_BUTTON", comId, ShopButtonTarget)
-
+	WAIT
 ;切换自定义shop按钮的角色
 @choiceButtonTarget
 	#DIM line
