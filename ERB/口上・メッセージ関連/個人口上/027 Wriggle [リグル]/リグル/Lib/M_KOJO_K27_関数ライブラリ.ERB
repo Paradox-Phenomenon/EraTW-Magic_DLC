@@ -1,0 +1,287 @@
+﻿;
+;### 関数 ###################################
+;以下の関数は「映姫様口上」内の「M_KOJO_K30_関数・お説教ライブラリ」を拝借したものです
+;リグル口上作者が作成したものではないのでご注意ください
+;同ライブラリの利用に関しては、映姫様口上の作者様のライセンスに準じます
+
+;==================================================
+;MASTERの恋人がその場に居るかどうか返す式中関数
+;=-1 リグルが恋人 =0 元から恋人なし =1 その場に居ない =2 恋人と同席
+@K27_FIND_LOVER()
+#FUNCTION
+SIF TALENT:MASTER:恋人 == 0
+	RETURNF 0
+SIF TALENT:恋人
+	RETURNF -1
+LOCAL = TALENT:MASTER:恋人
+SIF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置
+	RETURNF 2
+RETURNF 1
+;==================================================
+
+
+;==================================================
+;同部屋のキャラを拾う式中関数。探す順位は[恋人]持ち→知り合い→TARGET内ランダム
+;アリス口上の関数お借りして平文化した映姫口上の関数を拝借しました。つまり丸パクり
+;丸コピする以外の技術がないので先人たちの知恵に感謝をし続けるしかない
+@K27_FIND_AROUND()
+#FUNCTION
+#DIM 知り合い, 4 = 14, 68, 74, 84
+#DIM 総人数
+#DIM 抽選
+#LOCALSIZE 200
+VARSET LOCAL
+抽選 = 0
+総人数 = GET_TARGETNUM() 
+;部屋に一人なら当然0
+SIF 総人数 == 1
+	RETURNF 0
+;[恋人]持ちがいたら優先してIDを返す
+SIF K27_FIND_LOVER() == 2
+	RETURNF TALENT:MASTER:恋人
+;知り合い優先度順に現在位置を調べMASTERと同じならIDを返す
+FOR COUNT, 0, 6
+	SIF CFLAG:(知り合い:COUNT):現在位置 == CFLAG:MASTER:現在位置
+		RETURNF 知り合い:COUNT
+NEXT
+;知り合いがいなければ同室のTARGET_ID全部を拾う
+FOR COUNT,1, 総人数 + 1
+	;地獄の断頭台withジェロニモ状態を防ぐため口上主はスキップ
+	SIF TARGET:COUNT == TARGET:0
+		CONTINUE
+	;MASTERとリグルの現在位置にいなければスキップ
+	SIF (CFLAG:(TARGET:COUNT):現在位置 != CFLAG:MASTER:現在位置) || (CFLAG:(TARGET:COUNT):現在位置 != CFLAG:27:現在位置)
+		CONTINUE
+	;配列のカウントは別で取りながら代入
+	LOCAL:抽選 = TARGET:COUNT
+	抽選 ++
+NEXT
+
+SIF 抽選 < 1
+	RETURNF 0
+;抽選してIDを決定
+RETURNF LOCAL:(RAND(抽選))
+;==================================================
+
+
+;==================================================
+;酔っぱらい度を数字で返す式中関数
+;=0 素面 =1 ほろ酔い =2 酔いどれ 3=ぐでぐで
+@K27_DRUNK()
+#FUNCTION
+SIF BASE:27:酒気 <= 2
+	RETURNF 0
+SELECTCASE BASE:27:酒気
+	;ぐでぐで
+	CASE IS > (MAXBASE:27:酒気 / 10) * 8
+		RETURNF 3
+	;酔いどれ
+	CASE IS > (MAXBASE:27:酒気 / 10) * 5
+		RETURNF 2
+	;ほろ酔い
+	CASE IS <= (MAXBASE:27:酒気 / 10) * 5
+		RETURNF 1
+ENDSELECT
+;==================================================
+;CALL K27_AEGI
+;==================================================
+;汎用喘ぎ関数
+@K27_AEGI
+;Ｂ関連（胸を揉む、乳首を吸う）
+IF GROUPMATCH(SELECTCOM, 6, 7, 10, 11, 12, 47, 49, 126, 517, 519)
+	SELECTCASE ABL:Ｂ感覚
+	CASE IS >= 5
+		PRINTDATADW 
+			DATAFORM 「君が触れるところ、あったかいね…❤」
+			DATAFORM 「んっ❤　すごぉっ❤　これっ❤　すごぉいっ❤」
+			DATAFORM 「あっ❤　あっ❤　あんっ❤」
+			DATAFORM 「ふううっ❤　くううっっ❤」
+			DATAFORM 「いいよっ❤　もっとしてっ❤　もっと❤」
+			DATAFORM 「はああ…❤　はあああ～～❤」
+			DATAFORM 「胸って、こんなに気持ちよかったんだぁ❤　ああっ❤」
+			DATAFORM 「私の胸、そんなに好きなんだ…❤　好きなだけ、いいよ…❤」
+			DATAFORM 「もっと触れて❤　もっと気持ちよくしてっ❤」
+			DATAFORM 「んんんんっっ！❤　胸が、ビリビリしちゃった…❤」
+			DATAFORM 「そんなコリコリしちゃだめぇっ❤」
+		ENDDATA
+	CASE IS >= 2
+		PRINTDATADW 
+			DATAFORM 「やっ、ああ…❤」
+			DATAFORM 「あんっ！❤」
+			DATAFORM 「君に触られると、変な気分になっちゃう…❤」
+			DATAFORM 「んっ、んんっ❤」
+			DATAFORM 「あっ❤」
+			DATAFORM 「も、もっと、して…❤」
+			DATAFORM 「君が触れたところ、気持ちいいかも…❤」
+			DATAFORM 「あっ、あっ…❤　気持ちいいのかな、これ…❤」
+			DATAFORM 「そんなに強くしたら、ダメっ…❤」
+		ENDDATA
+	CASEELSE
+		PRINTDATADW 
+			DATAFORM 「あっ…ふぁ…」
+			DATAFORM 「ひゃあっ！？」
+			DATAFORM 「あっ！？」
+			DATAFORM 「強くしちゃ、嫌だよ…」
+			DATAFORM 「優しく、触ってね…」
+			DATAFORM 「んっ…」
+			DATAFORM 「やっ…あっ…」
+			DATAFORM 「あっ、あんっ！？」
+			DATAFORM 「あっ、あっ、あっ」
+			DATAFORM 「ああ…」
+			DATAFORM 「んん…」
+		ENDDATA
+	ENDSELECT
+;パイズリ関連
+ELSEIF GROUPMATCH(SELECTCOM, 82, 508, 511, 512)
+	SELECTCASE ABL:胸
+	CASE IS >= 5
+		PRINTDATADW 
+			DATAFORM 「人間の胸って、交尾にも使えるんだね…❤」
+			DATAFORM 「あんっ❤　胸っ、気持ちいいっ❤」
+			DATAFORM 「%CALLNAME:MASTER%の%TEXTR("生殖器/おちんちん")%っ❤　もっと擦り付けてっ❤」
+			DATAFORM 「あんっ❤　あんっ❤　あんっ❤」
+			DATAFORM 「ん゛っっ❤　すごぉっ❤　%CALLNAME:MASTER%のっ❤　すごぉいっ❤」
+			DATAFORM 「ん゛あっ❤　ん゛あっ❤　ん゛あっ❤」
+			DATAFORM 「ふふっ、私の胸で擦ると君の%TEXTR("生殖器/おちんちん")%がすっごく元気になるよ❤」
+			DATAFORM 「ああっ❤　胸がヤケドしちゃうよおっ❤」
+			DATAFORM 「ふふっ、君の%TEXTR("生殖器/おちんちん")%が暴れてる…❤」
+			DATAFORM 「ここで出したい？　言わなくても、君のここは出したいって言ってるよ❤」
+			DATAFORM 「私の胸、そんなに気持ちいいんだ❤　だってほら、君の%TEXTR("生殖器/おちんちん")%がこんなになってるもん❤」
+			DATAFORM 「ほら、\@ TALENT:バストサイズ > 0 ? 胸で包んであげる❤ # 胸で擦ってあげる❤ \@　気持ちいいよね？」
+			DATAFORM 「こら❤　暴れちゃ駄目だよ❤　それとも、気持ちよすぎて勝手に暴れちゃうのかな❤」
+			DATAFORM 「君の%TEXTR("生殖器/おちんちん")%から出るヌルヌルで、私の胸がドロドロになっちゃってるよ…❤」
+			DATAFORM 「\@ TALENT:バストサイズ > 0 ? これ、すごくドキドキしちゃうね…❤ # 先っぽを擦り付け合うの、気持ちいいね…❤ \@」
+			DATAFORM 「あっ、今ちょっとだけ漏らしちゃったでしょ❤　もったいないなあ…❤」
+			DATAFORM 「別に出しちゃってもいいよ❤　私の胸で何回でも硬くしてあげるから❤」
+			DATAFORM 「この身体に感謝しなきゃね。だって、君をこんなに気持ちよくさせられるんだもん…❤」
+			DATAFORM 「私の胸でこんなにビンビンに硬くなってるんだね…❤　嬉しいな…❤」
+			DATAFORM 「どうする？　このまま出しちゃう？　それとも交尾しちゃう？　君はどっちがいいのかな？　ほら、間に合わなくなるよ❤」
+			DATAFORM 「ほら❤　ヌルヌルで\@ TALENT:バストサイズ > 0 ? 胸に包まれるの❤ # 胸に擦り付けるの❤ \@　気持ちいいね❤」
+			DATAFORM 「あっ❤　あっ❤　あっ❤　そんなに激しいと火傷しちゃうよおっ❤」
+			DATAFORM 「ほら、降参しちゃう？　そしたら胸に出してもいいよ❤」
+			DATAFORM 「ふふ、私の体はどこでも%TEXTR(@"%CALLNAME:MASTER%/君")%を気持ちよくできるんだよ❤」
+		ENDDATA
+	CASE IS >= 2
+		PRINTDATADW 
+			DATAFORM 「こうやって挟むといいんだね？　どうかな？」
+			DATAFORM 「あんっ❤　君のが近づいたり離れたりしてる…❤」
+			DATAFORM 「ひゃあっ❤　先っぽに擦り付けちゃダメぇ…❤」
+			DATAFORM 「うう、私もなんだか変な感じに…」
+			DATAFORM 「君のネバネバ、私の胸にべったり出てるね…」
+			DATAFORM 「なんだかドキドキしちゃう…」
+			DATAFORM 「気持ちいいの？　ふふ❤　君の顔、可愛いよ❤」
+			DATAFORM 「胸が火傷しちゃいそう…」
+			DATAFORM 「私の胸で、君の%TEXTR("生殖器/おちんちん")%がビクビクしてる…」
+			DATAFORM 「ふぅん、こうすると%TEXTR(@"%CALLNAME:MASTER%/君")%は気持ちいいんだね…♪」
+			DATAFORM 「わぁ…%TEXTR(@"%CALLNAME:MASTER%/君")%の%TEXTR("生殖器/おちんちん")%から出る汁で胸がドロドロだ…♪」
+			DATAFORM 「ふふ、コツを掴んできたよ。私ってすごいでしょ♪」
+			DATAFORM 「胸で挟んだらたくさんやる気を出してくれるの？　じゃあ頑張っちゃおっかな♪」
+		ENDDATA
+	CASEELSE
+		PRINTDATADW 
+			DATAFORM 「%TEXTR(@"%CALLNAME:MASTER%/君")%が気持ちいいなら、それでいいけど…」
+			DATAFORM 「これも交尾に必要なことなのかな…」
+			DATAFORM 「こ、これでホントに気持ちよくなれてるの？」
+			DATAFORM 「わっ、君の%TEXTR("生殖器/おちんちん")%が、こんな間近に…」
+			DATAFORM 「んっ…先っぽに擦り付けたらダメ…」
+			DATAFORM 「んっ、んっ…これでいいのかな？」
+			DATAFORM 「胸に擦れて…なんだか変な感じ」
+			DATAFORM 「あんまり気持ちよくないんじゃないかなあ…」
+			DATAFORM 「どう？　上手くできてる…かな？」
+			DATAFORM 「人間って、変なこと思いつくよね…」
+			DATAFORM 「交尾のほうがずっとましに思えるけど…」
+			DATAFORM 「胸の使い道って、これで合ってるのかな…」
+		ENDDATA
+	ENDSELECT
+;Ｖセックス関連
+ELSEIF GROUPMATCH(SELECTCOM, 60, 61, 65, 67, 68, 320, 322, 506, 507)
+	SELECTCASE ABL:Ｖ感覚
+	CASE IS >= 5
+		PRINTDATADW 
+			DATAFORM 「はああ…❤　%CALLNAME:MASTER%の%TEXTR("生殖器/おちんちん")%、全部一気に入っちゃった…❤」
+			DATAFORM 「あんっ❤　はぁんっ❤　すご…っ❤　気持ちいいっ❤」
+			DATAFORM 「%CALLNAME:MASTER%の%TEXTR("生殖器/おちんちん")%っ❤　気持ちいいよおっ❤」
+			DATAFORM 「あんっ❤　あんっ❤　あんっ❤」
+			DATAFORM 「ん゛っっ❤　すごぉっ❤　%CALLNAME:MASTER%のっ❤　すごぉいっ❤」
+			DATAFORM 「ん゛あっ❤　ん゛あっ❤　ん゛あっ❤」
+			DATAFORM 「気持ちいいっ❤　もっとたくさんほしいよっ❤」
+			DATAFORM 「君のっ❤　お腹に響いてっ❤　あっ❤　ああっ❤」
+			DATAFORM 「あ゛ーーーーーっ❤　あ゛ーーーーーっ❤」
+			DATAFORM 「ん゛っ❤　ん゛あっ❤　あ゛あっ❤」
+			DATAFORM 「あ゛❤　あ゛❤　あ゛❤　だめっ❤　だめっ❤　だめだめだめぇっ❤」
+			DATAFORM 「あっ❤　はげしっ❤❤　あ゛ーーっ❤　あ゛ーーっ❤」
+			DATAFORM 「んああああッ❤　いいッ❤　いいよおッ❤」
+			DATAFORM 「あっ❤　駄目ぇっ❤　敏感なところ、ガンガン突いたらあっ❤」
+		ENDDATA
+	CASE IS >= 2
+		PRINTDATADW 
+			DATAFORM 「あんっ❤　あっ、あっ❤」
+			DATAFORM 「ゆっくりされるの、好きかも…❤」
+			DATAFORM 「ふうっ、ふっ❤　ふっ…❤」
+			DATAFORM 「んっ、んっ、んっ、んん～～っ❤」
+			DATAFORM 「いいよ、そのまま、続けて…」
+			DATAFORM 「だめっ、強い、よおっ…❤」
+			DATAFORM 「はっ、はっ❤　はっ❤　はああっ❤」
+			DATAFORM 「今の私は虫じゃないから、たっぷり時間をかけて交尾してね…❤」
+			DATAFORM 「君が私を食べてるのか、私が君を食べてるのか…んっ❤　もう、どっちでもいっか…❤」
+			DATAFORM 「交尾って、こんなに気持ちいいんだね…❤　私、知らなかった❤」
+			DATAFORM 「もっと❤　%CALLNAME:MASTER%の%TEXTR("生殖器/おちんちん")%っ、奥まで届かせてっ❤」
+			DATAFORM 「あっ❤　中、こすれてぇっ❤」
+			DATAFORM 「うぅ～～❤　うぅぅ～～～～ッ❤」
+		ENDDATA
+	CASEELSE
+		PRINTDATADW 
+			DATAFORM 「あっ、あっ、あっ…❤」
+			DATAFORM 「ごめん、もうちょっと、ゆっくり…」
+			DATAFORM 「ふうっ、ふっ❤　ふっ…❤」
+			DATAFORM 「んっ、んっ、んっ、んん～～っ❤」
+			DATAFORM 「いいよ、そのまま、続けて…」
+			DATAFORM 「だめっ、強い、よおっ…」
+			DATAFORM 「はっ、はっ、はっ、はっ❤」
+			DATAFORM 「ううっ、うううっ…❤」
+			DATAFORM 「あうっ、あうっ、あうっ❤」
+		ENDDATA
+	ENDSELECT
+;Ａセックス関連
+ELSEIF GROUPMATCH(SELECTCOM, 62, 63, 66, 69, 70, 71, 514, 515)
+	SELECTCASE ABL:Ａ感覚
+	CASE IS >= 5
+		PRINTDATADW 
+			DATAFORM 「嘘っ❤　気持ちいいっ❤　フンをするところなのにっ❤　気持ちいいっ❤」
+			DATAFORM 「あ～～❤　あ～～～～❤　お尻っ❤　熱いっ❤」
+			DATAFORM 「違うっ❤　そっちの穴じゃないっ❤　あァ❤　はァアアアッ❤」」
+			DATAFORM 「お尻っ❤　熱いよおっ❤」
+			DATAFORM 「だめえっ❤　お尻でズボズボ❤　だめえっ❤」
+			DATAFORM 「や……駄目っ❤　待っ❤　ふえッ！？　やっ！？　あッ❤　あああッ❤」
+			DATAFORM 「あ❤　アッ❤　あぁあッ❤　ああ～～～～❤」
+			DATAFORM 「あッ❤　あぁぁ～～～～❤　ん❤　んんうぅ～～～❤　ゆっくり抜き差し、だめぇぇ❤」
+			DATAFORM 「お尻だめッ❤　こわいッ❤　こわいの来るッ❤　やああッ❤」
+			DATAFORM 「%CALLNAME:MASTER%、激しッ❤　シていいからっ❤　お尻でいいからっ、ゆっくりしてぇ…❤」
+			DATAFORM 「はぁぁ…　ハッ！？　あ❤　あ～～～～～～～～～❤❤」
+			DATAFORM 「やだっ❤　止めてっ❤　止めっ❤　あッ❤　はああッ❤」
+		ENDDATA
+	CASE IS >= 2
+		PRINTDATADW 
+			DATAFORM 「わかんないっ、へんな、感じっ」
+			DATAFORM 「そこっ、交尾するところじゃないのにぃっ、あっ、熱いよおっ」
+			DATAFORM 「ううっ、気持ちよくなんかあっ、そっちの穴じゃないよおっ、んんっ！」
+			DATAFORM 「お尻、熱いよおっ」
+			DATAFORM 「だめえっ、それ以上お尻でズボズボしたらあっ」
+			DATAFORM 「なにコレっ、変っ、変だよおっ」
+			DATAFORM 「やっ、駄目っ、待っ、ふ、ああっ、あッ❤」
+			DATAFORM 「あ、う、う、あ、あっ、あッ、あ❤」
+			DATAFORM 「はぁぁ～～～～、うぅぅ～～～～。ちょ、待って、%CALLNAME:MASTER%、抜いてっ」
+			DATAFORM 「あっ！　あっ！　あっ！　や、やああッ」
+			DATAFORM 「だめえっ、そんなとこ、はいんないよおおッ、ふ、ううう～～～～ッ」
+		ENDDATA
+	CASEELSE
+		PRINTDATADW 
+			DATAFORM 「い、痛い痛いっ！　やめてよおっ」
+			DATAFORM 「う、ううう～～、そ、そこは交尾するところじゃないよお…」
+			DATAFORM 「うう、そこはフンをするところだよお…」
+			DATAFORM 「だ、ダメえ、苦しい、よお…」
+			DATAFORM 「だめえ…そんなとこ、入らない、ふ、ぐううっ」
+		ENDDATA
+	ENDSELECT
+ENDIF
+;==================================================

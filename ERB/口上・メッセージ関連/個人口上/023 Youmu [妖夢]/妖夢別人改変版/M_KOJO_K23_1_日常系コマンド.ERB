@@ -1,0 +1,3317 @@
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;日常系コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;300,会話
+;TFLAG:193(1=大成功 0=成功 -1=失敗 -2=大失敗（TARGETがMASTERより教養が4以上高い)
+;TCVAR:302(0=会話可能 1>=非恋慕時会話不能)
+;MARK:反発刻印(3以上=会話不能)(4以上はバグ
+;TCVAR:泥酔(1=通常成功or大失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_300
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_300
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_300
+;コマンド共通メッセージ(TRAIN_MESSAGE) 
+;削除すると「～話をした。」とかが消えます。また、削除した場合は自動で口上色が付きません。
+;口上メイン呼出
+CALL M_KOJO_別人版_MESSAGE_COM_K23_300_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_300_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;ブチギレ
+	IF CFLAG:318 == 1
+		PRINTFORML 「…………」
+		PRINTFORMW 妖梦默默地将手放在刀柄上……
+	
+	;泥酔
+	ELSEIF TCVAR:泥酔 == 1
+		PRINTFORML
+	
+	;反発刻印有　1で3分の1、2で3分の2で選択されるようにしたい
+	ELSEIF (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+		PRINTDATAW
+			DATAFORM 「……请不要轻易和我交谈」
+			DATAFORM 「……这是浪费时间」
+			DATAFORM 「……可以考虑收拾一下离开吗？」
+		ENDDATA
+		PRINTFORMW 无法隐藏烦躁，妖梦不悦地瞪着%CALLNAME:MASTER%……
+	
+	;不機嫌　3分の1で選択
+	ELSEIF TALENT:機嫌 == -1 && RAND:3 == 0
+		IF TALENT:恋慕
+			PRINTDATAW
+				DATAFORM 「……对不起，我现在没什么兴致……」
+				DATAFORM 「……抱歉，现在有点……」
+			ENDDATA
+		ELSE
+			PRINTFORMW 「……そうです%TEXTR("か/ね/")%」
+		ENDIF
+		PRINTFORMW 尽管面带佛系表情，妖梦似乎并没有完全忽略%CALLNAME:MASTER%的谈话
+	
+	;无法交谈
+	ELSEIF TCVAR:302
+		IF TALENT:恋慕
+			PRINTFORML 「……谢谢你关心我，让我感到很开心」
+			PRINTFORMW 「但我现在这样已经足够了……明白吗？」
+		ELSE
+			PRINTFORML 「嗯？那个话题刚才不是已经……」
+			PRINTFORMW 察觉到话题的重复，妖梦表情有些尴尬……
+		ENDIF
+	
+	;失败
+	ELSEIF TFLAG:193 == -1
+		SELECTCASE RAND:2
+			CASE 0
+				PRINTFORML 「嗯……那个……嗯，怎么了？」
+				PRINTFORMW 妖梦一脸疑惑，似乎不太明白发生了什么……
+			CASE 1
+				PRINTFORML 「…………诶？抱歉，我，刚才没听清楚」
+				PRINTFORMW 似乎是被忽略了，妖梦有点尴尬地歪着头……
+		ENDSELECT
+	
+	;大成功
+	ELSEIF TFLAG:193 == 1
+		SELECTCASE RAND:2
+			CASE 0
+				PRINTFORML 「这是什么，就算是我也……哈哈哈！」
+				PRINTFORMW 这个玩笑非常受欢迎
+			CASE 1
+				PRINTFORML 「嗯嗯……原来如此……」
+				PRINTFORMW 妖梦对这个不经意提到的话题似乎产生了出乎意料的兴趣
+		ENDSELECT
+	
+	;恋慕　まず20は書き出したい
+	ELSEIF TALENT:恋慕
+		SELECTCASE RAND:21
+			CASE 0
+				PRINTFORML 「其实半灵也是能够在一定程度上独自行动的」
+				PRINTFORMW 「所以如果%CALLNAME:MASTER%有什么要求的话，我可以借给你一天」
+				PRINTFORML 「……诶？ 食物？ 散步？」
+				PRINTFORMW 「喂！我可不是宠物！」
+			CASE 1
+				PRINTFORML 「给半灵起个名字？」
+				PRINTFORML 「嗯，毕竟它是我的一部分。我并没有特意去意识到它」
+				PRINTFORMW 「……所以」
+				PRINTFORMW 「它可不是狗或者猫，明白了吗！」
+			CASE 2
+				PRINTFORML 「周围的氛围已经适应了，但那股奇怪的风格总是让我不舒服」
+				PRINTFORMW 「特别是被击中的感觉——」
+				PRINTFORMW （啊，用那种不检点的心情，可能见不到%CALLNAME:MASTER%了……！）
+			CASE 3
+				PRINTFORML 「我的祖父是我的剑术师，同时也是先代的园艺师」
+				PRINTFORMW 「有一天突然辞去职务隐居了，此后就不知所踪了……」
+				PRINTFORMW 「……我希望有一天能介绍给你认识。我一直这么想着」
+			CASE 4
+				PRINTFORML 「真是的，如果总是说些随便的话，你可能会对我失去兴趣的哦？」
+				PRINTFORMW 妖梦愉快地听着%CALLNAME:MASTER%的故事
+				PRINTFORMW 「虽然我已经习惯了♪」
+			CASE 5
+				PRINTFORML 「——好像有这样的事情。是不是很了不起？」
+				PRINTFORMW 「嘿嘿嘿……嗯，其实是个谎言」
+					IF (ABL:教養 >= ABL:MASTER:教養) && RAND:3 == 0
+						PRINTFORML 「呼呼，看你的样子好像相信了呢。怎么样，就算是我——」
+						PRINTFORMW 「啊不好意思太得意了，所以半灵是咻咻！？」
+					ELSE
+						PRINTFORML 「……哎呀？嗯，好像露馅了？为什么……？」
+						PRINTFORMW %CALLNAME:MASTER%选择对身旁那个看起来不自然而焦躁的半灵保持沉默
+					ENDIF
+			CASE 6
+				PRINTFORMW 「由于幽幽子大人根本不来练习，我对『指南者』这个头衔开始感到危机感」
+				PRINTFORML 「所以%CALLNAME:MASTER%，对剑术有兴趣吗？」
+				PRINTFORMW 「即使不是剑术也没关系。只要你提出来，我会尽量陪你练！」
+			CASE 7
+				PRINTFORMW 「不知道是哪个妖怪训练的，这楼观剑几乎能斩断任何东西！」
+				PRINTFORML 「快乐？盘念？那是什么？」
+				PRINTFORMW 「嗯，呃……？大概不会变成大炮吧，但……？」
+			CASE 8
+				IF CFLAG:23:1001 == 1
+					PRINTFORMW 「……或许我还没有握有白楼剑的资格吧」
+					PRINTFORML 「不得不放弃的情感，一直缠绕着」
+					PRINTFORMW 「甚至，我希望它能够变成一片无所谓的模糊……」
+					PRINTFORMW 「……抱歉，说了这些让你困扰的事」
+					PRINTFORMW 「请忘记吧」
+				ELSE
+					PRINTFORML 「这把白楼剑曾经有些力不从心」
+					PRINTFORMW 「但现在我已经解决了一些疑虑，能够灵活运用了」
+					PRINTFORML 「……感兴趣吗？」
+					PRINTFORMW 「呵呵——%CALLNAME:MASTER%大人，我可不会告诉你」
+				ENDIF
+			CASE 9
+				PRINTFORML 「%CALLNAME:MASTER%先生也完全融入幻想乡了呢」
+				PRINTFORMW 「多亏了一些奇怪的朋友吧……」
+				PRINTFORMW 「我也有一些奇怪的朋友，因为他，我度过了难以替代的时光」
+			CASE 10
+				IF ABL:MASTER:料理技能 > 3
+					PRINTFORML 「%CALLNAME:MASTER%先生的厨艺真是一绝啊」
+					PRINTFORMW 「那么你应该能够理解每天增加菜谱的辛苦吧？」
+					PRINTFORML 「所以，下次希望你能教我一些食谱」
+					PRINTFORMW 「我也会从中学到东西，而且两个人一起做的话，相互之间也会有所发现的吧」
+				ELSE
+					PRINTFORML 「%CALLNAME:MASTER%先生，有什么想吃的吗？」
+					PRINTFORMW 「如果有的话，我们下次一起做吧。失败了也没关系，下次可以借鉴经验」
+					PRINTFORMW 「哪怕是慢慢进步，那也是非常有趣的事情哦！」
+				ENDIF
+			CASE 11
+				PRINTFORML 「虽然有点沮丧，但成为真正的行家还有很长的路要走」
+				PRINTFORMW 「%CALLNAME:MASTER%先生眼中，我是不是还是半吊子呢？」
+					;合意前後で分岐させられるだろうか？
+					IF CFLAG:1 > 0
+						PRINTFORMW 「如果是这样的话……我想请你多多教导我」
+						PRINTFORMW 妖梦静静地微笑着看向%CALLNAME:MASTER%，眼中似乎有一丝妖异的光芒……
+					ELSE
+						PRINTFORMW 「如果是这样的话，请多多教导我，日日精进！」
+					ENDIF
+			CASE 12
+				IF CFLAG:66:現在位置 == CFLAG:23:現在位置
+				;恋慕でも2分の1でおやつを献上
+					IF TALENT:66:恋慕 && RAND:2 == 0
+						PRINTFORMW 「啊，幽々子大人。看起来心情不错啊！」
+						PRINTFORML 「……那个，%CALLNAME:MASTER%先生离我好近……啊啊！你在做什么啊！？」
+						PRINTFORMW （果然连幽々子大人也……但我也……！）
+					ELSE
+						PRINTFORML 「啊，幽々子大人。发生了什么事吗？」
+						PRINTFORMW 「……诶，点心？」
+						PRINTFORML 「怎么办……唔，那么就用这个%TEXTR("お饅頭/最中/羊羹/わらび餅/カステラ/")%当作代替吧……」
+						PRINTFORMW 从她犹豫的表情看，那应该是她自己的点心吧……
+					ENDIF
+				ELSE
+					IF TALENT:66:恋慕
+						PRINTFORML 「%CALLNAME:MASTER%先生在幽々子大人那里可是很受欢迎呢」
+						PRINTFORMW 「每当幽々子大人谈论你的时候，她的表情都显得很开心哦？」
+						PRINTFORMW （……也许我表现得更加明显吧）
+					ELSE
+						PRINTFORML 「虽然是身为使用人的我说这种话有点奇怪，但是幽々子大人还真是个神秘的人物」
+						PRINTFORMW 「用难以捉摸来形容她可能更合适……在这方面也许和%CALLNAME:MASTER%先生更合得来」
+						PRINTFORMW 「她经常想要和我一起玩，和你一样」
+					ENDIF
+				ENDIF
+			CASE 13
+				PRINTFORML 「%CALLNAME:MASTER%先生，对刀有兴趣吗？」
+				PRINTFORMW 「不仅能派上用场，而且就算不善于使用，佩戴它也能在一定程度上保护自己」
+				PRINTFORMW 「而且%CALLNAME:MASTER%先生，无论是佩戴、挥舞还是背负，绝对都很合适！」
+			CASE 14
+				PRINTFORML 「虽然我已经清楚你并非那种人……」
+				PRINTFORML 「但请%CALLNAME:MASTER%先生」
+				PRINTFORMW 「即便捡到了别人的东西也不要考虑将它变卖」
+				PRINTFORMW 「请小心。在幻想乡确实存在那样的商人，会实施这种行为」
+			CASE 15
+				IF ABL:戦闘能力 > 4
+					PRINTFORML 「听我说%CALLNAME:MASTER%先生！我对『斩雨』这种感觉已经有了相当的掌握！」
+					PRINTFORMW 「但总是挥舞刀剑也不现实，结果伞还是一直需要……」
+					PRINTFORML 「……连雨云一起？」
+					PRINTFORMW 「哦哦……那确实是下一个目标，也是相当不错的目标」
+				ELSE
+					PRINTFORML 「据说要学会斩雨需要三十年」
+					PRINTFORMW 「虽然现在似乎已经触摸到了那个层次」
+					PRINTFORMW 「如果能够掌握深意，那么雨天也许就不需要伞了吧？」
+				ENDIF
+			CASE 16
+				IF ABL:戦闘能力 > 4
+					PRINTFORML 「最近挥舞空剑的时候，突然感觉到『空气被切割』的瞬间」
+					PRINTFORMW 「呼呼，其实我一直觉得五十年内就可以做到」
+					PRINTFORML 「……唔，如果问我能否在实战中挥舞，那……嗯，确实是个问题」
+					PRINTFORMW 「那就等着吧。等我炉火纯青时，第一个向%CALLNAME:MASTER%先生展示！」
+				ELSE
+					PRINTFORML 「据说要学会斩空需要五十年」
+					PRINTFORMW 「对于这一点我仍然不太明白……好吧！？现在就能做到吗！？」
+					PRINTFORML 「嗯，首先是这样……？」
+					PRINTFORMW 「……那个，难道这样就叫做『切开空气』了吗？」
+				ENDIF
+			CASE 17
+				PRINTFORML 「师父说，要学会斩时光需要二百年」
+				PRINTFORMW 「可惜和红魔馆的女仆战斗并没有太大的收获」
+				PRINTFORML 「……虽然这只是毫无根据的直觉」
+				PRINTFORMW 「但如果和%CALLNAME:MASTER%先生在一起，似乎有些东西能够掌握的感觉……」
+			CASE 18
+				PRINTFORML 「学到真理是通过斩来的，师父是这么教导我的」
+				PRINTFORML 「虽然有一段时间我为了领悟这一教诲而做了一些冒险……」
+				PRINTFORMW 「…………」
+				PRINTFORMW 「现在，或许能更冷静地面对这个教诲了」
+			; Let's catch bugs!
+			CASE 19
+				PRINTFORML 「从什么时候开始，在冥界飞着一些不可思议的蝴蝶」
+				PRINTFORMW 「不，好像紫女士也用过类似的弹幕……？」
+				PRINTFORMW 「一眼就能看出带有相当危险咒术的蝴蝶，修剪时如果飞过附近就感到有些担心……」
+				PRINTFORML 「除了夜晚外，其他时间都看不到，而且不知为何在春天时咒术也变得淡薄」
+				PRINTFORMW 「虽然不至于认真警戒，但还是会感到有些担心」
+			CASE 20
+				PRINTFORMW 「嗯嗯嗯……你说得对」
+				PRINTFORML 「确实买菜本来不是我作为园艺师的职责，但」
+				PRINTFORMW 「自从为了迎合幽々子大人的要求学会了炊事以后，感觉分派给我的工作增加了不少……？」
+		ENDSELECT
+	
+	;思慕その他
+	ELSE
+		SELECTCASE RAND:13
+			CASE 0, 1
+				PRINTFORMW 「这个半灵引起了您的注意吗？正因为是我的另一半，所以在许多方面都很方便呢」
+					SELECTCASE RAND:4
+						CASE 0
+							PRINTFORML 「……嗯，不能用来炼制材料吗？你，你说什么呢！？」
+							PRINTFORMW 看来它似乎无法取代徘徊的灵魂
+						CASE 1
+							PRINTFORML 「――像个大年糕一样？」
+							PRINTFORML 「…………不要试图吃掉哦」
+							PRINTFORMW 虽然只是轻松的评论，但却被怀疑地露骨地戒备着
+						CASE 2
+							PRINTFORML 「它能变成交通工具吗？」
+							PRINTFORML 「啊，毕竟不是魔理沙的扫帚，普通飞行可能更快……」
+							PRINTFORMW 「啊，但是当双手被占用时，还可以搭载物品呢」
+						CASE 3
+							PRINTFORML 「当然，也可以当武器使用！把它扔向对手是最快的方式」
+							PRINTFORML 「……要试试吗？」
+							PRINTFORMW %CALLNAME:MASTER% 礼貌地拒绝了
+					ENDSELECT
+			CASE 2
+				PRINTFORML 「最近，偶尔会吹来奇怪的风」
+				PRINTFORMW 「个人而言，非常在意，但不能被指派调查，这是不同于异变的事情吗？」
+				PRINTFORMW 「……即使如此，发现有人的内衣挂在树枝上时，心情仍然相当复杂」
+			CASE 3
+				PRINTFORML 「%CALLNAME:MASTER% 先生在烹饪时，可能会被幽幽子大人打扰」
+				PRINTFORMW 「因为她有点……贪吃，对食物的气味非常敏感」
+				PRINTFORMW 「即使食物被吃掉，希望您能宽容一些……」
+			CASE 4
+				PRINTFORML 「哎呀，居然发生过那样的事！？真是厉害啊……」
+				PRINTFORMW 「……嗯，开玩笑？」
+					IF TALENT:思慕
+						PRINTFORML 「真是的！请不要取笑我！」
+						PRINTFORMW 尽管提出抗议，但并没有感受到妖梦的愤怒气息
+					ELSE
+						PRINTFORMW 「真是的！再取笑我我就生气了！」
+					ENDIF
+			CASE 5
+				PRINTFORML 「哦……我不知道这个，必须记住才行」
+				PRINTFORMW 「……嗯，是在开玩笑？」
+					IF TALENT:思慕
+						PRINTFORML 「唔，又来这种马虎的事情……！」
+						PRINTFORMW 虽然表面上有点生气，但并没有感受到妖梦的愤怒气息
+					ELSE
+						PRINTFORMW 「嗯，要是记错了怎么办！会被嘲笑的！」
+					ENDIF
+			CASE 6
+				PRINTFORML 「正如之前所说，我是白玉楼的园丁。也负责幽幽子大人的护卫和剑术指导」
+				PRINTFORMW 「……虽然是受委托的，但本人并不怎么感兴趣」
+				PRINTFORML 「每次想要练习，她总是不见了」
+				PRINTFORMW 「只有在这个时候准备了点心，她才不会回来……」
+			CASE 7
+				PRINTFORMW 「这把楼观剑是妖怪锻造的，几乎没有什么刀剑斩不断的！」
+				PRINTFORML 「……是哪个妖怪锻造的？」
+				PRINTFORMW 「那个，嗯……对不起。我应该问问师傅的……」
+			CASE 8
+				PRINTFORML 「这把刀叫白楼剑，可以斩断被斩者的犹豫」
+				PRINTFORMW 「虽然斩妖除魔能轻松些，但我被阎魔大人责备过斩得太多……」
+				PRINTFORML 「――要是能不在意就好了」
+				PRINTFORMW 决定装作没有听到什么危险的低语
+			CASE 9
+				IF TALENT:思慕
+					PRINTFORML 「在这里的生活适应了吗？」
+					PRINTFORMW 「如果一切顺利的话，倒也不错，但一松懈就会被奇怪的家伙利用」
+					PRINTFORMW 「认识一些奇怪的朋友，是吧……啊，你为什么看着我……？」
+				ELSE
+					PRINTFORML 「在这里的生活怎么样？」
+					PRINTFORMW 「外来人很少见，所以一不留神就会被妖怪吃掉」
+					PRINTFORMW 「大家都是好人……吗。果然名声不错，是些奇怪的人呢」
+				ENDIF
+			CASE 10
+				IF TALENT:思慕 && ABL:MASTER:料理技能 > 1
+					PRINTFORML 「前几天从幽々子大人那里了解到，%CALLNAME:MASTER%先生似乎对各种料理都很了解呢」
+					PRINTFORMW 「……如果可以的话，能不能教我一点食谱呢？」
+					PRINTFORML 「而且，最好不是写下来，而是实际教授，这样更容易理解呢，嗯――」
+					PRINTFORMW 妖梦投过来的眼神让人感到有些不好意思……
+				ELSEIF ABL:MASTER:料理技能 > 2
+					PRINTFORML 「%CALLNAME:MASTER%さん的烹饪技能似乎相当了得呢……」
+					PRINTFORMW 「虽然我不是专业的，但也有一些心得」
+					PRINTFORML 「能够按照自己的想法做出料理，有一种……成就感吧」
+					PRINTFORMW 妖梦深有感触地点了点头
+				ELSE
+					PRINTFORML 「学会自己做饭真的很有趣哦」
+					PRINTFORMW 「虽然学会的过程很辛苦，也很费时，但在意想不到的时候可能会救你一命」
+					PRINTFORMW 「比如说――遇到空腹的幽々子大人的时候」
+				ENDIF
+			CASE 11
+				PRINTFORML 「半吊子的自觉虽然有，但被周围说起来总觉得有些不爽！」
+				PRINTFORML 「不过幽々子大人的指摘也有一定道理……」
+				PRINTFORMW 「唔……」
+					IF TALENT:思慕
+						PRINTFORML 看着陷入沉思的妖梦，%CALLNAME:MASTER%给了一些建议
+						PRINTFORMW 「……嗯，是的。我会注意的，谢谢你」
+					ELSE
+						PRINTFORMW 妖梦把手指放在嘴边，陷入了沉思……
+					ENDIF
+			CASE 12
+				IF CFLAG:66:現在位置 == CFLAG:23:現在位置
+					PRINTFORML 「怎么了幽々子大人？发生什么事了？」
+					PRINTFORMW 「……嗯，茶吗？」
+					PRINTFORML 「有点麻烦，立刻准备好……啊」
+					PRINTFORMW 妖梦期待的眼神让人感到一阵压力……
+				ELSE
+					PRINTFORML 「幽々子大人负责管理冥界，是位了不起的大人物」
+					PRINTFORMW 「只是涉及食物的时候就会不可避免地……」
+					PRINTFORMW 「当听到竹林的夜雀和兔子无法区分食物时，我实在难以置信……」
+				ENDIF
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;301,お茶を淹れる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_301
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_301
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_301
+CALL M_KOJO_別人版_MESSAGE_COM_K23_301_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_301_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;初めて
+	IF FIRSTTIME(SELECTCOM)
+		PRINTFORML 「哎呀，给我茶喝吗？」
+		PRINTFORMW 妖梦有些困惑地接过茶杯，一口喝下去后\@ TFLAG:193 == -1 ? 瞬间呛到了 # 缓解了表情 \@
+			IF TFLAG:193 == -1
+				PRINTFORMW 「这、这真的是茶吗！？ 不会是搞错成苦草汁了吧……」
+			ELSE
+				PRINTFORMW 「好……如果有机会，我一定还要再尝一口」
+			ENDIF
+	
+	;发飙
+	ELSEIF CFLAG:318 == 1
+		PRINTFORML 「……您是认真的吗？」
+		PRINTFORMW 妖梦盯着%CALLNAME:MASTER%……
+	
+	;醉醺醺
+	ELSEIF TCVAR:泥酔 == 1
+		PRINTFORML
+	
+	;反感刻印有 1/3 的几率，2/3 的几率
+	ELSEIF (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+		PRINTFORML 「……我可不会上当」
+		PRINTFORMW 妖梦一脸不悦，勉强接过了茶杯……
+	
+	;心情不好
+	ELSEIF TALENT:機嫌 == -1 && RAND:3 == 0
+		IF TALENT:思慕 || TALENT:恋慕
+			PRINTFORMW 「……茶虽然好喝，但心情还是不好」
+			PRINTFORML （心情不大好……）
+		ELSE
+			PRINTFORMW 「……谢谢」
+		ENDIF
+		PRINTFORMW 妖梦一边喝着茶，一边露出复杂的表情……
+	
+	;失败
+	ELSEIF TFLAG:193 == -1
+		SELECTCASE RAND:2
+			CASE 0
+				PRINTFORML 「嗯嗯，白开水……？」
+				PRINTFORMW 虽然调配失误，但由于是这种茶叶，还能糊弄过去……
+					;思慕以上的情况下，1/2 的几率糊弄不过去
+					IF TALENT:思慕 || TALENT:恋慕
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORMW 「糊弄不过去吧！？ 茶叶少了而已吧！」
+							CASE 1
+								PRINTFORMW 「嘛，如果%CALLNAME:MASTER%说的话……」
+						ENDSELECT
+					ENDIF
+			CASE 1
+				PRINTFORML 「什、什么？！？　这、这是苦的……！！」
+				PRINTFORMW 虽然调配失误，但由于是这种茶叶，还能糊弄过去……
+					IF TALENT:思慕 || TALENT:恋慕
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORMW 「没糊弄过去吧！？ 茶叶太多了吧！」
+							CASE 1
+								PRINTFORMW 「这、这种茶也有啊。我有点……」
+						ENDSELECT
+					ENDIF
+		ENDSELECT
+	
+	;工作时　参加宴会时应该不会给茶，所以应该不会有矛盾…
+	ELSEIF CFLAG:行動 == 5
+		SELECTCASE RAND:3
+			CASE 0
+				IF TALENT:思慕 || TALENT:恋慕
+					IF TCVAR:23:手伝った量
+						PRINTFORMW 「是差遣吗？ %CALLNAME:MASTER% 不用勉强自己哦？」
+					ELSE
+						PRINTFORMW 「是差遣吗？ 顺便也需要帮手呢～……嗯、没什么」
+					ENDIF
+				ELSE
+					PRINTFORMW 「是差遣吗？ 谢谢你的关心」
+				ENDIF
+			CASE 1
+				PRINTFORMW 「啊，谢谢！ 喝点东西确实很不错」
+			CASE 2
+				PRINTFORMW 「休息也很重要呢。既然有机会，我就稍微放松一下」
+		ENDSELECT
+	
+	;用餐后
+	ELSEIF PREVCOM == 414 || PREVCOM == 415
+		PRINTFORML 「哦哦……连饭后的茶也有」
+		PRINTFORMW 「真是照顾得像一名仆人，非常感谢」
+	
+	;大成功
+	ELSEIF TFLAG:193 == 1
+		IF TALENT:恋慕
+			SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER% 您泡茶的动作相当精致呢」
+					PRINTFORML 「甚至连眼神的交流都很了得，或许已经达到茶道的境地了吧？」
+					PRINTFORMW 妖梦对此表示赞叹，一边喝着茶
+				CASE 1
+					PRINTFORML 「这一杯喝得恰到好处……」
+					PRINTFORML 「如果有什么比平时更体贴入微的步骤，我想请教一下」
+					PRINTFORMW %CALLNAME:MASTER% 与妖梦愉快地聊起了泡茶的技巧……
+			ENDSELECT
+		ELSE
+			SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「如果我也能泡出这么美味的茶送给幽幽子大人就好了……」
+					PRINTFORMW 妖梦感叹着，对味道和香气表示赞赏
+				CASE 1
+					PRINTFORML 「哇……好喝。您随时都能准备出这样的好茶吗？」
+					PRINTFORMW 从妖梦的眼神中可以感受到尊敬之情……
+			ENDSELECT
+		ENDIF
+	
+	;恋慕
+	ELSEIF TALENT:恋慕
+		SELECTCASE RAND:3
+			CASE 0
+				PRINTFORML 「一直都非常感谢……呵呵」
+				PRINTFORMW 「不知怎么的，能从您这里喝到茶真的让我很高兴」
+			CASE 1
+				PRINTFORML 「无论是能力还是魔法，%CALLNAME:MASTER% 您的泡茶都是毫无疑问的」
+				PRINTFORMW 「我也理解了过分拘泥于琐事是无趣的道理」
+			CASE 2
+				PRINTFORML 「嗯嗯……好喝」
+				PRINTFORMW 「实际上，我在点心里放了%TEXTR("红豆包/花生糖/巧克力/饼干/")%，%CALLNAME:MASTER% 您要尝尝吗？」
+		ENDSELECT
+	
+	;思慕和其他
+	ELSE
+		SELECTCASE RAND:3
+			CASE 0
+				PRINTFORML 「谢谢您」
+				PRINTFORMW 「正好喉咙有点渴」
+			CASE 1
+				PRINTFORML 「……有泡茶的能力吗……？」
+				PRINTFORMW 「不、不是，什么都没有！」
+			CASE 2
+				PRINTFORML 「呼，稍微休息一下就感觉平静了。谢谢款待」
+					IF TALENT:思慕
+						PRINTFORMW 「……终于能和这杯茶打成一片了」
+					ELSE
+						PRINTFORMW （……茶的来源还是让我有点不安……！）
+					ENDIF
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;302,スキンシップ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_302
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_302
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_302
+CALL M_KOJO_別人版_MESSAGE_COM_K23_302_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_302_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;303,謝る
+;TFLAG:193(2=菓子折成功 1=大成功 0=成功 -1=失敗 -2=菓子折失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_303
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_303
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_303
+CALL M_KOJO_別人版_MESSAGE_COM_K23_303_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_303_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;304,仕事を手伝う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:350(仕事内容(JOB_仕事内容.ERB参照のこと
+;TCVAR:手伝えない(=2 手伝っても早くは終わらない、時間停止中不可 永琳の診察等)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_304
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_304
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_304
+CALL M_KOJO_別人版_MESSAGE_COM_K23_304_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_304_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	;暴躁
+	ELSEIF CFLAG:318 == 1
+		PRINTFORML 「…………」
+		PRINTFORMW 在忽略%CALLNAME:MASTER%的情况下，妖梦默默地进行工作……
+
+	;反発刻印存在
+	ELSEIF (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+		PRINTFORML 「……感谢您的帮助」
+		PRINTFORMW 在尴尬的氛围中，按照妖梦的指示进行工作……
+
+	;失败
+	ELSEIF TFLAG:193 == -1
+		SELECTCASE RAND:3
+			CASE 0
+				PRINTFORMW 「啊！？ 货物掉了！」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW 「……嗯，毕竟数量很大。一起重新堆叠就行了！」
+					ENDIF
+			CASE 1
+				PRINTFORMW 「不，%CALLNAME:MASTER%先生不行！？ 那个货架上的商品我没买！」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW 「……我理解你的感受。我们购买一些，自己动手做吧」
+					ENDIF
+			CASE 2
+				PRINTFORMW 「诶！？ 如果一次搬那么多会很危险的！」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW 「我也会帮忙……如果可以的话，也请使用半灵」
+					ENDIF
+		ENDSELECT
+
+	;大成功
+	ELSEIF TFLAG:193 == 1
+		SELECTCASE RAND:3
+			CASE 0
+				PRINTFORMW 「哦，一点儿货物崩溃的迹象都没有……真是令人敬佩的表现」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW 「这样的话我们可以加快速度。让我们整理好剩下的东西吧！」
+					ENDIF
+			CASE 1
+				PRINTFORMW 「那个货架上的商品半价！？ 太，太感谢了……！」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW 「但到底是怎样的交涉呢？ 店主似乎也同意了」
+					ENDIF
+			CASE 2
+				PRINTFORMW 「%CALLNAME:MASTER%先生，你的动作真是太熟练了，这么高效地搬运！」
+					IF TALENT:思慕 || TALENT:恋慕
+						PRINTFORMW （下次也能再来吗……诶，刚才瞬间去了那边……？）
+					ENDIF
+		ENDSELECT
+
+	;成功
+	ELSE
+		PRINTFORMW 「您来帮忙吗？ 非常感谢！」
+			SELECTCASE RAND:5
+				CASE 0
+					PRINTFORML 「那就请您帮忙装载货物」
+					PRINTFORMW 「虽然也请店员帮忙，但有点困难啊……」
+				CASE 1
+					PRINTFORML 「那就请您确认货架」
+					PRINTFORMW 「虽然我很注意，但货物容易不稳定……」
+				CASE 2
+					PRINTFORML 「那就请您在那家店接收我们订购的货品」
+					PRINTFORMW 「我会附上半灵，只要提到我的名字，应该能得到对应的服务」
+				CASE 3
+					PRINTFORML 「那就请您回收那些未动过手的货物」
+					PRINTFORMW 「因为在店前积了一堆，一目了然的」
+				CASE 4
+					PRINTFORML 「那就请您核对这张清单和这里的货物」
+					PRINTFORMW 「数量很多，店员们有时候也会搞错……」
+			ENDSELECT
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;305,膝枕してもらう
+;TFLAG:193(-5=MASTERがTARGETよりも巨体の場合(TALENT:MASTER:体型 > TALENT:体型 + 2) 1=大成功 0=成功 -1=失敗)(-5以外は地の文分岐無し)
+;ABL:親密(6以上=顔をのぞき込みながら頭を撫でてくれる 3以上=ただ頭を撫でてくれる 2以下=縮こまっている)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_305
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_305
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_305
+CALL M_KOJO_別人版_MESSAGE_COM_K23_305_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_305_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+ENDIF
+RETURN 1
+;==================================================
+;306,お腹を撫でる
+;TFLAG:193(1=ABL:親密6以上かつ妊娠時 0=成功 -1=ABL:親密5以下)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_306
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_306
+CALL M_KOJO_別人版_MESSAGE_COM_K23_306_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_306_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;307,頬をつまむ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+	;以下は先に書いた条件が優先される
+	;TALENT:恋慕(受け入れつつ笑顔でやり返す
+	;ABL:親密(6以上=おずおずとやり返す
+	;ABL:従順(5以上=されるがまま
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_307
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_307
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_307
+CALL M_KOJO_別人版_MESSAGE_COM_K23_307_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_307_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;308,頬をつつく
+;添い寝中or睡眠中限定
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_308
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_308
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_308
+CALL M_KOJO_別人版_MESSAGE_COM_K23_308_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_308_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;睡眠中
+	IF CFLAG:睡眠
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;309,頭を撫でる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:親密(6以上=通常成功時分岐
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_309
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_309
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_309
+CALL M_KOJO_別人版_MESSAGE_COM_K23_309_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_309_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;331,お茶を淹れる（薬入り）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_331
+;成否判定
+;TFLAG:192(-2=強制失敗(注、非コマンド終了）、-1＝強制失敗、0=COM依存、1=強制成功or大成功(注、睡眠薬アイスティーは眠気を感じていると飲まない)
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_331
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_331
+CALL M_KOJO_別人版_MESSAGE_COM_K23_331_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_331_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;332,お酒をふるまう
+;TFLAG:193(0=下戸飲み成功 -1=下戸飲み失敗 -2=下戸飲み大失敗 -5=下戸飲みあきらめ)
+;COM_STR(酒の名称)
+;ALCOHOL_TASTE(TFLAG:194)(15以上=気に入る 9以下=口に合わない)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_332
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存
+;TFLAG:口上特殊補正 (ここに数値を入れるとALCOHOL_TASTEを増減させられる)
+TFLAG:192 =0
+TFLAG:口上特殊補正 = 0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_332
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_332
+CALL M_KOJO_別人版_MESSAGE_COM_K23_332_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_332_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;333,愚痴を聞く
+;TFLAG:193(6=大成功(酔い) 5=成功(酔い) 4=失敗(酔い) 3=大成功 2=成功 1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_333
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_333
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_333
+CALL M_KOJO_別人版_MESSAGE_COM_K23_333_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_333_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 6
+		;大成功（酔い）
+		CASE 5
+		;成功（酔い）
+		CASE 4
+		;失敗（酔い）
+		CASE 3
+		;大成功
+		CASE 2
+		;成功
+		CASE 1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;334,杯を交わす
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:妊娠自覚状態(1=食事)
+;TALENT:酒耐性(-2=食事)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_334
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_334
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_334
+CALL M_KOJO_別人版_MESSAGE_COM_K23_334_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_334_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;335,介抱する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_335
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_335
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_335
+CALL M_KOJO_別人版_MESSAGE_COM_K23_335_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_335_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;336,膝枕する
+;ABL:親密(4以下=居心地悪げ 9以下=恥ずかしげ それ以上=幸せそう
+;TIME_PROGRESS(TFLAG:膝枕した)(44以下=失敗
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_336
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_336
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_336
+CALL M_KOJO_別人版_MESSAGE_COM_K23_336_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_336_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 > 0
+	;寝ちゃった
+	ELSE
+	;それ以外
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;350,押し倒す（時姦時イタズラする
+;TFLAG:194 (0=成功 1=人目がある　2=野外は嫌でござりまする　3=多人数プレイは勘弁　4=合意があってもムードが足りぬ　100=合意はあるが口上内特殊判定によって失敗）
+;TCVAR:抱き寄せ初回　1=普通に合意ゲット　2=先にキスぐらいしろよ　3=媚薬or発情には勝てなかったよお…　4=悔しい…刻印さえなければﾋﾞｸﾋﾞｸﾝ
+;5=強引に迫られると断れぬ(素質臆病持ち専用) 6=まんざらでもない　7=駄目　8=論外 98=口上内特殊判定による失敗 99=口上内特殊判定による成功
+;口上内特殊判定は該当するCFLAGが0だと無効
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_350
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_350
+CALL M_KOJO_別人版_MESSAGE_COM_K23_350_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_350_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;351,連れ出す
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_351
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_351
+;連れ出しにはTRAIN_MESSAGEが無い
+CALL M_KOJO_別人版_MESSAGE_COM_K23_351_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_351_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;TARGET連れ出し
+	IF CFLAG:同行 == 60
+		;醉醺醺
+		IF ALCOHOL_FACE(23) == "酔いどれ" || ALCOHOL_FACE(23) == "ぐでぐで"
+			PRINTFORML 「啊，诶？ ……稍微晒晒太阳，想要感受一下风……」
+			PRINTFORMW 似乎觉得情况不妙，妖梦毫不犹豫地握住了%CALLNAME:MASTER%的手
+		ELSEIF CFLAG:318 == 1 || MARK:23:反発刻印 > 1
+			PRINTFORML 「…………」
+			PRINTFORMW 似乎勉强会跟着过来……
+		;恋慕
+		ELSEIF TALENT:恋慕
+			IF CAN_IRAI_CHARA_GO_TOGATHER(TARGET)
+				PRINTFORMW 「立刻问我吗？ 太感谢了！」
+			ELSE
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORMW 「要去哪里？ 我会陪同的！」
+					CASE 1
+						PRINTFORMW 「如果我能帮上忙的话」
+					CASE 2
+						PRINTFORMW 「稍微跟在后面……有点可惜呢」
+				ENDSELECT
+			ENDIF
+		ELSE
+			IF CAN_IRAI_CHARA_GO_TOGATHER(TARGET)
+				PRINTFORMW 「啊，嗯……在这里可能有点困难呢」
+			ELSE
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORMW 「有事找我吗？」
+					CASE 1
+						PRINTFORMW 「嗯，有什么事吗？」
+					CASE 2
+						PRINTFORMW 「我不介意……要去哪里？」
+				ENDSELECT
+			ENDIF
+		ENDIF
+	;TARGET以外連れ出し(TARGET同行中のみ
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;352,告白する
+;FLAG:甲斐性無(1=失敗)
+;TFLAG:193 (1=成功 0=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_352
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_352
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_352
+CALL M_KOJO_別人版_MESSAGE_COM_K23_352_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_352_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;353,イタズラする
+;FLAG:甲斐性無(1=失敗)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_353
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_353
+CALL M_KOJO_別人版_MESSAGE_COM_K23_353_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_353_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;354,添い寝する（相手は起きて布団に招く感じ）
+;CFLAG:衰弱(1以上=起きない
+;CFLAG:お招き(0以外=起きない
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_354
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_354
+CALL M_KOJO_別人版_MESSAGE_COM_K23_354_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_354_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;355,時止め（地の文の改変程度に留めるべき
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_355
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_355
+CALL M_KOJO_別人版_MESSAGE_COM_K23_355_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_355_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;356,物陰に誘う
+;ABL:露出癖 + TALENT:羞恥心で判定
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_356
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存、1=強制成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_356
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_356
+CALL M_KOJO_別人版_MESSAGE_COM_K23_356_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_356_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;360,身を任せる
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_360
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_360
+CALL M_KOJO_別人版_MESSAGE_COM_K23_360_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_360_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;361,抵抗する
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_361
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_361
+CALL M_KOJO_別人版_MESSAGE_COM_K23_361_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_361_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;363,読み聞かせ（[幼稚]持ち専用）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;CFLAG:添い寝中(1=布団orベッドの中で本を読む
+;MASTERがTARGETより大柄の場合、膝の上にTARGETを乗せる
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_363
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_363
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_363
+CALL M_KOJO_別人版_MESSAGE_COM_K23_363_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_363_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;364,豆まき(萃香、勇儀、スカーレット姉妹用
+;TFLAG:193(豆まきに参加してる人数
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_364
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_364
+CALL M_KOJO_別人版_MESSAGE_COM_K23_364_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_364_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;365,守矢神社へ移動(早苗、神奈子、諏訪子用
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_365
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_365
+CALL M_KOJO_別人版_MESSAGE_COM_K23_365_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_365_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;368,自由行動に付き合う 
+;技能系の行動は技能レベルが1以上なら発生
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_368
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_368
+CALL M_KOJO_別人版_MESSAGE_COM_K23_368_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_368_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE Activity_Type:TARGET
+		CASE 0
+			;▼考え事［なに考えてるの］
+			;TFLAG:193,-1=はぐらかされる
+			;PRINTFORMW 
+		CASE 1
+			;▼遊ぶ［一緒に遊ぶ］
+			;※[幼稚]持ちのみ
+			;TFLAG:193,1=大いに盛り上がる,-1=あまり盛り上がらない
+			;PRINTFORMW 
+		CASE 2
+			;▼食事［一緒に食事する］
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 3
+			;▼つまみ食い［一緒につまみ食い］
+			;※[妖精]持ちとルーミア、こいし、幽々子、紫苑のみ
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 4
+			;▼掃除［掃除を手伝う］
+			;※[掃除係]持ちまたは汚臭耐性-1以下のみ
+			;PRINTFORMW 
+		CASE 5
+			;▼運動［一緒に運動する］
+			;※[音楽知識]持ちは除く（演奏になる）
+			;PRINTFORMW 
+		CASE 6
+			;▼読書［本の感想を聞く］
+			;TFLAG:193,-1=集中していて返事してくれない
+			;PRINTFORMW 
+		CASE 7
+			;▼料理［料理を手伝う］→［料理を分けてもらう］
+			;TFLAG:193,2=料理を手伝う,0=作った料理を食べる,-1==MASTERはお腹が空いてなかった（食べる時）
+			;PRINTFORMW 
+		CASE 8
+			;▼演奏［セッションする］or［伴奏する］
+			;※[音楽知識]持ちのみ（TALENT:音楽知識で変化）
+			;TALENT:音楽知識,1=演奏してる,2=歌ってる,3=踊ってる
+			;TFLAG:193,1=ノリノリ,0=成功,-1=失敗,-2=楽器がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 9
+			;▼採集［採集を手伝う］
+			;PRINTFORMW 
+		CASE 10
+			;▼釣り［一緒に釣りをする］
+			;TFLAG:193,-1=釣り竿がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 11
+			;▼実験［実験を手伝う］
+			;PRINTFORMW 
+		CASE 12
+			;▼のんびり［一緒にのんびりする］
+			;PRINTFORMW 
+		CASE 13
+			;▼晩酌［晩酌に付き合う］
+			;※酒耐性0以上のみ
+			;PRINTFORMW 
+		CASE 14
+			;▼買い物［買い物を手伝う］
+			;PRINTFORMW 
+		CASE 15
+			;▼説教［様子をうかがう］
+			;※神霊・蓬莱人は除く
+			;TFLAG:193,-1
+			;PRINTFORMW 
+		CASE 16
+			;▼落とし穴［いたずらに付き合う］or［様子をうかがう］
+			;※三月精・チルノ・クラウンピースのみ
+			;それ以外は落ちる側
+			;PRINTFORMW 
+		CASE 17
+			;▼雪だるま作り［一緒に雪作り］
+			;※冬の月のみ
+			;PRINTFORMW 
+		CASE 18
+			;▼炬燵でのんびり［炬燵でくつろぐ］
+			;※冬の月のみ
+			;PRINTFORMW 
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;自由行動判定用関数
+;上記テンプレに対応するCASEでRETURN -1するとその自由行動をしなくなります
+@M_KOJO_別人版_自由行動判定_K23(ARG)
+SELECTCASE ARG
+	;CASE 1, 2, 5
+	;	RETURN -1
+	CASEELSE
+		RETURN 0
+ENDSELECT
+
+;==================================================
+;402,就寝
+;TFLAG:193(0=通常 1=子供と一緒に川の字で寝る)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_402
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_402
+;就寝にTRAIN_MESSAGEは無い
+CALL M_KOJO_別人版_MESSAGE_COM_K23_402_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_402_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;403,休憩
+;CFLAG:TARGET:睡眠(1=TARGETが寝てる隣で休憩
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_403
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_403
+CALL M_KOJO_別人版_MESSAGE_COM_K23_403_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_403_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;405,出掛ける(同行時デート
+;条件が厄介なので、COMF405 出掛ける.ERBを参照のこと
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_405
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_405
+;出掛けるにTRAIN_MESSAGEは無い
+CALL M_KOJO_別人版_MESSAGE_COM_K23_405_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_405_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;TARGETとデート
+	IF CFLAG:同行
+	;TARGET以外とデート
+	ELSEIF CFLAG:MASTER:同行
+	;お出かけお見送り
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;410,掃除
+;FLAG:70(1=時間停止中
+;TFLAG:193(0=見てるだけ 1=一緒に掃除)
+;TFLAG:194(3=汚れ高 2=汚れ中 1=汚れ低 0=汚れ最小
+;OUTROOF(CFLAG:現在位置)(野外掃除（冬は雪かき
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_410
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_410
+CALL M_KOJO_別人版_MESSAGE_COM_K23_410_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_410_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF CFLAG:睡眠 || FLAG:70 || TCVAR:泥酔
+		PRINTFORML
+	;嘻嘻中
+	ELSEIF CFLAG:23:嘻嘻
+		PRINTFORML 「……打扫，是吧……打扫？」
+		PRINTFORMW 「现在吗？ ……好，我帮忙……」
+	;帮忙
+	ELSEIF TFLAG:193 == 1
+		;发火
+		IF CFLAG:318 == 1 || (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+			PRINTFORML 「…………」
+			PRINTFORMW %CALLNAME:MASTER%和妖梦默默地完成了清理，一言不发……
+		;铲雪
+		ELSEIF OUTROOF(CFLAG:現在位置) && DAY:2 == 4
+			;污垢多
+			IF TFLAG:194 >= 3
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORMW 「不管雪有多深，只要我们两个一起清理，马上就――」
+						PRINTFORML 「马、上……」
+						PRINTFORMW 「……」
+						PRINTFORMW 「……加油吧……」
+					CASE 1
+						PRINTFORMW 「这点雪算什么……！」
+						PRINTFORML 「那时候庭院也是！ 垃圾场前面也是！」
+						PRINTFORMW 「我一个人搞定的时候可是这样啊！！」
+						PRINTFORMW 一脸凶猛的妖梦正在与雪激烈战斗……
+				ENDSELECT
+			;污垢中以下
+			ELSE
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「看起来好像很熟练？」
+						PRINTFORMW 「嗯，嗯，其实……对铲雪有点不喜欢」
+					CASE 1
+						PRINTFORML 「呼，差不多就没问题了――好、冷！？」
+						PRINTFORMW 「……那个，%TEXTR("雪人的头/大雪兔/")%那个难道是……」
+				ENDSELECT
+			ENDIF
+		;白玉楼庭
+		ELSEIF MAIN_MAP == 6 && CFLAG:MASTER:現在位置 == 621
+			IF TFLAG:194 >= 3
+				PRINTFORML 「庭院……！」
+				PRINTFORMW 「怎么会这样……明明只是修剪产生的垃圾而已……」
+				PRINTFORML 「唉……不管怎么说，这是我作为园艺师的懒惰……」
+				PRINTFORMW %CALLNAME:MASTER%一边安慰着泪眼汪汪的妖梦，一边清理庭园
+			ELSE
+				PRINTFORML 「嗯，有点乱了呢……」
+				PRINTFORMW 「抱歉，一个人的话很难处理细节」
+					IF TALENT:恋慕
+						PRINTFORML 「如果%CALLNAME:MASTER%成为我的专属，我就可以专心照料了呢……」
+						PRINTFORMW 从妖梦的眼神中感受到一种威压……
+					ELSE
+						PRINTFORMW 「有%CALLNAME:MASTER%的帮助真是太好了」
+					ENDIF
+			ENDIF
+		ELSE
+			IF TFLAG:194 >= 3
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「哇……真是让人惊讶，居然到了这个地步」
+						PRINTFORMW 「如果任其不管，也许会有一些看点……」
+						PRINTFORMW %CALLNAME:MASTER%与妖梦一起面对着污垢的堆积……
+					CASE 1
+						PRINTFORML 「……有时候赶走了妖精群，这样的景象就会蔓延开来」
+						PRINTFORMW 「到底是从哪里冒出来的呢……？」
+						PRINTFORMW %CALLNAME:MASTER%想着要不要推荐黑色闪电，但觉得可能会引来更多妖精，于是停了下来
+				ENDSELECT
+			ELSE
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「打扫的时候，不禁让人想尝试一些事情」
+						PRINTFORMW 「……将周围的垃圾全部砍碎，算不算打扫呢？」
+					CASE 1
+						PRINTFORML 「打扫是每天的例行事项，屋子的清理也由我来做！」
+						PRINTFORMW 「……嗯？ 但是好像还有负责打扫的幽灵在其他地方……？」
+					CASE 2
+						PRINTFORML 「好了，差不多就到这里吧。变得很干净了！」
+						PRINTFORMW 「嗯……不禁让人想挥舞一下剑的爽快感」
+				ENDSELECT
+			ENDIF
+		ENDIF
+	;不帮忙
+	ELSE
+		IF CFLAG:318 == 1 || (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+			PRINTFORML 「…………」
+			PRINTFORMW 妖梦站在一旁，看着%CALLNAME:MASTER%打扫……
+		ELSE
+			PRINTFORML 「……我也来帮忙」
+				IF OUTROOF(CFLAG:現在位置) && DAY:2 == 4
+					PRINTFORMW 「我对于清扫雪的辛苦也有所了解」
+				ELSE
+					PRINTFORMW 「让%CALLNAME:MASTER%独自清扫感觉有些对不起……」
+				ENDIF
+			PRINTFORMW 最初，妖梦只是观察着%CALLNAME:MASTER%的工作，但很快就伸出了援手
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;411,戦闘訓練
+;TFLAG:194(3=夏の昼間 2=ヤバい天気 1=悪天候 0=屋内or通常天気
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_411
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_411
+CALL M_KOJO_別人版_MESSAGE_COM_K23_411_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_411_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;初回
+	IF FIRSTTIME(SELECTCOM)
+		PRINTFORML 「也就是说想进行锻炼吗……当然，我愿意！」
+		PRINTFORML 向妖梦表示想进行战斗训练，她兴致勃勃地同意了
+		PRINTFORML 半灵摆动着尾巴，仿佛要甩断一样……
+		PRINTFORMW
+		PRINTFORML 「那么就马上……虽然我很想这样说，但首先让我们确认彼此的技艺吧」
+		PRINTFORML 「既然是一起锻炼，不了解对方的实力可是会弄巧成拙的」
+		PRINTFORML 「看起来我是『指南者』，那就交给我吧！」
+		PRINTFORMW
+		PRINTFORML 在妖梦的指导下，我轻轻地动了动身体……
+		PRINTFORMW
+		PRINTFORMW ………
+		PRINTFORMW ……
+		PRINTFORML …
+		PRINTFORMW
+			;MASTER的戦闘能力大于等于6 && 妖梦的戦闘能力低于MASTER
+			IF ABL:MASTER:戦闘能力 >= 6 && ABL:MASTER:戦闘能力 > ABL:戦闘能力
+				PRINTFORML 「这、这是……」
+				PRINTFORML （比我强得多……究竟经历了多少次战斗……）
+				PRINTFORMW
+				PRINTFORML 妖梦惊呆地站在那里，摇了摇头，调整了姿势
+				PRINTFORML 「……有点得意忘形了。测量你的技量，实在有些唐突」
+				PRINTFORML 「如果有时间的话，下次可否请你教教我？」
+				PRINTFORMW
+				PRINTFORML 妖梦和半灵向%CALLNAME:MASTER%庄重地鞠躬
+				PRINTFORMW 如果心情好的话，或许可以陪妖梦练习一下……
+			ELSEIF ABL:MASTER:戦闘能力 >= 4
+				PRINTFORML 「哦哦……看起来是相当有实力的人啊」
+				PRINTFORML 「这样的话，从实战训练开始应该没有问题吧」
+				PRINTFORMW
+				PRINTFORML 「如果对手是个老手的话，我的斗志就会更高涨」
+				PRINTFORML 「辛苦了，从下次开始我们一起加油吧！」
+				PRINTFORMW
+				PRINTFORML 妖梦向%CALLNAME:MASTER%高兴地鞠躬
+				PRINTFORMW 看来在她心中，下次的练习已经确定了……
+			ELSEIF ABL:MASTER:戦闘能力 >= 2
+				PRINTFORML 「原来如此，看来你有足够的实力保护自己」
+				PRINTFORML 「但在幻想乡生活，无论磨练多少，技艺都不会生锈」
+				PRINTFORMW
+				PRINTFORML 「在确保基础的同时，慢慢增加实战意识的锻炼吧」
+				PRINTFORML 「辛苦了，下次的内容我会考虑好的！」
+				PRINTFORMW
+				PRINTFORML 妖梦向%CALLNAME:MASTER%快活地鞠躬
+				PRINTFORMW 看来在她心中，下次的练习已经确定了……
+			ELSE
+				PRINTFORML 「嗯……看起来你过去一直过着和战斗无关的生活呢」
+				PRINTFORML 「如果是因为目前的状况感到危机而开始锻炼，那是值得赞美的决断」
+				PRINTFORMW
+				PRINTFORML 「首先得增加体力。没有基础就无法建立更高的东西」
+				PRINTFORML 「辛苦了，我也喜欢锻炼，下次也请继续陪着我！」
+				PRINTFORMW
+				PRINTFORML 妖梦向%CALLNAME:MASTER%快活地鞠躬
+				PRINTFORMW 看来在她心中，下次的练习已经确定了……
+			ENDIF
+
+	;从这里开始是第二次以后
+	ELSEIF CFLAG:318 == 1
+		PRINTFORML 「…………」
+		PRINTFORMW 妖梦无视%CALLNAME:MASTER%继续挥动她的武器……
+	
+	ELSEIF (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+		PRINTFORML 「……我会陪你的」
+		PRINTFORMW 在尴尬的氛围中，%CALLNAME:MASTER%和妖梦进行了训练……
+	;酷暑
+	ELSEIF TFLAG:194 == 3
+		PRINTFORML 「啊、在这种烈日底下也没关系的……」
+		PRINTFORML 「当然我会陪你，但一旦感觉到危险就立刻停止训练吧」
+		PRINTFORMW 在烈热中，%CALLNAME:MASTER%和妖梦投入了训练中……
+	;糟糕天气、恶劣天气
+	ELSEIF TFLAG:194 == 1 || TFLAG:194 == 2
+		PRINTFORML 「啊，在这样的天气里也没关系……不，你是认真的吗？」
+		PRINTFORML 「当然我会陪你，但要注意周围的情况」
+		PRINTFORMW 在恶劣的天气中，%CALLNAME:MASTER%和妖梦投入了训练中……
+	;普通情况
+	ELSE
+		IF ABL:MASTER:戦闘能力 >= 6 && ABL:MASTER:戦闘能力 > ABL:戦闘能力
+			PRINTFORML 「能接受我的训练吗？谢谢！」
+			PRINTFORML %CALLNAME:MASTER%决定陪妖梦进行训练
+		ELSE
+			PRINTFORML 「是锻炼吗！那就开始吧！」
+			PRINTDATAL
+				DATAFORM 妖梦眼中闪烁着光芒……
+				DATAFORM 半灵围绕着%CALLNAME:MASTER%旋转着……
+			ENDDATA
+		ENDIF
+		PRINTFORMW
+		
+		IF ABL:MASTER:戦闘能力 >= 6 && ABL:MASTER:戦闘能力 > ABL:戦闘能力
+			SELECTCASE RAND:5
+				CASE 0
+					PRINTFORML 「能躲开吗！？」
+					PRINTFORML 妖梦和半灵的波动攻击，%CALLNAME:MASTER%轻松地躲避了！
+					PRINTFORML （竟然躲过了……身手真敏捷……！）
+				CASE 1
+					PRINTFORML 「就是这样！」
+					PRINTFORML 飞速袭来的半灵，%CALLNAME:MASTER%单手接住了！
+					PRINTFORML （完全不动摇……力量差距如此之大……！）
+				CASE 2
+					PRINTFORML 「哈啊！！」
+					PRINTFORML 伴随着热烈的吼声，%CALLNAME:MASTER%用气势将释放的剑气弹开了！
+					PRINTFORML （嗯，有点冒失！？但不能输……！）
+				CASE 3
+					PRINTFORML 「――嘶」
+					PRINTFORML 妖梦绕到盲点发动的一击，被%CALLNAME:MASTER%用两根手指夹住了！
+					PRINTFORML （完全被看穿了……速度还不够……！）
+				CASE 4
+					PRINTFORML 「这，也能成为锻炼吗……？」
+					PRINTFORML %CALLNAME:MASTER%在半灵上堆积物体，挑战平衡的极限
+					PRINTFORML （崩塌了……哈！？比想象中更能集中注意力……）
+			ENDSELECT
+			PRINTFORMW
+			PRINTFORML 「谢谢你！下次也请多关照！」
+			PRINTFORMW 妖梦看起来很高兴能有好的训练……
+			EXP:23:戦闘経験 += 3
+		
+		ELSEIF ABL:MASTER:戦闘能力 >= 4
+			SELECTCASE RAND:4
+				CASE 0
+					PRINTFORML 「躲避并命中，说起来容易做起来难……！」
+					PRINTFORML %CALLNAME:MASTER%进行了躲避飞舞半灵子弹并反击的训练
+				CASE 1
+					PRINTFORML 「对于中近距离我很有信心，但远距离有点不擅长……」
+					PRINTFORML %CALLNAME:MASTER%和妖梦轮流进行弹幕对决，专注于战术和指导
+				CASE 2
+					PRINTFORML 「我准备了很多替补，尽管放手斩！！」
+					PRINTFORML %CALLNAME:MASTER%用妖梦带来的日本刀，不断斩倒摆放的稻草包
+				CASE 3
+					PRINTFORML 「基础中的基础，因此不能疏忽」
+					PRINTFORML %CALLNAME:MASTER%和妖梦使用模拟刀进行素振的训练
+			ENDSELECT
+			PRINTFORMW
+				IF TALENT:恋慕 && RAND:2 == 0
+					PRINTFORML 「谢谢你。%CALLNAME:MASTER%，能够和你这样锻炼……真的，很高兴」
+				ELSE
+					PRINTFORML 「辛苦了！这样相互切磋确实更有集中力」
+				ENDIF
+			PRINTFORMW 互相进行了良好的训练……
+			EXP:MASTER:戦闘経験 += 2
+			EXP:23:戦闘経験 += 2
+		
+		ELSEIF ABL:MASTER:戦闘能力 >= 2
+			SELECTCASE RAND:4
+				CASE 0
+					PRINTFORML 「请毫不保留地射击，我可不采用软弱的锻炼方式！」
+					PRINTFORML %CALLNAME:MASTER%将四处飞动的半灵视为目标，努力进行弹幕练习
+				CASE 1
+					PRINTFORML 「再拉近一点，感受刚好躲避的感觉……」
+					PRINTFORML %CALLNAME:MASTER%在辨别飞来的半灵的同时进行回避练习
+				CASE 2
+					PRINTFORML 「状态不错，那么再来一圈吧！」
+					PRINTFORML %CALLNAME:MASTER%和妖梦一起休息片刻，然后全力奔跑周围
+				CASE 3
+					PRINTFORML 「对我来说可能是最熟悉的锻炼方式了」
+					PRINTFORML %CALLNAME:MASTER%使用妖梦带来的木刀进行素振练习
+			ENDSELECT
+			PRINTFORMW
+			PRINTFORML 「辛苦了！%TEXTR("不要心急，踏实地掌握/")%！」
+			PRINTFORMW 感觉这次的训练比平时要好……
+			EXP:MASTER:戦闘経験 += 2
+		
+		ELSE
+			SELECTCASE RAND:4
+				CASE 0
+					PRINTFORML 「请意识到一定的速度，累了就走也没关系！」
+					PRINTFORML %CALLNAME:MASTER%和妖梦一起休息片刻，然后轻松地跑动周围
+				CASE 1
+					PRINTFORML 「虽然是在无缘之塚捡到的，但这个东西还挺……」
+					PRINTFORML %CALLNAME:MASTER%用妖梦带来的跳绳进行体力训练
+				CASE 2
+					PRINTFORML 「刀很重，上半身的力量也很关键！」
+					PRINTFORML %CALLNAME:MASTER%在妖梦带来的厚垫子上进行力量训练
+				CASE 3
+					PRINTFORML 「不要小看只是走路，慢慢提高速度吧！」
+					PRINTFORML %CALLNAME:MASTER%和妖梦一起改变步伐在周围走动
+			ENDSELECT
+			PRINTFORMW
+			PRINTFORML 「辛苦了！%CALLNAME:MASTER%，%TEXTR("干得漂亮/")%！」
+			PRINTFORMW 感觉这次的训练比平时要好……
+			EXP:MASTER:戦闘経験 += 1
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;412,勉強
+;ABL:教養(ABL:MASTER:教養より大=MASTERが教えてもらう ABL:MASTER:教養より小=TARGETが教えてもらう
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_412
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_412
+CALL M_KOJO_別人版_MESSAGE_COM_K23_412_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_412_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF CFLAG:睡眠 || FLAG:70 || TCVAR:泥酔
+		RETURN 1
+	ELSEIF CFLAG:318 == 1 || (MARK:23:反発刻印 == 1 && RAND:3 == 0) || MARK:23:反発刻印 > 1
+		PRINTFORML 「…………」
+		PRINTFORMW 妖梦无视%CALLNAME:MASTER%，陷入冥想中……
+	ELSE
+		PRINTFORML 「座学吗」
+		PRINTFORMW 妖梦明显地%TEXTR("皱眉/表情不悦/避开目光/")%……
+			SELECTCASE RAND:5
+				CASE 0
+					PRINTFORML 「我确实知道这是必要的，但总觉得没什么兴致……」
+					PRINTFORMW %CALLNAME:MASTER%劝说妖梦，二人一起投入学习
+				CASE 1
+					PRINTFORML 「……不，正因为烦扰，不能一直回避。让我们一起挑战吧！」
+					PRINTFORMW %CALLNAME:MASTER%展现热情，与妖梦一同全力学习
+					PRINTFORML
+					PRINTFORMW 互相感觉比平时更有知识积累……
+					EXP:MASTER:学習経験 += 2
+					EXP:23:学習経験 += 2
+				CASE 2, 4
+					IF TALENT:恋慕 && RAND:2 == 0
+						PRINTFORML 「即使是%CALLNAME:MASTER%的提议，今天也有点……啊！？」
+						PRINTFORMW 「以灵体为题材是卑鄙的！……好吧，我会做的，请别试图涂鸦！」
+					ELSE
+						PRINTDATAL
+							DATAFORM 「嘛，你看，今天不太对劲嘛。不如说今天更适合练剑的日子……」
+							DATAFORM 「今天有点不同。虽然不说出来你也能感觉到，%CALLNAME:MASTER%也偶尔会有这样的日子，我今天就是这样……」
+							DATAFORM 「因为风吹来的签是『凶』，所以他们说要避免涉及危险的事情，但本来风吹来的签本身就不吉利……」
+							DATAFORM 「刚醒来就感觉身体不适，这时候再学习只会更糟糕，为了安全起见，就素振动一下，静养一下好了……」
+						ENDDATA
+						PRINTFORMW %CALLNAME:MASTER%带着沉闷的妖梦开始勉强学习
+					ENDIF
+				CASE 3
+					IF ABL:MASTER:教養 >= ABL:教養
+						PRINTFORML
+						PRINTFORML 「……哦，原来如此。得到%CALLNAME:MASTER%的指导会更加顺利啊」
+						PRINTFORML %CALLNAME:MASTER%时而解释，时而向妖梦传授学习之道
+					ELSE
+						PRINTFORML
+						PRINTFORML 「……嗯，是那个问题吗？那么——」
+						PRINTFORML %CALLNAME:MASTER%时而提问，时而向妖梦请教学问
+					ENDIF
+					PRINTFORMW 似乎不是因为对座学不感兴趣，而是难以振奋起来
+			ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;413,料理
+;TFLAG:194(100以上=禁断のメニュー 3=デザート 2=主食 1=軽食
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_413
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_413
+;TFLAG:194が100以上の場合のみ
+CALL M_KOJO_別人版_MESSAGE_COM_K23_413_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_413_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF CFLAG:睡眠 || FLAG:70 || TCVAR:泥酔
+		RETURN 1
+	;怒り
+	ELSEIF CFLAG:318 == 1 || (MARK:23:反発刻印 == 1 && RAND:3 == 0) || MARK:23:反発刻印 > 1
+		PRINTFORML 「…………」
+		PRINTFORMW 妖梦默默地完成了烹饪……
+
+	;特有
+	ELSEIF DISHNAME == "白玉みつまめ"
+		IF FIRSTTIME("妖夢固有料理")
+			PRINTFORML 「想要向我学习食谱，呃……其实更希望是我教给你」
+			PRINTFORMW 「嗯……」
+			PRINTFORML 「……对了！」
+			PRINTFORMW
+			PRINTFORML 「前段时间有点意识到半灵的存在，尝试着做了一些增加白玉的糖饼」
+			PRINTFORML 「结果做得相当不错，我自己都觉得很出色」
+				;夏天
+				SELECTCASE DAY:2
+					CASE 2
+						PRINTFORML 「外观看起来也很凉爽，所以我觉得正适合这个季节」
+				;其他季节
+					CASEELSE
+						PRINTFORML 「嘛，如果问我现在想吃吗，有点疑问……」
+				ENDSELECT
+			PRINTFORMW
+			PRINTFORML 「……你有兴趣吗？如果是的话，我们马上来做吧」
+			PRINTFORMW 「首先是准备白玉——」
+			PRINTFORML 「呜哇！？为什么突然拿着半灵的……」
+			PRINTFORML 「所以说！只是意识到而已，不是真的用到实物！」
+			PRINTFORMW
+			PRINTFORML 之后认真地从妖梦那里接受了指导……
+			PRINTFORMW 「好了，完成了！再强调一下，白玉的煮熟程度要小心哦？」
+		ELSEIF STRCOUNT(DISH_TASTE, "練習")
+			PRINTFORML 「任何事情都需要反复练习才能掌握」
+			PRINTFORMW 「直到%CALLNAME:MASTER%满意为止，我都会教给你的！」
+			PRINTFORML 「……请不要用半灵！」
+			PRINTFORMW 已经在之前强调过了……
+		ELSE
+			PRINTFORML 「你喜欢吗？如果是的话，我会很高兴！」
+			PRINTFORMW
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「……你一直在看着呢」
+						PRINTFORMW 「如果半灵的大小和白玉一样，%CALLNAME:MASTER%你能吃完吗？」
+					CASE 1
+						SELECTCASE DAY:2
+							CASE 2
+								PRINTFORML 「在这个季节来说，凉爽的甜味真是让人感激」
+								PRINTFORMW 「如果你故意选择了它，我会有点得意的」
+							CASEELSE
+								PRINTFORML 「……虽然这么说了，但季节感还是有点不对劲呢……」
+								PRINTFORMW 「但如果你考虑到这点还是想吃的话，我会很高兴的」
+						ENDSELECT
+				ENDSELECT
+		ENDIF
+	;漬物
+	ELSEIF DISHNAME == "漬物"
+		PRINTFORMW 「嗯嗯……是泡菜吗？」
+		PRINTFORML 「在府邸我做的话完全不好吃」
+		PRINTFORMW 「但是这么短的时间里确实泡得很入味……有什么窍门吗？」
+	;怪异或神秘料理
+	ELSEIF STRCOUNT(DISH_TASTE, "グロテスク") || STRCOUNT(DISH_TASTE, "謎料理")
+		PRINTFORMW 「嗯……！？」
+		PRINTFORML 「明明自己也帮忙了，这料理到底……？」
+		PRINTFORMW 「……那个，我还是免了吧……」
+	;普通
+	ELSE
+		IF TALENT:恋慕
+			PRINTFORML 「料理吗，好的，我们一起来做吧！」
+			PRINTFORMW
+				SELECTCASE RAND:5
+					CASE 0
+						IF ABL:MASTER:料理技能 > 4
+							PRINTFORML 「哇，熟练的手法……」
+							PRINTFORMW 「在你旁边看，我觉得自己还有很长的路要走」
+							PRINTFORMW 「所以，请再教我一次吧♪」
+						ELSEIF ABL:MASTER:料理技能 > 1
+							PRINTFORML 「两个人一起做确实会发现很多地方」
+							PRINTFORML 「如果以此为课题，下次一定会更好」
+							PRINTFORMW 「我们能做得更好！」
+						ELSE
+							PRINTFORML 「啊，%CALLNAME:MASTER%你还太……！」
+							PRINTFORMW 「那、那没关系，我会努力的！」
+						ENDIF
+					CASE 1
+						PRINTFORML 「爱情是最好的调味料，常听说这样说」
+						PRINTFORMW 「这是真的吗……吃完这道菜告诉我吧」
+					CASE 2
+						PRINTFORML 「虽然不仅限于这道菜」
+						PRINTFORML 「我做的菜总是会有一种让人背脊微凉的味道……」
+						PRINTFORMW 「明明没有放奇怪的东西，为什么呢……？」
+					CASE 3
+						PRINTFORML 「两个人一起做让心情变得愉快」
+						PRINTFORML 「%CALLNAME:MASTER%你如果每餐都和我一起站在厨房……」
+						PRINTFORMW 妖梦眺望着远处，眼中带着一丝遥远的眼神……
+					CASE 4
+						PRINTFORML 「摆盘是这样……完成了！」
+						PRINTFORMW 「怎么样？形象也很重要哦」
+				ENDSELECT
+		ELSE
+			PRINTFORML 「做菜吗，我也来帮忙！」
+			PRINTFORMW
+				SELECTCASE RAND:4
+					CASE 0
+						IF ABL:MASTER:料理技能 > 4
+							PRINTFORML 「太、太厉害了……」
+							PRINTFORMW 「你到底在哪里学到这么高超的技术？请务必教教我……」
+						ELSEIF ABL:MASTER:料理技能 > 1
+							PRINTFORML 「旁边有个懂得自己喜好的人真是令人欣慰」
+							PRINTFORMW 「%CALLNAME:MASTER%，对炊事有没有兴趣？」
+						ELSE
+							PRINTFORML 「诶，%CALLNAME:MASTER%你还太……！」
+								IF TALENT:思慕
+									PRINTFORMW 「嗯、嗯，我还能搞定，放弃可不行！」
+								ELSE
+									PRINTFORMW （怎、怎么办……虽然觉得不至于吃不了，但……）
+								ENDIF
+						ENDIF
+					CASE 1
+						PRINTFORML 「府邸里有专门负责做饭的幽灵」
+						PRINTFORMW 「而我有这方面的心得，原因……请自行脑补」
+					CASE 2
+						PRINTFORMW 「其实，白玉楼的花费有九成都花在食物上」
+						PRINTFORML 「……开玩笑的啦？」
+						PRINTFORMW 妖梦一脸茫然的看着……
+					CASE 3
+						PRINTFORML 「快、省、好吃。这是食物达到的最高点之一」
+						PRINTFORMW 「如果我也能在这方面有所造诣的话……」
+				ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;414,食事を取る
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:194(1=ノーパンしゃぶしゃぶ 2=禁断のメニュー 31=ドーピングコンソメスープ 30=モッツァレラチーズとトマトのサラダ 34=ギンギー料理
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_414
+;成否判定
+;TFLAG:192(-2=コマンド終了(非TARGET時強制失敗)、-1＝強制失敗、0=COM依存(非TARGET時強制成功)、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_414
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_414
+CALL M_KOJO_別人版_MESSAGE_COM_K23_414_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_414_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;415,食事をふるまう
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_415
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_415
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_415
+CALL M_KOJO_別人版_MESSAGE_COM_K23_415_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_415_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;416,演奏する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:使用楽器(1=キーボード 2=ピアノ 3=ギター 4=トランペット 5=ヴァイオリン)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_416
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_416
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_416
+CALL M_KOJO_別人版_MESSAGE_COM_K23_416_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_416_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TCVAR:泥酔 == 1
+		PRINTFORML
+	;怒り
+	ELSEIF CFLAG:318 == 1
+		PRINTFORML 「…………」
+		PRINTFORMW 被强烈的杀气所包围，仿佛在说“太吵了”……
+	;反発刻印存在
+	ELSEIF (MARK:23:反発刻印 == 1 && RAND:3 == 0) || (MARK:23:反発刻印 > 1 && RAND:3 != 0)
+		PRINTFORML 「……刺耳」
+		PRINTFORMW 妖夢背对着%CALLNAME:MASTER%，小声嘀咕着……
+	;失败
+	ELSEIF TFLAG:193 == -1
+		PRINTFORML 「失、失败对于任何人都是难免的！」
+		PRINTDATAW
+			DATAFORM 半灵摇摇晃晃地摔倒了……
+			DATAFORM 「但是下次请多多谅解……」
+			DATAFORM 「在这个领域我似乎帮不上忙，感到有点无奈……」
+		ENDDATA
+	;没有音楽技能
+	ELSEIF ABL:MASTER:音楽技能 == 0
+		PRINTFORML 「……说实话有点难以启齿」
+		PRINTFORMW 「如果能换个地方练习就好了……」
+		PRINTFORMW 妖夢虽然面带微笑，但她的眼中却没有笑意……
+	;大成功
+	ELSEIF TFLAG:193 == 1
+		PRINTFORML 「太棒了，%CALLNAME:MASTER%！！」
+			IF ABL:MASTER:音楽技能 > 4
+				PRINTFORMW 「和闹灵姐妹一样……不，可能比她们还要出色！」
+			ELSE
+				PRINTFORMW 「在这条路上肯定能走得很远！」
+			ENDIF
+		PRINTFORMW 妖夢眼中闪烁着光芒，向%CALLNAME:MASTER%热烈鼓掌
+	;成功
+	ELSE
+		SELECTCASE RAND:3
+			CASE 0
+				PRINTFORML 「哇，太厉害了……」
+				PRINTFORMW 妖夢和半灵一起欢快地晃动着身体
+			CASE 1
+				PRINTFORML 「%CALLNAME:MASTER%，太厉害了！」
+				PRINTFORMW 妖夢眼中闪烁着光芒，热情地鼓掌
+			CASE 2
+				PRINTFORML 「～♪」
+				PRINTFORMW 似乎很喜欢，妖夢哼唱起刚才演奏的曲子
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;417,昼寝をする
+;TFLAG:193(0=MASTERを抱き枕にして寝ている 1=MASTERの膝を枕にして寝ている 2=寝顔にキスされた 3=寝顔をのぞき込まれた 4=MASTERが膝枕されてる 5=秘処orペニス揉み
+;CFLAG:添い寝中(1=一緒に寝ている
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_417
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_417
+CALL M_KOJO_別人版_MESSAGE_COM_K23_417_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_417_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;421,願掛けする
+;条件が複雑なので、COMF421 願掛け.ERBおよび、EVENT_MESSAGE_COM400.ERBの願掛けするの項を参照のこと
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_421
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_421
+CALL M_KOJO_別人版_MESSAGE_COM_K23_421_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_421_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;422～430は、特殊コマンドなのでテンプレでは対応しません
+;==================================================
+
+;==================================================
+;431,お風呂でくつろぐ
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;TFLAG:194(1=連続入浴不可(表示しない可能性あり？
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_431
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_431
+CALL M_KOJO_別人版_MESSAGE_COM_K23_431_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_431_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;432,お風呂でくつろぐ
+;表示タイミングは入浴後なので、お風呂上がりでの
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_432
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_432
+CALL M_KOJO_別人版_MESSAGE_COM_K23_432_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_432_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;436,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_436
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_436
+CALL M_KOJO_別人版_MESSAGE_COM_K23_436_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_436_1
+;==================================================
+;440,待つ
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_440
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_440
+CALL M_KOJO_別人版_MESSAGE_COM_K23_440_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_440_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;441,授業を受ける(慧音専用
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_441
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_441
+CALL M_KOJO_別人版_MESSAGE_COM_K23_441_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_441_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;442,伐採する（未実装
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_442
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_442
+CALL M_KOJO_別人版_MESSAGE_COM_K23_442_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_442_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;445,採集する
+;TFLAG:193(採集物のID, 0=『何も見つからなかった…』
+;TFLAG:194(今回採集した個数
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_445
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_445
+CALL M_KOJO_別人版_MESSAGE_COM_K23_445_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_445_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;448,罠を仕掛ける／虫トラップ
+;TFLAG:193,
+;   -1=罠が壊れた
+;    0=罠を仕掛けた
+;    1=獲物が得られた
+;   10=虫トラップを仕掛けた
+;   11=虫トラップを破棄した
+;   12=ムシを捕まえた
+;FLAG:194,獲物の番号
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_448
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_448
+CALL M_KOJO_別人版_MESSAGE_COM_K23_448_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_448_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;449,虫捕り
+;TFLAG:193,
+;   -2=殺してでもうばいとる（取っ組み合いの末逃がす）
+;   -1=ゆずってくれ！→拒否
+;    0=捕獲失敗
+;    1=MASTERが捕まえた
+;    2=キャラが捕まえたのをMASTERが褒めた
+;    3=ゆずってくれ！→渋々オッケー
+;    4=ゆずってくれ！→オールオッケー
+;TRAINMESSAGEを省略する場合は虫カゴに入れる処理を忘れないように
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_449
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_449
+CALL M_KOJO_別人版_MESSAGE_COM_K23_449_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_449_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;483,ムシバトル
+;TFLAG:193,
+;    1=１対１の対戦
+;    2=３～４人戦
+;    3=２対２のチーム戦
+;TFLAG:194にMASTERの順位が入っています（MASTERが1ならキャラ負け）
+;バトル中の口上はイベント口上ファイルに入っています
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_483
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_483
+CALL M_KOJO_別人版_MESSAGE_COM_K23_483_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_483_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;484,スイカ割り
+;TFLAG:193,
+;   -1=失敗
+;    0=成功
+;    1=大成功
+;    2=木刀で大成功（ボーナス点）
+;TFLAG:194
+;    0=正直者
+;    1=ウソつき
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_484
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_484
+CALL M_KOJO_別人版_MESSAGE_COM_K23_484_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_484_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;490,アイテム
+;TFLAG:193(使用アイテムのID
+;TFLAG:194(対象 0=MASTER,1=TARGET
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_490
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_490
+;アイテムにTRAIN_MESSAGEはない
+CALL M_KOJO_別人版_MESSAGE_COM_K23_490_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_490_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;デート系コマンド
+;デート系口上は文字通り外出先で発生
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+[SKIPSTART]
+;現状未実装
+;==================================================
+;600,デート会話
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_600
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_600
+CALL M_KOJO_別人版_MESSAGE_COM_K23_600_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_600_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;601,デートスキンシップ
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_601
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_601
+CALL M_KOJO_別人版_MESSAGE_COM_K23_601_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_601_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;602,デートキス
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_602
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_602
+CALL M_KOJO_別人版_MESSAGE_COM_K23_602_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_602_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+[SKIPEND]
+;==================================================
+;603,手を繋ぐ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗でもふりほどかれたりはしません
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_603
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_603
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_603
+CALL M_KOJO_別人版_MESSAGE_COM_K23_603_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_603_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;604,散策する
+;デート中の場合、CFLAG:現在位置に移動先の場所が既に入ってる
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_604
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_604
+;散策するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_別人版_MESSAGE_COM_K23_604_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_604_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;605,寄り道する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文無し
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_605
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_605
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_605
+;寄り道するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_別人版_MESSAGE_COM_K23_605_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_605_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;610,食事に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_610
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_610
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_610
+CALL M_KOJO_別人版_MESSAGE_COM_K23_610_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_610_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;613,お金稼ぎする（オミットされました
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_613
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_613
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_613
+CALL M_KOJO_別人版_MESSAGE_COM_K23_613_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_613_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;614,食材の買い出し
+;TFLAG:193(1=購入＆デート経験アップ 0=購入 -1=非購入)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_614
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_614
+CALL M_KOJO_別人版_MESSAGE_COM_K23_614_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_614_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;615,お弁当を食べる
+;実行可能場所　お地蔵通り,枝垂れ柳の下,霧の湖,玄武の沢,大蝦蟇の池,絶景の丘,山の湖,天界
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:料理技能(2未満=微妙な出来 4未満=そこそこ美味しい 4以上=絶品)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_615
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_615
+CALL M_KOJO_別人版_MESSAGE_COM_K23_615_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_615_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;617,甘味処に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐は大成功のみ追加
+;==================================================
+@M_KOJO_別人版_SUCCESS_COM_K23_617
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_617
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_617
+CALL M_KOJO_別人版_MESSAGE_COM_K23_617_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_617_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;618,花屋（口上は表示されない模様？
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_618
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_618
+CALL M_KOJO_別人版_MESSAGE_COM_K23_618_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_618_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;620,鈴奈庵
+;TFLAG:193(1=貸し出しOK 0=貸し出し不可
+;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字引 X=4御伽草子
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_620
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_620
+CALL M_KOJO_別人版_MESSAGE_COM_K23_620_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_620_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;621,釣りをする
+;COM_STR（釣れたもの　"釣れない","ローター","木片","紙切れ", またはアイテム名、魚の種類）
+;TFLAG:194(1000以上ならTARGETが釣った)
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_621
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_621
+CALL M_KOJO_別人版_MESSAGE_COM_K23_621_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_621_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;626,土産屋
+;TFLAG:194(行動結果(-2=ひやかし -1=ウィンドウショッピング 1=400点未満（BAD） 2=～699点（NOMAL） 3=700点以上（GOOD）
+;CFLAG:性格傾向による地の文分岐あり
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_626
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_626
+CALL M_KOJO_別人版_MESSAGE_COM_K23_626_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_626_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:194
+		;ひやかし
+		CASE -2
+		
+		;やっぱりやめる（見送り）
+		CASE -1
+		
+		;400点未満（BAD）
+		CASE 1
+		
+		;400点～699点（NOMAL）
+		CASE 2
+		
+		;700点以上（GOOD）
+		CASE 3
+		
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;660,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_660
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_660
+CALL M_KOJO_別人版_MESSAGE_COM_K23_660_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_660_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;698,部屋に入る
+;TARGETの部屋に入る場合のみ表示
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_698
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_698
+CALL M_KOJO_別人版_MESSAGE_COM_K23_698_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_698_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;699,外に出る
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_COM_K23_699
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_COM_K23_699
+CALL M_KOJO_別人版_MESSAGE_COM_K23_699_1
+RETURN RESULT
+
+@M_KOJO_別人版_MESSAGE_COM_K23_699_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;派生コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;60,耳かき
+;前ターン膝枕後スキンシップコマンド
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
+;==================================================
+@M_KOJO_別人版_SUCCESS_SCOM_K23_60
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_SCOM_K23_60
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_SCOM_K23_60
+CALL M_KOJO_別人版_MESSAGE_SCOM_K23_60_1
+RETURN RESULT
+@M_KOJO_別人版_MESSAGE_SCOM_K23_60_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;61,抱きまくら
+;(TARGET睡眠時間or衰弱)添い寝中、前ターン抱きつく後就寝コマンド
+;分岐無し
+;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_SCOM_K23_61
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_SCOM_K23_61
+CALL M_KOJO_別人版_MESSAGE_SCOM_K23_61_1
+RETURN RESULT
+@M_KOJO_別人版_MESSAGE_SCOM_K23_61_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;62,デコちゅー
+;前ターン頭撫で後キスする
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;ABL:欲望(5以上=物足りない
+;ABL:親密(5以上=照れる
+;==================================================
+@M_KOJO_別人版_SUCCESS_SCOM_K23_62
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_SCOM_K23_62
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_SCOM_K23_62
+CALL M_KOJO_別人版_MESSAGE_SCOM_K23_62_1
+RETURN RESULT
+@M_KOJO_別人版_MESSAGE_SCOM_K23_62_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;63,もっとキスする
+;前ターンキスする後キスする
+;分岐条件はEVENT_MESSAGE_COM500.ERB参照
+;==================================================
+@M_KOJO_別人版_SUCCESS_SCOM_K23_63
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_SCOM_K23_63
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_SCOM_K23_63
+CALL M_KOJO_別人版_MESSAGE_SCOM_K23_63_1
+RETURN RESULT
+@M_KOJO_別人版_MESSAGE_SCOM_K23_63_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;80,手を引く
+;デート出発後目的地に着くまでの間
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_別人版_SUCCESS_SCOM_K23_80
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_別人版_MESSAGE_MESSAGECHECK_SCOM_K23_80
+RETURN 0
+
+@M_KOJO_別人版_MESSAGE_SCOM_K23_80
+CALL M_KOJO_別人版_MESSAGE_SCOM_K23_80_1
+RETURN RESULT
+@M_KOJO_別人版_MESSAGE_SCOM_K23_80_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
