@@ -32,6 +32,9 @@ SELECTCASE RESULT
 		IF 醸造量 > 0
 			CALL GET_ITEM(@"%VAR_FERMENT%", 醸造量, 2)
 		ENDIF
+		;(酒造パッチ)酒粕入手
+		SIF VAR_FERMENT == "吟醸酒" || VAR_FERMENT == "熟成酒" || VAR_FERMENT == "古酒" || VAR_FERMENT == "貴醸酒" || VAR_FERMENT == "貴醸熟成酒" || VAR_FERMENT == "貴醸古酒"
+			CALL GET_ITEM("酒粕", 1, 1)
 		VAR_FERMENT = %VAR_WATER%
 		VAR_WATER =
 		DAY:10 = 0
@@ -164,10 +167,14 @@ IF LOCAL == 1
 	ENDSELECT
 ENDIF
 
+;(酒造パッチ)吟醸酒・貴醸酒・三増酒を追加
 IF LOCAL == 2
 	{
 	CALL ASK_M("优质食材", ITEM:优质食材 && CAN_FERMENT(),
 	"草木灰", ITEM:草木灰 && VAR_FERMENT == "濁酒",
+	"大米酒曲-(酒醪(米))", ITEM:米こうじ && VAR_FERMENT == "奇跡之水",
+	"大米酒曲-(酒醪(再醸仕込))", ITEM:米こうじ && VAR_FERMENT == "吟醸酒",
+	"蒸留酒+甘味料", (ITEM:蒸留酒 && ITEM:甜味料) && VAR_FERMENT == "清酒",
 	"下一个",1,
 	"放棄",1)
 	}
@@ -179,6 +186,16 @@ IF LOCAL == 2
 			CALL LOST_ITEM("草木灰", 1, 1)
 			VAR_FERMENT = 灰持酒
 		CASE 2
+			CALL LOST_ITEM("米こうじ", 1, 1)
+			VAR_FERMENT = 酒醪(米)
+		CASE 3
+			CALL LOST_ITEM("米こうじ", 1, 1)
+			VAR_FERMENT = 酒醪(再醸仕込)
+		CASE 4
+			CALL LOST_ITEM("蒸留酒", 1, 1)
+			CALL LOST_ITEM("甘味材", 1, 1)
+			VAR_FERMENT = 三増酒
+		CASE 5
 			LOCAL = 0
 			CLEARLINE 5
 			RESTART
