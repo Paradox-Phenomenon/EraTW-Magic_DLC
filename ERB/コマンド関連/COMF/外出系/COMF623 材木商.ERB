@@ -82,7 +82,7 @@ FLAG:最後に木材商に訪れた日 = DAY:0
 PRINTFORML 　　所持金: %金額表示(MONEY)%
 DRAWLINE
 
-CALL ASK_M("原木売却・製材", ITEM:原木, "卖木材", ITEM:木材, "製材", 4, "確認交易内容", 5, "从店里离開", 6)
+CALL ASK_M("原木売却・製材", ITEM:原木, "卖木材", ITEM:木材, "卖製材", 4, "確認交易内容", 5, "从店里离開", 6)
 リザルト保管 = RESULT
 ProcessingCharge = LUMBERING(FLAG:原木種類, "木材商")
 CLEARLINE 12
@@ -156,7 +156,8 @@ SELECTCASE リザルト保管
 			PRINTL 
 			GOTO LOOP_SELECT
 		ENDIF
-		PRINTFORMW 「製材的采购吗。让我看看」
+		;PRINTFORMW 「製材的采购吗。让我看看」
+		PRINTFORMW 「要卖掉手上的製材吗。让我看看」
 		DRAWLINE
 		FOR LOCAL, 1, 50
 			SIF LOG_SALES:LOCAL == 0
@@ -186,12 +187,12 @@ SELECTCASE リザルト保管
 		
 		リザルト保管 = RESULT
 		IF リザルト保管 && LOG_SALES:リザルト保管
-			売値 = WOOD_VALUE(リザルト保管, "製材")
+			売値 = LUMBERING(リザルト保管, "木材商", "製材", 1)
 			候補個数 = LOG_SALES:リザルト保管
 			SETCOLOR 0x00FF00
 			PRINTFORMD 「
 			PRINTFORM %WOOD_NAME(リザルト保管)%
-			PRINTFORMD 的製材的话、以
+			PRINTFORMD 的製材的话、这边以
 			PRINTFORM %金額表示(売値)%
 			RESETCOLOR
 			PRINTFORML 买下、怎么样？」
@@ -274,7 +275,7 @@ RETURN 1
 Species = ARG % 100
 
 IF Type == "製材"
-	売値ベース =WoodValue_Plank:Species
+	売値ベース = WoodValue_Plank:Species
 ELSE
 	売値ベース = WoodValue_Log:Species
 ENDIF
@@ -322,26 +323,42 @@ RETURNF ARG % 100
 ;複数回選べるので、固定値を出す
 ;ARG	FLAG:原木種類
 ;Type	価格ないし製材数
+;Sale	卖出标志，为1时返回卖出价格，为0时返回加工价格
 ;-------------------------------------------------
-@LUMBERING(ARG, Craft, Type)
+@LUMBERING(ARG, Craft, Type, Sale)
 #FUNCTION
 #DIM 費用ベース
-#DIMS Craft
-#DIMS Type
+#DIMS DYNAMIC Craft
+#DIMS DYNAMIC Type
+#DIM DYNAMIC Sale
 
 IF Type == "QTY"
-	RETURNF 1 + (ARG / 100) * 2
+	RETURNF 1 + RAND:4 + (ARG / 10) * 2
 ENDIF
 
-費用ベース = WOOD_VALUE(ARG)
+IF Type == "製材"
+	費用ベース = WOOD_VALUE(ARG, "製材")
+ELSE
+	費用ベース = WOOD_VALUE(ARG)
+ENDIF
 
-SELECTCASE Craft
-	CASE "木材商"
-		RETURNF 費用ベース / 2
-	CASE "製材所"
-		RETURNF 費用ベース / 4
-ENDSELECT
-
+IF Sale == 1
+	SELECTCASE Craft
+		CASE "木材商"
+			RETURNF 費用ベース
+		CASE "製材所"
+			THROW ERROR! ILLEGAL Craft STRING WHEN Sale's VALUE IS 1!
+	ENDSELECT
+ELSEIF Sale == 0
+	SELECTCASE Craft
+		CASE "木材商"
+			RETURNF 費用ベース * 3
+		CASE "製材所"
+			RETURNF 費用ベース
+	ENDSELECT
+ENDIF
+SIF !GROUPMATCH(Sale, 0, 1)
+	THROW ERROR! ILLEGAL Sale VALUE!
 RETURNF 0
 
 @COM623_SELL(候補個数)
