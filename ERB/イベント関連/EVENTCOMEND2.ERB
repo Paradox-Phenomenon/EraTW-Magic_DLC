@@ -287,28 +287,50 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 		CALL KIGEN_CHANGE(TARGET,100,1)
 		BASE:憤怒 = 0
 		CFLAG:心情不快 = 0
-		;魔改被推到后，催眠强度大于50可以要求对方继续
-		;CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",ABL:施虐属性 >= 3)
-		CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",(ABL:施虐属性 >= 3 || FLAG:催眠強度 > 50))
-		SELECTCASE RESULT
-			CASE 0
-				PRINTFORML %CALLNAME:TARGET%放開%CALLNAME:MASTER%了
-				CALL 被逆推終了("満足")
-			CASE 1
-				PRINTFORML %CALLNAME:MASTER%推倒了%CALLNAME:TARGET%
-				CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,3)
-				FOR LOCAL,0,CHARANUM
-					CFLAG:(TARGET:LOCAL):诶嘿嘿 = 1
-					IF INROOM(CFLAG:MASTER:現在位置) == 2
-						CALL DATUI_SHOES(LOCAL,0)
-						CALL DATUI_SHOES(MASTER,0)
+		IF !FLAG:甲斐性無
+			;魔改被推到后，催眠强度大于50可以要求对方继续
+			;CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",ABL:施虐属性 >= 3)
+			CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",(ABL:施虐属性 >= 3 || FLAG:催眠強度 > 50))
+			SELECTCASE RESULT
+				CASE 0
+					PRINTFORML %CALLNAME:TARGET%放開%CALLNAME:MASTER%了
+					CALL 被逆推終了("満足")
+				CASE 1
+					PRINTFORML %CALLNAME:MASTER%推倒了%CALLNAME:TARGET%
+					CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,3)
+					FOR LOCAL,0,CHARANUM
+						CFLAG:(TARGET:LOCAL):诶嘿嘿 = 1
+						IF INROOM(CFLAG:MASTER:現在位置) == 2
+							CALL DATUI_SHOES(LOCAL,0)
+							CALL DATUI_SHOES(MASTER,0)
+						ENDIF
+					NEXT
+				CASE 2
+					PRINTFORML %CALLNAME:TARGET%眯起眼睛、在耳边轻声说一起做到不能做为止
+					CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,4)
+					TCVAR:TARGET:随便 = 1
+			ENDSELECT
+		ELSE
+			; CALL ASK_M("なにもしない", 1, "物欲しげな目で見つめる", 1)
+			CALL ASK_M("什么也不做", 1, "用充满欲望的眼神注视", 1)
+			SELECTCASE RESULT
+				CASE 0
+					; PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%を解放した
+					PRINTFORML %CALLNAME:TARGET%将%CALLNAME:MASTER%放开了
+					CALL 被逆推終了("満足")
+				CASE 1
+					IF ABL:施虐属性 >= 2 || (ABL:施虐属性 == 1 && RAND(2))
+						; PRINTFORML %CALLNAME:TARGET%は目を細め、それなら壊れるまでしてあげると囁いた
+						PRINTFORML %CALLNAME:TARGET%眯起眼睛、在耳边轻声说一起做到不能做为止
+						CALL KOJO_MESSAGE_SEND("EVENT", 30, TARGET, 4)
+						TCVAR:TARGET:随便 = 1
+					ELSE
+						; PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%の視線の意味がわからず、そのまま解放した
+						PRINTFORML %CALLNAME:TARGET%没有理解注视中的含义，就这么放开了%CALLNAME:MASTER%
+						CALL 被逆推終了("満足")
 					ENDIF
-				NEXT
-			CASE 2
-				PRINTFORML %CALLNAME:TARGET%眯起眼睛、在耳边轻声说一起做到不能做为止
-				CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,4)
-				TCVAR:TARGET:随便 = 1
-		ENDSELECT
+			ENDSELECT
+		ENDIF
 	ENDIF
 ENDIF
 
