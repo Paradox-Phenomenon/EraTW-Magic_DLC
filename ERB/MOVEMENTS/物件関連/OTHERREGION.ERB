@@ -145,12 +145,20 @@ ELSEIF INRANGE(RESULT, 0, MAXHOME - 1) && RESULT != 現在地MAPID
 			時間停止ジャンプ = 1
 		ENDIF
 		;原版是一行命令顶两行了,分开重写
-		CALL SET_DATE(目的地MAPID, Master, 所要時間, 時間停止ジャンプ)
-		FOR LOCAL,1,CHARANUM
-			IF CFLAG:(LOCAL):同行
-				CALL SET_DATE(目的地MAPID, LOCAL, 所要時間, 時間停止ジャンプ)
-			ENDIF
-		NEXT
+		IF !FLAG:约会的对象
+			CALL SET_DATE(目的地MAPID, Master, 所要時間, 時間停止ジャンプ)
+		ELSEIF FLAG:约会的对象 > 0
+			FOR LOCAL,1,CHARANUM
+				IF CFLAG:(LOCAL):同行
+					CALL SET_DATE(目的地MAPID, LOCAL, 所要時間, 時間停止ジャンプ)
+					;原版只计算一个角色的运动轨迹，因此如果存在只计算一次
+					;事实上原版这里算是优化过的，一行顶两行而且没有循环，运行效率高
+					;缺点就是没有扩展性
+					;说实话我也不知道到底应不应该改
+					BREAK
+				ENDIF
+			NEXT
+		ENDIF
 		RETURN 目的地MAPID
 	ENDIF
 ENDIF
