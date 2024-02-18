@@ -11,13 +11,20 @@ IF FLAG:70 == 1
 		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 2
 	ENDIF
 ELSE
-	TFLAG:理性削り = 1
-	
-	IF FLAG:甲斐性無 && !GETBIT(CFLAG:既成事實 ,0)
-		DRAWLINE
-		PRINTFORMW %CALLNAME:MASTER%沒有那樣的膽量
-		RETURN -1
+	;甲斐性無しの場合、その場にいる全員が関係を公認してないと勇気がでない
+	IF FLAG:甲斐性無
+		FOR LOCAL, 1, GET_TARGETNUM()
+			IF GET_UWAKI_HISTORY(TARGET:LOCAL, TARGET:0) < 2
+				DRAWLINE
+				; PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%に口づけをしようとしたが
+				PRINTFORML %CALLNAME:MASTER%想亲吻%CALLNAME:TARGET%
+				; PRINTFORMW 視界の端に%CALLNAME:(TARGET:LOCAL)%の姿が映ると思わず顔を離してしまった…
+				PRINTFORMW 但视野的边缘出现%CALLNAME:(TARGET:LOCAL)%的身影时，%CALLNAME:MASTER%不由得将脸移开了
+				RETURN -1
+			ENDIF
+		NEXT
 	ENDIF
+	TFLAG:理性削り = 1
 	;拒絶判定
 	IF REJECT_CHECK(SELECTCOM) && !CFLAG:睡眠
 		TFLAG:193 = 99
@@ -269,6 +276,9 @@ SIF GLOBAL_COMABLE(312)
 IF !FLAG:70
 	;亲热強度1
 	SIF (TCVAR:MASTER:亲热 < 1) && !CFLAG:睡眠
+		RETURN 0
+	;甲斐性なしはもう少し馴れ合い強度と既成事実が必要
+	SIF FLAG:甲斐性無 && ((TCVAR:MASTER:亲热 < 2 && !CFLAG:睡眠) || !GETBIT(CFLAG:既成事實, 0))
 		RETURN 0
 	;睡眠中
 	SIF CFLAG:睡眠 && !CFLAG:恶作剧 && !CFLAG:陪睡中

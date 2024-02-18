@@ -1,0 +1,508 @@
+﻿@M_KOJO_ORTHODOX_IRAIEXIST_K49(IRAI_NO)
+#DIM  IRAI_NO   ;抑制させる一般依頼ナンバー
+;動きを抑制させたい場合は、”RETURN 0”に変更すること
+;さとりんは誰かを襲撃させたりなんかしません
+SELECTCASE IRAI_NO
+	;掃除を手伝って（発生条件：TARGETがメインマップ在住）
+	CASE 1
+		RETURN 1
+	;お花に水をあげて（発生条件：TARGETがMASTER侵入可能の自宅住まいかつ、メインマップ在住かつ、親密２以上）
+	CASE 2
+		RETURN 1
+	;いっしょにあそぼ（発生条件：TARGETがTALENT:幼稚持ち）
+	CASE 3
+		RETURN 1
+	;料理上手になりたい（発生条件：TARGETの料理技能がMASTER未満かつ、MASTERの料理技能が２以上かつ、親密が３以上）
+	CASE 4
+		RETURN 1
+	;特訓につきあって（発生条件：TARGETの戦闘能力がMASTER以下かつ、親密が２以上かつ、人里以外）
+	CASE 5
+		RETURN 1
+	;誰か教えて！（発生条件：TARGETの教養がMASTER以下）
+	CASE 6
+		RETURN 1
+	;大掃除が終わらない（発生条件：TARGETがメインマップ在住かつ、冬の15日から31日までかつ、親密が３以上）
+	CASE 7
+		RETURN 1
+	;手紙を届けて（発生条件：TARGETの信頼度が30以上かつ、TARGETに文通相手が設定されている（FUNC_IRAI.ERBの965目以降に存在）
+	CASE 8
+		RETURN 1
+	;誰かの落とし物（発生条件：TARGETの信頼度が30以上）
+	CASE 9
+		RETURN 1
+	;どうしてもみつからない(そのまま落ちてる)（発生条件：TARGETの信頼度が30以上）
+	CASE 10
+		RETURN 1
+	;どうしてもみつからない(誰かが拾ってる)（発生条件：TARGETの信頼度が30以上）
+	CASE 11
+		RETURN 1
+	;懲らしめて！（発生条件：TARGETのCSVに戦闘能力が１以上ある場合）
+	CASE 12
+		RETURN 0
+	;うまい魚が食べたいなぁ（発生条件：わかさぎ姫以外）
+	CASE 13
+		RETURN 1
+	;現状無し
+	CASEELSE
+		RETURN 1
+ENDSELECT
+
+
+
+
+@M_KOJO_ORTHODOX_IRAI_K49(ROLE, SCENE, IRAI_ID)
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
+#DIMS SCENE    ;セリフの表示されるタイミング
+#DIM  IRAI_ID  ;依頼自体のID
+#DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
+#DIM  CHK_ID   ;依頼IDだけ抜き出したもの
+#DIMS BOOK_NAME;本の名称
+CHK_ID    = IRAI_ID % 1000
+CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
+SELECTCASE ROLE
+	CASE "CLIENT"
+		;一般依頼
+		IF IS_COMMON_IRAI(IRAI_ID)
+			SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+				CASE "一般依頼名"
+					SELECTCASE SCENE
+						CASE "依頼提示時"
+						;依頼を持ちかけられる時
+						CASE "依頼非受託時"
+						;内容だけ見て受託しなかった時
+						CASE "依頼受託時"
+						;依頼を受託した時
+						CASE "依頼確認時"
+						;[366]で依頼内容を依頼人に確認した時
+						CASE "依頼破棄時"
+						;受託した依頼を破棄する時
+						CASE "依頼実行直前"
+						;[367]で依頼を実行する時、実行処理の前に呼び出される
+						CASE "依頼実行直後"
+						;[367]で依頼を実行する時、実行処理の後に呼び出される
+						CASE "成功報告時"
+						;報告時（成功）
+						CASE "失敗報告時"
+						;報告時（失敗）
+						;この他、報告忘れや期限切れで失敗扱いになり後日依頼人に遭遇した際にも表示
+					ENDSELECT
+			ENDSELECT
+			RETURN
+		ENDIF
+		
+		;固有依頼
+		;個々の依頼名で分岐
+		;SCENEのWAITに関する仕様
+		;WAIT無しでよい　　　　："依頼提示時", "依頼非受託時", "依頼確認時", "依頼破棄時", "成功報告時", "失敗報告時"
+		;
+		;以下の2つは実際にはCARRYOUTでの地の文処理との比較検討が必要
+		;WAITを入れたほうが適切："依頼実行直前", "依頼実行直後"
+		SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+			CASE "参考文献"
+				SELECTCASE SCENE
+					;依頼を持ちかけられる時
+					CASE "依頼提示時"
+						SIF BOOK_NAME == ""
+							BOOK_NAME = %BOOKSNAME_ORTHODOX_49()%
+						IF 陥落状態() >= 4
+							PRINTFORML 「主様、あの少しお願いしても良いですか？」
+							PRINTFORML 「%BOOK_NAME%を探して借りてきてもらえませんか？」
+							PRINTFORML 「以前、幻想郷にも入ってきたと耳にしたことがありますから」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「……ああ、ちょうど良かった。%CALLNAME:MASTER%なら%BOOK_NAME%を探し出せますよね」
+							PRINTFORML 「『解らない』？　謙遜なんて、%CALLNAME:MASTER%には似合いませんよ」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「このさい、背に腹は替えられないわね」
+							PRINTFORML 「……%BOOK_NAME%を探してきて欲しいのですが」
+						ELSE
+							PRINTFORML 「すみません、%BOOK_NAME%を探してきてはもらえませんか？」
+						ENDIF
+					;内容だけ見て受託しなかった時
+					CASE "依頼非受託時"
+						IF 陥落状態() >= 4
+							PRINTFORML 「主様も忙しいですし、しょうが無いですよね」
+							PRINTFORML 「……主様も忙しいですし」
+							PRINTFORML 「『何が言いたい』？　いえ、別に言いたいことは無いですよ」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「『探せる自信は無い』？　それなら仕方ないですね」
+							PRINTFORML 「%CALLNAME:MASTER%なら、と思ったのですが」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「この程度の事が無理？　ふっ、所詮は卑怯者ですか」
+							PRINTFORML 「『その卑怯者に頼ろうとしたくせに』？　わざわざ仕事を用意してあげただけですよ」
+						ELSE
+							PRINTFORML 「是这様吗、それなら仕方ないですね」
+						ENDIF
+					;依頼を受託した時
+					CASE "依頼受託時"
+						IF 陥落状態() >= 4
+							PRINTFORML 「よかった、ありがとうございます主様」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「ありがとうございます、頼みましたからね」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「粪、この程度、即座に済ませられるでしょう」
+						ELSE
+							PRINTFORML 「よろしくお願いします」
+						ENDIF
+					;[366]で依頼内容を依頼人に確認した時
+					CASE "依頼確認時"
+						IF 陥落状態() >= 4
+							PRINTFORML 「探して欲しいのは、%BOOK_NAME%です、主様忘れないでくださいね」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「%BOOK_NAME%をお願いします。別の本を持ってこられても困りますから」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「%BOOK_NAME%だと、言ったでしょう。その耳は飾りですか？」
+						ELSE
+							PRINTFORML 「%BOOK_NAME%を探し出してください。お願いします」
+						ENDIF
+					;受託した依頼を破棄する時
+					CASE "依頼破棄時"
+						IF 陥落状態() >= 4
+							PRINTFORML 「……主様でも、出来ないことってあったんですね」
+							PRINTFORML 「『ただの気まぐれ』？　期待してたんですけどね」
+							PRINTFORML 「期待、してたのに」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「『見つけられなかった』？　探さなかったの間違いでは？」
+							PRINTFORML 「でもまあ、しかたありませんね。……阿燐を走らせようかしら」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「『やる気が起きない』？　たんに見つけられない無能の言い訳でしょう」
+							PRINTFORML 「まあ、%CALLNAME:MASTER%のような無能に頼んだ私がバカでした」
+						ELSE
+							PRINTFORML 「『今回は諦めろ』？　……まぁ、仕方ありませんね」
+						ENDIF
+					;[367]で依頼を実行する時、実行処理の前に呼び出される
+					CASE "依頼実行直前"
+						IF 陥落状態() >= 4
+							PRINTFORML 「『ここまで来たなら自己借りたほうが早い』？　そのとおりですけどね」
+							PRINTFORML 「それでも、主様にしてもらうのが楽しいですから」
+							PRINTFORML 「それに、主様にとっても得でしょう？」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「『何故自己借りない』？　それこそ、気まぐれ、ですよ」
+							PRINTFORML 「%CALLNAME:MASTER%の行動は見てて面白いですから」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「『ここまで来たら自己やれ』って、あんたが人を引っ張り出したくせに！」
+							PRINTFORML 「っ！　まったく、出来ないのなら最初から受けないでください」
+							PRINTFORML 「『あんた呼ばわり』？　……そこは、失礼しました」
+						ELSE
+							PRINTFORML 「わざわざここまで引っ張るとか、%CALLNAME:MASTER%はひねくれてますね。でも、借りるのは%CALLNAME:MASTER%の仕事ですよ」
+						ENDIF
+					;[367]で依頼を実行する時、実行処理の後に呼び出される
+					CASE "依頼実行直後"
+						IF 陥落状態() >= 4
+							PRINTFORML 「ありがとうございます、主様。おかげで%BOOK_NAME%が読めます」
+							PRINTFORML 「……でも、わざわざ私をここまでひっぱてこなくてもよかったんじゃ」
+							PRINTFORML 「『ただの気まぐれ』？　もう、本当に主様という人は」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「ありがとうございます。というか、出歩くのがイヤなので、%CALLNAME:MASTER%に頼んだのですが」
+							PRINTFORML 「『たまには良いだろう』？　たまには、ですね。とはいえ、%BOOK_NAME%が読めるのは嬉しいです」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「まったく……、頼んだのは借りてくるようにであって、目の前で借りろ、ではないのですが」
+							PRINTFORML 「『たまには運動しろ』？　人类ではないので別に痩せも太りもしませんから」
+						ELSE
+							PRINTFORML 「%BOOK_NAME%が手に入ったことには感謝しますが、今度から一人で動いてくださいね」
+						ENDIF
+						BOOK_NAME = 
+					;報告時（成功）
+					CASE "成功報告時"
+						IF BOOK_NAME == ""
+							IF 陥落状態() == 2
+								PRINTFORML 「%CALLNAME:MASTER%に頼むのは時間とお金の無駄でしたね」
+							ELSE
+								PRINTFORML 「非常感谢」
+							ENDIF
+						ELSEIF 陥落状態() >= 4
+							PRINTFORML 「主様、ちゃんと持ってきてくれてありがとうございます」
+							PRINTFORML 「%BOOK_NAME%、置いてるところちゃんとあるんですね」
+							PRINTFORML 「これで、あれが捗るわね……『あれとは』？　ななな、なんでもないですよ」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「ありがとうございます。……%BOOK_NAME%が本当に手に入るなんて」
+							PRINTFORML 「『あるかないかわからない物を探させたのか』？　い、いえあること自体は解っていたのですが」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「遅い。%CALLNAME:MASTER%の能力は飾り物ですか？」
+							PRINTFORML 「『借りてきてやっただろう』？　引き受けたことをするのは当然のことでしょうが」
+						ELSE
+							PRINTFORML 「ありがとうございます、おかげで助かりました」
+						ENDIF
+						BOOK_NAME = 
+					;報告時（失敗）
+					;この他、報告忘れや期限切れで失敗扱いになり後日依頼人に遭遇した際にも表示
+					CASE "失敗報告時"
+						IF 陥落状態() >= 4
+							PRINTFORML 「……主様？　私のお願いは忘れても構わない些細なことなんですか？」
+							PRINTFORML 「『そんなことはない』？　実際、持ってきてくれなかったじゃないですか」
+							PRINTFORML 「はぁ……、主様のバカ」
+						ELSEIF 陥落状態() == 3
+							PRINTFORML 「……約束くらいは、守って頂けませんか？」
+							PRINTFORML 「『たまには忘れることくらいある』？　……はぁ、もう良いです」
+						ELSEIF 陥落状態() == 2
+							PRINTFORML 「やっぱり役立たずでしたね。ろくに仕事もこなせないとか、よくそれで生きていられますね」
+							PRINTFORML 「『時姦してやろうか』？　どうぞ御勝手に、ただの八つ当たりで性交とかバカにも程がありますが」
+						ELSE
+							PRINTFORML 「出来ないなら出来ないで最初から引き受けないでください」
+						ENDIF
+						BOOK_NAME = 
+				ENDSELECT
+			CASE "返還借書（人間之里）","返還借書（紅魔館）"
+				SELECTCASE SCENE
+					;依頼を持ちかけられる時
+					CASE "依頼提示時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;内容だけ見て受託しなかった時
+					CASE "依頼非受託時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;依頼を受託した時
+					CASE "依頼受託時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;[366]で依頼内容を依頼人に確認した時
+					CASE "依頼確認時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;受託した依頼を破棄する時
+					CASE "依頼破棄時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;[367]で依頼を実行する時、実行処理の前に呼び出される
+					CASE "依頼実行直前"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;[367]で依頼を実行する時、実行処理の後に呼び出される
+					CASE "依頼実行直後"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;報告時（成功）
+					CASE "成功報告時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+					;報告時（失敗）
+					;この他、報告忘れや期限切れで失敗扱いになり後日依頼人に遭遇した際にも表示
+					CASE "失敗報告時"
+						IF 陥落状態() >= 4
+							IF 陥落状態() == 5
+							ELSE
+							ENDIF
+						ELSEIF 陥落状態() == 3
+						ELSEIF 陥落状態() == 2
+						ELSEIF 陥落状態() == 1
+						ELSE
+						ENDIF
+				ENDSELECT
+		ENDSELECT
+	CASE "TARGET"
+		;ここで表示されるSCENEは"依頼実行直前", "依頼実行直後"だけです
+		;一般依頼
+		IF IS_COMMON_IRAI(IRAI_ID)
+			SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+				;個々の依頼名で分岐してください
+				CASE "一般依頼名"
+				;人物が鍵になっていた・もしくは場所にたまたま居合わせた
+					SELECTCASE SCENE
+						;TARGETが呼ばれるのはこのタイミングだけ
+						CASE "依頼実行直前"
+						CASE "依頼実行直後"
+					ENDSELECT
+			ENDSELECT
+			RETURN
+		ENDIF
+		SELECTCASE CSVCALLNAME(CLIENT_ID)
+			;依頼者のCALLNAMEによる分岐（CSV準拠）
+			CASE "依頼者"
+				SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+					CASE "固有依頼名"
+						SELECTCASE SCENE
+						CASE "依頼実行直前"
+						CASE "依頼実行直後"
+						ENDSELECT
+				ENDSELECT
+		ENDSELECT
+	CASE "NO_REPORT"
+		;日数経過時、報告不要依頼を達成していた場合に呼ばれる口上
+		;ここで表示されるSCENEは"依頼報告不要"だけです
+		;SCENEが一つしか無いので分岐は不要
+		;また、必ず依頼主の口上が呼ばれます
+		;一般依頼
+		IF IS_COMMON_IRAI(IRAI_ID)
+			SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+				;個々の依頼名で分岐してください
+				CASE "一般依頼名"
+				CASE "給花澆水"
+				CASE "誰的遺失物"
+			ENDSELECT
+			RETURN
+		ENDIF
+		SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
+			CASE "固有依頼名"
+		ENDSELECT
+ENDSELECT
+
+@BOOKSNAME_ORTHODOX_49()
+#FUNCTIONS
+#DIMS BOOK_NAME
+#DIM LOOPCOUNT
+#DIM BOOK_NAME_NO
+#DIM BOOK_GENRE
+SELECTCASE RAND:3
+	;文系
+	CASE 0
+		SELECTCASE RAND:21
+			CASE 0
+				RETURNF "推理小説四十年史"
+			CASE 1
+				RETURNF "版画絵贋殺事件"
+			CASE 2
+				RETURNF "幽霊塔"
+			CASE 3
+				RETURNF "赤き拇指紋"
+			CASE 4
+				RETURNF "莫切自根金生木"
+			CASE 5
+				RETURNF "そしてだれもいなくなるのかー？"
+			CASE 6
+				RETURNF "画本虫撰"
+			CASE 7
+				RETURNF "守貞漫稿"
+			CASE 8
+				RETURNF "荀子"
+			CASE 9
+				RETURNF "孟子"
+			CASE 10
+				RETURNF "資治通鑑"
+			CASE 11
+				RETURNF "塩鉄論"
+			CASE 12
+				RETURNF "吾妻鏡"
+			CASE 13
+				RETURNF "類聚国史"
+			CASE 14
+				RETURNF "医心方"
+			CASE 15
+				RETURNF "ゴルギアス"
+			CASE 16
+				RETURNF "縛られたプロメテウス"
+			CASE 17
+				RETURNF "アンティゴネ（ソポクレス）"
+			CASE 18
+				RETURNF "伊曽保物語"
+			CASE 19
+				RETURNF "ユートピア"
+			CASE 20
+				RETURNF "ガリバー旅行記"
+		ENDSELECT
+	;理系
+	CASE 1
+		SELECTCASE RAND:13
+			CASE 0
+				RETURNF "発微算法"
+			CASE 1
+				RETURNF "原論"
+			CASE 2
+				RETURNF "アルス・マグナ"
+			CASE 3
+				RETURNF "種の起源"
+			CASE 4
+				RETURNF "眼の誕生"
+			CASE 5
+				RETURNF "ワンダフル・ライフ"
+			CASE 6
+				RETURNF "大和本草"
+			CASE 7
+				RETURNF "本草綱目"
+			CASE 8
+				RETURNF "鉄と病原体"
+			CASE 9
+				RETURNF "馬史"
+			CASE 10
+				RETURNF "布丁キピア"
+			CASE 11
+				RETURNF "天体の回転について"
+			CASE 12
+				RETURNF "方法序説"
+		ENDSELECT
+	;おかると～んん
+	CASE 2
+		SELECTCASE RAND:13
+			CASE 0
+				RETURNF "リグ・ヴェーダ"
+			CASE 1
+				RETURNF "ギルガメッシュ叙事詩"
+			CASE 2
+				RETURNF "ポポル・ヴフ"
+			CASE 3
+				RETURNF "スノッリのエッダ"
+			CASE 4
+				RETURNF "淮南子"
+			CASE 5
+				RETURNF "緑玉板"
+			CASE 6
+				RETURNF "777の書"
+			CASE 7
+				RETURNF "隠秘哲学について"
+			CASE 8
+				RETURNF "人类の尊厳について"
+			CASE 9
+				RETURNF "天使ラジエルの書"
+			CASE 10
+				RETURNF "ソロモンの鍵"
+			CASE 11
+				RETURNF "アブラメリンの書"
+			CASE 12
+				RETURNF "アルマンデル"
+		ENDSELECT
+ENDSELECT

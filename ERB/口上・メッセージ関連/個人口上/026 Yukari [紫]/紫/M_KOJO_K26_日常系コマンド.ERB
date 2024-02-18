@@ -1,0 +1,2727 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;日常系指令
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;300,会話
+;TFLAG:193(1=大成功 0=成功 -1=失敗 -2=大失敗（TARGETがMASTERより教養が4以上高い)
+;TCVAR:302(0=会話可能 1>=非恋慕時会話不能)
+;MARK:反発刻印(3以上=会話不能)(4以上はバグ
+;TCVAR:烂醉(1=通常成功or大失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_300
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K26_300
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K26_300
+;指令共通メッセージ(TRAIN_MESSAGE) 
+;削除すると「～说着话。」とかが消えます。また、削除した場合は自動で口上色が付きません。
+;口上メイン呼出
+CALL M_KOJO_MESSAGE_COM_K26_300_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_300_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;憤怒
+	IF CFLAG:318 == 1
+		PRINTFORMW 「你居然敢直截了当地这么说呢。」
+		PRINTFORMW 紫用愤怒的声音回答了。
+	;会話不能
+	ELSEIF TCVAR:302
+		PRINTFORMW 「……」
+		PRINTFORMW 紫沉默了。
+	ELSEIF TFLAG:193 == -2
+		IF RAND:5 == 0
+			PRINTFORMW 「能不能多点教养呢？」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「和妖精说话可能更開心。」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「真无聊，不不，太无聊了。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「要我教教你该怎么学习吗？」
+		ELSE
+			PRINTFORMW 「不好意思，请您变得更聪明一点。」
+		ENDIF
+	;ミニMap時のみ
+	;条件をメインMap時にできなくもないけど面倒
+	;現在位置が墓
+	ELSEIF CFLAG:MASTER:現在位置 == 150
+		IF RAND:5 == 0
+			PRINTFORMW 「扫墓什么的，一个人就够了」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「这里也能连接冥界吗？」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「能看到什么吗？虽然我能看到很多东西」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「葬式不要戒名不要，那么可能会被这里的僧侣讨厌吧。」
+		ELSE
+			PRINTFORMW 「没有在这里久住的兴趣。」
+		ENDIF
+	;現在位置が竹林入口
+	ELSEIF CFLAG:MASTER:現在位置 == 410
+		IF RAND:5 == 0
+			PRINTFORMW 「这附近有恐怖的怪物」
+			PRINTFORMW 「你问我的事情吗？算了，还是不知道为好」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「真实存在于主观之中，那么我是否是真实的呢？」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「也许是看到了在梦境的延续」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「红魔馆的曲奇虽然很好吃，但这里的竹笋也很美味，如果不会迷路的话就好了。」
+		ELSE
+			PRINTFORMW 「雨后春笋的味道太淡了。」
+		ENDIF
+	;現在位置が彼岸
+	ELSEIF CFLAG:MASTER:現在位置 == 640
+		IF RAND:5 == 0
+			PRINTFORMW 「彼岸花……从以前開始就很讨厌」
+			PRINTFORMW 「是啊，从很久以前開始。」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「被阎王大人发现太麻烦了，我讨厌那个人。」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「最近有没有偷懒啊？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「与现世的境界，我能用吗？」
+		ELSE
+			PRINTFORMW 「简直像莲台野一样」
+		ENDIF
+	;風呂場
+	ELSEIF BATHCHECK(CFLAG:MASTER:現在位置) && IN_HOME(CFLAG:MASTER:現在位置)
+		IF RAND:3 == 0
+			PRINTFORMW 「好舒服的温泉啊，真想一直泡着不出来」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「呵呵，说不定被偷拍了呢，我们的密会呢」
+		ELSE
+			PRINTFORMW 「哎呀？是对我的裸体有兴趣吗？」
+		ENDIF
+	ELSE
+		SELECTCASE RAND:4
+		CASE 0
+			IF DAY:2 == 1
+				IF RAND:3 == 0
+					PRINTFORMW 「春天真是适合午睡的季节啊，怎么样？%CALLNAME:MASTER%也好好享受了吗？」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「嘿，你知道吗？樱花树下可能埋着尸体哦？」
+				ELSE
+					PRINTFORMW 「呼啊啊……还有点困呢」
+				ENDIF
+			ELSEIF DAY:2 == 2
+				IF RAND:3 == 0
+					PRINTFORMW 「虽然夏天想说去海边，但我们这里没有海呢」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「这么热的天气，真是难以入眠啊」
+				ELSE
+					PRINTFORMW 「要不和蓝、橙一起冲个凉吧？」
+				ENDIF
+			ELSEIF DAY:2 == 3
+				IF RAND:3 == 0
+					PRINTFORMW 「秋天的神明也很精力充沛呢」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「红叶的季节，一起来赏月吧」
+				ELSE
+					PRINTFORMW 「在秋天的长夜中聊聊天如何？夜晚可是很长的，就像我一样」
+				ENDIF
+			ELSEIF DAY:2 == 4
+				IF RAND:3 == 0
+					PRINTFORMW 「这么冷的天气，真是想念蓝的尾巴呢」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「难道你不会冬眠吗？明明%CALLNAME:MASTER%都醒着？」
+				ELSE
+					PRINTFORMW 「平时我是冬眠的，但既然你醒着，也没办法了吧？」
+				ENDIF
+			ENDIF
+		CASEELSE
+			IF TALENT:恋人
+				IF RAND:5 == 0
+					PRINTFORMW 「恩，和%CALLNAME:MASTER%在一起就已经十分快乐了……」
+					PRINTFORMW 「真想去远方看看啊」
+				ELSEIF RAND:4 == 0
+					PRINTFORMW 「对我来说只有一两件内衣」
+					PRINTFORMW 「%CALLNAME:MASTER%喜欢什么样的？」
+				ELSEIF RAND:3 == 0
+					PRINTFORMW 「嘿嘿，呐，让我听听%CALLNAME:MASTER%的故事。」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「%CALLNAME:MASTER%不要死啊」
+				ELSE
+					PRINTFORMW 「能告诉我%CALLNAME:MASTER%喜欢的场景吗？」
+					PRINTFORMW 「我会尽量帮你实现的」
+				ENDIF
+			ELSEIF TALENT:恋慕
+				IF RAND:5 == 0
+					PRINTFORMW 「如果说‘时间就是金钱’的话，那么操纵时间的人就是暴发户了。」
+				ELSEIF RAND:4 == 0
+					PRINTFORMW 「所谓结界的概念是内和外，跨越边界的是？进入的时候我们就是存在的」
+				ELSEIF RAND:3 == 0
+					PRINTFORMW 「感觉迟钝就麻烦了，顿感那样的。」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「%CALLNAME:MASTER%会做怎样的梦呢？」
+				ELSE
+					PRINTFORMW 「即使在庭院里，尽力讴歌生命，月亮上的人也可能并不知道吧。」
+				ENDIF
+			ELSEIF TALENT:思慕
+				IF RAND:5 == 0
+					PRINTFORMW 「恩，我没发现什么有意思的事情呢。」
+				ELSEIF RAND:4 == 0
+					PRINTFORMW 「我也有工作，但是大家都嫌烦，本不应该是这样的啊」
+				ELSEIF RAND:3 == 0
+					PRINTFORMW 「接受有需要的东西，排除不需要的东西，无论外部还是内部都不会改变。」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「你知道讽刺家吗？就是不知道事物价值的人啊」
+				ELSE
+					PRINTFORMW 「哎呀，%CALLNAME:MASTER%，你能说些有趣的话吗？」
+				ENDIF
+			ELSE
+				IF RAND:5 == 0
+					PRINTFORMW 「蓝要是能懂得享乐就好了……」
+				ELSEIF RAND:4 == 0
+					PRINTFORMW 「说起来蓝的入浴照，听说被禁止了，真无聊。」
+				ELSEIF RAND:3 == 0
+					PRINTFORMW 「如果说眼睛看到的东西是现实的话，眼睛看不见的东西就是虚构的了」
+					PRINTFORMW 「即使蝴蝶在世界的另一边振翅飞翔，谁都不会介意。」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「如果发生错误，就必须修复相应的地方。」
+				ELSE
+					PRINTFORMW 「想要永远玩下去的东西，是不可能会有的。」
+				ENDIF
+			ENDIF
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;301,泡茶
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_301
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_301
+CALL M_KOJO_MESSAGE_COM_K26_301_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_301_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;憤怒
+	IF CFLAG:318 == 1
+		PRINTFORMW 「恩，我不客气了。」
+	ELSEIF TFLAG:193 == -1
+		IF RAND:5 == 0
+			PRINTFORMW 「能不能再努力一点呢……」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「不好喝啊……」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「倒也不是不能喝」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「这样的东西……」
+		ELSE
+			PRINTFORMW 「我只能说难喝啊……」
+		ENDIF
+	ELSE
+		IF RAND:5 == 0
+			PRINTFORMW 「呼……咕嘟……」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「比博丽神社的茶好喝。」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「哎呀？多谢您的好意」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「味道不浓，也不淡」
+		ELSE
+			PRINTFORMW 「啊…很好喝」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;302,身体接觸
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_302
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_302
+CALL M_KOJO_MESSAGE_COM_K26_302_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_302_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;憤怒
+	IF CFLAG:318 == 1
+		PRINTFORMW 「可以不要碰我吗？」
+	;風呂場
+	ELSEIF BATHCHECK(CFLAG:MASTER:現在位置) && IN_HOME(CFLAG:MASTER:現在位置)
+		IF RAND:3 == 0
+			PRINTFORMW 「除了背部，还想要洗哪里呢？比如……哪个地方？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「呵呵，这边也要好好清洁一下呢」
+		ELSE
+			PRINTFORMW 「看，有积垢了哦？我会给你清洁干净的」
+		ENDIF
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「恋人就是这样做的吧」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「好痒啊，再多来点。」
+		ELSE
+			PRINTFORMW 「%UNICODE(0x2665) *1%…感觉不错」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「真是的……喜欢啊…这样的事」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「啊…不要碰太多……%UNICODE(0x2665) *1%」
+			PRINTFORMW 「因为很害羞……」
+		ELSE
+			PRINTFORMW 「熟悉的感觉呢……嗯，我并没有说什么特别的」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「这种事情，除了我之外还会和谁做吗？…我倒是不介意」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「…感觉不到啊」
+		ELSE
+			PRINTFORMW 「再激烈一点也没关系」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「请不要太过亲昵好吗？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「恩，虽然希望你能说明立场……」
+		ELSE
+			PRINTFORMW 「有什么事吗？」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;303,道歉
+;TFLAG:193(2=菓子折成功 1=大成功 0=成功 -1=失敗 -2=菓子折失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_303
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_303
+CALL M_KOJO_MESSAGE_COM_K26_303_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_303_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	SELECTCASE TFLAG:193 
+	CASE 0,1,2
+		PRINTFORMW %CALLNAME:MASTER%向紫道歉
+		PRINTFORMW 「哎呀，您特意这么费心，我倒是没特别在意。」
+		PRINTFORMW 紫一边浮起笑容一边宽恕了。
+	CASEELSE
+		PRINTFORMW %CALLNAME:MASTER%向紫道歉
+		PRINTFORMW 「你的诚意不够啊」
+		PRINTFORMW 紫用没有笑着的眼睛那样放言。
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;304,幫忙干活
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:350(仕事内容(JOB_仕事内容.ERB参照のこと
+;TCVAR:沒法幫忙(=2 手伝っても早くは終わらない、時間停止中不可 永琳の診察等)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_304
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_304
+CALL M_KOJO_MESSAGE_COM_K26_304_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_304_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+		IF RAND:5 == 0
+			PRINTFORMW 「灵梦和蓝都在做什么呢？」
+		ELSEIF RAND:4 == 0
+			PRINTFORMW 「我可真能干」
+		ELSEIF RAND:3 == 0
+			PRINTFORMW 「好了好了，研修期间是七成工资哦」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「如果做了不擅长的事情而破坏了结界的话，那就麻烦了。」
+		ELSE
+			PRINTFORMW 「蓝也叫过来比较好吧？像那个时候那样有乱入者来的话很麻烦……」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;305,索求膝枕
+;TFLAG:193(-5=MASTERがTARGETよりも巨体の場合(TALENT:MASTER:体型 > TALENT:体型 + 2) 1=大成功 0=成功 -1=失敗)(-5以外は地の文分岐無し)
+;ABL:親密(6以上=顔をのぞき込みながら頭を撫でてくれる 3以上=ただ頭を撫でてくれる 2以下=縮こまっている)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_305
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_305
+CALL M_KOJO_MESSAGE_COM_K26_305_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_305_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;憤怒
+	IF CFLAG:318 == 1
+		PRINTFORMW 「…这样可以吗？
+		PRINTFORMW 紫很焦躁地伸出了膝盖。
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「帮你清耳吧？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「呵呵，这样看来很可爱呢，%CALLNAME:MASTER%」
+		ELSE
+			PRINTFORMW 「好孩子，你看，睡一觉吧？」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「你看，我抚摸你的头。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「我这样做简直就像一个女孩子一样」
+		ELSE
+			PRINTFORMW 「嗯……好平和啊……」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「这种事情，最近很少有了……」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「…真是个爱撒娇的孩子」
+		ELSE
+			PRINTFORMW 「以前这样的事，蓝她们也干过啊……」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「又不是蓝……」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「隔着结界枕一条腿有什么意义呢？」
+		ELSE
+			PRINTFORMW 「真是的……我觉得不太舒服……」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;306,撫摸肚子
+;TFLAG:193(1=ABL:親密6以上かつ妊娠時 0=成功 -1=ABL:親密5以下)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_306
+CALL M_KOJO_MESSAGE_COM_K26_306_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_306_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;307,捏臉蛋
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+	;以下は先に書いた条件が優先される
+	;TALENT:恋慕(受け入れつつ笑顔でやり返す
+	;ABL:親密(6以上=怯生生地やり返す
+	;ABL:従順(5以上=されるがまま
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_307
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗(注、抱住模式中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_307
+CALL M_KOJO_MESSAGE_COM_K26_307_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_307_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「已经够了！——别以为我不知道！」
+			PRINTFORMW 紫在叫着谁的名字。
+		ELSEIF TALENT:恋慕
+			PRINTFORMW 「嗯……%CALLNAME:MASTER%……」
+		ELSE
+			PRINTFORMW 「…嗯……嗯…？」
+		ENDIF
+	;通常
+	ELSE
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「…有什么事吗？」
+			PRINTFORMW 紫着急地追问。
+		ELSEIF TALENT:恋人
+			IF RAND:3 == 0
+				PRINTFORMW 「恩？嗯」
+				PRINTFORMW 紫反过来把脸凑近。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「捏着我的脸，%CALLNAME:MASTER%挺開心的吧？」
+			ELSE
+				PRINTFORMW 「哎呀？不讨厌自己被嘲笑吗？」
+			ENDIF
+		ELSEIF TALENT:恋慕
+			IF RAND:3 == 0
+				PRINTFORMW 「啊，我可不会就这样放过哟？」
+				PRINTFORMW 紫这样说着就捏回来了。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「呵呵，蓝是不会做这种事的。」
+			ELSE
+				PRINTFORMW 「恩，我的脸会变得很奇怪哦」
+			ENDIF
+		ELSEIF TALENT:思慕
+			IF RAND:3 == 0
+				PRINTFORMW 「嗯……虽然很困扰……」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「也许比起我，选择蓝橙或许会更有趣。」
+			ELSE
+				PRINTFORMW 「大妖怪的脸颊怎么样呢？」
+			ENDIF
+		ELSE
+			IF RAND:3 == 0
+				PRINTFORMW 「捏我的脸……真是有胆量啊」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「真不凑巧，你那样做让我很困扰。」
+			ELSE
+				PRINTFORMW 「真是的……我觉得不太舒服……」
+			ENDIF
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;308,捅臉頰
+;陪睡中or睡眠中限定
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_308
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗(注、抱住模式中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_308
+CALL M_KOJO_MESSAGE_COM_K26_308_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_308_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;睡眠中
+	IF CFLAG:睡眠
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「笨蛋！——真讨厌！」
+			PRINTFORMW 紫在叫着谁的名字。
+		ELSEIF TALENT:恋慕
+			PRINTFORMW 「…%CALLNAME:MASTER%…？
+		ELSE
+			PRINTFORMW 「…嗯…？」
+		ENDIF
+	;通常
+	ELSE
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「……」
+			PRINTFORMW 紫投来了冷淡的视线。
+		ELSEIF TALENT:恋人
+			IF RAND:3 == 0
+				PRINTFORMW 「怎么了？」
+				PRINTFORMW 紫開心地回头。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「对蓝也试着做同样的事情吧？那孩子认真的样子会很迷茫的」
+			ELSE
+				PRINTFORMW 「好的，还给你♪」
+			ENDIF
+		ELSEIF TALENT:恋慕
+			IF RAND:3 == 0
+				PRINTFORMW 「哎呀？怎么了？」
+				PRINTFORMW 紫那样微笑地说。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「呵呵，看起来很開心呢。」
+			ELSE
+				PRINTFORMW 「完全触及少女的柔软肌肤，真是罪孽深重……」
+			ENDIF
+		ELSEIF TALENT:思慕
+			IF RAND:3 == 0
+				PRINTFORMW 「哎呀，这样很贵的哦？」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「想要剥下妖怪的皮？希望不要变成这样」
+			ELSE
+				PRINTFORMW 「唔…被整了」
+			ENDIF
+		ELSE
+			IF RAND:3 == 0
+				PRINTFORMW 「太天真了」
+				PRINTFORMW 紫的间隙让%CALLNAME:MASTER%戳到了另一个人的脸上。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「…好痛啊」
+			ELSE
+				PRINTFORMW 「我是个宽容的妖怪，放过你吧。」
+			ENDIF
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;309,摸頭
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:親密(6以上=通常成功時分岐
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_309
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗(注、抱住模式中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_309
+CALL M_KOJO_MESSAGE_COM_K26_309_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_309_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「如果你能停下来的话……」
+		ELSEIF TALENT:恋慕
+			PRINTFORMW 「…%CALLNAME:MASTER%……」
+		ELSE
+			PRINTFORMW 「…嗯~？」
+		ENDIF
+	;通常
+	ELSE
+		;憤怒
+		IF CFLAG:318 == 1
+			PRINTFORMW 「…这种情况下倒是能好好做」
+			PRINTFORMW 紫投来了冷淡的视线。
+		ELSEIF TALENT:恋人
+			IF RAND:3 == 0
+				PRINTFORMW 「请再抚摸我一下♪」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「像这样的事情，很少被这么做，真丢脸啊……」
+			ELSE
+				PRINTFORMW 「恩，不习惯呢，这样的」
+			ENDIF
+		ELSEIF TALENT:恋慕
+			IF RAND:3 == 0
+				PRINTFORMW 「哎—，怎么办才好呢？」
+				PRINTFORMW 紫一边那样说着一边被这么做。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「连灵梦都没做过的，这样的事♪」
+			ELSE
+				PRINTFORMW 「头发，不会变得很奇怪吧……」
+			ENDIF
+		ELSEIF TALENT:思慕
+			IF RAND:3 == 0
+				PRINTFORMW 「怎么了？」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「我没有什么经验啊，像这样的事情，被这样做」
+			ELSE
+				PRINTFORMW 「太复杂了……」
+			ENDIF
+		ELSE
+			IF RAND:3 == 0
+				PRINTFORMW 「嘛，没有疏忽和漏洞。」
+				PRINTFORMW 紫的间隙让%CALLNAME:MASTER%抚摸了其他人类的头发。
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「头发乱了」
+			ELSE
+				PRINTFORMW 「能否请您不要碰我？」
+			ENDIF
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;331,泡茶（下薬）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_331
+;成否判定
+;TFLAG:192(-2=強制失敗(注、非指令終了）、-1＝強制失敗、0=COM依存、1=強制成功or大成功(注、睡眠薬冰淇淋ティーは眠気を感じていると飲まない)
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_331
+CALL M_KOJO_MESSAGE_COM_K26_331_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_331_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;332,勸酒
+;TFLAG:193(0=不會喝酒成功 -1=不會喝酒失敗 -2=不會喝酒大失敗 -5=不會喝酒あきらめ)
+;TFLAG:194(51=濁酒 52=清酒 53=鬼殺酒)
+;ALCOHOL_TASTE(TFLAG:194)(15以上=気に入る 9以下=口に合わない)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_332
+CALL M_KOJO_MESSAGE_COM_K26_332_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_332_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;333,聽牢騷
+;TFLAG:193(6=大成功(酔い) 5=成功(酔い) 4=失敗(酔い) 3=大成功 2=成功 1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_333
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_333
+CALL M_KOJO_MESSAGE_COM_K26_333_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_333_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 6
+		;大成功（酔い）
+		CASE 5
+		;成功（酔い）
+		CASE 4
+		;失敗（酔い）
+		CASE 3
+		;大成功
+		CASE 2
+		;成功
+		CASE 1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;334,碰杯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:妊娠自覚状態(1=吃飯)
+;TALENT:酒耐性(-2=吃飯)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_334
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_334
+CALL M_KOJO_MESSAGE_COM_K26_334_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_334_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;335,照料
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_335
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_335
+CALL M_KOJO_MESSAGE_COM_K26_335_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_335_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;336,膝枕
+;ABL:親密(4以下=居心地悪げ 9以下=恥ずかしげ それ以上=幸せそう
+;TIME_PROGRESS(TFLAG:膝枕した)(44以下=失敗
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_336
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_336
+CALL M_KOJO_MESSAGE_COM_K26_336_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_336_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF TFLAG:193 > 0
+	;寝ちゃった
+		PRINTFORMW 「幸福的时间……继续下去就好了」
+	ELSE
+	;それ以外
+		IF CFLAG:318 == 1
+			PRINTFORMW 「把人惹火了……」
+		ELSEIF TALENT:恋人
+			IF RAND:3 == 0
+				PRINTFORMW 「恩……就这样冬眠吧」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「感觉让人意外地心情不错呢」
+			ELSE
+				PRINTFORMW 「好像要沉入安宁中了……」
+			ENDIF
+		ELSEIF TALENT:恋慕
+			IF RAND:3 == 0
+				PRINTFORMW 「…冬眠的时候把你带过去吧？」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「没有蓝的尾巴那么大……」
+			ELSE
+				PRINTFORMW 「意外的有肉，看起来很好吃。」
+			ENDIF
+		ELSEIF TALENT:思慕
+			IF RAND:3 == 0
+				PRINTFORMW 「……」
+				PRINTFORMW 「像这样抬头仰望%CALLNAME:MASTER%，真是少见啊……」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「…睡得太舒服了」
+			ELSE
+				PRINTFORMW 「有点不好意思，呢哇」
+			ENDIF
+		ELSE
+			IF RAND:3 == 0
+				PRINTFORMW 「…哎呀？也许还不错呢」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「也许蓝的更好」
+			ELSE
+				PRINTFORMW 「换成橙吧」
+			ENDIF
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;350,推倒（時姦時猥褻
+;TFLAG:194 (0=成功 1=人目がある　2=野外は嫌でござりまする　3=多人数プレイは勘弁　4=合意があっても情緒が足りぬ　100=合意はあるが口上内特殊判定によって失敗）
+;TCVAR:初次拥抱　1=普通に合意ゲット　2=先に接吻ぐらいしろよ　3=媚薬or発情には勝てなかったよお…　4=悔しい…刻印さえなければﾋﾞｸﾋﾞｸﾝ
+;5=強引に迫られると断れぬ(素質膽怯持ち専用) 6=まんざらでもない　7=駄目　8=論外 98=口上内特殊判定による失敗 99=口上内特殊判定による成功
+;口上内特殊判定は該当するCFLAGが0だと無効
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_350
+CALL M_KOJO_MESSAGE_COM_K26_350_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_350_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+		PRINTFORML 
+	ELSEIF TFLAG:194
+		SELECTCASE TFLAG:194
+			CASE 1
+				PRINTFORMW 「有人和妖怪的视线，有点在意」
+			CASE 2
+				PRINTFORMW 「是暴露狂的原因吗？」
+			CASE 3
+				PRINTFORMW 「乱交稍微……」
+			CASE 4
+				PRINTFORMW 「哈……能再给我稍微制造些情緒吗？」
+		ENDSELECT
+	ELSEIF TCVAR:初次拥抱
+		SELECTCASE TCVAR:初次拥抱
+			CASE 1
+				PRINTFORMW 「…温柔的还是激烈地的，请你自便%UNICODE(0x2665) *1%」
+			CASE 2
+				PRINTFORMW 「我想要你吻一下……嗯，可以。」
+			CASE 3
+				PRINTFORMW 「…呵呵，好吧……我坐上来了♪」
+			CASE 4
+				PRINTFORMW 「身体……想要……%UNICODE(0x2665) *1%」
+			CASE 5
+			CASE 6
+				PRINTFORMW 「…再稍微了解一下彼此吧？从那以后也不晚」
+			CASE 7
+				PRINTFORMW 「什么呀，这不是我的兴趣」
+			CASE 8
+				PRINTFORMW 「可以停止吗？」
+		ENDSELECT
+	ELSE
+		IF TALENT:恋人
+			IF RAND:3 == 0
+				PRINTFORMW 「还要更多……」%UNICODE(0x2665) *1%」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「我……%CALLNAME:MASTER%……%UNICODE(0x2665) *1%」
+			ELSE
+				PRINTFORMW 「%CALLNAME:MASTER%吗……喜欢%UNICODE(0x2665) *1%」
+			ENDIF
+		ELSEIF TALENT:恋慕
+			IF RAND:3 == 0
+				PRINTFORMW 「%CALLNAME:MASTER%…%UNICODE(0x2665) *1%」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「被逆推也不坏啊……」
+			ELSE
+				PRINTFORMW 「和我在一起还那么不知分寸♪」
+			ENDIF
+		ELSEIF TALENT:思慕
+			IF RAND:3 == 0
+				PRINTFORMW 「我的身体有那么有魅力吗？」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「你能需要我真是太高兴了♪」
+			ELSE
+				PRINTFORMW 「也许还不错……」
+			ENDIF
+		ELSE
+			IF RAND:3 == 0
+				PRINTFORMW 「哎呀？被逆推了」
+			ELSEIF RAND:2 == 0
+				PRINTFORMW 「嘛，很想要的样子啊。」
+			ELSE
+				PRINTFORMW 「…随你的便」
+			ENDIF
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;351,帯出去
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_351
+;連れ出しにはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K26_351_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_351_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+		PRINTFORML 
+	;TARGET連れ出し
+	ELSEIF CFLAG:同行 == 60
+		IF RAND:3 == 0
+			PRINTFORMW 「能带我去哪里呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「怎么了？」
+		ELSE
+			PRINTFORMW 「…怎么了？
+		ENDIF
+	;TARGET以外連れ出し(TARGET同行中のみ
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;352,告白
+;FLAG:甲斐性無(1=失敗)
+;TFLAG:193 (1=成功 0=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_352
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_352
+CALL M_KOJO_MESSAGE_COM_K26_352_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_352_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF TFLAG:193 == 1
+		PRINTFORMW 「我，恋人？」
+		PRINTFORMW 紫接受了告白，沉默了一会后開了口。
+		PRINTFORMW 「…我吓了一跳，因为没有人会说那样的话」
+		PRINTFORMW 「但是，那没关系，因为」
+		PRINTFORML
+		PRINTFORMW 「因为，我也喜欢%CALLNAME:MASTER%——」
+		PRINTFORML
+		PRINTFORMW 「…呵呵，不是我骄傲，但我比%CALLNAME:MASTER%先喜欢上了你」
+		PRINTFORMW 「也就是说，我迷上了，我输了」
+		PRINTFORMW 紫一这么说就抓住了%CALLNAME:MASTER%的手。
+		PRINTFORMW 「%CALLNAME:MASTER%，%CALLNAME:MASTER%」
+		PRINTFORMW 「——不要消失啊」
+		PRINTFORMW 纤细的少女的手悲伤地颤抖着。
+	ELSE
+		PRINTFORMW 「什么？」
+		PRINTFORMW 紫看起来很坏地露出笑容那样询问了。
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;353,猥褻
+;FLAG:甲斐性無(1=失敗)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_353
+CALL M_KOJO_MESSAGE_COM_K26_353_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_353_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;354,陪睡（相手は起きて被窝に招く感じ）
+;CFLAG:衰弱(1以上=起きない
+;CFLAG:招待(0以外=起きない
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_354
+CALL M_KOJO_MESSAGE_COM_K26_354_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_354_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;355,時止め（地の文の改変程度に留めるべき
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_355
+CALL M_KOJO_MESSAGE_COM_K26_355_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_355_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;360,任憑擺佈
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=裙子の中を見せる 53=乳交 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅき大堂ド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_360
+CALL M_KOJO_MESSAGE_COM_K26_360_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_360_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;361,抵抗
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=裙子の中を見せる 53=乳交 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅき大堂ド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_361
+CALL M_KOJO_MESSAGE_COM_K26_361_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_361_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;363,朗読（[幼稚]持ち専用）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;CFLAG:陪睡中(1=被窝orベッドの中で本を読む
+;MASTERがTARGETより大柄の場合、膝の上にTARGETを乗せる
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_363
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_363
+CALL M_KOJO_MESSAGE_COM_K26_363_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_363_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;364,撒豆子(萃香、勇儀、斯喀雷特姉妹用
+;TFLAG:193(撒豆子に参加してる人数
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_364
+CALL M_KOJO_MESSAGE_COM_K26_364_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_364_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;365,向守矢神社移動(早苗、神奈子、諏訪子用
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_365
+CALL M_KOJO_MESSAGE_COM_K26_365_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_365_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;368,陪同行動 
+;技能系の行動は技能レベルが1以上なら発生
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_368
+CALL M_KOJO_MESSAGE_COM_K26_368_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_368_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	SELECTCASE Activity_Type:TARGET
+		CASE 0
+			;▼思考［在思考什么吗］
+			;TFLAG:193,-1=被躲避
+			IF CFLAG:318 == 1
+				PRINTFORMW 「我没什么要和你说的」
+			ELSEIF TFLAG:193 == -1
+				PRINTFORMW 「你觉得我在想什么？猜中的话，你也算是妖怪了」
+			ELSEIF TALENT:恋慕
+				IF RAND:3 == 0
+					PRINTFORMW 「再贴近一点也没关系哦」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「刚才在想着喜欢的人，因为我喜欢嘛♪」
+				ELSE
+					PRINTFORMW 「嗯，下次去哪里约会好呢？」
+				ENDIF
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「灵梦也变得温和了，平和蓝也变得灵活起来了吗？」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「隐岐奈总是黏糊糊的，有点让人困扰呢」
+				ELSE
+					PRINTFORMW 「结界的状况让我在意，最近有很多人进出的样子」
+				ENDIF
+			ENDIF
+		CASE 2
+			;▼用餐［一起用餐］
+			;TFLAG:193,-1=MASTER没饿
+			IF CFLAG:318 == 1
+				PRINTFORMW 「你连一人用餐都办不到吗？」
+				PRINTFORMW 紫一边生气地用餐着。
+			ELSEIF TALENT:恋慕
+				PRINTFORMW 「嘻，一起用餐味道更好%UNICODE(0x2665) *1%」
+			ELSE
+				PRINTFORMW 「哎呀？反正都来了，一起吃吧？」
+			ENDIF
+		CASE 4
+			;▼清理［帮忙打扫卫生］
+			;※[清理任务]持有或臭味耐受-1以下才能进行
+			IF CFLAG:318 == 1
+				PRINTFORMW 「%CALLNAME:MASTER%碰上就变脏了」
+			ELSEIF TALENT:恋慕
+				PRINTFORMW 「%CALLNAME:MASTER%帮我打扫真是轻松%UNICODE(0x2665) *1%」
+			ELSE
+				PRINTFORMW 「你也来帮忙打扫吗？这样就能清理得更干净了」
+			ENDIF
+		CASE 5
+			;▼运动［一起运动］
+			;※除了持有[音乐知识]的人（变成演奏）
+			IF CFLAG:318 == 1
+				PRINTFORMW 「……嗯……别看……！」
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「运动的时候应该穿运动服的……%UNICODE(0x2665) *1%」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「……嗯……竟然和我一起运动……」
+				ELSE
+					PRINTFORMW 「……呼……累了呢……%UNICODE(0x2665) *1%」
+				ENDIF
+			ENDIF
+		CASE 6
+			;▼阅读［听取书的感想］
+			;TFLAG:193,-1=专心读书无法回答
+			IF CFLAG:318 == 1
+				PRINTFORMW 「……能不能给我安静点？」
+			ELSEIF TFLAG:193 == -1
+				PRINTFORMW 「……嗯，是啊，应该这样的」
+				PRINTFORMW 紫敷衍地回答。
+			ELSE
+				PRINTFORMW 「要不要再去书店看看？」
+			ENDIF
+		CASE 7
+			;▼料理［帮助做饭］→［分享做好的食物］
+			;TFLAG:193,2=帮助做饭,0=吃做好的食物,-1==MASTER不饿（吃的时候）
+			IF TFLAG:193 == 2
+				IF CFLAG:318 == 1
+					PRINTFORMW 「你做的东西真的吃得下吗？」
+				ELSEIF TALENT:恋慕
+					PRINTFORMW 「嗯，一起做饭感觉就像是夫妻%UNICODE(0x2665) *1%」
+				ELSE
+					PRINTFORMW 「哎呀？我也是能做点料理的哦」
+				ENDIF
+			ELSE
+				IF CFLAG:318 == 1
+					PRINTFORMW 「……还算好吃吧」
+				ELSEIF TALENT:恋慕
+					PRINTFORMW 「啊～啊，来，让我喂你%UNICODE(0x2665) *1%」
+				ELSE
+					PRINTFORMW 「大家一起吃感觉更好呢%UNICODE(0x2665) *1%」
+				ENDIF
+			ENDIF
+		CASE 9
+			;▼采集［帮助采集］
+			IF CFLAG:318 == 1
+				PRINTFORMW 「你需要的我没有用的东西吧」
+			ELSE
+				PRINTFORMW 「会有什么东西呢？希望能发现有趣的东西」
+			ENDIF
+		CASE 10
+			;▼钓鱼［一起垂钓］
+			;TFLAG:193,-1=没有钓竿，只是看着
+			IF CFLAG:318 == 1
+				PRINTFORMW 「什么都没钓到啊」
+			ELSE
+				PRINTFORMW 「你能钓到什么呢？大物？」
+			ENDIF
+		CASE 11
+			;▼实验［帮助实验］
+			IF CFLAG:318 == 1
+				PRINTFORMW 「你能做什么呢？」
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「呵呵呵，要在哪里改造呢？」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「想让我搞哪个领域%UNICODE(0x2665) *1%」
+				ELSE
+					PRINTFORMW 「继续实验下去吧%UNICODE(0x2665) *1%」
+				ENDIF
+			ENDIF
+		CASE 12
+			;▼悠闲［一起悠闲］
+			IF CFLAG:318 == 1
+				PRINTFORMW 「真是无聊啊，要不要一直这么无聊下去？」
+			ELSEIF TALENT:恋慕
+				IF RAND:3 == 0
+					PRINTFORMW 「呼，就这样悠闲下去吧」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「我们两个一起冬眠吗？」
+				ELSE
+					PRINTFORMW 「%CALLNAME:MASTER%和我一起这样……嗯%UNICODE(0x2665) *1%」
+				ENDIF
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「这样太无聊了，感觉要打哈欠了」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「灵梦也是这样度过的吗？」
+				ELSE
+					PRINTFORMW 「蓝要是也能悠闲些就好了呢」
+				ENDIF
+			ENDIF
+		CASE 13
+			;▼晚酌［陪伴晚酌］
+			;※酒耐性大于0才能进行
+			IF CFLAG:318 == 1
+				PRINTFORMW 「……呼」
+				PRINTFORMW 紫一脸无表情地喝着晚酒。
+			ELSEIF TALENT:恋慕
+				IF RAND:3 == 0
+					PRINTFORMW 「干杯♪我们两个人%UNICODE(0x2665) *1%」
+					PRINTFORMW 紫一边脸红，一边喝着晚酒。
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「我准备的酒，喜欢吗%UNICODE(0x2665) *1%？」
+					PRINTFORMW 紫一边脸红，一边喝着晚酒。
+				ELSE
+					PRINTFORMW 「为了和%CALLNAME:MASTER%一起喝而准备的，干杯%UNICODE(0x2665) *1%」
+					PRINTFORMW 紫一边脸红，一边喝着晚酒。
+				ENDIF
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「有好酒呢」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「这是我准备的，要感激一下」
+				ELSE
+					PRINTFORMW 「美味的酒最好是和懂得品味的人一起喝」
+				ENDIF
+			ENDIF
+		CASE 14
+			;▼购物［帮助购物］
+			IF CFLAG:318 == 1
+				PRINTFORMW 「……你就别跟着我了好吗？」
+				PRINTFORMW 紫生气地购物着。
+			ELSEIF TALENT:恋慕
+				IF RAND:3 == 0
+					PRINTFORMW 「如果你想吃什么，我会做给你的%UNICODE(0x2665) *1%」
+					PRINTFORMW 紫一边脸红，一边这么说着。
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「像这样一起约会也不错%UNICODE(0x2665) *1%」
+					PRINTFORMW 紫一边脸红，一边这么说着。
+				ELSE
+					PRINTFORMW 「和我一起走会传出八卦的吧♪」
+					PRINTFORMW 紫一边脸红，一边这么说着。
+				ENDIF
+			ELSE
+				IF RAND:3 == 0
+					PRINTFORMW 「哎呀？行情真低啊」
+				ELSEIF RAND:2 == 0
+					PRINTFORMW 「蒲公英也能卖出去吗？」
+				ELSE
+					PRINTFORMW 「各种东西都能卖出去呢」
+				ENDIF
+			ENDIF
+		CASE 17
+			;▼堆雪人［一起堆雪人］
+			;※只在冬季满月时进行
+			IF CFLAG:318 == 1
+				PRINTFORMW 「好冷啊，就像我们一样」
+			ELSEIF TALENT:恋慕
+				PRINTFORMW 「嘻嘻，一起做个可爱的吧%UNICODE(0x2665) *1%」
+			ELSE
+				PRINTFORMW 「橙会高兴的吧？」
+			ENDIF
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;402,就寝
+;TFLAG:193(0=通常 1=兒童と一緒に川の字で寝る)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_402
+;就寝にTRAIN_MESSAGEは無い
+CALL M_KOJO_MESSAGE_COM_K26_402_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_402_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「晚安、做个好梦」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「接下来就要进入梦乡中了♪」
+		ELSE
+			PRINTFORMW 「要睡了吗？还是有什么想见的人呢？」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;403,休憩
+;CFLAG:TARGET:睡眠(1=TARGETが寝てる隣で休憩
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_403
+CALL M_KOJO_MESSAGE_COM_K26_403_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_403_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「放松一下也不错啊」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「蓝也不要着急、一起休息一下就好」
+		ELSE
+			PRINTFORMW 「什么时候都应该做自己喜欢做的事情」
+			PRINTFORMW 「趁自己还没有后悔的时候」
+		ENDIF
+	ENDIF
+
+
+ENDIF
+RETURN 1
+;==================================================
+;405,外出(同行時约会
+;条件が厄介なので、COMF405 外出.ERBを参照のこと
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_405
+;外出にTRAIN_MESSAGEは無い
+CALL M_KOJO_MESSAGE_COM_K26_405_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_405_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	;TARGETと约会
+	IF CFLAG:同行
+		IF TALENT:恋人
+			PRINTFORMW 「今天去哪里？」
+		ELSEIF TALENT:恋慕
+			PRINTFORMW 「和%CALLNAME:MASTER%的奇妙旅行」
+		ELSEIF TALENT:思慕
+			PRINTFORMW 「呵呵，你和我约会，究竟在想什么呢？」
+		ELSE
+			PRINTFORMW 「…嘛，和我约会什么的，真是个有趣的人」
+		ENDIF
+	;TARGET以外と约会
+	ELSEIF CFLAG:MASTER:同行
+	;お出かけお見送り
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;410,掃除
+;FLAG:70(1=時間停止中
+;TFLAG:193(0=見てるだけ 1=一緒に掃除)
+;TFLAG:194(3=汚れ高 2=汚れ中 1=汚れ低 0=汚れ最小
+;OUTROOF(CFLAG:現在位置)(野外掃除（冬は扫雪
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_410
+CALL M_KOJO_MESSAGE_COM_K26_410_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_410_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「…真令人吃惊，是扫除中毒吗？」
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「比灵梦还热心」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「比蓝更喜欢干净吗？」
+		ELSE
+			PRINTFORMW 「我也帮你吧？」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;411,戦闘訓練
+;TFLAG:194(3=夏の昼間 2=ヤバい天気 1=悪天候 0=屋内or通常天気
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_411
+CALL M_KOJO_MESSAGE_COM_K26_411_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_411_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF RAND:10 == 0
+		PRINTFORMW 「那么，请双手合十吧。」
+	ELSEIF RAND:9 == 0
+		PRINTFORMW 「小心交通事故♪」
+		PRINTFORMW 「废线「废弃车站下车之旅」」！
+	ELSEIF RAND:8 == 0
+		PRINTFORMW 「你觉得我的结界只有一两个吗？」
+		PRINTFORMW 「镜符「四重结界」」！
+	ELSEIF RAND:7 == 0
+		PRINTFORMW 「我可以看到一切」
+		PRINTFORMW 「魔眼「拉普拉斯之魔」！」
+	ELSEIF RAND:6 == 0
+		PRINTFORMW 「与魑魅魍魉一起舞蹈吧。」
+		PRINTFORMW 「魍魉「二重黑死蝶」！」
+	ELSEIF RAND:5 == 0
+		PRINTFORMW 「%CALLNAME:MASTER%在哪里呢？」
+		PRINTFORMW 「「人类与妖怪的境界」！」
+	ELSEIF RAND:4 == 0
+		PRINTFORMW 「是梦还是现实，还是白日梦？」
+		PRINTFORMW 「結界「夢與現實の呪」	！」
+	ELSEIF RAND:3 == 0
+		PRINTFORMW 「成为有象与无象的尽头」
+		PRINTFORMW 「幻想「第一種永久機関」	！」
+	ELSEIF RAND:2 == 0
+		PRINTFORMW 「结果精神也是相对的」
+		PRINTFORMW 「结界「客观结界」！」
+	ELSE
+		PRINTFORMW 「我觉得蓝和橙的训练比较好。」
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;412,学习
+;ABL:教養(ABL:MASTER:教養より大=MASTERが教えてもらう ABL:MASTER:教養より小=TARGETが教えてもらう
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_412
+CALL M_KOJO_MESSAGE_COM_K26_412_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_412_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「…一个人做吧」
+	ELSE
+		IF RAND:3 == 0
+			;『猫と悪魔』
+			;シュレディンガーの猫にせよラプラスの魔にせよ過去の思考実験の産物が重要であったその過程が意味をなさなくなり結果として忘れ去られる的な。
+			PRINTFORMW 「薛定谔是这样，拉普拉斯也是这样，长时间被遗忘的怪物，到底是怎样的心情呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「是否存在人所认识的东西，或者说事物的本质并不是问题、」
+			PRINTFORMW 「总之，问题在于能够认识到，那就是实像还是虚像，二不是本质。」
+		ELSE
+			PRINTFORMW 「结界是拒绝和需求的界线，如果这能理解的话，就算是%CALLNAME:MASTER%也罢。」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;413,料理
+;TFLAG:194(100以上=禁断のメニュー 3=甜点 2=主食 1=軽食
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_413
+;TFLAG:194が100以上の場合のみ
+CALL M_KOJO_MESSAGE_COM_K26_413_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_413_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;414,吃飯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:194(1=没穿内裤涮涮锅 2=禁断のメニュー 31=興奮劑高湯 30=奶酪番茄沙拉 34=银吉獣料理
+;TCVAR:MASTER:308(bit0=浓郁 bit1=薄味 bit3=超辣 bit4=超甜 bit5=芥末 bit6=激酸っぱ
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_414
+;成否判定
+;TFLAG:192(-2=指令終了(非TARGET時強制失敗)、-1＝強制失敗、0=COM依存(非TARGET時強制成功)、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_414
+CALL M_KOJO_MESSAGE_COM_K26_414_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_414_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;415,招待吃飯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TCVAR:MASTER:308(bit0=浓郁 bit1=薄味 bit3=超辣 bit4=超甜 bit5=芥末 bit6=激酸っぱ
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_415
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_415
+CALL M_KOJO_MESSAGE_COM_K26_415_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_415_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;416,演奏
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:使用楽器(1=電子琴 2=鋼琴 3=吉他 4=小號 5=小提琴)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_416
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_416
+CALL M_KOJO_MESSAGE_COM_K26_416_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_416_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;417,午睡をする
+;TFLAG:193(0=MASTERを抱き枕にして寝ている 1=MASTERの膝を枕にして寝ている 2=寝顔に接吻された 3=寝顔をのぞき込まれた 4=MASTERが膝枕されてる 5=秘処or阴茎揉み
+;CFLAG:陪睡中(1=一緒に寝ている
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_417
+CALL M_KOJO_MESSAGE_COM_K26_417_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_417_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;421,祈願する
+;条件が複雑なので、COMF421 祈願.ERBおよび、EVENT_MESSAGE_COM400.ERBの祈願するの項を参照のこと
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_421
+CALL M_KOJO_MESSAGE_COM_K26_421_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_421_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+	ELSEIF RAND:3 == 0
+		PRINTFORMW 「向神祈祷也并不是那么可靠啊」
+	ELSEIF RAND:2 == 0
+		PRINTFORMW 「在祈求什么呢？向八百万神明祈祷之前得好好想清楚啊」
+	ELSE
+		PRINTFORMW 「我的愿望是这个世界能永远持续下去」
+	ENDIF
+ENDIF
+RETURN 1
+
+;==================================================
+;422～430は、特殊指令なので貂プレでは対応しません
+;==================================================
+
+;==================================================
+;431,在浴室里放鬆
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;TFLAG:194(1=連続入浴不可(表示しない可能性あり？
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_431
+CALL M_KOJO_MESSAGE_COM_K26_431_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_431_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF TALENT:恋人
+		PRINTFORMW 「居然有这么好的温泉呢，还是因为和%CALLNAME:MASTER%一起入浴所以感觉特别舒服吗？」
+	ELSEIF TALENT:恋慕
+		PRINTFORMW 「大的好处多，彼此之间也是%UNICODE(0x2665) *1%」
+	ELSEIF TALENT:思慕
+		PRINTFORMW 「大浴缸真不错，说不定还能游泳呢」
+	ELSEIF CFLAG:2 >= 500
+		PRINTFORMW 「贤者入浴场景感觉就像会刊上登场一样」
+	ELSE
+		PRINTFORMW 「请不要太过关注我，好吗？」
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;432,在浴室里放鬆
+;表示タイミングは入浴後なので、お風呂上がりでの
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_432
+CALL M_KOJO_MESSAGE_COM_K26_432_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_432_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF TALENT:恋人
+		PRINTFORMW 「居然有这么好的温泉呢，还是因为和%CALLNAME:MASTER%一起入浴所以感觉特别舒服吗？」
+	ELSEIF TALENT:恋慕
+		PRINTFORMW 「大的好处多，彼此之间也是%UNICODE(0x2665) *1%」
+	ELSEIF TALENT:思慕
+		PRINTFORMW 「大浴缸真不错，说不定还能游泳呢」
+	ELSEIF CFLAG:2 >= 500
+		PRINTFORMW 「贤者入浴场景感觉就像会刊上登场一样」
+	ELSE
+		PRINTFORMW 「请不要太过关注我，好吗？」
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;436,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=单薄的高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_436
+CALL M_KOJO_MESSAGE_COM_K26_436_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_436_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「……」
+		PRINTFORMW 紫一个人默默地读书。
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「居然有妖魔圖鑒，这里到底有些什么书呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「读过色情书吗？」
+		ELSE
+			PRINTFORMW 「哎呀？你要读什么？」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;440,等待
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_440
+CALL M_KOJO_MESSAGE_COM_K26_440_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_440_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「在等谁？如果是我的话我会很高兴的」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「看起来很无聊的样子」
+		ELSE
+			PRINTFORMW 「等待着的人并没有来、真是可悲啊」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;441,聽課(慧音専用
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_441
+CALL M_KOJO_MESSAGE_COM_K26_441_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_441_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;442,伐採（未実装
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_442
+CALL M_KOJO_MESSAGE_COM_K26_442_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_442_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;442以降の指令は、実行しても口上はおそらく表示されないので貂プレでもスルー
+;==================================================
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;约会系指令
+;约会系口上は文字街道外出先で発生
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+[SKIPSTART]
+;現状未実装
+;==================================================
+;600,约会会話
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_600
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K26_600_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_600_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;601,约会身体接觸
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_601
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K26_601_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_601_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;602,约会接吻
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_602
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K26_602_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_602_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+[SKIPEND]
+;==================================================
+;603,牽手
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗でもふりほどかれたりはしません
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_603
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_603
+CALL M_KOJO_MESSAGE_COM_K26_603_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_603_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF CFLAG:318 == 1
+		PRINTFORMW 「不要碰我」
+		PRINTFORMW 紫摆開了手。
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「真是的……你要带我去哪里呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「我们是不是像恋人」
+		ELSE
+			PRINTFORMW 「好温暖啊，%CALLNAME:MASTER%之手，和我不同」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「男人真是强硬啊……」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「请不要太靠近出口，可能会遇到神隐。」
+		ELSE
+			PRINTFORMW 「哎呀，真是积极啊」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「明明哪里都能去，还特意走过去呢。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「%CALLNAME:MASTER%想去的地方是哪里呢？」
+		ELSE
+			PRINTFORMW 「如果能看到蓝的话会很有趣呢。」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「如果被灵梦看见的话，可能会被退治的。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「不要被认为是异变就好了」
+		ELSE
+			PRINTFORMW 「…不要牵太久」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+
+;==================================================
+;604,散步
+;约会中の場合、CFLAG:現在位置に移動先の場所が既に入ってる
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_604
+;散步にはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K26_604_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_604_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+ENDIF
+RETURN 1
+;==================================================
+;605,繞道
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文無し
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_605
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_605
+;繞道にはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K26_605_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_605_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF CFLAG:318 == 1
+		PRINTFORMW 「…我怎么都行吗？」
+	ELSEIF RAND:3 == 0
+		PRINTFORMW 「去哪里？」
+	ELSEIF RAND:2 == 0
+		PRINTFORMW 「…这么大年纪还出门，嘛，这样的浪费或许也不错」
+	ELSE
+		PRINTFORMW 「发现了什么？」
+	ENDIF
+ENDIF
+RETURN 1
+
+;==================================================
+;610,請吃飯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_610
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_610
+CALL M_KOJO_MESSAGE_COM_K26_610_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_610_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF CFLAG:318 == 1
+		PRINTFORMW 「真不巧，那种东西治不好我的心情。」
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「什么都行，如果能和%CALLNAME:MASTER%一起吃的话。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「最近无论哪家店都提高了手艺呢」
+		ELSE
+			PRINTFORMW 「要不我亲手做菜吧？」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「%CALLNAME:MASTER%喜欢吃什么？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「最近从外面进来了好吃的东西呢」
+		ELSE
+			PRINTFORMW 「要不要进口海鲜？」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「比蓝做的菜好吃吗？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「要是我也把橙带过来就好了。」
+		ELSE
+			PRINTFORMW 「幽幽子呢……停一下吧」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「也许可以和蓝一起来呢」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「你是这样吸引人吗？」
+		ELSE
+			PRINTFORMW 「哎呀？能请客吗？」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+
+;==================================================
+;613,賺錢（オミットされました
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_613
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_613
+CALL M_KOJO_MESSAGE_COM_K26_613_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_613_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;614,採購食材
+;TFLAG:193(1=購入＆約會経験UP 0=購入 -1=非購入)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_614
+CALL M_KOJO_MESSAGE_COM_K26_614_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_614_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;615,吃便當
+;実行可能場所　地蔵小路,倒垂的柳樹下,霧之湖,玄武之澤,大蛤蟆之池,絶景之丘,山之湖,天界
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:料理技能(2未満=微妙な出来 4未満=そこそこ美味しい 4以上=絶品)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_615
+CALL M_KOJO_MESSAGE_COM_K26_615_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_615_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;617,甘味処に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐は大成功のみ追加
+;==================================================
+@M_KOJO_SUCCESS_COM_K26_617
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K26_617
+CALL M_KOJO_MESSAGE_COM_K26_617_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_617_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF CFLAG:318 == 1
+		PRINTFORMW 「你想抓住我的心情吗？」
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「%CALLNAME:MASTER%也喜欢甜味吗？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「这样也不错啊」
+		ELSE
+			PRINTFORMW 「哼哼，我这种味道这么敏感啊？」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「嘛，我大概也知道这个中奖了的甜味处吧。」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「馅蜜、丸子、表演节目也要再多一点才行。」
+		ELSE
+			PRINTFORMW 「要不要考虑一下栽培冬季甘薯？」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「嗯……喜欢甜的东西」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「用脑子就会想要糖分」
+		ELSE
+			PRINTFORMW 「去灵梦那里买吧。」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「橙好像会喜欢呢」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「要不要给蓝买点礼物？」
+		ELSE
+			PRINTFORMW 「砂糖也是永远亭产的吗？」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;618,花屋（口上は表示されない模様？
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_618
+CALL M_KOJO_MESSAGE_COM_K26_618_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_618_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;620,鈴奈庵
+;TFLAG:193(1=貸し出しOK 0=貸し出し不可
+;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字典 X=4御伽草子
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_620
+CALL M_KOJO_MESSAGE_COM_K26_620_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_620_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「……」
+		PRINTFORMW 紫一个人默默地读书。
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「要借什么东西呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「%CALLNAME:MASTER%能看到真实吗？」
+		ELSE
+			PRINTFORMW 「那孩子看起来也很健康，比什么都好。」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;621,釣魚
+;TFLAG:193(0=釣れない 1～4=魚 11～15=好吃的魚 610=木材 131=守矢之守札 21=跳蛋 609=氷之鱗 606=龍之爪)
+;TFLAG:194(1000以上ならTARGETが釣った)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_621
+CALL M_KOJO_MESSAGE_COM_K26_621_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_621_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「……」
+		PRINTFORMW 紫一个人默默地看着水面。
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「太公望」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「能钓到什么呢？」
+		ELSE
+			PRINTFORMW 「大鱼，能钓到就好了。」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;626,土産物屋
+;TFLAG:194(-2=ひやかし -1=見送り 1=BAD 2=NOMAL 3=GOOD)
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_626
+CALL M_KOJO_MESSAGE_COM_K26_626_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_626_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	SELECTCASE TFLAG:194
+	;挑逗
+	CASE -2
+		IF RAND:3 == 0
+			PRINTFORMW 「哎呀哎呀，被生气了呢」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「明明什么都没有可玩的」
+		ELSE
+			PRINTFORMW 「外面的世界还有逛街的乐趣呢」
+		ENDIF
+	;果断放弃（送别）
+	CASE -1
+		IF RAND:3 == 0
+			PRINTFORMW 「没找到什么好东西呢」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「可能只是燃料不够用吧」
+		ELSE
+			PRINTFORMW 「都是些熟悉的东西呢」
+		ENDIF
+	;400点以下（BAD）
+	CASE 1
+		IF RAND:3 == 0
+			PRINTFORMW 「噢，品味真差啊」
+			PRINTFORMW 紫似乎并不太高兴……
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「我就收下了，要感激一下哦？」
+			PRINTFORMW 紫似乎并不太高兴……
+		ELSE
+			PRINTFORMW 「品味有点差呢」
+			PRINTFORMW 紫似乎并不太高兴……
+		ENDIF
+	;400点～699点（NOMAL）
+	CASE 2
+		IF RAND:3 == 0
+			PRINTFORMW 「给我送礼物，真了不起」
+			PRINTFORMW 紫露出了略带羞涩的笑容。
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「谢谢，很高兴」
+			PRINTFORMW 紫露出了略带羞涩的笑容。
+		ELSE
+			PRINTFORMW 「送礼物也需要一点才华的哦？合格了」
+			PRINTFORMW 紫露出了略带羞涩的笑容。
+		ENDIF
+	;700点以上（GOOD）
+	CASE 3
+		IF RAND:3 == 0
+			PRINTFORMW 「是的，你很了解我的喜好」
+			PRINTFORMW 「……所以我喜欢你」
+			PRINTFORMW 紫脸颊泛红，开心地笑着。
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「以前……」
+			PRINTFORMW 「没什么，谢谢你」
+			PRINTFORMW 紫脸颊泛红，开心地笑着。
+		ELSE
+			PRINTFORMW 「呵呵，很高兴，谢谢%UNICODE(0x2665) *1%」
+			PRINTFORMW 紫脸颊泛红，开心地笑着。
+		ENDIF
+	ENDSELECT
+ENDIF
+
+RETURN 1
+;==================================================
+;660,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=单薄的高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_660
+CALL M_KOJO_MESSAGE_COM_K26_660_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_660_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「……」
+		PRINTFORMW 紫一个人默默地读书。
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「居然有妖魔圖鑒，这里到底有些什么书呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「读过色情书吗？」
+		ELSE
+			PRINTFORMW 「哎呀？你要读什么？」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;698,進入房間
+;TARGET的房間に入る場合のみ表示
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_698
+CALL M_KOJO_MESSAGE_COM_K26_698_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_698_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+	ELSEIF CFLAG:313 == 1
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「……嗯、没关系」
+		PRINTFORMW 紫冷冷地说。
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「有点不好意思啊、让别人进入房间这种事」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「我想应该已经收拾好了、但是我的房间在哪呢♪」
+		ELSE
+			PRINTFORMW 「不要太挑剔哦」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;699,外出
+;==================================================
+@M_KOJO_MESSAGE_COM_K26_699
+CALL M_KOJO_MESSAGE_COM_K26_699_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K26_699_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;派生指令
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;60,掏耳朵
+;前ターン膝枕後身体接觸指令
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K26_60
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K26_60
+CALL M_KOJO_MESSAGE_SCOM_K26_60_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K26_60_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF TALENT:恋人
+		PRINTFORMW 「好了好了，这样行吗？%UNICODE(0x2665) *1%」
+	ELSEIF TALENT:恋慕
+		PRINTFORMW 「蓝很不擅长呢，这个。」
+	ELSEIF TALENT:思慕
+		PRINTFORMW 「一动不动啊，我擅长这种细腻的东西。」
+	ELSE
+		PRINTFORMW 「如果利用间隙的话，即使不做这样的事……」
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;61,抱枕
+;(TARGET睡眠時間or衰弱)陪睡中、前ターン抱きつく後就寝指令
+;分岐無し
+;==================================================
+@M_KOJO_MESSAGE_SCOM_K26_61
+CALL M_KOJO_MESSAGE_SCOM_K26_61_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K26_61_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;62,亲額頭
+;前ターン頭撫で後接吻
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;ABL:欲望(5以上=物足りない
+;ABL:親密(5以上=照れる
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K26_62
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K26_62
+CALL M_KOJO_MESSAGE_SCOM_K26_62_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K26_62_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:時間停止
+		PRINTFORMW 在时间冻结的时候吻了紫色的额头。
+	ELSEIF CFLAG:TARGET:睡眠
+		PRINTFORMW 「…嗯……谁…？」
+		PRINTFORMW 紫发出了奇怪感觉的梦话。
+	ELSEIF CFLAG:318 == 1
+		PRINTFORMW 「你打算干什么！」
+		PRINTFORMW 紫瞪了一眼。
+	ELSEIF TALENT:恋人
+		PRINTFORMW 「哎呀哎呀，嘴唇也挺好的♪」
+	ELSEIF TALENT:恋慕
+		PRINTFORMW 「…我觉得这太狡猾了」
+	ELSEIF TALENT:思慕
+		PRINTFORMW 「…笨蛋……」
+	ELSE
+		PRINTFORMW 「…这样啊」
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;63,更多的接吻
+;前ターン接吻後接吻
+;分岐条件はEVENT_MESSAGE_COM500.ERB参照
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K26_63
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K26_63
+CALL M_KOJO_MESSAGE_SCOM_K26_63_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K26_63_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF FLAG:70
+	;恋慕
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「嗯…%UNICODE(0x2665) *1%再多一点…%UNICODE(0x2665) *1%」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「嗯……%UNICODE(0x2665) *1%……再接吻一下……%UNICODE(0x2665) *1%」
+		ELSE
+			PRINTFORMW 「…%UNICODE(0x2665) *1%已经很激烈了...%UNICODE(0x2665) *1%」
+		ENDIF
+	;屈服3
+	ELSEIF MARK:不埒刻印 == 3
+		IF RAND:3 == 0
+			PRINTFORMW 「…更加……%UNICODE(0x2665) *1%%CALLNAME:MASTER%的嘴唇…%UNICODE(0x2665) *1%」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「嗯……%UNICODE(0x2665) *1%」
+		ELSE
+			PRINTFORMW 「啊…%UNICODE(0x2665) *1%……嗯……%UNICODE(0x2665) *1%」
+		ENDIF
+	;それ以外
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「嗯%UNICODE(0x2665) *1%」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「%UNICODE(0x2665) *1%」
+		ELSE
+			PRINTFORMW 「啊…%UNICODE(0x2665) *1%嗯……%UNICODE(0x2665) *1%」
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;80,拉手
+;约会出発後目的地に着くまでの間
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K26_80
+;成否判定
+;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K26_80
+CALL M_KOJO_MESSAGE_SCOM_K26_80_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K26_80_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+CALL M_KOJO_COLOR_K26
+	IF CFLAG:318 == 1
+		PRINTFORMW 「……」
+		PRINTFORMW 紫讨厌被拉着手。
+	ELSEIF TALENT:恋人
+		IF RAND:3 == 0
+			PRINTFORMW 「好怀念啊，这种情况」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「我们去扫墓吧？」
+		ELSE
+			PRINTFORMW 「特地步行，太棒了。」
+		ENDIF
+	ELSEIF TALENT:恋慕
+		IF RAND:3 == 0
+			PRINTFORMW 「%CALLNAME:MASTER%要把我带到哪里去呢？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「不管去哪里我都跟着你。」
+		ELSE
+			PRINTFORMW 「最近没怎么走路呢」
+		ENDIF
+	ELSEIF TALENT:思慕
+		IF RAND:3 == 0
+			PRINTFORMW 「…从前的蓝也像这样被拉着吧」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「不要太用力拉啊，会脱掉的。」
+		ELSE
+			PRINTFORMW 「讨厌迷路吗？」
+		ENDIF
+	ELSE
+		IF RAND:3 == 0
+			PRINTFORMW 「找到什么了吗？」
+		ELSEIF RAND:2 == 0
+			PRINTFORMW 「如果使用间隙的话，不用特意走路……」
+		ELSE
+			PRINTFORMW 「最近不怎么出门，稍微有点刺激」
+		ENDIF
+	ENDIF
+
+ENDIF
+RETURN 1

@@ -3,7 +3,9 @@
 ;ARG = 対象の角色番号
 ;*********************************************************************************************
 @CCOMF142(ARG)
-TRYCALLFORM UNIQUE_COUNTER2_SOURCE_K{ARG}
+VARSET RESULTS
+CALL KOJO_ACTIVE_INFO(ARG)
+TRYCALLFORM UNIQUE_COUNTER2_SOURCE_K{ARG}%RESULTS%
 RETURN 1
 
 ;*********************************************************************************************
@@ -11,25 +13,36 @@ RETURN 1
 ;ARG = 対象の角色番号
 ;*********************************************************************************************
 @CCOM_ABLE142(ARG)
-RESULT = 0
-TRYCALLFORM UNIQUE_COUNTER2_ABLE_K{ARG}
-RETURN RESULT
+VARSET RESULTS
+CALL KOJO_ACTIVE_INFO(ARG)
+TRYCCALLFORM UNIQUE_COUNTER2_ABLE_K{ARG}%RESULTS%
+	RETURN 1
+CATCH
+	RETURN 0
+ENDCATCH
+RETURN 0
 
 ;*********************************************************************************************
 ;Counter実行判定値算出関数
 ;ARG = 対象の角色番号
 ;*********************************************************************************************
-@CCOM_ORDER142(指令番号, ARG, 基本値)
+@CCOM_ORDER142(指令番号, ARG, 基本値 = 0)
 #DIM 指令番号
 #DIM 基本値
-
+#DIMS DYNAMIC KOJO_NAME
+VARSET RESULTS
+CALL KOJO_ACTIVE_INFO(ARG)
+KOJO_NAME '= RESULTS
 RESULT = 0
 RESULTS =
-TRYCALLFORM UNIQUE_COUNTER2_FREQUENCY_K{ARG}
+LOCAL = 0
+TRYCCALLFORM UNIQUE_COUNTER2_FREQUENCY_K{ARG}%KOJO_NAME%
 
 	;=============================
 	LOCAL = 基本値 + RESULT
 	;Counterタイプ別計算処理 実質実行判定処理を含む
 	;=============================
 	LOCAL *= COUNTER_TYPE(RESULTS, ARG)
+CATCH
+ENDCATCH
 RETURN LOCAL
