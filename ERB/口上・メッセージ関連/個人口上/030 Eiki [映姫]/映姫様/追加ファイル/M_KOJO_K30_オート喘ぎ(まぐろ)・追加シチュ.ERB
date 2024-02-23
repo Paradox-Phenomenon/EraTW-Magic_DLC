@@ -831,7 +831,7 @@ ENDIF
 LOCALS:0 '= "…………", "……", "…"
 RESETCOLOR
 DRAWLINE
-CALL PRINT_GROUP(LOCALS, 3)
+CALL PRINT_GROUP(LOCALS, 3, 500)
 CALL M_KOJO_COLOR_K30
 TIME += 10
 ;顔絵エフェクト用フラグ
@@ -935,7 +935,7 @@ RETURN 1
 @K30_BLOW_JOB_IN_COURT
 LOCALS:0 '= "…………", "……", "…"
 RESETCOLOR
-CALL PRINT_GROUP(LOCALS, 3)
+CALL PRINT_GROUP(LOCALS, 3, 500)
 CALL K30_D_LINE
 PRINTFORMDL %TEXTR("一片寂静/毫无其他人声/弥漫着庄严的气氛")%的法廷有%TEXTR("粗重的呼吸和隐秘的/哔擦哔擦黏糊糊的/极其不般配的")%水声回响…
 PRINTFORMW 
@@ -994,7 +994,7 @@ LOCAL:2= INRANGE(TIME, 720, 769)
 LOCALS:0 '= "…………", "……", "…"
 RESETCOLOR
 DRAWLINE
-CALL PRINT_GROUP(LOCALS, 3)
+CALL PRINT_GROUP(LOCALS, 3, 500)
 CALL M_KOJO_COLOR_K30
 CALL K30_SPTALK, "反発", "「你看，这种地方要是被谁看到可不得了」/「你也快点穿好衣服吧…要暴露到什么时候？」"
 PRINTFORMDL 映姬迅速整理了略微凌乱的服装，已经坐在自己的座位上
@@ -1356,10 +1356,11 @@ RETURN
 ;==================================================
 ;Ａ性交用中出し射精、潮吹きメッセージ関数
 ;--------------------------------------------------
-;ARG:状況分岐 =1 被逆推時 =2 背面駅弁 =3 まんぐりがえし =4 膣裏・Ｓ状結腸攻め =5 交互挿入(一人目の時のみ) = 6 CounterＡ挿入
+;ARG:状況分岐 =1 被逆推時 =2 背面駅弁 =3 まんぐりがえし =4 膣裏・Ｓ状結腸攻め =5 交互挿入 = 6 CounterＡ挿入
 ;--------------------------------------------------
-@K30_PRE_ORG_MES_A(ARG)
+@K30_PRE_ORG_MES_A(ARG, TGT=0)
 #DIM BODY
+#DIM TGT
 BODY = TEQUIP:体位
 SIF BODY == 0
 	BODY = TEQUIP:体位２
@@ -1369,9 +1370,8 @@ SIF NOWEX:MASTER:11
 	LOCAL:1 = 1
 IF NOWEX:MASTER:11 && !TEQUIP:MASTER:避孕套
 	;開発進むと同時ばかりなので随意散らす
-	IF (NOWEX:Ａ絶頂 > 1 && RAND:4 == 1) || ARG > 1
+	SIF (NOWEX:Ａ絶頂 > 1 && RAND:4 == 1) || ARG > 1
 		GOTO SQUIRTING
-	ENDIF
 	PRINTFORML 
 	PRINTDATA
 		DATAFORM 「啊啊嗯~
@@ -1420,38 +1420,35 @@ ENDIF
 ;表示確率最大30%、同時絶頂、交互挿入時、CounterＡ挿入で+15%
 $SQUIRTING
 SIF NOWEX:Ａ絶頂 < 2
-	RETURN 1
+	RETURN 0
 SIF RAND:100 > MIN(ABL:Ａ感覚 * 3, 30) + (LOCAL:1 * 15) + ((ARG == 5) * 15) + ((ARG == 6) * 15)
-	RETURN 1
+	RETURN 0
 PRINTFORML 
 CFLAG:1607 ++
-;潮吹きで部屋を汚す
-SIF AT_HOME(30)
-	YOGORE:(CFLAG:30:現在位置) += RAND:75 + 50
 IF ARG == 2
 	LOCAL = K30_FIND_AROUND()
 	CALL HPH_PRINT, @"「不行啊HPH　已经…已经、不行了啊啊HPH」", "L"
 	SIF LOCAL
-		CALL HPH_PRINT, @"「我っ、明明是阎魔っHPH　%K30_C_NAME(LOCAL)%っ、明明在ぃHPH」", "W"
+		CALL HPH_PRINT, @"「我っ、明明是阎魔っHPH　%K30_C_NAME(LOCAL)%っ、明明在ぃHPH」", "L"
 	PRINTFORMDL 映姬婉转动听的娇吟久久不停歇，同时从%SLIT(30)%喷射出的透明液体划出漂亮的弧线
-	PRINTFORMDW 用这个样子吹潮的话，真的有一种小便的奇妙错觉…
+	PRINTFORMDL 用这个样子吹潮的话，真的有一种小便的奇妙错觉…
 ;ニッチな性癖を攻めすぎだろ
 ELSEIF ARG == 3
 	CALL HPH_PRINT, @"「啊啊っHPH　啊啊啊啊~、不行啊啊HPH」", "L"
-	PRINTFORMDW 被交叠的体位插进雪臀的映姬，突然发出急迫的声音
-	PRINTFORMDW 同时从%SLIT(30)%透明液体%TEXTR("猛地迸发/大量喷出/激烈的飞溅/")%、全都落在了映姬身上
+	PRINTFORMDL 被交叠的体位插进雪臀的映姬，突然发出急迫的声音
+	PRINTFORMDL 同时从%SLIT(30)%透明液体%TEXTR("猛地迸发/大量喷出/激烈的飞溅/")%、全都落在了映姬身上
+	PRINTFORML
 	CALL HPH_PRINT, @"「讨厌，讨厌啊HPH　这样的、这样的啊……HPH」", "L"
-	PRINTFORMDW 被蒙上的爱液弄湿了头发，映姬在屈辱感和羞耻中颤抖着身体，登上了肛门绝顶…
-	RETURN 1
+	PRINTFORMDL 被蒙上的爱液弄湿了头发，映姬在屈辱感和羞耻中颤抖着身体，登上了肛门绝顶…
 ELSEIF ARG == 6 && BODY == 3
-	PRINTFORMDW 主动将阴茎吞入肛門、但映姬已经没有余裕就快要登顶极乐…
+	PRINTFORMDL 主动将阴茎吞入肛門、但映姬已经没有余裕就快要登顶极乐…
 	CALL HPH_PRINT, @"「总觉得HPH　奇怪！　这个HPH　中出HPH　中出了唔唔呜HPH」", "L"
-	PRINTFORMDW 因快乐而放松的的%SLIT(30)%里，透明的爱液以%TEXTR("猛地迸射/大量喷出/激烈地飞溅/")%、把什么都没做的%CALLNAME:MASTER%弄得黏糊糊的…
+	PRINTFORMDL 因快乐而放松的的%SLIT(30)%里，透明的爱液以%TEXTR("猛地迸射/大量喷出/激烈地飞溅/")%、把什么都没做的%CALLNAME:MASTER%弄得黏糊糊的…
 ELSE
 	SIF ARG == 5
-		LOCAL = MASTER_POSE(7, 1, 1)
+		LOCAL = TGT
 	IF BODY == 3 
-		PRINTFORMD 自己主动摇着腰贪图菊花快乐的映姬
+		PRINTFORMD 映姫主动扭动腰部，沉溺于肛门的快感中。
 	ELSE
 		PRINTFORMD %CALLNAME:MASTER%
 		SELECTCASE BODY
@@ -1489,14 +1486,14 @@ ELSE
 	SELECTCASE BODY
 		CASE 1
 			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20))
-				PRINTFORMDW %CALLNAME:MASTER%湿漉漉的…
+				PRINTFORMDL %CALLNAME:MASTER%湿漉漉的…
 			ELSE
-				PRINTFORMDW 彼此的腹沟间都湿濡了…
+				PRINTFORMDL 彼此的腹沟间都湿濡了…
 			ENDIF
 		CASE 2
 			IF (!INROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20))
 				PRINTFORMD 映姫白嫩嫩的玉足和\@ BATHROOM() ? 床 # 地面 \@湿透了…
-				PRINTFORMDW 
+				PRINTFORMDL 
 			ELSE
 				PRINTFORMD 哗啦哗啦
 				IF BEDROOM(CFLAG:MASTER:現在位置)
@@ -1506,13 +1503,13 @@ ELSE
 				ELSE
 					PRINTFORMD 地面
 				ENDIF
-				PRINTFORMDW 弄湿了…
+				PRINTFORMDL 弄湿了…
 			ENDIF
 		CASE 3
 			IF TCVAR:30:398 == 1
-				PRINTFORMDW 正面划出一道漂亮的弧线…… 
+				PRINTFORMDL 正面划出一道漂亮的弧线…… 
 			ELSE
-				PRINTDATADW
+				PRINTDATADL
 					DATAFORM 连%CALLNAME:MASTER%的脸上都全部皆是…
 					DATAFORM %CALLNAME:MASTER%从胸部到脸上都湿透了…
 					DATAFORM 处于下面的%CALLNAME:MASTER%像淋浴一样被浇遍了…
@@ -1520,11 +1517,12 @@ ELSE
 				ENDDATA
 			ENDIF
 		CASE 4
-			PRINTFORMDW 彼此的肚子都湿透了…
+			PRINTFORMDL 彼此的肚子都湿透了…
 		CASE 5
-			PRINTFORMDW 正面划出一道漂亮的弧线…… 
+			PRINTFORMDL 正面划出一道漂亮的弧线…… 
 	ENDSELECT
 ENDIF
+PRINTFORML
 IF CFLAG:1607 == 1
 	IF ARG > 1
 		PRINTFORML 「不是的！！这个，真的不是！……不要看…」
@@ -1536,27 +1534,46 @@ IF CFLAG:1607 == 1
 ELSEIF K30_FIND_AROUND() || ARG == 5
 	LOCAL = K30_FIND_AROUND()
 	SIF ARG == 5
-		LOCAL = MASTER_POSE(7, 1, 1)
-	PRINTFORMD %CALLNAME:LOCAL%对閻魔様的潮吹
-	IF PALAM:LOCAL:欲情 < PALAMLV:8
-		PRINTFORMDW %TEXTR("看得目瞪口呆/看着吃惊不已/把它当成了情趣，脸红了/")%
+		LOCAL = TGT
+	IF TFLAG:50 == 16 && NOWEX:LOCAL:Ａ絶頂
+		PRINTDATADL
+			DATAFORM %CALLNAME:LOCAL%看着阎魔大人的喷潮，欲望地扭动着腰部
+			DATAFORM 伴随着阎魔大人的喷潮，%CALLNAME:LOCAL%的阴部溢出了爱液
+			DATAFORM %CALLNAME:LOCAL%舀起阎魔大人的喷潮，滴落在与%CALLNAME:MASTER%连接的部位上
+		ENDDATA
+		STRDATA LOCALS
+			DATAFORM 「啊啊！要到了HPH 在%K30_C_NAME(LOCAL)%面前，要到了HPH 要到了呜呜呜呜HPH」
+			DATAFORM 「屁股HPH 要到了HPH 太厉害了HPH 太厉害了HPH 要出来了HPHHPH」
+			DATAFORM 「%K30_C_NAME(LOCAL)%！%K30_C_NAME(MASTER)%HPH 我，要到了HPH 用屁股要到了HPHHPH」
+		ENDDATA
+		CALL HPH_PRINT, LOCALS, "L"
+		PRINTDATAD
+			DATAFORM 在被%CALLNAME:LOCAL%和交替侵犯肛门的情况下，映姬感受到强烈的背叛感
+			DATAFORM %CALLNAME:LOCAL%和自己都对屁股的刺激感到强烈的兴奋，映姬感受到
+			DATAFORM 被%CALLNAME:LOCAL%看到无法隐藏的淫态，映姬被一种奇特的兴奋感包围着
+		ENDDATA
 	ELSE
-		PRINTFORMDW %TEXTR("用好奇的目光注视着/不可思议地用手指比划着水滴/目不转睛地死死盯着看/")%
+		PRINTFORMD %CALLNAME:LOCAL%对閻魔様的潮吹
+		IF PALAM:LOCAL:欲情 < PALAMLV:8
+			PRINTFORMDL %TEXTR("看得目瞪口呆/看着吃惊不已/把它当成了情趣，脸红了/")%
+			ELSEIF TFLAG:50 == 16
+			PRINTFORMDL %TEXTR("羡慕地注视着/看到后更加兴奋/看到后迫不及待地等待着/")%
+		ELSE
+			PRINTFORMDL %TEXTR("用好奇的目光注视着/不可思议地用手指比划着水滴/目不转睛地死死盯着看/")%
+		ENDIF
+		STRDATA LOCALS
+			DATAFORM 「不要看！　%K30_C_NAME(LOCAL)%っ、求你了HPH　不要看啊HPH」
+			DATAFORM 「啊啊啊っHPH　%K30_C_NAME(LOCAL)%が…%K30_C_NAME(LOCAL)%がっ、明明在看…HPH」
+			DATAFORM 「讨厌，讨厌啊HPH　%K30_C_NAME(LOCAL)%…这个，不是的HPH　不是这样啊HPH」
+		ENDDATA
+		CALL HPH_PRINT, LOCALS, "L"
+		PRINTDATAD
+			DATAFORM 一点点也好，映姬扭动着娇躯，试图从%CALLNAME:LOCAL%的视线中逃脱。
+			DATAFORM 映姫面对%CALLNAME:LOCAL%的视线、顿觉強烈的羞恥\@ ABL:露出癖 > 7 ? 和興奮 # \@之感
+			DATAFORM 无法在%CALLNAME:LOCAL%面前停下来，映姬颤抖着身体不断攀登绝顶
+		ENDDATA
 	ENDIF
-	SELECTCASE RAND:3
-		CASE 0
-			CALL HPH_PRINT, @"「不要看！　%K30_C_NAME(LOCAL)%っ、求你了HPH　不要看啊HPH」", "L"
-		CASE 1
-			CALL HPH_PRINT, @"「啊啊啊っHPH　%K30_C_NAME(LOCAL)%が…%K30_C_NAME(LOCAL)%がっ、明明在看…HPH」", "L"
-		CASE 2
-			CALL HPH_PRINT, @"「讨厌，讨厌啊HPH　%K30_C_NAME(LOCAL)%…这个，不是的HPH　不是这样啊HPH」", "L"
-	ENDSELECT
-	PRINTDATAD
-		DATAFORM 一点点也好，映姬扭动着娇躯，试图从%CALLNAME:LOCAL%的视线中逃脱。
-		DATAFORM 映姫面对%CALLNAME:LOCAL%的视线、顿觉強烈的羞恥\@ ABL:露出癖 > 7 ? 和興奮 # \@之感
-		DATAFORM 无法在%CALLNAME:LOCAL%面前停下来，映姬颤抖着身体不断攀登绝顶
-	ENDDATA
-	PRINTFORMDW 同时登上肛门绝顶…
+	PRINTFORMDL 同时登上肛门绝顶…
 ELSEIF ABL:露出癖 > 4 && CFLAG:1607 > 10
 	;ニッチな性癖(ry
 	IF BODY == 3 && TCVAR:30:398 == 0
@@ -1591,7 +1608,7 @@ ELSEIF ABL:露出癖 > 4 && CFLAG:1607 > 10
 		DATAFORM 映姬沉浸在排尿般的奇妙感觉中、
 		DATAFORM 映姬对溢出的潮水感到满足
 	ENDDATA
-	PRINTFORMDW 同时登上肛门绝顶…
+	PRINTFORMDL 同时登上肛门绝顶…
 ELSE
 	SELECTCASE RAND:3
 		CASE 0
@@ -1606,8 +1623,9 @@ ELSE
 		DATAFORM 映姬一边因潮吹的羞耻和快乐而浑身发抖，
 		DATAFORM 映姬一边因为潮吹的害羞而把脸颊染成红色，
 	ENDDATA
-	PRINTFORMDW 一边登上肛门的绝顶…
+	PRINTFORMDL 一边登上肛门的绝顶…
 ENDIF
+WAIT
 RETURN 1
 
 ;==================================================
@@ -1768,10 +1786,10 @@ ELSE
 		DATAFORM 「之前的，好激动啊…已经很想念了…」\n「可以，再来一次吗」
 	ENDDATA
 	PRINTFORML 「和%K30_C_NAME(MASTER)%一起出门的同时」
-	PRINTFORMW 「我的屁股%TEXTR("如此下流/如此卑鄙")%、想要让您…%TEXTR("教育我/欺负我/惩罚我/")%…♥」
+	PRINTFORMW 「我的屁股%TEXTR("如此下流/如此卑鄙")%…、想要让您…%TEXTR("教育我/欺负我/惩罚我/")%…♥」
 	PRINTFORMDL 映姬用夹杂着兴奋和情欲的眼神，恳求地凝视着我……
 	RESETCOLOR
-	CALL ASK_YN("今日は普通に", "しっかり交手")
+	CALL ASK_YN("今天就正常进行吧", "认真陪伴她")
 	CALL M_KOJO_COLOR_K30
 	CLEARLINE 1
 	IF !RESULT
@@ -1783,10 +1801,31 @@ ELSE
 	PRINTFORMDL %CALLNAME:MASTER%当然同意，把映姬拉到了一个不起眼的地方
 	PRINTFORMW 
 	IF EQUIP:30:下半身内衣２
-		PRINTFORML 「呼呼~…♥　阿里嘎多，%K30_C_NAME(MASTER)%」
-		PRINTFORML 「那么，这个是…和我交往的奖励♥」
-		PRINTFORMDL 不知何时脱的，映姫尚有余温的%PANTSNAME(EQUIP:下半身内衣２, 30)%递给了我
-		PRINTFORMDW %CALLNAME:MASTER%把%PANTSNAME(EQUIP:30:下半身内衣２, 30)%谨慎的收好
+		IF CFLAG:1608 < 2 || !TALENT:尻穴狂 || DIARY:30:40 == 0
+			PRINTFORML 「呼呼~…♥　阿里嘎多，%K30_C_NAME(MASTER)%」
+			PRINTFORML 「那么，这个是…和我交往的奖励♥」
+			PRINTFORMDL 不知何时脱的，映姫将%PANTSNAME(EQUIP:下半身内衣２, 30)%递给了我
+			PRINTFORMDW %CALLNAME:MASTER%小心翼翼地收起了仍然温暖的%PANTSNAME(EQUIP:30:下半身内衣２, 30)%
+		ELSEIF !GETBIT(CFLAG:1609, 4)
+			PRINTFORML 「%K30_C_NAME(MASTER)%，谢谢♥ 那么…你愿意陪我，作为奖励吗，还有…」
+			PRINTFORML 「今天，还有一个…额外的东西哦…♥」
+			PRINTFORMDW 映姬递给了%PANTSNAME(EQUIP:下半身内衣２, 30)%，还有一个像小盒子一样的东西
+			PRINTFORML
+			PRINTFORML 「据说使用这个…可以调节这个，仪器的…强度...」
+			PRINTFORML 「保持秘密...让你用手，更加，舒服地，对待我的屁股…♥」
+			PRINTFORML 「如果是%K30_C_NAME(MASTER)%这样…对我加以“照顾”的话，当然，会有兴趣的吧♥」
+			PRINTFORMDW %CALLNAME:MASTER%按照指示将%PANTSNAME(EQUIP:30:下半身内衣２, 30)%收好，并将遥控器放入口袋
+			TCVAR:30:365 = 1
+			SETBIT CFLAG:1609, 4
+		ELSE
+			PRINTFORML 「呵呵♥ 谢谢，%K30_C_NAME(MASTER)%」
+			PRINTFORML 「那么，你愿意陪我作为奖励，还有...乐趣，我会给你...♥」
+			PRINTFORMDL 映姬自然地递给了%PANTSNAME(EQUIP:下半身内衣２, 30)%和遥控器…
+			PRINTFORMDW %CALLNAME:MASTER%依然将温暖的%PANTSNAME(EQUIP:30:下半身内衣２, 30)%收好，并将遥控器放入口袋
+			TCVAR:30:365 = 1
+		ENDIF
+		SIF TCVAR:30:365
+			CFLAG:allowKojoCom = 1
 		CALL K30_PANTS_GETTING
 		PRINTFORML 「%TEXTR("啊啊……好厉害，心跳加速了/呃哆…已经准备好了/…嗯~♥　对不起，我……已经，很难受了")%…」
 	ELSE
@@ -1812,7 +1851,7 @@ SETBIT CFLAG:1609, 1
 TEQUIP:肛用振動棒 = 1
 LOCALS:0 '= "…………", "……", "…"
 RESETCOLOR
-CALL PRINT_GROUP(LOCALS, 3)
+CALL PRINT_GROUP(LOCALS, 3, 500)
 CALL M_KOJO_COLOR_K30
 CALL HPH_PRINT, @"「%LOCALS:LOCAL%」", "W"
 CALL K30_PRINT_BUTT_IMAGE(-1, 2, 4, 3, 0, 0)
@@ -1822,9 +1861,15 @@ PRINTDATAD
 	DATAFORM …偷偷忍受快感的映姬的表情非常诱惑、
 	DATAFORM …映姬湿润的眼睛和烫热的呼吸，就像做爱时一样
 ENDDATA
-PRINTFORMDL %TEXTR("任谁都看得入迷了/不知不觉就被吸引住了目光/光看着就能激起情欲")%
-PRINTFORMDL %TEXTR("这会不会被别人发现/总觉得特别引人注目/这样会被眼尖的人发现的/")%…？
-PRINTFORMDW %CALLNAME:MASTER%一边这样担心一边和费洛蒙全開的映姬去约会了。
+PRINTFORMDL %TEXTR("每个人都可能被迷住/不由自主地被吸引/散发着过量的信息素")%
+IF !TCVAR:30:365
+	PRINTFORMDL 这会不会被其他人注意到呢…？
+	PRINTFORMDW %CALLNAME:MASTER%担心着这一点，和映姬一起出去约会，她的步伐有些生硬
+ELSE
+	PRINTFORML
+	PRINTFORMDL 让完全堕落的阎魔大人在众人面前成为玩具，肯定会很有趣吧
+	PRINTFORMDW %CALLNAME:MASTER%心情高涨，和映姬一起出去约会，她的步伐有些生硬
+ENDIF
 CFLAG:1608 ++
 SIF DIARY:30:38 == 0
 	CALL K30_WRITE_DIARY(38)
@@ -1832,16 +1877,21 @@ RETURN 1
 
 ;装着・ソース操作
 @K30_DATE_WITH_VIBERATOR
+#DIM 倍率
 ;约会終了/中断でのリセット処理
 IF (GET_MAPID(CFLAG:現在位置) == MAIN_MAP && CFLAG:現在位置 != OMANEKIBEYA())|| CFLAG:MASTER:约会中 != CFLAG:30:约会中
 	TEQUIP:肛用振動棒 = 0
 	TCVAR:30:364 = 0
+	TCVAR:30:365 = 0
 	RETURN 1
 ENDIF
+倍率 = 1 + (TCVAR:30:365 == 2)
 TEQUIP:肛用振動棒 = 1
-BASE:理性 = MAX((BASE:理性 - (50 + RAND:100)), 0)
-CFLAG:积攒度 = MIN((CFLAG:积攒度 + RAND:30), 1000)
-PALAM:潤滑 += 2000 + RAND:750
+BASE:理性 = MAX((BASE:理性 - (RAND:100 * 倍率)), 0)
+CFLAG:积攒度 = MIN((CFLAG:积攒度 + RAND:20 * 倍率), 1000)
+PALAM:潤滑 += 1000 * 倍率 + RAND:1000
+SIF 倍率 == 2
+	TIMES SOURCE:快Ａ, 2
 ;こうしないと勝手に怒ったりすぐ倒れたりする。酷いソース操作だけど陥落後の茶番なので許して
 SOURCE:反感 /= 10
 SOURCE:鬱屈 /= 10
@@ -1855,6 +1905,7 @@ RETURN
 @K30_PULL_OUT_VIBE
 SIF !TEQUIP:肛用振動棒
 	RETURN
+CALL M_KOJO_COLOR_K30
 PRINTFORML 
 PRINTFORMW 「稍等…等一下、%K30_C_NAME(MASTER)%」
 CALL HPH_PRINT, "「这样下去的话…回不去了、哟…HPH」", "L"
@@ -1869,7 +1920,7 @@ PRINTFORMDW %CALLNAME:MASTER%傻笑着，故意把插进去的震动棒慢慢地
 CALL HPH_PRINT, "「～～～～～～～～～っHPH」", "L"
 LOCALS:0 '= "…………", "……", "…"
 RESETCOLOR
-CALL PRINT_GROUP(LOCALS, 3)
+CALL PRINT_GROUP(LOCALS, 3, 500)
 PRINTFORML 
 PRINTFORML 道具使用経験 +1(%CALLNAME:MASTER%)
 PRINTFORML 
@@ -1880,7 +1931,6 @@ DRAWLINE
 PRINTFORML 
 PRINTFORML 一直享受到最后之最后的两人终于约会归来了…
 PRINTFORMW 
-CALL M_KOJO_COLOR_K30
 EXP:MASTER:道具使用経験 += 1
 EXP:Ａ経験 += 2
 EXP:Ａ絶頂経験 += 6
@@ -1892,6 +1942,7 @@ TCVAR:30:Ａ絶頂経験 += 6
 TCVAR:30:絶頂経験 += 6
 TEQUIP:肛用振動棒 = 0
 TCVAR:30:364 = 0
+TCVAR:30:365 = 0
 RETURN 1
 
 ;==================================================

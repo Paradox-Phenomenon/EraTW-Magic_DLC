@@ -19,8 +19,8 @@ SIF FLAG:口上色
 	;小分岐
 	;-------------------------------------------------
 	;戦闘前
-	HANDICAP_FIXED = 0
-	HANDICAP_RAND = 0
+	;HANDICAP_FIXED = 0
+	;HANDICAP_RAND = 0
 	;ハンデをつけることができ、数値が大きいほど你が不利になる　数値が負なら你が有利に
 	;キャラの能力に関わらずクッソ強くしたり弱くしたりできる
 	;記入チェック（=0, 非表示、1, 表示）
@@ -32,14 +32,25 @@ SIF FLAG:口上色
 			PRINTFORML 「你看、%CALLNAME:MASTER%阁下很强不是嘛」
 			PRINTFORML 「如果变成单方面的碾压就太无聊了、%CALLNAME:MASTER%阁下应该不会欺凌弱小吧？」
 			PRINTFORML 「所以、能不能对姐姐稍稍放些水呢…♪」
+			CALL ASK_YN("可以", "不可以")
+			IF !RESULT
+				HANDICAP_FIXED += ABL:MASTER:戦闘能力 * 50
+			ELSE
+				PRINTFORMW 「呜呜...%CALLNAME:MASTER%真是个坏蛋…」
+			ENDIF
 		ELSE
 			PRINTFORML 「%CALLNAME:MASTER%阁下。我只是个不值一提的管狐罢了」
 			PRINTFORML 「你真的打算对这样弱小的对手使出全力吗？」
 			PRINTFORML 「欺负弱小的对手、只会让%CALLNAME:MASTER%阁下的战斗阅历沾上污点」
 			PRINTFORML 「如何？　这样的话、你能再加以酌量三分吗？」
 			PRINTW 
+			CALL ASK_YN("可以", "不行,要把她打的体无完肤")
+			IF !RESULT
+				HANDICAP_FIXED += ABL:MASTER:戦闘能力 * 50
+			ELSE
+				PRINTFORMW 「呜、呜哇...」
+			ENDIF
 		ENDIF
-		RETURN 0
 	ENDIF
 	;-------------------------------------------------
 	;ハンデ
@@ -48,7 +59,6 @@ SIF FLAG:口上色
 	;-------------------------------------------------
 	IF LOCAL:1 && ARGS == "ハンデ"
 		;ハンデつけなかったら表示されないので無記入でよい
-		HANDICAP_FIXED += ABL:MASTER:戦闘能力 * 50
 		IF (TALENT:MASTER:年齢 == -1 || TALENT:MASTER:幼児／幼児退行)
 			PRINTFORML 「好高兴♪　%CALLNAME:MASTER%阁下对姐姐真的很温柔呢♪」
 			IF ABL:MASTER:戦闘能力 >= 3
@@ -69,7 +79,6 @@ SIF FLAG:口上色
 			PRINTFORML （轻而易举呢…如此容易应付、真是帮了大忙了♪）
 			PRINTW 
 		ENDIF
-		RETURN 0
 	ENDIF
 	;-------------------------------------------------
 	;戦闘中TARGET被弾時口上
@@ -357,6 +366,10 @@ SIF FLAG:口上色
 					;CALL HPH_PRINT,@"「空欄埋めなきゃ病に罹ってるくせに好きな部分と温度差が激しすぎるHPH」","L"
 					;CALL HPH_PRINT,@"「スレで感想がないと『自分の口上って、実は需要ない…？』ってすぐ落ち込むHPH」","L"
 					
+				IF CFLAG:1045 == 1
+					CALL K139_GAMBLING_机翻更新版
+				ENDIF
+			;ハンデなし
 				ELSE
 					IF ABL:MASTER:戦闘能力 > 2
 						CALL HPH_PRINT,@"「啊咧HPH　这是怎么了呀HPH　身体不舒服吗HPH」","L"
@@ -514,25 +527,38 @@ SIF FLAG:口上色
 				ELSE
 					PRINTFORML 「%CALLNAME:MASTER%阁下被完全看穿了♪」
 					PRINTFORML 「即使弱小如我、也能根据你的战斗方式做到如此地步哟♪」
-				ENDIF
-			CASE 1
+			ENDIF
+			
+			IF CFLAG:1045 == 1
+				CALL K139_GAMBLING_机翻更新版
+			ENDIF
+		CASE 1
 				PRINTFORML 「不不不、只是险胜一筹…」
-			CASE 0
-				IF HANDICAP_FIXED > 0
+		;あなたの勝ち
+		CASE 0
+			IF HANDICAP_FIXED > 0
 					PRINTFORML 「完败了…心服口服」
 					PRINTFORML （不甘心啊～本想趁你带着障碍疏忽大意的时候把你打得落花流水、再好好嘲讽一番的～）
+				PRINTW 
+			ELSE
+				IF ABL:MASTER:戦闘能力 > 2
+						PRINTFORML 「我这种人本来就不可能战胜%CALLNAME:MASTER%阁下啊…」
+					IF TALENT:恋慕 || TALENT:恋人
+						PRINTFORML （呵呵...果然我看中的人是有理由的呢...%UNICODE(0x2665) *1% 真是可靠的人♪）
+					ELSE
+						PRINTFORML （稍微手下留情一点啊、死脑筋…！）
+					ENDIF
 					PRINTW 
 				ELSE
-					IF ABL:MASTER:戦闘能力 > 2
-						PRINTFORML 「我这种人本来就不可能战胜%CALLNAME:MASTER%阁下啊…」
-						PRINTFORML （稍微手下留情一点啊、死脑筋…！）
-						PRINTW 
-					ELSE
 						PRINTFORML 「哎呀哎呀…似乎有些小看%CALLNAME:MASTER%阁下了。失策了」
+					IF TALENT:恋慕 || TALENT:恋人
+						PRINTFORML （看来这边也是很强大的样子呢...%UNICODE(0x2665) *1% 选择了这个人是正确的♪）
+					ELSE
 						PRINTFORML （%CALLNAME:MASTER%居然这么强什么的…我明明对自己看人的眼光很自信的）
-						PRINTW 
 					ENDIF
+					PRINTW 
 				ENDIF
+			ENDIF
 		ENDSELECT
 	ENDIF
 RESETCOLOR

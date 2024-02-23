@@ -109,7 +109,7 @@ RETURNF 1
 ;愛麗絲口上の関数お借りして平文化しました。ERHだと動作が速かったり安定するのかな
 ;丸コピは那个なので知り合い以外は随机で選んでIDを返すように。誰もいなければ0を返す
 ;引数が真-TARGET内随机、偽-優先順序付き（[恋人]持ち→知り合い→TARGET内随机）
-;映姫様の知り合いは7人,小町>久侘歌>覚>赫喀提亞>阿求>幽幽子>紫の順に(勝手に)設定
+;映姫様の知り合いは8人,小町>久侘歌>覚>赫喀提亞>阿求>幽幽子>紫>瓔花の順に(勝手に)設定
 ;-------------------------------------------------
 @K30_FIND_AROUND(ARG = 0)
 #FUNCTION
@@ -153,7 +153,8 @@ SIF 抽選 < 1
 RETURNF LOCAL:(RAND(抽選))
 ;==================================================
 ;映姫様が他の角色を呼ぶ式中関数
-;呼び捨て =小町 久侘歌：敬称 =赫喀提亞「様」：他は皆「さん」づけ
+;呼び捨て =小町 久侘歌：敬称 =赫喀提亞「様」
+;阿求 =「御阿礼の子」：リリー姉妹 =略さない：他は皆「さん」づけ
 ;ARG=0でMASTER 条件付けで呼び名を変える。需要なさそうだけどおにいさんにも対応
 ;引数 =1or2をとると路人角色/MASTER/対象角色無し(ARG=0)が指定されたら「だれか」「他の人」と呼ぶ＠性騷擾が捗る
 ;引数 =3で種族・属性呼び。CSV読みでTALENT分けより雰囲気出る気がするけど、個別で設定しないからやっぱり変なのはある
@@ -196,9 +197,17 @@ SELECTCASE ARG
 			RETURNF CSTR:30:80
 		;それ以外は通常形
 		RETURNF MASTERNAME:30 + "桑"
+	;リリー姉妹
+	CASE 18, 19
+		RETURNF @"莉莉%\@ ARG == 18 ? 白 # 黑\@%"
 	;小町・久侘歌
 	CASE 76, 129
 		RETURNF CALLNAME:ARG
+	;阿求
+	CASE 80
+		SIF CFLAG:30:現在位置 == CFLAG:80:現在位置
+			RETURNF CALLNAME:ARG + "桑"
+		RETURNF "御阿礼之子"
 	;赫喀提亞
 	CASE 113
 		RETURNF CALLNAME:ARG + "様"
@@ -1128,7 +1137,6 @@ BLOCK = TCVAR:30:385 || TCVAR:30:强行 || !(TALENT:恋慕 || TALENT:炮友 || T
 TEMP = CURRENTREDRAW()
 REDRAW 0
 IF !FLAG:アニメーション
-	IF ARG < 3
 	SELECTCASE ARG
 		CASE 0 TO 2
 		CALL PRINT_IMAGE("30_blow5", SIZE, "left")
@@ -1140,7 +1148,6 @@ IF !FLAG:アニメーション
 	ENDSELECT
 		REDRAW TEMP
 		RETURN
-	ENDIF
 ENDIF
 SELECTCASE ARG
 	;通常
@@ -1187,7 +1194,7 @@ SELECTCASE ARG
 		ELSE
 			HTML_FORM = <img src='30_おしゃぶり映姫様' height='{SIZE}' width='{SIZE}'>
 			HTML_PRINT HTML_FORM
-			FOR LOCAL, 0, (SIZE / 100)
+			FOR LOOP_C, 0, (SIZE / 100)
 				PRINTFORML
 			NEXT
 			;描画間隔を制御する命令
@@ -1604,8 +1611,10 @@ TEMP_SIZE = FLAG:多尺寸
 TEMP_WIDTH = 默认角色画像横幅
 TEMP_SCALE = 角色画像表示尺寸比
 FLAG:多尺寸 = 1
-默认角色画像横幅 = 270
-角色画像表示尺寸比 = 100
+IF TEMP_WIDTH * TEMP_SCALE > 27000
+	默认角色画像横幅 = 270
+	角色画像表示尺寸比 = 100
+ENDIF
 ;レイヤのセットと表示
 DEBUGPRINTFORML LINECOUNT:{LINECOUNT}
 FOR COUNT, 0, L_NUM
@@ -1815,14 +1824,13 @@ RETURN
 #DIM G_ID
 #DIM NUM
 #DIM ORG
-#DIMS SET_RESOURCE,6
+#DIMS SET_RESOURCE,7
 #DIMS RESOURC_NAME
 #DIMS 差分
 ;睡眠中は表示しない
 SIF !FLAG:画像表示 || CFLAG:睡眠
 	RETURN
 ORG = (SUMARRAY(NOWEX:30:0, 8, 10) > 0)
-	
 ;ベースと素体を設定
 VARSET SET_RESOURCE
 SET_RESOURCE:0= 30_AHE_BASE
@@ -1830,48 +1838,146 @@ SET_RESOURCE:0= 30_AHE_BASE
 SIF !CHECK_NUDE(30) && CFLAG:衣装一時変更 == 62
 	差分 = _HEN-T
 SET_RESOURCE:1 = 30_AHE_BODY%差分%
+SET_RESOURCE:2 = 30_AHE_ACME
 RESOURC_NAME = 30_あへ顔%差分%
 
 ;口を設定-随机２種、恋慕かつ四重絶頂以上で３種類
 NUM = RAND:(2 + (ORG && TALENT:恋慕))
-SET_RESOURCE:2 = 30_AHE_MOUTH{NUM}
+SET_RESOURCE:3 = 30_AHE_MOUTH{NUM}
 RESOURC_NAME += @"口{NUM}"
 
 ;目を設定-恋慕で目にハート付き、恋慕かつ四重/五重絶頂で差分増
-NUM = TALENT:恋慕 ? RAND:(1 + ORG) + (NOWEX:9 > 0) # 3
-SET_RESOURCE:3 = 30_AHE_EYE{NUM}
+NUM = TALENT:恋慕 ? 1 + RAND(ORG + (NOWEX:9 > 0) + 1) # 0
+SET_RESOURCE:4 = 30_AHE_EYE{NUM}
 RESOURC_NAME += @"目{NUM}"
 
 ;眉を設定-随机２択
 NUM = RAND:2
-SET_RESOURCE:4 = 30_AHE_BROW{NUM}
+SET_RESOURCE:5 = 30_AHE_BROW{NUM}
 RESOURC_NAME += @"眉{NUM}"
 
 ;エフェクト-恋慕で随机４種
 IF TALENT:恋慕
 	NUM = RAND:4
-	SET_RESOURCE:5 = 30_AHE_EFFECT{NUM}
+	SET_RESOURCE:6 = 30_AHE_EFFECT{NUM}
 	RESOURC_NAME += @"効果{NUM}"
 ENDIF
 ;合成したスプライトをリソース登録して表示
 IF !SPRITECREATED(RESOURC_NAME)
 	G_ID = 0
-	FOR COUNT, 0, 5 + (TALENT:恋慕 > 0)
+	FOR COUNT, 0, 6 + (TALENT:恋慕 > 0)
 		CALL 画像合成(G_ID, SET_RESOURCE:COUNT)
 	NEXT
 	SPRITECREATE RESOURC_NAME, G_ID
 ENDIF
-
 CALL PRINT_IMAGE(RESOURC_NAME, 1000, "left")
 PRINTFORML 
 RETURN
+;==================================================
+;映姫様のバイブデート中顔絵を表示する関数
+;--------------------------------------------------
+@K30_PRINT_VIBE_DATE
+#DIM G_ID
+#DIM LAYER
+#DIM NUM
+#DIMS TEX
+#DIMS TEX2
+#DIM L_NUM
+#DIM TEMP_SIZE
+#DIM TEMP_WIDTH
+#DIM TEMP_SCALE
+#DIMS SET_RESOURCE,7
+#DIMS RESOURC_NAME
+SIF !FLAG:画像表示 || !GETBIT(CFLAG:1500, 1)
+	RETURN
+VARSET SET_RESOURCE
+LAYER = 0
+L_NUM = 2
+TEX '= \@ TCVAR:30:365 == 2 || NOWEX:Ａ絶頂 ? AHE_ # \@
+SET_RESOURCE:0 = 30_%TEX%BASE
+SET_RESOURCE:1 = 30_AHE_BODY_WEAR
+RESOURC_NAME = 30_バイブデート%TEX%
+IF NOWEX:Ａ絶頂
+	SET_RESOURCE:2 = 30_AHE_ACME
+	RESOURC_NAME += "イき"
+	L_NUM ++
+ENDIF
+NUM = RAND:2
+SET_RESOURCE:L_NUM = 30_AHE_BROW{NUM}
+RESOURC_NAME += @"眉{NUM}"
+L_NUM ++
+;弱
+IF TCVAR:30:365 == 1
+	TEX '= \@ NOWEX:Ａ絶頂 ? 4 # %TOSTR(RAND(5, 7))% \@
+	TEX2 '= \@ NOWEX:Ａ絶頂 ? %TOSTR(RAND:2)% # %TOSTR(RAND(3, 6))% \@
+;強
+ELSE
+	TEX '= \@ NOWEX:Ａ絶頂 ? %TOSTR(RAND(2, 4))% # 1 \@
+	TEX2 '= TOSTR(RAND(3, 6))
+ENDIF
+SET_RESOURCE:L_NUM = 30_AHE_EYE%TEX%
+RESOURC_NAME += @"目%TEX%"
+L_NUM ++
+SET_RESOURCE:L_NUM = 30_AHE_MOUTH%TEX2%
+RESOURC_NAME += @"口%TEX2%"
+L_NUM ++
+IF NOWEX:Ａ絶頂
+	TEX '= \@ TCVAR:30:365 == 1 ? 0 # %TOSTR(RAND(2, 4))% \@
+	SET_RESOURCE:L_NUM = 30_AHE_EFFECT%TEX%
+	RESOURC_NAME += @"効果%TEX%"
+ELSEIF TCVAR:30:365 == 2
+	SET_RESOURCE:L_NUM = 30_AHE_EFFECT1
+	RESOURC_NAME += "効果1"
+ELSEIF K30_BE_SEEN() && !TFLAG:约会道中
+	SET_RESOURCE:L_NUM = 別顔_吐息_30
+	RESOURC_NAME += "効果4"
+	LAYER = 1
+ELSE
+	SET_RESOURCE:L_NUM = 汎用エフェクト_spoken squiggle
+	RESOURC_NAME += "効果5"
+	LAYER = 2
+ENDIF
+IF !SPRITECREATED(RESOURC_NAME)
+	G_ID = 0
+	FOR COUNT, 0, L_NUM
+		CALL 画像合成(G_ID, SET_RESOURCE:COUNT)
+	NEXT
+	SELECTCASE LAYER
+		CASE 0
+			CALL 画像合成(G_ID, SET_RESOURCE:L_NUM)
+		CASE 1
+			CALL 画像合成(G_ID, SET_RESOURCE:L_NUM, -15, 0, 320, 320)
+		CASE 2
+			CALL 画像合成(G_ID, SET_RESOURCE:L_NUM, 0, -15, 270, 270)
+	ENDSELECT
+	SPRITECREATE RESOURC_NAME, G_ID
+ENDIF
+TEMP_SIZE = FLAG:多尺寸
+TEMP_WIDTH = 默认角色画像横幅
+TEMP_SCALE = 角色画像表示尺寸比
+FLAG:多尺寸 = 1
+IF TEMP_WIDTH * TEMP_SCALE > 27000
+	默认角色画像横幅 = 270
+	角色画像表示尺寸比 = 100
+ENDIF
+CALL 画像セット(RESOURC_NAME, 0, 0, 角色画像表示尺寸比, 0)
+SIF 充填率(30, 2) > 30
+	CALL ダミーセット(0, 0, 角色画像表示尺寸比, 1)
+CALL 画像セット(@"30_SECTIONAL_DATE{TCVAR:30:365}", 0, 0, 角色画像表示尺寸比, 0)
+SIF 充填率(30, 2) > 30
+	CALL 画像セット(@"30_SECTIONAL_%\@ 充填率(30, 2) > 60 ? POKKORI # TAPPURI \@%", 0, 0, 角色画像表示尺寸比, 1)
+CALL 画像一斉表示("LEFT", 0, 1, -1)
+FLAG:多尺寸 = TEMP_SIZE
+默认角色画像横幅 = TEMP_WIDTH
+角色画像表示尺寸比 = TEMP_SCALE
+RETURN 1
 ;==================================================
 ;映姫様のメシ顔を表示する関数
 ;--------------------------------------------------
 @K30_PRINT_MESHIGAO(ARGS)
 SIF !FLAG:画像表示 || !顔絵付きメッセージ
 	RETURN
-SETANIMETIMER 200
+SETANIMETIMER 150
 CALL 画像セット("30_BG1", 0, 0, 100, 0)
 CALL GET_BASE_RESOURCE(30, "顔絵", "", ARGS)
 CALL 画像セット(RESULTS:0, 0, 0, 100, 1)
