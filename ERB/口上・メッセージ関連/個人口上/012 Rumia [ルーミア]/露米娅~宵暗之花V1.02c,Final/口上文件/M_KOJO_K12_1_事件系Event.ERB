@@ -282,6 +282,7 @@ CFLAG:12:319 = 1
 
 ;同室就说明见过面
 ;防止一天到晚都凑一起导致没法触发见面日记的bug
+;草，这个可能有让日记无法触发的bug
 ;SIF (CFLAG:12:319 == 1) && ONCE("RUMIA_ALONG_WITH_YOU")
 ;TCVAR:12:182 = 1 
 
@@ -2170,7 +2171,7 @@ IF LOCAL
 			PRINTFORMW [ 露米娅不会再告白了 ]
 			RESETCOLOR
 			PRINTFORMDL 							
-			SETBIT CFLAG:12:13,1
+			SETBIT CFLAG:12:13,1 
 			;日记
 			CALL M_KOJO_Moe_DIARYSETTING_K12(20,1)	
 			CALL RUMIA_MOE_WITH_YOUR_DIARY_TO_WRITE(6,0,11)
@@ -2591,8 +2592,10 @@ IF LOCAL
 	CALL RUMIA_HIGH_EXP_CHECK
 
 	IF ARG == 1 || (ARG == 2) && (TCVAR:12:今天有否见面)
-		SIF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
+		IF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
 				CALL RUMIA_BECOME_LOVER 	
+				RETURN 1 
+		ENDIF 
 		IF CFLAG:12:1666 <=3
 			SELECTCASE MOE_RUMIA_GET_RELATION()
 				CASE -3 TO 0
@@ -2873,7 +2876,8 @@ IF LOCAL
 			[SKIPEND]
 
 			ELSEIF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
-				CALL RUMIA_BECOME_LOVER 	
+					CALL RUMIA_BECOME_LOVER 	
+					RETURN 1 
 			ELSEIF TALENT:12:恋慕
 				PRINTFORMDL 黑暗中的露米娅猛地扑出来，你早有准备，稳稳地抱住张开手臂冲过来的露米娅
 				PRINTFORMDL 顺着冲击的力量原地转了个圈，娇小女孩却不肯放开抱着你的手
@@ -2938,8 +2942,10 @@ IF LOCAL
 		IF LOCAL:1 && !ARG:1
 		CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)
 
-		SIF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
-		CALL RUMIA_BECOME_LOVER 	
+		IF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
+				CALL RUMIA_BECOME_LOVER 	
+				RETURN 1 
+		ENDIF 
 
 		CALL RUMIA_GOOD_MORNING_AFTER_CHILD_RAISING
 		SIF RESULT == 1
@@ -3043,8 +3049,10 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 
-		SIF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
-		CALL RUMIA_BECOME_LOVER 	
+		IF TALENT:12:恋人 && FIRSTTIME("RUMIA_FIRST_FALL_OF_YOU") && !FLAG:73 && ( CFLAG:12:1299 < 3 )
+				CALL RUMIA_BECOME_LOVER 	
+				RETURN 1 
+		ENDIF 
 
 		CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA) 
 		PRINTFORMW 
@@ -6630,7 +6638,7 @@ IF LOCAL
 			;过夜用函数 开始
 			CALL RUMIA_OVER_NIGHT_WITH_YOU_START(3)
 
-			;给日记判别用变量赋值三
+			;给日记判别用变量赋值三，以开启思慕日记
 			CFLAG:12:1018 = 3 
 
 			RESULT = 0
@@ -6640,8 +6648,6 @@ IF LOCAL
 				BREAK
 			NEXT
 	
-
-
 			CLEARLINE 1
 			PRINTFORML 「好饿……」
 			PRINTFORML 
@@ -6763,7 +6769,7 @@ IF LOCAL
 		PRINTFORML
 		PRINTFORMW 「好想……与%MASTERNAME:12%更加亲密%UNICODE(0x2764)%……」
 		PRINTFORMW 「做更多，更快乐，更过分的事情%UNICODE(0x2764)%……」
-		PRINTFORMW 「已经……离不开了%MASTERNAME:12%的身体了呀%UNICODE(0x2764)%……」
+		PRINTFORMW 「已经……离不开%MASTERNAME:12%的身体了呀%UNICODE(0x2764)%……」
 		PRINTFORML 
 		PRINTFORMDL 你只是轻轻地，将小妖怪拥入怀里……
 		PRINTFORMDW 已经不需要言语，就能明白，接下来要发生的事情了呢
@@ -6784,8 +6790,12 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
-		IF !TALENT:12:0 && 充填率(12,1)
-			PRINTFORMW 今天……差点被%MASTERNAME:12%插得要哭出来了
+		IF !TALENT:12:0
+			IF 充填率(12,1)
+				PRINTFORMW 今天……差点被%MASTERNAME:12%插得要哭出来了
+			ELSE 
+				PRINTFORMW 最近……差点被%MASTERNAME:12%插得要哭出来了
+			ENDIF 
 			PRINTFORMW 小穴已经舒服到不行了，每次进来，全身都像是要融化一样，马上就要去了
 			PRINTFORML 坏心眼的%MASTERNAME:12%，会让露米娅自己坐在上面
 			PRINTFORMW 趁着露米娅马上就要去的时候，用力地往肚子里面顶
@@ -6794,10 +6804,10 @@ IF LOCAL
 			PRINTFORMW 好舒服，好舒服好舒服，但是，太舒服了，最后要去的时候，会很痛苦
 			PRINTFORMW 几乎一下子就把露米娅的力气都抽干了，一点劲都使不上来
 			PRINTFORMW 如果这个时候，%MASTERNAME:12%再顶着里面射的话，又会忍不住去一次
-			PRINTFORMW 等到终于能感觉到自己的身体，%MASTERNAME:12%会用手帕帮我擦脸，
-			PRINTFORMW 原来刚刚去的时候，鼻涕和眼泪都憋出来了，脸上很难看……
-			PRINTFORML 然后……
-			PRINTFORMW ……%MASTERNAME:12%就会温柔地抱着我，带着露米娅去睡一觉、
+			PRINTFORMW 等到终于能感觉到自己的身体，%MASTERNAME:12%会用手帕帮我擦脸
+			PRINTFORMW 原来，刚刚露米娅去的时候，鼻涕和眼泪都憋出来了，脸上变得很难看……
+			PRINTFORML 再然后……
+			PRINTFORMW ……%MASTERNAME:12%就会温柔地抱着我，带着露米娅去睡一觉
 			PRINTFORMW 每次做到很累很累的时候，只是和%MASTERNAME:12%休息，就能睡得更香
 			IF (CFLAG:12:强行内射 || CFLAG:12:睡眠姦 == 2 || CFLAG:12:烂酔奸 == 2 || MARK:12:3)
 				PRINTFORML 虽然%MASTERNAME:12%也对露米娅，做过更加过分的事情……
@@ -8726,44 +8736,45 @@ LOCAL = 1
 ;-------------
 IF LOCAL
 ;需要补充
-IF CFLAG:12:1001 || CFLAG:12:1201	
+	IF (CFLAG:12:1001 || CFLAG:12:1201) && MARK:12:3 < 2
 
-	PRINTFORMW 「%MASTERNAME:12%！看外面的天上，有烟花耶！」
-	PRINTFORMDL 随着月亮升到天顶，不知从何处升起来庆祝新年的烟花
-	PRINTFORMDL 
-	PRINTFORMDW 与露米娅一同坐下，手臂边上传来被依靠的温暖触感
-	PRINTFORMDW 你稍微抬起手臂，便搂住了身旁柔弱的肩膀，让露米娅靠在臂弯中了
-	PRINTFORMDL 
-	PRINTFORMW 「……第一次看见烟花的时候……露米娅还不知道是在庆祝，还以为是有人打架呢……」
-	PRINTFORMDL 
-	PRINTFORMW 「过了很久很久……也还是会害怕，烟花爆炸的声音……」
-	PRINTFORMDL 
-	PRINTFORMW 「不过，只要与%MASTERNAME:12%在一起……就什么都不怕了！」
-	PRINTFORMDL 
-	PRINTFORMDL 就这样静静地欣赏着烟花
-	PRINTFORMDL 
-	PRINTFORMDL ……
-	PRINTFORMDL 
-	PRINTFORMDL 直到满天星火散去，夜晚重归静谧，新月下的星河清晰可见了
-	PRINTFORMDL 
-	PRINTFORMW ……
-	PRINTFORMDL 
-
-	IF TALENT:12:恋人
-		PRINTFORMW 「%MASTERNAME:12%……你的新年愿望是什么呢」
-		PRINTFORMDL 黑暗之中的露米娅紧紧地靠了过来 		
+		PRINTFORMW 「%MASTERNAME:12%！看外面的天上，有烟花耶！」
+		PRINTFORMDL 随着月亮升到天顶，不知从何处升起来庆祝新年的烟花
 		PRINTFORMDL 
-		PRINTFORMW 「露米娅想要，明年能天天都在一起%UNICODE(0x2764)%～」
-		PRINTFORMW 「后年也是，大后年也是，十年二十年之后也是……」
-		PRINTFORMW 「亲爱的%MASTERNAME:12%……一直，一直都要在一起哟%UNICODE(0x2764)%」
-	ELSE 
-		PRINTFORML 「诶……现在一点都不怕了哦！」
-		PRINTFORMW 「不如说，被%MASTERNAME:12%抱着，什么都不怕了呢……」
-		PRINTFORMW 「很感谢%MASTERNAME:12%……能陪着露米娅看烟花！」
-		
-	ENDIF 
+		PRINTFORMDW 与露米娅一同坐下，手臂边上传来被依靠的温暖触感
+		PRINTFORMDW 你稍微抬起手臂，便搂住了身旁柔弱的肩膀，让露米娅靠在臂弯中了
+		PRINTFORMDL 
+		PRINTFORMW 「……第一次看见烟花的时候……露米娅还不知道是在庆祝，还以为是有人打架呢……」
+		PRINTFORMDL 
+		PRINTFORMW 「过了很久很久……也还是会害怕，烟花爆炸的声音……」
+		PRINTFORMDL 
+		PRINTFORMW 「不过，只要与%MASTERNAME:12%在一起……就什么都不怕了！」
+		PRINTFORMDL 
+		PRINTFORMDL 就这样静静地欣赏着烟花
+		PRINTFORMDL 
+		PRINTFORMDL ……
+		PRINTFORMDL 
+		PRINTFORMDL 直到满天星火散去，夜晚重归静谧，新月下的星河清晰可见了
+		PRINTFORMDL 
+		PRINTFORMW ……
+		PRINTFORMDL 
 
-ENDIF 	
+		IF TALENT:12:恋人
+			PRINTFORMW 「%MASTERNAME:12%……你的新年愿望是什么呢」
+			PRINTFORMDL 黑暗之中的露米娅紧紧地靠了过来 		
+			PRINTFORMDL 
+			PRINTFORMW 「露米娅想要，明年能天天都在一起%UNICODE(0x2764)%～」
+			PRINTFORMW 「后年也是，大后年也是，十年二十年之后也是……」
+			PRINTFORMW 「亲爱的%MASTERNAME:12%……一直，一直都要在一起哟%UNICODE(0x2764)%」
+		ELSE 
+			PRINTFORML 「诶……现在一点都不怕烟花了哦！」
+			PRINTFORMW 「不如说，被%MASTERNAME:12%抱着，什么都不怕了呢……」
+			PRINTFORMW 「很感谢%MASTERNAME:12%……能陪着露米娅看烟花！」
+			PRINTFORMW 「以后……%MASTERNAME:12%……也要在一起，做永远的好朋友！」
+			
+		ENDIF 
+
+	ENDIF 	
 
 ENDIF
 RETURN 1

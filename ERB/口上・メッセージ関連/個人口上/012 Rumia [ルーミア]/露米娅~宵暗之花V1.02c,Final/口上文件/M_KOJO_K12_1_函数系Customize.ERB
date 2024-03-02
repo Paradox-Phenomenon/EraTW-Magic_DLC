@@ -1023,6 +1023,7 @@ ENDSELECT
 ;CSVに記入されていない場合の標準値は1000
 ;-------------------------------------------------
 @RUMIA_MAKE_SIZE, ARG
+#DIM 数值影响值,5
 
 VARSET LOCAL
 IF CFLAG:ARG:身体測定 == 2 || (CFLAG:ARG:身体測定 == 1 && (MAXBASE:ARG:身高 == 0 || MAXBASE:ARG:体重 == 0 || MAXBASE:ARG:胸圍 == 0 || MAXBASE:ARG:腰圍 == 0 || MAXBASE:ARG:臀圍 == 0))
@@ -1057,16 +1058,19 @@ ENDIF
 ;-------------------------------------------------
 ;Moe的自定义部分 身高
 ;-------------------------------------------------
-
-IF ( DAY:0 - CFLAG:12:1299 ) < 180
-	TIMES BASE:ARG:身高, (0.73 + ( (DAY:0 - CFLAG:12:1299) * 0.12 / 180 ) )
-ELSE 
-	TIMES BASE:ARG:身高, (0.73 + ( (DAY:0 - CFLAG:12:1299) * 0.12 / 180 ) )
-ENDIF 
 IF ( DAY:0 - CFLAG:12:1299 ) < 480 
-	TIMES BASE:ARG:身高,( (DAY:0 - CFLAG:12:1299) * 0.19 / 480 )  + 0.73 
+	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:1299) * 190 / 480 ) )
+	BASE:ARG:身高 *= 数值影响值:1 / 1000
 ELSE 
-	TIMES BASE:ARG:身高,( (DAY:0 - CFLAG:12:1299) * 0.19 / 480 )  + 0.73 
+	数值影响值:1 = 920
+	BASE:ARG:身高 *= 数值影响值:1 / 1000
+ENDIF 
+IF ( DAY:0 - CFLAG:12:1299 ) < 180
+	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:1299) * 120 / 180 ) )
+	BASE:ARG:身高 *= 数值影响值:1 / 1000
+ELSE 
+	数值影响值:1 = 850
+	BASE:ARG:身高 *= 数值影响值:1 / 1000
 ENDIF 
 ;-------------------------------------------------
 
@@ -1087,9 +1091,11 @@ ENDIF
 ;-------------------------------------------------
 
 IF TALENT:ARG:体型 == -2
-	TIMES BASE:ARG:腰圍, 1.16 - ( (DAY:0 - CFLAG:12:1299) * 0.08 / 180 )
+	数值影响值:2 = 1160 - ( (DAY:0 - CFLAG:12:1299) * 80 / 180 )
+	BASE:ARG:腰圍 *= 数值影响值:2 / 1000
 ELSEIF TALENT:ARG:体型 == -1
-	TIMES BASE:ARG:腰圍, 1.08 - ( (DAY:0 - CFLAG:12:1299) * 0.08 / 480 )
+	数值影响值:2 = 1080 - ( (DAY:0 - CFLAG:12:1299) * 80 / 480 )
+	BASE:ARG:腰圍 *= 数值影响值:2 / 1000
 ENDIF
 ;-------------------------------------------------
 
@@ -1118,9 +1124,11 @@ ENDIF
 ;-------------------------------------------------
 
 IF TALENT:ARG:胸圍 == -2
-	TIMES BASE:ARG:胸圍, 0.84 + ( (DAY:0 - CFLAG:12:1299) * 0.08 / 180 )
+	数值影响值:3 = 840 + ( (DAY:0 - CFLAG:12:1299) * 80 / 180 )
+	BASE:ARG:胸圍 *= 数值影响值:3 / 1000
 ELSEIF TALENT:ARG:胸圍 == -1
-	TIMES BASE:ARG:胸圍, 0.92 + ( (DAY:0 - CFLAG:12:1299) * 0.08 / 480 )
+	数值影响值:3 = 920 + ( (DAY:0 - CFLAG:12:1299) * 80 / 480 )
+	BASE:ARG:胸圍 *= 数值影响值:3 / 1000
 ENDIF 
 ;-------------------------------------------------
 
@@ -1167,14 +1175,14 @@ ENDIF
 ;Moe的自定义部分 体重
 ;-------------------------------------------------
 IF TALENT:ARG:体型 == -2
-	IF ( DAY:0 - CFLAG:12:1299 ) < 180
-		TIMES BASE:ARG:体重,( (DAY:0 - CFLAG:12:1299) * 0.10 / 180 )  + 0.80 
-	ENDIF 
-ELSEIF TALENT:ARG:体型 == -1 
 	IF ( DAY:0 - CFLAG:12:1299 ) < 480 
-		TIMES BASE:ARG:体重,( (DAY:0 - CFLAG:12:1299) * 0.13 / 480 )  + 0.80 
+		数值影响值:4 = ( (DAY:0 - CFLAG:12:1299) * 130 / 480 )  + 800 
+		BASE:ARG:体重 *= 数值影响值:4 / 1000
 	ENDIF 
-ELSE 
+	IF ( DAY:0 - CFLAG:12:1299 ) < 180
+		数值影响值:4 = ( (DAY:0 - CFLAG:12:1299) * 100 / 180 )  + 800 
+		BASE:ARG:体重 *= 数值影响值:4 / 1000
+	ENDIF 
 ENDIF 
 ;-------------------------------------------------
 
@@ -1364,6 +1372,7 @@ VARSET 判定无效
 					PRINTFORMDW 不知是因为什么原因，今晚睡得很好，体力，气力和tsp都因此增加了
 					CALL BUFF_BASE(MASTER,BASE_体力,200)
 					CALL BUFF_BASE(MASTER,BASE_気力,200)
+					CALL BUFF_BASE(MASTER,BASE_TSP,200)
 				ENDIF 
 			CASE 1
 				PRINTFORML 
@@ -1410,6 +1419,7 @@ VARSET 判定无效
 								PRINTFORMDW 不知是因为什么原因，今晚睡得很好，体力，气力和tsp都因此增加了
 								CALL BUFF_BASE(MASTER,BASE_体力,200)
 								CALL BUFF_BASE(MASTER,BASE_気力,200)
+								CALL BUFF_BASE(MASTER,BASE_TSP,200)
 							ENDIF 
 					ENDSELECT
 		ENDSELECT
@@ -1450,7 +1460,7 @@ VARSET 判定无效
 		SETCOLOR MOE_RUMIA
 		PRINTFORMW 「……居然没发现我吗……」
 		PRINTFORMW 「呜啊啊！……趁着露米娅不在把点心吃掉了……呜呜呜呜呜呜……」
-		PRINTFORMW 「不行，……那就……呜%UNICODE(0x2764)%！……那就必须要给点惩罚才行%UNICODE(0x2764)%！」
+		PRINTFORMW 「不行！！……那就……呜%UNICODE(0x2764)%！……那就必须要给点惩罚才行%UNICODE(0x2764)%！」
 		CALL RUMIA_ATTACK_YOU_DURING_NIGHT
 	ELSE
 		$NANIMONAI
@@ -1700,6 +1710,7 @@ WAIT
 
 理性判定値 += 1200 
 
+;不为什么
 SIF TEQUIP:12:縄 || TEQUIP:12:拘束
 理性判定値 += 1000 
 
@@ -1962,7 +1973,7 @@ TFLAG:97 += ARG:1
 TFLAG:98 += ARG:2
 TFLAG:99 += ARG:2
 SIF ARG:1>0
-TFLAG:193 = MAX(TFLAG:193,DOKU_GET_HOW_MOOD(ARG))
+TFLAG:193 = MAX(TFLAG:193,MOE_RUMIA_GET_RELATION())
 RETURN 1
 
 @DOKU_COMF_FAIL
@@ -2029,7 +2040,7 @@ RETURN RESULT_HERE
 ;由于原版代码的问题，哪怕有复数个口上，BEFORETRAIN也只能生效一个
 ;这个函数是使用自由行动替代BEFORETRAIN的一部分，应当在EVENT31里被调用
 ;ARG是口上主，ARG:1是占用的自由行动
-;Moe：大概或许好像，4881修复了这个问题……
+;Moe：大概或许好像，4881修复了BEFORETRAIN这个问题……
 
 ;事实上，原版的FLAGSET也可以做到类似的事情
 ;但这种处理方式能保证「绝对只在每天睡醒后触发一次」，而不会像FLAGSET一样可能在读档后之类的地方触发
