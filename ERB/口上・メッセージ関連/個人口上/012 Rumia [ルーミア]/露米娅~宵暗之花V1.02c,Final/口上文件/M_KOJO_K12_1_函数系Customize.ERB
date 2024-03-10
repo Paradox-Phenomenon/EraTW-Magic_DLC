@@ -408,6 +408,127 @@ ENDCATCH
 
 
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
+;露米亜的移动轨迹
+;用于配合自己留在补丁里面的接口
+@M_KOJO_CHARAMOVE_DATA_K12_1(ARG,ARG:2)
+;此部分对应的补丁为ERB\キャラデータ\Chara_data_12_ルーミア.ERB
+
+	SELECTCASE ARG
+		;連動設定（RETURN=依存する角色, RESULT:1～3=対等に連動する角色）
+		CASE 1
+
+		;特殊生活時間設定（CFLAG:LOCAL:生活時間補正を設定する）
+		;可以在未来实装上课的时候，在这里做更改
+		CASE 3
+			IF (CFLAG:12:1202 || CFLAG:12:1002) && YOUBI_MATCH(DAY, "水金") && CFLAG:ARG:妊娠経過日数 <= 20
+			;早⑩（确信）
+				CFLAG:12:生活時間補正 = -120
+			ELSE 
+				CFLAG:12:生活時間補正 = 0 
+			ENDIF 
+
+		;移動傾向（±～10=行きやすい/行きにくい, -100=行かない）
+		;相比原版，补充了不会进艾伦房间和浴室的设定，与在各个地方的移动倾向
+		CASE 4
+			SELECTCASE ARG:2	
+				CASE P2境内, P10走廊, P11庭
+					RETURN 5
+				CASE P8廚房
+					RETURN 7
+				CASE P27三妖精之家・大廳
+					RETURN -5
+				CASE P201人里的門, P202中央広場, P203南大街, P204東大街, P205北大街, P206西大街, P207龍神像
+					RETURN -7
+				CASE P216食料品店, P217甜品店, P218小料理屋
+					RETURN 7 
+				CASE P213鈴奈庵 , P222寺子屋
+					RETURN 5 
+				CASE P301正門, P302庭, P303守衛小屋
+					RETURN -10 
+				CASE P343湖畔, P347霧之湖
+					RETURN 5 
+				CASE P345琪露諾的冰屋, P346大妖精の棲家
+					SIF CFLAG:12:1204 || CFLAG:12:1004 
+						RETURN 7
+				;私人房间不会去
+				CASE P303守衛小屋, P304空的小屋, P305仓库, P328地下走廊 TO P333大浴場
+					RETURN -100
+				;私人房间不会去
+				CASE P512魔理沙宅・寝室, P514魔理沙宅・風呂, P521人偶洋館・愛麗絲的房間, P522人偶洋館・神綺的房間
+					RETURN -100
+				CASE P523人偶洋館・夢子的房間, P526人偶洋館・風呂, P531人偶洋館・空的部屋, P537艾倫宅・風呂, P535艾倫宅・寝室
+					RETURN -100
+				CASE P541朱鷺子的棲息処, P542莉格露的棲息処, P544成美の小屋
+					RETURN -100
+				CASE 543
+					;白天很喜欢在家里
+					IF INRANGE(TIME, 480, 1020) 
+						RETURN 10
+					;總不能在外面淋雨不回家吧
+					ELSEIF TIME:5 == 4 || TIME:5 == 5 || TIME:5 == 6 
+						RETURN 7
+					ELSE 
+						RETURN 5 
+					ENDIF 
+			ENDSELECT
+		;出现场所
+		;相比原版完全改掉了，现在不会去冥界那种地方了——
+		;本来去那里就不太正常吧）
+		CASE 7
+			SELECTCASE ARG:2
+				CASE 桜花道的鳥居, 神社境内, 神社本堂, 神社走廊, 妖精的大樹
+					RETURN 1      
+				CASE 広場, 商家町, 呑屋小道, 寺子屋    ;二周目，或者一周目学生才会这些
+					SIF CFLAG:12:1200 || CFLAG:12:1004 || CFLAG:12:1204
+					RETURN 1          
+				CASE 霧之湖, 正門, 廃洋館
+					RETURN 1         
+				CASE 冰造的小雪屋
+					SIF CFLAG:12:1204 || CFLAG:12:1004
+						RETURN 1         
+				CASE 竹林入口, 迷失的小道, 斜角的竹林, 無名之丘, 太陽花田
+					RETURN 1          
+				CASE 森林的入口, 古木的大樹, 霧雨魔法店, 人偶的洋館, 再思之道, 無縁塚
+					RETURN 1 
+				CASE 山麓樹海, 玄武之澤, 森の深奥
+					RETURN 1         
+				CASE 九天瀑布, 絶景之丘, 山之湖, 守矢神社境内
+					RETURN 1         
+			ENDSELECT
+		;引力設定（CFLAG:LOCAL:引力点を設定する）
+		;可以参考一下魔理沙的
+		CASE 8	
+			;露米娅讨厌阳光
+			IF INRANGE(TIME, 480, 1020) 
+				TCVAR:12:引力点 = 543
+			ENDIF
+	ENDSELECT
+@M_KOJO_Moe_仕事内容設定_K12(ARG:1)
+;此部分对应的补丁为ERB\MOVEMENTS\JOB_仕事内容.ERB
+ARG = 12
+IF CFLAG:12:1202 || CFLAG:12:1002
+	IF YOUBI_MATCH(DAY, "水金") && CFLAG:ARG:妊娠経過日数 <= 20
+		MAXBASE:12:工作量 = 600 * 3
+		BASE:12:工作量 = 600 * 3
+		CSTR:12:工作情報 = "上课"
+		TCVAR:ARG:工作開始 = CLOCK_TO_TIME(10, 10)
+		TCVAR:ARG:工作結束 = CLOCK_TO_TIME(14, 30)
+		CFLAG:ARG:職場 = P222寺子屋
+		CFLAG:ARG:職場 = P222寺子屋
+		CFLAG:ARG:職種 = 43
+		TCVAR:ARG:工资 = 0
+		TCVAR:12:沒法幫忙 = 1
+		;TCVAR:ARG:礼物 = GETNUM(ITEM, "來歷不明的肉")
+		RETURN
+	ENDIF
+ENDIF 
+;原版的@角色データ12，可以通过改变STR的方式，强行覆写掉
+;具体的写法还没找出来，先放在这里好了
+@M_KOJO_Moe_角色データ_K12_EVENTTRAIN
+
+
+
+;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 ;强制约会函数
 ;强制进入约会状态和可约会状态
 ;用于初见约会分支以及外出时带上露米娅
@@ -422,7 +543,6 @@ IF GET_MAPID(CFLAG:MASTER:現在位置) != MAIN_MAP
 	CFLAG:12:就寝時間 = 0
 	CFLAG:12:起床時間 = 0
 	CFLAG:12:300 = CFLAG:0:300
-
 ;メインMap時は最大三時間まで
 ELSE
 	CFLAG:12:约会中 = CFLAG:MASTER:現在位置 / 100
@@ -430,10 +550,7 @@ ELSE
 	CFLAG:12:同行 = 180
 	FLAG:约会的对象 = 12
 	CFLAG:12:300 = CFLAG:0:300
-
 ENDIF
-
-
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 ;约会结束用 函数
 ;强制结束约会状态，用于初见当天结束
@@ -564,44 +681,63 @@ ENDIF
 CALL RUMIA_TALENT_CHANGE 
 
 IF DOKURUMIA_1
+	;二周目辨别函数
 	CFLAG:12:1200 = 1
 	CFLAG:12:1201 = 1
-	CFLAG:12:355 = 420
-	CFLAG:12:354 = 1320
+	;这两个似乎用处不是很大……故更换为了390生活時間補正
+	CFLAG:12:390 = -240
+	;CFLAG:12:355 = 420
+	;CFLAG:12:354 = 1320
+	;话术等级C，经验
 	ABL:12:41 = 2
 	EXP:12:71 = 77
+	;清扫等级C，经验
 	ABL:12:40 = 2
 	EXP:12:70 = 77
+	;教养等级C，经验
 	ABL:12:43 = 2
 	EXP:12:75 = 77
+	;料理等级C，经验
 	ABL:12:44 = 2 
 	EXP:12:76 = 77
+	;天生亲密1
 	ABL:12:親密 += 1
 	SETBIT WILL_RETURN_WHAT,1
 ENDIF
 IF DOKURUMIA_2
 	CFLAG:12:1202 = 1
+	;教养等级B，经验
 	ABL:12:43 = 3
 	EXP:12:75 = 200
 	SETBIT WILL_RETURN_WHAT,2
 ENDIF
 IF DOKURUMIA_3
 	CFLAG:12:1203 = 1
+	;钓鱼Lv2
 	TALENT:12:47 = 2
 	EXP:12:82 = 77
+	;采集Lv3
 	TALENT:12:48 = 3
 	EXP:12:84 = 200
+	;调和Lv1
 	TALENT:12:49 = 1
 	EXP:12:85 = 20
 	SETBIT WILL_RETURN_WHAT,3
 ENDIF
 IF DOKURUMIA_4
 	CFLAG:12:1204 = 1
+	;摧毁自尊心低
 	TALENT:12:13 = 0
+	;相性
+	RELATION:12:28 = 120
+	RELATION:12:27 = 120
+	RELATION:12:13 = 120
+	RELATION:12:14 = 120
 	SETBIT WILL_RETURN_WHAT,4
 ENDIF
 IF DOKURUMIA_5
 	CFLAG:12:1205 = 1
+	;战斗能力
 	ABL:12:42 = 6 
 	EXP:12:74 = 21 
 	SETBIT WILL_RETURN_WHAT,5

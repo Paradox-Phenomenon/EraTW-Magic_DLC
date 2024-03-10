@@ -1,0 +1,3572 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;日常系コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;300,会話
+;TFLAG:193(1=大成功 0=成功 -1=失敗 -2=大失敗（TARGETがMASTERより教養が4以上高い)
+;TCVAR:302(0=会話可能 1>=非恋慕時会話不能)
+;MARK:反発刻印(3以上=会話不能)(4以上はバグ
+;TCVAR:泥酔(1=通常成功or大失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_300
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 = 0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_300
+;コマンド共通メッセージ(TRAIN_MESSAGE) 
+;削除すると「～話をした。」とかが消えます。また、削除した場合は自動で口上色が付きません。
+CALL TRAIN_MESSAGE
+;口上メイン呼出
+CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_300_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTFORML 
+	;成为朋友
+	CALL Moe_LARVA_FIRST_BECOME_FRINED
+	SIF RESULT == 1 
+	RETURN 1 
+	[SKIPSTART]
+	IF TALENT:118:恋慕
+		IF TFLAG:193 == 1 
+			SELECTCASE RAND:3
+				CASE 1
+					PRINTFORML 
+				CASE 0
+					PRINTFORML 
+				CASEELSE
+					PRINTFORML 
+			ENDSELECT
+		ELSEIF TFLAG:193 == 0 
+			SELECTCASE RAND:3
+				CASE 1
+					PRINTFORML 
+				CASE 0
+					PRINTFORML 
+				CASEELSE
+					PRINTFORML 
+			ENDSELECT
+		ELSE ;失败的情况
+			SELECTCASE RAND:3
+				CASE 1
+					PRINTFORML 
+				CASE 0
+					PRINTFORML 
+				CASEELSE
+					PRINTFORML 
+			ENDSELECT
+		ENDIF 
+	[SKIPEND]
+	;需要补充
+	IF TALENT:118:思慕
+			IF TFLAG:193 == 1 
+			SELECTCASE RAND:1
+				;CASE 2
+				;CASE 1
+				CASE 0
+					IF FIRSTTIME("K118_COM300_TALK_3_02")
+						PRINTFORML 「%CSTR:118:20%的家外面，为什么有那么大的桌子……」
+						PRINTFORMW 「你说那个啊，那是妖精们的会议桌呢！……」
+						PRINTFORML 「有什么很重要的事情需要商量，比如说，异变发生的时候！」
+						PRINTFORMW 「大家都会去那里，交换情报什么的……」
+						PRINTFORMDL 然后就去给解决异变的人添堵么……
+						PRINTFORMW 「妖精们都喜欢趁着这个机会，好好的放开来玩嘛……」
+					ELSE 
+						GOTO K118_300_FRIEND
+					ENDIF 
+			ENDSELECT
+		ELSEIF  TFLAG:193 == 0 
+			GOTO K118_300_FRIEND
+			SELECTCASE RAND:3
+				CASE 1
+					PRINTFORML 
+				CASE 0
+					PRINTFORML 
+				CASEELSE
+					PRINTFORML 
+			ENDSELECT
+		ELSE ;失败的情况
+			GOTO K118_300_FRIEND
+			SELECTCASE RAND:3
+				CASE 1
+					PRINTFORML 
+				CASE 0
+					PRINTFORML 
+				CASEELSE
+					PRINTFORML 
+			ENDSELECT
+		ENDIF 
+	ELSEIF CFLAG:118:1001 
+		$K118_300_FRIEND
+		IF TFLAG:193 == 1 
+			SELECTCASE RAND:3
+				CASE 2 
+					IF TALENT:118:3 
+						GOTO K118_300_FRIEND
+					ELSE 
+						PRINTFORML 「呐，%MASTERNAME:118%有被妖精们恶作剧过嘛？」
+						PRINTFORML 「最擅长恶作剧的妖精三人组，在博丽神社附近的大树中生活……」
+						PRINTFORML 「如果被她们当作恶作剧的对象，会遭受到什么待遇，都是没办法预料的哦」
+						IF TALENT:5:3 || TALENT:6:3 || TALENT:7:3
+							PRINTFORML 「不过，听说%MASTERNAME:118%和她们的关系，很不错的样子……」
+							PRINTFORMW 「%MASTERNAME:118%，究竟是很擅长和妖精打交道呢，还是单纯喜欢小孩子呢……嗯哼？」
+						ELSE 
+							PRINTFORML 「不过，她们很容易被有意思的事情吸引注意力……」
+							PRINTFORMW 「说不定，因为%CSTR:118:20%跟人类交流很稀奇，因为我在旁边所以不会对你做什么哦？」
+						ENDIF 
+					ENDIF 
+				CASE 1
+					PRINTFORML 「诶，偷偷告诉你——其实%CSTR:118:20%在魔法之森也有一个家呢～」
+					PRINTFORMW 「四季异变之前，太阳花田会特别特别冷，所以%CSTR:118:20%会来这边睡觉」
+					PRINTFORML 「……就是睡觉呀，一觉睡很久很久的那种呢！」
+					PRINTFORMW 「不过现在不需要啦，%CSTR:118:20%已经没那么怕冬天了呢」
+					SIF DAY:2 == 4
+					PRINTFORMW 「啊……啊啾！……还是有点冷……」
+				CASE 0
+					PRINTFORML 「呐，%MASTERNAME:118%听说过四季异变嘛？」
+					PRINTFORMW 「那个时候，因为摩多罗在搞鬼，全幻想乡的妖精们都变得很强！」
+					PRINTFORML 「%CSTR:118:20%也感受到了这种力量，那个时候居然能跟琪露诺打得不相上下呢！」
+					PRINTFORMW 「如果那个时候冷静下来就好了呢，借着这份力量，应该做点有意义的事情！」
+			ENDSELECT
+		ELSEIF TFLAG:193 == 0	
+			SELECTCASE RAND:8
+
+				CASE 5
+					PRINTFORML 「呐，告诉我更多有关%MASTERNAME:118%的事情吧？」
+					PRINTFORML 「比方说，%MASTERNAME:118%在外界的时候，这样的事情，我很感兴趣哟！」
+					PRINTFORMW 「听说外界的世界里，全是人类……而且，比幻想乡要大的多呢！」
+
+				CASE 4
+					PRINTFORML 「%MASTERNAME:118%会不会觉得，%CSTR:118:20%在这边会有些困扰呢？」
+					PRINTFORML 「我一扇翅膀，就会到处洒鳞粉，这样子应该不太受别人欢迎吧……」
+					PRINTFORMW 「没有嘛！那就好！」
+
+				CASE 3
+					PRINTFORML 「大概只有%MASTERNAME:118%愿意找%CSTR:118:20%这样的妖精说话了呢……」
+					PRINTFORML 「其他的人类根本不听%CSTR:118:20%说话，因此误入太阳花田的情况很多很多……」
+					PRINTFORMW 「好可怕……还好%CSTR:118:20%跟幽香姐姐关系不错呢……」
+
+				CASE 2
+					PRINTFORML 「为什么没看见%CSTR:118:20%和别的妖精玩……」
+					PRINTFORML 「出远门很不方便呀……万一刮起大风，就必须得走路了」
+					PRINTFORMW 「那样的话，如果被人类当作会恶作剧的妖精，会被赶走的……」
+
+				CASE 1 ;丢思慕？
+					PRINTFORML 「%CSTR:118:20%不喜欢独自出门……」
+					PRINTFORML 「像%CSTR:118:20%这样的弱小妖精，自己出门的话会很危险的呢」
+					PRINTFORMW 「想要%MASTERNAME:118%带%CSTR:118:20%出去玩！这样的话就不用担心啦！」
+
+				CASE 0
+					PRINTFORML 「%MASTERNAME:118%很喜欢和%CSTR:118:20%这样的妖精聊天嘛？」
+					PRINTFORML 「其他人类都觉得，妖精们都跟小孩子一样，没啥头脑与见识……」
+					PRINTFORML 「明明仔细回忆一下，以前的事情都能记得起很多呀……」
+					PRINTFORMW 「怎么能这么说呢……%MASTERNAME:118%说对不对？」
+
+				CASEELSE
+					GOTO K118_300_NONE_FRIEND
+			ENDSELECT
+
+		ELSE ;失败的情况还没写完
+			SELECTCASE RAND:4
+				CASE 0 
+					PRINTFORML 「呐——如果%CSTR:118:20%对%MASTERNAME:118%做恶作剧的话，%MASTERNAME:118%会不会生气啊……」
+					PRINTFORMW 「……因为%MASTERNAME:118%说话确实很无聊嘛……」
+				CASE 1 
+					PRINTFORML 「诶诶诶？%MASTERNAME:118%刚刚在说什么……」
+					PRINTFORMDW 拉尔瓦似乎对你的话题不感兴趣的样子……
+				CASEELSE
+					GOTO K118_300_NONE_FRIEND
+
+			ENDSELECT 
+		ENDIF 
+	ELSE 
+		$K118_300_NONE_FRIEND
+		IF TFLAG:193 == 1 
+			SELECTCASE RAND:5
+
+				CASE 4
+					PRINTFORML 「因为%CSTR:118:20%是蝴蝶妖精！」
+					PRINTFORML 「所以在%CSTR:118:20%旁边的时候，身上粘上鳞粉很正常的」
+					PRINTFORMW 「这种鳞粉没有毒啦，就是不知道%MASTERNAME:118%会不会过敏啊」
+
+				CASE 3
+					PRINTFORML 「%CSTR:118:20%不太喜欢恶作剧，跟其他妖精不一样的」
+					PRINTFORML 「所以遇见其他妖精，%MASTERNAME:118%可要小心哦」
+					PRINTFORMW 「被偷走什么东西还是小事，被弹幕打中就不好了」
+
+				CASE 2
+					PRINTFORML 「%CSTR:118:20%的头上的叶子是装饰用的啦」
+					PRINTFORML 「%MASTERNAME:118%不觉得，这样看起来很有活力吗？」
+					PRINTFORML 「而且有必要躲起来的话，叶子也能起隐蔽作用的！」
+					PRINTFORMDW 但是金黄的触角却亮得刺眼啊……
+
+				CASE 1
+					PRINTFORML 「%MASTERNAME:118%平常都干些什么呢？」
+					PRINTFORML 「泡茶……扫地……听起来好无聊啊……」
+					PRINTFORMW 「人类都需要做这样的工作来赚钱嘛……好辛苦啊——」
+
+				CASE 0
+					PRINTFORML 「这双大翅膀，有没有很好看呢？」
+					PRINTFORMDL 拉尔瓦稍微背过身去，向你展示着蝴蝶翅膀上复杂的纹路
+					PRINTFORMW 「和其他的妖精都不一样对不对！很特别对不对！」
+
+			ENDSELECT
+		ELSEIF  TFLAG:193 == 0 
+			SELECTCASE RAND:5
+
+				CASE 4
+					PRINTFORML 「%CSTR:118:20%平常都在太阳花田玩，有时候也会出门找其他妖精玩」
+					PRINTFORMW 「妖精们又不用吃饭……平常开开心心地玩就可以啦」
+
+				CASE 3
+					PRINTFORML 「有点无聊呢……做什么好呢？」
+					PRINTFORMW 「突然理解桑尼她们为什么喜欢恶作剧了呢……」
+
+				CASE 2
+					PRINTFORML 「%MASTERNAME:118%好像是第一个会好好跟%CSTR:118:20%说话的人类呢！」
+					PRINTFORMW 「遇见别的人类总是会被莫名其妙的赶走……是鳞粉的原因吗？」
+					
+				CASE 1
+					PRINTFORML 「感觉人类的生活，比妖精们要忙得多的多的多呢……」
+					PRINTFORMW 「%CSTR:118:20%也想试试帮忙什么的……结果却被当成想玩的妖精了」
+
+				CASE 0
+					PRINTFORML 「故意在地上洒鳞粉，能引来像%MASTERNAME:118%这样的人类……」
+					PRINTFORMW 「就跟人类拿好吃的东西钓妖精一样，好有意思！」
+
+			ENDSELECT
+		ELSE ;失败的情况
+			SELECTCASE RAND:3
+
+				CASE 2
+					PRINTFORML 「咿……啊！%MASTERNAME:118%说了什么来着？」
+					PRINTFORMDW 拉尔瓦好像根本就没在听的样子……
+
+				CASE 1
+					PRINTFORML 「诶？是在跟%CSTR:118:20%说话吗？」
+					PRINTFORMW 「刚刚没注意听……能再说一遍嘛？」
+
+				CASE 0
+					PRINTFORML 「呼啊……诶？那个，刚刚说什么了？」
+					PRINTFORMDW 拉尔瓦有些迷迷糊糊的，是听着你的话而感到昏昏欲睡了吗……
+
+			ENDSELECT
+		ENDIF 
+
+	ENDIF 
+
+	;ここに口上書いて下さい
+ENDIF
+PRINTFORML 
+RETURN 1
+
+@Moe_LARVA_FIRST_BECOME_FRINED
+;已经成为朋友触发此段对话，大概朋友要求是对话触发，好感500，信赖75，亲密3，会问独有称呼
+
+IF ( CFLAG:118:好感度 >= 500 ) && ( CFLAG:118:信賴度 >= 75 )  &&  (ABL:118:親密 > 3 ) 
+	PRINTFORML 「呐，%MASTERNAME:118%是住在哪里啊？」
+	PRINTFORMDW 突然被拉尔瓦问到这样的问题，你如实地回答了
+	IF CFLAG:118:神社在住
+		PRINTFORMW 「原来就住在附近嘛，难怪经常能看见%MASTERNAME:118%呢……」
+	ELSE 
+		PRINTFORMW 「原来住在%GET_MAPNAME(MAIN_MAP)%嘛！感觉离我家好远呢……」
+	ENDIF 
+	PRINTFORML 「因为我没问过%MASTERNAME:118%这件事……又有点好奇你住在哪里嘛」
+	PRINTFORMW 「明明一见到%MASTERNAME:118%，%CSTR:118:20%就告诉你我住在太阳花田了……」
+	PRINTFORMDL 对陌生人主动告诉别人自己的住址……不觉得有些奇怪嘛……
+	PRINTFORMW 「是，是这样吗……呜，不会一开始就把%CSTR:118:20%当作奇怪的妖精看待了吧……」
+	CALL DOKU_OD_ASK_MOE_LARVA("是的",1,"没有",1)
+	SELECTCASE RESULT 
+		CASE 0 
+			PRINTFORML 「呜啊……因为，因为妖精们都是这么介绍自己的呀……」
+			PRINTFORMW 「大家都住在太阳花田、雾之湖或者妖怪之山附近……不说清楚的话，都没法找到对方！」
+			PRINTFORMW 「原来初次见面不能这样嘛……」
+			PRINTFORMDW 也不能这样说……你向拉尔瓦稍微解释了一下
+			PRINTFORMW 「因为人类之间的交际关系比妖精要复杂……所以，告诉对方自己的住址，是一种奇怪的行为……」
+			PRINTFORMW 「不过对于妖精来说，因为大家都是一起玩的关系……说清楚住址反倒显得礼貌呢！」
+			PRINTFORMW 「哇啊！又学到新的东西啦！谢谢%MASTERNAME:118%！」
+			PRINTFORMW 「那个，下次遇见别的人类，我也会好好注意的！」
+		CASE 1 
+			PRINTFORMW 「诶！居然没有嘛！」
+			PRINTFORMW 「因为妖精们都说，%CSTR:118:20%很特别，也很奇怪……」
+			PRINTFORMW 「翅膀是独一无二的漂亮！裙子也有独一无二的花纹！然后，然后就跟其他人差不多诶……」
+			PRINTFORMW 「啊对了！作为妖精居然不喜欢恶作剧……还反倒去做帮助人类的事情……」
+			PRINTFORMW 「大概，%CSTR:118:20%想的东西，稍微比其他妖精要多一点点？」
+			PRINTFORMDW 这不是值得夸耀的事情嘛……
+			PRINTFORMW 「嘿嘿……我就说嘛，毕竟做好事总会有好报的嘛」
+	ENDSELECT	
+	PRINTFORML ……
+	PRINTFORMW 「刚刚是说什么来着……啊！想起来了！」
+	PRINTFORML 「那个，因为%CSTR:118:20%想和%MASTERNAME:118%做朋友，所以就自顾自问了这样的问题……」
+	PRINTFORMW 「%MASTERNAME:118%不会在意吧……」
+	PRINTFORML 
+	PRINTFORML [0]我不在意哦
+	INPUT 
+	CLEARLINE 1
+	PRINTFORML 「那就好！那，咱们以后就是朋友了哦！」
+	PRINTFORMW 「作为朋友的话……诶嘿嘿，稍微恶作剧一下，也没关系的吧？」
+	PRINTFORML 
+	PRINTFORMDW 暴露本性了呢……
+	PRINTFORML 
+	SETCOLOR MOE_TIPS 
+	PRINTFORMW [与拉尔瓦成为朋友了！]
+	RESETCOLOR
+	PRINTFORML 
+	CFLAG:118:1001 = 1
+	RETURN 1 
+ELSE
+	RETURN 0 
+ENDIF 
+;==================================================
+;301,お茶を淹れる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_301
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_301
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_301_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_301_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+PRINTFORML 
+IF FIRSTTIME(SELECTCOM)
+	PRINTFORMW 「茶？是给%CSTR:118:20%的吗？非常感谢！」
+	PRINTFORML 
+	PRINTFORMDL 拉尔瓦伸手接过茶……
+	PRINTFORMDW 似乎是烫到了，还没摸上茶杯便飞快的抽离了手
+	PRINTFORML 
+	PRINTFORML 「呜哇！好烫手……那个，可以等一会儿再喝嘛？」
+	PRINTFORMW 「诶？是要从茶杯的边缘端着嘛……%CSTR:118:20%试试……」
+	PRINTFORML 
+	PRINTFORMDL 你指导着拉尔瓦用指尖夹着茶杯的边缘
+	PRINTFORMDL 不可避免地，你碰上了这双白皙的小手，凉爽的触感让你有些恍惚
+	PRINTFORMDW 这个体温……在妖精里面都算凉快的呢……难怪很怕烫呢……
+	PRINTFORML 
+	PRINTFORML 「那个，%MASTERNAME:118%是碰到手了，所以很在意嘛？」
+	PRINTFORMW 「没事的啦，%MASTERNAME:118%的手很温暖，所以碰一碰也没关系！」
+	PRINTFORML 
+	PRINTFORML 「在意我的体温嘛？因为蝴蝶没法控制自己的体温，所以变成妖精了，也很难维持呢」
+	PRINTFORMW 「现在是不需要裹着蛹过冬了，以前%CSTR:118:20%都要躲到地底才能过……」
+	PRINTFORML 
+	PRINTFORMDL 一碗热茶，便打开了这只蝴蝶小妖精的话匣子
+	PRINTFORMDW 妖精都是这么喜欢交流的嘛……
+	PRINTFORML 
+	RETURN 1
+ENDIF 
+	;IF TALENT:118:恋慕
+
+	IF TALENT:118:思慕 || TALENT:118:恋慕
+		SELECTCASE RAND:6 
+			CASE 0	
+				PRINTFORML 「啊！正好有些口渴啦！」
+				PRINTFORMDL 拉尔瓦接过茶就想喝，被你制止了
+				PRINTFORMW 「诶？是热茶吗……差点就被烫到了呢，谢谢%MASTERNAME:118%！」
+			CASE 1
+				PRINTFORML 「好暖和啊～」
+				PRINTFORMDL 拉尔瓦捧着茶，眯着眼睛，细细品味着杯中清香
+				PRINTFORMW 「%MASTERNAME:118%泡的茶很香啊！是用了什么魔法吗？」
+			CASE 2	
+				PRINTFORML 「%MASTERNAME:118%有准备带盖子的茶杯嘛？」
+				PRINTFORML 「虽然%CSTR:118:20%的鳞粉喝下去也没关系」
+				PRINTFORMW 「但是从自己身上掉下来的东西……怎么都感觉不自在……」
+			CASE 3	
+				PRINTFORML 「有点烫……还得放一放嘛……」
+				PRINTFORML 「话说，就不能用温水泡嘛……还要等，好麻烦啊……」
+				PRINTFORMW 「那个……不是不喜欢%MASTERNAME:118%泡茶啦……」
+			CASE 4
+				PRINTFORML 「呐——就没有甜一点的茶嘛……」
+				PRINTFORML 「真的没有嘛……那就只能祭出%CSTR:118:20%的独家秘方——」
+				PRINTFORMDL 拉尔瓦摸着后脑勺，取下来一片叶子放进茶杯里……
+				PRINTFORMW 「这样就行啦！呜……不错不错！就是这个味道！」
+			CASE 5	
+				PRINTFORML 「%CSTR:118:20%其实本来不太喜欢喝茶的呢……」
+				PRINTFORML 「因为%MASTERNAME:118%喜欢泡茶，喝得多了，也就习惯了」
+				PRINTFORMW 「很少有妖精能品尝这种苦味的饮料，所以……要多给我泡一泡哦～」
+				
+
+		ENDSELECT
+	;ELSEIF CFLAG:118:1001
+	ELSE 
+		$K118_301_0_TEA
+		;IF TFLAG:193 > -1 
+			SELECTCASE RAND:7 
+				CASE 0 
+					PRINTFORML 「茶？是给%CSTR:118:20%的吗？非常感谢！」
+					PRINTFORMDW 拉尔瓦接过来茶，似乎还是有些烫手的样子……
+				CASE 1
+					PRINTFORML 「好像%CSTR:118:20%从来没有喝过别人泡的茶呢……」
+					PRINTFORMW 「我觉得茶很好喝！大概是因为%MASTERNAME:118%很会泡茶吧？」
+				CASE 2
+					PRINTFORML 「原来茶树的叶子，需要晒干才能好喝吗？」
+					PRINTFORMDW 拉尔瓦凑近了茶壶，看着茶叶逐渐舒展开来的过程
+				CASE 3
+					PRINTFORML 「不知道往茶里面加一些花蜜，会是什么感觉呢……」
+					PRINTFORMDW 拉尔瓦看着茶叶若有所思……
+				CASE 4
+					PRINTFORML 「这种茶，先冲洗一下，再泡出来的会更好喝吗？」
+					PRINTFORMW 「感觉冲洗的那些水，是不是浪费了呢……」
+				CASE 5
+					PRINTFORML 「啊！%CSTR:118:20%身上没有掉鳞粉下来吧？掉进茶里就不好了……」
+					PRINTFORMW 「有没有带盖子的茶杯呢……」
+				CASE 6
+					PRINTFORML 「居然能喝上%MASTERNAME:118%泡的茶呢！」
+					SIF (DAY:0 > 30) 
+						PRINTFORML 「之前就听说过，%MASTERNAME:118%泡茶很厉害！」
+						PRINTFORMW 「%CSTR:118:20%很少喝这种热腾腾的饮料，平常都是采点花蜜就够了呢」
+				CASE 7
+					IF DAY:2 == 4 
+						PRINTFORML 「哈啊啊……冬天能喝上一口热茶就是好啊！」
+						PRINTFORMDW 拉尔瓦抱着稍微冷下来的茶杯，看起来在用茶杯取暖
+					ELSE 
+						GOTO K118_301_0_TEA
+					ENDIF 
+			ENDSELECT 
+		;ELSE 
+		;ENDIF 
+	ENDIF 
+
+
+ENDIF
+RETURN 1
+;==================================================
+;302,スキンシップ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_302
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_302
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_302_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_302_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+PRINTFORML 
+	IF TFLAG:193 > -1 
+		;IF TALENT:118:恋慕
+
+		IF TALENT:118:思慕 || TALENT:118:恋慕
+			SELECTCASE RAND:3
+				CASE 0 
+					PRINTFORMDL 你试着碰了碰拉尔瓦头上的叶子……
+					PRINTFORML 「想要吗？%MASTERNAME:118%摸的那片叶子其实是伪装的P点呢」
+					PRINTFORMDL 触碰到的瞬间，叶子便变成红色的方块掉进了手里
+					PRINTFORMW 「%MASTERNAME:118%不会用嘛……好遗憾——」
+				CASE 1
+					PRINTFORMDL 你试着碰了碰拉尔瓦的蝴蝶翅膀
+					PRINTFORML 「呜啊！那个，翅膀很敏感，不要碰啦……」
+					PRINTFORMDL 沿着繁复的花纹轻轻戳弄着，惹得女孩忍不住拉开距离
+					PRINTFORMW 「看看不就好了嘛……蝴蝶的翅膀很重要的呀……」
+				CASE 2 
+					PRINTFORMDL 你用手搭上了拉尔瓦的肩膀
+					PRINTFORML 「诶！要揉肩膀嘛！那就把翅膀先收起来——」
+					PRINTFORMDL 宽大的蝴蝶翅膀向着女孩的身前裹去，露出了同样是蝴蝶花纹的小小盖袖
+					PRINTFORMDL 随着你轻柔的揉捏动作，拉尔瓦忍不住发出很享受的声音
+					PRINTFORMW 「呼嗯……很舒服呢……谢谢%MASTERNAME:118%！——」
+			ENDSELECT
+		;ELSEIF CFLAG:118:1001
+		ELSE 
+			SELECTCASE RAND:4 
+				CASE 0 
+					PRINTFORML 「啊！%MASTERNAME:118%不要靠太近」
+					PRINTFORMDL 拉尔瓦从你身边飘开，稍微抖了抖翅膀
+					PRINTFORMW 「沾上鳞粉就很难清理了哦」
+				CASE 1
+					PRINTFORML 「%CSTR:118:20%的蝴蝶翅膀，是很重要的东西！」
+					PRINTFORMDL 「所以，不要乱碰哦，不然就用弹幕打你！」
+					PRINTFORMW 「诶……都说了不要碰了啦……真是的～」
+				CASE 2 
+					PRINTFORML 「诶！不要把%CSTR:118:20%头上的叶子碰掉了啊！」
+					PRINTFORMW 「因为是很有用的东西嘛……具体是什么用呢？暂且保密～」
+				CASE 3 
+					PRINTFORMDL 试着碰了碰蝴蝶翅膀，却被拉尔瓦扭着身体躲开了
+					PRINTFORMW 「那个，翅膀不要碰嘛……%CSTR:118:20%能感觉到哦」
+			ENDSELECT
+		ENDIF 
+	ELSE 
+		PRINTFORML 「都说了不要靠太近嘛……」
+		PRINTFORMDL 你身上碰到蝴蝶翅膀的地方，闪着大片的光芒……
+		PRINTFORMW 「你看，沾了好多鳞粉，回家记得换身衣服哦……」
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;303,謝る
+;TFLAG:193(2=菓子折成功 1=大成功 0=成功 -1=失敗 -2=菓子折失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_303
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+
+TFLAG:192 = 0
+SIF MARK:118:3 > 1 
+TFLAG:192 = -1 
+
+@M_KOJO_Moe_MESSAGE_COM_K118_303
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_303_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_303_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193 
+		CASE 2 
+			IF TALENT:118:恋慕 || TALENT:118:思慕
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「总觉得被当成小孩对待了……」
+						PRINTFORMW 「不过也没关系啦，我原谅%MASTERNAME:118%了哦」
+					CASE 1 
+						PRINTFORML 「送个点心就想要我原谅你……」
+						PRINTFORMW 「诶！这个是……%MASTERNAME:118%很用心呢，那就原谅你吧」
+				ENDSELECT
+			ELSE
+				PRINTFORML 「诶？这是……点心？」
+				PRINTFORML 「那个，是专门买给%CSTR:118:20%的嘛！谢谢%MASTERNAME:118%！」
+				PRINTFORMW 「之前的事情……没关系的！原谅你了！」
+			ENDIF 
+		CASE 1,0
+			IF TALENT:118:恋慕 || TALENT:118:思慕
+				SELECTCASE RAND:2 
+					CASE 0 
+						PRINTFORML 「其实，我也没那么在意%MASTERNAME:118%做的事情……」
+						PRINTFORML 「%MASTERNAME:118%都说了这么久道歉的话，那就更不应该计较了，对吧？」
+						PRINTFORMW 「作为补偿的话……嗯……能不能靠过来一下呢？」
+						PRINTFORML 
+					CASE 1 
+						PRINTFORML 「……听起来，是发自真心的道歉呢……」
+						PRINTFORML 「仔细想想，%CSTR:118:20%也不应该和%MASTERNAME:118%计较太多……」
+						PRINTFORMW 「这样吧？%MASTERNAME:118%过来一下，我告诉你个事儿……」
+						PRINTFORML 
+				ENDSELECT
+						PRINTFORMDW 你正想凑过去，却被蝴蝶翅膀扑在脸上，漫天飞舞的鳞粉让你连着打了好几个喷嚏
+						CALL LARVA_MOE_SNEEZE(1,2)
+						PRINTFORML 
+						PRINTFORMW 「噗……变成闪光%MASTERNAME:118%了……这样的话，就原谅你啦！」
+			ELSE
+				PRINTFORML 「嗯……还是原谅%MASTERNAME:118%吧」
+				PRINTFORMW 「但是！下次可不能这样做了！」
+			ENDIF 
+		CASE -1 
+			;IF TALENT:118:恋人
+			IF TALENT:118:恋慕 || (TALENT:118:思慕 && !MARK:118:3)
+				PRINTFORMW 「……说完了？」
+				PRINTFORML 
+				PRINTFORMDL 拉尔瓦用力扇了扇翅膀，漫天飞舞的鳞粉让你连着打了好几个喷嚏
+				PRINTFORMDW 看起来还没消气……
+				CALL LARVA_MOE_SNEEZE(1,2)
+			ELSEIF MARK:118:3
+				SELECTCASE RAND:2 
+					CASE 0 
+						PRINTFORML 「……说完了？」
+					CASE 1
+						PRINTFORML 「……才不信你！」
+				ENDSELECT
+				PRINTFORML 
+				PRINTFORMDW 拉尔瓦闪烁着淡淡凶光的冷漠眼神，让你难以靠近……
+			ELSE
+				PRINTFORML 「说些这样的话就能得到原谅嘛……呜……」
+				PRINTFORMDW 拉尔瓦用翅膀裹着自己背过了身……
+			ENDIF 
+		CASE -2 
+			IF MARK:118:3
+				PRINTFORML 「……我不收」
+				PRINTFORMW 「送个礼物就能和好的话……哼！」
+				PRINTFORMDW 拉尔瓦用翅膀裹着自己背过了身……
+			ELSE 
+				PRINTFORML 「这个太贵重了，我不能收……」
+				PRINTFORMW 「……就算是赔礼也不要！」
+				PRINTFORMDW 拉尔瓦用翅膀裹着自己背过了身……
+			ENDIF 
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;304,仕事を手伝う
+;拉尔瓦酱没有工作捏
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:350(仕事内容(JOB_仕事内容.ERB参照のこと
+;TCVAR:手伝えない(=2 手伝っても早くは終わらない、時間停止中不可 永琳の診察等)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_304
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_304
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_304_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_304_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+	
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;305,膝枕してもらう
+
+;点子：脸朝下
+
+;TFLAG:193(-5=MASTERがTARGETよりも巨体の場合(TALENT:MASTER:体型 > TALENT:体型 + 2) 1=大成功 0=成功 -1=失敗)(-5以外は地の文分岐無し)
+;ABL:親密(6以上=顔をのぞき込みながら頭を撫でてくれる 3以上=ただ頭を撫でてくれる 2以下=縮こまっている)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_305
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_305
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_305_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_305_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL	
+	IF TFLAG:193 == -5 
+		PRINTFORML 「呜啊……再怎么说我也只是个妖精……」
+	ELSEIF ABL:118:親密 > 5 
+		;IF TALENT:118:恋慕
+			SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「诶嘿嘿……一看到%MASTERNAME:118%的脸，就想给你化个妆呢……」
+					PRINTFORML 「那个，其实妖精们要化妆的话，都是要这样——」
+					PRINTFORMDL 拉尔瓦伸手摸上了自己的翅膀……
+					PRINTFORMW 「啊？不要化妆嘛……真扫兴呢，明明能变成闪光%MASTERNAME:118%的……」
+				CASE 1 
+					PRINTFORML 「呐，要不要直接……就枕在腿上？」
+					PRINTFORMW 「没关系的，相比头发刺挠的感觉，%MASTERNAME:118%的身体很温暖，更……喜欢……」
+					PRINTFORML 
+					PRINTFORMDL 蝴蝶妖精清凉的体温，稍微带去了心中的燥热
+					PRINTFORMDW 紧实而又柔嫩的腿部肌肤，温柔地包裹住你的头部
+					PRINTFORML 
+					PRINTFORML 「%MASTERNAME:118%的脖子……有点烫呢……」
+					PRINTFORMW 「呐！才不是因为太舒服了吧？怎么这么暖和……」
+					PRINTFORML 
+			ENDSELECT
+		;ELSE 
+			PRINTFORML 
+		;ENDIF 
+	ELSEIF ABL:118:親密 > 2 
+		SELECTCASE RAND:2 
+			CASE 0 
+				PRINTFORML 「就只能枕一小会哦，还要%MASTERNAME:118%把头给我摸摸！」
+				PRINTFORMDL 拉尔瓦修长的腿并没有多少肉感，不过幼小的身材让膝枕的高度十分合适
+			CASE 1
+				PRINTFORML 「那个，因为腿有点瘦……这样睡着会不会累？」
+				PRINTFORML 「不会嘛！那个，%CSTR:118:20%已经有点累了哦……」
+				PRINTFORMDW 只能恋恋不舍地从蝴蝶妖精的膝枕上离开了
+		ENDSELECT
+	ELSE 	
+		PRINTDATAL 
+			DATAFORM 「头发贴在裙子上，沙沙的感觉……好痒……」
+			DATAFORM 「有点重……不太习惯呀……」
+			DATAFORM 「呐……%MASTERNAME:118%好了没有啊……」
+			DATAFORM 「好奇怪的感觉呢……」
+		ENDDATA
+		PRINTDATADW 
+			DATAFORM 拉尔瓦的大腿时不时扭动着，是感到不舒服吗
+			DATAFORM 拉尔瓦撅起小嘴看着你
+			DATAFORM 拉尔瓦的腿紧绷着，没有想象中的那种柔软
+			DATAFORM 拉尔瓦的翅膀不安分地动着
+		ENDDATA
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;306,お腹を撫でる
+;TFLAG:193(1=ABL:親密6以上かつ妊娠時 0=成功 -1=ABL:親密5以下)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_306
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_306_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_306_1
+;-------------------------------------------------
+
+;								PRINTFORML 「肚子……好涨……不要按……呜哇啊%UNICODE(0x2764)%——」
+
+
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+		SELECTCASE TFLAG:193 
+			CASE 1 ;怀孕先不写
+				SELECTCASE RAND:1
+					CASE 0 
+						PRINTFORML 「欸嘿……怀上了孩子什么的」
+						PRINTFORMW 「我们的未来，会变成什么样子呢？」
+						PRINTFORMDW 拉尔瓦轻抚着小腹的脸上，隐隐泛着母性的光辉
+					;CASE 1 
+						;寿命论么
+					;	PRINTFORML 「还想要，和%MASTERNAME:118%在一起呀……」
+					;	PRINTFORMW 「%CSTR:118:20%以后想，在这孩子的身上，看到%MASTERNAME:118%的影子！」
+					;	PRINTFORMDW 拉尔瓦隐去的半边脸庞，似乎……
+					ENDSELECT
+
+			CASE 0
+				IF TALENT:118:恋慕 || TALENT:118:恋人
+					IF 充填率_OF_LARVA(TARGET,1)
+						;IF CFLAG:118:14 == 2 
+						IF 充填率_OF_LARVA(TARGET,1) > 100 
+							PRINTDATAW 
+								DATAFORM 「呐……%MASTERNAME:118%是射在里面了呀……还摸什么呢……」
+								DATAFORM 「在咕叽咕叽地流动着……%MASTERNAME:118%好坏——」
+								DATAFORM 「%MASTERNAME:118%的体温，有好好传递到%CSTR:118:20%这边了呢……」
+								DATAFORM 「只能摸一摸哦……弄得太多了，一点都不想流出来……」
+							ENDDATA
+						
+						ELSE
+							PRINTDATAW 
+								DATAFORM 「好温暖呀……射进肚子里的，和%MASTERNAME:118%的掌心，都好暖和……」
+								DATAFORM 「明明做过涩涩的事情啦……%MASTERNAME:118%是还想要吗？」
+								DATAFORM 「%MASTERNAME:118%的体温，有好好传递到%CSTR:118:20%这边了呢……」
+								DATAFORM 「呜啊……刚刚还摸得不够多嘛？」
+							ENDDATA
+						ENDIF 
+						PRINTFORMDW 拉尔瓦红透了脸，紧闭着白皙的双腿，似乎在强忍着不让体内的精液流出……
+					ELSEIF CFLAG:118:340 > 250 
+						PRINTFORML 「呜啊……不要用力地摸那里啊……」
+						PRINTFORMDW 着重按揉着女孩的小腹，拉尔瓦抱着手臂，似乎欲拒还迎的样子
+						PRINTFORML 「因为%MASTERNAME:118%的手，真的很暖和嘛……」
+					ELSE 
+						PRINTFORML 「%MASTERNAME:118%的手……好温暖啊……」
+						PRINTFORMDW 伸手抚上女孩的肚子时，便被拉尔瓦用手臂和翅膀一起抱住了
+						SIF MARK:118:2 
+						PRINTFORMW 「呐……要不要伸进裙子里面摸呢～」
+					ENDIF 
+				ELSEIF TALENT:118:思慕
+					SELECTCASE RAND:2 
+						CASE 0
+							PRINTFORML 「很在意%CSTR:118:20%裙子上的图案嘛？」
+							PRINTFORML 「这个是%CSTR:118:20%自己设计的！因为是幼虫（Larva）所以就做成了幼虫身上的花纹！」
+							PRINTFORMW 「很漂亮对不对！别的妖精都没有这样的裙子呢！」
+							PRINTFORML 「诶？居然只是要摸肚子……」
+						CASE 1 
+							PRINTFORML 「%MASTERNAME:118%的体温，比%CSTR:118:20%的要高很多呢……」
+							PRINTFORML 「那个……再摸一摸也没关系……很暖和呢」
+							PRINTFORMDW 你的手掌被拉尔瓦抱住，陷入了女孩柔软的小肚子中
+					ENDSELECT
+				ELSE 
+					SELECTCASE RAND:3 
+						CASE 0
+							PRINTFORMW 「呜……虽然很暖和，但是感觉好奇怪……」
+						CASE 1
+							PRINTFORMW 「呜哇！人类之间也会互相摸肚子嘛……」
+						CASE 2
+							PRINTFORMW 「不要随便摸女孩子的肚子……」
+					ENDSELECT
+				ENDIF 	
+			CASE -1 
+				IF TCVAR:118:132
+					PRINTFORML 「讨厌！不要随便乱摸呀！！」
+					PRINTFORMW 拉尔瓦吓得拍掉了你的手，眼神里已经泛起怒气了……
+				ELSE 
+					PRINTFORML 「呜哇！再怎么说……女孩子的肚子也是不能随便乱摸的吧？」
+					PRINTFORMDW 拉尔瓦抓着你的手，羞红的小脸气呼呼地鼓起来了
+				ENDIF 
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;307,頬をつまむ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+	;以下は先に書いた条件が優先される
+	;TALENT:恋慕(受け入れつつ笑顔でやり返す
+	;ABL:親密(6以上=おずおずとやり返す
+	;ABL:従順(5以上=されるがまま
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_307
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_307
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_307_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_307_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;通常
+	ELSE	
+		IF TALENT:118:恋慕		;待补充
+				SELECTCASE RAND:3
+					CASE 0 
+						PRINTFORML 「沾点鳞粉，给%MASTERNAME:118%化个妆……」
+						PRINTFORMW 「噗呲……%MASTERNAME:118%笑一笑！哇，好有意思！」
+						PRINTFORML 
+						PRINTFORMD 从拉尔瓦拿出来的小镜子上，映出了你
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORMW 闪闪发光的眼角
+							CASE 1
+								PRINTFORMW 密布着点点光芒的脸颊
+						ENDSELECT
+						PRINTFORML 
+						PRINTFORMW  「呜……还是擦擦……这样不太适合%MASTERNAME:118%呢」
+						IF TALENT:0:性別 == 2 
+							PRINTFORMW  「%MASTERNAME:118%很帅气！用这样的妆反倒变……可爱了呢」
+						ELSE 
+							PRINTFORMW  「这样还不够！我要看到全身都闪着光的%MASTERNAME:118%！」
+						ENDIF
+					CASE 1 
+						PRINTFORML 「哈呀！振翅二连击！」
+						PRINTFORMDW 忽然挣脱开你的手的拉尔瓦猛地转过身去
+						IF ABL:118:42 > ABL:0:42 - 1 
+							PRINTFORMDW 还未发现怎么回事，你便被高高扬起的蝴蝶翅膀拍了一脸……啊不，两脸……
+							PRINTFORMW 「嗯哼，恶作剧大成功——」
+							CALL LARVA_MOE_SNEEZE(2,1)
+						ELSE 
+							PRINTFORMDL 听见招式名的时候，你便有所反应，飞快地退开了
+							PRINTFORMDW 原地转过来的拉尔瓦，裙摆随着身体一起停下来了
+							PRINTFORMW 「好，好厉害，什么时候跑开的呀？」
+						ENDIF 
+					CASE 2 
+						PRINTFORMW 「……呜……」
+						PRINTFORMDL 捏住拉尔瓦的脸颊时，你也被她的小手抢着捏住了
+						PRINTFORMDW 眼神对上的时候，拉尔瓦撅起小嘴，移开了视线……
+						PRINTFORMW 「总是%MASTERNAME:118%摸我……%CSTR:118:20%也想摸一摸你嘛……」
+				ENDSELECT
+		ELSEIF ABL:118:親密 > 5 
+			SELECTCASE RAND:2 
+				CASE 0
+					PRINTFORML 「那个……让我也碰一碰%MASTERNAME:118%的脸……」
+					PRINTFORMW 「哇，好热……诶嘿，%MASTERNAME:118%是害羞了嘛？」
+				CASE 1
+					PRINTFORML 「……不要扯呀！呜……」
+					PRINTFORMDL 拉尔瓦慌忙拨开你的手，捂着脸颊装着很疼的样子……
+					PRINTFORMW 「那个，蝴蝶更容易感觉到疼的，不要用力……」
+					PRINTFORMDW 是捏疼了嘛？可是，拉尔瓦的脸蛋分明红到了耳根……
+				CASE 2 
+			ENDSELECT
+		ELSEIF ABL:118:従順 > 5 
+			SELECTCASE RAND:2 
+				CASE 0
+					PRINTFORML 「那个……不要太用力哦……」
+					PRINTFORMW 「嘿嘿……只有%CSTR:118:20%的脾气会这么好哟……」
+				CASE 1
+					PRINTFORML 「呜！有点疼……轻一点点呀」
+					PRINTFORMW 「那个，蝴蝶更容易感觉到疼的，所以不要用力……」
+			ENDSELECT
+
+		ELSE 
+			SELECTCASE RAND:2 
+				CASE 0
+					PRINTFORML 「哇啊！摸人家的脸干什么呀！」
+				CASE 1
+					PRINTFORML 「呜！有点疼……请不要这样……」
+			ENDSELECT
+		ENDIF 
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;308,頬をつつく
+;添い寝中or睡眠中限定，戳脸颊，恋慕
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_308
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+IF MARK:118:3 || CFLAG:118:318
+	TFLAG:192 = -1
+ELSE 
+	TFLAG:192 = 1 
+ENDIF 
+
+@M_KOJO_Moe_MESSAGE_COM_K118_308
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_308_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_308_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;睡眠中
+	IF CFLAG:睡眠
+		IF TFLAG:193
+			IF CFLAG:118:360 > 277 && ONCE("K118_308_WANT")
+				SELECTCASE RAND:1
+					CASE 0 
+						PRINTFORMW 「呜……呜咕——啾噜……」
+						PRINTFORMDL 指尖随着拉尔瓦扭头的动作，从她的嘴角滑入了口中
+						PRINTFORMDL 而后……用舌头缠绕住你的手指，吮吸了起来
+						PRINTFORMDW ……是梦见了什么呢？
+					;CASE 1 
+				ENDSELECT
+			ELSE
+					PRINTDATAL
+						DATAFORM 「诶？……嘿嘿……」
+						DATAFORM 「呜噗——」
+						DATAFORM 「呼噜噜……」
+						DATAFORM 「……呀喵？……」
+					ENDDATA
+					PRINTDATADW
+						DATAFORM 睡眠中的拉尔瓦嘟起了小嘴……
+						DATAFORM 让手指陷入其中的柔嫩脸颊，似乎能戳破一样
+						DATAFORM 拿开手指的时候，留下了更为白皙的印迹，很快又变得红润了
+						DATAFORM 指尖划过脸颊，传递着清凉而又软滑的触感
+						DATAFORM 有些软趴趴的脸颊嫩肉裹住了你的指尖
+					ENDDATA
+			ENDIF 
+		ELSE ;不爽地背过身
+			PRINTDATAL
+				DATAFORM 「呜……」
+				DATAFORM 「……哼呜——」
+				DATAFORM 「呜……唔嗯？」
+			ENDDATA
+		ENDIF 
+	;通常
+	ELSE
+		IF TFLAG:193 
+			
+		ELSEIF TFLAG:193 == -1 
+
+		ELSE 
+			PRINTDATAW
+				DATAFORM 「摸人家的脸干嘛啊……」
+				DATAFORM 「呜啊！干什么呢！」
+				DATAFORM 「不要把%CSTR:118:20%当成小孩子——」
+			ENDDATA
+		ENDIF 
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;309,頭を撫でる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:親密(6以上=通常成功時分岐
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_309
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_309
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_309_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_309_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;ELSEIF CFLAG:118:334		;陪睡
+	;通常
+	ELSE
+		SELECTCASE TFLAG:193 
+			CASE 1
+				$K118_309_193_1
+				IF TALENT:118:恋慕 ;待补充
+					SELECTCASE RAND:3 
+						CASE 0
+							PRINTFORML 「%CSTR:118:20%的头，摸起来感觉如何呢？」
+							PRINTFORML 「%MASTERNAME:118%喜欢我这样的短发嘛？喜欢摸叶子嘛？会不会很困扰之类的！」
+							PRINTFORMDL 享受着抚摸的拉尔瓦时不时提着问题，能感觉到触角随着话语微微摇动着
+							PRINTFORMW 「都没有嘛！那%MASTERNAME:118%多摸一会吧！嘿嘿……」
+						CASE 1 
+							PRINTFORML 「这样摸的话……呜哇……感觉快要睡着了……」
+							PRINTFORMDL 你用手掌包覆着拉尔瓦的小脑袋，温暖的触感让拉尔瓦露出羞怯的笑容
+							PRINTFORMW 「那个，%MASTERNAME:118%的手……很舒服……不是因为无聊才想睡觉啦……」
+						CASE 2 
+							PRINTFORML 「耳朵附近的叶子很少呢！要不要摸这边……」
+							PRINTFORMDL 你用手轻轻梳理着淡蓝色头发，不时碰到拉尔瓦肉嘟嘟的脸颊，一接触便飞快泛起了红晕
+							PRINTFORMW 「不要一直看着人家啊……好害羞……」
+						CASE 3 
+							PRINTFORML 「%MASTERNAME:118%摸触角的话，不会有什么味道吗……」
+							PRINTFORMDL 你收回手稍微闻了一下，有着些许刺鼻的味道，不过并没有传说中的臭味呢
+							PRINTFORML 「臭味的话，是遇到危险的时候，才会变得很大很大的……」
+							PRINTFORMW 「因为有%MASTERNAME:118%在身边，%CSTR:118:20%一点都不怕呢！」
+					ENDSELECT
+				ELSEIF TALENT:118:思慕 
+					SELECTCASE RAND:3 
+						CASE 0
+							PRINTFORML 「呐——都说了不要碰触角啦……」
+							PRINTFORMDL 虽然嘴上表达着不满，但拉尔瓦还是容忍着你的行为
+							PRINTFORMW 「为什么%MASTERNAME:118%这么喜欢揉触角呢，手上会沾上味道的呀……」
+						CASE 1
+							PRINTFORML 「嗯哼嗯哼……诶？就停下了嘛……」
+							PRINTFORMDL 拉尔瓦看着你放下的手，似乎有些失落的样子
+							PRINTFORMW 「……再摸一摸吧？%MASTERNAME:118%刚刚那样摸的话，很舒服……」
+						CASE 2
+							PRINTFORML 「哈啊……诶？好像带下来叶子了哦」
+							PRINTFORMDL 你想趁机偷偷地拿走叶子，却被拉尔瓦察觉到了
+							PRINTFORM 「诶？%MASTERNAME:118%手里那个是%CSTR:118:20%
+							SELECTCASE RAND:7 
+								CASE 0
+									PRINTFORMW 的符卡！快还给我！」
+								CASE 1,2,3
+									PRINTFORMW 的P点！快还给我！」
+								CASE 4,5
+									PRINTFORMW 的花蜜！快还给我！」
+								CASE 6 
+									PRINTFORMW 的好东西！快还给我！」
+							ENDSELECT
+					ENDSELECT
+
+
+				ELSE 
+					SELECTCASE RAND:3 
+						CASE 0
+							PRINTFORML 「%MASTERNAME:118%别把叶子带下来了哦……」
+							PRINTFORML 「因为是很有用的东西，掉下来被风吹走了就太可惜了」
+						CASE 1
+							PRINTFORML 「嗯哼嗯哼……那个，总觉得%MASTERNAME:118%是把%CSTR:118:20%当小孩子了呢」
+							PRINTFORMW 「我不介意哦，因为%CSTR:118:20%本来就是幼虫嘛」
+						CASE 2
+							PRINTFORML 「呜……碰到触角了啦！%MASTERNAME:118%不要往那里去……」
+							PRINTFORMW 「诶？那个，%MASTERNAME:118%记得洗手哦……触角上是有毒的……」
+					ENDSELECT
+				ENDIF 
+
+			CASE 0,1 
+				IF CFLAG:118:318 
+					PRINTDATAW 
+						DATAFORM 「不要碰我——」
+						DATAFORM 「离我远点嘛——」
+						DATAFORM 「呜啊啊啊啊！」
+						DATAFORM 「把你的手拿开——」
+					ENDDATA
+					PRINTDATADL 
+						DATAFORM 拉尔瓦甩着脑袋避开了你的手
+						DATAFORM 拉尔瓦一巴掌拍掉了你的手
+						DATAFORM 拉尔瓦撅起嘴看着你，不想回应你的抚摸
+					ENDDATA
+					PRINTFORMDW 看样子还在生你的气呢…… 
+				ELSEIF ABL:118:親密 > 5 
+					GOTO K118_309_193_1
+				ELSE 
+						SELECTCASE RAND:3 
+							CASE 0
+								PRINTFORMDL 拉尔瓦甩开你的手，自己就往头上摸去了……
+								PRINTFORML 「头上的叶子……哈啊……还好没弄掉」
+								PRINTFORMW 「真是的……%MASTERNAME:118%不要随便就摸人家的头啊！」
+							CASE 1
+								PRINTFORML 「呜啊！触角不能碰的啦！」
+								PRINTFORMDL 应该没碰到呀……
+								PRINTFORMW 「反正不能碰！」
+							CASE 2
+								PRINTFORML 「那个……为什么要摸啊……」
+								PRINTFORMDL 拉尔瓦的触角微微颤抖着，似乎有种味道蔓延开了……
+								PRINTFORMW 「%MASTERNAME:118%……都说了不能碰的啦……」
+						ENDSELECT
+				ENDIF 
+		ENDSELECT
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;331,お茶を淹れる（薬入り）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_331
+;成否判定
+;TFLAG:192(-2=強制失敗(注、非コマンド終了）、-1＝強制失敗、0=COM依存、1=強制成功or大成功(注、睡眠薬アイスティーは眠気を感じていると飲まない)
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_331
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_331_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_331_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;332,お酒をふるまう
+;TFLAG:193(0=下戸飲み成功 -1=下戸飲み失敗 -2=下戸飲み大失敗 -5=下戸飲みあきらめ)
+;COM_STR(酒の名称)
+;ALCOHOL_TASTE(TFLAG:194)(15以上=気に入る 9以下=口に合わない)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_332
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存
+;TFLAG:口上特殊補正 (ここに数値を入れるとALCOHOL_TASTEを増減させられる)
+TFLAG:192 =0
+TFLAG:口上特殊補正 = 0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_332
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_332_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_332_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;333,愚痴を聞く
+;TFLAG:193(6=大成功(酔い) 5=成功(酔い) 4=失敗(酔い) 3=大成功 2=成功 1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_333
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_333
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_333_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_333_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 6
+		;大成功（酔い）
+		CASE 5
+		;成功（酔い）
+		CASE 4
+		;失敗（酔い）
+		;CASE 3
+		;大成功
+		CASE 2,3
+		;成功
+		;待补充
+			IF TALENT:118:恋人
+				PRINTDATAL 
+					DATAFORM 「果然还是%MASTERNAME:118%懂我嘛～」
+					DATAFORM 「还是%MASTERNAME:118%肯听%CSTR:118:20%的话呢～」
+					DATAFORM 「诶嘿嘿，对你说了那么多不好听的话……」
+				ENDDATA
+				PRINTDATADW 
+					DATAFORM 拉尔瓦开心地抱住了你的手
+				ENDDATA
+
+			ELSE 
+				PRINTDATAL 
+					DATAFORM 「啊……跟%MASTERNAME:118%说了这样的话，很对不起呀……」
+					DATAFORM 「那个……谢谢%MASTERNAME:118%，听我发牢骚什么的……」
+					DATAFORM 「果然还是%MASTERNAME:118%会说话呢……」
+				ENDDATA
+				PRINTDATADW 
+					DATAFORM 拉尔瓦挠了挠自己的脑袋，向你歉意地笑着
+				ENDDATA
+			ENDIF 
+		CASE 1
+		;失敗
+			IF TALENT:118:恋人
+				PRINTDATAL 
+					DATAFORM 「虽然嘴上是那么说啦……」
+					DATAFORM 「呜……还是觉得不行呀……」
+					DATAFORM 「呐——%MASTERNAME:118%知不知道呀——」
+				ENDDATA
+				PRINTDATADW 
+					DATAFORM 拉尔瓦低下头嘟起嘴来……
+					DATAFORM 拉尔瓦烦躁地甩着你的手……
+					DATAFORM 拉尔瓦耷拉着翅膀……
+				ENDDATA
+			ELSE 
+				PRINTDATAL 
+					DATAFORM 「%MASTERNAME:118%也不站我这边——」
+					DATAFORM 「呜呜呜……」
+					DATAFORM 「不行啊！还是好气……」
+				ENDDATA
+				PRINTDATADW 
+					DATAFORM 拉尔瓦捂着耳朵不肯听你的话……
+					DATAFORM 拉尔瓦烦躁地拍起了翅膀……
+					DATAFORM 拉尔瓦似乎听不进你的话了……
+				ENDDATA
+			ENDIF 
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;334,杯を交わす
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:妊娠自覚状態(1=食事)
+;TALENT:酒耐性(-2=食事)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_334
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_334
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_334_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_334_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;335,介抱する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_335
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_335
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_335_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_335_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;336,膝枕する
+;ABL:親密(4以下=居心地悪げ 9以下=恥ずかしげ それ以上=幸せそう
+;TIME_PROGRESS(TFLAG:膝枕した)(44以下=失敗
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_336
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_336
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_336_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_336_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 > 0
+	;寝ちゃった
+	ELSE
+	;それ以外
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;350,押し倒す（時姦時イタズラする
+;TFLAG:194 (0=成功 1=人目がある　2=野外は嫌でござりまする　3=多人数プレイは勘弁　4=合意があってもムードが足りぬ　100=合意はあるが口上内特殊判定によって失敗）
+;TCVAR:抱き寄せ初回　1=普通に合意ゲット　2=先にキスぐらいしろよ　3=媚薬or発情には勝てなかったよお…　4=悔しい…刻印さえなければﾋﾞｸﾋﾞｸﾝ
+;5=強引に迫られると断れぬ(素質臆病持ち専用) 6=まんざらでもない　7=駄目　8=論外 98=口上内特殊判定による失敗 99=口上内特殊判定による成功
+;口上内特殊判定は該当するCFLAGが0だと無効
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_350
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_350_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_350_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70 
+	ELSEIF TFLAG:194 
+		SELECTCASE TFLAG:194	;除开等于0的情况，基本都是拒绝，所以可以少一点
+			CASE 1 
+				IF TALENT:118:恋慕
+					PRINTFORML 「啊啊……是，想做了嘛？」
+					PRINTFORMDW 在蝴蝶翅膀的遮挡下，你轻抚着女孩娇躯的手，被拉尔瓦抱住了
+					PRINTFORML 「呜……这里有别人……会被别人看见的……」
+					PRINTFORMW 「想要的话，带%CSTR:118:20%去别的地方吧%UNICODE(0x2764)%……」
+				ELSEIF TALENT:118:思慕
+					PRINTFORML 「在，在这里……喂！」
+					PRINTFORMDL 拉尔瓦顿时又羞又恼地后退了几步
+					PRINTFORML 「……%MASTERNAME:118%说这样的话，是在恶作剧嘛？」
+					PRINTFORMW 「这哪里是恶作剧嘛！明明就是在耍流氓……」
+				ELSE
+					PRINTFORML 「在这里……嗯？什么啊！」
+					PRINTFORML 「就算是开玩笑，也得考虑一下氛围吧……」
+					PRINTFORMDW 拉尔瓦皱起眉头，跟你保持开距离了……
+				ENDIF 
+			CASE 2 
+				IF TALENT:118:恋慕
+					PRINTFORML 「啊咧？在这里做……呜……」
+					PRINTFORMDL 拉尔瓦的脸蛋一下就红透了，紧紧抓着裙子，老半天才开了口
+					PRINTFORMW 「不行呀……被别的妖精看到了，会出大问题的……」
+					PRINTFORMDW 是什么问题呢？
+					PRINTFORMW 「反正就是不行！%CSTR:118:20%可不想%MASTERNAME:118%被别人看见啊……」
+					PRINTFORMDW 看着快要哭出来的拉尔瓦，只能摸了摸她的小脑袋以表安慰
+				ELSEIF TALENT:118:思慕
+					PRINTFORML 「在，在这里……喂！」
+					PRINTFORML 「这里怎么可能嘛！会，会被别人看见……」
+					PRINTFORMDL 拉尔瓦又羞又恼地扭过了头……
+				ELSE 
+					PRINTFORML 「在这里……嗯？什么啊！！」
+					PRINTFORML 「就算是开玩笑，也得考虑一下时候吧……」
+					PRINTFORMDW 拉尔瓦皱起眉头，跟你保持开距离了……
+				ENDIF 
+			CASE 3 
+				IF TALENT:118:恋慕
+					PRINTFORML 「啊咧？在这里做……呜……」
+					PRINTFORMDL 拉尔瓦的脸蛋一下就红透了，紧紧抓着裙子，老半天才开了口
+					PRINTFORMW 「不行呀……这里有别人呀，看到了，会出大问题的……」
+					PRINTFORMDW 是什么问题呢？
+					PRINTFORMW 「反正就是不行！%CSTR:118:20%可不想自己的样子被别人看见啊……」
+					PRINTFORMW 「只有……%MASTERNAME:118%可以看……」
+					PRINTFORMDW 看着快要哭出来的拉尔瓦，只能摸了摸她的小脑袋以表安慰
+				ELSEIF TALENT:118:思慕
+					PRINTFORML 「在，在这里……喂！」
+					PRINTFORMW 「这里怎么可能嘛！被别人看见的话……」
+					PRINTFORMDL 拉尔瓦又羞又恼地扭过了头……
+				ELSE 
+					PRINTFORML 「在这里……嗯？什么啊！！」
+					PRINTFORML 「就算是开玩笑，也得考虑一下时候吧……」
+					PRINTFORMDW 拉尔瓦皱起眉头，跟你保持开距离了……
+				ENDIF 
+			CASE 4 
+				IF TALENT:118:思慕 || TALENT:118:恋慕
+					PRINTFORML 「要抱抱嘛！诶嘿嘿，那就蹭蹭……」
+					PRINTFORML 「呜啊！摸哪里呢……%MASTERNAME:118%真是的……」
+					PRINTFORMDL 拉尔瓦似乎并没有做那种事情的心情……
+					PRINTFORMW 「要做……更加亲密的事情嘛……呜……有点不喜欢……」
+				ELSE	
+					PRINTFORML 「诶？随随便便就抱过来，干什么啊！」
+					PRINTFORMDL 拉尔瓦好像根本就没理解你的意思……
+					PRINTFORMW 「稍微考虑一下我的心情吧……%MASTERNAME:118%……」
+				ENDIF 
+		ENDSELECT
+	ELSEIF TCVAR:初次拥抱
+		;「Moe特有的，介于无知与非无知之间的纯情萝莉」
+		SELECTCASE TCVAR:初次拥抱
+			CASE 1		;恋慕恋人会回抱，其他情况会不是很明白
+					PRINTFORMW 「哇啊……%MASTERNAME:118%抱得好紧……」
+					PRINTFORML 
+					PRINTFORMDL 你搂住拉尔瓦纤细的娇躯，蝴蝶翅膀也裹着你，给你的身上染上了她的色彩
+					PRINTFORMDW 她本来有些清凉的身体，在与你的紧密相拥中，因情意的炙烤愈发变得温暖
+				IF TALENT:118:恋人
+					PRINTFORML 
+					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
+					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
+					PRINTFORML 
+					INPUT 
+					PRINTFORML  [0]想要什么呢？
+					PRINTFORML 
+					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDW 略微松开拥抱的力度，怀中的女孩竟自己贴近上来，小脑袋埋进了你的胸口
+					PRINTFORML 
+					PRINTFORMW 「那个……%MASTERNAME:118%也有想要的东西……对吧？」
+					PRINTFORMW 「……那种事情……%CSTR:118:20%听说过……是相互喜欢的人要做的事情呢%UNICODE(0x2764)%……」
+					PRINTFORMW 「可以哟%UNICODE(0x2764)%……%MASTERNAME:118%，对%CSTR:118:20%做那样的事情吧%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDL 拉尔瓦抬起头深情地看向你，原先金黄色的眼瞳染上了妖艳的粉红色，述说着炽热的情意
+					PRINTFORML 
+					PRINTFORMW 「以后也是，要一直都，温柔地抱着我哦%UNICODE(0x2764)%……」
+					PRINTFORML 
+				ELSEIF TALENT:118:恋慕
+					PRINTFORML 
+					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
+					PRINTFORML 「不行的呀……在%MASTERNAME:118%面前变成这样……好难为情呀%UNICODE(0x2764)%」
+					PRINTFORML 
+					INPUT 
+					PRINTFORML  [0]为什么难为情？
+					CLEARLINE 1
+					PRINTFORML 
+					PRINTFORML 「这样的事情……应该是和喜欢的人做的吧……」
+					PRINTFORML 
+					PRINTFORMDW 略微松开拥抱的力度，怀中的女孩竟自己贴近上来，小脑袋埋进了你的胸口
+					PRINTFORML 大大的蝴蝶翅膀也随着纤细的手臂，一同环抱住你，染上了鳞粉的闪耀光芒
+					IF TALENT:0:恋人
+						PRINTFORML 
+						PRINTFORMW 「%MASTERNAME:118%明明有相互喜欢的人了……为什么还要来找%CSTR:118:20%……」
+						PRINTFORML 
+						PRINTFORMDW 感觉到胸前漫溢开的温热液体，你保持着拥抱，轻拍着拉尔瓦的后背
+						PRINTFORML 
+						PRINTFORMW 「%MASTERNAME:118%……真是个超级大坏蛋……」
+						PRINTFORMW 「把人家的心给偷走了……还对%CSTR:118:20%这么好……」
+						PRINTFORMW 「明明，%MASTERNAME:118%已经有恋人了……如果被别人发现了，又会被当成坏孩子……」
+						PRINTFORML 
+						PRINTFORMDW 拉尔瓦抬起头看向你，小脸上布满泪痕，原先金黄色的眼瞳染上妖艳的粉红色，述说着炽热的情意
+						PRINTFORML 
+						PRINTFORML 「不行呀……已经……离不开%MASTERNAME:118%了啊……」
+						PRINTFORMW 「对我这样的坏孩子……做坏坏的事情吧%UNICODE(0x2764)%……」
+						PRINTFORML 
+					ELSE 
+						PRINTFORML 
+						PRINTFORMW 「还不知道%MASTERNAME:118%喜欢谁呢……」
+						PRINTFORMW 「不过呀，既然%MASTERNAME:118%对%CSTR:118:20%这么好……」
+						PRINTFORMW 「大概或许……%MASTERNAME:118%肯定喜欢我吧？」
+						PRINTFORML 
+						PRINTFORMDW 正想回答的你，却被拉尔瓦伸出的指尖点住了嘴唇
+						PRINTFORML 
+						PRINTFORML 「%MASTERNAME:118%的心意……%CSTR:118:20%已经知道了哟」
+						PRINTFORMW 「无论是喜欢还是不喜欢……至少，%CSTR:118:20%很喜欢%MASTERNAME:118%！」
+						PRINTFORML 
+						PRINTFORMDW 突然的告白让你有些不知所措，可看着拉尔瓦灿烂的笑容，一时间难以相信
+						PRINTFORML 
+						PRINTFORML 「这样就好啦！那，咱们现在就算是互相喜欢啦！」
+						PRINTFORMW 「那样的话，做这样的事情，就没关系了呢……」
+						PRINTFORML 
+						PRINTFORMDW 拉尔瓦睁开眼睛，深情地看向你，原先金黄色的眼瞳染上了妖艳的粉红色，述说着炽热的情意
+						PRINTFORML 
+						PRINTFORML 「已经……离不开%MASTERNAME:118%了啊……」
+						PRINTFORMW 「以后也是，要一直都，温柔地抱着我哦%UNICODE(0x2764)%……」
+						PRINTFORML 
+					ENDIF 
+				ELSEIF TALENT:118:思慕
+					PRINTFORML 「呜啊啊！突然抱上来干嘛……」
+					PRINTFORML 「啊……%MASTERNAME:118%的心……跳得很快……」
+					PRINTFORML 
+					PRINTFORML 还没伸出手抚摸上蝴蝶女孩的身体，拉尔瓦忽然自己就贴近过来
+					PRINTFORML 大大的蝴蝶翅膀也随着纤细的手臂，一同环抱住你了
+					PRINTFORML 
+					PRINTFORML 「%CSTR:118:20%能明白，你的心情哟……」
+					PRINTFORML 「这样的事……我不讨厌……%MASTERNAME:118%的怀抱，真的很温暖%UNICODE(0x2764)%」
+					IF TALENT:0:恋人
+						PRINTFORML 「只是，为什么不找自己的恋人去做呢……」
+					ELSE 
+						PRINTFORML 「呐，要对我温柔一点呀……」
+					ENDIF 
+					PRINTFORML 
+				ELSE 
+				ENDIF 
+			CASE 2 
+				IF TALENT:118:恋人
+					PRINTFORML 
+					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
+					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
+					PRINTFORML 
+					INPUT 
+					PRINTFORML  [0]想要什么呢？
+					PRINTFORML 
+					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
+					PRINTFORML 「啊……想要%UNICODE(0x2764)%……欸嘿，一个深情的kiss的说%UNICODE(0x2764)%……」
+					PRINTFORMW 「%CSTR:118:20%知道那种事情哦……用kiss来表达喜欢的话，会很舒服%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDW 拉尔瓦抬起头深情地看向你，原先金黄色的眼瞳染上了妖艳的粉红色，述说着炽热的情意
+					PRINTFORML 
+					PRINTFORMW 「只是被%MASTERNAME:118%抱住……就已经超级幸福了呢%UNICODE(0x2764)%……」
+					PRINTFORMW 「还有kiss，还有更幸福的事情……」
+					PRINTFORMW 「%MASTERNAME:118%……多多地，教给我%UNICODE(0x2764)%……」
+					PRINTFORMDW 
+				ELSEIF TALENT:118:恋慕 || TALENT:118:思慕
+					PRINTFORML 「呜啊啊！突然抱上来……要做什么嘛……」
+					PRINTFORMW 「呐——%MASTERNAME:118%，就没想过，要注意次序什么的……」
+					PRINTFORML 
+					PRINTFORMDL 拉尔瓦鼓起脸蛋，撅起了小嘴看着你……
+					PRINTFORMDW 僵持了一小会，终于还是扭过了头，身体却与翅膀一起抱住了你
+					PRINTFORML 
+					PRINTFORMW 「没关系……这样的事，待会要好好教给我哦……」
+				ENDIF 
+			CASE 3,4 
+				IF TALENT:118:恋人
+					PRINTFORML 
+					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
+					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
+					PRINTFORML 
+					INPUT 
+					PRINTFORML  [0]想要什么呢？
+					PRINTFORML 
+					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDW 略微松开拥抱的力度，怀中的女孩竟自己贴近上来，小脑袋埋进了你的胸口
+					PRINTFORML 
+					PRINTFORMW 「那个……%MASTERNAME:118%也有想要的东西……对吧？」
+					PRINTFORMW 「……那种事情……%CSTR:118:20%听说过……是相互喜欢的人要做的事情呢%UNICODE(0x2764)%……」
+					PRINTFORMW 「可以哟%UNICODE(0x2764)%……%MASTERNAME:118%，对%CSTR:118:20%做那样的事情吧%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDL 拉尔瓦抬起头深情地看向你，原先金黄色的眼瞳染上了妖艳的粉红色，述说着炽热的情意
+					PRINTFORML 
+					PRINTFORMW 「以后也是，要一直都，温柔地抱着我哦%UNICODE(0x2764)%……」
+					PRINTFORML 
+
+				ELSE 
+					PRINTFORMW 「不要！不要抱我%UNICODE(0x2764)%……」
+					PRINTFORMW 「不行呀%UNICODE(0x2764)%……身体，好奇怪%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDL 难以抵抗情欲的蝴蝶妖精，耷拉着翅膀依偎在你怀中
+					PRINTFORMDW 透过衣物，你感觉到了，女孩不同于以往的温热体温
+					PRINTFORML 
+					PRINTFORMW 「想要%UNICODE(0x2764)%……但是不行呀%UNICODE(0x2764)%，会，被当成坏孩子的呀%UNICODE(0x2764)%……」
+					PRINTFORMW 「%MASTERNAME:118%%UNICODE(0x2764)%，这个，H的事情%UNICODE(0x2764)%……可以嘛%UNICODE(0x2764)%……」
+					PRINTFORML 
+					PRINTFORMDL 你用手上的抚摸回答着拉尔瓦的问题
+					PRINTFORMDW 一点点探及女孩的敏感区域，胸前的灼热吐息随着爱抚，愈发频繁
+					PRINTFORML 
+					PRINTFORMW 「呜%UNICODE(0x2764)%……再，快一点嘛%UNICODE(0x2764)%～」
+					PRINTFORMW 「变坏什么的%UNICODE(0x2764)%，已经无所谓了%UNICODE(0x2764)%，快点%UNICODE(0x2764)%，不够呀%UNICODE(0x2764)%……」
+					PRINTFORML 
+				ENDIF 
+			CASE 5 
+					PRINTFORML 「呜……不要，不要啊！——」
+					PRINTFORMDL 无助的蝴蝶妖精，用翅膀裹住了自己
+					PRINTFORMDW 看着你伸出的双手，惊恐地紧缩起小小的身躯
+					PRINTFORML 「求求您……%MASTERNAME:118%……」
+					PRINTFORMW 「我怕疼……不要，动我的翅膀……」
+			CASE 6 
+				IF TALENT:118:恋人
+					PRINTFORML 「哇哦……%MASTERNAME:118%，原来对我是这么想的嘛？」
+					PRINTFORMW 「那个，我并不讨厌哦，而且，非常开心！」
+					PRINTFORML 
+					PRINTFORMDW 拉尔瓦明朗而又纯洁的笑容，让你看得有些出神
+					PRINTFORML 
+					PRINTFORML 「嗯哼，就是%MASTERNAME:118%的这个表情，%CSTR:118:20%最喜欢！」
+					PRINTFORMW 「至少，%MASTERNAME:118%没有把%CSTR:118:20%完全当成小孩子嘛！」
+					PRINTFORMW 「所以说，H的事情，以后再做也不晚哟」
+				ELSEIF TALENT:118:恋慕 ||  TALENT:118:思慕
+					PRINTFORML 「哇哦……%MASTERNAME:118%，原来对我是这么想的嘛？」
+					IF TALENT:0:恋人
+						PRINTFORML 「可是，%MASTERNAME:118%不是有恋人了嘛……」
+						PRINTFORMW 「这样的事情，会让我和%MASTERNAME:118%变成奇怪的关系……」
+						PRINTFORMW 「%CSTR:118:20%可不希望被别人知道啊……」
+						PRINTFORML 
+					ELSE 
+						PRINTFORML 「可是……这样的事，是，是——」
+						PRINTFORMDW 拉尔瓦支支吾吾地比划着手，想说什么却又羞红了脸
+						PRINTFORML 「呜……没什么没什么！反正这种事情太早了啦！」
+						PRINTFORMW 「……应该，太早了吧？」
+					ENDIF 
+				ELSE 
+					PRINTFORML 「……做这样的事情……会变成奇怪的关系的……」
+					PRINTFORMW 「%CSTR:118:20%……想和%MASTERNAME:118%做好朋友！」
+				ENDIF 
+			CASE 7,8
+				IF TALENT:118:恋慕 ||  TALENT:118:思慕
+					PRINTFORML 「诶……%MASTERNAME:118%摸哪里哇！」
+					PRINTFORML 「满脑子都是H的事情什么的……真的好奇怪！」
+					PRINTFORMDW 拉尔瓦慌乱地挣脱出了你的怀抱
+				ELSE
+					PRINTFORML 「%MASTERNAME:118%在做什么啊！！」
+					PRINTFORMW 「随随便便就抱住别人，上下其手什么的……」
+					PRINTFORMDW 拉尔瓦慌乱地挣脱出了你的怀抱
+				ENDIF 
+		ENDSELECT
+	ELSE	
+		;通常拥抱
+
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;351,連れ出す
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_351
+;連れ出しにはTRAIN_MESSAGEが無い
+CALL M_KOJO_Moe_MESSAGE_COM_K118_351_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_351_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;TARGET連れ出し
+	IF CFLAG:同行 == 60
+	;TARGET以外連れ出し(TARGET同行中のみ
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;352,告白する
+;FLAG:甲斐性無(1=失敗)
+;TFLAG:193 (1=成功 0=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_352
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_352
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_352_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_352_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 
+		;IF TALENT:118:恋慕
+		IF TALENT:118:思慕
+			PRINTFORMW 「喜欢……%CSTR:118:20%，嗯，这样嘛！」
+			PRINTFORMDW 拉尔瓦似乎把你的话当作了玩笑话呢……
+			IF ABL:118:43 < 2 
+				PRINTFORML 「%MASTERNAME:118%呀，%CSTR:118:20%可是一直什么都不懂的妖精哦！」
+			ELSE 
+				PRINTFORML 「%MASTERNAME:118%呀，%CSTR:118:20%以前，可是很坏很坏的存在哦……」
+			ENDIF 
+			CALL ASK_M("我知道",1)
+			IF ABL:118:40 < 2 
+			PRINTFORML 「那个……打扫卫生之类的家务，%CSTR:118:20%一点都不会哦」
+			ELSE 
+			PRINTFORML 「那个……泡茶扫地什么的事情，%CSTR:118:20%一点都不喜欢做哦」
+			ENDIF 
+			CALL ASK_M("我知道",1)
+			IF ABL:118:44 < 2 
+			PRINTFORML 「啊……做饭！%CSTR:118:20%做不出好吃的饭的啦！」
+			ELSEIF ABL:118:41 < 2 
+			PRINTFORML 「啊……%CSTR:118:20%……不太会跟人打交道呢……」
+			ELSEIF ABL:118:42 < 2
+			PRINTFORML 「啊……弹幕胜负！这个是真的很弱的说……」
+			ELSE 
+			PRINTFORML 「啊……不行不行！我只是个妖精呢……」
+			ENDIF 
+			CALL ASK_M("我知道",1)
+			PRINTFORML 
+			PRINTFORMDW 找不到理由的拉尔瓦，发现你的话语并非恶作剧，顿时染红了脸颊
+			PRINTFORML 
+			PRINTFORML 「呜……是，是真的呀……」
+			PRINTFORMW 「呐，%CSTR:118:20%到底有什么地方，值得%MASTERNAME:118%喜欢呀？」
+			PRINTFORML 
+			PRINTFORMDL 你描述了，与拉尔瓦相处时，所经历的点点滴滴
+			PRINTFORMDW 无论是促膝长谈，还是受邀出门，还是友人以上恋人未满的紧密拥抱
+			SIF CFLAG:118:1
+			PRINTFORMDW 甚至是，相互索求快感时，悄声在耳边说过的情话
+			PRINTFORMDW 那个背负着翅膀的身影，是如此地耀眼动人
+			;PRINTFORML 共同经历的日子，让彼此都逐渐接近了，幸福这一答案
+			PRINTFORML 
+			PRINTFORML 「哇啊啊……我，我一点也不……」
+			PRINTFORMW 「不……不是这样的……我，我也喜欢……%MASTERNAME:118%！」
+			PRINTFORML 
+			PRINTFORMDW 难以掩盖喜悦的心情，拉尔瓦直接扑进了你的怀抱中
+			PRINTFORML 
+			PRINTFORMW 「明明，我的鳞粉经常惹得你打喷嚏……%MASTERNAME:118%一点都不嫌弃……」
+			PRINTFORMW 「明明，%CSTR:118:20%对你做的恶作剧……%MASTERNAME:118%也没有生气……」
+			SIF DAY > 100 
+			PRINTFORMW 「明明一到冬天，就会冷得走不动路……%MASTERNAME:118%还是温柔地让我取暖……」
+			PRINTFORMW 「%MASTERNAME:118%总是这样，黏在我身边，在我耳朵边上说着温柔的话……」
+			PRINTFORMW 「%MASTERNAME:118%的这份温暖……再也离不开了呢……」
+			PRINTFORML 
+			PRINTFORMDL 比往日更久的紧密相拥
+			PRINTFORMDW 不同的是，微微扬起的蝴蝶翅膀，述说着女孩此刻的喜悦
+			PRINTFORML 
+			PRINTFORMW 「%CSTR:118:20%也，最喜欢%MASTERNAME:118%啦！」
+			PRINTFORMW 「以后啊，要让%CSTR:118:20%，成为世界上最幸福的妖精哦！」
+			PRINTFORML 
+		ENDIF 
+	ELSE 
+
+
+
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;353,イタズラする
+;FLAG:甲斐性無(1=失敗)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_353
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_353_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_353_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;354,添い寝する（相手は起きて布団に招く感じ）
+;CFLAG:衰弱(1以上=起きない
+;CFLAG:お招き(0以外=起きない
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_354
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_354_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_354_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF !SHIRAHU(TARGET)
+			PRINTDATAL 
+				DATAFORM 「呼哇……」
+				DATAFORM 「呼噜噜……呜噜……」
+				DATAFORM 「呼……哇喵……」
+				DATAFORM 「呼——呜呼……」
+			ENDDATA
+			IF TALENT:118:恋人 || TALENT:118:恋慕
+				PRINTFORML 纤细娇躯扭着扭着，无意识中就贴近了你
+				PRINTFORMW 而后，保持着身体接触，又沉沉地睡去了
+			ELSE 
+				PRINTDATAL 
+					DATAFORM 拉尔瓦似乎没有注意到你的样子
+					DATAFORM 拉尔瓦不习惯地转过了身
+					DATAFORM 拉尔瓦的翅膀裹得更紧了一些……
+				ENDDATA
+			ENDIF 
+	ELSE 
+	;目前的版本，必须恋慕才能这样子
+		;IF TALENT:118:恋人
+			PRINTDATAL 
+				DATAFORM 「要睡了么？嗯哼……」
+				DATAFORM 「睡着之前，再跟%CSTR:118:20%说说话吧？」
+				DATAFORM 「今天这样靠的太远了啦，再近一点——」
+				DATAFORM 「%MASTERNAME:118%要睡了嘛？还是说……」
+				DATAFORM 「%MASTERNAME:118%还想说说话嘛？呜哈啊——」
+				DATAFORM 「我蹭，我蹭蹭蹭……诶嘿嘿……」
+			ENDDATA
+			PRINTFORMDW 还未在被窝里躺好，拉尔瓦就迫不及待地凑近了你
+		;ELSE 	;恋慕待补充
+
+		;ENDIF 
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;355,時止め（地の文の改変程度に留めるべき
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_355
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_355_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_355_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;356,物陰に誘う
+;ABL:露出癖 + TALENT:羞恥心で判定
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_356
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存、1=強制成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_356
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_356_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_356_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TALENT:118:27
+		PRINTFORML 「嗯？%MASTERNAME:118%怎么啦？……」
+		PRINTFORML 「要带%CSTR:118:20%……看好看的东西……这样嘛？」
+		IF FIRSTTIME("LARVA_356_GET_ALONG_WITH_YOU")
+			PRINTFORML 「不知道是什么东西呢～」
+		ELSE 
+			PRINTFORML 「大概猜到……是什么东西了呢……」
+		ENDIF 
+			PRINTFORML 
+			PRINTFORML ……
+			PRINTFORML 
+			PRINTFORMW 「哇啊啊……」
+			PRINTFORMDW 拉尔瓦盯着你的肉棒，已经有些出神了……
+			IF (( ABL:118:11 > 10 ) && RAND:4) || ( CFLAG:118:1721 > 500 )
+				PRINTFORMW 「呜……原来是想吃掉我嘛？」
+				PRINTFORMDL 还未说出的话，被女孩的单纯话语挤了回去
+				PRINTFORMDW 而后，漫溢着潮红的脸颊贴近过来，让肉棒挤在了彼此之间
+				PRINTFORML 
+				PRINTFORML 「说起来，%CSTR:118:20%……也有点想要恶作剧了呢%UNICODE(0x2764)%……」
+				PRINTFORMW 「结果反倒被%MASTERNAME:118%抢先了，不过也不错～」
+				PRINTFORML 
+				PRINTFORMDL 微微扬起的，颤抖着的蝴蝶翅膀，述说着女孩此刻的温柔情意
+				PRINTFORMDW 紧贴住你的娇小身躯，被你的情欲灼烧着，逐渐染上了你的体温
+				PRINTFORML 
+				PRINTFORMW 「%MASTERNAME:118%……一起舒服起来吧%UNICODE(0x2764)%……」
+			ELSE 
+				PRINTFORML 「呐——想要的话，为什么一定要在外面……」
+				PRINTFORMW 「虽然也不是不可以做……但是，被别人看见了，怎么办呀……」
+				PRINTFORMW 「不行不行！」
+				PRINTFORMDL 看着轻摇着头的蝴蝶妖精，你正想放弃的时候
+				PRINTFORMDW 股间的怒张，被那双熟悉的纤手握住了
+				PRINTFORMW 「那么想要的话，就让%CSTR:118:20%……给你满足一下吧～」
+			ENDIF 
+	ELSE 	;待补充
+
+		IF ABL:118:露出癖 + TALENT:118:羞恥心 >= 3 
+
+
+		ELSE 
+
+
+		ENDIF 
+	ENDIF 
+
+ENDIF
+RETURN 1
+;==================================================
+;360,身を任せる
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_360
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_360_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_360_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;361,抵抗する
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_361
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_361_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_361_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;363,読み聞かせ（[幼稚]持ち専用）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;CFLAG:添い寝中(1=布団orベッドの中で本を読む
+;MASTERがTARGETより大柄の場合、膝の上にTARGETを乗せる
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_363
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_363
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_363_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_363_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;364,豆まき(萃香、勇儀、スカーレット姉妹用
+;TFLAG:193(豆まきに参加してる人数
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_364
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_364_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_364_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;365,守矢神社へ移動(早苗、神奈子、諏訪子用
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_365
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_365_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_365_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;368,自由行動に付き合う 
+;技能系の行動は技能レベルが1以上なら発生
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_368
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_368_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_368_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE Activity_Type:TARGET
+		CASE 0
+			;▼考え事［なに考えてるの］
+			;TFLAG:193,-1=はぐらかされる
+			;PRINTFORMW \
+			IF TFLAG:193 == -1 
+				PRINTDATAW 
+					DATAFORM 「这个和%MASTERNAME:118%，没关系……」
+					DATAFORM 「问别人的隐私是不对的……」
+					DATAFORM 「只是一些不重要的事……」
+					DATAFORM 「没有没有！没什么重要的事……」
+					DATAFORM 「在想明天吃什么——其实我不需要吃饭呢……」
+					DATAFORM 「没什么呀？真的没什么！」
+					DATAFORM 「……反正不是恶作剧的事！」
+					DATAFORM 「呜啊，刚刚我说到哪里了来着……」
+					DATAFORM 「天上有个黑球！……没上当呀……」
+					DATAFORM 「在想，和%MASTERNAME:118%无关的事情嘛……」
+				ENDDATA
+			ELSE
+			ENDIF 
+		CASE 1
+			;▼遊ぶ［一緒に遊ぶ］
+			;※[幼稚]持ちのみ
+			;TFLAG:193,1=大いに盛り上がる,-1=あまり盛り上がらない
+			;PRINTFORMW 
+		CASE 2
+			;▼食事［一緒に食事する］
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 3
+			;▼つまみ食い［一緒につまみ食い］
+			;※[妖精]持ちとルーミア、こいし、幽々子、紫苑のみ
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 4
+			;▼掃除［掃除を手伝う］
+			;※[掃除係]持ちまたは汚臭耐性-1以下のみ
+			;PRINTFORMW 
+		CASE 5
+			;▼運動［一緒に運動する］
+			;※[音楽知識]持ちは除く（演奏になる）
+			;PRINTFORMW 
+		CASE 6
+			;▼読書［本の感想を聞く］
+			;TFLAG:193,-1=集中していて返事してくれない
+			;PRINTFORMW 
+		CASE 7
+			;▼料理［料理を手伝う］→［料理を分けてもらう］
+			;TFLAG:193,2=料理を手伝う,0=作った料理を食べる,-1==MASTERはお腹が空いてなかった（食べる時）
+			;PRINTFORMW 
+		CASE 8
+			;▼演奏［セッションする］or［伴奏する］
+			;※[音楽知識]持ちのみ（TALENT:音楽知識で変化）
+			;TALENT:音楽知識,1=演奏してる,2=歌ってる,3=踊ってる
+			;TFLAG:193,1=ノリノリ,0=成功,-1=失敗,-2=楽器がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 9
+			;▼採集［採集を手伝う］
+			;PRINTFORMW 
+		CASE 10
+			;▼釣り［一緒に釣りをする］
+			;TFLAG:193,-1=釣り竿がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 11
+			;▼実験［実験を手伝う］
+			;PRINTFORMW 
+		CASE 12
+			;▼のんびり［一緒にのんびりする］
+			;PRINTFORMW 
+		CASE 13
+			;▼晩酌［晩酌に付き合う］
+			;※酒耐性0以上のみ
+			;PRINTFORMW 
+		CASE 14
+			;▼買い物［買い物を手伝う］
+			;PRINTFORMW 
+		CASE 15
+			;▼説教［様子をうかがう］
+			;※神霊・蓬莱人は除く
+			;TFLAG:193,-1
+			;PRINTFORMW 
+		CASE 16
+			;▼落とし穴［いたずらに付き合う］or［様子をうかがう］
+			;※三月精・チルノ・クラウンピースのみ
+			;それ以外は落ちる側
+			;PRINTFORMW 
+		CASE 17
+			;▼雪だるま作り［一緒に雪作り］
+			;※冬の月のみ
+			;PRINTFORMW 
+		CASE 18
+			;▼炬燵でのんびり［炬燵でくつろぐ］
+			;※冬の月のみ
+			;PRINTFORMW 
+	ENDSELECT
+ENDIF
+RETURN 1
+
+
+;因为做实验什么的很难绷
+@自由行動判定_K118_1(ARG)
+SELECTCASE ARG
+	CASE 11,14,15,18
+		RETURN -1
+	CASEELSE
+		RETURN 0
+ENDSELECT
+
+;==================================================
+;402,就寝
+;TFLAG:193(0=通常 1=子供と一緒に川の字で寝る)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_402
+;就寝にTRAIN_MESSAGEは無い
+CALL M_KOJO_Moe_MESSAGE_COM_K118_402_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_402_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;403,休憩
+;CFLAG:TARGET:睡眠(1=TARGETが寝てる隣で休憩
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_403
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_403_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_403_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TALENT:118:恋慕
+		SELECTCASE RAND:3  
+			CASE 0
+				PRINTFORML 「……%MASTERNAME:118%睡着了没有呀……」
+				PRINTFORML 「真的睡着了嘛……睡着了的话，%CSTR:118:20%可要恶作剧了哦……」
+				PRINTFORMDW 你装作没有听见，待到拉尔瓦凑过来伸手摸上你，便猛地伸出双臂——
+				IF GET_TARGETNUM() > 1 
+					PRINTFORML 「呜哇！还有别人呢，不要这么抱着……」
+					PRINTFORMDW 拉尔瓦红透的小脸扭了过去，装作张望着别处，不敢看你的眼睛
+				ELSE
+					PRINTFORML 「哇啊！被%MASTERNAME:118%抓住了……呜……」
+					PRINTFORMDW 虽然嘴上娇嗔着拒绝的话，但拉尔瓦的手臂，与翅膀一起回抱过来了
+				ENDIF 
+			CASE 1
+				PRINTFORML 「……%MASTERNAME:118%睡着了没有呀……」
+				PRINTFORML 「那个……没有睡着对吧？%CSTR:118:20%看出来了哦」
+				PRINTFORMDL 你的脸颊忽然被揉搓起来，是拉尔瓦纤细的小手呢……
+				PRINTFORMDW 不得不睁开了眼睛，脸颊上的触感飞快散去，跪坐在一旁的拉尔瓦眯着眼睛，明朗地笑着
+				PRINTFORMW 「我算过了哦，%MASTERNAME:118%每次休息，差不多都是一个小时！」
+			CASE 2 
+				PRINTFORMDL 从小睡中醒来的你，瞥向身边依靠着你的小小身体——
+				PRINTFORMDW 是拉尔瓦用翅膀裹住自己，似乎还在睡觉的样子……
+				PRINTFORML 「……哈啊啊——%MASTERNAME:118%醒来了呀……」
+				IF DAY:2 == 4 
+				PRINTFORMW 「这么冷的天……不睡觉不行的呀……」
+				ELSE 
+				PRINTFORMW 「睡得好舒服……欸嘿，比在自己床上还舒服哟～」
+				ENDIF 
+		ENDSELECT
+	ELSEIF TALENT:118:思慕
+		SELECTCASE RAND:2 
+			CASE 0
+				PRINTFORML 「%MASTERNAME:118%要休息嘛！那个，%CSTR:118:20%也一起吧？」
+				PRINTFORML 「不介意鳞粉吧？不介意的话，想靠在%MASTERNAME:118%身上嘛……」
+				PRINTFORMDW 小小的肩膀隔着蝶翼靠住了你，不一会儿便听到拉尔瓦轻微的呼噜声了
+			CASE 1
+				PRINTFORML 「%MASTERNAME:118%累了嘛？%CSTR:118:20%觉得还好呢……」
+				PRINTFORML 「这样的话，那就让%CSTR:118:20%待会叫你起床吧！」
+				PRINTFORMDW 在拉尔瓦时不时微笑着的注视中，你稍微休息了一会儿
+		ENDSELECT
+	ELSE 
+		SELECTCASE RAND:2 
+			CASE 0 
+				PRINTFORML 「喂喂喂……%MASTERNAME:118%真的敢在%CSTR:118:20%面前睡觉啊？」
+				PRINTFORMW 「莫名有种被依赖的感觉呢……那我也休息一下好啦」
+			CASE 1
+				PRINTFORML 「那个，%MASTERNAME:118%不知道嘛？在妖精出没的地方休息，容易被捉弄呢」
+				PRINTFORMW 「不过%CSTR:118:20%会照看你的！我也一起坐会儿……哈啊啊……」
+		ENDSELECT 
+		PRINTFORMDW 拉尔瓦用翅膀裹着自己，靠在一旁的椅子上眯着眼睛……
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;405,出掛ける(同行時デート
+;条件が厄介なので、COMF405 出掛ける.ERBを参照のこと
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_405
+;出掛けるにTRAIN_MESSAGEは無い
+CALL M_KOJO_Moe_MESSAGE_COM_K118_405_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_405_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;TARGETとデート
+	IF CFLAG:同行
+		IF FIRSTTIME("K118_405_FIRST_APPOINTMENT")
+			PRINTFORML 「约会……约会是什么意思啊？」
+			PRINTFORMW 「只有两个人一起出门去玩就叫做约会嘛……」
+			IF TALENT:118:思慕 || TALENT:118:恋慕
+				PRINTFORML 「好诶！%CSTR:118:20%早就想说，什么时候一起出去玩什么的……」
+				PRINTFORML 「我还有很多很多地方没去过，也很想看看现在的幻想乡是什么样子呢！」
+				PRINTFORMDL 现在的幻想乡……难道说，以前——
+				PRINTFORMW 「啊……没什么没什么！这个不重要！能和%MASTERNAME:118%出去玩就好！」
+			ELSE 
+				PRINTFORML 「听起来好可疑……%MASTERNAME:118%是想拐妖精吗？」
+				PRINTFORMDL 你向拉尔瓦解释清楚，是去幻想乡的景点玩……
+				PRINTFORML 「啊……%CSTR:118:20%错怪%MASTERNAME:118%了呢……对不起！」
+				PRINTFORMW 「还有，谢谢%MASTERNAME:118%能带%CSTR:118:20%出去玩！」
+			ENDIF 	
+			;PRINTFORML 「那，去什么地方玩呀？」
+		ELSEIF TALENT:118:恋慕
+			PRINTFORML 「什么？%MASTERNAME:118%叫我出门去玩吗，好诶！那就出发吧！」
+			PRINTFORMDL 拉尔瓦开心地搂住了你的手臂，连带着蝴蝶翅膀抱住了你的全身
+			PRINTFORMW 「去哪里呢？%CSTR:118:20%很好奇呀……」
+		ELSEIF TALENT:118:思慕
+			PRINTFORML 「跟着%MASTERNAME:118%，就能去一些平常根本不敢去的地方呢……」
+			PRINTFORML 「因为总有人喜欢把妖精当作玩具来对待……被抓走之后，会发生什么都不知道」
+			PRINTFORMW 「……那个，%CSTR:118:20%相信%MASTERNAME:118%能保护好我的！」		
+		ELSE	;；所以去哪里呢？
+			PRINTFORML 「是要带%CSTR:118:20%出去玩嘛？」
+			PRINTFORML 「好诶！有%MASTERNAME:118%在一起的话，就不怕路上被人欺负啦！」
+			PRINTFORML 「那个，去什么地方玩呀？」
+		ENDIF 
+
+		;后面需要接地点差分，还未完工  %DATENAME_PLACE()%是地点名称，CFLAG:0:12是地点的大地图变好
+		SELECTCASE CFLAG:MASTER:12
+			CASE 0 ;博丽神社
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_0")
+					PRINTFORML 「呜啊！居然是去神社嘛？」
+				ELSEIF DAY:2 == 4
+					PRINTFORML 「呜哇……要去神社吗……」			
+				ELSE 
+					PRINTFORML 「是要去神社吗！」
+				ENDIF 
+
+				IF DAY:2 == 4
+					PRINTFORML 「那边的风，特别特别大……特别是现在这种时候，会冷死的……」
+					IF TALENT:118:恋慕
+						SELECTCASE RAND:2 
+							CASE 0 
+							PRINTFORMW 「呐，起风的时候，要抱住我，不让%CSTR:118:20%被吹飞哦……」
+							CASE 1
+							PRINTFORMW 「那就，嘿咻……要经常抱一抱我哦……」
+						ENDSELECT
+					ELSEIF TALENT:118:思慕
+						PRINTFORMW 「到时候得借%MASTERNAME:118%挡一挡风呢……」
+					ELSE 
+						PRINTFORMW 「神社应该能喝热茶吧，到时候找灵梦讨一杯……」
+					ENDIF 
+				ELSE 
+					IF TALENT:118:恋慕 ;待补充
+						PRINTFORML 「人类带着妖精，进全是妖怪的神社玩……会不会被妖怪吃掉呢？」
+						PRINTFORMW 「诶嘿嘿，开个玩笑的啦，有%MASTERNAME:118%在就一点都不怕呢……」
+					ELSEIF TALENT:118:思慕 ;待补充
+						PRINTFORML 「但愿那几个家伙现在不在家……啊……没事没事！那就出发吧！」
+						PRINTFORMW 「%CSTR:118:20%说的，是几只喜欢恶作剧的妖精……不重要不重要！」
+					ELSE ;待补充
+						PRINTFORML 「那边是三妖精的家！虽然全幻想乡的妖精也就她们三个敢住那里……」
+						PRINTFORMW 「因为她们的能力很擅长恶作剧嘛，三人合力能把人耍得团团转……」
+					ENDIF 
+				ENDIF 
+
+			CASE 1 	;命莲寺
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_1") 
+					IF ABL:118:43 > 1 
+						PRINTFORMW 「命莲寺……没听说过诶——」
+					ELSE 
+						PRINTFORMW 「命莲寺……是人类村庄附近的寺庙吗——」
+					ENDIF
+					PRINTFORML 「由妖怪们为主要成员的寺庙……」
+					PRINTFORMW 「那，他们吃肉吗？喝酒吗？会去吓唬人吗？」
+					PRINTFORMDW 这个可不好说呢……				
+				ELSE 
+					PRINTFORML 「诶……是命莲寺吗？」
+					IF TALENT:118:恋慕 ;待补充
+						IF DAY:2 == 4
+						PRINTFORML 「那个地方外面有墓地哇！会刮冷风的呀！」
+						PRINTFORMW 「不会有鬼吧……不会吧？要是有的话，%CSTR:118:20%会吓得躲进%MASTERNAME:118%的怀里——」
+						PRINTFORMW 「嗯哼，%MASTERNAME:118%不会是这么想的吧？」
+						PRINTFORMDL 背对着你的拉尔瓦忽地向后靠过来，被你稳稳地接住了
+						PRINTFORMW 「不管怎样……%MASTERNAME:118%的怀抱，我都想要～」
+						ELSE 
+						PRINTFORML 「那个地方很安静呢……毕竟是寺庙嘛」
+						PRINTFORMW 「跟%MASTERNAME:118%去那样宁静的地方散散心，比起听妖精们胡说八道，要好得多呀——」
+						ENDIF 
+					;ELSEIF TALENT:118:思慕 ;待补充
+					;	PRINTFORML 「去寺庙的话……呜，那个，就真的想去嘛？」
+					;	PRINTFORMW 「因为，一点都不好玩嘛！」
+					ELSE ;待补充
+						IF  DAY:2 == 4
+						PRINTFORML 「那个地方外面全是坟墓哇！会刮阴风的呀！」
+						PRINTFORMW 「呜……一想到这个，背后就打寒颤……」
+						PRINTFORMDW 妖精也会怕幽灵么……
+						PRINTFORMW 「才不是！是，是因为，好冷啊啊啊啊啊啊啊……」
+						ELSE 
+						PRINTFORML 「去寺庙的话……呜，那个，就真的想去嘛？」
+						PRINTFORMW 「因为，总觉得一点都不好玩嘛！」
+						ENDIF 
+					ENDIF 
+				ENDIF 
+
+			CASE 2 		;人间之里
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_2")
+					PRINTFORML 「哇塞！是去人类的村庄嘛！」
+					PRINTFORMW 「那个……%MASTERNAME:118%，人类的村庄，欢迎妖精进入嘛？不会把我赶出去吧？」
+					PRINTFORMDW 要赶都是赶喜欢恶作剧的妖精……拉尔瓦这样的，应该没问题吧？
+					PRINTFORMW 「好耶！一直想去看来着……%MASTERNAME:118%快点出发吧！」
+				ELSE 
+					PRINTDATAL 
+							DATAFORM 「哇！还是去人类的村庄嘛！」
+							DATAFORM 「人间之里……是人类的村庄嘛！」
+					ENDDATA
+				ENDIF 
+				IF  DAY:2 == 4
+					PRINTDATAL 
+							DATAFORM 「广场的中间，听说会烧很大的火堆！」
+							DATAFORM 「冷天的时候，店铺应该会开……应该是壁炉吧？」
+							DATAFORM 「听说，人里有温泉浴场！会很暖和……」
+					ENDDATA	
+					IF TALENT:118:恋慕
+						PRINTFORML 「不过呀，只要%MASTERNAME:118%一直一直抱着我……」
+						PRINTFORMW 「去哪里都不会冷呀……」
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 「因为真的很冷很冷嘛……」
+						PRINTFORMW 「那个……在外面也想要……贴贴……」
+					ENDIF 
+				ELSE 	
+					PRINTFORML 「那里不让妖精进去，听说是怕妖精们偷东西什么的……」
+					PRINTFORML 「不过有%MASTERNAME:118%带路的话，肯定没问题的啦！」
+					IF TALENT:118:恋慕
+						SELECTCASE RAND:3 
+							CASE 0 
+								PRINTFORML 「放心放心，我可不会对别人恶作剧的呢～」
+								PRINTFORML 「只有这样的事，是只会，对%MASTERNAME:118%做的呢～」
+							CASE 1
+								PRINTFORML 「如果有发生了妖精的恶作剧……%MASTERNAME:118%要帮我作证！」
+								PRINTDATAL 
+									DATAFORM 「我可不会对不认识的家伙做那种事情！」
+									DATAFORM 「毕竟%CSTR:118:20%一直在你身边，哪里有时间呢……」
+								ENDDATA
+							CASE 2
+								PRINTFORML 「听说人类的村庄里，有专门拐妖精的怪叔叔……」
+								PRINTFORML 「%MASTERNAME:118%很像这种怪叔叔呢，欸嘿，开个玩笑～」
+						ENDSELECT
+					ELSE 
+						SELECTCASE RAND:2
+							CASE 0 
+								PRINTFORML 「说起来，经常看见有妖精说，去人里进货什么的……」
+								PRINTFORML 「总觉得不太正常……」
+							CASE 1 
+								PRINTFORML 「正好，%CSTR:118:20%也想看看，最近村庄里变得怎样了」
+								PRINTFORML 「……会不会遇见有意思的，妖怪？」
+						ENDSELECT
+					ENDIF 
+				ENDIF 
+			CASE 3 
+			;雾之湖-红魔馆
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_3")
+					PRINTFORMW 「哇！是去雾之湖嘛！」
+					PRINTFORMDW 拉尔瓦似乎非常开心的样子，翅膀都高高翘起来了
+					PRINTFORML 「因为那里有很多好朋友！正好可以去和她们打个招呼！」
+					PRINTFORMW 「%CSTR:118:20%上次去雾之湖，有，有多久了来着？」
+					IF DAY:2 == 4 
+						PRINTFORML 「因为天气变冷了，所以不想出门去那里……」
+						PRINTFORMW 「起雾的时候，湖边没一点阳光！冷得要死……」
+					ELSE 
+						PRINTFORML 「那里全是雾……一点阳光都照不进来……」
+						PRINTFORMW 「空气也特别潮湿，简直不是人——啊不，妖精能住的地方……」
+					ENDIF 
+					PRINTFORML 「虽然还是有很多妖精住那里啦……去顺便打个招呼也挺好的！」
+					PRINTFORMW 「毕竟，我也算是妖精中的佼佼者呢！」
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 4
+			;迷途竹林
+			;需要注意，这里原来是自己家，要搬出去的话，必定是恋慕
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_4")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 5
+			;魔法之森
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_5")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 6
+			;三途川-冥界
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_6")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 7
+			;妖怪之山-山麓
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_7")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 8
+			;妖怪之山-山顶
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_8")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 9
+			;地底
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_9")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+			CASE 10
+			;梦之世界-月之都
+				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_10")
+				ELSE 
+					IF TALENT:118:恋慕
+						PRINTFORML 
+					ELSEIF TALENT:118:思慕
+						PRINTFORML 
+					ELSE
+						PRINTFORML 
+					ENDIF 
+				ENDIF 
+
+
+		ENDSELECT
+	;TARGET以外とデート，看见别人同行
+	;MOE_LARVA_GET_GO_ALONG_TARGET()，是同行的人的角色编号
+	;⑨，硬起来，桑尼，露娜，斯塔，克劳恩皮丝，露米娅？，大妖精，莉莉白，莉莉黑
+	;九大妖精军团，再加个幼女妖怪，集齐了（确信）
+	ELSEIF CFLAG:MASTER:同行
+		IF TALENT:118:恋人
+			PRINTFORML 「喂……带着别人出去，还要在%CSTR:118:20%面前转一圈……」
+			PRINTFORMW 「%MASTERNAME:118%啊，是不是，我脾气太好了呢？呐！！——」
+			PRINTFORMDW 在拉尔瓦掏出符卡前，你赶快逃走了……
+			PRINTFORMW 「喂……明明我才是……为什么呀……呜哇啊啊啊啊……」
+			IF MARK:118:3 < 3 
+				CALL GET_ANGRY(118, 1)
+			ELSE 
+				CALL GET_ANGRY(118, 3)
+			ENDIF 
+		ELSEIF TALENT:118:恋慕
+			IF MOE_LARVA_GET_GO_ALONG_TARGET() == 124
+				PRINTFORML 「喂……能约上秘神出去，很值得炫耀么……」
+				PRINTFORML 「%CSTR:118:20%很幼稚对吧？跟我相处一点都没意思对吧，呐！！！」
+			ELSEIF MOE_LARVA_GET_GO_ALONG_TARGET() == (14 || 5 || 6 || 7 || 111 || 12 || 13 || 18 || 19 )
+				PRINTFORML 「%CALLNAME:MOE_LARVA_GET_GO_ALONG_TARGET()%……%MASTERNAME:118%是要带着，这家伙约会么……」
+				PRINTFORML 「呐，带我也一起去玩……不行么……」
+			ELSE 
+				PRINTFORML 「喂，在%CSTR:118:20%面前……带着别人出去什么的……」
+				PRINTFORML 「哈啊……嘶……」
+				PRINTFORMDL 拉尔瓦扭过头，用翅膀遮住了脸，再也没有理会你
+			ENDIF 
+				PRINTFORML 你拉着%CALLNAME:MOE_LARVA_GET_GO_ALONG_TARGET()%匆匆离开了……
+				PRINTFORML 「为什么呀……」
+			IF MARK:118:3 < 2 
+				CALL GET_ANGRY(118, 0)
+			ELSE 
+			ENDIF 
+		ELSE 
+			IF MOE_LARVA_GET_GO_ALONG_TARGET() == 124
+				PRINTFORML 「摩多罗……啊不，隐岐奈小姐，要和%MASTERNAME:118%出去玩呀？」
+				PRINTFORML 「居然会和人类这么亲密，放下了神明的架子了呢……」
+			ELSEIF MOE_LARVA_GET_GO_ALONG_TARGET() == (14 || 5 || 6 || 7 || 111 || 12 || 13 || 18 || 19 ) 
+				PRINTFORML 「%CALLNAME:MOE_LARVA_GET_GO_ALONG_TARGET()%酱！诶！这是要和%MASTERNAME:118%……咳咳！我懂啦！」
+				PRINTFORML 「你居然还会跟着%MASTERNAME:118%这样的人类呢，诶嘿嘿，很少见哟——」
+			ENDIF 
+			IF TALENT:118:思慕
+				PRINTDATAL 
+					DATAFORM 「带%CSTR:118:20%一起出去可以嘛……不行啊……」
+					DATAFORM 「说起来，我也想一起出去玩的……不行嘛？」
+					DATAFORM 「要是%MASTERNAME:118%也带我出去就好了……」
+				ENDDATA 
+				PRINTFORMW 「啊！说了很奇怪的话……对不起……」
+				PRINTFORMDW 拉尔瓦似乎强忍着不快的情绪，目送着你离开了……
+				TALENT:118:15 = -1 
+			ELSE 
+				PRINTDATAL
+					DATAFORM 「嘛啊……要出发了么……那就——」
+					DATAFORM 「啊，不打扰你们啦，那就——」
+					DATAFORM 「既然这样的话……欸嘿，那就——」
+				ENDDATA
+				PRINTFORMW 「祝你们幸福！！」
+				PRINTFORMDL 拉尔瓦大声地喊出祝福的话语，像是做了恶作剧一样飞快地笑着跑走了……
+				PRINTFORMDW 听见这样的真诚祝福，不由得心情也好了起来……
+				TALENT:MOE_LARVA_GET_GO_ALONG_TARGET():15 = 1 
+			ENDIF 
+		ENDIF 
+	;お出かけお見送り
+	ELSE
+	ENDIF
+ENDIF
+PRINTFORMW 
+RETURN 1
+;==================================================
+;410,掃除
+;FLAG:70(1=時間停止中
+;TFLAG:193(0=見てるだけ 1=一緒に掃除)
+;TFLAG:194(3=汚れ高 2=汚れ中 1=汚れ低 0=汚れ最小
+;OUTROOF(CFLAG:現在位置)(野外掃除（冬は雪かき
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_410
+
+
+
+@M_KOJO_Moe_MESSAGE_COM_K118_410
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_410_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_410_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	ELSE
+		IF TALENT:118:恋慕 
+			SELECTCASE RAND:5
+				CASE 0 
+					PRINTFORML 「说起来，%CSTR:118:20%以前也去红魔馆打过工呢……」
+					PRINTFORML 「打扫过的地方总是闪闪发光，被表扬了，还拿到了很多报酬！」
+					PRINTFORMW 「虽然大家都知道是因为鳞粉……不过也少不了认真努力的打扫！」
+				CASE 1 
+					PRINTFORML 「%MASTERNAME:118%这么勤奋地扫地……是因为有报酬嘛，还是说看见垃圾就不自在呢？」
+					PRINTFORML 「以前的话，%CSTR:118:20%倒是无所谓啦，只要不影响正常生活不就行嘛……」
+					PRINTFORMW 「现在嘛……跟着%MASTERNAME:118%一起打扫，就能注意到很多方便的地方了呢！」
+				CASEELSE
+					GOTO K118_410_2 
+			ENDSELECT
+		ELSEIF TALENT:118:思慕 || TALENT:118:恋慕
+			$K118_410_2 
+			SELECTCASE RAND:4 
+				CASE 0
+					IF FIRSTTIME("K118_410_2_FIRSTTIME")
+						PRINTFORML 「扫地看起来好有趣的样子！」
+						PRINTFORML 「让%CSTR:118:20%用扫把来扫，可以吗？」
+						PRINTFORMDL 拉尔瓦抄起扫把就开始把垃圾往两边扫……
+						PRINTFORMW 「啊？是要扫在一起嘛？啊……习惯了呢……」
+					ELSE 
+						PRINTFORML 「%MASTERNAME:118%要不要休息一下，让%CSTR:118:20%用扫把来扫，可以吗？」
+						PRINTFORMDL 拉尔瓦抄起扫把又开始把垃圾往两边扫……
+						PRINTFORML 「啊！……又忘记了呢……那就这样——」
+						PRINTFORMDW 看得出来并不熟练的样子，你跟在她身后做着善后工作……
+
+					ENDIF 
+				CASE 1 
+					PRINTFORML 「人类生活的地方，都需要像%MASTERNAME:118%这样打扫嘛？」
+					PRINTFORML 「虽然%CSTR:118:20%觉得，脏一点点也没什么问题的啦……」
+					PRINTFORMW 「不过%MASTERNAME:118%有这样的要求，那就得好好奉陪一下～」
+				CASE 2 
+					PRINTFORML 「妖精们很少像%MASTERNAME:118%这样打扫卫生呢……」
+					PRINTFORML 「大家都是把要扔的东西丢到角落，等看不下去了再去打扫啊」
+					PRINTFORML 「为什么红魔馆会特地招妖精来打扫卫生呢……真搞不懂」
+					PRINTFORMDW 大概是因为人类进去不合适吧……
+				CASE 3
+					IF ( TFLAG:194 == 0 ) ||  ( TFLAG:194 == 1 )
+						PRINTFORML 「……终于扫完啦，看看效果——」
+						PRINTFORML 「哇塞！地面在闪闪发光诶！%MASTERNAME:118%真厉害！」
+						PRINTFORMDL 那不是拉尔瓦身上掉下来的鳞粉嘛……
+						PRINTFORMW 「不管不管！反正就是厉害！」
+					ELSE 
+						GOTO K118_410_2 
+					ENDIF 
+				CASE 4
+					PRINTFORMDL 拉尔瓦伸手递给你扫把，忽然就压低声音惊呼出声
+					PRINTFORML 「呀啊——」
+					PRINTFORMDL 手上传来的清凉而又细腻的触感，转瞬即逝了
+					PRINTFORML 「啊……没什么的说，真的没什么啦！」
+					PRINTFORMDW 拉尔瓦脸上染起了红晕，忍不住扭过头，用翅膀挡住了脸……
+			ENDSELECT
+		ELSE 
+			SELECTCASE RAND:4
+				CASE 0
+					PRINTFORML 「要扫除的话……」
+					PRINTFORML 「%CSTR:118:20%在这里会不会碍事呢？」
+					PRINTFORML 「诶？居然还需要我帮忙嘛！」
+					PRINTFORMW 「也不算什么大事啦，毕竟%CSTR:118:20%也没什么事情的说……」
+				CASE 1
+					PRINTFORML 「鳞粉掉在地上……会不会很困扰呢？」
+					PRINTFORML 「诶？闪闪发光的样子，会很好看嘛？」
+					PRINTFORMW 「%CSTR:118:20%以为别人会讨厌呢……」
+				CASE 2
+					PRINTFORML 「%MASTERNAME:118%好像很喜欢扫地的样子！」
+					PRINTFORML 「%CSTR:118:20%不喜欢！而且我也不会制造什么垃圾」
+					PRINTFORML 「所以就没有这方面的习惯呢」
+					PRINTFORMW 「虽然我也不喜欢乱糟糟的环境啦……」
+				CASE 3
+					PRINTFORML 「闪闪发光的垃圾，会不会很好看呢？」
+					PRINTFORML 「既然很好看，那为什么要扫走呢？摆在那里不就好了——」
+					PRINTFORMDL 无意与拉尔瓦做这样的争论，你自顾自地打扫着
+					PRINTFORMDW 虽然没能得到回答，但拉尔瓦还是在一旁帮忙清理着垃圾……
+
+			ENDSELECT
+		ENDIF 
+	ENDIF	
+ENDIF
+RETURN 1
+;==================================================
+;411,戦闘訓練
+;TFLAG:194(3=夏の昼間 2=ヤバい天気 1=悪天候 0=屋内or通常天気
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_411
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_411_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_411_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;412,勉強
+;ABL:教養(ABL:MASTER:教養より大=MASTERが教えてもらう ABL:MASTER:教養より小=TARGETが教えてもらう
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_412
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_412_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_412_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;413,料理
+;TFLAG:194(100以上=禁断のメニュー 3=デザート 2=主食 1=軽食
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_413
+;TFLAG:194が100以上の場合のみ
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_413_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_413_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+ENDIF
+RETURN 1
+;==================================================
+;414,食事を取る
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:194(1=ノーパンしゃぶしゃぶ 2=禁断のメニュー 31=ドーピングコンソメスープ 30=モッツァレラチーズとトマトのサラダ 34=ギンギー料理
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_414
+;成否判定
+;TFLAG:192(-2=コマンド終了(非TARGET時強制失敗)、-1＝強制失敗、0=COM依存(非TARGET時強制成功)、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_414
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_414_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_414_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;415,食事をふるまう
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_415
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_415
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_415_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_415_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;416,演奏する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:使用楽器(1=キーボード 2=ピアノ 3=ギター 4=トランペット 5=ヴァイオリン)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_416
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_416
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_416_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_416_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;417,昼寝をする
+;TFLAG:193(0=MASTERを抱き枕にして寝ている 1=MASTERの膝を枕にして寝ている 2=寝顔にキスされた 3=寝顔をのぞき込まれた 4=MASTERが膝枕されてる 5=秘処orペニス揉み
+;CFLAG:添い寝中(1=一緒に寝ている
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_417
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_417_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_417_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;421,願掛けする
+;条件が複雑なので、COMF421 願掛け.ERBおよび、EVENT_MESSAGE_COM400.ERBの願掛けするの項を参照のこと
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_421
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_421_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_421_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;422～430は、特殊コマンドなのでテンプレでは対応しません
+;==================================================
+
+;==================================================
+;431,お風呂でくつろぐ
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;TFLAG:194(1=連続入浴不可(表示しない可能性あり？
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_431
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_431_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_431_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;432,お風呂でくつろぐ
+;表示タイミングは入浴後なので、お風呂上がりでの
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_432
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_432_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_432_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;436,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_436
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_436_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_436_1
+;==================================================
+;440,待つ
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_440
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_440_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_440_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;441,授業を受ける(慧音専用
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_441
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_441_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_441_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;442,伐採する（未実装
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_442
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_442_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_442_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;445,採集する
+;TFLAG:193(採集物のID, 0=『何も見つからなかった…』
+;TFLAG:194(今回採集した個数
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_445
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_445_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_445_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;448,罠を仕掛ける／虫トラップ
+;TFLAG:193,
+;   -1=罠が壊れた
+;    0=罠を仕掛けた
+;    1=獲物が得られた
+;   10=虫トラップを仕掛けた
+;   11=虫トラップを破棄した
+;   12=ムシを捕まえた
+;FLAG:194,獲物の番号
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_448
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_448_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_448_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;449,虫捕り
+;TFLAG:193,
+;   -2=殺してでもうばいとる（取っ組み合いの末逃がす）
+;   -1=ゆずってくれ！→拒否
+;    0=捕獲失敗
+;    1=MASTERが捕まえた
+;    2=キャラが捕まえたのをMASTERが褒めた
+;    3=ゆずってくれ！→渋々オッケー
+;    4=ゆずってくれ！→オールオッケー
+;TRAINMESSAGEを省略する場合は虫カゴに入れる処理を忘れないように
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_449
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_449_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_449_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;483,ムシバトル
+;TFLAG:193,
+;    1=１対１の対戦
+;    2=３～４人戦
+;    3=２対２のチーム戦
+;TFLAG:194にMASTERの順位が入っています（MASTERが1ならキャラ負け）
+;バトル中の口上はイベント口上ファイルに入っています
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_483
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_483_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_483_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;484,スイカ割り
+;TFLAG:193,
+;   -1=失敗
+;    0=成功
+;    1=大成功
+;    2=木刀で大成功（ボーナス点）
+;TFLAG:194
+;    0=正直者
+;    1=ウソつき
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_484
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_484_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_484_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;490,アイテム
+;TFLAG:193(使用アイテムのID
+;TFLAG:194(対象 0=MASTER,1=TARGET
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_490
+;アイテムにTRAIN_MESSAGEはない
+CALL M_KOJO_Moe_MESSAGE_COM_K118_490_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_490_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;デート系コマンド
+;デート系口上は文字通り外出先で発生
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+[SKIPSTART]
+;現状未実装
+;==================================================
+;600,デート会話
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_600
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_600_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_600_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;601,デートスキンシップ
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_601
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_601_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_601_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;602,デートキス
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_602
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_602_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_602_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+[SKIPEND]
+;==================================================
+;603,手を繋ぐ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗でもふりほどかれたりはしません
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_603
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_603
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_603_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_603_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;604,散策する
+;デート中の場合、CFLAG:現在位置に移動先の場所が既に入ってる
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_604
+;散策するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_Moe_MESSAGE_COM_K118_604_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_604_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;605,寄り道する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文無し
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_605
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_605
+;寄り道するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_Moe_MESSAGE_COM_K118_605_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_605_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;610,食事に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_610
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_610
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_610_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_610_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;613,お金稼ぎする（オミットされました
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_613
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_613
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_613_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_613_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;614,食材の買い出し
+;TFLAG:193(1=購入＆デート経験アップ 0=購入 -1=非購入)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_614
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_614_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_614_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;615,お弁当を食べる
+;実行可能場所　お地蔵通り,枝垂れ柳の下,霧の湖,玄武の沢,大蝦蟇の池,絶景の丘,山の湖,天界
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:料理技能(2未満=微妙な出来 4未満=そこそこ美味しい 4以上=絶品)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_615
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_615_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_615_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;617,甘味処に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐は大成功のみ追加
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K118_617
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_COM_K118_617
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_617_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_617_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;618,花屋（口上は表示されない模様？
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_618
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_618_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_618_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;620,鈴奈庵
+;TFLAG:193(1=貸し出しOK 0=貸し出し不可
+;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字引 X=4御伽草子
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_620
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_620_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_620_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;621,釣りをする
+;COM_STR（釣れたもの　"釣れない","ローター","木片","紙切れ", またはアイテム名、魚の種類）
+;TFLAG:194(1000以上ならTARGETが釣った)
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_621
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_621_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_621_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;626,土産屋
+;TFLAG:194(行動結果(-2=ひやかし -1=ウィンドウショッピング 1=400点未満（BAD） 2=～699点（NOMAL） 3=700点以上（GOOD）
+;CFLAG:性格傾向による地の文分岐あり
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_626
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_626_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_626_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:194
+		;ひやかし
+		CASE -2
+		
+		;やっぱりやめる（見送り）
+		CASE -1
+		
+		;400点未満（BAD）
+		CASE 1
+		
+		;400点～699点（NOMAL）
+		CASE 2
+		
+		;700点以上（GOOD）
+		CASE 3
+		
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;660,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_660
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_660_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_660_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;698,部屋に入る
+;TARGETの部屋に入る場合のみ表示
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_698
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_698_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_698_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;699,外に出る
+;==================================================
+@M_KOJO_Moe_MESSAGE_COM_K118_699
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K118_699_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K118_699_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;派生コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;60,耳かき
+;前ターン膝枕後スキンシップコマンド
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K118_60
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K118_60
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_SCOM_K118_60_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K118_60_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;61,抱きまくら
+;(TARGET睡眠時間or衰弱)添い寝中、前ターン抱きつく後就寝コマンド
+;分岐無し
+;==================================================
+@M_KOJO_Moe_MESSAGE_SCOM_K118_61
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_SCOM_K118_61_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K118_61_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;62,デコちゅー
+;前ターン頭撫で後キスする
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;ABL:欲望(5以上=物足りない
+;ABL:親密(5以上=照れる
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K118_62
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K118_62
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_SCOM_K118_62_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K118_62_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;63,もっとキスする
+;前ターンキスする後キスする
+;分岐条件はEVENT_MESSAGE_COM500.ERB参照
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K118_63
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K118_63
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_SCOM_K118_63_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K118_63_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;80,手を引く
+;デート出発後目的地に着くまでの間
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K118_80
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K118_80
+CALL TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_SCOM_K118_80_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K118_80_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
