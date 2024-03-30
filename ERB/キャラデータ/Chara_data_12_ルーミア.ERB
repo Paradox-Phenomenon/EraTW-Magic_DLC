@@ -1,38 +1,97 @@
 ﻿@CHARAMOVE_DATA_12(ARG, ARG:2)
 LOCAL = 12
-SELECTCASE ARG
-	;連動設定（RETURN=依存する角色, RESULT:1～3=対等に連動する角色）
-	CASE 1
-	;特殊生活時間設定（CFLAG:LOCAL:生活時間補正を設定する）
-	CASE 3
-	;移動傾向（±～10=行きやすい/行きにくい, -100=行かない）
-	CASE 4
-		SELECTCASE ARG:2
-			;私室には入らない
-			CASE P512魔理沙宅・寝室, P514魔理沙宅・風呂, P521人偶洋館・愛麗絲的房間, P522人偶洋館・神綺的房間
-				RETURN -100
-			CASE P523人偶洋館・夢子的房間, P526人偶洋館・風呂, P531人偶洋館・空的部屋
-				RETURN -100
-			CASE P541朱鷺子的棲息処, P542莉格露的棲息処, P544成美の小屋, P545慧ノ子の棲み処
-				RETURN -100
-		ENDSELECT
-	;出現場所
-	CASE 7
-		SELECTCASE ARG:2
-			CASE 地蔵小路, 倒垂的柳樹下, 墓地
-				RETURN 1
-			CASE 森林的入口, 古木的大樹, 再思之道, 無縁塚
-				RETURN 1
-			CASE 中有之道, 三途之川
-				RETURN 1
-		ENDSELECT
-	;引力設定（CFLAG:LOCAL:引力点を設定する）
-	CASE 8
-ENDSELECT
+;------------------------------------------------------------
+;口上の存在判定 and RESULTSに文字列代入
+IF CFLAG:LOCAL:口上セレクタ
+	TRYCALLFORM M_KOJO_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}
+ELSE
+	TRYCALLFORM M_KOJO_K{LOCAL}
+ENDIF
+;口上存在しないなら終了
+IF !RESULT
+	CALLFORM M_KOJO_CHARAMOVE_DATA_K{LOCAL}_INITIAL	
+ENDIF
+;口上表示設定なら表示
+IF FLAG:口上文本設定 > 0
+	TRYCCALLFORM M_KOJO_CHARAMOVE_DATA_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}(ARG, ARG:2)
+		RETURN RESULT 
+	CATCH
+		CALLFORM CHARAMOVE_DATA_K{LOCAL}_INITIAL(ARG, ARG:2)
+		RETURN RESULT 
+	ENDCATCH
+ENDIF
+;------------------------------------------------------------
+@CHARAMOVE_DATA_K12_INITIAL(ARG, ARG:2)
+	SELECTCASE ARG
+		;連動設定（RETURN=依存する角色, RESULT:1～3=対等に連動する角色）
+		CASE 1
+		;特殊生活時間設定（CFLAG:LOCAL:生活時間補正を設定する）
+		CASE 3
+		;移動傾向（±～10=行きやすい/行きにくい, -100=行かない）
+		CASE 4
+			SELECTCASE ARG:2
+				;私室には入らない
+				CASE P512魔理沙宅・寝室, P514魔理沙宅・風呂, P521人偶洋館・愛麗絲的房間, P522人偶洋館・神綺的房間
+					RETURN -100
+				CASE P523人偶洋館・夢子的房間, P526人偶洋館・風呂, P531人偶洋館・空的部屋
+					RETURN -100
+				CASE P541朱鷺子的棲息処, P542莉格露的棲息処, P544成美の小屋
+					RETURN -100
+			ENDSELECT
+		;出現場所
+		CASE 7
+			SELECTCASE ARG:2
+				CASE 地蔵小路, 倒垂的柳樹下, 墓地
+					RETURN 1
+				CASE 森林的入口, 古木的大樹, 再思之道, 無縁塚
+					RETURN 1
+				CASE 中有之道, 三途之川
+					RETURN 1
+			ENDSELECT
+		;引力設定（CFLAG:LOCAL:引力点を設定する）
+		CASE 8
+	ENDSELECT
 
 @EXIST_角色データ12
 #LOCALSIZE 1
 #LOCALSSIZE 1
+
+[SKIPSTART]
+
+@角色データ12(ARG, O_DATA, V_NAME)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS O_DATA
+#DIMS V_NAME
+
+LOCAL = 12
+
+;------------------------------------------------------------
+		;口上の存在判定 and RESULTSに文字列代入
+		IF CFLAG:LOCAL:口上セレクタ
+			TRYCALLFORM M_KOJO_K{NO:LOCAL}_{CFLAG:LOCAL:口上セレクタ}
+		ELSE
+			TRYCALLFORM M_KOJO_K{NO:LOCAL}
+		ENDIF
+		;口上存在しないなら終了
+		IF !RESULT
+			CALLFORM M_KOJO_CHARAMOVE_DATA_K{NO:LOCAL}_INITIAL	
+		ENDIF
+		;口上表示設定なら表示
+		IF FLAG:口上文本設定 > 0
+			SIF FLAG:口上色
+				TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:LOCAL}
+			TRYCCALLFORM M_KOJO%RESULTS%_CHARAMOVE_DATA_K{NO:LOCAL}
+
+			CATCH
+				CALLFORM 角色データ{NO:LOCAL}_INITIAL	
+			ENDCATCH
+		ENDIF
+		RESETCOLOR
+;------------------------------------------------------------
+
+[SKIPEND]
 
 @角色データ12(ARG, O_DATA, V_NAME)
 #FUNCTION

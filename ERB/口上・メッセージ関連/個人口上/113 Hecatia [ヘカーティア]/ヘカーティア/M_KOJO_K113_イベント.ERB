@@ -6,14 +6,15 @@
 ;------ ｷﾘﾄﾘ ｶｲｼ -----------
 ;eraTheWorld proto4.07パッチ取り込み用 Ver1.13
 ;テンプレートの使い方
-;初めに置換コマンド等により KX を K(キャラNo) に変更して下さい  
-;キャラNoはCSVフォルダのCharaファイルを参照　例(霧雨 魔理沙の場合)：KX =置換=> K11
+;初めに置換コマンド等により K113 を K(キャラNo) に変更して下さい  
+;キャラNoはCSVフォルダのCharaファイルを参照　例(霧雨 魔理沙の場合)：K113 =置換=> K11
 ;
 ;------ ｷﾘﾄﾘ ｵﾜﾘ -----------
 
 ;**** FlagManagement **********************************************************
-;本口上にて使用しているCFLAG・TCVAR等
-;
+;本口上にて使用しているCFLAG?TCVAR等
+;睡姦、時姦口上あり時姦口上あり
+;TCVAR:113:今日会ったか
 ;
 ;******************************************************************************
 
@@ -27,7 +28,7 @@ RESULTS:1 = ＜eratoho総合スレ291＞ >>749
 RETURN 1
 
 ;### 口上基本フラグ設定 #############################
-@M_KOJO_総合スレ７４９_FLAGSETTING_K113
+@M_KOJO_総合スレ７４９_総合スレ７４９_FLAGSETTING_K113
 ;基本フラグ設定はここで行ってください
 ;共通の口上フラグは必要な箇所のコメントアウトを外してご利用ください
 ;口上専用フラグはご自由に
@@ -35,14 +36,14 @@ RETURN 1
 
 ;眠姦口上有、時間停止口上有、なりきりに1を入れると、それぞれ時間停止時、眠姦時、なりきり時にコマンド口上が読み込まれるように
 ;入れないと時間停止時、眠姦時、なりきり時は一切喋りません
-CFLAG:108:眠姦口上有 = 1
-CFLAG:108:時間停止口上有 = 1
+CFLAG:113:眠姦口上有 = 1
+CFLAG:113:時間停止口上有 = 1
 ;CFLAG:X:なりきり口上有 = 0
 
-;破瓜キャンセル口上有に1を入れると、@M_KOJO_総合スレ７４９_EVENT_KX_LOST_VIRGIN_STOPでキャンセルの成否を操作できます
+;破瓜キャンセル口上有に1を入れると、@M_KOJO_総合スレ７４９_EVENT_K113_LOST_VIRGIN_STOPでキャンセルの成否を操作できます
 ;CFLAG:X:破瓜キャンセル口上有 = 0
 
-;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_総合スレ７４９_EVENT_KX_PERMISSIONで押し倒しの成否を操作できます
+;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_総合スレ７４９_EVENT_K113_PERMISSIONで押し倒しの成否を操作できます
 ;CFLAG:X:口上内抱き寄せ判定_初回 = 0
 ;CFLAG:X:口上内抱き寄せ判定_通常 = 0
 
@@ -76,7 +77,6 @@ SETCOLOR 0xC90B39
 
 ;月
 ;SETCOLOR 0xF0D124
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -138,20 +138,35 @@ ELSE
 ENDIF
 RETURN 1
 
+
 ;@K113_BEFORETRAIN
-;一日の開始時、正確には来訪判定時に読み込む関数,使うときはコメントアウトを外すこと
+;一日の開始時、正確には来訪判定時に読み込む関数
 ;ここでCFLAG:XX:翌日来訪を設定して確実に来訪させたりTCVAR:XX:発情で朝っぱらからサカらせることもできる
-;ただし「毎朝例外なく読み込まれる」
+;ただし「毎朝例外なく読み込まれる」ため、条件を設定しておくことが望ましい
+
+
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"SP_EVENT"系イベント
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;==================================================
 ;デート帰りにファーストKISS（合意も付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_SPEVENT_MESSAGECHECK_K113_1
+
+RETURN 1
+
 @M_KOJO_総合スレ７４９_SPEVENT_K113_1(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
-CALL SPEVENT_MESSAGE_1(ARG,ARG:1)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -175,10 +190,21 @@ RETURN 1
 ;==================================================
 ;デート帰りに告白（恋人が付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_SPEVENT_MESSAGECHECK_K113_2
+RETURN 1
+
 @M_KOJO_総合スレ７４９_SPEVENT_K113_2(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
-CALL SPEVENT_MESSAGE_2(ARG,ARG:1)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -196,16 +222,16 @@ IF LOCAL
 		PRINTFORML 
 		;初回
 		IF FIRSTTIME("告白")
-			PRINTFORML 「决定了，%CALLNAME:MASTER%」
-			PRINTFORMDW 在约会结束的路上。赫卡提亚突然凝视着这边，说道。
-			PRINTFORML 「我将把你，作为地狱女神的伴侣」
-			PRINTFORMW 「我告诉你，这可不是开玩笑。我是认真的」
-			PRINTFORMDW 面带异常认真表情的她，%CALLNAME:MASTER%……
-		;第二次之后
+			PRINTFORML 「我已经决定了，%CALLNAME:MASTER%」
+			PRINTFORMDW 在约会回家的路上，赫卡蒂亚突然直视著我这么说道：
+			PRINTFORML 「我要你成为我，地狱女神的伴侣。」
+			PRINTFORMW 「先说清楚，这不是玩笑。我是认真的。」
+			PRINTFORMDW 面对她罕见的认真表情，%CALLNAME:MASTER%……
+		;二回目以降
 		ELSE
-			PRINTFORML 「%CALLNAME:MASTER%。自那之后有改变吗？」
-			PRINTFORML 「呵呵呵……装傻吗♪你其实也明白的对吧？」
-			PRINTFORMDW 看来赫卡提亚还没有放弃%CALLNAME:MASTER%……
+			PRINTFORML 「%CALLNAME:MASTER%，从那之后你的感觉有变化吗？」
+			PRINTFORML 「呵呵呵呵……是不是有点心不在焉？你也应该明白吧？」
+			PRINTFORMDW 赫卡蒂亚似乎还没放弃%CALLNAME:MASTER%……
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -234,14 +260,24 @@ IF LOCAL
 	ENDIF
 ENDIF
 RETURN 1
-
 ;==================================================
 ;デート帰り
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_SPEVENT_MESSAGECHECK_K113_3
+RETURN 0
+
 @M_KOJO_総合スレ７４９_SPEVENT_K113_3(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
-CALL SPEVENT_MESSAGE_3(ARG,ARG:1)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -375,44 +411,47 @@ IF LOCAL
 		;正月、バレンタイン、ハロウィン、クリスマスの場合
 		IF (DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)
 			CALL SPECIALDAY_EVENT_K113_総合スレ７４９
+		;不機嫌
 		ELSEIF CFLAG:318 == 1
-			PRINTFORML 「……啊，%CALLNAME:MASTER%。你在这里？」
-			PRINTFORMDW 赫卡提亚似乎心情不好……
-		;不是在工作中，今天没有见面。
-		ELSEIF !TCVAR:113:今日会ったか
-			SELECTCASE TIME:2
-				;早上
-				CASE 1,2
-					PRINTFORML 「早上好～！」
-					SELECTCASE RAND:2
-						CASE 0
-							PRINTFORMW 「希望今天也会发生有趣的事情♪」
-						CASE 1
-							PRINTFORMW 「清新的早晨啊，%CALLNAME:MASTER%♪」
-					ENDSELECT
-				;中午
-				CASE 3,4
-					PRINTFORML 「下午好～！」
-					SELECTCASE RAND:2
-						CASE 0
-							PRINTFORMW 「“谐音不好听”？这样吗？」
-						CASE 1
-							PRINTFORMW 「%CALLNAME:MASTER%，你的事情已经办完了吗？」
-					ENDSELECT
-				;晚上
-				CASE 5,6,7
-					SELECTCASE RAND:2
-						CASE 0
-							PRINTFORML 「晚上好～！」
-							PRINTFORMW 「我们的时间从现在开始，对吧，%CALLNAME:MASTER%♪」
-						CASE 1
-							PRINTFORML 「你到底去了哪里呢？%CALLNAME:MASTER%」
-							PRINTFORMW 「作为惩罚，今晚我要你陪我直到天亮♪」
-					ENDSELECT
-			ENDSELECT
+			IF !TCVAR:113:今日会ったか
+				PRINTFORML 「……啊，%CALLNAME:MASTER%。你在这里吗？」
+				PRINTFORMDW 赫卡蒂亚似乎心情不好……
+			ELSE
+				PRINTFORML 「你刚才一直在嘟囔……在做什么？」
+				PRINTFORMDW 赫卡蒂亚似乎还是心情不佳……
+			ENDIF
 		ELSE
-			IF CFLAG:318 == 1
-				PRINTFORMW 「一直在到处晃荡……你在做什么？」
+			IF !TCVAR:113:今日会ったか
+				SELECTCASE TIME:2
+					;早上
+					CASE 1,2
+						PRINTFORML 「早上好～！」
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORMW 「希望今天也会发生有趣的事情♪」
+							CASE 1
+								PRINTFORMW 「清新的早晨啊，%CALLNAME:MASTER%♪」
+						ENDSELECT
+					;中午
+					CASE 3,4
+						PRINTFORML 「下午好～！」
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORMW 「“谐音不好听”？这样吗？」
+							CASE 1
+								PRINTFORMW 「%CALLNAME:MASTER%，你的事情已经办完了吗？」
+						ENDSELECT
+					;晚上
+					CASE 5,6,7
+						SELECTCASE RAND:2
+							CASE 0
+								PRINTFORML 「晚上好～！」
+								PRINTFORMW 「我们的时间从现在开始，对吧，%CALLNAME:MASTER%♪」
+							CASE 1
+								PRINTFORML 「你到底去了哪里呢？%CALLNAME:MASTER%」
+								PRINTFORMW 「作为惩罚，今晚我要你陪我直到天亮♪」
+						ENDSELECT
+				ENDSELECT
 			ELSE
 				SELECTCASE RAND:2
 					CASE 0
@@ -423,212 +462,211 @@ IF LOCAL
 			ENDIF
 		ENDIF
 		RETURN 1
-		;-------------------------------------------------
-		;TARGETが入ってきた
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 2
-			;正月、バレンタイン、ハロウィン、クリスマスの場合
-			IF (DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)
-				CALL SPECIALDAY_EVENT_K113_総合スレ７４９
-			ELSEIF CFLAG:318 == 1
-				PRINTFORML 「……啊，%CALLNAME:MASTER%。你在这里？」
-				PRINTFORMDW 赫卡提亚似乎心情不好……
-			IF TALENT:恋慕 || TALENT:思慕
-				SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「房间里依旧物品稀少呢……」
-						PRINTFORML 「只是睡觉起床，就这种感觉」
-					CASE 1
-						PRINTFORML 「%CALLNAME:MASTER%。主人要来玩了哦♪」
-						PRINTFORML 「快快，茶还没好吗？」
-					CASE 2
-						CALL HPH_PRINT,@"「哎呀♪拿出这么色情的书，想做什么呢？」","L"
-				ENDSELECT
-				PRINTFORMDW 赫卡提亚突然走进了房间……
-			ELSE
-				SELECTCASE RAND:3
-					CASE 0
-						PRINTFORML 「突击检查！房间查看♪」
-					CASE 1
-						PRINTFORML 「打扰了哦」
-					CASE 2
-						PRINTFORML 「啊，刚刚藏了什么吧？」
-				ENDSELECT
-				PRINTFORMDW 赫卡提亚突然走进了房间……
-			ENDIF
+	ENDIF
+	;-------------------------------------------------
+	;TARGETが入ってきた
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 2
+		;正月、バレンタイン、ハロウィン、クリスマスの場合
+		IF (DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)
+			CALL SPECIALDAY_EVENT_K113_総合スレ７４９
+		ELSEIF CFLAG:318 == 1
+			PRINTFORML 「……啊，%CALLNAME:MASTER%。你在这里吗？」
+			PRINTFORMDW 赫卡蒂亚似乎心情不好……
+		ELSEIF TALENT:恋慕 || TALENT:思慕
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「房间里的东西还是和往常一样少呢……」
+					PRINTFORML 「就是睡觉和起床的日常感觉」
+				CASE 1
+					PRINTFORML 「%CALLNAME:MASTER%。主人大人来玩了吗？」
+					PRINTFORML 「哎呀，茶还没泡吗？」
+				CASE 2
+					CALL HPH_PRINT,@"「咦咦？你竟然拿出这种色情书，想干嘛呀~ HPH」","L"
+			ENDSELECT
+			PRINTFORMDW 赫卡蒂亚突然走进了房间...
+		ELSE
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「突袭！房间检查一下~」
+				CASE 1
+					PRINTFORML 「我来打扰一下了~」
+				CASE 2
+					PRINTFORML 「哎呀，我刚刚好像藏了什么？？」
+			ENDSELECT
+			PRINTFORMDW 赫卡蒂亚突然走进了房间...
 		ENDIF
-		RETURN 1
-		;-------------------------------------------------
-		;TARGETが風呂に入ってきて一緒に入る
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 3
-			IF TALENT:恋慕 || TALENT:思慕
-				PRINTFORML 「%CALLNAME:MASTER%。比起主人先入浴，我可不会感到钦佩呢」
-				PRINTFORML 「是要给我洗背，还是接受惩罚，你自己选吧」
-				PRINTFORMDW 决定给赫卡提亚洗背……
-			ELSE
-				PRINTFORML 「哎呀，不是%CALLNAME:MASTER%呀。正好啊♪」
-				PRINTFORML 「我会把洗我背的权利交给你」
-				PRINTFORMDW 不知怎么地，竟然和赫卡提亚一起洗澡了……
-			ENDIF
+	ENDIF
+	RETURN 1
+	;-------------------------------------------------
+	;TARGETが風呂に入ってきて一緒に入る
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 3
+		IF TALENT:恋慕 || TALENT:思慕
+			PRINTFORML 「%CALLNAME:MASTER%。您竟然比我主人还先洗澡，真是令人惊讶呢~」
+			PRINTFORML 「你要选择，是流过我的背脊，还是接受惩罚？」
+			PRINTFORMDW 选择了让赫卡蒂亚的背脊接受洗礼……
+		ELSE
+			PRINTFORML 「哎呀，不是%CALLNAME:MASTER%。这刚刚好呢?」
+			PRINTFORML 「就讓你擁有讓我從背後流过的權利吧。」
+			PRINTFORMDW 不知怎的，我與赫卡蒂亞開始一起洗澡……
 		ENDIF
+	ENDIF
+	RETURN 1
+	;-------------------------------------------------
+	;TARGETが風呂に入ってきて出て行った
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 4
+		PRINTFORML 「哎？%CALLNAME:MASTER%，你进来了啊」
+		PRINTFORML 「我会等着你，快点出来吧」
+		PRINTFORMDW 赫卡提亚走出了浴室……
 		RETURN 1
 	ENDIF
-		;-------------------------------------------------
-		;TARGETが風呂に入ってきて出て行った
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 4
-			PRINTFORML 「哎？%CALLNAME:MASTER%，你进来了啊」
-			PRINTFORML 「我会等着你，快点出来吧」
-			PRINTFORMDW 赫卡提亚走出了浴室……
-			RETURN 1
-		ENDIF
-		;-------------------------------------------------
-		;TARGETが風呂に入ってきて追い出された
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 5
-			PRINTFORML 「好啦，你就到此为止吧~！」
-			PRINTFORML 「我要进来洗澡了，快点出去吧」
-			PRINTFORMDW 在赫卡提亚后来进来后，被赶出了浴室……
-			RETURN 1
-		ENDIF
-		;-------------------------------------------------
-		;外出先で遭遇した
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 6
-			;正月、バレンタイン、ハロウィン、クリスマスの場合
-			IF (DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)
-				CALL SPECIALDAY_EVENT_K113_総合スレ７４９
-			ELSEIF CFLAG:318 == 1
-				PRINTFORML 「……你啊，到处都能见到呢」
-				PRINTFORMDW 赫卡提亚似乎心情不好……
-			ELSE
-				IF TALENT:恋慕 || TALENT:思慕
-					PRINTFORML 「找到你了哦～%CALLNAME:MASTER%」
-					SELECTCASE RAND:2
-						CASE 0
-							PRINTFORML 「难道你不想见我吗？」
-							PRINTFORMDW 有时候也想一个人静一静。
-						CASE 1
-							PRINTFORML 「是想躲开主人吗？」
-							PRINTFORMDW 不知道是如何找到的，但赫卡提亚被找到了……
-					ENDSELECT
-				ELSE
-					PRINTFORML 「原来不是%CALLNAME:MASTER%啊」
-					SELECTCASE RAND:2
-						CASE 0
-							PRINTFORML 「你在这里做什么呢？」
-							PRINTFORMDW 赫卡提亚到底在想些什么呢……？
-						CASE 1
-							PRINTFORML 「一个人来玩的吗？真是闲人一个……」
-							PRINTFORMDW 赫卡提亚带着怜悯的眼神……
-					ENDSELECT
-				ENDIF
-			ENDIF
+	;-------------------------------------------------
+	;TARGETが風呂に入ってきて追い出された
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 5
+		PRINTFORML 「好啦，你就到此为止吧~！」
+		PRINTFORML 「我要进来洗澡了，快点出去吧」
+		PRINTFORMDW 在赫卡提亚后来进来后，被赶出了浴室……
 		RETURN 1
-		ENDIF
-		;-------------------------------------------------
-		;他キャラとデート中に遭遇した
-		;ARG:1にデート相手
-		;記入チェック（=0, 非表示、1, 表示）
-		LOCAL:1 = 1
-		;-------------------------------------------------
-		IF LOCAL:1 && ARG == 7
-			IF FLAG:デート相手 == 1;霊夢
-				PRINTFORML 「哎呀，好久不见啦♪」
-				PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
-			ELSEIF FLAG:デート相手 == 11;魔理沙
-				PRINTFORML 「哎呀，好久不见啦♪」
-				PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
-			ELSEIF FLAG:デート相手 == 30;映姬
-				IF TALENT:30:恋人
-					CALL HPH_PRINT,@"「哎呀呀…♪连阎魔大人也放松地扭着鼻子……HPH」","L"
-				ELSE
-					PRINTFORML 「呵呵呵……看起来很开心呢，映姬♪」
-				ENDIF
-				PRINTFORML 「好啦♪讨厌的家伙快点消失吧♪」
-				PRINTFORMDW 赫卡提亚非常开心地逗弄着映姬。
-			ELSEIF FLAG:デート相手 == 31;早苗
-				PRINTFORML 「哎呀，好久不见啦♪」
-				PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
-			ELSEIF FLAG:デート相手 == 52;鈴仙
-				PRINTFORML 「来看纯狐了吗？」
-				PRINTFORML 「我觉得她在家。%CALLNAME:MASTER%，带她过来吧」
-				PRINTFORMDW 不知为何要见到纯狐……
-			ELSEIF FLAG:デート相手 == 98;依姬
-				PRINTFORML 「呀～不纯洁～♪会被玷污～♪」
-				PRINTFORML 「——什么？要杀人吗？粗暴的女人%CALLNAME:MASTER%可不会喜欢哦」
-				PRINTFORMDW 气氛有点尴尬……
-			ELSEIF FLAG:デート相手 == 99;豊姫
-				PRINTFORML 「呀～不纯洁～♪会被玷污～♪」
-				PRINTFORML 「——什么？要杀人吗？粗暴的女人%CALLNAME:MASTER%可不会喜欢哦」
-				PRINTFORMDW 气氛有点尴尬……
-			ELSEIF FLAG:デート相手 == 100;レイセン
-				PRINTFORML 「啊，看见了♪要告诉姐妹吗？」
-				PRINTFORMW 「啊哈哈！开玩笑啦♪」
-			ELSEIF FLAG:デート相手 == 107;清兰
-				PRINTFORML 「有事吗？月之兔子♪」
-				PRINTFORML 「啊哈哈！你这副表情，躲在%CALLNAME:MASTER%背后也没用哦♪」
-				PRINTFORMDW 清兰略带颤抖地瞪着赫卡提亚……
-			ELSEIF FLAG:デート相手 == 108;鈴瑚
-				PRINTFORML 「有事吗？月之兔子」
-				PRINTFORML 「……总之，先停止吃东西吧」
-				PRINTFORMDW 鈴瑚警惕地吃着团子，同时留意着赫卡提亚……
-			ELSEIF FLAG:デート相手 == 109;ドレミー
-				PRINTFORML 「在这里碰到你真巧。能给我枕头吗？」
-				PRINTFORML 「报酬就交给你们的%CALLNAME:MASTER%吧……♪」
-				PRINTFORMDW 显然察觉到了，哆来咪摇头拒绝了。
-			ELSEIF FLAG:デート相手 == 110;探女
-				PRINTFORML 「嗨♪你好～♪」
-				PRINTFORML 「……唉，不要无视人家，这样很不礼貌」
-				PRINTFORMDW 探女用求助的眼神看着这边……
-			ELSEIF FLAG:デート相手 == 111;克劳恩皮丝
-				IF CFLAG:MASTER:初期位置 == 1063
-					PRINTFORML 「两位。如果要晚点回来，记得提前告诉我或者纯狐」
-				ELSE
-					PRINTFORML 「皮丝。如果有想要的东西，记得让%CALLNAME:MASTER%买给你哦？」
-				ENDIF
-				PRINTFORMDW 克劳恩皮丝开心地回答了。
-			ELSEIF FLAG:デート相手 == 112;纯狐
-				IF CFLAG:MASTER:初期位置 == 1063
-					PRINTFORML 「明白吗？纯狐。不用在意我和皮丝的事情……」
-					CALL HPH_PRINT,@"「%CALLNAME:MASTER%，尽情享受吧HPH」","L"
-					PRINTFORMDW 是什么呢……？
-				ELSE
-					PRINTFORML 「%CALLNAME:MASTER%。如果让纯狐觉得无聊，我可不会答应」
-					PRINTFORMDW "放心吧"，我自信地回答道。
-				ENDIF
-			ELSEIF TALENT:113:恋人
-				PRINTFORML 「感觉有点奇怪，原来是这样啊……」
-				PRINTFORML 「不是生气哦？看，笑一个，笑一个♪」
-				PRINTFORMDW 眼睛里并没有笑意……
-			ELSEIF TALENT:111:恋人 || TALENT:112:恋人
-				PRINTFORML 「……%CALLNAME:MASTER%。有这么好的恋人，还会出轨？」
-				IF TALENT:111:恋人 
-					PRINTFORML 「唉～……皮丝究竟看上了"这个"哪里呢……」
-				ELSE
-					PRINTFORML 「我要告诉纯狐」
-				ENDIF
-				PRINTFORMDW 被赫卡提亚发现了……
-			ELSEIF TALENT:恋慕 || TALENT:思慕
-				PRINTFORML 「放下%CALLNAME:MASTER%去约会……」
-				PRINTFORML 「我可没教过你这样不好的孩子%CALLNAME:MASTER%」
-				PRINTFORMDW 没有教过这种事…
+	ENDIF
+	;-------------------------------------------------
+	;外出先で遭遇した
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 6
+		;正月、バレンタイン、ハロウィン、クリスマスの場合
+		IF (DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)
+			CALL SPECIALDAY_EVENT_K113_総合スレ７４９
+		ELSEIF CFLAG:318 == 1
+			PRINTFORML 「……你啊，到处都能见到呢」
+			PRINTFORMDW 赫卡提亚似乎心情不好……
+		ELSE
+			IF TALENT:恋慕 || TALENT:思慕
+				PRINTFORML 「找到你了哦～%CALLNAME:MASTER%」
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「难道你不想见我吗？」
+						PRINTFORMDW 有时候也想一个人静一静。
+					CASE 1
+						PRINTFORML 「是想躲开主人吗？」
+						PRINTFORMDW 不知道是如何找到的，但赫卡提亚被找到了……
+				ENDSELECT
 			ELSE
-				PRINTFORML 「哎呀，你们两个关系真好呢」
-				PRINTFORML 「要不要把皮丝也叫来，让你们更"有心思"呢？」
-				PRINTFORMDW "多管闲事"，赫卡提亚被赶走了。
+				PRINTFORML 「原来不是%CALLNAME:MASTER%啊」
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「你在这里做什么呢？」
+						PRINTFORMDW 赫卡提亚到底在想些什么呢……？
+					CASE 1
+						PRINTFORML 「一个人来玩的吗？真是闲人一个……」
+						PRINTFORMDW 赫卡提亚带着怜悯的眼神……
+				ENDSELECT
 			ENDIF
+		ENDIF
+	RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;他キャラとデート中に遭遇した
+	;ARG:1にデート相手
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 7
+		IF FLAG:デート相手 == 1;霊夢
+			PRINTFORML 「哎呀，好久不见啦♪」
+			PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
+		ELSEIF FLAG:デート相手 == 11;魔理沙
+			PRINTFORML 「哎呀，好久不见啦♪」
+			PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
+		ELSEIF FLAG:デート相手 == 30;映姬
+			IF TALENT:30:恋人
+				CALL HPH_PRINT,@"「哎呀呀…♪连阎魔大人也放松地扭着鼻子……HPH」","L"
+			ELSE
+				PRINTFORML 「呵呵呵……看起来很开心呢，映姬♪」
+			ENDIF
+			PRINTFORML 「好啦♪讨厌的家伙快点消失吧♪」
+			PRINTFORMDW 赫卡提亚非常开心地逗弄着映姬。
+		ELSEIF FLAG:デート相手 == 31;早苗
+			PRINTFORML 「哎呀，好久不见啦♪」
+			PRINTFORMW 「今天我们两个一起友好地解决事件吧？」
+		ELSEIF FLAG:デート相手 == 52;鈴仙
+			PRINTFORML 「来看纯狐了吗？」
+			PRINTFORML 「我觉得她在家。%CALLNAME:MASTER%，带她过来吧」
+			PRINTFORMDW 不知为何要见到纯狐……
+		ELSEIF FLAG:デート相手 == 98;依姬
+			PRINTFORML 「呀～不纯洁～♪会被玷污～♪」
+			PRINTFORML 「——什么？要杀人吗？粗暴的女人%CALLNAME:MASTER%可不会喜欢哦」
+			PRINTFORMDW 气氛有点尴尬……
+		ELSEIF FLAG:デート相手 == 99;豊姫
+			PRINTFORML 「呀～不纯洁～♪会被玷污～♪」
+			PRINTFORML 「——什么？要杀人吗？粗暴的女人%CALLNAME:MASTER%可不会喜欢哦」
+			PRINTFORMDW 气氛有点尴尬……
+		ELSEIF FLAG:デート相手 == 100;レイセン
+			PRINTFORML 「啊，看见了♪要告诉姐妹吗？」
+			PRINTFORMW 「啊哈哈！开玩笑啦♪」
+		ELSEIF FLAG:デート相手 == 107;清兰
+			PRINTFORML 「有事吗？月之兔子♪」
+			PRINTFORML 「啊哈哈！你这副表情，躲在%CALLNAME:MASTER%背后也没用哦♪」
+			PRINTFORMDW 清兰略带颤抖地瞪着赫卡提亚……
+		ELSEIF FLAG:デート相手 == 108;鈴瑚
+			PRINTFORML 「有事吗？月之兔子」
+			PRINTFORML 「……总之，先停止吃东西吧」
+			PRINTFORMDW 鈴瑚警惕地吃着团子，同时留意着赫卡提亚……
+		ELSEIF FLAG:デート相手 == 109;ドレミー
+			PRINTFORML 「在这里碰到你真巧。能给我枕头吗？」
+			PRINTFORML 「报酬就交给你们的%CALLNAME:MASTER%吧……♪」
+			PRINTFORMDW 显然察觉到了，哆来咪摇头拒绝了。
+		ELSEIF FLAG:デート相手 == 110;探女
+			PRINTFORML 「嗨♪你好～♪」
+			PRINTFORML 「……唉，不要无视人家，这样很不礼貌」
+			PRINTFORMDW 探女用求助的眼神看着这边……
+		ELSEIF FLAG:デート相手 == 111;克劳恩皮丝
+			IF CFLAG:MASTER:初期位置 == 1063
+				PRINTFORML 「两位。如果要晚点回来，记得提前告诉我或者纯狐」
+			ELSE
+				PRINTFORML 「皮丝。如果有想要的东西，记得让%CALLNAME:MASTER%买给你哦？」
+			ENDIF
+			PRINTFORMDW 克劳恩皮丝开心地回答了。
+		ELSEIF FLAG:デート相手 == 112;纯狐
+			IF CFLAG:MASTER:初期位置 == 1063
+				PRINTFORML 「明白吗？纯狐。不用在意我和皮丝的事情……」
+				CALL HPH_PRINT,@"「%CALLNAME:MASTER%，尽情享受吧HPH」","L"
+				PRINTFORMDW 是什么呢……？
+			ELSE
+				PRINTFORML 「%CALLNAME:MASTER%。如果让纯狐觉得无聊，我可不会答应」
+				PRINTFORMDW "放心吧"，我自信地回答道。
+			ENDIF
+		ELSEIF TALENT:113:恋人
+			PRINTFORML 「感觉有点奇怪，原来是这样啊……」
+			PRINTFORML 「不是生气哦？看，笑一个，笑一个♪」
+			PRINTFORMDW 眼睛里并没有笑意……
+		ELSEIF TALENT:111:恋人 || TALENT:112:恋人
+			PRINTFORML 「……%CALLNAME:MASTER%。有这么好的恋人，还会出轨？」
+			IF TALENT:111:恋人 
+				PRINTFORML 「唉～……皮丝究竟看上了"这个"哪里呢……」
+			ELSE
+				PRINTFORML 「我要告诉纯狐」
+			ENDIF
+			PRINTFORMDW 被赫卡提亚发现了……
+		ELSEIF TALENT:恋慕 || TALENT:思慕
+			PRINTFORML 「放下%CALLNAME:MASTER%去约会……」
+			PRINTFORML 「我可没教过你这样不好的孩子%CALLNAME:MASTER%」
+			PRINTFORMDW 没有教过这种事…
+		ELSE
+			PRINTFORML 「哎呀，你们两个关系真好呢」
+			PRINTFORML 「要不要把皮丝也叫来，让你们更"有心思"呢？」
+			PRINTFORMDW "多管闲事"，赫卡提亚被赶走了。
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -4960,19 +4998,29 @@ IF LOCAL
 	PRINTL 
 ENDIF
 RETURN 1
-
 ;==================================================
 ;デイリーイベント2,夢精
-;親密5以上で発生（来訪キャラのみ）
+;濃厚精液状態で発生
 ;▼地の文--------------------------------------------------
 ;【MASTER】が夢精で汚した下着を洗っていると【TARGET】が飛んできた！
 ;【TARGET】はそんなもの他の洗濯物と一緒に洗わないでと抗議すると、【MASTER】の手に収まった下着をふんだくり戻っていった…
 ;【TARGET】　欲情の珠＋1000
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_DAILY_EVENT_MESSAGECHECK_K113_2
+RETURN 0
+
 @M_KOJO_総合スレ７４９_DAILY_EVENT_K113_2(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;地の文を変えたければコメントアウト
 ;※コメントアウトすると欲情の珠＋1000（JUEL:11 += 1000）もカットされるので注意
-CALL DAILY_MESSAGE_2(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 0
@@ -4984,14 +5032,25 @@ RETURN 1
 
 ;==================================================
 ;デイリーイベント4,物思い
-;濃厚精液状態で発生
+;親密5以上で発生（来訪キャラのみ）
 ;▼地の文--------------------------------------------------
 ;とりとめもない思考に耽っていた【TARGET】は、いつの間にか【MASTER】のことを考えていたことに気づいた
 ;【TARGET】は明日【MASTER】に会いに行くことにしたようだ
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_DAILY_EVENT_MESSAGECHECK_K113_4
+RETURN 0
+
 @M_KOJO_総合スレ７４９_DAILY_EVENT_K113_4(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;地の文を変えたければコメントアウト
-CALL DAILY_MESSAGE_4(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 0
@@ -5005,10 +5064,21 @@ RETURN 1
 ;デイリーイベント12,特訓
 ;信頼100以上で発生（拠点キャラのみ）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;（任意）:通常の地の文を表示するかスキップするか決定する。
+;RETURN 0;通常地の文と口上を表示
+;RETURN 1;口上のみ表示
+;RETURN 2;通常地の文のみ表示
+;RETURN 3;どちらも表示しない
+;==================================================
+@M_KOJO_総合スレ７４９_DAILY_EVENT_MESSAGECHECK_K113_12
+RETURN 0
+
 @M_KOJO_総合スレ７４９_DAILY_EVENT_K113_12(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;地の文を変えたければコメントアウト
 ;コメントアウトできるのはARG:1=1,2のみです
-CALL DAILY_MESSAGE_12(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 0
@@ -5402,8 +5472,8 @@ SIF 0
 	SIF YOUBI_MATCH(DAY, "水木") && INRANGE(TIME, 720, 1020) && CFLAG:今日の運勢 % 2 == 0
 		TCVAR:引力点 = P213鈴奈庵
 	;特定の人物が特定の場所にいるとそこへ引っ張られる
-		SIF CFLAG:[[白蓮]]:現在位置 == P103本堂 && !CFLAG:[[白蓮]]:うふふ && SHIRAHU([[白蓮]])
-			TCVAR:引力点 = P103本堂
+	SIF CFLAG:[[白蓮]]:現在位置 == P103本堂 && !CFLAG:[[白蓮]]:うふふ && SHIRAHU([[白蓮]])
+		TCVAR:引力点 = P103本堂
 	;土日に10分の1の確率で特定の人物にくっついてまわる
 	SIF YOUBI_MATCH(DAY, "土日") && CFLAG:今日の運勢 % 10 == 0 && !CFLAG:[[さとり]]:うふふ && SHIRAHU([[さとり]])
 		TCVAR:引力点 = CFLAG:[[さとり]]:現在位置
@@ -5427,7 +5497,7 @@ IF LOCAL:1
 	SELECTCASE ARGS
 	CASE "衝突"
 		;-------------------------------------------------
-		;場外に出て%CALLNAME:MASTER%がキャラと衝突した際の台詞
+		;場外に出てあなたがキャラと衝突した際の台詞
 		;文字数制限はありません,汎用台詞もありません
 		;-------------------------------------------------
 		RESULTS = いたっ！ ちょっと、危ないじゃないのよ！
@@ -5480,3 +5550,57 @@ IF LOCAL:1
 		ENDSELECT
 	ENDSELECT
 ENDIF
+
+;外出先特殊遭遇イベント
+@RUN_INTO_総合スレ７４９_K113(MAP_ID)
+#DIM MAP_ID
+;K113をキャラ番号に置換
+;最後に必ずRETURN 1すること
+;面識がない場合発生させないなど、あえて不発にさせたい場合RETURN -1すること
+;	SIF !CFLAG:XX:面識
+;		RETURN -1
+;	PRINTFORML %CALLNAME:XX%在场
+;	PRINTFORML 「你好」
+;	CFLAG:XX:好感度 += 5
+;	RETURN 1
+
+;セフレ契約用
+;"補正"でRETURNした数値が理性判定に加算されるので、
+;簡単にセフレにしたいならマイナス、難易度を上げたかったり実質不可能にしたいならプラスすべし
+@KOJO_総合スレ７４９_SF_CONTRACT_EVENT_K113(ARGS)
+SELECTCASE ARGS
+	CASE "導入"
+		IF TALENT:111:恋人 || TALENT:112:恋人
+			PRINTFORMW 「……明明有那么好的恋人，竟然还堂而皇之地搞外遇呢……？」
+		ELSE
+			PRINTFORMW 「……是想把我，这个地狱女神当情妇吗？」
+		ENDIF
+	CASE "補正"
+		;PRINTFORML （我突然想快点搞定）
+		;RETURN -1000
+	CASE "成功"
+		IF TALENT:111:恋人 || TALENT:112:恋人
+			PRINTFORML （但也许我不能拒绝……）
+			CALL HPH_PRINT,@"「秘密的恋情其实也不坏呢……哈啊」","L"
+			PRINTFORMDW 赫卡提亚一边露出冶艳的笑容，一边向%CALLNAME:MASTER%的裆部蹭去……！
+		ELSE
+			PRINTFORML 「本来的话，我真想给你带来足以粉碎灵魂的痛楚……」
+			CALL HPH_PRINT,@"「不过和你的话，仅限身体的关系也未必是坏事呢……哈啊」","L"
+			PRINTFORMDW 得到了赫卡提亚的同意……！
+		ENDIF
+	CASE "失敗"
+		IF TALENT:111:恋人 || TALENT:112:恋人
+			PRINTFORML 「怎么样？有没有改变主意？」
+			PRINTFORML 「……好吧好吧？那就当刚才的玩笑没说过吧」
+		ELSE
+			PRINTFORML 「真是的，我也被看扁了……」
+		ENDIF
+		PRINTFORMDW 从赫卡提亚那里得到的并不是同意，而是惩罚……"
+ENDSELECT
+
+;一般依頼の抑制
+;ARG is request number
+;If this function returns 1, that request will not occur for this character
+@M_KOJO_総合スレ７４９_CHECK_K113_IRAI_BLOCKED(ARGS,ARG,ARG:1)
+; SIF GROUPMATCH(ARG, 2)
+;     RETURN 1
