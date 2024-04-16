@@ -1,0 +1,282 @@
+﻿
+;-------------------------------------------------
+;Eratoho The World 4.881用 露米娅Moe版口上Ver1.04 
+;-------------------------------------------------
+;==========================================================
+
+;施工中……
+
+;==========================================================
+;怕太阳函数，FLAGSETTING里面CALL的部分
+;==========================================================
+@MOE_RUMIA_SUN_BURN_IN_FLAGSETTING
+
+IF  ( (TIME > 360) && (TIME < 1080) ) && (CFLAG:12:1360 != 1) && (TIME - TCVAR:12:361 > 5) 
+	CALL MOE_RUMIA_SUN_BURN() 
+	SIF ( CFLAG:12:1001 || CFLAG:12:1201 )	&& OUTROOF(CFLAG:12:300);解锁了雨伞用法
+	TEQUIP:12:201 = 1
+ENDIF 
+
+;==========================================================
+;宵暗妖怪怕太阳函数
+;还原原设的，露米娅不适应光线的设定……
+;CFLAG:12:1360 记录是否使用晒伤设定，0为削弱强度，2为原设强度
+;TCVAR:12:360	当日已经被扣除的总体力
+;TCVAR:12:361	本函数内记录的上次时间变化
+;==========================================================
+@MOE_RUMIA_SUN_BURN()
+#DIM SUN_STRENGTH	;单次被太阳晒伤的程度
+#DIM SUN_STRENGTH_REALITY	;实际上需要转换成这个值（削弱的情况
+#DIM TOTAL_SUN_BRUN;被太阳晒得太多次的程度	
+
+SUN_STRENGTH = 0 
+SUN_STRENGTH_REALITY = 0 
+
+SIF ONCE("MOE_RUMIA_SUN_BURN_FIRST")
+TCVAR:12:361 = TIME 
+
+;太阳最盛的时候……
+IF ( (TIME > 720) && (TIME < 960) ) 
+	SUN_STRENGTH += 100
+ELSEIF  ( (TIME > 600) && (TIME < 720) ) ||  ( (TIME > 960) && (TIME < 1020) ) 
+	SUN_STRENGTH += 75
+ELSEIF ( (TIME > 480) && (TIME < 600) ) ||  ( (TIME > 1020) && (TIME < 1050) ) 
+	SUN_STRENGTH += 50
+ELSE 
+	SUN_STRENGTH += 30
+ENDIF 
+
+;季节不一样的时候
+IF DAY:2 == 2
+	SUN_STRENGTH += 20
+ELSEIF DAY:2 == 4
+	SUN_STRENGTH -= 10
+ENDIF
+
+;天气不一样的时候
+IF GROUPMATCH(DAY:5 , 8 , 9 , 10 , 11 , 12 )	;下雪天
+	SUN_STRENGTH -= 15
+ELSEIF GROUPMATCH(DAY:5 , 3 , 4 , 13 )	;下雨或冰雹
+	SUN_STRENGTH -= 10
+ELSEIF DAY:5 == 3 	;多云
+	SUN_STRENGTH += 5
+ELSE 		;晴天或晴朗
+	SUN_STRENGTH += 20
+ENDIF 
+
+;其他的情况
+IF SUN_STRENGTH > 0
+
+	;异常气象：烈日的时候
+	SIF FLAG:89 == 13
+	SUN_STRENGTH *= 3
+
+	;非朋友约会的时候
+	SIF !(CFLAG:12:1001 || CFLAG:12:1201) && FLAG:73 != 12
+	SUN_STRENGTH = 0
+
+	;自由行动黑球的时候
+	SIF TCVAR:12:355
+	SUN_STRENGTH = 0
+
+	;一周目没有见面的时候
+	SIF (CFLAG:12:300 != CFLAG:0:300) && !CFLAG:12:1200
+	SUN_STRENGTH /= 4	
+
+	;二周目的时候
+	SIF CFLAG:12:1200
+	SUN_STRENGTH /= 5
+
+	;在室内的时候
+	SIF !OUTROOF(CFLAG:12:300)
+	SUN_STRENGTH /= 5
+
+	;在地底的时候
+	SIF GET_MAPID(CFLAG:12:現在位置) == 9
+	SUN_STRENGTH /= 2
+
+	;有共用雨伞的时候
+	SIF TEQUIP:12:201
+	SUN_STRENGTH /= 2
+
+	;在家的时候，与室内可以叠加，极大地削弱光线
+	IF CFLAG:12:300 == CFLAG:12:311 
+		SUN_STRENGTH /= 3
+		SIF SUN_STRENGTH  > 29 
+			SUN_STRENGTH = 20 
+	ENDIF  
+
+ELSE 
+	SUN_STRENGTH = 0
+ENDIF 
+
+IF SUN_STRENGTH
+	;单日内越晒越受不了
+	SELECTCASE TCVAR:12:360 	;当日被晒掉的总体力
+		CASE IS > 3000
+			TIMES SUN_STRENGTH , 3.21
+		CASE IS > 2000
+			TIMES SUN_STRENGTH , 2.43
+		CASE IS > 1500
+			TIMES SUN_STRENGTH , 2.01
+		CASE IS > 1000
+			TIMES SUN_STRENGTH , 1.72
+		CASE IS > 750
+			TIMES SUN_STRENGTH , 1.45
+		CASE IS > 500
+			TIMES SUN_STRENGTH , 1.27
+		CASE IS > 250
+			TIMES SUN_STRENGTH , 1.10
+		CASEELSE
+	ENDSELECT
+	;数值随机化
+	IF SUN_STRENGTH > 100 
+		SUN_STRENGTH *= (90 + RAND:20)
+		SUN_STRENGTH /= 100 
+	ELSEIF SUN_STRENGTH > 50 
+		SUN_STRENGTH *= (45 + RAND:10)
+		SUN_STRENGTH /= 50
+	ELSE 
+		SUN_STRENGTH *= (10 + RAND:3)
+		SUN_STRENGTH /= 10
+	ENDIF 
+	;太低的时候就不扣了
+	SIF SUN_STRENGTH < 7
+		SUN_STRENGTH = 0
+ENDIF 
+
+;次数足够多的话会产生耐受
+SELECTCASE CFLAG:12:1361 
+	CASE IS > 10000 
+		TIMES SUN_STRENGTH,0.10
+	CASE IS > 7500
+		TIMES SUN_STRENGTH,0.21
+	CASE IS > 4500
+		TIMES SUN_STRENGTH,0.35
+	CASE IS > 2500
+		TIMES SUN_STRENGTH,0.50
+	CASE IS > 1500
+		TIMES SUN_STRENGTH,0.65
+	CASE IS > 1000
+		TIMES SUN_STRENGTH,0.72
+	CASE IS > 750
+		TIMES SUN_STRENGTH,0.78
+	CASE IS > 300
+		TIMES SUN_STRENGTH,0.85
+	CASE IS > 100
+		TIMES SUN_STRENGTH,0.90
+ENDSELECT
+
+;削弱状态下，将大大减少……
+IF !CFLAG:12:1360
+	SUN_STRENGTH_REALITY = SUN_STRENGTH
+	IF SUN_STRENGTH > 200 
+		SUN_STRENGTH_REALITY = 100 
+	ELSE 
+		SUN_STRENGTH_REALITY /= 3
+	ENDIF 
+ELSE 
+	SUN_STRENGTH_REALITY = SUN_STRENGTH
+ENDIF 
+
+;检测时间是否有发生变化
+IF SUN_STRENGTH_REALITY && TIME > TCVAR:12:361
+
+	IF TIME - TCVAR:12:361 > 5	
+
+		;记录当前时间段被晒掉的单位量
+		SUN_STRENGTH_REALITY *= ( TIME - TCVAR:12:361 )
+		SUN_STRENGTH_REALITY /= 5
+
+		;记录总次数
+		LOCAL = ((TCVAR:12:361 - TIME) / 5 )
+		CFLAG:12:1361 += LOCAL
+
+		;记录时间变化
+		TCVAR:12:361 = TIME 
+
+		;记录当日被晒掉的总体力
+		TCVAR:12:360 += SUN_STRENGTH_REALITY
+
+		;只有目标为露米娅时才会触发的口上
+		IF  (CFLAG:12:300 == CFLAG:0:300)  && TFLAG:104 == 12
+			IF FIRSTTIME("MOE_RUMIA_FIRST_GET_SUN_BURN_MESSAGE")
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(1,SUN_STRENGTH_REALITY)
+			ELSEIF BASE:12:1	;有气力就扣除气力
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(2,SUN_STRENGTH_REALITY)
+			ELSE 	;没有气力就扣除体力
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(3,SUN_STRENGTH_REALITY)
+			ENDIF 
+		ENDIF 
+
+		;扣除对应值，分开使用两种变量就可以保持旁白的严重性，与实际上扣除的不会冲突……
+		IF (CFLAG:12:300 == CFLAG:0:300) && TFLAG:104 == 12
+			IF BASE:12:1 > SUN_STRENGTH_REALITY ;有气力就扣除气力
+				IF SUN_STRENGTH_REALITY > 30
+					IF SUN_STRENGTH_REALITY > 300
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "被阳光灼伤了")
+					ELSEIF SUN_STRENGTH_REALITY > 100
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "被阳光晒到了")
+					ELSEIF SUN_STRENGTH_REALITY > 30
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "不适应阳光")
+					ENDIF 
+					WAIT 
+				ELSE 
+					BASE:12:1 -= SUN_STRENGTH_REALITY
+				ENDIF 
+			ELSEIF BASE:12:1 < SUN_STRENGTH_REALITY
+				CALL RECOVER(12 , -BASE:12:1, "気力", "被阳光灼伤了")
+			ELSEIF BASE:12:0 > SUN_STRENGTH_REALITY ;没气力就扣除体力
+				IF SUN_STRENGTH_REALITY > 50
+					IF SUN_STRENGTH_REALITY > 300
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "被阳光灼伤了")
+					ELSEIF SUN_STRENGTH_REALITY > 100
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "被阳光晒到了")
+					ELSEIF SUN_STRENGTH_REALITY > 50
+						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "不适应阳光")
+					ENDIF 
+					WAIT
+				ELSE 
+					BASE:12:0 -= SUN_STRENGTH_REALITY
+				ENDIF 
+			ELSEIF BASE:12:0 < SUN_STRENGTH_REALITY
+				CALL RECOVER(12 , -BASE:12:0, "気力", "被阳光灼伤了")
+			ENDIF 	
+		ELSE 	;非面对面的情况，就偷偷地扣好了
+			IF BASE:12:1 ;有气力就扣除气力
+				BASE:12:1 -= SUN_STRENGTH_REALITY
+			ELSE ;没气力就扣除体力
+				BASE:12:0 -= SUN_STRENGTH_REALITY
+			ENDIF 
+		ENDIF 
+	ENDIF 
+ENDIF 
+
+
+@MOE_RUMIA_SUN_BURN_MESSAGE(ARG,ARG:1=0)
+;ARG:1 的值是扣除值
+IF ARG == 1 
+	;初次触发该事件
+
+
+
+
+
+
+ELSEIF ARG == 2 
+	;开始烧气力
+
+
+
+
+
+
+
+ELSEIF ARG == 3
+	;开始烧体力
+
+
+
+
+
+ENDIF 

@@ -8,11 +8,17 @@
 ;MARK:反発刻印(3以上=会話不能)(4以上はバグ
 ;TCVAR:烂醉(1=通常成功or大失敗)
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_300
+DRAWLINE
+RETURN 1
+
 @M_KOJO_MESSAGE_COM_K70_300
 ;指令共通メッセージ(TRAIN_MESSAGE) 
 ;削除すると「～说着话。」とかが消えます
-;CALL TRAIN_MESSAGE
-DRAWLINE
 ;口上メイン呼出
 CALL M_KOJO_MESSAGE_COM_K70_300_1
 RETURN RESULT
@@ -262,7 +268,7 @@ IF LOCAL
                 PRINTFORMW 「哈……是这样吗……」
             ENDSELECT
 		ENDIF
-	;ゲストキャラと同室だと各キャラ1日1回ずつゲスト会話が発生（お茶とは別）
+	;ゲストキャラと同室だと各キャラ1日1回ずつゲスト会話が発生（茶とは別）
 	;4=小鈴が恋慕(同行中だと最優先),3=ゲストと同行中in鈴奈庵,2=ゲストとデート中orゲストが恋慕で同行中,1=それ以外
 	ELSEIF GUESTS != ""
 		CALL M_KOJO_K70_画像表示(GUEST:1, "通常", "通常")
@@ -282,7 +288,7 @@ IF LOCAL
 		;▼博麗神社
 		CASE "桜花道的鳥居"
 			;春
-			IF GET_MONTH() == "春の月"
+			IF GET_MONTH() == "春之月"
 				PRINTFORML 「樱花真的是太美了!」
 				PRINTFORMW 「我们去稍微赏花怎么样?」
 			;春以外
@@ -349,7 +355,7 @@ IF LOCAL
 				PRINTFORML 「这里的澡堂我也偶尔来」
 				PRINTFORMW 「还是宽敞的浴室很舒服呢。～！」
 			ENDIF
-		CASE "連れ込み宿"
+		CASE "情人用宿屋"
 			;入った時点で合意取得するのね…,诶嘿嘿前か後かは絶頂したかで判断するので事前に絶頂させてると稍微齟齬
 			IF EX:70:Ｃ絶頂 + EX:70:Ｖ絶頂 + EX:70:Ａ絶頂 + EX:70:Ｂ絶頂 + EX:70:Ｍ絶頂
 				IF TALENT:70:処女
@@ -370,7 +376,7 @@ IF LOCAL
 				;と言いつつ行こうとすると拒否されちゃいます。女の子って難しいね
 		;▼霧の湖
 		CASE "霧之湖"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORML 「嗯，我有点想游泳了。」
 				PRINTFORMW 「但是这里的湖泊很危险，不能进去。」
 			ELSE
@@ -379,7 +385,7 @@ IF LOCAL
 			ENDIF
 		CASE "冰造的小雪屋"
 			PRINTFORML 「为什么我在这种地方呆着啊……」
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「很凉快啊……」
 			ELSE
 				PRINTFORMW 「嗯……太冷了……」
@@ -390,7 +396,7 @@ IF LOCAL
 		CASE "正門"
 			PRINTFORML 「啊，这就是吸血鬼的红魔馆啊」
 			PRINTFORMW 「不要进去比较好吧……！」
-		CASE "広間"
+		CASE "大廳"
 			PRINTFORML 「真、真的可以进吸血鬼之馆吗……」
 			PRINTFORMW 「而且好宽敞,比外面看起来大多了……」
 		CASE "食堂"
@@ -419,7 +425,7 @@ IF LOCAL
 			PRINTFORML 「这里风景诗意但我记得这里是危险的地方吧……」
 			PRINTFORMW 「这么一想,这景色也有点诡异了……」
 		CASE "太陽花田"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「哇!一大片向日葵花田!好壮观呀!」
 			ELSE
 				PRINTFORML 「这里全是向日葵吗~」
@@ -487,7 +493,7 @@ IF LOCAL
 			PRINTFORML 「和%CALLNAME:MASTER%先生一起爬山真是太棒了♪」
 			PRINTFORMW 「平时总是坐缆车一下子就过去了,很难有机会进入这里呢ー!」
 		CASE "玄武之澤"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
         PRINTFORML 「看着凉快的样子,让人好想游个泳呢」
         PRINTFORMW 「但是这里有河童,所以不能下水……」
 			ELSE
@@ -602,7 +608,7 @@ IF LOCAL
 		CASEELSE
 		ENDSELECT
 		;デート会話済み
-		デート会話:POINT = 1
+		约会会話:POINT = 1
 		TCVAR:70:352 = 1
 [SKIPEND]
 	;鈴奈庵のデート同行会話
@@ -634,7 +640,7 @@ IF LOCAL
 		SETBIT TCVAR:70:360, 0
 	;レア
 	ELSEIF !RAND:512
-		PRINTFORMW 「くしゅん！ ……あれ、風邪ひいたかな？」
+		PRINTFORMW 「喂！……哎呀，感冒了吗？」
 	;▼状況会話集
 	;1-1,大雨,猛烈な雨,台風
 	ELSEIF !GETBIT(TCVAR:[[小鈴]]:359, 1) && (GROUPMATCH(天候, 5, 14) || FLAG:異常気象 == 9)
@@ -1108,7 +1114,7 @@ CASE "恋慕"
 		PRINTFORMW 「我虽然能读懂,但回信时苦于不会写英文」
 	CASE 10
 		PRINTFORML 「%CALLNAME:MASTER%有什么收藏爱好吗?」
-		IF FIRSTTIME("パンツ没収", 1)
+		IF FIRSTTIME("胖次没収", 1)
 			PRINTFORMW 「专注于一样东西会获得很多乐趣的♪」
 		ELSE
 			PRINTFORMW 「啊,我想起您有一种最差劲的嗜好!!!」
@@ -1571,25 +1577,25 @@ CASE "季節"
 		RESTART
 	ENDIF
 	SELECTCASE GET_MONTH()
-	CASE "春の月"
+	CASE "春之月"
 		PRINTFORML 「暖春的日子真惬意呢~」
 		IF OUTROOF(CFLAG:[[小鈴]]:現在位置)
 			PRINTFORMW 「这样的日子适合在树荫下悠闲地读书%KOSUZU_BI("!♪")%」
 		ELSE
 			PRINTFORMW 「这样的日子适合在树荫下悠闲地读书呢」
 		ENDIF
-	CASE "夏の月"
+	CASE "夏之月"
 		PRINTFORML 「每天都这么热呢~......」
 		PRINTFORMW 「这个季节下雨的机会比较大,有本书在家里待着会比较好哦~%KOSUZU_BI("!♪")%」
 		SIF M_KOJO_K70_SUZUNAAN(CFLAG:[[小鈴]]:現在位置) == 1
 			PRINTFORMW 「来,给您推荐一本吧!」
-	CASE "秋の月"
+	CASE "秋之月"
 		PRINTFORML 「秋天的气氛越来越浓郁了呢~」
 		PRINTFORMW 「没错,说到秋天自然联想到读书的秋天!」
 		;游戏里并没有这样的设定
 		SIF M_KOJO_K70_SUZUNAAN(CFLAG:[[小鈴]]:現在位置) == 1
 			PRINTFORMW 「现在正值打折季,要不要也给%CALLNAME:MASTER%您选一本?」
-	CASE "冬の月"
+	CASE "冬之月"
 		PRINTFORML 「嘶......今天又这么冷呢~......」
 		PRINTFORMW 「这样的日子只想裹在毛毯里,一整天看书才好......」
 	ENDSELECT
@@ -2438,25 +2444,25 @@ CASE 8
 				PRINTFORMW 「明亮的月光，虫鸣声，凉爽的风……果然还是『夏夜』呢～」
 			CASE "秋之月"
 				PRINTFORMW 「美丽的中秋之夜～♪ 能和%CALLNAME:MASTER%先生一起看，真是太棒了♪」
-			CASE "冬の月"
+			CASE "冬之月"
 				PRINTFORML 「月亮这么明亮，恐怖的东西也不会出现吧♪」
 				PRINTFORMW 「……或许并非如此……」
 			ENDSELECT
 		ELSEIF TALENT:[[小鈴]]:恋慕
 			PRINTFORML 「啊，看，今晚是满月呢」
 			SELECTCASE GET_MONTH()
-			CASE "春の月"
+			CASE "春之月"
 				PRINTFORMW 「月亮好……不，没什么！」
-			CASE "夏の月"
+			CASE "夏之月"
 				PRINTFORMW 「在凉爽的风中显得更加美丽……果然『夏夜』这么说很对呢」
-			CASE "秋の月"
+			CASE "秋之月"
 				PRINTFORMW 「能和%CALLNAME:MASTER%先生一起看到十五的月亮，感觉有点美妙呢♪」
-			CASE "冬の月"
+			CASE "冬之月"
 				PRINTFORMW 「夜晚这么明亮……」
 			ENDSELECT
 		ELSE
 			PRINTFORML 「啊，看，今晚是满月呢」
-			IF GET_MONTH() == "秋の月"
+			IF GET_MONTH() == "秋之月"
 				PRINTFORMW 「中秋的圆月真美啊～」
 			ELSE
 				PRINTFORMW 「情调不错呢～」
@@ -2995,7 +3001,7 @@ CASE "ゲスト"
 					PRINTFORML 「和%CALLNAME:MASTER%先生在一起总是有点紧张」
 					PRINTFORMW 「不过，有你在我也感到安心～」
 				CASE 14
-					IF ARGS:1 == "お茶"
+					IF ARGS:1 == "茶"
 						PRINTFORML 「呵呵，这样喝茶感觉真幸福啊～」
 						PRINTFORML 「啊，%CALLNAME:MASTER%先生喜欢酒多一点吗？」
 						PRINTFORMW 「嗯，那下次我们三个一起去喝吧♪」
@@ -3054,7 +3060,7 @@ CASE "ゲスト"
 				PRINTFORMW 「%CALLNAME:MASTER%先生你们进行到哪一步了呢？」
 				PRINTL 
 				PRINTFORMDL ！
-				IF ARGS:1 == "お茶"
+				IF ARGS:1 == "茶"
 				PRINTFORMDL 对突然的问题，我差点把口中的茶喷了出来…
 				ELSE
 					PRINTFORMDL 
@@ -3103,7 +3109,7 @@ CASE "ゲスト"
 			ELSEIF M_KOJO_K70_SUZUNAAN(CFLAG:[[小鈴]]:現在位置) == 1
 				PRINTFORML 「顺便说一下阿求，你的事情办完了的话差不多回去吧？」
 				PRINTFORMW 「客人也来了，占着位置可不好」
-			ELSEIF ARGS:1 == "お茶"
+			ELSEIF ARGS:1 == "茶"
 				PRINTFORMW 「%CALLNAME:MASTER%先生，如果要我和阿求选的话，你会选哪一个？」
 				PRINTL 
 				PRINTFORMDL ！
@@ -3667,7 +3673,7 @@ RETURN 1
 ;泥酔フラグ
 TCVAR:[[小鈴]]:383 = 1
 SELECTCASE ARGS
-CASE "お茶"
+CASE "茶"
 	PRINTFORML 「呼啊……这是……？」
 	PRINTFORMW 「嗯嗯嗯……好好吃哦～！」
 CASE "食事", "お弁当を食べる", "食事に誘う", "甘味処に誘う"
@@ -3719,7 +3725,7 @@ PRINTFORML
 SELECTCASE ARGS
 CASE "膝枕してもらう", "お腹を撫でる", "頬をつまむ", "頭を撫でる", "尻を撫でる", "抱き付く", "キスする", "胸愛撫", "アナル愛撫", "クリ愛撫", "指挿入れ", "スカートめくり", "デコちゅー"
 	PRINTFORMDW 在意吗，不太清楚……
-CASE "お茶"
+CASE "茶"
 	PRINTFORMDW 小鈴喝得好像是酒……
 CASE "食事", "お弁当を食べる", "食事に誘う", "甘味処に誘う"
 	PRINTFORMDW 小鈴好像是把吃的当作酒的小菜吃了……
@@ -3851,7 +3857,7 @@ CASE "会話"
 			RESTART
 		ENDSELECT
 	ENDIF
-CASE "お茶"
+CASE "茶"
 	IF TALENT:[[小鈴]]:恋慕
 		SELECTCASE RAND:(9 + 共通分岐)
 		CASE 1, 2, 3
@@ -4062,12 +4068,18 @@ ENDSELECT
 ;==================================================
 
 ;==================================================
-;301,お茶を淹れる
+;301,茶を淹れる
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_301
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_301
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_301
 CALL M_KOJO_MESSAGE_COM_K70_301_1
 RETURN RESULT
 
@@ -4081,7 +4093,7 @@ LOCAL = 1
 IF LOCAL
 	RESETCOLOR
 	;ゲストキャラ判定
-	CALL M_KOJO_K70_GUEST("お茶")
+	CALL M_KOJO_K70_GUEST("茶")
 	GUEST = RESULT
 	GUEST:1 = RESULT:1
 	GUESTS = %RESULTS%
@@ -4090,10 +4102,10 @@ IF LOCAL
 	ELSEIF GUESTS != ""
 		RESETCOLOR
 		CLEARLINE 2
-		PRINTFORMDL お茶会
+		PRINTFORMDL 茶会
 		DRAWLINE
 		;当然その場にいる全員とするわけですが、あえて省略しています
-		;文章上では相手主導ですけどソースは変わりませんし特別なお茶も自分のものを使います
+		;文章上では相手主導ですけどソースは変わりませんし特別な茶も自分のものを使います
 		IF M_KOJO_K70_SUZUNAAN(CFLAG:70:現在位置) && ABL:70:親密 >= 5
 			PRINTFORML %CALLNAME:PLAYER%一站起来就要沏茶
 			PRINTFORML 察觉到这一点的小鈴已经准备好了茶…
@@ -4113,10 +4125,10 @@ IF LOCAL
 	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
-		CALL M_KOJO_K70_DRUNK("お茶")
+		CALL M_KOJO_K70_DRUNK("茶")
 	;発情
 	ELSEIF TCVAR:[[小鈴]]:発情
-		CALL M_KOJO_K70_HATSUJO("お茶")
+		CALL M_KOJO_K70_HATSUJO("茶")
 	;不機嫌
 	ELSEIF M_KOJO_K70_FUKIGEN([[小鈴]])
 		PRINTFORMW 「……ありがとうございます」
@@ -4130,7 +4142,7 @@ IF LOCAL
 		ENDIF
 		PRINTL 
 		;ゲスト会話へ
-		CALL M_KOJO_K70_TALKSET("ゲスト", GUEST:1, GUEST, "お茶")
+		CALL M_KOJO_K70_TALKSET("ゲスト", GUEST:1, GUEST, "茶")
 		;一日一回
 		TCVAR:70:(M_KOJO_K70_GUEST_TCVAR(GUEST:1)) = 1
 		;ゲスト参加時は大成功/失敗は省略
@@ -4143,7 +4155,7 @@ IF LOCAL
 				PRINTFORMW 「哎呀，合您的口味吗?太好了♪」
 			;失敗,悪いのはあなたです
 			ELSEIF TFLAG:SELECTCOM的分岐 == -1
-				PRINTFORMW 「あら、お口に合いませんでしたか… すみません……」
+				PRINTFORMW 「啊，您不跟我说话吗…对不起……」
 			ENDIF
 		ELSE
 			PRINTFORML 「谢谢你\@ TALENT:70:恋慕 ? ♪ # \@」
@@ -4164,7 +4176,7 @@ IF LOCAL
 					PRINTFORML 「啊，我正好有茶点哦」
 					PRINTFORMW 「好的，请♪」
 				CASEELSE
-					IF GET_MONTH() == "夏の月"
+					IF GET_MONTH() == "夏之月"
 						PRINTFORMW 「嗯……补充水分是很重要的」
 					ELSE
 						PRINTFORMW 「嗯……身体暖和了～」
@@ -4181,9 +4193,15 @@ RETURN 1
 ;302,スキンシップ
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_302
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_302
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_302
 CALL M_KOJO_MESSAGE_COM_K70_302_1
 RETURN RESULT
 
@@ -4193,7 +4211,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
 		PRINTFORMDL %CALLNAME:MASTER%因为喝醉了，碰到了%CALLNAME:TARGET%的身体
@@ -4415,7 +4432,7 @@ ELSEIF ARGS == "恋慕"
 	CASE 15
 		PRINTFORMDL %CALLNAME:MASTER%把手背放在小鈴的脖子后面
 		PRINTW 
-		IF GET_MONTH() == "夏の月"
+		IF GET_MONTH() == "夏之月"
 			PRINTFORML 「咿～，怎么了啊～？」
 			PRINTFORMW 「因为我在出汗，所以不太想被摸那里～…」
 		ELSE
@@ -4438,13 +4455,13 @@ ELSEIF ARGS == "恋慕"
 		PRINTFORML 「诶诶！稍微有点害羞呢…❤」
 		PRINTL 
 		SELECTCASE GET_MONTH()
-		CASE "春の月"
+		CASE "春之月"
 			PRINTFORMDW 闻到了海鸠花的香味……
-		CASE "夏の月"
+		CASE "夏之月"
 			PRINTFORMDW 闻到了橘子的香味……
-		CASE "秋の月"
+		CASE "秋之月"
 			PRINTFORMDW 闻到了金木犀的香味……
-		CASE "冬の月"
+		CASE "冬之月"
 			PRINTFORMDW 闻到了菊花的香味……
 		ENDSELECT
 	CASE 19
@@ -4497,9 +4514,15 @@ ENDIF
 SIF TCVAR:70:350 >= 3
 	TFLAG:192 = -2
 
-@M_KOJO_MESSAGE_COM_K70_303
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_303
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_303
 CALL M_KOJO_MESSAGE_COM_K70_303_1
 RETURN RESULT
 
@@ -4509,7 +4532,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	IF TFLAG:SELECTCOM的分岐 == -2 || TFLAG:SELECTCOM的分岐 == 2
 		PRINTFORMDL %CALLNAME:PLAYER%向%CALLNAME:TARGET%道歉并递上了糖果礼盒
 	ELSE
@@ -4604,7 +4626,6 @@ RETURN 1
 ;TCVAR:手伝えない(=2 手伝っても早くは終わらない、時間停止中不可 永琳の診察等)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_304
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_304_1
 RETURN RESULT
 
@@ -4736,7 +4757,6 @@ RETURN 1
 ;ABL:親密(6以上=顔をのぞき込みながら頭を撫でてくれる 3以上=ただ頭を撫でてくれる 2以下=縮こまっている)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_305
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_305_1
 RETURN RESULT
 
@@ -4898,7 +4918,6 @@ RETURN 1
 ;TFLAG:193(1=ABL:親密6以上かつ妊娠時 0=成功 -1=ABL:親密5以下)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_306
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_306_1
 RETURN RESULT
 
@@ -4977,7 +4996,6 @@ RETURN 1
 	;ABL:従順(5以上=されるがまま
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_307
-;CALL TRAIN_MESSAGE
 DRAWLINE
 CALL M_KOJO_MESSAGE_COM_K70_307_1
 RETURN RESULT
@@ -5057,7 +5075,6 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_308
-;CALL TRAIN_MESSAGE
 DRAWLINE
 CALL M_KOJO_MESSAGE_COM_K70_308_1
 RETURN RESULT
@@ -5105,7 +5122,6 @@ RETURN 1
 ;ABL:親密(6以上=通常成功時分岐
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_309
-;CALL TRAIN_MESSAGE
 DRAWLINE
 CALL M_KOJO_MESSAGE_COM_K70_309_1
 RETURN RESULT
@@ -5327,7 +5343,6 @@ RETURN 1
 IF M_KOJO_K70_FUKIGEN([[小鈴]])
 	DRAWLINE
 ELSE
-	CALL TRAIN_MESSAGE
 ENDIF
 CALL M_KOJO_MESSAGE_COM_K70_310_1
 RETURN RESULT
@@ -5471,7 +5486,6 @@ RETURN 1
 IF M_KOJO_K70_FUKIGEN([[小鈴]])
 	DRAWLINE
 ELSE
-	CALL TRAIN_MESSAGE
 ENDIF
 CALL M_KOJO_MESSAGE_COM_K70_311_1
 RETURN RESULT
@@ -5493,7 +5507,7 @@ IF LOCAL
 		CASE 2
 			PRINTFORMW 「能不能就这样一直待到睡着呢……」
 		CASEELSE
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「嗯……有点热～……」
 			ELSE
 				PRINTFORMW 「嗯……%CALLNAME:MASTER%先生好温暖啊……❤」
@@ -5600,9 +5614,9 @@ IF LOCAL
 		CASE 17
 			PRINTFORMW 「在%CALLNAME:MASTER%先生的怀中，不安全感都消失了…❤」
 		CASEELSE
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「啊，虽然有点出汗……但是❤」
-			ELSEIF GET_MONTH() == "冬の月"
+			ELSEIF GET_MONTH() == "冬之月"
 				PRINTFORMW 「即使是寒冷的冬天，这样在一起感觉很温暖呢❤」
 			ELSE
 				PRINTFORMW 「%CALLNAME:MASTER%先生的体温，真的很舒适呢…❤」
@@ -5646,9 +5660,9 @@ IF LOCAL
 		CASE 17
 			PRINTFORMW 「只有现在，与%CALLNAME:MASTER%先生在一起…❤」
 		CASEELSE
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「唔，好热啊～……」
-			ELSEIF GET_MONTH() == "冬の月"
+			ELSEIF GET_MONTH() == "冬之月"
 				PRINTFORMW 「啊呜～，好冷～请%CALLNAME:MASTER%先生不要离开我啊～」
 			ELSE
 				PRINTFORMW 「%CALLNAME:MASTER%先生，好温暖…❤」
@@ -5679,7 +5693,7 @@ IF LOCAL
 		CASE 11
 			PRINTFORMW 「嗯，这是为什么呢…？」
 		CASEELSE
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「唔，好热啊～……」
 			ELSE
 				PRINTFORMW 「呵呵，好温暖」
@@ -5711,7 +5725,6 @@ SIF M_KOJO_K70_FUKIGEN([[小鈴]])
 
 @M_KOJO_MESSAGE_COM_K70_312
 IF CFLAG:70:诶嘿嘿 == 2 || FLAG:時間停止
-	CALL TRAIN_MESSAGE
 ELSE
 	DRAWLINE
 ENDIF
@@ -6222,7 +6235,6 @@ ENDSELECT
 ;313,胸愛撫
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_313
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_313_1
 RETURN RESULT
 
@@ -6571,7 +6583,6 @@ ENDSELECT
 ;314,アナル愛撫
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_314
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_314_1
 RETURN RESULT
 
@@ -6615,7 +6626,6 @@ RETURN 1
 ;315,クリ愛撫
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_315
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_315_1
 RETURN RESULT
 
@@ -6687,7 +6697,6 @@ RETURN 1
 ;316,指挿入れ
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_316
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_316_1
 RETURN RESULT
 
@@ -6739,7 +6748,6 @@ RETURN 1
 ;317,腰を動かす（Ｖ）
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_317
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_317_1
 RETURN RESULT
 
@@ -6795,7 +6803,6 @@ RETURN 1
 ;318,腰を動かす（Ａ）
 ;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_318
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_318_1
 ;RETURN RESULT
 
@@ -6813,7 +6820,6 @@ RETURN 1
 ;320,相手主導正常位
 ;====================================================================================================
 @M_KOJO_MESSAGE_COM_K70_320
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_320_1
 RETURN RESULT
 
@@ -6830,7 +6836,6 @@ RETURN 1
 ;322,相手主導後背位
 ;====================================================================================================
 @M_KOJO_MESSAGE_COM_K70_322
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_322_1
 RETURN RESULT
 
@@ -6847,7 +6852,11 @@ RETURN 1
 ;==================================================
 ;330,スカートめくり
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_330
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_330
 IF M_KOJO_K70_FUKIGEN([[小鈴]])
 	DRAWLINE
 ELSEIF TFLAG:193 >= 0
@@ -6857,8 +6866,11 @@ ELSEIF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
 ELSEIF M_KOJO_K70_FUKIGEN([[小鈴]])
 	DRAWLINE
 ELSE
-	CALL TRAIN_MESSAGE
+	RETURN 0
 ENDIF
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_330
 CALL M_KOJO_MESSAGE_COM_K70_330_1
 RETURN RESULT
 
@@ -6868,7 +6880,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	IF FLAG:時間停止
 	;酔ってる
 	ELSEIF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
@@ -7019,11 +7030,10 @@ IF LOCAL
 ENDIF
 RETURN 1
 ;==================================================
-;331,お茶を淹れる（薬入り）
+;331,茶を淹れる（薬入り）
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_331
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_331_1
 RETURN RESULT
 
@@ -7036,10 +7046,10 @@ IF LOCAL
 	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
-		CALL M_KOJO_K70_DRUNK("お茶")
+		CALL M_KOJO_K70_DRUNK("茶")
 	;発情
 	ELSEIF TCVAR:[[小鈴]]:発情
-		CALL M_KOJO_K70_HATSUJO("お茶")
+		CALL M_KOJO_K70_HATSUJO("茶")
 	;不機嫌
 	ELSEIF M_KOJO_K70_FUKIGEN([[小鈴]])
 		PRINTFORMW 「……谢谢您」
@@ -7064,7 +7074,7 @@ IF LOCAL
 			PRINTFORML 「啊，我正好带了些茶点呢」
 			PRINTFORMW 「请，尽管吃♪」
 		CASEELSE
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「嗯……补充水分很重要呢」
 			ELSE
 				PRINTFORMW 「嗯……身体会变暖哦～」
@@ -7100,7 +7110,6 @@ CASEELSE
 ENDSELECT
 
 @M_KOJO_MESSAGE_COM_K70_332
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_332_1
 RETURN RESULT
 
@@ -7203,9 +7212,15 @@ RETURN 1
 SIF TCVAR:70:350 >= 3
 	TFLAG:192 = -2
 
-@M_KOJO_MESSAGE_COM_K70_333
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_333
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_333
 CALL M_KOJO_MESSAGE_COM_K70_333_1
 RETURN RESULT
 
@@ -7217,7 +7232,6 @@ LOCAL = 1
 IF LOCAL
 	;気づいたら分岐増えてた……愚痴を聞くだけでなんでこんなことに……
 	;諸悪の根源たるフキゲン分岐を取っ払った
-	CALL M_KOJO_COLOR_K70
 	;フキゲンが最大(3)だと謝っても許してくれない、謝りキャンセルが発動
 	IF TFLAG:192 == -2
 		PRINTFORMDL 试图让%CALLNAME:TARGET%好心情，但似乎没有起到作用
@@ -7409,7 +7423,6 @@ RETURN 1
 ;;TALENT:酒耐性(-2=食事)
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_334
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_334_1
 ;RETURN RESULT
 ;
@@ -7434,7 +7447,6 @@ RETURN 1
 ;;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_335
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_335_1
 ;RETURN RESULT
 ;
@@ -7459,9 +7471,15 @@ RETURN 1
 ;ABL:親密(4以下=居心地悪げ 9以下=恥ずかしげ それ以上=幸せそう
 ;TIME_PROGRESS(TFLAG:膝枕した)(44以下=失敗
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_336
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_336
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_336
 CALL M_KOJO_MESSAGE_COM_K70_336_1
 RETURN RESULT
 
@@ -7479,7 +7497,6 @@ IF LOCAL
 		寝ちゃうフラグ = 0
 	SIF TCVAR:[[小鈴]]:発情
 		寝ちゃうフラグ = 0
-	CALL M_KOJO_COLOR_K70
 	IF TALENT:70:恋慕 && 寝ちゃうフラグ
 		PRINTFORMDL %CALLNAME:PLAYER%端坐着，轻拍着膝盖，%CALLNAME:TARGET%开心地靠了过来
 	ELSE
@@ -7630,7 +7647,6 @@ RETURN 1
 ;5=強引に迫られると断れぬ(素質臆病持ち専用) 6=まんざらでもない　7=駄目　8=論外
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_350
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_350_1
 RETURN RESULT
 
@@ -7946,7 +7962,6 @@ RETURN 1
 ;TFLAG:193 (1=成功 0=失敗)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_352
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_352_1
 RETURN RESULT
 
@@ -8029,7 +8044,6 @@ RETURN 1
 ;;FLAG:甲斐性無(1=失敗)
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_353
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_353_1
 ;RETURN RESULT
 ;
@@ -8045,10 +8059,9 @@ RETURN 1
 ;==================================================
 ;354,添い寝する（相手は起きて布団に招く感じ）
 ;CFLAG:衰弱(1以上=起きない
-;CFLAG:お招き(0以外=起きない
+;CFLAG:招待(0以外=起きない
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_354
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_354_1
 RETURN RESULT
 
@@ -8066,7 +8079,7 @@ IF LOCAL
 			IF CFLAG:MASTER:初期位置 == CFLAG:[[小鈴]]:初期位置 
 				PRINTFORML 「啊……%CALLNAME:MASTER%先生……」
 				PRINTFORML 「请……❤ 我已经给被子暖好了……❤」
-				SIF GET_MONTH() == "夏の月"
+				SIF GET_MONTH() == "夏之月"
 					PRINTFORML 「啊，如果太热的话，对不起……」
 				WAIT
 			ELSE
@@ -8082,7 +8095,7 @@ IF LOCAL
 				PRINTFORMW 「你能陪我一起睡吗……真高兴…❤」
 			ENDIF
 		CASE 3
-			IF GET_MONTH() == "冬の月"
+			IF GET_MONTH() == "冬之月"
 				PRINTFORML 「哈哇……❤」
 				PRINTFORMW 「有%CALLNAME:MASTER%先生在真是暖和啊～❤」
 			ELSE
@@ -8090,14 +8103,14 @@ IF LOCAL
 				PRINTFORMW 「这么贴近会很热的哦❤」
 			ENDIF
 		CASE 4
-			IF GET_MONTH() == "冬の月"
+			IF GET_MONTH() == "冬之月"
 				PRINTFORML 「快点过来～！」
 				PRINTFORMW 「好冷啊～～！」
 			ELSE
 				PRINTFORMW 「呵呵…❤ 即使没有被子也感觉很温暖❤」
 			ENDIF
 		CASE 5
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORML 「嗯，%CALLNAME:MASTER%先生……」
 				PRINTFORMW 「有点……热啊…❤」
 			ELSE
@@ -8126,7 +8139,6 @@ RETURN 1
 ;;355,時止め（地の文の改変程度に留めるべき
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_355
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_355_1
 ;RETURN RESULT
 ;
@@ -8144,7 +8156,6 @@ RETURN 1
 ;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_360
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_360_1
 RETURN RESULT
 
@@ -8498,7 +8509,6 @@ RETURN 1
 ;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=スカートの中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_361
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_361_1
 RETURN RESULT
 
@@ -8528,7 +8538,6 @@ RETURN 1
 ;;MASTERがTARGETより大柄の場合、膝の上にTARGETを乗せる
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_363
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_363_1
 ;RETURN RESULT
 ;
@@ -8546,7 +8555,6 @@ RETURN 1
 ;;TFLAG:193(豆まきに参加してる人数
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_364
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_364_1
 ;RETURN RESULT
 ;
@@ -8563,7 +8571,6 @@ RETURN 1
 ;;365,守矢神社へ移動(早苗、神奈子、諏訪子用
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_365
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_365_1
 ;RETURN RESULT
 ;
@@ -8581,7 +8588,6 @@ RETURN 1
 ;技能系の行動は技能レベルが1以上なら発生
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_368
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_368_1
 RETURN RESULT
 
@@ -8736,8 +8742,8 @@ IF LOCAL
 		;▼採集［採集を手伝う］
 		;PRINTFORMW 
 	CASE 10
-		;▼釣り［一緒に釣りをする］
-		;TFLAG:193,-1=釣り竿がなくて見てるだけ
+		;▼釣魚［一緒に釣魚をする］
+		;TFLAG:193,-1=釣魚竿がなくて見てるだけ
 		;PRINTFORMW 
 	CASE 11
 		;▼実験［実験を手伝う］
@@ -8798,7 +8804,7 @@ IF LOCAL
 		;PRINTFORMW 
 	CASE 17
 		;▼雪だるま作り［一緒に雪作り］
-		;※冬の月のみ
+		;※冬之月のみ
 		SELECTCASE RAND:8
 		CASE 1
 			PRINTFORMW 「嘻嘻♪ 真是有趣呢～」
@@ -8819,7 +8825,7 @@ IF LOCAL
 		ENDSELECT
 	CASE 18
 		;▼炬燵でのんびり［炬燵でくつろぐ］
-		;※冬の月のみ
+		;※冬之月のみ
 		SELECTCASE RAND:8
 		CASE 1
 			PRINTFORMW 「哎呀！对不起，踢到您的脚了」
@@ -8877,7 +8883,6 @@ RETURN 1
 ;CFLAG:TARGET:睡眠(1=TARGETが寝てる隣で休憩
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_403
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_403_1
 RETURN RESULT
 
@@ -9089,7 +9094,6 @@ RETURN 1
 ;OUTROOF(CFLAG:現在位置)(野外掃除（冬は雪かき
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_410
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_410_1
 RETURN RESULT
 
@@ -9120,7 +9124,7 @@ IF LOCAL
 			PRINTFORML 「啊，我的房间真的很脏吗……」
 			PRINTFORMW 「虽然很感激，但心情有点复杂……」
 			RETURN 1
-		ELSEIF OUTROOF(CFLAG:MASTER:現在位置) && GET_MONTH() == "冬の月"
+		ELSEIF OUTROOF(CFLAG:MASTER:現在位置) && GET_MONTH() == "冬之月"
 			PRINTFORML 「是要铲雪吗？」
 		ELSE
 			PRINTFORML 「是打扫卫生吗？」
@@ -9140,7 +9144,6 @@ RETURN 1
 ;TFLAG:194(3=夏の昼間 2=ヤバい天気 1=悪天候 0=屋内or通常天気
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_411
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_411_1
 RETURN RESULT
 
@@ -9182,8 +9185,14 @@ RETURN 1
 ;412,勉強
 ;ABL:教養(ABL:MASTER:教養より大=MASTERが教えてもらう ABL:MASTER:教養より小=TARGETが教えてもらう
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_412
+RETURN 1
+
 @M_KOJO_MESSAGE_COM_K70_412
-;CALL TRAIN_MESSAGE
 DRAWLINE
 CALL M_KOJO_MESSAGE_COM_K70_412_1
 RETURN RESULT
@@ -9194,7 +9203,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	IF CFLAG:70:睡眠
 	;酔ってる
 	ELSEIF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
@@ -9249,8 +9257,7 @@ RETURN 1
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_413
 ;TFLAG:194が100以上の場合のみ
-;CALL TRAIN_MESSAGE
-DRAWLINE
+CALL D_LINE
 CALL M_KOJO_MESSAGE_COM_K70_413_1
 RETURN RESULT
 
@@ -9261,7 +9268,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL && DISH_ASSI == 70
-	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
 		CALL M_KOJO_K70_DRUNK("料理")
@@ -9860,7 +9866,6 @@ RETURN 1
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_414
 IF DISHNAME != "银吉獣料理"
-	CALL TRAIN_MESSAGE
 ELSE
 	DRAWLINE
 ENDIF
@@ -10000,17 +10005,17 @@ IF LOCAL && !CFLAG:70:睡眠
 				WAIT
 			;温かい
 			ELSEIF STRCOUNT(DISH_TASTE, "温暖")
-				IF GET_MONTH() == "夏の月"
+				IF GET_MONTH() == "夏之月"
 					PRINTFORML 「这个会让人出一身汗呢～…」
-				ELSEIF GET_MONTH() == "冬の月"
+				ELSEIF GET_MONTH() == "冬之月"
 					PRINTFORML 「嘻嘻，正好可以取暖呢！」
 				ENDIF
 				PRINTFORMW 「那么，我要开动了」
 			;冷たい
 			ELSEIF STRCOUNT(DISH_TASTE, "冷")
-				IF GET_MONTH() == "夏の月"
+				IF GET_MONTH() == "夏之月"
 					PRINTFORML 「吃这个来抵挡一下炎热吧！」
-				ELSEIF GET_MONTH() == "冬の月"
+				ELSEIF GET_MONTH() == "冬之月"
 					PRINTFORML 「吃了这个身体会变得冰凉呢……」
 				ENDIF
 				PRINTFORMW 「那么，我要开动了」
@@ -10124,18 +10129,18 @@ IF LOCAL && !CFLAG:70:睡眠
 			;温かい
 			ELSEIF STRCOUNT(DISH_TASTE, "温暖")
 				PRINTFORML 「哎呀，我也可以尝一尝吗？谢谢～」
-				IF GET_MONTH() == "夏の月"
+				IF GET_MONTH() == "夏之月"
 					PRINTFORML 「哇！好热！感觉要出汗了……」
-				ELSEIF GET_MONTH() == "冬の月"
+				ELSEIF GET_MONTH() == "冬之月"
 					PRINTFORML 「哇～，好温暖！吃了这个感觉暖洋洋的～」
 				ENDIF
 				PRINTFORMW 「那么，请不要客气」
 			;冷的
 			ELSEIF STRCOUNT(DISH_TASTE, "冷")
 				PRINTFORML 「哎呀，我也可以尝一尝吗？谢谢～」
-				IF GET_MONTH() == "夏の月"
+				IF GET_MONTH() == "夏之月"
 					PRINTFORML 「哇～！凉爽适合夏天～」
-				ELSEIF GET_MONTH() == "冬の月"
+				ELSEIF GET_MONTH() == "冬之月"
 					PRINTFORML 「呃！好冷！感觉要冻僵了……」
 				ENDIF
 				PRINTFORMW 「那么，请不要客气」
@@ -10291,7 +10296,6 @@ RETURN 1
 ;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_415
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_415_1
 RETURN RESULT
 
@@ -10311,7 +10315,6 @@ RETURN 1
 ;;TFLAG:使用楽器(1=キーボード 2=ピアノ 3=ギター 4=トランペット 5=ヴァイオリン)
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_416
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_416_1
 ;RETURN RESULT
 ;
@@ -10330,7 +10333,6 @@ RETURN 1
 ;;CFLAG:添い寝中(1=一緒に寝ている
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_417
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_417_1
 ;RETURN RESULT
 ;
@@ -10348,7 +10350,6 @@ RETURN 1
 ;条件が複雑なので、COMF421 願掛け.ERBおよび、EVENT_MESSAGE_COM400.ERBの願掛けするの項を参照のこと
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_421
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_421_1
 RETURN RESULT
 
@@ -10374,7 +10375,6 @@ RETURN 1
 ;TFLAG:194(1=連続入浴不可(表示しない可能性あり？
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_431
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_431_1
 RETURN RESULT
 
@@ -10418,7 +10418,6 @@ RETURN 1
 ;;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_432
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_432_1
 ;RETURN RESULT
 ;
@@ -10436,7 +10435,6 @@ RETURN 1
 ;;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_436
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_436_1
 ;RETURN RESULT
 ;
@@ -10445,7 +10443,6 @@ RETURN 1
 ;440,待つ
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_440
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_440_1
 RETURN RESULT
 
@@ -10477,7 +10474,6 @@ RETURN 1
 ;;441,授業を受ける(慧音専用
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_441
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_441_1
 ;RETURN RESULT
 ;
@@ -10494,7 +10490,6 @@ RETURN 1
 ;;442,伐採する（未実装
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_442
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_442_1
 ;RETURN RESULT
 ;
@@ -10513,7 +10508,6 @@ RETURN 1
 ;;TFLAG:194(今回採集した個数
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_445
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_445_1
 ;RETURN RESULT
 ;
@@ -10539,7 +10533,6 @@ RETURN 1
 ;;ムシの名前は MUSHI_NAME で表示したり判別したりできます
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_448
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_448_1
 ;RETURN RESULT
 ;
@@ -10566,7 +10559,6 @@ RETURN 1
 ;;ムシの名前は MUSHI_NAME で表示したり判別したりできます
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_449
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_449_1
 ;RETURN RESULT
 ;
@@ -10589,7 +10581,6 @@ RETURN 1
 ;;バトル中の口上はイベント口上ファイルに入っています
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_483
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_483_1
 ;RETURN RESULT
 ;
@@ -10614,7 +10605,6 @@ RETURN 1
 ;;    1=ウソつき
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_484
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_484_1
 ;RETURN RESULT
 ;
@@ -10657,7 +10647,6 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗でもふりほどかれたりはしません
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_603
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_603_1
 RETURN RESULT
 
@@ -10759,7 +10748,7 @@ IF LOCAL
 		;▼博麗神社
 		CASE "桜花道的鳥居"
 			;春
-			IF GET_MONTH() == "春の月"
+			IF GET_MONTH() == "春之月"
 				PRINTFORML 「樱花，真的很美呢～！」
 				PRINTFORMW 「要不要一起去赏花呢？」
 			;春以外
@@ -10847,7 +10836,7 @@ IF LOCAL
 			;虽然说着要去，但试图去的时候会被拒绝。女孩子真是难懂啊
 		;▼霧の湖
 		CASE "霧之湖"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORML 「呼，真想游个泳啊」
 				PRINTFORMW 「但是这个湖很危险，不能进去游泳的」
 			ELSE
@@ -10856,7 +10845,7 @@ IF LOCAL
 			ENDIF
 		CASE "冰造的小雪屋"
 			PRINTFORML 「为什么这里会有雪屋……」
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「好凉快……」
 			ELSE
 				PRINTFORMW 「呜呜……好冷……」
@@ -10896,7 +10885,7 @@ IF LOCAL
 			PRINTFORML 「这地方虽然氛围宁静，但好像是个危险的地方……」
 			PRINTFORMW 「这么一想，这景色也有点诡异呢……」
 		CASE "太陽花田"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORMW 「哇！一片向日葵田！好壮观啊！」
 			ELSE
 				PRINTFORML 「这全是向日葵吗～」
@@ -10964,7 +10953,7 @@ IF LOCAL
 			PRINTFORML 「%CALLNAME:MASTER% 先生和爬山真是太棒了♪」
 			PRINTFORMW 「平时都是搭缆车飞奔而过，很难进入的地方呢！」
 		CASE "玄武之澤"
-			IF GET_MONTH() == "夏の月"
+			IF GET_MONTH() == "夏之月"
 				PRINTFORML 「看起来很凉爽，有点想游泳呢」
 				PRINTFORMW 「但是这里有河童，所以……」
 			ELSE
@@ -11152,9 +11141,15 @@ RETURN 1
 ;610,食事に誘う
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_610
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_610
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_610
 CALL M_KOJO_MESSAGE_COM_K70_610_1
 RETURN RESULT
 
@@ -11164,7 +11159,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	PRINTFORMD %CALLNAME:MASTER%和%CALLNAME:TARGET%在一起
 	SELECTCASE CFLAG:[[小鈴]]:現在位置
 	CASE 商家町
@@ -11287,7 +11281,6 @@ RETURN 1
 ;;613,お金稼ぎする（オミットされました
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_613
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_613_1
 ;RETURN RESULT
 ;
@@ -11305,7 +11298,6 @@ RETURN 1
 ;TFLAG:193(1=購入＆デート経験アップ 0=購入 -1=非購入)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_614
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_614_1
 RETURN RESULT
 
@@ -11339,9 +11331,15 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;ABL:料理技能(2未満=微妙な出来 4未満=そこそこ美味しい 4以上=絶品)
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_615
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_615
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_615
 CALL M_KOJO_MESSAGE_COM_K70_615_1
 RETURN RESULT
 
@@ -11351,7 +11349,6 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
 		CALL M_KOJO_K70_DRUNK("お弁当を食べる")
@@ -11447,7 +11444,6 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐は大成功のみ追加
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_617
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_617_1
 RETURN RESULT
 
@@ -11479,7 +11475,6 @@ RETURN 1
 ;618,花屋（口上は表示されない模様？
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_618
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_618_1
 RETURN RESULT
 
@@ -11499,7 +11494,6 @@ RETURN 1
 ;;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字引 X=4御伽草子
 ;;==================================================
 ;@M_KOJO_MESSAGE_COM_K70_620
-;CALL TRAIN_MESSAGE
 ;CALL M_KOJO_MESSAGE_COM_K70_620_1
 ;RETURN RESULT
 ;
@@ -11515,12 +11509,11 @@ RETURN 1
 ;ENDIF
 ;RETURN 1
 ;==================================================
-;621,釣りをする
+;621,釣魚をする
 ;TFLAG:193(0=釣れない 1～4=魚 11～15=うまい魚 610=木材 131=守矢の守札 21=ローター 609=氷の鱗 606=龍の爪)
 ;TFLAG:194(1000以上ならTARGETが釣った)
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_621
-CALL TRAIN_MESSAGE
 DRAWLINE
 CALL M_KOJO_MESSAGE_COM_K70_621_1
 RETURN RESULT
@@ -11535,10 +11528,10 @@ IF LOCAL
 	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
-		CALL M_KOJO_K70_DRUNK("釣り")
+		CALL M_KOJO_K70_DRUNK("釣魚")
 	;発情中
 	ELSEIF TCVAR:[[小鈴]]:発情
-		CALL M_KOJO_K70_HATSUJO("釣り")
+		CALL M_KOJO_K70_HATSUJO("釣魚")
 	ELSE
 		SELECTCASE TFLAG:193
 		;釣れない
@@ -11601,23 +11594,23 @@ IF LOCAL
 				LOCALS = %ITEMNAME:(TFLAG:193)%
 			ENDSELECT
 			SELECTCASE LOCALS
-			CASE "氷の鱗", "龍の爪"
+			CASE "氷之鱗", "龍之爪"
 				PRINTFORML 「哇~！好漂亮~！这是什么？」
 			CASE "龍涎香"
 				PRINTFORML 「诶？ 这块石头看起来很稀有呢……」
-			CASE "ピラニア"
+			CASE "食人魚"
 				IF TFLAG:194 > 1000
 					PRINTFORML 「啊啊！！ 怎么会有这种东西ー！」
 				ELSE
 					PRINTFORML 「啊啊！！ 有东西要咬人了ー！」
 				ENDIF
-			CASE "ガーパイク", "カムルチー", "チョウザメ", "イトウ", "ピラルクー", "タキタロウ"
+			CASE "雀鳝", "雷魚", "鲟", "伊富魚", "巨骨舌鱼", "泷太郎"
 				IF TFLAG:194 > 1000
 					PRINTFORML 「哦，好重～！ %CALLNAME:MASTER%先生帮帮忙～！」
 				ELSE
 					PRINTFORML 「哇哦！好大一个！我、我也来帮忙！」
 				ENDIF
-			CASE "ウナギ", "ヤツメウナギ", "ナマズ"
+			CASE "鰻魚", "八目鰻", "鲶魚"
 				IF TFLAG:194 > 1000
 					PRINTFORML 「啊！滑溜溜的好恶心……」
 				ELSE
@@ -11640,7 +11633,7 @@ IF LOCAL
 			ENDSELECT
 			PRINTL 
 			PRINTFORML 「嗯嗯……看起来这是%LOCALS%呢」
-			SIF GROUPMATCH(LOCALS, "ガーパイク", "ピラルクー", "ピラニア")
+			SIF GROUPMATCH(LOCALS, "雀鳝", "巨骨舌鱼", "食人魚")
 				PRINTFORML 「诶！？ %LOCALS%！？」
 			WAIT
 		ENDSELECT
@@ -11653,7 +11646,6 @@ RETURN 1
 ;CFLAG:性格傾向による地の文分岐あり
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_626
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_626_1
 RETURN RESULT
 
@@ -11674,9 +11666,9 @@ ELSEIF STRCOUNT(LOCALS, "(書|本|卷書|魔法書|経典|記録|詞典)")
 	LOCALS:1 = 本
 ELSEIF STRCOUNT(LOCALS, "(护符|护身符|符箓|小装饰|驱魔护符|念珠|火箭|勾玉)")
 	LOCALS:1 = 护身符
-;ELSEIF STRCOUNT(LOCALS, "(結晶|宝玉|宝珠|オーブ|守護石|魔法石|妖玉|しずく)")
+;ELSEIF STRCOUNT(LOCALS, "(結晶|宝玉|宝珠|宝珠|守護石|魔法石|妖玉|水滴)")
 ;	LOCALS:1 = 宝玉;保留
-ELSEIF STRCOUNT(LOCALS, "(遺物|秘宝|礦物碎片|人工制品|化石)")
+ELSEIF STRCOUNT(LOCALS, "(遺物|秘宝|礦物碎片|遺物|化石)")
 	LOCALS:1 = 遺物
 ELSE
 	LOCALS:1 = 
@@ -11695,7 +11687,6 @@ IF LOCAL
 	ELSEIF TFLAG:194 == -2
 		PRINTFORMW 「哇！对不起！！」
 		PRINTFORMW 「我可能逗留太久了……」
-
 	; 放弃（送别）
 	ELSEIF TFLAG:194 == -1
 		IF TALENT:[[小鈴]]:恋人
@@ -11961,9 +11952,15 @@ ENDIF
 ;660,読書
 ;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
 ;==================================================
-@M_KOJO_MESSAGE_COM_K70_660
-;CALL TRAIN_MESSAGE
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_MESSAGECHECK_COM_K70_660
 DRAWLINE
+RETURN 1
+
+@M_KOJO_MESSAGE_COM_K70_660
 CALL M_KOJO_MESSAGE_COM_K70_660_1
 RETURN RESULT
 
@@ -11975,7 +11972,6 @@ LOCAL = 1
 ;地の文をカットしているため[無知]解除イベントが起きません,ご了承ください
 ;なお、地の文の前半部分（你は本棚にあった～）は省略不可
 IF LOCAL
-	CALL M_KOJO_COLOR_K70
 	;酔ってる
 	IF ALCOHOL_FACE(70) == "酔酒" || ALCOHOL_FACE(70) == "不省人事"
 		CALL M_KOJO_K70_DRUNK("読書")
@@ -12044,7 +12040,6 @@ RETURN 1
 ;TARGET的房間に入る場合のみ表示
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_698
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_698_1
 RETURN RESULT
 
@@ -12063,7 +12058,7 @@ IF LOCAL
 		PRINTFORML 「被子已经准备好了哦…❤」
 	ELSE
 		PRINTFORML 「来吧，请上去吧」
-		SIF FIRSTTIME("お招き") || !RAND:3
+		SIF FIRSTTIME("招待") || !RAND:3
 			PRINTFORML 「请不要触摸堆积着的书啊……会坍塌的……」
 	ENDIF
 	PRINTW 
@@ -12082,7 +12077,6 @@ RETURN 1
 ;699,外出
 ;==================================================
 @M_KOJO_MESSAGE_COM_K70_699
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_COM_K70_699_1
 RETURN RESULT
 
@@ -12117,7 +12111,6 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
 ;==================================================
 @M_KOJO_MESSAGE_SCOM_K70_60
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_SCOM_K70_60_1
 RETURN RESULT
 @M_KOJO_MESSAGE_SCOM_K70_60_1
@@ -12155,7 +12148,6 @@ RETURN 1
 ;分岐無し
 ;==================================================
 @M_KOJO_MESSAGE_SCOM_K70_61
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_SCOM_K70_61_1
 RETURN RESULT
 @M_KOJO_MESSAGE_SCOM_K70_61_1
@@ -12199,7 +12191,6 @@ RETURN 1
 ;ABL:親密(5以上=照れる
 ;==================================================
 @M_KOJO_MESSAGE_SCOM_K70_62
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_SCOM_K70_62_1
 RETURN RESULT
 @M_KOJO_MESSAGE_SCOM_K70_62_1
@@ -12254,7 +12245,6 @@ RETURN 1
 ;分岐条件はEVENT_MESSAGE_COM500.ERB参照
 ;==================================================
 @M_KOJO_MESSAGE_SCOM_K70_63
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_SCOM_K70_63_1
 RETURN RESULT
 @M_KOJO_MESSAGE_SCOM_K70_63_1
@@ -12354,7 +12344,6 @@ RETURN 1
 ;TFLAG:193(1=大成功 0=成功 -1=失敗)
 ;==================================================
 @M_KOJO_MESSAGE_SCOM_K70_80
-CALL TRAIN_MESSAGE
 CALL M_KOJO_MESSAGE_SCOM_K70_80_1
 RETURN RESULT
 @M_KOJO_MESSAGE_SCOM_K70_80_1

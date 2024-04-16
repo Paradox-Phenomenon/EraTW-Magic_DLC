@@ -1,0 +1,977 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;函数系
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+
+
+;==================================================
+;特定台词输出函数
+;==================================================
+@MOE_LARVA_LINES_PRINT(ARGS,ARG)
+
+IF ARG == 11
+	PRINTFORMDW %ARGS%
+ELSEIF ARG == 10 
+	PRINTFORMDL %ARGS%
+ELSEIF ARG 
+	PRINTFORMW %ARGS%
+ELSE 
+	PRINTFORML %ARGS%
+ENDIF 
+
+;==================================================
+;独有称呼设置函数
+;这一段是DOKU佬搓的版本
+	;ARG为0，则设置自机
+	;ARG为1，则设置对方自称
+	;当ARGS有指定至值时，（就叫XXX）的内容会换成ARGS
+;==================================================
+@MOE_LARVA_NAME_SET(ARGS,ARG=0)
+
+;预处理
+SIF ARG
+	ARG = 1
+$RE_INPUT
+IF ARGS == ""
+	IF ARG
+		ARGS '= CSTR:118:20
+	ELSE
+		ARGS '= MASTERNAME:118
+	ENDIF
+	SIF ARGS == ""
+	ARGS '= CALLNAME:(ARG*118)
+ENDIF
+LOCALS '= ARGS
+
+;预处理结束
+
+PRINTBUTTON @"[就叫%LOCALS%]", 0
+IF LOCALS != CALLNAME:(ARG*118)
+	PRINTL 
+	PRINTBUTTON @"[改回%CALLNAME:(ARG*118)%]", 1
+ENDIF
+PRINTL 
+PRINTBUTTON @"[更改]", 2
+INPUT
+CLEARLINE 1
+PRINTL 
+SELECTCASE RESULT
+CASE 0
+$NAMESET_CASE0
+;CASE0 改成另外一个
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= ARGS
+	LOCAL = 0
+CASE 1
+$NAMESET_CASE1
+;CASE1 就用原来的
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= CALLNAME:(ARG*118)
+	LOCAL = 1
+;输入一个名字
+CASE 2
+	PRINTDL （请在下方输入名字）
+	INPUTS
+	LOCALS:1 '= REPLACE(RESULTS,"[\s]","")
+	IF STRLENS(LOCALS) > 10
+		PRINTW 「一口气都念不完哇……有短一点的嘛？」  
+		GOTO RE_INPUT
+	ENDIF 
+	;统一处理
+	SELECTCASE LOCALS:1
+		CASE LOCALS
+			GOTO NAMESET_CASE0
+		CASE CALLNAME:(ARG*118)
+			GOTO NAMESET_CASE1
+		CASE ""
+			PRINTL 「这不是什么都没说嘛……」  
+			GOTO RE_INPUT
+	ENDSELECT
+	LOCALS = 2
+	
+	IF ARG
+		;角色
+		SELECTCASE LOCALS:1
+		
+		
+		ENDSELECT
+	ELSE
+		;玩家
+		SELECTCASE LOCALS:1
+			CASE "老公","亲爱的","宝宝","达令" 
+				IF !TALENT:118:恋人 || !(TALENT:118:恋慕 || TALENT:118:思慕)
+					PRINTFORMW 「%LOCALS:1%……好奇怪的名字……」
+					PRINTFORMW 「不行不行！换一个！这么叫总觉得会被人误会……」
+					GOTO RE_INPUT
+				ENDIF
+			LOCALS = 3
+		ENDSELECT
+	ENDIF
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= LOCALS:1
+CASEELSE
+	GOTO RE_INPUT
+ENDSELECT
+LOCALS '= REPLACE(LOCALS,"[\s]","")
+IF ARG
+	;角色
+	CSTR:118:20 '= LOCALS
+ELSE
+	;玩家
+	MASTERNAME:118 '= LOCALS
+ENDIF
+
+;口上内容
+SELECTCASE LOCAL
+	CASE 0
+	;没有改变
+		
+	CASE 1
+	;初始名称
+		
+	CASE 2
+	;普通更改
+		
+	CASE 3
+	;彩蛋一号
+		IF TALENT:118:恋人 && TALENT:118:恋慕
+			PRINTFORMW 「%RESULTS%……诶嘿嘿%UNICODE(0x2764)%，%RESULTS%%UNICODE(0x2764)%～……」
+			PRINTFORMW 「这样叫才对嘛……嘿嘿，%CSTR:118:20%真的能这样叫你嘛！%RESULTS%！」
+		ELSEIF TALENT:118:恋人 && TALENT:118:思慕
+			PRINTFORMW 「%RESULTS%……%RESULTS%%UNICODE(0x2764)%！这样叫可以嘛……」
+			PRINTFORMW 「你要是很喜欢的话，%RESULTS%～……嘿嘿，看起来很喜欢呢！」 		
+		ENDIF
+ENDSELECT
+RETURN LOCAL
+
+;==================================================
+;第一次称呼设置函数
+;==================================================
+@MOE_LARVA_SET_NAME(ARG=0)
+
+IF GETBIT(CFLAG:31, 1)	 ;周目变化会尝试继承
+	SIF MASTERNAME:118 == ""
+		MASTERNAME:118 = MOE_LARVA_CALL_YOU
+	SIF CSTR:118:20 == ""
+		CSTR:118:20 = MOE_LARVA_CALL_YOU:1
+ELSE ;非周目变化才会设置
+	SIF CSTR:118:20 == ""
+		CSTR:118:20 = 拉尔瓦
+	SIF MASTERNAME:118 == ""
+		MASTERNAME:118 = %CALLNAME:MASTER%
+ENDIF 
+
+
+
+;==================================================
+;时间段输出函数
+;==================================================
+@MOE_LARVA_TIME_OUTPUT(ARG=0)
+#FUNCTIONS 
+
+IF TIME < 540 
+	RETURNF "早上"
+ELSEIF TIME < 720 
+	RETURNF "上午"
+ELSEIF TIME < 960 
+	RETURNF "下午"
+ELSE 
+	RETURNF "晚上"
+ENDIF 
+
+;==================================================
+;神态描写函数
+;==================================================
+@MOE_LARVA_WHEN_SEE_YOU(季节,动作)
+#DIM 季节 ;2是夏天，4是冬天，1，3是其他，或许可以加夏天活力差分
+#DIM 动作 ;1是靠近
+
+IF 季节 == 4 
+	IF 动作 == 1 
+		SELECTCASE RAND:2 
+			CASE 0
+				PRINTFORMDL 拉尔瓦用蝴蝶翅膀裹着自己，摇摇晃晃地飘了过来——
+			CASE 1
+				PRINTFORMD 拉尔瓦踮着裸露的小脚
+				SIF OUTROOF(CFLAG:118:300)
+					PRINTFORMD 踩着雪
+					PRINTFORMDL 小跑过来——
+			CASE 2
+				PRINTFORML 
+		ENDSELECT
+	ENDIF 
+ELSEIF 季节 == 1 || 季节 == 3 || 季节 == 4
+	IF 动作 == 1 
+		SELECTCASE RAND:4
+			CASE 0
+				PRINTFORMDL 拉尔瓦扑扇着翅膀，毫不在意漫天飞舞的鳞粉……
+			CASE 1
+				PRINTFORMDL 从远处扇着翅膀飞过来的拉尔瓦，带着一阵清香靠近了你
+			CASE 2
+				PRINTFORMDL 拉尔瓦裸露着双脚，踏着轻快的步伐走近过来
+			CASE 3
+				PRINTFORMDL 拉尔瓦背着手走走来，笑盈盈地看着你
+		ENDSELECT
+	ENDIF 
+ENDIF 
+
+;==================================================
+;打喷嚏函数，从露米娅的口上里截过来的
+;ARG是程度，要减少的气力
+;==================================================
+@LARVA_MOE_SNEEZE(ARG,ARG:1=0,ARG:2=0)
+
+IF ARG == 1 
+    ;CALL RECOVER(MASTER, -10, "体力", "被露米娅咬了一口")
+    CALL RECOVER(MASTER, ARG:1 * -10, "気力", "打喷嚏")
+	SIF ARG:1
+	CALL RECOVER(MASTER, ARG:2 * -10, "体力", "打喷嚏")
+ELSEIF ARG == 2 
+    CALL RECOVER(MASTER, ARG:1 * -10, "気力", "被翅膀拍了脸")
+	SIF ARG:1
+	CALL RECOVER(MASTER, ARG:2 * -10, "体力", "被翅膀拍了脸")
+
+ENDIF 
+
+;==================================================
+;口上色设置函数
+;==================================================
+@LARVA_MOE_SET_COLOR(ARG)
+
+IF FLAG:1031 || CFLAG:118:1031 == 1
+	SETCOLOR ARG 
+ELSE 
+	RESETCOLOR
+ENDIF 
+
+;==================================================
+;第三人称检测函数
+;检测自机性别，扶她暂视为女性
+;ARG
+;==================================================
+@LARVA_MOE_GET_SEX_OF_YOU(ARG)
+#FUNCTIONS 
+
+IF !ARG
+	IF TALENT:0:2 == 2 
+		RETURNF "他	"
+	ELSE 
+		RETURNF "她	"
+	ENDIF 
+ENDIF 
+
+@LARVA_MOE_GET_SEX_OF_YOU_COMFIRM(ARG)
+#FUNCTION
+IF !ARG 
+	IF TALENT:0:2 == 2 
+		RETURNF 1 
+	ELSE 
+		RETURNF 0
+	ENDIF 
+ENDIF 
+
+;==================================================
+;心情检测函数
+;心情低为-1，愤怒为-2，反发为-3以上，不可叠加
+;==================================================
+@MOE_LARVA_MOOD()
+#FUNCTION 
+LOCAL = 0 
+IF MARK:118:反発刻印
+	LOCAL -= (MARK:118:反発刻印 + 2)
+ELSEIF TCVAR:118:132
+	LOCAL -= 2
+ELSEIF TALENT:118:15
+	LOCAL -= 1
+ENDIF  
+RETURNF LOCAL 
+
+
+;==================================================
+;同行检测函数，式中函数可直接调用
+;==================================================
+@MOE_LARVA_GET_GO_ALONG_TARGET()
+#FUNCTION 
+
+FOR LOCAL , 1 , CHARANUM 
+	IF CFLAG:LOCAL:同行 && CFLAG:LOCAL:同行 != 118
+		RETURNF LOCAL
+		BREAK
+	ENDIF 
+NEXT
+
+;==================================================
+;炮友检测函数
+;==================================================
+@MOE_LARVA_SEX_FRIEND()
+#FUNCTION 
+IF TALENT:118:184 || TALENT:118:185 
+	RETURNF 1
+ELSE 
+	RETURNF 0 
+ENDIF 
+
+;==================================================
+;胖次检定
+;来自于爱丽丝初期版
+;这个算式的值即为自机身上属于拉尔瓦的胖次的数量
+;==================================================
+@K118_CHECK_STOLEN_PANTIES(ARG = 118)
+#FUNCTION
+#DIM iPants_Type
+#DIM iPants_Num
+
+SIF !FLAG:853
+	RETURNF 0
+
+iPants_Num = 0
+FOR iPants_Type,0,MAXPANTS
+	SIF PANTS_TEMP:ARG:iPants_Type
+		iPants_Num += PANTS_TEMP:ARG:iPants_Type
+NEXT
+RETURNF iPants_Num
+
+;==================================================
+;胖次检定
+;来自于爱丽丝初期版
+;这个算式的值即为自机身上拉尔瓦的胖次型号
+;==================================================
+@K118_CHECK_STOLEN_PANTIES_TYPE(ARG = 118)
+#FUNCTION
+#DIM iPants_Type
+#DIM iPants_Num
+
+SIF !FLAG:853
+	RETURNF 0
+
+iPants_Num = 0
+FOR iPants_Type,0,MAXPANTS
+	SIF PANTS_TEMP:ARG:iPants_Type
+		BREAK 		
+NEXT
+RETURNF iPants_Type
+
+
+;==================================================
+;充填率_OF_LARVA检测函数
+;避免不同版本充填率函数定义不一样
+;==================================================
+
+;身体部位 1=V, 2=A, 3=VA 4= 子宮
+@充填率_OF_LARVA(角色登録番号, 身体部位)
+#FUNCTION
+#DIM 角色登録番号
+#DIM 身体部位
+#DIM 精液量
+#DIM 身体容量
+
+VARSET 精液量
+
+;該当部位の精液量の取得
+SELECTCASE 身体部位
+	CASE 1
+		精液量 = EX:角色登録番号:14
+	CASE 2
+		精液量 = EX:角色登録番号:15
+	CASE 3
+		;------ ALTER 精液填充加算
+		精液量 = EX:角色登録番号:14 + EX:角色登録番号:15 + (EX:角色登録番号:子宮内精液)
+		;------ END
+		;精液量 = EX:角色登録番号:14 + EX:角色登録番号:15
+	CASE 4
+		精液量 = EX:角色登録番号:子宮内精液
+ENDSELECT
+
+;該当部位の容量を取得
+SELECTCASE TALENT:角色登録番号:体型
+	CASE -5
+		身体容量 = 300
+	CASE -4 TO -2
+		身体容量 = 600
+	CASE -1
+		身体容量 = 1000
+	CASE 0
+		身体容量 = 1200
+	CASE IS > 0
+		身体容量 = 1500
+ENDSELECT
+
+;子宮ならば容量半減
+IF 身体部位 == 4
+	身体容量 /= 2
+ENDIF
+RETURNF 100 * 精液量 / 身体容量
+
+;==================================================
+;室内外描述函数
+;检测当前是在室内还是在室外，并输出对应的字符串
+;输入ARG可以指定输出不同的结果
+;==================================================
+@MOE_LARVA_OUTROOF_PRINT(ARG=0)
+#FUNCTIONS
+
+IF OUTROOF(CFLAG:118:300)
+	SELECTCASE ARG
+		CASE 0 
+			RETURNF "地"
+	ENDSELECT
+ELSE 
+	SELECTCASE ARG
+		CASE 0 
+			RETURNF "床"			
+	ENDSELECT
+ENDIF 
+
+;==================================================
+;宵暗之花检测函数
+;检测露米娅是否是我自己的口上，	且是否是二周目，可以整联动剧情,
+;==================================================
+@MOE_LARVA_GET_RUMIA_KOJO_VERSION_NUM()
+
+	IF !CFLAG:12:998	
+		RESULT = 0 
+	ELSE 	
+		TRYCALLFORM M_KOJO_K12_{CFLAG:12:998}	
+		IF RESULTS:1 == "Moe版"
+			IF CFLAG:12:1200 
+				RESULT = 2
+			ELSE
+				RESULT = 1 
+			ENDIF 
+		ENDIF 
+	ENDIF 
+	RETURN RESULT 
+
+
+;==================================================
+;主动掀裙子描述函数、
+;避免重复使用文本造成虚胖
+;函数内自带胖次辨别，所以应该不用主动赋给arg
+;==================================================
+@MOE_LARVA_PANTS_OR_PUxxY_DESCRIPTION(ARG=0)
+
+;函数内判别有无胖次穿着
+IF !ARG
+	SIF !EQUIP:6
+	ARG = 1 
+ENDIF 
+
+IF PALAM:118:9 >= 10000
+	PRINTFORMDL 在女孩满是黏糊糊蜜液的双腿之间
+ELSEIF PALAM:118:9 >= 2000
+	PRINTFORMDL 在女孩染上些许湿润的两腿之间
+ELSE 
+	PRINTFORMDL 在女孩白皙光洁的大腿之间
+ENDIF 
+
+;无胖次的情况
+IF ARG == 1 
+
+			IF 充填率_OF_LARVA(TARGET,1) > 77
+				PRINTFORMDL 直接裸露出的幼小蜜缝黏满了白浊，还在不断向外喷着精液
+                PRINTFORMDL 流淌着的精液随着女孩蹲下的动作，大股大股地滴落在地上……
+			ELSEIF 充填率_OF_LARVA(TARGET,1) > 10
+				PRINTFORMDL 裸露着的幼小蜜缝黏满了白浊，从中汩汩地流着精液
+                PRINTFORMDL 流淌着的精液随着女孩蹲下的动作，啪哒啪哒地滴落在地上……
+			ELSEIF PALAM:118:9 > 10000
+				PRINTFORMDL 直接裸露的幼小蜜缝，已经湿得一塌糊涂
+                PRINTFORMDL 从微微张开的穴口流淌出的蜜液，啪哒啪哒地滴落在地上……
+			ELSEIF PALAM:118:9 > 2000
+				PRINTFORMDL 被蜜液微微濡湿的幼小蜜缝吸引着你的目光……
+			ELSE 
+				PRINTFORMDL 微微张开的幼小蜜缝吸引着你的目光……
+			ENDIF
+
+ELSEIF !ARG
+	
+            IF 充填率_OF_LARVA(TARGET,1) > 77
+                PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%中间不断地漫出精液……
+            ELSEIF 充填率_OF_LARVA(TARGET,1) > 10
+                PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被精液浸染了……
+            ELSEIF PALAM:118:9 >= 10000
+                PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%散发出阵阵香味……
+            ELSEIF PALAM:118:9 >= 1000
+                PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被蜜液浸染了……
+            ELSE
+                PRINTFORMDL %PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光
+            ENDIF
+
+ENDIF 
+;==================================================
+;插入是否满足检测函数
+;检测是否允许进入，以最难的体位为准
+;删除了显示文本的部分以保证悄悄检测
+;返回1时允许，返回0时拒绝
+;用于LOST_VIRGIN_STOP
+;==================================================
+@MOE_LARVA_CHECK_ENABLE_TO_INSERT(ARG)
+#FUNCTION
+
+		A = 0
+		S = 0
+		;全部の命令に共通の要素を考慮
+		;(従順が高いと命令に従いやすいなど)
+		;常識改変
+		;避免无此补丁的版本报错
+		;IF FLAG:催眠強度
+		;	A += 30 * FLAG:催眠強度 / 100
+		;ENDIF
+		;ABL:9
+		IF ABL:9
+			A += ABL:9
+		ENDIF
+		;ABL:従順
+		IF ABL:従順
+			A += ABL:従順 * 4
+		ENDIF
+		;ABL:15
+		IF ABL:15
+			A += ABL:15 * 2
+		ENDIF
+		;レズ調教
+		IF HETEROSEX(TARGET,PLAYER) == 1
+			;ABL:17
+			IF ABL:17
+				A += ABL:17 * 3
+				ENDIF
+			;ABL:32
+			IF ABL:32
+				A += ABL:32 * 3
+				ENDIF
+			;TALENT:兩面通吃
+			IF TALENT:性別嗜好 == -1
+				A += 10
+				ENDIF
+			;好奇心
+			IF TALENT:23 > 0
+				A += 7
+				ENDIF
+			;保守的
+			IF TALENT:23 < 0
+				A -= 13
+				ENDIF
+		;ゲイ調教
+		ELSEIF HETEROSEX(TARGET,PLAYER) == 2
+			;ABL:18
+			IF ABL:18
+				A += ABL:18 * 3
+				ENDIF
+			;ABL:33
+			IF ABL:33
+				A += ABL:33 * 3
+				ENDIF
+			;TALENT:兩面通吃
+			IF TALENT:性別嗜好 == -1
+				A += 10
+				ENDIF
+			;好奇心
+			IF TALENT:23 > 0
+				A += 7
+				ENDIF
+			;保守的
+			IF TALENT:23 < 0
+				A -= 13
+				ENDIF
+		ELSE
+			;好奇心
+			IF TALENT:23 > 0
+				A += 5
+				ENDIF
+			;保守的
+			IF TALENT:23 < 0
+				A -= 10
+				ENDIF
+		ENDIF
+
+		;刻印チェック
+		IF MARK:苦痛刻印
+			A += MARK:苦痛刻印 * 5
+		ENDIF
+		IF TALENT:13 > 0
+			T = 4
+		ELSEIF TALENT:13 < 0
+			T = 1
+		ELSE
+			T = 2
+		ENDIF
+
+		;不埒刻印および反発刻印
+		IF MARK:不埒刻印
+			A += MARK:不埒刻印 * 3 * T
+		ENDIF
+		IF MARK:反発刻印
+			A -= MARK:反発刻印 * 2 * T
+		ENDIF
+
+
+		;PALAM:恭順
+		IF GETPALAMLV(PALAM:恭順,5)
+			A += GETPALAMLV(PALAM:恭順,5) * 3
+		ENDIF
+		;PALAM:恐怖
+		IF GETPALAMLV(PALAM:恐怖,5)
+			A += GETPALAMLV(PALAM:恐怖,5) * 3
+		ENDIF
+
+		;服従
+		IF TALENT:服従
+			A += 10
+		ENDIF
+		;隷属
+		IF TALENT:服従 > 1
+			A += 20
+		ENDIF
+		;叛逆（服従、隷属で無効）
+		IF TALENT:態度 > 0 && !TALENT:服従
+			A -= 5
+		ENDIF
+		;堅強
+		IF TALENT:10 > 0
+			A -= 5
+		ENDIF
+		;坦率
+		IF TALENT:態度 < 0
+			A += 5
+		ENDIF
+		;自尊心高
+		IF TALENT:13 > 0
+			A -= 15
+		ENDIF
+		;自尊心低
+		IF TALENT:13 < 0
+			A += 5
+		ENDIF
+		;喜歡引人注目
+		IF TALENT:26
+			A += 2
+		ENDIF
+		;圧抑
+		IF TALENT:自己愛 < 0
+			A -= 10
+		ENDIF
+		;抵抗
+		IF TALENT:抵抗
+			A -= 10
+		ENDIF
+		;把柄
+		IF TALENT:34
+			A += 12
+		ENDIF
+		;容易高潮
+		IF TALENT:72
+			A += 10
+		ENDIF
+		;迷信
+		IF TALENT:85
+			A += 8
+		ENDIF
+
+
+		;調教者の能力、素質
+		;ABL:16
+		IF ABL:PLAYER:16
+			A += ABL:PLAYER:16 * 2
+		ENDIF
+		;魅惑
+		IF TALENT:PLAYER:魅惑
+			A += 6
+		ENDIF
+		;謎之魅力
+		IF TALENT:PLAYER:94
+			A += 8
+		ENDIF
+		;施虐狂
+		IF TALENT:PLAYER:82
+			A += 3
+		ENDIF
+
+		;助手の素質
+		;鼓舞
+		IF ASSIPLAY && TALENT:PLAYER:鼓舞
+			A += 1
+		ENDIF
+
+		IF TCVAR:145 == 1
+			A += 20
+		ENDIF
+
+		;相性チェック
+		R = NO:PLAYER
+		IF RELATION:R > 0 && RELATION:R < 30
+			A -= 10
+		ELSEIF RELATION:R > 0 && RELATION:R < 70
+			A -= 6
+		ELSEIF RELATION:R > 0 && RELATION:R < 100
+			A -= 3
+		ELSEIF RELATION:R >= 100 && RELATION:R < 130
+			A += 3
+		ELSEIF RELATION:R >= 100 && RELATION:R < 170
+			A += 6
+		ELSEIF RELATION:R >= 100 && RELATION:R >= 170
+			A += 10
+		ENDIF
+		;ABL:欲望
+		IF ABL:欲望
+			A += ABL:欲望 * 3
+		ENDIF
+		;ABL:Ｖ感覚
+		IF ABL:Ｖ感覚
+			A += ABL:Ｖ感覚 * 2
+		ENDIF
+		;快楽刻印
+		IF MARK:快楽刻印
+			A += MARK:快楽刻印 * 3
+		ENDIF
+		;PALAM:潤滑（の不足）
+		IF PALAM:潤滑 < PALAMLV:3
+			A -= 5
+		ENDIF
+		;PALAM:欲情
+		IF GETPALAMLV(PALAM:欲情,5)
+			A += GETPALAMLV(PALAM:欲情,5) * 3
+		ENDIF
+		;害羞
+		IF TALENT:羞恥心 > 0
+			A -= 2
+		ENDIF
+		;否定快感
+		IF TALENT:快感応答 < 0 && !TALENT:恋慕
+			A -= 5
+		ENDIF
+		;討厭男人（恋慕、親愛で無効）
+		IF OTOKOGIRAI(TARGET)
+			A -= 12
+		ENDIF
+		;恋慕
+		IF TALENT:恋慕 && ASSIPLAY == 0
+			A += 15
+			S = 15
+		ENDIF
+		;親愛
+		IF TALENT:恋慕 > 1 && ASSIPLAY == 0
+			A += 5
+			S = 5
+		ENDIF
+		;処女
+		LOCAL = MAX(10,40 - EXP:Ｖ経験)
+		IF TALENT:処女
+			A -= LOCAL
+		;V経験
+		ELSEIF EXP:Ｖ経験 < EXPLV:2
+			A -= 15
+		ENDIF
+
+		;調教者が扶她
+		IF (TALENT:PLAYER:2 & 3) == 3
+			A += 4
+		ENDIF
+
+		;媚薬
+		IF TCVAR:媚薬
+			A += 6
+		ENDIF
+
+		Y = 0
+		;愛液的污垢
+		SIF STAIN:PLAYER:2 & 1
+			Y += 1
+		;精液的污垢
+		SIF STAIN:PLAYER:2 & 4
+			Y += 3
+		;肛門的污垢
+		SIF STAIN:PLAYER:2 & 8
+			Y += 7
+		SIF STAIN:PLAYER:2 & 16
+			Y += 15
+		Y = Y * (2 - TALENT:汚臭耐性) / 2
+
+		;有污垢
+		IF Y
+			A -= Y
+			;汚臭鈍感
+			IF TALENT:汚臭耐性 > 0
+			ELSEIF TALENT:汚臭耐性 < 0
+			ENDIF
+		ENDIF
+
+		;合計を表示(20以上で実行)
+		;以最高的背面座位为准
+		V = 42
+		IF A < V
+			RETURNF 0
+		ELSE 
+			RETURNF 1 
+		ENDIF 
+;==================================================
+;检测其他人EX程度的函数
+;ARG为0时，返回到RESULT中的值，为当前EX程度最高的角色编号
+;ARG为1时，返回到RESULT中的值，为当前EX程度最高数值
+;用于？
+;==================================================
+@MOE_LARVA_GET_OTHERS_EX_CHARANUM(ARG=0)
+#FUNCTION 
+#DIM TOTAL_EX	;总绝顶数
+#DIM CHARA_ID	;当前选择的角色编号
+#DIM MAX_EX	;值为当前绝顶值最大的角色编号
+;EX:選択中角色ID:LOCAL
+VARSET TOTAL_EX
+VARSET CHARA_ID 
+VARSET MAX_EX
+FOR CHARA_ID , 0 , CHARANUM 
+	FOR LOCAL , 0 , 4 
+		TOTAL_EX:CHARA_ID += EX:CHARA_ID:(LOCAL)	;记录某人的总绝顶数
+	NEXT 
+	SIF !TOTAL_EX:CHARA_ID	;不存在绝顶时直接进入下一个角色
+		CONTINUE 
+	SIF MAX_EX == 0 	;有绝顶数值时将当前角色设为最大
+		MAX_EX = CHARA_ID
+	SIF TOTAL_EX:CHARA_ID > TOTAL_EX:MAX_EX		;最大EX判别
+		MAX_EX = CHARA_ID
+NEXT
+IF !ARG
+	RETURNF MAX_EX 
+ELSE 
+	RETURNF TOTAL_EX:MAX_EX 
+ENDIF 
+
+;==================================================
+;检测拉尔瓦有多少额外体力
+;计算方式是简单的相加，返回值为对应差值，可能为负数
+;==================================================
+@MOE_LARVA_GET_EXTRA_BASE(ARG)
+#FUNCTION 
+	RESULT += (MAXBASE:118:0 + MAXBASE:118:1)
+	RESULT -= (CSVBASE(118 , 0) + CSVBASE(118 , 1))
+	RETURNF RESULT 
+
+
+
+;==================================================
+;関数名:MOE_LARVA_ADD_BASE
+;概　要:メッセージ付きBASE加算
+;可以输入负值
+;==================================================
+@MOE_LARVA_ADD_MAXBASE(VAR_NAME,C_ID,変動数)
+#DIMS VAR_NAME
+#DIM VAR_ID
+#DIM C_ID
+#DIM 変動数
+
+SIF 変動数 == 0
+	RETURN
+
+VAR_ID = FINDELEMENT(BASENAME, VAR_NAME)
+MAXBASE:C_ID:VAR_ID += 変動数
+IF 変動数 > 0
+	CALL COLORMESSAGE(@"%VAR_NAME%的上限值变化：＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,2)
+ELSEIF  変動数 < 0
+	CALL COLORMESSAGE(@"%VAR_NAME%的上限值变化： - {-変動数}（%CALLNAME:C_ID%）",C_RED,2,2)
+ENDIF 
+
+
+
+;==================================================
+;从帕露战神（不是）DOKU那里扒的代码工具
+;-------------------------------------------------
+@DOKU_OD_ASK_MOE_LARVA(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8, ARGS:9, ARG:9, ARGS:10, ARG:10, ARGS:11, ARG:11, ARGS:12, ARG:12, ARGS:13, ARG:13, ARGS:14, ARG:14, ARGS:15, ARG:15, ARGS:16, ARG:16)
+;DOKU:我这个东西的强大之处是
+;隐藏选项（编号空出来）
+;隐藏选项（编号不空出来）
+;菜单选项（编号自定义）
+;额外空行（相当于选项中间插printl）
+
+#DIM CONST MAX_OPTION_NUM = 17
+#DIM CURRENT
+#DIM NOWCURRENT
+#DIM BIT_NOT_AVAI = 0
+RESETCOLOR
+NOWCURRENT = 0
+FOR CURRENT, 0, (MAX_OPTION_NUM + 1)
+IF ARGS:(CURRENT) != ""
+SELECTCASE ARG:(CURRENT)
+CASE 1
+PRINTBUTTON @"[{CURRENT}]%ARGS:(CURRENT)%", CURRENT
+PRINTL 
+CASE 0 
+SETCOLOR 0x606060
+SETBIT BIT_NOT_AVAI,CURRENT
+PRINTPLAINFORM [{CURRENT}]%ARGS:(CURRENT)%
+RESETCOLOR
+PRINTL 
+CASE 2
+SETBIT BIT_NOT_AVAI,CURRENT
+;把这个case放到2上，是因为这样能用"2-是否可选"来得到正确的情况
+;如果应当显示，那么case1，如果不该显示，那么case2
+ENDSELECT
+NOWCURRENT += 1
+ENDIF
+NEXT
+$INPUT_LOOP
+INPUT
+IF RESULT < 0 || RESULT >= NOWCURRENT || ARGS:RESULT == "" || GETBIT(BIT_NOT_AVAI,RESULT)
+CLEARLINE 1
+GOTO INPUT_LOOP
+ELSE
+CLEARLINE NOWCURRENT+1
+PRINTFORML [{RESULT}]%ARGS:RESULT%
+ENDIF
+SIF FLAG:1031
+SETCOLOR C_MOE_LARVA
+RETURN RESULT
+
+@DOKU_KM_RENEW_TARGET_OF_LARVA(ARG)
+;优化用函数，用于替代简单粗暴的INFO_RENEW_TARGET来更新target，防止其他人的FLAGSETTING被反复执行
+;ARG是外部输入的角色编号。只要在自己的flagset里做好反重复执行就好了
+;KM的意思是KOJO_MESSAGE
+VARSET LOCAL
+IF !ARG
+;为了配合DOKU_MOVE对玩家进行移动的情况
+CALL INFO_RENEW_TARGET
+RETURN 1
+ENDIF
+CALL TARGETSET_CHACK("")
+LOCAL = FLAG:7
+CALL KOJO_MESSAGE_SEND("GRAVITY",-1, ARG,-1,-1)
+TFLAG:104 = TARGET
+FLAG:7 = LOCAL
+;GRAVITY换成SUIKA是一样的。谁能想到我能如此操作呢？
+RETURN 1
+
+@DOKU_KM_RENEW_AND_SET_TARGET_OF_LARVA(ARG)
+IF CFLAG:ARG:300 != CFLAG:0:300
+CALL DOKU_KM_RENEW_TARGET_OF_LARVA(ARG)
+RETURN 1
+ENDIF
+CALL TARGETSET_CHACK("")
+LOCAL = FLAG:7
+CALL KOJO_MESSAGE_SEND("GRAVITY",-1, ARG,-1,-1)
+FLAG:7 = LOCAL
+RETURN 1
+
+
