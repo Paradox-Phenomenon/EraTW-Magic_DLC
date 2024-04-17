@@ -71,6 +71,6 @@ FONTSTYLE 3
 REDRAW 0
 CALL FULLCUTIN(40, 25, "ぱにめーしょんPresents","　","　","　　　　　　――狂気の全画面カットイン")
 FONTSTYLE 0
-SETFONT "MS Mincho"
+SETFONT "ＭＳ ゴシック"
 REDRAW 1
 
