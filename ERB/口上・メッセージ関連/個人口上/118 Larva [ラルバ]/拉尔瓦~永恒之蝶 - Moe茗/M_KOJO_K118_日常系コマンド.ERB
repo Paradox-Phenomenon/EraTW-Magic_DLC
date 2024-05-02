@@ -15,27 +15,32 @@
 ;成否判定
 ;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
 TFLAG:192 = 0
+SIF (FLAG:73 != 108) && FLAG:73 && MOE_LARVA_MOOD() < 0	;和别人约会时的冷门情况
+	TFLAG:192 = -1 
+
 
 @M_KOJO_Moe_MESSAGE_COM_K118_300
 ;コマンド共通メッセージ(TRAIN_MESSAGE) 
 ;削除すると「～話をした。」とかが消えます。また、削除した場合は自動で口上色が付きません。
 CALL TRAIN_MESSAGE
 ;口上メイン呼出
+
 CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1
 RETURN RESULT
-@M_KOJO_Moe_MESSAGE_COM_K118_300_1
 
+@M_KOJO_Moe_MESSAGE_COM_K118_300_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	$M_KOJO_Moe_MESSAGE_COM_K118_300_1_START 
 	;成为朋友
+	SIF !CFLAG:118:1001
 	CALL Moe_LARVA_FIRST_BECOME_FRINED
 	SIF RESULT == 1 
 		RETURN 1
 
+	$M_KOJO_Moe_MESSAGE_COM_K118_300_1_START
 	;约会期间可能触发
 	IF FLAG:73 == 118 
 		;愤怒？
@@ -63,31 +68,31 @@ IF LOCAL
 			RETURN 1
 
 		;约会对话
-		SIF  !RAND:3
+		SIF  !RAND:3 
 			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_6
 		SIF RESULT == 1 
 			RETURN 1
 
 		;恋人对话
-		SIF TALENT:118:7 && RAND:5
+		SIF TALENT:118:7 && RAND:3 > RAND:2
 			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_7
 		SIF RESULT == 1 
 			RETURN 1
 		
 		;恋慕对话
-		SIF TALENT:118:3 && RAND:5
+		SIF TALENT:118:3 && RAND:5 > RAND:4
 			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_8
 		SIF RESULT == 1 
 			RETURN 1
 
 		;炮友对话
-		SIF MOE_LARVA_SEX_FRIEND() && RAND:5
+		SIF MOE_LARVA_SEX_FRIEND() && RAND:2
 			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_10
 		SIF RESULT == 1 
 			RETURN 1		
 		
 		;思慕对话
-		SIF TALENT:118:3 && RAND:5
+		SIF TALENT:118:3 && RAND:4 > RAND:3
 			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_9
 		SIF RESULT == 1 
 			RETURN 1
@@ -99,13 +104,18 @@ IF LOCAL
 			RETURN 1
 
 		;设定相关
-		SIF CFLAG:118:1001
-			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_1
+		CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_1
 		SIF RESULT == 1 
 			RETURN 1
 
 	;非约会
 	ELSE 
+
+		;愤怒？
+		SIF CFLAG:318 == 1
+			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_14 
+		SIF RESULT == 1 
+			RETURN 1
 
 		;会话失败 
 		SIF TFLAG:193 < 0 
@@ -127,13 +137,13 @@ IF LOCAL
 
 		;季节对话
 		SIF ONCE("K118_REACT_FOR_SEASON") && !RAND:7
-			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_4
+			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_3
 		SIF RESULT == 1 
 			RETURN 1
 
 		;联动对话
 		SIF ONCE("K118_REACT_FOR_OTHER") && !RAND:10
-			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_7
+			CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_12
 		SIF RESULT == 1 
 			RETURN 1
 
@@ -177,12 +187,12 @@ IF LOCAL
 		CALL M_KOJO_Moe_MESSAGE_COM_K118_300_1_Custom_1
 		SIF RESULT == 1 
 			RETURN 1
-
+		;
+		GOTO M_KOJO_Moe_MESSAGE_COM_K118_300_1_START
 	ENDIF 
 	;ここに口上書いて下さい
 ENDIF
-GOTO M_KOJO_Moe_MESSAGE_COM_K118_300_1_START 
-
+RETURN 0 
 
 @Moe_LARVA_FIRST_BECOME_FRINED
 ;已经成为朋友触发此段对话，大概朋友要求是对话触发，好感500，信赖75，亲密3，会问独有称呼
@@ -289,7 +299,7 @@ LOCAL = 1
 IF LOCAL
 IF FIRSTTIME(SELECTCOM)
 	IF GETBIT(CFLAG:31, 1)
-		PRINTFORMW 「茶？是给%CSTR:118:20%的嘛？非常感谢！」
+		PRINTFORMW 「茶？是给%CSTR:118:20%的嘛？谢谢你！」
 		PRINTFORML 
 		PRINTFORMDL 拉尔瓦伸手接过了茶
 		PRINTFORMDW 不可避免地碰到了那双白皙小手，还是记忆中熟悉的清凉触感
@@ -319,7 +329,7 @@ IF FIRSTTIME(SELECTCOM)
 		PRINTFORMDW 还是这么喜欢，和别人谈天说地呢……
 		PRINTFORML 
 	ELSE 
-		PRINTFORMW 「茶？是给%CSTR:118:20%的吗？非常感谢！」
+		PRINTFORMW 「茶？是给%CSTR:118:20%的吗？谢谢你！」
 		PRINTFORML 
 		PRINTFORMDL 拉尔瓦伸手接过茶……
 		PRINTFORMDW 似乎是烫到了，还没摸上茶杯便飞快的抽离了手
@@ -407,7 +417,7 @@ ENDIF
 		ELSE 
 			SELECTCASE RAND:8
 				CASE 0 
-					PRINTFORML 「茶？是给%CSTR:118:20%的吗？非常感谢！」
+					PRINTFORML 「茶？是给%CSTR:118:20%的吗？谢谢你！」
 					PRINTFORMDW 拉尔瓦接过来茶，似乎还是有些烫手的样子……
 				CASE 1
 					PRINTFORML 「好像%CSTR:118:20%从来没有喝过别人泡的茶呢……」
@@ -466,7 +476,7 @@ LOCAL = 1
 IF LOCAL
 PRINTFORML 
 	IF TFLAG:193 > -1 
-		IF FLAG:73 == 12
+		IF FLAG:73 == 118	;约会的时候
 			GOTO K118_302_0_3
 			[SKIPSTART]
 			IF  (DATE_HITOGOMI() || WITH_MOB() == 9)	;有路人
@@ -546,7 +556,7 @@ PRINTFORML
 						PRINTFORMW 「沾上鳞粉就很难清理了哦」
 					CASE 1
 						PRINTFORML 「%CSTR:118:20%的蝴蝶翅膀，是很重要的东西！」
-						PRINTFORMDL 「所以，不要乱碰哦，不然就用弹幕打你！」
+						PRINTFORML 「所以，不要乱碰哦，不然就用弹幕打你！」
 						PRINTFORMW 「诶……都说了不要碰了啦……真是的～」
 					CASE 2 
 						PRINTFORML 「诶！不要把%CSTR:118:20%头上的叶子碰掉了啊！」
@@ -1529,7 +1539,7 @@ IF LOCAL
 							PRINTDATAL 
 								DATAFORM 「今天想要被%MASTERNAME:118%%UNICODE(0x2764)%……一边亲着嘴一边往肚子里顶%UNICODE(0x2764)%……」
 								DATAFORM 「有点想……趴着%UNICODE(0x2764)%……被%MASTERNAME:118%，从后面用力撞进来%UNICODE(0x2764)%……」
-								DATAFORM 「今天可以……面对面抱着，一边亲嘴一边做嘛%UNICODE(0x2764)%……」
+								DATAFORM 「今天可以……和%MASTERNAME:118%面对面抱着，一边亲嘴一边做嘛%UNICODE(0x2764)%……」
 								DATAFORM 「肚子有点痒痒的……想要……被%MASTERNAME:118%插进来%UNICODE(0x2764)%……」
 								DATAFORM 「可以让%CSTR:118:20%在上面嘛%UNICODE(0x2764)%……想让%MASTERNAME:118%好好地舒服一下%UNICODE(0x2764)%……」
 							ENDDATA
@@ -1647,8 +1657,8 @@ IF LOCAL
 					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
 					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
 					PRINTFORML 
-					INPUT 
 					PRINTFORML  [0]想要什么呢？
+					INPUT
 					PRINTFORML 
 					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
 					PRINTFORML 
@@ -1735,8 +1745,8 @@ IF LOCAL
 					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
 					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
 					PRINTFORML 
-					INPUT 
 					PRINTFORML  [0]想要什么呢？
+					INPUT 
 					PRINTFORML 
 					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
 					PRINTFORML 「啊……想要%UNICODE(0x2764)%……欸嘿，一个深情的kiss的说%UNICODE(0x2764)%……」
@@ -1763,8 +1773,8 @@ IF LOCAL
 					PRINTFORML 「不要这么紧呀……呜啊……身体好热……要融化了啦%UNICODE(0x2764)%……」
 					PRINTFORMW 「但是……好舒服%UNICODE(0x2764)%……从来都没有……这么舒服过……还想，还想要%UNICODE(0x2764)%……」
 					PRINTFORML 
-					INPUT 
 					PRINTFORML  [0]想要什么呢？
+					INPUT 
 					PRINTFORML 
 					PRINTFORML 「想要%UNICODE(0x2764)%……被%MASTERNAME:118%这样抱着……但是，又好像不够呀%UNICODE(0x2764)%……」
 					PRINTFORML 
@@ -1778,7 +1788,6 @@ IF LOCAL
 					PRINTFORML 
 					PRINTFORMW 「以后也是，要一直都，温柔地抱着我哦%UNICODE(0x2764)%……」
 					PRINTFORML 
-
 				ELSE 
 					PRINTFORMW 「不要！不要抱我%UNICODE(0x2764)%……」
 					PRINTFORMW 「不行呀%UNICODE(0x2764)%……身体，好奇怪%UNICODE(0x2764)%……」
@@ -1864,12 +1873,55 @@ IF LOCAL
 	;TARGET連れ出し
 	IF CFLAG:同行 == 60
 	;TARGET以外連れ出し(TARGET同行中のみ
-		IF TALENT:118:8 || TALENT:118:3 
+		IF TALENT:118:7
+			IF ((CFLAG:118:1721 > 599) || TCVAR:118:142) && !RAND:5
+				SELECTCASE RAND:2 
+					CASE 0 
+						PRINTFORML 「%MASTERNAME:118%……哼哼，去哪里呢？」
+						IF BASE:0:5 > MAXBASE:0:5  * 2 / 3
+							PRINTFORML 「那个地方，已经那么大了噢——是，想要对吧？」
+							PRINTFORMDL 忽然凑近过来的拉尔瓦，有意无意地用身体磨蹭着你……
+							PRINTFORMW 「%CSTR:118:20%呀，也想被你抱住了呀……」
+						ELSE 
+							PRINTFORMW 「要是去没人的地方……可能·会被妖精袭击噢%UNICODE(0x2764)%」
+						ENDIF 
+					CASE 1 
+						PRINTFORML 「%MASTERNAME:118%%UNICODE(0x2764)%～……要走了嘛？」
+						PRINTFORML 「欸嘿，那就——呼哇——蹭蹭蹭……」
+						PRINTFORMDL 拉尔瓦紧抱着你的手臂在身前蹭着……
+						PRINTFORMDW 似乎……伴随着口中的喘息声……正在蹭着什么敏感的地方……
+				ENDSELECT	
+			ELSE 
+				SELECTCASE RAND:5
+					CASE 0 
+						PRINTFORML 「今天也是和%MASTERNAME:118%一起冒险的一天！」
+						PRINTFORMW 「要不要联手策划一次异变？就叫……鳞粉飞满天异变吧！」
+					CASE 1 
+						PRINTFORML 「只要是和%MASTERNAME:118%，去哪里都可以！」
+						PRINTFORMW 「好吃的，好玩的，有意思的事情，都要和%MASTERNAME:118%做呢！」
+					CASE 2
+						PRINTFORML 「如果是扫地的话，给%CSTR:118:20%分一点零花钱好嘛？」
+						PRINTFORML 「嘿嘿，开个玩笑啦，我参与打扫的话也能去领一份报酬呢！」
+						PRINTFORMW 「到时候拿这笔钱，一起出去旅游什么的……就像什么呢？嗯哼？」
+					CASE 3
+						PRINTFORML 「要不要出一趟远门呢？因为是和%MASTERNAME:118%……」
+						PRINTFORMW 「呜呜呜——反正就是想出去玩嘛，想和%MASTERNAME:118%约会的说……」
+					CASE 4 
+						PRINTFORML 「%MASTERNAME:118%鞋带散了噢——」
+						PRINTFORMDL 才刚低下头，就发觉身边的拉尔瓦扇着翅膀飞起，稳稳地坐在你的肩膀上
+						PRINTFORMDL 下意识扶住拉尔瓦的双腿，来自肩上娇躯的柔软触感让你有些浮想联翩
+						PRINTFORMW 「不重吧？哼哼，那就——%MASTERNAME:118%一号！出发！」
+				ENDSELECT 
+			ENDIF 
+		ELSEIF TALENT:118:8 || TALENT:118:3 
 			PRINTDATAL 
 				DATAFORM 「嗯！%MASTERNAME:118%一起吧！」
 				DATAFORM 「有点期待……不要是恶作剧哇……」
 				DATAFORM 「一起的话，去更远的地方好吗？」
 				DATAFORM 「不要走快了哇，%CSTR:118:20%可能会跟不上……」
+				DATAFORM 「直接带我去约会的话……会很开心——」
+				DATAFORM 「是去扫地呢？还是去玩呢？还是说……」
+				DATAFORM 「有没有什么有趣的事情哇……」
 			ENDDATA
 		ELSEIF CFLAG:118:1001 
 			PRINTDATAW 
@@ -2068,6 +2120,11 @@ IF LOCAL
 				PRINTFORML 纤细娇躯扭着扭着，无意识中就贴近了你
 				PRINTFORMW 而后，保持着身体接触，又沉沉地睡去了
 			ELSE 
+				PRINTDATAL 
+					DATAFORM 「呼……呼噜……」
+					DATAFORM 「诶……呜？」
+					DATAFORM 「呼……呼嗯——……」
+				ENDDATA	
 				PRINTDATAL 
 					DATAFORM 拉尔瓦似乎没有注意到你的样子
 					DATAFORM 拉尔瓦不习惯地转过了身
@@ -2554,7 +2611,18 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF TALENT:118:恋慕
+	IF CFLAG:TARGET:睡眠 || CFLAG:TARGET:衰弱
+		IF TALENT:118:7 
+			PRINTFORMDL 只是贴着拉尔瓦的身体，小妖精就跟捡到宝一样抱了过来……
+			PRINTFORMDW 明明睡着了还能这样么……不由自主地摸了摸她的脑袋……
+		ELSEIF TALENT:118:3 
+			PRINTFORMDL 在拉尔瓦的身旁躺下了……
+			PRINTFORMDW 忽然被那伸展着的蝴蝶翅膀盖住了脸……就这样睡了一会儿……
+		ELSE 
+			PRINTFORMDL 看着拉尔瓦的睡颜，不由自主地便陷入了沉眠
+			PRINTFORMDW 就这样小睡了一会儿……
+		ENDIF 
+	ELSEIF TALENT:118:恋慕
 		SELECTCASE RAND:3  
 			CASE 0
 				PRINTFORML 「……%MASTERNAME:118%睡着了没有呀……」
@@ -2713,27 +2781,27 @@ IF LOCAL
 					PRINTFORML 「诶……是命莲寺吗？」
 					IF TALENT:118:恋慕 ;待补充
 						IF DAY:2 == 4
-						PRINTFORML 「那个地方外面有墓地哇！会刮冷风的呀！」
-						PRINTFORMW 「不会有鬼吧……不会吧？要是有的话，%CSTR:118:20%会吓得躲进%MASTERNAME:118%的怀里——」
-						PRINTFORMW 「嗯哼，%MASTERNAME:118%不会是这么想的吧？」
-						PRINTFORMDL 背对着你的拉尔瓦忽地向后靠过来，被你稳稳地接住了
-						PRINTFORMW 「不管怎样……%MASTERNAME:118%的怀抱，我都想要～」
+							PRINTFORML 「那个地方外面有墓地哇！会刮冷风的呀！」
+							PRINTFORMW 「不会有鬼吧……不会吧？要是有的话，%CSTR:118:20%会吓得躲进%MASTERNAME:118%的怀里——」
+							PRINTFORMW 「嗯哼，%MASTERNAME:118%不会是这么想的吧？」
+							PRINTFORMDL 背对着你的拉尔瓦忽地向后靠过来，被你稳稳地接住了
+							PRINTFORMW 「不管怎样……%MASTERNAME:118%的怀抱，我就是想要～」
 						ELSE 
-						PRINTFORML 「那个地方很安静呢……毕竟是寺庙嘛」
-						PRINTFORMW 「跟%MASTERNAME:118%去那样宁静的地方散散心，比起听妖精们胡说八道，要好得多呀——」
+							PRINTFORML 「那个地方很安静呢……毕竟是寺庙嘛」
+							PRINTFORMW 「跟%MASTERNAME:118%去那样宁静的地方散散心，比起听妖精们胡说八道，要好得多呀——」
 						ENDIF 
 					;ELSEIF TALENT:118:思慕 ;待补充
 					;	PRINTFORML 「去寺庙的话……呜，那个，就真的想去嘛？」
 					;	PRINTFORMW 「因为，一点都不好玩嘛！」
 					ELSE ;待补充
 						IF  DAY:2 == 4
-						PRINTFORML 「那个地方外面全是坟墓哇！会刮阴风的呀！」
-						PRINTFORMW 「呜……一想到这个，背后就打寒颤……」
-						PRINTFORMDW 妖精也会怕幽灵么……
-						PRINTFORMW 「才不是！是，是因为，好冷啊啊啊啊啊啊啊……」
+							PRINTFORML 「那个地方外面全是坟墓哇！会刮阴风的呀！」
+							PRINTFORMW 「呜……一想到这个，背后就打寒颤……」
+							PRINTFORMDW 妖精也会怕幽灵么……
+							PRINTFORMW 「才不是！是，是因为，好冷啊啊啊啊啊啊啊……」
 						ELSE 
-						PRINTFORML 「去寺庙的话……呜，那个，就真的想去嘛？」
-						PRINTFORMW 「因为，总觉得一点都不好玩嘛！」
+							PRINTFORML 「去寺庙的话……呜，那个，就真的想去嘛？」
+							PRINTFORMW 「因为，总觉得一点都不好玩嘛！」
 						ENDIF 
 					ENDIF 
 				ENDIF 
@@ -2765,9 +2833,9 @@ IF LOCAL
 					ENDIF 
 				ELSE 	
 					PRINTFORML 「那里不让妖精进去，听说是怕妖精们偷东西什么的……」
-					PRINTFORML 「不过有%MASTERNAME:118%带路的话，肯定没问题的啦！」
+					PRINTFORMW 「不过有%MASTERNAME:118%带路的话，肯定没问题的啦！」
 					IF TALENT:118:恋慕
-						SELECTCASE RAND:3 
+						SELECTCASE RAND:4
 							CASE 0 
 								PRINTFORML 「放心放心，我可不会对别人恶作剧的呢～」
 								PRINTFORML 「只有这样的事，是只会，对%MASTERNAME:118%做的呢～」
@@ -2780,12 +2848,14 @@ IF LOCAL
 							CASE 2
 								PRINTFORML 「听说人类的村庄里，有专门拐妖精的怪叔叔……」
 								PRINTFORML 「%MASTERNAME:118%很像这种怪叔叔呢，欸嘿，开个玩笑～」
+							CASE 3 
+								PRINTFORML 「总觉得很让%MASTERNAME:118%破费呢……毕竟总是要花钱的……」
 						ENDSELECT
 					ELSE 
 						SELECTCASE RAND:2
 							CASE 0 
 								PRINTFORML 「说起来，经常看见有妖精说，去人里进货什么的……」
-								PRINTFORML 「总觉得不太正常……」
+								PRINTFORML 「总觉得不太正常……她们哪来的钱呀……」
 							CASE 1 
 								PRINTFORML 「正好，%CSTR:118:20%也想看看，最近村庄里变得怎样了」
 								PRINTFORML 「……会不会遇见有意思的，妖怪？」
@@ -2807,13 +2877,28 @@ IF LOCAL
 						PRINTFORMW 「空气也特别潮湿，简直不是人——啊不，妖精能住的地方……」
 					ENDIF 
 					PRINTFORML 「虽然还是有很多妖精住那里啦……去顺便打个招呼也挺好的！」
-					PRINTFORMW 「毕竟，我也算是妖精中的佼佼者呢！」
+					PRINTFORM; 「毕竟，我也算是妖精中的佼佼者呢！」
 				ELSE 
-				PRINTFORMW 「哇！是去雾之湖嘛！」
+					PRINTFORMW 「哇！是去雾之湖嘛！」
 					IF TALENT:118:恋慕
-						PRINTFORML 「我想和%MASTERNAME:118%，一起看看湖边的风景呢……」
+						SELECTCASE RAND:5
+							CASE 0 
+								PRINTFORMW 「我也想和%MASTERNAME:118%，一起看看湖边的风景呢……」
+							CASE 1
+								PRINTFORML 「虽然湖上经常都是浓雾……」
+								PRINTFORML 「不过，只是看着湖边，也很美丽呢……」
+							CASE 2
+								PRINTFORML 「雾之湖周围也住着很多妖精！」
+								PRINTFORML 「不过最漂亮的只有%CSTR:118:20%！你看这对翅膀——」
+							CASE 3
+								PRINTFORML 「因为是妖精住着的地方，所以对%MASTERNAME:118%还是有点危险的……」
+								PRINTFORML 「不过没关系！掉进落穴的话%CSTR:118:20%会救你的！」
+							CASE 4
+								PRINTFORML 「能带%CSTR:118:20%去红魔馆里面看一看吗？」
+								PRINTFORML 「诶哆……%MASTERNAME:118%肯定知道怎么进去的啦——」
+						ENDSELECT
 					ELSE
-						PRINTFORML 「因为是有点冷的地方……算啦，%MASTERNAME:118%想去就一起吧」
+						PRINTFORML 「因为是有点冷的地方……算啦，%MASTERNAME:118%想去就一起吧——」
 					ENDIF 
 				ENDIF 
 			CASE 4
@@ -3020,7 +3105,6 @@ IF LOCAL
 						PRINTFORMDL 拉尔瓦抄起扫把又开始把垃圾往两边扫……
 						PRINTFORML 「啊！……又忘记了呢……那就这样——」
 						PRINTFORMDW 看得出来并不熟练的样子，你跟在她身后做着善后工作……
-
 					ENDIF 
 				CASE 1 
 					PRINTFORML 「人类生活的地方，都需要像%MASTERNAME:118%这样打扫嘛？」
@@ -3088,8 +3172,28 @@ RETURN RESULT
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
-IF LOCAL
-
+IF LOCAL	
+	;IF TFLAG:194 == 3 
+	;ELSEIF TFLAG:194 == 2 
+	;ELSEIF TFLAG:194 == 1 
+	;ELSE 
+		IF ABL:MASTER:戦闘能力 > ABL:118:戦闘能力
+			PRINTDATAL 
+				DATAFORM 「刚刚那个姿势，%MASTERNAME:118%怎么做到的呀？」
+				DATAFORM 「%CSTR:118:20%的弹幕放完啦！诶诶诶！不要，不要这么急呀——」
+				DATAFORM 「只是稍微动一动就能避开吗……好厉害……」
+				DATAFORM 「这么厉害，不用符卡的话……完全没有压力哇……」
+				DATAFORM 「%MASTERNAME:118%全部避开了呢！真厉害啊！」
+			ENDDATA
+		ELSE 
+			PRINTDATAL 
+				DATAFORM 「小心那边！就算是妖精的弹幕，也会伤到%MASTERNAME:118%的……」
+				DATAFORM 「翅膀才是召唤弹幕的地方！不要往这边靠哦——」
+				DATAFORM 「哼哼，这样就累了嘛，%CSTR:118:20%可是还没用符卡呢……」
+				;DATAFORM 
+			ENDDATA
+		ENDIF 
+	;ENDIF 
 ENDIF
 RETURN 1
 ;==================================================
@@ -3108,7 +3212,7 @@ LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	;亲密5，计数0，自己有知，每日一次
-	SIF ( ABL:118:9 > 5 ) && !CFLAG:118:1160 && !TALENT:0:27 && ONCE("M_KOJO_Moe_MESSAGE_COM_K118_412_BREAK_IGNORENT_ASK")
+	SIF ( ABL:118:9 > 5 ) && !CFLAG:118:1160 && !TALENT:0:27 && ONCE("M_KOJO_Moe_MESSAGE_COM_K118_412_BREAK_IGNORENT_ASK") && TALENT:118:27 
 		CALL M_KOJO_Moe_Custom_EVENT_K118_IGNORENT_BREAK
 		SIF RESULT == 1 
 		RETURN 1 
@@ -3890,7 +3994,7 @@ IF LOCAL
 	;IF TALENT:118:7
 	;未来想加恋人差分，待补充
 	;ELSEIF CFLAG:118:1001
-	IF CFLAG:12:1001
+	IF CFLAG:118:1001
 		SELECTCASE TFLAG:194
 			;ひやかし
 			CASE -2
@@ -3957,7 +4061,7 @@ IF LOCAL
 					CASE 1
 						PRINTFORML 「哇啊！一直都很想要这个呢！%MASTERNAME:118%真好！」
 					CASE 2
-						PRINTFORML 「真的给%CSTR:118:20%买这个了呢！谢谢谢%MASTERNAME:118%！」
+						PRINTFORML 「真的给%CSTR:118:20%买这个了呢！谢谢%MASTERNAME:118%！」
 				ENDSELECT
 				PRINTFORMDW 与紧抱着礼物的%CALLNAME:118%，牵起了手走出了店门
 			TALENT:118:15 = 1
@@ -4062,7 +4166,60 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-
+	IF CFLAG:睡眠
+		IF TALENT:118:7 || TALENT:118:3
+			SELECTCASE RAND:3
+				CASE 0 	
+					PRINTFORML 「……%MASTERNAME:118%……喜欢……」
+					PRINTFORMDL 是在梦中练习着情话嘛……
+				CASE 1 
+					PRINTFORML 「……%MASTERNAME:118%%UNICODE(0x2764)%……」
+					PRINTFORMDL 拉尔瓦在用很可爱的声音念叨着你的名字
+					PRINTFORMDW 在做什么样的美梦呢……
+				CASE 2 
+					PRINTFORML 「抱抱……%MASTERNAME:118%……」
+					PRINTFORMDL 你随意搭在床边的手臂被拉尔瓦抱住了
+					PRINTFORMDW 连睡梦中都在向你撒娇么……
+			ENDSELECT 
+			PRINTFORMDW 被依靠着的感觉让你也产生了依赖，忍不住抱得更紧了一些
+		ELSE 		
+			PRINTDATAL 
+				DATAFORM 「呼……呼噜……」
+				DATAFORM 「诶……呜？」
+				DATAFORM 「呼……呼嗯——……」
+			ENDDATA	
+		ENDIF 	
+	ELSE 
+		IF TALENT:118:7 
+			PRINTDATAL 
+				DATAFORM 「要抱着睡嘛？嗯！那，%MASTERNAME:118%抱过来——」
+				DATAFORM 「抱着%CSTR:118:20%就能睡个好觉？嘿嘿，我也是噢——」
+				DATAFORM 「只要被%MASTERNAME:118%抱着……就感觉好幸福哇%UNICODE(0x2764)%……」
+				DATAFORM 「很温暖噢%UNICODE(0x2764)%……%MASTERNAME:118%的怀里……蹭一蹭%UNICODE(0x2764)%……」
+			ENDDATA
+			IF !TALENT:118:6 && !RAND:3 
+				PRINTFORMDL ……
+				PRINTFORML  「啾%UNICODE(0x2764)%……」
+				PRINTFORMDL 忽然的亲吻让你忍不住睁开了眼睛
+				PRINTFORMDW 紧靠在你胸前向你献吻的小妖精，轻闭着眼睛露出了安心的笑容
+				PRINTFORMDL ……
+			ELSE 
+				PRINTFORMDL 在你的怀抱之中，拉尔瓦伸出手来，轻轻摩挲着你的头
+				PRINTFORMDL 伴随着轻轻唱响的摇篮曲，令人安心的旋律让你的意识渐渐地远离……
+			ENDIF 
+		ELSE 
+			PRINTDATAL
+			 	DATAFORM 「要抱着睡嘛？真是个爱撒娇的孩子……呼呼……」
+				DATAFORM 「抱着%CSTR:118:20%就能睡个好觉？嘿嘿，我也是噢——」
+				DATAFORM 「不要随便翻身噢……压到翅膀会疼的呢……」
+			ENDDATA	
+			PRINTDATADW 
+				DATAFORM 轻轻抱住那纤细柔软的身体，你很快便因怀中的安心感而睡着了
+				DATAFORM 拉尔瓦紧靠着你的胸口，很快便沉沉地睡去了
+				DATAFORM 忽而被拉尔瓦戳弄着脸颊，不一会儿便安静下来了呢
+			ENDDATA
+		ENDIF 
+	ENDIF 
 ENDIF
 RETURN 1
 ;==================================================
@@ -4141,15 +4298,48 @@ IF LOCAL
 	ENDIF 
 	SELECTCASE TFLAG:193 
 		CASE 1 
-
+			IF TALENT:118:7 && !RAND:2
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORML 「有急事嘛！那我也要快一点，起飞——呜呀啊啊！」 
+						PRINTFORMDL 听见惊叫声的同时，你下意识地搂住了不小心摔倒的拉尔瓦
+						PRINTFORMDL 所幸并没有撞伤，不过拉尔瓦太难跑起来……索性直接扛起她开始赶路
+						PRINTFORMW 「哇哦哦！好高！好快！要飞起来了一样哇！——」 
+					CASE 1 
+						PRINTFORML 「是有什么好吃的店，快要关门了吗？」 
+						PRINTFORMDL 大概吧……你迎合着拉尔瓦的话，绘声绘色地讲起目的地的美食…… 
+						PRINTFORMDL 为了讲解而略微放慢脚步，不一会儿便被一脸兴奋的拉尔瓦拖着走了……
+						PRINTFORMW 「可是%MASTERNAME:118%不是说要关门了吗！快点快点！」 
+					CASE 2
+						PRINTFORML 「不是要把我拐跑吧？嗯哼？%MASTERNAME:118%哪里有那么老实呢……」 
+						PRINTFORMW 「比方说约会的时候讨好%CSTR:118:20%……晚上的时候就趁机做涩涩的事……」 
+						PRINTFORMW 「又或者……约会的时候，不知不觉就到了旅馆……」 
+						PRINTFORMW 「虽然，虽然不讨厌这样，不过……还是想多陪%MASTERNAME:118%做更多事哇……」 
+				ENDSELECT
+			ELSE 
+				PRINTDATAL 
+					DATAFORM 「在牵着手……还牵得这么紧……」 
+					DATAFORM 「相比要做的事情……现在这样也挺好呀……」 
+					DATAFORM 「紧紧地牵着……好像什么一样呢？」 
+					DATAFORM 「要抓紧赶路吗，嗯……再牵一下！」 
+					DATAFORM 「走那么快干嘛呀……明明想再安静地说会话呢……」 
+				ENDDATA
+			ENDIF 
 		CASE 0 
-
-
+			PRINTDATAL 
+				DATAFORM 「有急事嘛！那我也要快一点，起飞——」 
+				DATAFORM 「再快点的话，就要起飞了噢，会弄得鳞粉到处都是噢！」 
+				DATAFORM 「赶路嘛？借一下肩膀，%CSTR:118:20%要飞起来了噢——」 
+				DATAFORM 「是有什么好吃的店，快要关门了吗？」 
+				DATAFORM 「不是要把我拐跑吧？哼哼，开个玩笑～」 
+			ENDDATA
 		CASE -1 
 			PRINTDATAL
 				DATAFORM 「走那么快干嘛呀……」 
 				DATAFORM 「……又不是要急着做什么……」 
 				DATAFORM 「手，手弄疼了——」 
+				DATAFORM 「呐——慢一点嘛……」 
+				DATAFORM 「把手拿开啦，我自己会飞的啦……」 
 			ENDDATA
 	ENDSELECT
 ENDIF
