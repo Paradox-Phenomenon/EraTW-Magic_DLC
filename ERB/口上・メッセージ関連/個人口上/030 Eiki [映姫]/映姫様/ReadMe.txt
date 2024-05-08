@@ -37,6 +37,13 @@ https://web.archive.org/web/20180106024449/http://nyancleap.net:80/aeggen/
 http://tekito.kanichat.com/nmoudame/
 ・青空文庫 「仏教人生読本」 岡本かの子 著
 https://www.aozora.gr.jp/cards/000076/files/52342_51795.html
+ (23/07追記）
+・AIのべりすと
+https://ai-novel.com/
+・喘ぎ声生成器
+https://densyoku.app/aegigoe-generator
+・ChatGPT
+http://chat.openai.com/
 		;-------------------------------------------------
 				更新履歴・今後の予定
   長くなったので更新履歴等.txtに分離

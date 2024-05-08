@@ -298,6 +298,7 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 				CASE 1
 					PRINTFORML %CALLNAME:MASTER%推倒了%CALLNAME:TARGET%
 					CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,3)
+					CFLAG:MASTER:诶嘿嘿 = 1
 					FOR LOCAL,0,CHARANUM
 						CFLAG:(TARGET:LOCAL):诶嘿嘿 = 1
 						IF INROOM(CFLAG:MASTER:現在位置) == 2
@@ -311,24 +312,40 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 					TCVAR:TARGET:随便 = 1
 			ENDSELECT
 		ELSE
-			; CALL ASK_M("なにもしない", 1, "物欲しげな目で見つめる", 1)
-			CALL ASK_M("什么也不做", 1, "用充满欲望的眼神注视", 1)
+			;CALL ASK_M("なにもしない", 1, "物欲しげな目で見つめる", 1, "もっと攻めて", ABL:サドっ気 >= 3 && ABL:MASTER:マゾっ気 >= 3)
+			CALL ASK_M("什么也不做", 1, "用充满欲望的眼神注视", 1, "更主动些", ABL:施虐属性 >= 3 && ABL:MASTER:受虐属性 >= 3)
 			SELECTCASE RESULT
 				CASE 0
 					; PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%を解放した
 					PRINTFORML %CALLNAME:TARGET%将%CALLNAME:MASTER%放开了
 					CALL 被逆推終了("満足")
 				CASE 1
-					IF ABL:施虐属性 >= 2 || (ABL:施虐属性 == 1 && RAND(2))
-						; PRINTFORML %CALLNAME:TARGET%は目を細め、それなら壊れるまでしてあげると囁いた
-						PRINTFORML %CALLNAME:TARGET%眯起眼睛、在耳边轻声说一起做到不能做为止
+					IF ABL:施虐属性 >= 5 && RAND(2)
+						PRINTFORML %CALLNAME:TARGET%说如果有想要的事情，命令你好好乞求
+						IF ABL:MASTER:受虐属性 >= 3
+							PRINTFORML %CALLNAME:MASTER% 用快要消失的声音恳求时
+							PRINTFORML %CALLNAME:TARGET% 身体颤抖，轻声说道，那样的话，我会一直做下去直到你崩溃
+							CALL KOJO_MESSAGE_SEND("EVENT", 30, TARGET, 4)
+							TCVAR:TARGET:随便 = 1
+						ELSE
+							; PRINTFORML %CALLNAME:MASTER%は何も言うことができず、解放されてしまった…
+							PRINTFORML %CALLNAME:MASTER%怎么也说不出来，就这么被放开了…
+							CALL 被逆推終了("満足")
+						ENDIF
+					ELSEIF ABL:施虐属性 >= 3 || (ABL:施虐属性 == 2 && RAND(6)) || (ABL:施虐属性 == 1 && RAND(2))
+						PRINTFORML %CALLNAME:TARGET%似乎被%CALLNAME:MASTER%的眼神激起了虐待倾向
+						PRINTFORML 仿佛无法忍受那样的表情，%CALLNAME:TARGET%扑向了%CALLNAME:MASTER%...
 						CALL KOJO_MESSAGE_SEND("EVENT", 30, TARGET, 4)
 						TCVAR:TARGET:随便 = 1
 					ELSE
-						; PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%の視線の意味がわからず、そのまま解放した
-						PRINTFORML %CALLNAME:TARGET%没有理解注视中的含义，就这么放开了%CALLNAME:MASTER%
+						PRINTFORML %CALLNAME:TARGET%不明白%CALLNAME:MASTER%的眼神含义，便放开了
 						CALL 被逆推終了("満足")
 					ENDIF
+				CASE 2
+					PRINTFORML %CALLNAME:MASTER%用快要消失的声音恳求时
+					PRINTFORML %CALLNAME:TARGET%眯起眼睛，在耳边轻声说一起做到不能做为止
+					CALL KOJO_MESSAGE_SEND("EVENT", 30, TARGET, 4)
+					TCVAR:TARGET:随便 = 1
 			ENDSELECT
 		ENDIF
 	ENDIF

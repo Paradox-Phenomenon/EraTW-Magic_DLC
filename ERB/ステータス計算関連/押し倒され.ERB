@@ -6,9 +6,6 @@
 #DIM 抱きつき優先
 #DIM C_ID
 
-#DIM PUSH判定
-
-
 IF FLAG:推倒
 	被逆推判定 = 0
 	被逆推判定 += ABL:TARGET:戦闘能力 - ABL:MASTER:戦闘能力
@@ -113,11 +110,10 @@ IF !CHK_DATENOW(CFLAG:TARGET:约会中)
 				;同室にいるのが1人のみの場合または複数人に被逆推たとき
 				IF GET_TARGETNUM() == 1 || 複数被逆推() == 1
 					;被逆推ない効果
-					PUSH判定 = 1
 					IF FLAG:推倒 && 被逆推判定 <= 0
 						PRINTL
 						PRINTFORML 突然被%CALLNAME:TARGET%抱了过来！
-						PRINTFORM %CALLNAME:TARGET%は
+						PRINTFORM %CALLNAME:TARGET%
 						IF PALAM:TARGET:欲情 >= PALAMLV:10
 							PRINT 闪闪发光的
 						ELSE
@@ -127,18 +123,53 @@ IF !CHK_DATENOW(CFLAG:TARGET:约会中)
 						WAIT
 						$INPUT_LOOP
 						PRINTFORML 顺势被逆推吗？
-						PRINTL [ 0 ] - 抵抗
+						PRINTL [ 0 ] - 拒绝
 						PRINTL [ 1 ] - 躺下
 						INPUT
 						IF RESULT == 0 || RESULT == 1
-							PUSH判定 = RESULT
+							IF RESULT == 0
+								PRINTFORMW %CALLNAME:MASTER%将%CALLNAME%轻轻推开了
+							ELSEIF RESULT == 1
+								GOTO CHOOSE_TO_BE_PUSHED
+							ENDIF
 						ELSE
 							GOTO INPUT_LOOP
 						ENDIF
-					;延迟中は襲い掛かってこない
+					;ディレイ中は襲い掛かってこない
 					ELSEIF CFLAG:TARGET:延迟 > 0
-					ENDIF
-					IF PUSH判定 == 1
+
+					;甲斐性無しモードの時、まれに押し倒させてくる
+					ELSEIF FLAG:甲斐性無 && REVERSE_MIRADA(TARGET)
+						PRINTL
+						PRINTFORML 突然被%CALLNAME:TARGET%抱住了！
+						PRINTFORML %CALLNAME:TARGET%从怀里拿出一块石头，向%CALLNAME:MASTER%炫耀。
+						PRINTL
+						CALL COLORMESSAGE(@"%CALLNAME:TARGET%握紧石头，石头开始神秘地闪耀起来…", C_PINK, 2, 1)
+						PRINTL 　・
+						PRINTL 　・
+						PRINTL 　・
+						PRINTFORMW 醒来时，发现%CALLNAME:MASTER%被%CALLNAME:TARGET%推倒了！
+						IF !UFUFU_START_TIME
+							UFUFU_START_TIME = TIME
+							UFUFU_START_DAY = DAY
+						ENDIF
+						;本体に取り込まれて、このタイミングで口上を差し込みたい人が現れるまで封印
+						;CALL KOJO_MESSAGE_SEND("EVENT",10,TARGET,5,0)
+						FOR LOCAL, 1, GET_TARGETNUM() + 1
+							C_ID = TARGET:LOCAL
+							CFLAG:C_ID:诶嘿嘿 = 1
+							IF !TCVAR:C_ID:発情 && !TCVAR:C_ID:媚薬 && !GETBIT (CFLAG:C_ID:既成事實 , 1)
+								SETBIT CFLAG:C_ID:既成事實 , 1
+								CALL COLORMESSAGE(@"获得了和%CALLNAME:C_ID%的合意",C_YELLOW,2)
+							ELSE
+								CFLAG:C_ID:ヤラせちゃった = 1
+							ENDIF
+						NEXT
+						CFLAG:MASTER:诶嘿嘿 = 1
+						TFLAG:102 = 2
+						TFLAG:抱住模式 = 0
+					ELSE
+						$CHOOSE_TO_BE_PUSHED
 						PRINTL
 						PRINTFORMW %CALLNAME:MASTER%被推倒了！
 						IF !UFUFU_START_TIME
@@ -287,8 +318,12 @@ RETURNF 0
 LOCAL = CFLAG:ARG:合意判定
 LOCAL += (EX:ARG:Ｃ寸止め + EX:ARG:Ｖ寸止め + EX:ARG:Ａ寸止め + EX:ARG:Ｂ寸止め + EX:ARG:Ｍ寸止め) * 20
 ;抱き着くと被逆推率上昇
-SIF SELECTCOM == 311
+IF SELECTCOM == 311
 	LOCAL += 30
+	;小心者の勇気には応えてくれやすい
+	SIF FLAG:甲斐性無
+		LOCAL += 100
+ENDIF
 LOCAL += TALENT:ARG:性的兴趣 * 20
 SIF TALENT:ARG:処女
 	LOCAL -= 50
@@ -412,8 +447,12 @@ SIF TALENT:ARG:恋慕
 SIF CFLAG:ARG:强行内射
 	LOCAL -= 100
 ;抱き着くと抱き着き判定上昇
-SIF SELECTCOM == 311
+IF SELECTCOM == 311
 	LOCAL += 30
+	;小心者の勇気には応えてくれやすい
+	SIF FLAG:甲斐性無
+		LOCAL += 100
+ENDIF
 SIF TALENT:ARG:胆量 < 0 || TALENT:ARG:応答 < 0 || TALENT:ARG:冷漠 || TALENT:ARG:羞恥心 > 0
 	LOCAL = LOCAL - 30
 SIF TALENT:ARG:性的兴趣 > 0 || TALENT:ARG:羞恥心 < 0
@@ -479,6 +518,40 @@ ENDSELECT
 SIF FLAG:甲斐性無
 	LOCAL = LOCAL * 2
 RETURNF LOCAL
+
+;==============================================================
+;ミラダ逆使用判定
+;この前にも押し倒し判定があるため、素質などはそこまで詳しく見ない
+;RANDを含むため実行するたびに結果が変わる
+;C_ID	キャラNO
+;RETURN	0=使用しない, 1=使用する
+;==============================================================
+@REVERSE_MIRADA(C_ID)
+#FUNCTION
+#DIM C_ID
+
+;使用率の基準値
+;普段の度胸の無さへの信頼が高いほど、石に頼りたくなる
+LOCAL:0 = SQRT(LIMIT(CFLAG:C_ID:信賴度, 0, 20000) * 2)
+;欲望ボーナス1
+LOCAL:0 += 5 * MIN(ABL:C_ID:欲望, 10)
+;陥落素質ボーナス
+IF TALENT:C_ID:恋慕 && ABL:C_ID:欲望 > 10 && GROUPMATCH(TALENT:C_ID:処女, 1, -1)
+	LOCAL:0 *= 2
+ELSEIF TALENT:C_ID:愛欲
+	LOCAL:0 += 200
+ELSEIF TALENT:C_ID:炮友 == 2
+	LOCAL:0 += 100
+ELSEIF TALENT:C_ID:炮友
+	LOCAL:0 += 50
+ELSEIF TALENT:C_ID:思慕
+	LOCAL:0 /= 3
+ENDIF
+
+;DEBUGPRINTFORM ミラダ逆使用率:{LOCAL:0 + 1}/1000
+SIF RAND(1000) <= LOCAL:0
+	RETURNF 1
+RETURNF 0
 
 @HITOKE(同室チェック)
 ;MASTERの位置から見て他的房間にだれかいるかどうか

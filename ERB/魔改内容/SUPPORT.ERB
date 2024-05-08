@@ -1,13 +1,13 @@
 ﻿;数据更新
 @updateVersion()
-	#DIM index
+	;#DIM index
 	;本体更新
 	; SIF LASTLOAD_VERSION != GAMEBASE_VERSION
 		CALL gameUpdateVersion
 	;kojo更新
-	FOR index, 0, CHARANUM
-		CALL KOJO_MESSAGE_SEND("KOJO_VERSION", 0, index)
-	NEXT
+	;FOR index, 0, CHARANUM
+	;	CALL KOJO_MESSAGE_SEND("KOJO_VERSION", 0, index)
+	;NEXT
 
 ;本体更新
 @gameUpdateVersion()
@@ -22,6 +22,7 @@
 	; SIF LASTLOAD_VERSION < 4285
 	; 	CALL SAVE_SUPPORT_VERSION_4285
 	CALL UPDATE
+
 @UPDATE_OF_KOJO_ORIGIN
 
 ;口上の存在判定 and RESULTSに文字列代入
@@ -33,7 +34,7 @@ FOR LOCAL, 1, CHARANUM
 	ELSE
 		TRYCALLFORM M_KOJO_K{LOCAL}
 	ENDIF
-	PRINTFORML 正在確認%CALLNAME:LOCAL%%RESULTS%的口上是否存在UPDATE
+	PRINTFORML 正在確認%CALLNAME:LOCAL%%RESULTS:1%的口上是否存在UPDATE
 	TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{LOCAL}
 	WAIT
 NEXT
@@ -105,7 +106,6 @@ FOR LOCAL, 1, CHARANUM
 	ENDIF
 	LOCAL:2 ++
 NEXT
-WAIT
 
 IF FLAG:並び替え
 	FOR LOCAL, 1, NUM_OF_CHARA_WITH_KOJO + 1
@@ -124,7 +124,7 @@ WHILE 1
 	DRAWLINE
 	DRAWLINE
 	HTML_PRINT @"<i><b><u>　　　　角色口上ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
-	HTML_PRINT @"<i>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</i>"
+	HTML_PRINT @"<i><font color = '#0x00FF00'>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</font></i>"
 	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
 		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有口上角色'>　　过滤无口上角色功能开启　　</nonbutton></i>"
 	ELSE
@@ -170,11 +170,11 @@ WHILE 1
 		TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
 		COLOR '= "0x" + hex_to_str(GETCOLOR())
 		HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{LOCAL, 4, LEFT}"
-		HTML += @"]  -  %CALLNAME:C_ID, 8, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
+		HTML += @"]  -  %CALLNAME:C_ID, 16, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
 		IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > 0 
-			HTML += @"<br>     %"", 80, LEFT%----------------%CALLNAME:C_ID%%RESULTS:1%口上</font></button><br>"
+			HTML += @"----------------%CALLNAME:C_ID%%RESULTS:1%口上</font></button>"
 		ELSE
-			HTML += @"<br>     %"", 80, LEFT%----------------无口上</font></button><br>"
+			HTML += @"----------------无口上</font></button>"
 		ENDIF
 		HTML_PRINT HTML
 		RESETCOLOR
@@ -232,7 +232,7 @@ WHILE 1
 			ELSE
 				TRYCALLFORM M_KOJO_K{CHOOSE_COMMAND}
 			ENDIF
-			PRINTFORML 正在確認%CALLNAME:CHOOSE_COMMAND%%RESULTS%的口上是否存在UPDATE
+			PRINTFORML 正在確認%CALLNAME:CHOOSE_COMMAND%%RESULTS:1%的口上是否存在UPDATE
 			TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{CHOOSE_COMMAND}
 			WAIT
 			PRINTL
@@ -282,3 +282,25 @@ IF CFLAG:C_ID:诶嘿嘿 > 0
 	ENDIF
 	PRINTL
 ENDIF
+
+@TSP_GRADE_MODIFICATION
+#FUNCTION
+SELECTCASE MAXBASE:MASTER:TSP
+	CASE 0 TO 199
+		RETURNF 1
+	CASE 200 TO 399
+		RETURNF 2
+	CASE 400 TO 799
+		RETURNF 3
+	CASE 800 TO 1599
+		RETURNF 4
+	CASE 1600 TO 3199
+		RETURNF 5
+	CASE 3200 TO 6665
+		RETURNF 6
+	CASE IS >= 6666
+		RETURNF 7
+	CASEELSE
+		THROW ⚠️WARNING⚠️ ILLEGAL TSP VALUE
+ENDSELECT
+RETURNF 0

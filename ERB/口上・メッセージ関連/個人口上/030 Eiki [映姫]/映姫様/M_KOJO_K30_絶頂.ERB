@@ -12,7 +12,6 @@
 @M_KOJO_MESSAGE_PALAMCNG_B_K30
 #DIM RESET
 #DIM SEX_COUNT, 8
-CALL PALAM_MESSAGE_B
 IF RESET < TCVAR:30:383
 	RESET = TCVAR:30:383
 	VARSET SEX_COUNT
@@ -42,6 +41,9 @@ IF (!TEQUIP:50 && NOWEX:Ｖ絶頂 > 1) || (!TEQUIP:51 && NOWEX:Ａ絶頂 > 1)
 	SEX_COUNT:(TEQUIP:体位) ++
 	SIF SEX_COUNT:(TEQUIP:体位) > 2
 		SETBIT TCVAR:30:389, TEQUIP:体位
+	;ついでに潮吹きで部屋を汚す
+	SIF AT_HOME(30)
+		YOGORE:(CFLAG:30:現在位置) += RAND:200 + 100 + (NOWEX:Ａ絶頂 > 1) * 200
 ENDIF
 ;子宮口責め超強絶頂をカウント
 IF TFLAG:50 == 7 && NOWEX:Ｖ絶頂 && !(NOWEX:Ｖ絶頂 % 3)
@@ -223,31 +225,58 @@ ELSE
 		;振動棒约会中１
 		IF TCVAR:30:364 > 0 && !GROUPMATCH(CFLAG:現在位置, 情人用宿屋, 情人旅館, OMANEKIBEYA())
 			LOCAL = K30_FIND_AROUND()
-			LOCAL:1 = GROUPMATCH(LOCAL, 0, 49)
+			LOCAL:1 = GROUPMATCH(LOCAL, 0, 49, RANDOM_CHARANUM)
 			CALL HPH_PRINT(@"「%UNICODE(0XFF5E)* RAND(5, 15)%%TEXTR("ッ/っ/")%%TEXTR("HPH/HPHHPH/")%HPH」", "W")
-			IF (!GROUPMATCH(LOCAL, 0, 49) || DATE_HITOGOMI()) && RAND:2
+			PRINTFORML
+			IF K30_BE_SEEN()  && !TFLAG:约会道中
+				IF TCVAR:30:365 > 1
 				STRDATA LOCALS
-					DATAFORM （我……我在…HPH）\n（%\@ LOCAL:1 ? 人 # %K30_C_NAME(LOCAL)%的 \@%面前…去了HPH）
-					DATAFORM （好厉害…太快乐了HPH）\n（%K30_C_NAME(LOCAL, 2)%も…明明在，却这么……舒服…HPH）
-					DATAFORM （啊啊…HPH　大脑…空白、了…HPH）\n（在人前，所以……这么兴奋……吗…HPH）
+						DATAFORM （阎魔…暗地里，这样…不体面的，事情…做着…）\n（如果…%\@ LOCAL:1 ? 有人 # %K30_C_NAME(LOCAL)% \@%知道了的话…HPH）\n（会怎么样呢…HPHHPH）
+						DATAFORM （啊HPH 真是快要…害怕…的程度，舒服…HPHHPH）\n（%\@ LOCAL:1 ? 在公众场合 # %K30_C_NAME(LOCAL)%，身旁 \@%的情况下HPH 这么，厉害…HPHHPH）
+						DATAFORM （用屁股…高潮了…HPHHPH）\n（%\@ LOCAL:1 ? 在这种地方 # %K30_C_NAME(LOCAL)%面前 \@%HPH 我HPH 高潮了…HPHHPH）
+					ENDDATA
+				ELSE
+					STRDATA LOCALS
+						DATAFORM （我……我在…HPH）\n（%\@ LOCAL:1 ? 人 # %K30_C_NAME(LOCAL)%的 \@%面前…去了HPH）
+						DATAFORM （好厉害…太快乐了HPH）\n（%K30_C_NAME(LOCAL, 2)%も…明明在，却这么……舒服…HPH）
+						DATAFORM （啊啊…HPH　大脑…空白、了…HPH）\n（在人前，所以……这么兴奋……吗…HPH）
+					ENDDATA
+				ENDIF
+			ELSE
+				IF TCVAR:30:365 > 1
+					STRDATA LOCALS
+						DATAFORM （啊HPH 声音…只是，忍住…已经尽力了…HPHHPH）
+						DATAFORM （这，下一次…更，厉害的…来临时HPH 我…HPHHPH）
+						DATAFORM （要崩溃了…HPH 我，害怕…了…HPHHPH）
+						DATAFORM （用屁股…狂躁HPH 感觉舒服HPH 很舒服…HPHHPH）
+					ENDDATA
+				ELSE
+					STRDATA LOCALS
+						DATAFORM （这个…好…HPH　非常、好…HPH）
+						DATAFORM （啊啊…HPH　我…要漏出来了…HPH）
+						DATAFORM （像这、样…HPH　好厉…害…HPH）
+						DATAFORM （嗯っ…HPH　明明，变成…这样…HPH）
+					ENDDATA
+				ENDIF
+			ENDIF
+			CALL HPH_PRINT, LOCALS, "L"
+			PRINTFORMD 尽力%TEXTR("暗中/压住声音/屏住呼吸/")%地静下\@ LOCAL > 1 && RAND:2 ? 激烈的 # な \@迎来了高潮
+			IF TCVAR:30:365 > 1
+				PRINTDATADW
+					DATAFORM 之后，映姬仍然无法动弹…
+					DATAFORM 紧接着，映姬身体颤抖了一下…
+					DATAFORM ，映姬流下口水呆立着…
+					DATAFORM 之后，映姬仿佛被呛到一样僵硬着…
 				ENDDATA
 			ELSE
-				STRDATA LOCALS
-					DATAFORM （这个…好…HPH　非常、好…HPH）
-					DATAFORM （啊啊…HPH　我…要漏出来了…HPH）
-					DATAFORM （像这、样…HPH　好厉…害…HPH）
-					DATAFORM （嗯っ…HPH　明明，变成…这样…HPH）
+				PRINTDATADW
+					DATAFORM 之后的映姬仍在余韵中颤抖…
+					DATAFORM ，映姬满足地微笑了…
+					DATAFORM 之后，映姬长长地喘出了一口气…
+					DATAFORM 于是，香汗淋漓的映姬轻轻地擦了擦…
+					DATAFORM 映姬慌忙擦掉了滚落的口水
 				ENDDATA
 			ENDIF
-			CALL HPH_PRINT(LOCALS, "L")
-			PRINTFORMD 尽力%TEXTR("暗中/压住声音/屏住呼吸/")%地静下\@ LOCAL > 1 && RAND:2 ? 激烈的 # な \@迎来了高潮
-			PRINTDATADW
-				DATAFORM 之后的映姬仍在余韵中颤抖…
-				DATAFORM ，映姬满足地微笑了…
-				DATAFORM 之后，映姬长长地喘出了一口气…
-				DATAFORM 于是，香汗淋漓的映姬轻轻地擦了擦…
-				DATAFORM 映姬慌忙擦掉了滚落的口水
-			ENDDATA
 		;振動棒约会中２
 		ELSEIF TFLAG:193 == 350
 			CALL HPH_PRINT, @"「啊啊っ！　啊っ啊啊嗯HPH　一库っ！　一库呜HPH」\n「屁股っHPH　一っ一库呜呜ぅううHPHHPH」", "W"
@@ -261,7 +290,7 @@ ELSE
 				CALL HPH_PRINT, @"「%UNICODE(0XFF5E)* RAND(5, 15)%%TEXTR("ッ/っ/")%%TEXTR("HPH/HPHHPH/")%」", "L"
 				PRINTFORMDL 映姬用自己的手指撑開了肛门，就这样狼狈地去了…
 				CALL HPH_PRINT, @"「啊呜呜、啊唔HPH　%K30_C_NAME(MASTER)%…HPH」\n「这样看着的话…咿呀HPH」", "W"
-			ELSEIF TCVAR:30:393 < 2
+			ELSEIF TCVAR:30:392 < 2
 				CALL HPH_PRINT("「火辣辣ぃHPH　火辣辣的……但是很舒服…咿咿HPH」", "L")
 				CALL HPH_PRINT("「啊っHPH　啊っHPHHPH　映姬要被你干死了，不！别真的停，用力呀……一库、屁股要去了呜呜うぅうHPH」", "W")
 			ELSEIF SELECTCOM == 45
@@ -272,7 +301,7 @@ ELSE
 					CALL HPH_PRINT("「好厉害っHPH　…这っ、好厉害啊っHPHHPH」", "L")
 					CALL HPH_PRINT("「卟噜卟噜的っ、要去了！　一直、一~直的HPH　要去了呜呜ぅうHPH」", "W")
 				ENDIF
-			ELSEIF RAND:3 == 1 || TCVAR:30:393 < 6 || (TEQUIP:30:Ａ接触部位 != 1 && RAND:3 != 1) || (TEQUIP:30:Ａ接触部位 == 1 && CFLAG:诶嘿嘿 == 2)
+			ELSEIF RAND:3 == 1 || TCVAR:30:392 < 6 || (TEQUIP:30:Ａ接触部位 != 1 && RAND:3 != 1) || (TEQUIP:30:Ａ接触部位 == 1 && CFLAG:诶嘿嘿 == 2)
 				SELECTCASE TEQUIP:30:Ａ接触部位
 					;Ａ性交
 					CASE 1
@@ -328,7 +357,7 @@ ELSE
 			GOTO SKIP
 		;強絶頂Ａ
 		ELSEIF LOCAL == 2
-			IF TCVAR:30:392 > 5
+			IF TCVAR:30:392 > 5 || TCVAR:30:364
 				IF RAND:2 == 1
 					CALL HPH_PRINT("「屁股っHPH　好舒服啊っ…太美了っHPH　啊っ、啊啊啊啊啊啊HPH」", "W")
 				ELSE
@@ -341,7 +370,7 @@ ELSE
 			ENDIF
 		;絶頂Ａ
 		ELSE
-			IF TCVAR:30:392 > 4
+			IF TCVAR:30:392 > 4 || TCVAR:30:364
 				IF RAND:2 == 1
 					CALL HPH_PRINT("「去了HPH　屁股っ……又要っ、去了ううHPH」", "W")
 				ELSE
@@ -477,16 +506,23 @@ SOURCE:鬱屈 /= 3
 ;奴隷の睡眠絶頂時の口上
 ;-------------------------------------------------
 @M_KOJO_MESSAGE_PALAMCNG_B2_K30
-CALL PALAM_MESSAGE_B
 
 ;-------------------------------------------
 ;調教後の文本＠調教後というか指令後
 ;诶嘿嘿等に関係なくTARGET指定中なら毎ターン読み込まれるので仕込んだフラグの整理に使ってみる
 ;-------------------------------------------
-@M_KOJO_MESSAGE_PALAMCNG_C_K30
-;口上单薄的ところはシステムメッセージ
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_C_K30
+;口上薄いところはシステムメッセージ
 SIF !GROUPMATCH(SELECTCOM, 21, 81, 352)
-	CALL PALAM_MESSAGE_C
+	RETURN 0
+RETURN 1
+
+@M_KOJO_MESSAGE_PALAMCNG_C_K30
+TCVAR:30:382 = NOWEX:Ａ絶頂 ? 1 # 0
 ;非诶嘿嘿時のフラグ掃除
 IF !CFLAG:诶嘿嘿
 	TCVAR:30:362 = 0
@@ -538,8 +574,6 @@ IF TCVAR:30:362 > 1 && TCVAR:30:361 != TIME
 	CALL K30_REVERT_POSITION
 	RETURN
 ENDIF
-SIF FLAG:99
-	GOTO HIDE
 ;縦 割 れ ア ナ ル
 IF EXP:Ａ性交経験 > 99 && ABL:Ａ感覚 > 4 && !GETBIT(CFLAG:1910, 7)
 	CALL K30_VERTICAL_ANUS
@@ -557,8 +591,7 @@ IF TEQUIP:50 == PLAYER && CFLAG:诶嘿嘿 == 1 && TFLAG:194 != -99 && !CFLAG:180
 	RETURN 
 ENDIF
 RETURN
-
-$HIDE
+[SKIPSTART]
 ;物陰モードかつ他に誰かいるなら情景描写
 SIF GET_TARGETNUM() == 1
 	RETURN
@@ -600,15 +633,21 @@ SELECTCASE TOINT(TEXTR(LOCALS))
 ENDSELECT
 PRINTFORML 
 RETURN
-
+[SKIPEND]
 ;-------------------------------------------------
 ;射精に関する口上の表示
 ;一時的にTARGETを口上主に設定している
 ;-------------------------------------------------
 ;TFLAG:1 射精部位 (ビット0=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕
 ;20=手淫口交 21=乳夾口交22=六九式 24=子宮口 25=疑似 26=授乳PLAY
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_0
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_0(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;避孕套
@@ -692,8 +731,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_23
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_23(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 TCVAR:30:395 ++
 ;-------------------------------------------------
@@ -716,8 +761,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_22
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_22(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 TCVAR:30:395 ++
 
@@ -744,8 +795,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_21
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_21(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 TCVAR:30:395 ++
 
@@ -774,11 +831,17 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_20
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_20(ARG)
 ;射精アニメ
 CALL K30_BLOW_JOB_ANIME(4)
 PRINTFORML 
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 TCVAR:30:395 ++
 
@@ -817,6 +880,13 @@ IF LOCAL
 	ENDIF
 	RETURN 1
 ENDIF
+RETURN 1
+
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_9
 RETURN 1
 
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_9(ARG)
@@ -891,8 +961,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_8
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_8(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -931,8 +1007,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_7
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_7(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -960,8 +1042,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_6
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_6(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -993,8 +1081,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_5
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_5(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -1018,6 +1112,13 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_4
+RETURN 1
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_4(ARG)
 #DIM CHR
 IF SELECTCOM == 417
@@ -1035,7 +1136,6 @@ IF SHIRAHU(30)
 	CALL K30_BLOW_JOB_ANIME(4)
 	PRINTFORML 
 ENDIF
-CALL PALAM_MESSAGE_A
 ;-------------------------------------------------
 ;口交
 ;小町口上で百合百合している映姫様がとても良かったのでもろに影響うけてます
@@ -1401,8 +1501,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_26
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_26(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -1453,8 +1559,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_3
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_3(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -1494,8 +1606,14 @@ RETURN 1
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_2
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_2(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;肛門
@@ -1568,8 +1686,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A_K30_1
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A_K30_1(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;膣内
@@ -1666,8 +1790,14 @@ RETURN 1
 ;一時的にTARGETを口上主に設定している
 ;-------------------------------------------------
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_0
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_0(ARG)
-CALL PALAM_MESSAGE_A
 ;-------------------------------------------------
 ;避孕套
 ;記入チェック（=0, 非表示、1, 表示）
@@ -1679,8 +1809,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_23
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_23(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 
 ;-------------------------------------------------
@@ -1694,8 +1830,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_7
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_7(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;足交
@@ -1709,8 +1851,14 @@ ENDIF
 RETURN 1
 
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_5
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_5(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;乳交
@@ -1723,8 +1871,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_4
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_4(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;口交
@@ -1737,8 +1891,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_3
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_3(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;手淫
@@ -1751,8 +1911,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_2
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_2(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;肛門
@@ -1765,8 +1931,14 @@ IF LOCAL
 ENDIF
 RETURN 1
 
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_MESSAGE_PALAMCNG_MESSAGECHECK_A2_K30_1
+RETURN 0
+
 @M_KOJO_MESSAGE_PALAMCNG_A2_K30_1(ARG)
-CALL PALAM_MESSAGE_A
 TCVAR:30:396 ++
 ;-------------------------------------------------
 ;膣内
@@ -1781,7 +1953,6 @@ RETURN 1
 
 
 @M_KOJO_MESSAGE_PALAMCNG_F_K30(ARG)
-CALL PALAM_MESSAGE_F
 ;-------------------------------------------------
 ;挑逗
 ;記入チェック（=0, 非表示、1, 表示）

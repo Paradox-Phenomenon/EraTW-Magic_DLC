@@ -264,7 +264,6 @@ CFLAG:111:口上内抱き寄せ判定_通常 = 1
 ;ELSE
 ;	CFLAG:X:来訪不能 = 0
 ;ENDIF
-
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K111
 SETCOLOR 0xE86FC7
@@ -292,7 +291,7 @@ ENDIF
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
-VERSION = 201
+VERSION = 202
 CALL M_KOJO_COLOR_K111
 IF !TALENT:111:無接吻経験 || EXP:111:接吻経験
 	SIF FIRSTTIME("初吻", 0, 111)
@@ -411,6 +410,13 @@ RETURN 1
 ;==================================================
 ;约会帰りにファーストKISS（合意も付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_SPEVENT_MESSAGECHECK_K111_1
+RETURN 1
+
 @M_KOJO_SPEVENT_K111_1(ARG,ARG:1)
 ;口上主はTARGET
 ;--------------------------------------------------
@@ -462,6 +468,13 @@ RETURN 1
 ;==================================================
 ;约会帰りに告白（恋人が付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_SPEVENT_MESSAGECHECK_K111_2
+RETURN 1
+
 @M_KOJO_SPEVENT_K111_2(ARG,ARG:1)
 ;口上主はTARGET
 ;--------------------------------------------------
@@ -597,6 +610,13 @@ RETURN 1
 ;==================================================
 ;约会帰り
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_SPEVENT_MESSAGECHECK_K111_3
+RETURN 1
+
 @M_KOJO_SPEVENT_K111_3(ARG,ARG:1)
 ;口上主はTARGET
 ;--------------------------------------------------
@@ -1264,7 +1284,7 @@ IF TALENT:111:恋慕 && TALENT:111:心情 >= 0 && !FLAG:约会的对象 && CFLAG
 	PRINTL 
 	PRINTFORMDL 克劳恩皮斯脸颊染上可爱地粉红……。
 	PRINTW 
-	SELECTCASE RAND:5
+	SELECTCASE RAND:6
 	CASE 1
 		PRINTFORMW 「不要瞎想！ 只是……想去厕所了而已……\/\/\/」
 	CASE 2
@@ -4992,7 +5012,6 @@ RETURN 1
 ;==================================================
 @M_KOJO_DAILY_EVENT_K111_4(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;地の文を変えたければコメントアウト
-CALL DAILY_MESSAGE_4(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -5009,7 +5028,6 @@ RETURN 1
 @M_KOJO_DAILY_EVENT_K111_12(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;地の文を変えたければコメントアウト
 ;コメントアウトできるのはARG:1=1,2のみです
-CALL DAILY_MESSAGE_12(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -5233,6 +5251,7 @@ ELSEIF ARG == 2
 ;一日の終わりに今日获得的礼物をお気に入りにする（↑の大事にするから続き）（700点以上かつ最高得点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 3
+	PRINTL 
 	IF TALENT:[[克勞恩皮絲]]:恋人
 		PRINTFORML 「想要不弄丢，果然还是应该一直一直带在身上吧――」
 		PRINTFORMW 「就好像，%CALLNAME:MASTER%一直守护在我身边一样……」
@@ -5517,3 +5536,7 @@ SIF 0
 	SIF YOUBI_MATCH(DAY, "土日") && CFLAG:今日の運勢 % 10 == 0 && !CFLAG:[[覚]]:诶嘿嘿 && SHIRAHU([[覚]])
 		TCVAR:引力点 = CFLAG:[[覚]]:現在位置
 [SKIPEND]
+
+@M_KOJO_CHECK_K111_IRAI_BLOCKED(ARGS,ARG,ARG:1)
+SIF GROUPMATCH(ARG, 2)
+    RETURN 1
