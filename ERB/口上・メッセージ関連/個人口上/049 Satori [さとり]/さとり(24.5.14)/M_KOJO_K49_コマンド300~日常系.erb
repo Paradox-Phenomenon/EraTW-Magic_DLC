@@ -1007,9 +1007,13 @@ IF LOCAL
 			IF !CFLAG:49:1501 && 陥落状態()>=3 && CFLAG:MASTER:現在位置 == CFLAG:36:現在位置 && CFLAG:36:好感度 > 100
 				CALL EVENT_49_1500(1)
 				CFLAG:49:1501 = 999
+				CFLAG:49:1500 = 0
 			ENDIF
 			;==================================================
+			SIF CFLAG:49:1500 == 0
+				RETURN 1
 		ENDIF
+		;==================================================
 	ENDIF
 ENDIF
 SIF 陥落状態() == 2 && !FLAG:時間停止
@@ -1890,8 +1894,8 @@ IF LOCAL
 		;==================================================
 		SIF CFLAG:49:1500 == 0
 			RETURN 1
-		;==================================================
 	ENDIF
+	;==================================================
 	IF CFLAG:350 >= 49 && RAND:2
 	;料理を勧める / ;杯を交わす
 		IF CFLAG:妊娠自覚状態 == 1
@@ -3146,7 +3150,7 @@ RETURN 1
 ;410,掃除
 ;==================================================
 @M_KOJO_MESSAGE_COM_K49_410
-CALL TRAIN_MESSAGE
+CALL 小五地文
 CALL M_KOJO_MESSAGE_COM_K49_410_1
 RETURN RESULT
 
@@ -3795,21 +3799,29 @@ IF LOCAL
 	SIF FLAG:口上色
 		CALLFORM M_KOJO_COLOR_K49
 	;==================================================
-	;1510;觉与黑暗料理
-	IF !CFLAG:49:1510 && CFLAG:49:1500 == 1 && 陥落状態()>=1 && GET_MAPID(CFLAG:MASTER:現在位置) == 9 && CFLAG:MASTER:現在位置 == CFLAG:36:現在位置 && CFLAG:MASTER:現在位置 == CFLAG:37:現在位置 && !RAND:2
-		CALL EVENT_49_1500(10)
-		CFLAG:49:1510 = 999
-		CFLAG:49:1500 = 0
-		RETURN 1
-	ENDIF
-	;==================================================
-	;1538;觉妖怪与挑剔的食客
-	; IF !CFLAG:49:1538 && CFLAG:49:1500 == 1 && 陥落状態()>=3 && CFLAG:36:好感度>=5 && GET_MAPID(CFLAG:MASTER:現在位置) == 9 && !RAND:5
-	IF !CFLAG:49:1538 && CFLAG:49:1500 == 1
-		CALL EVENT_49_1500(38)
-		CFLAG:49:1538 = 999
-		CFLAG:49:1500 = 0
-		RETURN 1
+	;杂谈集系事件
+	IF LOCAL
+		CFLAG:49:1500 = 1;确保一次只触发一个
+		;==================================================
+		;1510;觉与黑暗料理
+		IF !CFLAG:49:1510 && CFLAG:49:1500 == 1 && 陥落状態()>=1 && GET_MAPID(CFLAG:MASTER:現在位置) == 9 && CFLAG:MASTER:現在位置 == CFLAG:36:現在位置 && CFLAG:MASTER:現在位置 == CFLAG:37:現在位置 && !RAND:2
+			CALL EVENT_49_1500(10)
+			CFLAG:49:1510 = 999
+			CFLAG:49:1500 = 0
+			RETURN 1
+		ENDIF
+		;==================================================
+		;1538;觉妖怪与挑剔的食客
+		; IF !CFLAG:49:1538 && CFLAG:49:1500 == 1 && 陥落状態()>=3 && CFLAG:36:好感度>=5 && GET_MAPID(CFLAG:MASTER:現在位置) == 9 && !RAND:5
+		IF !CFLAG:49:1538 && CFLAG:49:1500 == 1
+			CALL EVENT_49_1500(38)
+			CFLAG:49:1538 = 999
+			CFLAG:49:1500 = 0
+			RETURN 1
+		ENDIF
+		;==================================================
+		SIF CFLAG:49:1500 == 0
+			RETURN 1
 	ENDIF
 	;==================================================
 	IF 陥落状態() >= 3
@@ -5023,296 +5035,106 @@ RETURN 1
 ;TFLAG:193(0=釣れない 1～4=魚 11～15=好吃的魚 610=木材 131=守矢之守札 21=跳蛋 609=氷之鱗 606=龍之爪)
 ;TFLAG:194(1000以上ならTARGETが釣った)
 ;==================================================
-@M_KOJO_SUCCESS_COM_K49_621
+@M_KOJO_SUCCESS_COM_KX_621
 ;成否判定
 ;TFLAG:192(-2=指令終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
 TFLAG:192 =0
 
-@M_KOJO_MESSAGE_COM_K49_621
+@M_KOJO_MESSAGE_COM_KX_621
 CALL TRAIN_MESSAGE
-CALL M_KOJO_MESSAGE_COM_K49_621_1
+CALL M_KOJO_MESSAGE_COM_KX_621_1
 RETURN RESULT
 
-@M_KOJO_MESSAGE_COM_K49_621_1
+@M_KOJO_MESSAGE_COM_KX_621_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF TFLAG:194 >= 1000	
-		SELECTCASE RAND:5
-		CASE 0
-			PRINTFORML 「诶嘿！成功了！」
-		CASE 1
-			PRINTFORML 「呜哇，钓出来了」
-		CASE 2
-			PRINTFORML 「嘿啾，来了来了！」
-		CASE 3
-			PRINTFORML 「哦～～出来了」
-		CASE 4
-			PRINTFORML 「来了！」
-		ENDSELECT
-	ELSE
-		SELECTCASE TFLAG:193
-		CASE 0
-			SELECTCASE RAND:4
-			CASE 0
-				PRINTFORML 「唉～～～没钓到」
-			CASE 1
-				PRINTFORML 「唔～～没关系的，下次就能钓到的」
-			CASE 2
-				PRINTFORML 「.......」
-				PRINTFORML  雏的视线集中在了钓鱼杆上
-				PRINTFORML  好像是和钓鱼杠起来了
-			CASE 3
-				PRINTFORML 「......」
-				PRINTFORML  雏无言地把目光集中在钓鱼杆上
-			ENDSELECT
-		CASE 1, 5, 6, 10;石斑魚、溪哥、拉氏鱥、蓝鳃太阳魚
-			SELECTCASE RAND:4
-			CASE 0
-				PRINTFORML 
-			CASE 1
-				PRINTFORML
-			CASE 2
-				PRINTFORML
-			CASE 3
-				PRINTFORML
-			ENDSELECT
-		CASE 2, 3, 4;皐月鱒、山女、岩魚
-			SELECTCASE RAND:4
-			CASE 0
-				PRINTFORML 「诶？这是....什么鱼」
-				PRINTFORML  看着一脸疑惑的雏，%CALLNAME:MASTER%向雏解释了这是什么鱼
-			CASE 1
-				PRINTFORML 「唔....幻想乡有这种鱼吗？」
-				PRINTFORML  雏发出了疑惑的声音
-			CASE 2
-				PRINTFORML 「诶嘿嘿～～圆滚滚的，烤了一定很好吃」
-				PRINTFORML  雏看着肥满的鱼流下了口水
-			CASE 3
-				PRINTFORML 「嗯，怎么吃呢？」
-				PRINTFORML 看着手里的鱼，雏陷入了沉思
-			ENDSELECT
-		CASE 7;鲫魚
-			SELECTCASE RAND:4
-			CASE 0
-				PRINTFORML 「这是！今晚晚餐有着落了。」
-				PRINTFORML 看着手里的鲫鱼，雏的眼睛亮了起来
-			CASE 1
-				PRINTFORML 雏拿着鱼竿
-				PRINTFORML 线里的鱼还在随风摇摆着
-			CASE 2
-				PRINTFORML 「嗯,鲫鱼啊......今晚怎么吃呢？」
-				PRINTFORML 看着手里的鲫鱼，雏陷入了沉思。
-			CASE 3
-				PRINTFORML 「这鱼活力好好啊」
-				PRINTFORML  雏看着在地上蹦哒的鲫鱼说道
-			ENDSELECT
-		CASE 8;食人魚
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「诶？这条鱼看起来好凶的样子」
-			CASE 1
-				PRINTFORML 「嗯.....看起来就很恐怖啊」
-			ENDSELECT
-		CASE 9;雀鳝
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「嗯....听附近的河童说这是一条日本鱼...」
-				PRINTFORML  雏看着手中这条大鱼，眼神抽了抽
-			CASE 1
-				PRINTFORML 「emmmmmm，%CALLNAME:MASTER%你觉得这会是条日本鱼吗」
-				PRINTFORML  雏一手拿着鱼竿，一手拎着还在乱动的鱼说道
-			ENDSELECT
-		CASE 11;鮭魚
-			SELECTCASE RAND:4
-			CASE 0
-				PRINTFORML 「嗯，这个吃了好像对身体有利来着」
-				PRINTFORML  雏看着这条鲑鱼陷入了沉思
-			CASE 1
-				PRINTFORML 「诶？鲑鱼吗？正好好久没做三文鱼寿司了，%CALLNAME:MASTER%也想要吗」
-				PRINTFORML  雏拿着鲑鱼向%CALLNAME:MASTER%问道
-			CASE 2
-				PRINTFORML 「嗯～～～，%CALLNAME:MASTER%你觉得该怎么吃呢？」
-				PRINTFORML  雏看着%CALLNAME:MASTER%提出了问题
-			CASE 3
-				PRINTFORML 「嗯～～～清蒸还是烧烤呢？哎呀好难选择啊～～」
-				PRINTFORML  好像陷入到了痛苦的抉择中了
-			CASE 4
-				PRINTFORML 「说起来，%CALLNAME:MASTER%好像没吃饭吧，哟西！今天的食物就是你了」
-			ENDSELECT
-		CASE 12;西太公魚
-			PRINTFORML 「啊哈哈哈.....这是什么啊」
-		CASE 13;虹鱒
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「嗯，我听山上的神明说这好像叫做虹鱒来着，好像是很好养的东西来着」
-			CASE 1
-				PRINTFORML 「这个做生鱼片好像口感还不错，%CALLNAME:MASTER%要不要试试」
-			ENDSELECT
-		CASE 14;八目鰻
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「嗯....鳗鱼的话烤着吃比较好」
-				PRINTFORML  雏看着手里扭动的鳗鱼思考者
-			CASE 1
-				PRINTFORML 「诶，鳗鱼吗？我记得好像可以去找那个烧烤摊老板娘做成食物来着」
-			ENDSELECT
-		CASE 15;巨骨舌鱼 巨骨舌鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「诶？！！！这是什么鱼啊？这么大」
-				PRINTFORML  雏看着眼前这超大的鱼震惊着
-			CASE 1
-				PRINTFORML 「噫呀～～～好沉啊....真不知道%CALLNAME:MASTER%你是怎么把它钓起来的」」
-				PRINTFORML  雏吃力的抱着这头巨大的鱼
-			ENDSELECT
-		CASE 16;杜父魚 鰍鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「滑溜溜的，好痒啊」
-			CASE 1
-				PRINTFORML 「额....在哪里动来动去，总感觉有点恶心呢....」
-			ENDSELECT
-		CASE 17;香魚 鮎鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「嗯，这条鱼的胡须好长啊」
-				PRINTFORML  emmmmmm，那好像不是胡须吧，%CALLNAME:MASTER%这样想着
-			CASE 1
-				PRINTFORML 「我记得这个的肉好像是非常好吃的来着」
-				PRINTFORML  雏盯着鮎鱼看了许久
-			ENDSELECT
-		CASE 19;鰻魚 鰻鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「好像海里的蛇啊，这么长的身体」
-			CASE 1
-				PRINTFORML 「我听冥界那个幽灵公主说这种鱼好像很好吃的样子」
-			ENDSELECT
-		CASE 20;姫鱒 姫鱒
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「诶，这条鱼我和荷取吃过，很好吃的说」
-			CASE 1
-				PRINTFORML 「看起来很好吃的样子」
-			ENDSELECT
-		CASE 22;鯉魚鲤鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「鲤鱼吗？带回去养着吧」
-			CASE 1
-				PRINTFORML 「听说红魔馆的门卫好像是鲤鱼变成的来着？我也不大清楚...」
-			ENDSELECT
-		CASE 23;腔棘鱼 空棘鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「好奇怪啊～～～这条鱼...等等，怎么那么熟悉呢？」
-			CASE 1
-				PRINTFORML 「这！这不是荷取说的那条活化石吗！」
-				PRINTFORML  雏十分惊讶地看着这条鱼
-			ENDSELECT
-		CASE 24;鲟 蝶鮫或者鲟鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「我看人間之里的居民都是把这条鱼做成鱼寿司来着」
-			CASE 1
-				PRINTFORML 「嗯，看起来好长，不知道吃起来怎么样？」
-				PRINTFORML  总感觉雏变得贪吃了
-			ENDSELECT
-		CASE 25;国鱒 国鳟鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「这个做成生鱼片应该很美味吧」
-			CASE 1
-				PRINTFORML 「我见人間之里的居民是把这个做成生鱼片吃的，要不%CALLNAME:MASTER%也来试试？」
-			ENDSELECT
-		CASE 26;草魚 草鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「这条鱼我好像常常在水草里见到，为什么呢？」
-				PRINTFORML  看来得给雏科普科普了
-			CASE 1
-				PRINTFORML 「草鱼啊，应该可以吃吧？」
-				PRINTFORML  雏你是什么时候变成吃货的？
-			ENDSELECT
-		CASE 27;高身鲫 欧洲鲫鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「是鲫鱼呢，诶？不是吗？」
-				PRINTFORML  某种程度上来说这也是鲫鱼吧
-			CASE 1
-				PRINTFORML 「嗯，欧洲鲫鱼？为什么要分那么细呢？」
-			ENDSELECT
-		CASE 28;伊富魚 伊富鱼
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「这个应该能吃吧？」
-			CASE 1
-				PRINTFORML 「伊富鱼，是个很好听的名字呢」
-			ENDSELECT
-		CASE 29;大口黑鲈 黑鲈
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「哇喔，这条鱼好大啊」
-				PRINTFORML  雏看着%CALLNAME:MASTER%手里的鱼，眼睛闪着星星
-			CASE 1
-				PRINTFORML 「诶玖！真大啊这条鱼」
-			ENDSELECT
-		CASE 31;泷太郎 泷太郎(正体不明的鱼)
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「这！！！！这难道就是那条传说中的鱼吗！太好了！%CALLNAME:MASTER%！」
-				PRINTFORML  雏激动地抱着%CALLNAME:MASTER%
-			CASE 1
-				PRINTFORML 「这是那条传说中的鱼把，我曾经听说过，有谁钓出这条鱼的话一定是一个不一般的人」
-			ENDSELECT
-		CASE 610;木材
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「诶？木头吗.....嘛，带回去看看能不能用」
-			CASE 1
-				PRINTFORML 「我钓到........唔～～～～～为啥是个木头啊」
-				PRINTFORML  雏看着手中的木头鼓着脸
-			ENDSELECT
-		CASE 131;守矢之守札
-			SELECTCASE RAND:5
-			CASE 0
-				PRINTFORML 「这.....这好像是山上那个巫女的守礼吧」
-				PRINTFORML  雏看着手中的守礼想着
-			CASE 1
-				PRINTFORML 「诶～～～～守矢的巫女也会掉东西吗」
-			CASE 2
-				PRINTFORML 「那个……%CALLNAME:MASTER%你要不收着这个守礼吧，也许哪天就需要了呢」
-				PRINTFORML  雏制止了准备要把守礼扔掉的%CALLNAME:MASTER%
-			CASE 3
-				PRINTFORML 「诶？难道山上的神社是这么宣传自己的吗？」
-				PRINTFORML  总感觉雏的脑回路有点奇怪
-			CASE 4
-				PRINTFORML 「嗯....守礼吗？从哪里漂下来的呢？得送回去」
-			ENDSELECT
-		CASE 21;跳蛋
-			PRINTFORML 「......」
-			PRINTFORML  雏看着被钓上来的东西，脸变得红通通的
-			PRINTFORML 「真是的....为什么会有这种东西啊」
-		CASE 609;氷之鱗
-			PRINTFORML 「诶？这么冷的地方都有吗？」
-			PRINTFORML  话说这本来就是冷的地方才有的吧.....
-		CASE 606;龍之爪
-			PRINTFORML 「诶？爪子？为啥这种地方会有这种东西啊」
-			PRINTFORML  不管怎么说.....爪子能钓上来本身就很奇怪吧
-		CASE 643;龍涎香
-			SELECTCASE RAND:2
-			CASE 0
-				PRINTFORML 「味道好香啊～～～～诶？你说什么？这是做香水的材料吗？」
-				PRINTFORML  雏看着手中散发着芳香的东西，感觉有点奇妙
-			CASE 1
-				PRINTFORML 「嗯～～味道好好闻，诶？！你说这是抹香鲸的结石？」
-				PRINTFORML  雏一脸残念地看着手中的龙延香
-			ENDSELECT
-		ENDSELECT
+	;==================================================
+	;杂谈集系事件
+	IF LOCAL
+		CFLAG:49:1500 = 1;确保一次只触发一个
+		;==================================================
+		;1548，觉妖怪与湖钓行
+		IF !CFLAG:49:1501 && 陥落状態() >= 3 && CFLAG:38:好感度 > 514 && GET_MAPID(CFLAG:MASTER:現在位置) == 3 && CFLAG:MASTER:現在位置 == CFLAG:38:現在位置 && EXP:MASTER:82 > 55
+			CALL EVENT_49_1500(48)
+			CFLAG:49:1548 = 999
+			CFLAG:49:1500 = 0
+		ENDIF
+		;==================================================
+		SIF CFLAG:49:1500 == 0
+			RETURN 1
 	ENDIF
+	;==================================================
+	SELECTCASE TFLAG:193
+	CASE 0
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「啊呀，什么也没有呢」
+		CASE 1
+			PRINTFORML 「『下次一定』？下次是怎样的下次呀～」
+		ENDSELECT
+	CASE 7,27,11,17,19,20;鲫魚;高身鲫 欧洲鲫鱼;鮭魚;香魚 鮎鱼;鰻魚 鰻鱼;姫鱒 姫鱒
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「『它在想什么』？在想着怎样被料理时更加美味呀」
+			PRINTFORML 「...开玩笑的～」
+		CASE 1
+			PRINTFORML 「它也如%CALLNAME:MASTER%一般美味呢～」
+			PRINTFORML 「啊、当然说的是味道呀？」
+		ENDSELECT
+	CASE 8;食人魚
+		SELECTCASE RAND:2
+		CASE 0
+			PRINTFORML 「哎呀，这正是人所云之吃人的鱼呢」
+			PRINTFORML 「与吃人的妖怪有所不同之处，%CALLNAME:MASTER%可要看仔细了才行」
+		ENDSELECT
+	CASE 14;八目鰻
+		SELECTCASE RAND:2
+		CASE 0
+			PRINTFORML 「听闻有夜雀妖怪在兽道贩售这类鱼鲜」
+			PRINTFORML 「但是，无论怎样料理味道也总有所不同。%CALLNAME:MASTER%知道是为什么吗～？」
+		ENDSELECT
+	CASE 22;鯉魚 鲤鱼
+		SELECTCASE RAND:2
+		CASE 0
+			PRINTFORML 「据说，这鱼在曾有被视作祥瑞象徵来看待的事」
+			PRINTFORML 「以水中游物作祈福用，%CALLNAME:MASTER%不觉得这样很奇怪吗？」
+		ENDSELECT
+	CASE 24;鲟 蝶鮫或者鲟鱼
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「『它在想什么』？在想着怎样被料理时会更加美味呀」
+			PRINTFORML 「...开玩笑的～」
+		ENDSELECT
+	CASE 25;国鱒 国鳟鱼
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「『它在想什么』？在想着怎样被料理时会更加美味呀」
+			PRINTFORML 「...开玩笑的～」
+		ENDSELECT
+	CASE 26;草魚 草鱼
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「它也如%CALLNAME:MASTER%一般美味呢～」
+			PRINTFORML 「啊、当然说的是味道呀？」
+		ENDSELECT
+	CASE 131;守矢之守札
+		SELECTCASE RAND:4
+		CASE 0
+			PRINTFORML 「为了宣扬信仰，那山上的巫女可真是勤奋而尽职尽责呢」
+			PRINTFORML 「%CALLNAME:MASTER%也能有那样的干劲就好了～」
+		CASE 1
+			PRINTFORML 「真是不遗余力呢...」
+			PRINTFORML 「话虽如此，不觉得有些多了吗？符札」
+			PRINTFORML 「如若祈福能以数量决胜的话，神明想必也会与祈福者一道劳累不休吧。」
+			PRINTFORML 「这样想想，神明还真是可怜」
+		ENDSELECT
+	CASE 21,610,609,606,643;跳蛋;木材;氷之鱗;龍之爪;龍涎香
+		PRINTFORML 「...这个不是活的吧？不是吧？」
+		PRINTFORMDL  觉露出了有些微妙的表情....
+	ENDSELECT
 ENDIF
 RETURN 1
 ;==================================================
