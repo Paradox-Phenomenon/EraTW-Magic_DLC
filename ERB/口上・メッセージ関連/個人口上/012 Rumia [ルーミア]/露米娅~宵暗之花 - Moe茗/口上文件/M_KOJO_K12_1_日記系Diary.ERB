@@ -1,47 +1,32 @@
-﻿
-
+﻿;-------------------------------------------------
+;Eratoho The World 4.881用 露米娅Moe版口上  
 ;-------------------------------------------------
-;Eratoho The World 4.881用 露米娅Moe版口上Ver1.04 
-;-------------------------------------------------
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;日记系函数
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;为了突破原版日记的100页限制，将三个全局变量换成了自定义的变量
 ;然后从原版扒了很多东西，结果，越塞越多，越做越大，越整越离谱
 ;ban掉了原版的日记指令，换成了更换过变量的版本，特别原版（确信
-
 ;感谢 绝对零度之伤痕 教我如何使用原版的debug，从而能准确测试出日记的位置
-
 ;全局变量说明
-
 ;RUMIA_MAX_DIARY_PAGE	最大允许页数，已经自定义为10000
 ;用法是RUMIA_MAX_DIARY_PAGE:CHARA:0 = 最大页数
-
 ;RUMIA_DIARY	单条日记的参数
 ;用法是RUMIA_DIARY:CHARA:XX	，值为1代表已读，值为2代表等待大喇叭播报，值为3代表无需播报且未读
 ;
 ;RUMIA_PAGESET		日记某页书写的日记编号
 ;用法是RUMIA_PAGESET:CHARA:PAGENUM = NO_DIARY，NO_DIARY是对应的日记编号
-
 ;RUMIA_DIARY_DATE		日记某页的天数
 ;用法如RUMIA_DIARY_DATE:CHARA:PAGENUM = DAY ，日记系文本内有自动计算日期的函数，不改天数就没问题）
-
 ;RUMIA_DIARY_SETTING		日记某页的差分条件
 ;RUMIA_DIARY_SETTING:CHARA:PAGENUM = ARG，具体的差分请写在日记正文之中……
-
-
 ;触发流程说明
-
 ;原版中，每晚在EVENT31之后，都会触发BEFORE_CHECK，然后是大喇叭播报，最后是AFTERCHECK
 ;原版那个屎一样的代码，居然不会CALL别人版的日记，而且，日记最大页数只有100页啊啊啊！
 ;所以更换了自己的变量与触发流程，适配的版本是4881了
-
 ;每晚的部分
 ;==========================================================
 ;EVENT31(事件系)：这一部分用于测定当日条件，然后触发事件或日常日记，会在这边CALL一个统一触发的函数
-
 ;BEFORE_CHECK：
 ;设置值为2的日记，然后用大喇叭播报日记
 ;CHARA_DIARY_PAGESETTING：
@@ -49,49 +34,37 @@
 ;AFTER_CHECK：
 ;因为每晚和每次读日记都会触发，能提供一个比EVENT31晚的时间点，所以设置得较晚的事件都放里面了
 ;由于面识之前不会触发EVENT31，所以在初见之前，这里会强行为露米娅CALL一下EVENT31，用于黑球日记
-
 ;BEFORE_TRAIN(事件系)：这一部分用于检测起床，第二天日记，制作早起喇叭等
 ;==========================================================
-
 ;自定义的部分
 ;==========================================================
 ;M_KOJO_Moe_EVENT_AFTER_TRAIN_DIARYSETTING_K12
 	;当天事件日记触发的条件函数，触发的位置在EVENT31里面，在日常日记之前
 	;满足特定条件之后，就会直接触发
-
-;M_KOJO_Moe_EVENT_BEFORE_TRAIN_DIARYSETTING_K12
+;M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K12
 	;第二天事件日记触发的条件函数，触发的位置在beforetrain里面
 	;目前是无论如何都会触发的日记……呜……所以需要用CFLAG之类的检测一下……
-
 ;M_KOJO_Moe_DAYIY_DIARYSETTING_K12(ARG)
 	;当天日常日记触发的条件函数，触发的位置在EVENT31里面，在当天事件日记之后
 ;==========================================================
-
 ;==========================================================
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩最重要的函数
 ;K12_DIARY_PAGESETTING
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩最重要的函数
 	; 日记页数设置的函数
 	; 将最新的日记页数指定为 CHARA 的日记编号 （NO_DIARY）
-
 ;RUMIA_Moe_K12_COM406
 	;自定义的指令，使用自定义的全局变量才可以读自定义的日记，所以自定义了
-
 ;M_KOJO_Moe_K12_DIARY_COM(C_ID)
 	;读日记，读露米娅日记的部分
-
-
 ;==========================================================
-
 ;=============================
 ;当天事件日记触发的条件函数
-
 ;触发的位置在EVENT31里面
 ;是触发完就会马上被大喇叭播报的函数
 ;=============================
 @M_KOJO_Moe_EVENT_AFTER_TRAIN_DIARYSETTING_K12
-
-IF ((TCVAR:12:390 ) && FIRSTTIME("RUMIA_FIRST_PUSH_YOU_DOWN_DIARY")) || TCVAR:12:181
+IF (TCVAR:12:390 ) || TCVAR:12:181
 ;初次逆推
 	SIF TCVAR:12:390 && FIRSTTIME("RUMIA_FIRST_PUSH_YOU_DOWN_DIARY")
 	CALL M_KOJO_Moe_DIARYSETTING_K12(32,1)
@@ -104,30 +77,50 @@ ELSE
 ;	CALL M_KOJO_Moe_DIARYSETTING_K12(31,1)
 ;	ENDIF 
 ENDIF 
-
 ;=============================
 ;第二天事件日记触发的条件函数
-
-;触发的位置在beforetrain里面
-;是无论如何都会触发的日记……呜……所以需要CFLAG:12:1800来做限制
-;实现的方式，是在BEFORETRAIN里面确认值为2，然后当夜触发
+;触发的位置在eventtrain里面
+;是无论如何都会触发的日记……呜……所以需要额外变量来做限制
+;实现的方式，是在EVENTTRAIN里面确认值为2，然后当夜触发
+;;如果希望日记发生在特定事件的第二天早上，请在相应的语句中添加CALL M_KOJO_Moe_EVENT_EVENTTRAIN_TRIGGER_SET_K12(ARG)，以设置第二天日记
 ;=============================
-@M_KOJO_Moe_EVENT_BEFORE_TRAIN_DIARYSETTING_K12
-
-IF CFLAG:12:1800 
-	CALL M_KOJO_Moe_DIARYSETTING_K12( CFLAG:12:1800 , 1 )
-	CFLAG:12:1800 = 0 
-ENDIF 
-
+@M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K12
+#DIM TRIGGER_NUM
+;从100开始倒序检测
+FOR TRIGGER_NUM,100,1,-1
+	IF RUMIA_DIARY_TRIGGER:TRIGGER_NUM 
+		CALL M_KOJO_Moe_DIARYSETTING_K12(  RUMIA_DIARY_TRIGGER:TRIGGER_NUM  , 1 )
+		RUMIA_DIARY_TRIGGER:TRIGGER_NUM = 0
+	ELSE 
+	ENDIF 
+NEXT
+;=============================
+;第二天事件日记触发的设置函数
+;在想要触发的位置CALL这个函数即可
+;ARG	想要触发的日记编号
+;=============================
+@M_KOJO_Moe_EVENT_EVENTTRAIN_TRIGGER_SET_K12(ARG)
+#DIM TRIGGER_NUM
+FOR TRIGGER_NUM , 1 , 100
+	;如果当前数组位置存在变量
+	SIF RUMIA_DIARY_TRIGGER:TRIGGER_NUM 
+		CONTINUE 
+	;如果当前数组位置不存在变量
+	IF !RUMIA_DIARY_TRIGGER:TRIGGER_NUM
+		RUMIA_DIARY_TRIGGER:TRIGGER_NUM = ARG 
+		BREAK
+	ENDIF 
+NEXT
+;
+;
+;
 ;=============================
 ;日常日记触发的统一管理函数
-
 ;CALL的位置在EVENT31
 ;未来更新需要补充的话，补充在对应的分组下面，然后增加随机数即可
 ;=============================
 @M_KOJO_Moe_DAYIY_DIARYSETTING_K12(见面与否)
 #DIM 见面与否
-
 	;不见之后，没法触发日记
 	IF CFLAG:12:360 || CFLAG:12:1006
 	;没见面的时候，触发的日记，暂时不整
@@ -190,11 +183,10 @@ ENDIF
 			ENDIF 
 		ENDIF 
 	ENDIF 
-
-
 ;==========================================================
 ;存在判定
 ;0だと日記は書かれません。
+;这边的会被CALL三遍？
 ;==========================================================
 @DIARY_Moe_K12_EXIST
 #DIM PART_DAYS
@@ -202,15 +194,11 @@ ENDIF
 ;CFLAG:12:340 = CFLAG:12:1720
 ;CFLAG:12:1720 = 1 
 ;ENDIF 
-
-IF !CFLAG:12:面識  && CFLAG:0:睡眠
-	PART_DAYS = DAY - CFLAG:12:最後に会った日
+IF !CFLAG:12:18  && CFLAG:0:313		;无见面且在自机睡觉期间
+	PART_DAYS = DAY - CFLAG:12:384      ;最后的相见之日
 	CALL KOJO_MESSAGE_SEND("EVENT", 31, 12, TCVAR:12:182 ? 0 # PART_DAYS)
 ENDIF 
-
-
 RETURN 1
-
 ;==========================================================
 ;读日记前判定
 ;每次阅读和每夜都会触发
@@ -219,50 +207,34 @@ RETURN 1
 #DIM CHARA
 #DIM DCOUNT
 #DIM PAGECOUNT
-
 CHARA = 12
-
 RUMIA_MAX_DIARY_PAGE:CHARA:0 = 12400 	;要在一起一百年哦
-
 ;原版有一个打开日记再匆匆写的东西，甚至读取不了别人版
-
-
 ;每夜触发的部分
-IF CFLAG:0:睡眠
-
+IF CFLAG:0:313
 	DCOUNT = 0 
 	;筛选一下最大页数
 	FOR DCOUNT,1,RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1
-
 		;每个编号为2的日记都将进入该循环，用于事件系
 		IF RUMIA_DIARY:CHARA:DCOUNT == 2
-
 			;这个为什么要触发呢……不触发就没法使用吗
 			;CALL K12_DIARY_PAGESETTING(CHARA, DCOUNT)
-
 			;寻找等于该编号的页码
 			FOR PAGECOUNT, 1, RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1
-
 				;找到页码之后，call一下	对应的日记文本，然后即可
 				IF RUMIA_PAGESET:CHARA:PAGECOUNT == DCOUNT
-
 					CALLFORM DIARY_Moe_TEXT_K{CHARA}(RUMIA_PAGESET:CHARA:PAGECOUNT,"デイリー", PAGECOUNT)
 					PRINTFORMW 
-	
 					;给对应的日记值赋1，以表示已经看过了
 					RUMIA_DIARY:CHARA:DCOUNT = 1
-
 					BREAK  
 				ENDIF
 			NEXT
 		ELSE
 			CONTINUE
 		ENDIF
-
 	NEXT
-
 ENDIF 
-
 ;==========================================================
 ;在每日日记结算后处理。
 ;用来写了一些不一样的东西
@@ -270,38 +242,20 @@ ENDIF
 ;==========================================================
 @DIARY_Moe_AFTER_CHECK_K12
 #DIM PART_DAYS
-
-IF CFLAG:0:睡眠
-
-	;为还没有见面的露米娅酱提供一个EVENT31
-	IF !CFLAG:12:面識 
-			PART_DAYS = DAY - CFLAG:12:最後に会った日
-			CALL KOJO_MESSAGE_SEND("EVENT", 31, 12, TCVAR:12:182 ? 0 # PART_DAYS)
-	ENDIF 
-
+IF CFLAG:0:313
     ;夜袭确认,	;非陷落禁止,反发禁止
 	SIF (TALENT:12:3 || TALENT:12:8 || TALENT:12:7 || TALENT:12:184 || TALENT:12:185 ) && !MARK:12:3 
     CALL RUMIA_DAILY_EV13_COMFIRM 
-
-    ;恢复无知，其实随着自制自慰的确认，这部分或许没必要了
-    SIF !TALENT:12:27 && !CFLAG:12:1127 && !TALENT:12:156
-    TALENT:12:27 = 1 
-
     ;自慰确认
     CALL RUMIA_COMFORT_HERSELF_DURING_NIGHT
-
     ;恢复积攒度
     IF (CFLAG:12:1720 > 1) 
     CFLAG:12:340 = CFLAG:12:1720
     CFLAG:12:1720 = 1
     ENDIF 
-
     ;恢复自慰经验，以此来保持无知）
     EXP:12:22 = CFLAG:12:1721
-	
 ENDIF 
-
-
 ;=============================
 ;日記発生処理の一括管理関数
 ;ARG	;日记的编号
@@ -310,20 +264,16 @@ ENDIF
 ;ARG:3	为返回至对应页数的判别参数
 ;=============================
 @M_KOJO_Moe_DIARYSETTING_K12(ARG,ARG:1=0,ARG:2=0,ARG:3=0)
-
 	;日记变量设置
 	IF ARG:1
 		RUMIA_DIARY:12:ARG = 2
 	ELSE 
 		RUMIA_DIARY:12:ARG = 3
 	ENDIF 
-
 	;避免日常系的重复日记
 	SIF !CFLAG:0:313
 	CFLAG:12:1770 = 1 
-
 	CALL K12_DIARY_PAGESETTING(12, ARG,ARG:3)		
-	
 ;===========================================================================
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 ; 日记页数设置的函数
@@ -334,22 +284,16 @@ ENDIF
 #DIM CHARA
 #DIM NO_DIARY
 #DIM SETTING_NUMBER
-
 ;RUMIA_PAGESET
 ;RUMIA_MAX_DIARY_PAGE
 ;均为自定义变量，最大数值没有上限
-
 FOR LOCAL, 1, RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1
-
 	;这里是页数的区分……
 	IF !RUMIA_PAGESET:CHARA:LOCAL
-
 		;检测多少页是第多少号日记并记录
 		RUMIA_PAGESET:CHARA:LOCAL = NO_DIARY
-
 		;日记日期和日记页数绑定
 		RUMIA_DIARY_DATE:CHARA:LOCAL = DAY 
-
 		;在设置日记页数的时候，就记录好日记的差分格式……
 		IF SETTING_NUMBER != 0
 			RUMIA_DIARY_SETTING:CHARA:LOCAL = SETTING_NUMBER
@@ -361,7 +305,6 @@ FOR LOCAL, 1, RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1
 			RETURN LOCAL 
 		ENDIF 
 	ENDIF
-
 NEXT
 ;===========================================================================
 ;日記计数用函数
@@ -391,13 +334,10 @@ IF TARGET > 0 && CFLAG:TARGET:311 == CFLAG:MASTER:311
 ELSE
 	同棲 = 0
 ENDIF
-
 OWNER = COM406_CHECK_OWNER()
-
-LOCAL = 50 + ABL:MASTER:話術技能 * 5 + ABL:TARGET:9 * 2
+LOCAL = 50 + ABL:MASTER:41 * 5 + ABL:TARGET:9 * 2
 SIF BASE:TARGET:酒気 > MAXBASE:TARGET:酒気 / 2
 	LOCAL -= 15
-
 SELECTCASE TFLAG:192
 	;通常
 	CASE 0
@@ -425,10 +365,8 @@ SELECTCASE TFLAG:192
 		TFLAG:193 = -1
 		RETURN 0
 ENDSELECT
-
 TFLAG:194 = OWNER
 TARGET = 12 
-
 IF CFLAG:MASTER:300 == CFLAG:MASTER:311
 	PRINTFORML 书桌上放着\@ 同棲 ? 两本 # 一本 \@日记。
 	PRINTFORML 要做什么？
@@ -501,18 +439,15 @@ ELSE
 		CALL M_KOJO_Moe_K12_DIARY_COM(OWNER)
 	ENDIF
 ENDIF
-
 $SKIP
 IF !FLAG:70
 	TIME += 5
 ELSE
 	BASE:MASTER:TSP -= 10
 ENDIF
-
 IF SHIRAHU(TARGET) && TARGET > 0
 	;固定で獲得するソース
 	SOURCE:歓楽 = 200
-
 	;ABL:9をみる
 	IF ABL:9 <= 1
 		SOURCE:歓楽 += (ABL:9 * 30)
@@ -527,14 +462,9 @@ IF SHIRAHU(TARGET) && TARGET > 0
 	ELSE
 		SOURCE:歓楽 += 1600 + (ABL:9 * 30)
 	ENDIF
-
-
 	SOURCE:歓楽 = LIMIT(SOURCE:歓楽,0,5000)
-
-
 	SOURCE:受動 = 100 + 100 * ABL:10
 	SOURCE:征服 = 100 + 100 * ABL:16
-
 	IF TFLAG:193 == -1 || TFLAG:193 == -2
 		TIMES SOURCE:歓楽 , 0.10
 		TIMES SOURCE:征服 , 0.50
@@ -548,7 +478,7 @@ IF SHIRAHU(TARGET) && TARGET > 0
 		TIMES SOURCE:征服 , 2.00
 		TIMES SOURCE:受動 , 2.00
 	ENDIF
-	SELECTCASE ABL:MASTER:話術技能
+	SELECTCASE ABL:MASTER:41	;话术技能
 		CASE 0
 			TIMES SOURCE:歓楽 , 0.20
 			TIMES SOURCE:征服 , 0.20
@@ -576,11 +506,9 @@ IF SHIRAHU(TARGET) && TARGET > 0
 	ENDSELECT
 ENDIF
 RETURN 1
-
 ;-------------------------------------------------
 ;读日记，读露米娅日记的部分
 ;-------------------------------------------------
-
 @M_KOJO_Moe_K12_DIARY_COM(C_ID)
 #DIM DCOUNT
 #DIM PAGENUM
@@ -590,32 +518,27 @@ RESULT = 0
 PAGENUM = 0
 CLOSE = 0
 DCOUNT = 0 
-
 TRYCALL RUMIA_Moe_K12__DIARY_MEMORY_EXIST_ENSURE_ALL
-
 ;指令で呼び出されたとき
 CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, 0, 0, "EXIST")
 IF !RESULT
 	PRINTFORMW 然而好像还什么都没有写…
 	RETURN
 ENDIF
-
 FOR DCOUNT, 1, RUMIA_MAX_DIARY_PAGE:C_ID:0 + 1
 	SIF GROUPMATCH(RUMIA_DIARY:C_ID:DCOUNT, 1 , 3)	;修改原有的判定……，如果把2加进去，会让准备当天大喇叭的也播报出来
 		PAGENUM ++
 NEXT
-
 IF PAGENUM == 0
 	PRINTFORMW 然而好像还什么都没有写…
 	RETURN
 ENDIF
-
 FOR DCOUNT, 1, RUMIA_MAX_DIARY_PAGE:C_ID:0 + 1
 	CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, RUMIA_PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "指令")
 	;未読(3)だったら既読(1)にする
 	SIF RUMIA_DIARY:C_ID:(RUMIA_PAGESET:C_ID:DCOUNT) == 3
 		RUMIA_DIARY:C_ID:(RUMIA_PAGESET:C_ID:DCOUNT) = 1
-	CALL ASK_M("察看回想",RUMIA_Moe_K12_DIARY_MEMORY_EXIST_ENSURE(RUMIA_PAGESET:C_ID:DCOUNT),"察看下一頁 ", DCOUNT < PAGENUM, " 向前翻5页", DCOUNT + 5 <= PAGENUM, "向前翻10页", DCOUNT + 10 <= PAGENUM, "察看前一頁", DCOUNT > 1,"察看前⑩頁",DCOUNT > 11, "閉合日記", 1)
+	CALL ASK_M("察看回想",RUMIA_Moe_K12_DIARY_MEMORY_EXIST_ENSURE(RUMIA_PAGESET:C_ID:DCOUNT),"察看下一頁 ", DCOUNT < PAGENUM, "向后·翻5页", DCOUNT + 5 <= PAGENUM, "向后翻10页", DCOUNT + 10 <= PAGENUM, "察看前一頁", DCOUNT > 1,"察看前⑩頁",DCOUNT > 11, "閉合日記", 1)
 		IF RESULT == 0 
 			CALL RUMIA_Moe_K12_DIARY_MEMORY_COMFIRM(RUMIA_PAGESET:C_ID:DCOUNT)
 			DCOUNT -= 1 
@@ -635,17 +558,14 @@ FOR DCOUNT, 1, RUMIA_MAX_DIARY_PAGE:C_ID:0 + 1
 			BREAK
 		ENDIF
 NEXT
-
 ;==========================================================
 ;日記の内容
 ;NO_DIARY   = 日记编号（日记模式）
 ;MODE      = "デイリー"「Daily」：在一天结束时在每日活动中大声朗读
 ;          = "コマンド":使用 [Read Diary] 命令输出
 ;PAGECOUNT = 写在哪一页上
-
 ;ARG:3, ARGS:2, ARG:4
 ;RUMIA_PAGESET:C_ID:DCOUNT，"指令",DCOUNT
-
 ;==========================================================
 @DIARY_Moe_TEXT_K12(NO_DIARY, MODE, PAGECOUNT)
 #DIM NO_DIARY
@@ -671,7 +591,6 @@ IF MODE == "デイリー"
 ENDIF
 [SKIPEND]
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
-
 ;第几页这个是可以显示的
 PRINTFORMDL - ルーミアの日記　%M_KOJO_Moe_K12_漢数字変換(PAGECOUNT)%⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 PRINTFORML 
@@ -685,25 +604,18 @@ PRINTFORML
 PRINTFORMDL ⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 PRINTFORML 
 RESETCOLOR
-
 ;==========================================================
 ;日記の発生条件差分（@DIARY_XXX_KX_YY_EDIT()）
-
 ;RUMIA_DIARY_SETTING:XX:YY：可将第xx个角色的第yy条日记的条件值返回到RESULT中
 ;在写入日记时就会更改，所以不用担心会不会随着攻略进度变化，用于永久的日记差分
 ;
 ;如果希望日记发生在特定事件以及命令的时候，请直接在相应的语句中添加CALL M_KOJO_Moe_DIARYSETTING_K12(NO_DIARY,1)	
-;如果希望日记发生在特定事件的第二天早上，请在相应的语句中添加CFLAG:12:1800 = 日记编号，M_KOJO_Moe_EVENT_BEFORE_TRAIN_DIARYSETTING_K12
-
+;如果希望日记发生在特定事件的第二天早上，请在相应的语句中添加CALL M_KOJO_Moe_EVENT_EVENTTRAIN_TRIGGER_SET_K12(ARG)，M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K12内会显示的
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 ;日記の内容（@DIARY_XXX_KX_YY）
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
 ;事件系日记
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
-
-
 ;==========================================================
 ;初见使用平价食材
 ;==========================================================
@@ -712,7 +624,6 @@ SIF DAY > 30
 	RETURN 2 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1(ARG)
-
 PRINTFORML 今天遇见了%CALLNAME:MASTER%，吃到了好吃的饭团！
 PRINTFORML 不过还是有点怕……
 IF ARG == 2 
@@ -721,18 +632,14 @@ IF ARG == 2
 ELSE 
 	PRINTFORML 如果是外界人的话……应该，没问题的吧？
 ENDIF 
- 
-
 ;==========================================================
 ;初见使用优质食材
 ;==========================================================
 @DIARY_Moe_K12_2_EDIT
 SIF DAY > 30 
 	RETURN 2 
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_2(ARG)
-
 PRINTFORML 今天遇见了%CALLNAME:MASTER%，吃到了好吃的面条！
 PRINTFORML 真想再吃到呢……如果下次还能遇见就好了……
 PRINTFORML 不过还是有点怕……
@@ -742,22 +649,16 @@ IF ARG == 2
 ELSE 
 	PRINTFORML 如果是外界人的话……应该，没问题的吧？
 ENDIF 
- 
-
 ;==========================================================
 ;初见使用高级食材
 ;==========================================================
 @DIARY_Moe_K12_3_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_3(ARG)
-
 PRINTFORML 今天遇见了一个很棒的朋友，叫%MASTERNAME:12%
 PRINTFORML 给了露米娅很好很好吃的，世界上最好吃的煮丸子！
 PRINTFORML 因为还想吃到这种食物……所以就和%MASTERNAME:12%成为朋友了呢！
 PRINTFORML 明天见到%MASTERNAME:12%的话，会不会还会有第二份呢
- 
-
 ;==========================================================
 ;初见被带出去，且未成为朋友
 ;==========================================================
@@ -770,7 +671,6 @@ ELSE
 ENDIF 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_4(ARG)
-
 IF ARG 
 	;吃过饭
 	PRINTFORML 今天去外面吃饭了，真的很热闹呢！
@@ -781,29 +681,21 @@ ELSE
 	PRINTFORML 果然是骗子！
 	PRINTFORML 以后要小心%CALLNAME:MASTER%！
 ENDIF 
- 
-
 ;==========================================================
 ;初见选择以后约出去
 ;==========================================================
 @DIARY_Moe_K12_5_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_5(ARG)
-
 PRINTFORML 今天找上了一个很奇怪的外界人……
 PRINTFORML 身上没有吃的，却说自己将来会带露米娅出去吃……
 PRINTFORML 不会是把露米娅抓去卖给人贩子吧……还是小心一点比较好……
- 
-
 ;==========================================================
 ;成为朋友（与初见可以重复）
 ;==========================================================
 @DIARY_Moe_K12_6_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_6(ARG)
-
 PRINTFORML 今天忍不住问了问%MASTERNAME:12%，原来只是交朋友嘛
 PRINTFORML 交朋友这种事情，露米娅好像，确实没有什么朋友呢
 PRINTFORML 莉格露只是需要照应的邻居，魔理沙姐姐也不会跟露米娅说别的话
@@ -811,16 +703,12 @@ PRINTFORML 但是%MASTERNAME:12%，真的好像是在意露米娅一样，一直
 PRINTFORML 经常靠在我旁边，还总是说一些不着边际的话，就像是怕我丢了一样
 PRINTFORML 露米娅只是一个弱小的妖怪而已，能交上这样的朋友，很幸运呢！
 PRINTFORML 这样的友情，我一定会好好珍惜的……
- 
-
 ;==========================================================
 ;二周目初见当天触发
 ;==========================================================
 @DIARY_Moe_K12_7_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_7(ARG)
-
 PRINTFORML 今天遇见了一个奇怪的人……
 PRINTFORML 不知道为什么，相遇的时候就发现，露米娅好像知道，这个人应该叫%MASTERNAME:12%
 PRINTFORML 是很久很久以前就见过，但是露米娅忘记了吗
@@ -830,16 +718,12 @@ PRINTFORML 就好像，露米娅忘记了什么，与%MASTERNAME:12%一同经历
 PRINTFORML 好奇怪，明明只是初次见面的陌生人
 PRINTFORML 为什么%MASTERNAME:12%的模样，笑容，声音
 PRINTFORML 露米娅都记得这么清楚？
- 
-
 ;==========================================================
 ;二周目初见第二天触发
 ;==========================================================
 @DIARY_Moe_K12_8_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_8(ARG)
-
 PRINTFORML 昨晚露米娅做了一个很奇怪的梦
 PRINTFORML 梦里，露米娅与%MASTERNAME:12%，似乎是特别亲近的关系
 PRINTFORML 就仿佛，%MASTERNAME:12%是特别，特别重要的人一样
@@ -848,16 +732,12 @@ PRINTFORML 以至于醒来的时候，都感觉，好像丢掉了什么东西
 PRINTFORML 就像是，很久以前露米娅在外面流浪，后来终于找到这棵大树一样的感觉
 PRINTFORML 真奇怪啊，明明是第一次相遇的陌生人，却会做这样的梦
 PRINTFORML ……是发生过什么事情吗……
- 
-
 ;==========================================================
 ;思慕之后第二天触发
 ;==========================================================
 @DIARY_Moe_K12_9_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_9(ARG)
-
 PRINTFORML 昨晚迷迷糊糊的跑到%MASTERNAME:12%家
 PRINTFORML 本来是想找%MASTERNAME:12%要吃的，结果居然，跟%MASTERNAME:12%睡了一觉……
 PRINTFORML 一起睡觉这种事情，是■■了才能做的事情吧……
@@ -867,8 +747,6 @@ PRINTFORML 从来都没有这样，安心地睡过一觉呢
 PRINTFORML 如果以后都能与%MASTERNAME:12%■■■■■■■
 PRINTFORML 那样的话……
 PRINTFORML 不行不行！在说什么呢！
- 
-
 ;==========================================================
 ;一周目恋慕当天触发
 ;==========================================================
@@ -879,13 +757,8 @@ ELSE
 ENDIF 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_10(ARG)
-
 IF !ARG
-	PRINTFORML 莉格露太过分了！
-	PRINTFORML 说这么奇怪的话，都不想理她了！
-	PRINTFORML 
-	PRINTFORML 不过
-	PRINTFORML 她说的，好像是真的呢
+	PRINTFORML 一直在想着%MASTERNAME:12%的事情呢……
 ELSE 
 	PRINTFORML 与%MASTERNAME:12%在一起这么久了
 	PRINTFORML 总觉得，露米娅自己，是不是没那么喜欢%MASTERNAME:12%……
@@ -905,8 +778,6 @@ PRINTFORML
 PRINTFORML 确实啊
 PRINTFORML 假如%MASTERNAME:12%真的要回到，他原本生活的那个世界了
 PRINTFORML 那露米娅怎么办呢
- 
-
 ;==========================================================
 ;一周目恋慕之后第二天触发
 ;==========================================================
@@ -917,11 +788,9 @@ SIF CFLAG:12:1003 || CFLAG:12:1203
 	RESULT += 10
 SIF CFLAG:12:1004 || CFLAG:12:1204 
 	RESULT += 1
-
 RETURN RESULT 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_11(ARG)
-
 PRINTFORML 昨晚
 PRINTFORML 梦见了很久以前
 PRINTFORML 露米娅为了讨吃的，被外界人用武器伤到了
@@ -959,16 +828,12 @@ PRINTFORML 如果没有%MASTERNAME:12%……
 PRINTFORML 不，不能再说这样的话了
 PRINTFORML 既然%MASTERNAME:12%已经陪在露米娅身边了
 PRINTFORML 那就要，好好的去回应%MASTERNAME:12%的期待，努力地成长起来！
- 
-
 ;==========================================================
 ;二周目恋慕确认第二天触发
 ;==========================================================
 @DIARY_Moe_K12_12_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_12(ARG)
-
 PRINTFORML 昨晚……想起来很重要的事情
 PRINTFORML 似乎，露米娅过去，不是现在这样子
 PRINTFORML 梦里的露米娅，因为是弱小的妖怪，所以被人类所驱赶……
@@ -997,16 +862,12 @@ PRINTFORML 也请%MASTERNAME:12%，能感受到我不成熟的心意
 PRINTFORML 能够陪着露米娅，一起欢笑，一起学习，一起成长
 PRINTFORML 直到露米娅，有资格站在%MASTERNAME:12%旁边
 PRINTFORML 就能与%MASTERNAME:12%，永远地■■■了吧
- 
-
 ;==========================================================
 ;一周目逆初吻
 ;==========================================================
 @DIARY_Moe_K12_13_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_13(ARG)
-
 PRINTFORML 今天……跟%MASTERNAME:12%kiss了……
 PRINTFORML 真的……很矛盾呢
 PRINTFORML 想亲近%MASTERNAME:12%，但是
@@ -1023,16 +884,12 @@ IF CFLAG:0:511 == 12
 ENDIF 
 PRINTFORML 露米娅也想，让%MASTERNAME:12%记住这份回忆
 PRINTFORML 露米娅最真实的样子……%MASTERNAME:12%喜不喜欢呢……
- 
-
 ;==========================================================
 ;二周目逆初吻
 ;==========================================================
 @DIARY_Moe_K12_14_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_14(ARG)
-
 PRINTFORML 果然，是露米娅自己忘记了……
 PRINTFORML 忘记了很重要的回忆
 PRINTFORML 那些犹如梦境一样的回忆，现在看来，实在是难以置信
@@ -1050,8 +907,6 @@ PRINTFORML ■■真的好羞人，■■一起的时候，害羞得快晕倒了
 PRINTFORML 不过，真的好舒服……还想■■■
 PRINTFORML 但是真的好怕，让%MASTERNAME:12%厌烦什么的
 PRINTFORML 真矛盾呢……
- 
-
 ;==========================================================
 ;一周目第一次逆告白成功，当天触发
 ;==========================================================
@@ -1060,7 +915,6 @@ PRINTFORML 真矛盾呢……
 	RETURN 1 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_15(ARG)
-
 PRINTFORML 就像，在做梦一样
 PRINTFORML 明明是露米娅自己
 PRINTFORML 忍不住情绪了，居然在这种时候，展现出以前吓人才会有的样子
@@ -1081,16 +935,12 @@ PRINTFORML 就连在■■之后，虽然很累，但是真的好舒服……
 PRINTFORML 最后，终于努力让露米娅，成为%MASTERNAME:12%的■■了啊
 PRINTFORML 真的很难忘记那个拥抱
 PRINTFORML 所以，以后也要用更多的拥抱，来回报%MASTERNAME:12%%UNICODE(0x2764)%
- 
-
 ;==========================================================
 ;一周目逆告白拒绝
 ;==========================================================
 @DIARY_Moe_K12_16_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_16(ARG)
-
 PRINTFORML 为什么
 PRINTFORML 只是因为露米娅是妖怪吗
 PRINTFORML 还是说根本不喜欢露米娅，只是为了好玩？
@@ -1106,16 +956,12 @@ PRINTFORML 下次，再有这样的机会
 PRINTFORML 露米娅一定要控制好影子
 PRINTFORML 像正常的人类女孩子一样，去表达自己的心意
 PRINTFORML 绝对不能再让%MASTERNAME:12%害怕了啊
- 
-
 ;==========================================================
 ;一周目第二次逆告白成功
 ;==========================================================
 @DIARY_Moe_K12_17_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_17(ARG)
-
 PRINTFORML 
 PRINTFORML 终于
 PRINTFORML 今天总算是能把情绪控制下来
@@ -1134,16 +980,12 @@ PRINTFORML 看来啊，露米娅也成长了很多呢
 PRINTFORML 总是喜欢在好事发生的时候哭出来
 PRINTFORML 以后可不能这样了
 PRINTFORML 毕竟，对着最■的人哭出来，会让%MASTERNAME:12%担心的呀
- 
-
 ;==========================================================
 ;一周目第二次逆告白拒绝
 ;==========================================================
 @DIARY_Moe_K12_18_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_18(ARG)
-
 PRINTFORML 为什么
 PRINTFORML 只是因为露米娅是妖怪吗
 PRINTFORML 还是说根本不喜欢露米娅，只是为了好玩？
@@ -1163,16 +1005,12 @@ PRINTFORML
 PRINTFORML 露米娅，还要继续努力
 PRINTFORML 以后，对%MASTERNAME:12%的态度，还是要和以前一样
 PRINTFORML 一直一直，都要■■%MASTERNAME:12%
- 
-
 ;==========================================================
 ;二周目逆告白成功
 ;==========================================================
 @DIARY_Moe_K12_19_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_19(ARG)
-
 PRINTFORML 今天，想起来很多事情
 PRINTFORML 与%MASTERNAME:12%相处的那些日子
 PRINTFORML 在他人看来，原来是如此的珍贵
@@ -1194,16 +1032,12 @@ PRINTFORML 这样的眼泪，露米娅以后一定要少流一些
 PRINTFORML 毕竟，%MASTERNAME:12%也已经，把露米娅当做最重要的人了
 PRINTFORML 露米娅也要成熟一点，不要再像过去那样幼稚了啊
 PRINTFORML 在最■■的人面前，不要为了开心的事情流眼泪了……
- 
-
 ;==========================================================
 ;二周目逆告白失败
 ;==========================================================
 @DIARY_Moe_K12_20_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_20(ARG)
-
 PRINTFORML 呜呜呜……
 PRINTFORML 果然还是准备不充分吗……
 PRINTFORML 居然还摔伤了，还让%MASTERNAME:12%帮忙包扎什么的
@@ -1218,31 +1052,23 @@ PRINTFORML 以后的日子，还很长很长呢
 PRINTFORML 所以，露米娅一定要努力，让%MASTERNAME:12%也■■上露米娅
 PRINTFORML 到时候，就轮到%MASTERNAME:12%来■■了，诶嘿嘿
 PRINTFORML 最■■%MASTERNAME:12%啦
- 
-
 ;==========================================================
 ;获得条件二：寺子屋学习当天
 ;==========================================================
 @DIARY_Moe_K12_21_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_21(ARG)
-
 PRINTFORML 今天与%MASTERNAME:12%一同去了寺子屋
 PRINTFORML 居然真的能听懂慧音老师上课呢
 PRINTFORML 而且慧音老师说，以后都能直接去听课了，真好啊
 PRINTFORML 如果不是%MASTERNAME:12%带着露米娅的话，或许就再也上不了这样的课吧
 PRINTFORML %MASTERNAME:12%……实在是很感谢你呀……
- 
-
 ;==========================================================
 ;获得条件三：购买fumo当天
 ;==========================================================
 @DIARY_Moe_K12_22_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_22(ARG)
-
 CALL RUMIA_MOE_AA_2_1
 PRINTFORMDL （纸上用铅笔细致勾勒出了fumo的模样）
 PRINTFORML 
@@ -1252,16 +1078,12 @@ PRINTFORML 现在画出来了，才发现，这不就是露米娅嘛
 PRINTFORML 如果没有%MASTERNAME:12%的话，大概只能够这样一直看着吧
 PRINTFORML 如果有一个%MASTERNAME:12%的fumo就好了……
 PRINTFORML 露米娅存下来的钱，也可以去给%MASTERNAME:12%买一个了呢
- 
-
 ;==========================================================
 ;获得条件四：交完4个baka朋友，的第二天！隔日！
 ;==========================================================
 @DIARY_Moe_K12_23_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_23(ARG)
-
 PRINTFORML 今天去找米斯琪姐姐，结果发现，大家都在一起玩
 PRINTFORML 原来，他们早就已经是很好的朋友了啊
 PRINTFORML 只是，露米娅过去自己不敢去打招呼，怕，被人讨厌什么的
@@ -1271,16 +1093,12 @@ PRINTFORML 但是，现在这种平常日子里的友情，才最为珍贵呢…
 PRINTFORML 就跟%MASTERNAME:12%一样
 PRINTFORML 与%MASTERNAME:12%做朋友，真的是露米娅所做过的，最珍贵的决定
 PRINTFORML 要是就这样放弃了，恐怕……
- 
-
 ;==========================================================
 ;获得条件五：解放的当日
 ;==========================================================
 @DIARY_Moe_K12_24_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_24(ARG)
-
 PRINTFORML 于月亮之中，露米娅终于得到了自己想要的力量
 PRINTFORML 但是，现在的露米娅，已经不需要依靠力量去填饱肚子了
 PRINTFORML 那样的战斗，虽然很令人振奋，好像自己真的能够支配他们一样
@@ -1307,16 +1125,12 @@ PRINTFORML 诶嘿嘿，虽然身体一点都没有成长
 PRINTFORML 但是，露米娅已经强大到，有可能是幻想乡最强的存在了哦
 PRINTFORML 要是谁敢伤害%MASTERNAME:12%……
 PRINTFORML 那就别怪露米娅不客气！
- 
-
 ;==========================================================
 ;被初吻
 ;==========================================================
 @DIARY_Moe_K12_25_EDIT
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_25(ARG)
-
 PRINTFORML 今天，被%MASTERNAME:12%要求……kiss了
 PRINTFORML 还不小心说出来了，露米娅是第一次■■……好害羞
 PRINTFORML 明明只是互相贴着嘴唇而已
@@ -1324,8 +1138,6 @@ PRINTFORML 为什么，现在想起来都还是好紧张，好难受
 PRINTFORML 感觉在%MASTERNAME:12%身边，露米娅都要变成坏孩子了呢
 PRINTFORML 不过啊，既然是%MASTERNAME:12%提起来的话……
 PRINTFORML 明天也还想要……%MASTERNAME:12%的■■%UNICODE(0x2764)%……
- 
-
 ;==========================================================
 ;第一次被告白，成功
 ;==========================================================
@@ -1338,7 +1150,6 @@ ENDIF
 RETURN RESULT
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_26(ARG)
-
 IF ARG
 	PRINTFORML 好幸福
 	PRINTFORML 今天……被%MASTERNAME:12%主动提起来了
@@ -1378,8 +1189,6 @@ ELSE
 	PRINTFORML 以后都要，一直喜欢%MASTERNAME:12%！
 	PRINTFORML 
 ENDIF 
- 
-
 ;==========================================================
 ;被告白 失败
 ;==========================================================
@@ -1393,7 +1202,6 @@ ENDIF
 RETURN RESULT
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_27(ARG)
-
 IF ARG == 3
 	PRINTFORML 为什么呀……
 	PRINTFORML 要是，那个时候答应就好了啊……
@@ -1417,16 +1225,12 @@ ELSE
 	PRINTFORML 为什么要这么说呢？搞不懂……
 	PRINTFORML 
 ENDIF 
- 
-
 ;==========================================================
 ;第二次被告白，第一次是逆告白失败的情况
 ;==========================================================
 @DIARY_Moe_K12_28_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_28(ARG)
-
 PRINTFORML 今天……
 PRINTFORML %MASTERNAME:12%真的……说出了那样的话……
 PRINTFORML 好想哭
@@ -1443,16 +1247,12 @@ PRINTFORML 拒绝了还主动说起来的大坏蛋
 PRINTFORML 真的好喜欢好喜欢
 PRINTFORML 以后也要像这样，一直喜欢露米娅哦
 PRINTFORML 
- 
-
 ;==========================================================
 ;第二次被告白，第一次是主动告白失败的情况
 ;==========================================================
 @DIARY_Moe_K12_29_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_29(ARG)
-
 PRINTFORML 今天……
 PRINTFORML %MASTERNAME:12%真的……再次向露米娅告白了……
 PRINTFORML 好想哭
@@ -1468,8 +1268,6 @@ PRINTFORML 喜欢
 PRINTFORML 真的好喜欢好喜欢
 PRINTFORML 以后也要像这样，一直喜欢露米娅哦
 PRINTFORML 
- 
-
 ;==========================================================
 ;第一次被推倒
 ;==========================================================
@@ -1490,10 +1288,8 @@ SIF !TALENT:12:0 && !TCVAR:12:388
 RESULT += 100
 RETURN RESULT 
 ENDIF 
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_30(ARG)
-
 IF ARG == 99
 	CALL DIARY_Moe_K12_31
 ELSE 
@@ -1521,8 +1317,6 @@ ELSE
 ENDIF 
 SIF ARG > 99 
 CALL DIARY_Moe_K12_31
- 
-
 ;==========================================================
 ;破处
 ;==========================================================
@@ -1538,7 +1332,6 @@ ELSE
 ENDIF 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_31(ARG)
-
 IF ARG == 99
 	PRINTFORML 好痛
 	PRINTFORML 是不是，肚子里面被撕开了……
@@ -1564,7 +1357,6 @@ ELSE
 	PRINTFORML 但还是好纠结，这样的决定，到底会不会让%MASTERNAME:12%，更加喜欢露米娅一点
 	PRINTFORML 如果多做一点的话，大概就会了吧？
 ENDIF 
- 
 ;==========================================================
 ;第一次逆推
 ;==========================================================
@@ -1578,7 +1370,6 @@ ELSE
 	SIF !TALENT:12:0 && !TCVAR:12:388
 	RESULT += 10 
 ENDIF 
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_32(ARG)
 SETCOLOR MOE_RUMIA
@@ -1608,24 +1399,18 @@ ELSE
 	SIF ARG > 9 
 	CALL DIARY_Moe_K12_31
 ENDIF 
- 
-
 ;==========================================================
 ;第一次弹幕胜负，成功击败
 ;==========================================================
 @DIARY_Moe_K12_33_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_33(ARG)
-
 PRINTFORML 今天第一次见识到了%MASTERNAME:12%的实力
 PRINTFORML 那种寻找空隙的手法，像极了灵梦姐姐和魔理沙姐姐……
 PRINTFORML 想了很久才准备好的弹幕，这样就被轻松化解了
 PRINTFORML 真的，很不甘心啊
 PRINTFORML 如果还有下一次
 PRINTFORML 一定要，更加努力才可以
- 
-
 ;==========================================================
 ;已经弹幕胜负成功过的情况下，再次进行弹幕胜负并成功的当天触发
 ;==========================================================
@@ -1641,7 +1426,6 @@ ENDIF
 RETURN RESULT
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_34(ARG)
-
 PRINTFORML 今天跟%MASTERNAME:12%又决了一次胜负
 PRINTFORML 好想赢
 PRINTFORML 早就为此做了很多准备，但是，还是输了呢
@@ -1666,16 +1450,12 @@ PRINTFORML 不行啊，本来就不是这样的呀
 PRINTFORML 还会有下一次弹幕胜负的吧
 PRINTFORML 但是，如果下一次还输了
 PRINTFORML 那，只能说明，露米娅根本就没有%MASTERNAME:12%那样的实力吧
- 
-
 ;==========================================================
 ;弹幕胜负失败当天触发
 ;==========================================================
 @DIARY_Moe_K12_35_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_35(ARG)
-
 PRINTFORML 总算是赢了！
 PRINTFORML 今天与%MASTERNAME:12%的弹幕胜负
 PRINTFORML 尽了最大的努力，最后总算是取得了胜利了！
@@ -1683,31 +1463,23 @@ PRINTFORML 以后，露米娅也能说，我可是比%MASTERNAME:12%更强的，
 PRINTFORML 不过%MASTERNAME:12%看起来也很高兴的样子
 PRINTFORML 不会是故意让着露米娅吧
 PRINTFORML 唔，搞不懂呢
- 
-
 ;==========================================================
 ;在弹幕胜负连续成功第三天触发以下内容，仅触发一次
 ;==========================================================
 @DIARY_Moe_K12_36_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_36(ARG)
-
 PRINTFORML 今天的弹幕胜负，果然又输了呢
 PRINTFORML 如果那个时候，再看清楚%MASTERNAME:12%的动作一点点，更精确一点
 PRINTFORML 会不会，完全的不一样呢
 PRINTFORML 如果下一次还能进行弹幕胜负的话
 PRINTFORML 还要更加努力啊
- 
-
 ;==========================================================
 ;连续弹幕胜负成功第四天，仅触发一次
 ;==========================================================
 @DIARY_Moe_K12_37_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_37(ARG)
-
 PRINTFORML 为什么
 PRINTFORML 明明已经互相战斗过这么多次
 PRINTFORML 已经更加努力地发射出更多的弹幕
@@ -1724,16 +1496,12 @@ PRINTFORML 毕竟，就算有危险，%MASTERNAME:12%会保护露米娅啊
 PRINTFORML 可是这样
 PRINTFORML 作为妖怪却放弃了战斗的意愿
 PRINTFORML 真的，真的，一点都不甘心
- 
-
 ;==========================================================
 ;连败之后的冷淡
 ;==========================================================
 @DIARY_Moe_K12_38_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_38(ARG)
-
 PRINTFORML 输了
 PRINTFORML 好痛苦
 PRINTFORML 真的难以触及
@@ -1746,16 +1514,12 @@ PRINTFORML 为什么要在%MASTERNAME:12%面前，说那样的话
 PRINTFORML 对不起，如果明天%MASTERNAME:12%还会跟露米娅说话
 PRINTFORML 一定要好好珍惜啊
 PRINTFORML 以后就没有理由，去战斗了啊
- 
-
 ;==========================================================
 ;连败之后三天，弹幕胜负露米娅无论成功与否
 ;==========================================================
 @DIARY_Moe_K12_39_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_39(ARG)
-
 PRINTFORML 今天总算是击败了%MASTERNAME:12%了呢！
 PRINTFORML 虽然只是学着他的样子扔石头
 PRINTFORML 也根本就不是什么正常的对决
@@ -1771,14 +1535,10 @@ PRINTFORML 哪怕又输了，那正好就是%MASTERNAME:12%赢了嘛，祝贺就
 PRINTFORML 不过，还是好想
 PRINTFORML 露米娅，能变得更强一点
 PRINTFORML 如果有异变发生了，就能保护%MASTERNAME:12%了啊
- 
-
 ;==========================================================
 ;红豆饭
 ;==========================================================
 @DIARY_Moe_K12_40_EDIT
-
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_40(ARG)
 IF (ARG == 10 ) ||  (ARG == 3 ) ||  (ARG == 4 )
@@ -1814,13 +1574,11 @@ ELSEIF ARG == 1
 	PRINTFORML 露米娅还想和%MASTERNAME:12%，单独相处一段时间呀
 	PRINTFORML 才，才不是想要……
 ENDIF  
-
 ;==========================================================
 ;怀孕
 ;ARG	儿童人数
 ;==========================================================
 @DIARY_Moe_K12_41_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_41(ARG)
 PRINTFORML 露米娅背着%MASTERNAME:12%，偷偷地去看了医生
@@ -1849,22 +1607,13 @@ ELSE
 	PRINTFORML 嘿嘿，要是说出去露米娅具体生了多少个孩子，别人会信嘛？
 	PRINTFORML 谜底揭晓——答案是{ARG}个！很多吧！
 ENDIF 
-
 ;==========================================================
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_42_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_42(ARG)
-
- 
-
 ;==========================================================
-
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
 ;日常系日记 150之后的均为日常系
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -1875,1853 +1624,1178 @@ NO,200 ~ 	恋慕见面过
 NO.300 ~	思慕见面过
 NO.400 ~	朋友见面过
 [SKIPEND]
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;恋人，约会过的日记
 ;100 - 
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
 @DIARY_Moe_K12_100_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_100(ARG)
-
 PRINTFORML 今天，与%MASTERNAME:12%一同约会了呢
 PRINTFORML 还是感觉%MASTERNAME:12%像是在带孩子
 PRINTFORML 什么时候露米娅才能长大一点呢
 PRINTFORML 呜，当然是指身体上的啦……
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_101_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_101(ARG)
-
 PRINTFORML 今天与%MASTERNAME:12%一起出了远门
 PRINTFORML 被路上的人问露米娅是不是%MASTERNAME:12%的女儿
 PRINTFORML %MASTERNAME:12%居然直接说是■■■，好害羞
 PRINTFORML 不行，既然%MASTERNAME:12%都这么说了，露米娅也要有该有的样子啊
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_102_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_102(ARG)
-
 PRINTFORML 今天出门了
 PRINTFORML 好喜欢和%MASTERNAME:12%一起出门
 PRINTFORML 站在%MASTERNAME:12%旁边，很满足
 PRINTFORML 想要抱着的时候，随时都可以搂住%MASTERNAME:12%
 PRINTFORML 这种归属感，真的很让人安心
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_103_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_103(ARG)
-
 PRINTFORML 与%MASTERNAME:12%一起出去了
 PRINTFORML 很满足，感觉像是被重视了一样
 PRINTFORML 露米娅也要多多帮上%MASTERNAME:12%的忙呢
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_104_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_104(ARG)
-
 PRINTFORML 在外面走着，就像是与%MASTERNAME:12%一起来了一场冒险一样
 PRINTFORML 呜，露米娅一直都在用小孩子的思维想事情呢
 PRINTFORML 不过，在%MASTERNAME:12%面前，真想当个长不大的孩子啊
 PRINTFORML 但是，又觉得这样的露米娅，完全没有大人的样子，好纠结
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_105_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_105(ARG)
-
 PRINTFORML 与%MASTERNAME:12%一起约会了
 PRINTFORML 在外面相互照看着，能与%MASTERNAME:12%在一起，很满足
 PRINTFORML 有着很真切的，可以依赖的人
 PRINTFORML 有的时候，也会被%MASTERNAME:12%依赖
 PRINTFORML 能帮到%MASTERNAME:12%，真的很开心
- 
-
 ;==========================================================
 ;恋人，约会过的日记
 ;==========================================================
 @DIARY_Moe_K12_106_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_106(ARG)
-
 PRINTFORML 在外面，与%MASTERNAME:12%也有说不完的话
 PRINTFORML 哪怕只是很小很小的一个东西
 PRINTFORML 都能互相争个半天，虽然最后还是话题一转就过去啦
 PRINTFORML 呜，听谁说，这种就像是老■老■一样……好害羞……
- 
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;恋人，交流过的日记
 ;150 -
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
-
 ;==========================================================
 @DIARY_Moe_K12_150_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_150(ARG)
-
 PRINTFORML 今天与%MASTERNAME:12%玩了
 PRINTFORML 与%MASTERNAME:12%的交流
 PRINTFORML 像是完全停不下来一样
 PRINTFORML 日记都没时间写了呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_151_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_151(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 今天也是见到了%MASTERNAME:12%的一天
 PRINTFORML 很喜欢这种平淡的日子
- 
-
 ;==========================================================
 @DIARY_Moe_K12_152_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_152(ARG)
-
 PRINTFORML 不知道什么时候
 PRINTFORML 露米娅居然不怕阳光了
 PRINTFORML 太阳晒起来，真的跟%MASTERNAME:12%说的那样，暖洋洋的
 PRINTFORML 虽然晒久了还是头晕发困，但是%MASTERNAME:12%在旁边就不怕呢
 PRINTFORML 大不了，让%MASTERNAME:12%抱着露米娅回家嘛
- 
-
 ;==========================================================
 @DIARY_Moe_K12_153_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_153(ARG)
-
 PRINTFORML 今天露米娅自己学了学做饭
 PRINTFORML 因为还是不够满意，所以就自己偷偷吃掉了
 PRINTFORML 真想给%MASTERNAME:12%做一顿大餐啊
 PRINTFORML 不过得忍住，不能自己偷偷吃掉啦！
- 
-
 ;==========================================================
 @DIARY_Moe_K12_154_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_154(ARG)
-
 PRINTFORML 想出去玩了……
 PRINTFORML 什么时候，%MASTERNAME:12%能叫上露米娅一起出门呢？
 PRINTFORML 早点准备一下吧，便当还有■■什么的，诶嘿嘿
- 
-
 ;==========================================================
 @DIARY_Moe_K12_155_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_155(ARG)
-
 PRINTFORML 虽然也是与往常没什么差别的一天
 PRINTFORML 但是，这样的平凡日子，才是最珍贵的啊
 PRINTFORML 与%MASTERNAME:12%一起，做更多有趣的事情吧——
- 
-
 ;==========================================================
 @DIARY_Moe_K12_156_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_156(ARG)
-
 PRINTFORML 有很多话都想写在日记里
 PRINTFORML 但是，太多太多了
 PRINTFORML 最后写出来的，也就只有这么一句
 PRINTFORML 能遇见，亲爱的%MASTERNAME:12%，露米娅好幸福
- 
-
 ;==========================================================
 @DIARY_Moe_K12_157_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_157(ARG)
-
 PRINTFORML 今天露米娅也好好的做了■■的样子
 PRINTFORML 什么时候，等%MASTERNAME:12%和露米娅提出来，■■什么的
 PRINTFORML 那时，露米娅作的这些■■修行，就能有用了吧？
- 
-
 ;==========================================================
 @DIARY_Moe_K12_158_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_158(ARG)
-
 PRINTFORML 好喜欢
 PRINTFORML 好喜欢好喜欢好喜欢
 PRINTFORML 当着面大声说出来，说了这么多遍
 PRINTFORML 每说一遍，心里都像是被填满了一遍，好幸福
- 
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;恋慕，交流过的日记
 ;200 -
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
 @DIARY_Moe_K12_200_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_200(ARG)
-
 PRINTFORML 与%MASTERNAME:12%说话挺有趣的呢
 PRINTFORML 还想说更多更多的话
 PRINTFORML 但是，每天就只有这么久呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_201_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_201(ARG)
-
 PRINTFORML 有点无聊呢
 PRINTFORML 不过%MASTERNAME:12%在旁边的话
 PRINTFORML 待多久，都很喜欢，很安心
- 
-
 ;==========================================================
 @DIARY_Moe_K12_202_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_202(ARG)
-
 PRINTFORML 昨天跟%MASTERNAME:12%玩得太过分了
 PRINTFORML 都忘记写日记了
 PRINTFORML 不过，哪怕不写，也绝对，绝对不会忘记的
- 
-
 ;==========================================================
 @DIARY_Moe_K12_203_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_203(ARG)
-
 PRINTFORML %MASTERNAME:12%看起来好像天天都在扫地
 PRINTFORML 露米娅也要爱干净才可以呢
 PRINTFORML 以后如果真的■■■了，露米娅也要学会扫地了呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_204_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_204(ARG)
-
 PRINTFORML 跟%MASTERNAME:12%说了很多话呢……
 PRINTFORML 虽然很想说那些，准备了很久的心里话
 PRINTFORML 但是，还是会怕%MASTERNAME:12%拒绝什么的
- 
-
 ;==========================================================
 @DIARY_Moe_K12_205_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_205(ARG)
-
 PRINTFORML 与%MASTERNAME:12%喝茶，感觉什么茶都很好喝
 PRINTFORML 是因为%MASTERNAME:12%很会泡茶呢，还是单纯的想要喝茶呢
 PRINTFORML 实在是搞不懂呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_206_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_206(ARG)
-
 PRINTFORML 夜深人静的时候
 PRINTFORML 就很容易想起来白天的事情
 PRINTFORML 比如说，■■■■什么的
 PRINTFORML 真希望能与%MASTERNAME:12%更亲近一些啊
- 
-
 ;==========================================================
 @DIARY_Moe_K12_207_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_207(ARG)
-
 PRINTFORML 明明不久前
 PRINTFORML 露米娅还一直自己一个人生活的
 PRINTFORML 随着%MASTERNAME:12%的到来，露米娅的生活，变得完全不一样了
 PRINTFORML 能遇见%MASTERNAME:12%，真是太好了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_208_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_208(ARG)
-
 PRINTFORML 明明过去说了很多次，■■■%MASTERNAME:12%这样的话
 PRINTFORML 玩闹的时候，说着■■这样的话，怎么能算数呢
 PRINTFORML 所以，想要认认真真的，向%MASTERNAME:12%说■■■
 PRINTFORML 这样的简单的话语，却怎么都说不出来了
 PRINTFORML 好怕，说出来了，就做不了这么好的朋友了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_209_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_209(ARG)
-
 PRINTFORML 为什么%MASTERNAME:12%总来找露米娅呢？
 PRINTFORML 那样亲近的态度，那种温柔的话语
 PRINTFORML 从来就没有在与别人的交流中听到过，感受过
 PRINTFORML %MASTERNAME:12%，又是怎么看待露米娅的呢
- 
-
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;思慕，交流过的日记
 ;300 -
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
 @DIARY_Moe_K12_300_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_300(ARG)
-
 PRINTFORML 与%MASTERNAME:12%说话，很有趣呢
 PRINTFORML 就好像，说很久都不会厌烦的样子
 PRINTFORML %MASTERNAME:12%有没有这样觉得呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_301_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_301(ARG)
-
 PRINTFORML 有点无聊呢
 PRINTFORML 不过%MASTERNAME:12%在旁边就不无聊了
 PRINTFORML 能够听到很多，好有意思的话题
- 
-
 ;==========================================================
 @DIARY_Moe_K12_302_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_302(ARG)
-
 PRINTFORML 今天帮%MASTERNAME:12%打扫卫生了
 PRINTFORML 露米娅也要爱干净才可以呢
 PRINTFORML 不能只让%MASTERNAME:12%付出啊，要懂得回报才行
- 
-
 ;==========================================================
 @DIARY_Moe_K12_303_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_303(ARG)
-
 PRINTFORML 昨天跟%MASTERNAME:12%玩得太过分了
 PRINTFORML 都忘记写日记了
 PRINTFORML 很开心
- 
-
 ;==========================================================
 @DIARY_Moe_K12_304_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_304(ARG)
-
 PRINTFORML %MASTERNAME:12%泡的红茶，很不错呢！
 PRINTFORML 如果露米娅也泡出那样的茶
 PRINTFORML %MASTERNAME:12%会不会开心呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_305_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_305(ARG)
-
 PRINTFORML 有点饿
 PRINTFORML 想吃点好吃的，要不要找%MASTERNAME:12%要呢？
 PRINTFORML 这样是不是有点，不要脸？
 PRINTFORML %MASTERNAME:12%不会因此讨厌露米娅吧
- 
-
 ;==========================================================
 @DIARY_Moe_K12_306_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_306(ARG)
-
 PRINTFORML 今天与%MASTERNAME:12%靠得更近了呢
 PRINTFORML 每次紧紧地靠着%MASTERNAME:12%
 PRINTFORML 就会很安心，想就这样睡一觉
- 
-
 ;==========================================================
 @DIARY_Moe_K12_307_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_307(ARG)
-
 PRINTFORML 要不要买点什么给%MASTERNAME:12%呢
 PRINTFORML 因为受了很多照顾，就想有所回报
 PRINTFORML 不知道%MASTERNAME:12%喜欢吃什么呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_308_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_308(ARG)
-
 PRINTFORML 今天问到了%MASTERNAME:12%一些
 PRINTFORML 关于为什么对露米娅这么好的话
 PRINTFORML 但是%MASTERNAME:12%却只是笑着看着露米娅
 PRINTFORML 或许，是不是不该问这种问题？
- 
-
 ;==========================================================
 @DIARY_Moe_K12_309_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_309(ARG)
-
 PRINTFORML %MASTERNAME:12%的眼睛，很漂亮呢
 PRINTFORML 但是，目光接触的时候
 PRINTFORML 为什么露米娅会忍不住躲开呢
 PRINTFORML 明明好想要更多的交流呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_310_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_310(ARG)
-
 PRINTFORML 跟%MASTERNAME:12%说了很多话呢……
 PRINTFORML 不小心说出心里话了
 PRINTFORML 现在想起来，心还是会跳的很快
 PRINTFORML 是得病了吗，但是妖怪哪里会得什么病呢
- 
-
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;朋友，交流过的日记
 ;400 - 	日常
 ;420 - 	亲密小差分
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
-
-
 ;==========================================================
 @DIARY_Moe_K12_400_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_400(ARG)
-
 PRINTFORML %MASTERNAME:12%教露米娅用影子做出的遮阳伞
 PRINTFORML 很方便呢，白天出门再也不会撞到树上了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_401_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_401(ARG)
-
 PRINTFORML %MASTERNAME:12%跟响子姐姐，或许会很聊得来？
 PRINTFORML 啊不对，%MASTERNAME:12%很喜欢扫地，但是响子姐姐却讨厌死了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_402_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_402(ARG)
-
 PRINTFORML 魔理沙姐姐好像很忙的样子？
 PRINTFORML 有没有什么露米娅能帮上的呢？
- 
-
 ;==========================================================
 @DIARY_Moe_K12_403_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_403(ARG)
-
 PRINTFORML 今天也陪魔理沙姐姐做了实验呢～
 PRINTFORML 看起来很成功的样子！
- 
-
 ;==========================================================
 @DIARY_Moe_K12_404_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_404(ARG)
-
 PRINTFORML 今天去爱丽丝姐姐家，和上海与蓬莱一起玩了呢！
 PRINTFORML 不过爱丽丝姐姐却在旁边，一句话都不说，是不开心吗？
- 
-
 ;==========================================================
 @DIARY_Moe_K12_405_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_405(ARG)
-
 PRINTFORML 用采到的蘑菇跟魔理沙姐姐换了吃的！
 PRINTFORML 问了问魔理沙姐姐，说是要那种会发光的蘑菇呢，好像没见过多少
- 
-
 ;==========================================================
 @DIARY_Moe_K12_406_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_406(ARG)
-
 PRINTFORML 三月精在干嘛呢，看起来很有趣的样子？
 PRINTFORML 看了很久，才发现是在演大家都知道的故事
 PRINTFORML 虽然是看过的故事，但是看着演出来也很有意思
- 
-
-
 ;==========================================================
 @DIARY_Moe_K12_407_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_407(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 今天的%MASTERNAME:12%与往常一样呢
 PRINTFORML 有什么特别的事情发生就好了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_420_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_420(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 跟%MASTERNAME:12%说了很多话呢……
 PRINTFORML 心里话说出来了，就会很舒畅
- 
-
 ;==========================================================
 @DIARY_Moe_K12_421_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_421(ARG)
-
 PRINTFORML 今天遇见%MASTERNAME:12%了
 PRINTFORML %MASTERNAME:12%泡的红茶，很不错呢！
 PRINTFORML 还是想学一学怎么泡茶……
- 
-
 ;==========================================================
 @DIARY_Moe_K12_422_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_422(ARG)
-
 PRINTFORML 有点饿……不过从%MASTERNAME:12%那里拿到了吃的！
 PRINTFORML 想吃点更加美味的点心，要不要找%MASTERNAME:12%要呢？
 PRINTFORML 这样会不会有点，不要脸？
- 
-
 ;==========================================================
 @DIARY_Moe_K12_423_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_423(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 遇见%MASTERNAME:12%了，很开心
 PRINTFORML 不知道%MASTERNAME:12%会不会这么想呢
- 
-
 ;==========================================================
 @DIARY_Moe_K12_424_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_424(ARG)
-
 PRINTFORML 与%MASTERNAME:12%说话挺有趣的呢
 PRINTFORML 如果能知道更多就好了
- 
-
 ;==========================================================
 @DIARY_Moe_K12_425_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_425(ARG)
-
 PRINTFORML 有点无聊呢
 PRINTFORML 不过%MASTERNAME:12%在的话，就不无聊了
 PRINTFORML 所以到底是无聊还是不无聊呢……
- 
-
-
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;朋友，交流过的日记（二周目）
 ;450 - 
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
 @DIARY_Moe_K12_450_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_450(ARG)
-
 PRINTFORML 在村里看到了熟悉的面孔
 PRINTFORML 但是却想不起应该怎么称呼
 PRINTFORML 总感觉，露米娅忘记了什么事情
 PRINTFORML 
- 
-
 ;==========================================================
 @DIARY_Moe_K12_451_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_451(ARG)
-
 PRINTFORML 今天……
 PRINTFORML 那个老人又在念叨露米娅是吃人妖怪了
 PRINTFORML 露米娅连打架都没怎么跟人打过
 PRINTFORML 怎么可能吃人嘛
 PRINTFORML 
- 
-
 ;==========================================================
 @DIARY_Moe_K12_452_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_452(ARG)
-
 PRINTFORML 从缝衣的阿姨那里拿到了报酬
 PRINTFORML 沉甸甸的，是甜酒呢
 PRINTFORML 不知道为什么，露米娅喝起甜酒
 PRINTFORML 就感觉，是不是很久很久以前，也喝过
 PRINTFORML 
- 
-
 ;==========================================================
 @DIARY_Moe_K12_453_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_453(ARG)
-
 PRINTFORML 人里的孩子，以为露米娅好欺负啥的
 PRINTFORML 掰手腕掰不过，跑也跑不过，不知道还以为是露米娅欺负人
 PRINTFORML 被群起而攻的时候，飞起来就打不到了
 PRINTFORML 结果最后还是忘了，最开始为什么打起来……
 PRINTFORML 
- 
-
 ;==========================================================
 @DIARY_Moe_K12_454_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_454(ARG)
-
 PRINTFORML 今天去了朋友家
 PRINTFORML 帮忙从邻居家的屋顶上捡东西了
 PRINTFORML 不会飞，真的是很麻烦的一件事啊
 PRINTFORML 
- 
-
 ;==========================================================
 @DIARY_Moe_K12_455_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_455(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 今天的%MASTERNAME:12%与往常一样呢
 PRINTFORML 有什么特别的事情发生就好了
 PRINTFORML ……还是说，已经发生过很特别的事情了吗？
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;获得条件后，交流时概率触发的日记
 ;700 - 条件二
 ;800 - 条件三
 ;900 - 条件四
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;条件二
-
 ;==========================================================
 @DIARY_Moe_K12_700_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_700(ARG)
-
 PRINTFORML 在寺子屋的时候
 PRINTFORML 和同学们玩得很开心呢
 PRINTFORML 虽然和%MASTERNAME:12%做朋友已经很满足了
 PRINTFORML 但，还是好想多交一些朋友啊
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_701_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_701(ARG)
-
 PRINTFORML 今天学到的东西有点困扰呢
 PRINTFORML 课堂上都没人敢去问老师……
 PRINTFORML 不知道%MASTERNAME:12%会不会懂呢，明天或许可以问一下
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_702_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_702(ARG)
-
 PRINTFORML 在铃奈庵看见了很不错的书
 PRINTFORML 下次学习的时候，与%MASTERNAME:12%一起看看吗
 PRINTFORML 明天需要记得去借啊
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_703_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_703(ARG)
-
 PRINTFORML 今天学到的历史故事
 PRINTFORML 与那些老妖怪所说的不太一样呢
 PRINTFORML 不过慧音老师讲的都是书上的知识
 PRINTFORML 书上的应该才是正确的吧
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_704_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_704(ARG)
-
 PRINTFORML 今天阿求老师看起来很累的样子？
 PRINTFORML 同学们都保持安静，一点都不调皮了呢
 PRINTFORML 真希望阿求老师身体好起来啊
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_705_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_705(ARG)
-
 PRINTFORML 下课的时候，还有两个同学留着
 PRINTFORML 原来是为了争辩课上遇见的问题
 PRINTFORML 露米娅有这样的问题，找%MASTERNAME:12%就可以了呢
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_706_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_706(ARG)
-
 PRINTFORML 课间，那两个男孩子打起来了
 PRINTFORML 因为阿求老师还没来
 PRINTFORML 所以露米娅就擅自拉开了他们
 PRINTFORML 不知道是不是正确的决定呢
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_707_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_707(ARG)
-
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;条件三
-
 ;==========================================================
 @DIARY_Moe_K12_800_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_800(ARG)
-
 PRINTFORML 今天去找米斯琪姐姐
 PRINTFORML 很努力地工作了呢
 PRINTFORML 虽然不小心把裙子弄湿了
 PRINTFORML 但是吃到了很美味的烤串
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_801_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_801(ARG)
-
 PRINTFORML 今天没有看见米斯琪姐姐
 PRINTFORML 不会是睡过了？还是说忘了这事儿？
 PRINTFORML 真不愧是鸟脑袋啊
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_802_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_802(ARG)
-
 PRINTFORML 今天不得不去人里找了一下猎人叔叔们
 PRINTFORML 看门的叔叔居然没有赶露米娅
 PRINTFORML 是因为没有用影子的原因吗
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_803_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_803(ARG)
-
 PRINTFORML 采到的蘑菇很多了呢
 PRINTFORML 找魔理沙姐姐去换，特地要了钱，而不是吃的
 PRINTFORML 因为吃的要尽快吃完
 PRINTFORML 但是钱可以一直存着呢
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_804_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_804(ARG)
-
 PRINTFORML 在外面遇见了猎人叔叔
 PRINTFORML 似乎丢了什么东西
 PRINTFORML 露米娅飞到天上，很容易就找到了呢
 PRINTFORML 这样的小忙帮多了，存起来的钱会很多很多～
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_805_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_805(ARG)
-
 PRINTFORML 去买了一些零食什么的
 PRINTFORML 手上有钱就想买更多零食呢
 PRINTFORML 不行不行，一定要好好存起来
 PRINTFORML 存着等下次一起玩，偷偷给%MASTERNAME:12%买礼物～
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_806_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_806(ARG)
-
 PRINTFORML 在外面玩的时候
 PRINTFORML 捡到了很有意思的东西，似乎是从外界来的
 PRINTFORML 卖钱的话，能卖多少呢？
 PRINTFORML 下次要不要去问问%MASTERNAME:12%呢……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_807_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_807(ARG)
-
 PRINTFORML fumo好像有一点脏了呢……
 PRINTFORML 应该是可以洗的，但是得找个好天气，而且需要很细心地洗……
 PRINTFORML 好麻烦……想让%MASTERNAME:12%帮忙洗……
 PRINTFORML 不行！露米娅不能这么懒呀！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_808_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_808(ARG)
-
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;条件四
-
 ;==========================================================
 @DIARY_Moe_K12_900_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_900(ARG)
-
 PRINTFORML 琪露诺又闯祸了
 PRINTFORML 不过还好没被太计较
 PRINTFORML 如果那个时候露米娅在旁边就好了
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_901_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_901(ARG)
-
 PRINTFORML 怎么妖精们都这么喜欢挖地穴
 PRINTFORML 感觉是很恶劣的恶作剧
 PRINTFORML 可不能学她们这样啊
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_902_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_902(ARG)
-
 PRINTFORML 想起来之前，和朋友们一起玩的时候
 PRINTFORML 只有米斯琪会随时带个本子，随手记东西
 PRINTFORML 很好的习惯呢，要向她学习啊
 PRINTFORML 不过……露米娅似乎记得住这样的小事？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_903_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_903(ARG)
-
 PRINTFORML 好想什么时候再叫上大家
 PRINTFORML 一起去哪里玩什么的
 PRINTFORML 只是大家不一定都有时间呢
 PRINTFORML 到时候就一起吃饭吧
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_904_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_904(ARG)
-
 PRINTFORML 听说有大事发生的时候
 PRINTFORML 妖精们会去太阳花田开会
 PRINTFORML 可不是有传闻说，那里非常危险吗
 PRINTFORML 该不会，危险的就是妖精们……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_905_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_905(ARG)
-
 PRINTFORML 大酱跟在小琪后面的样子
 PRINTFORML 有点像露米娅跟着%MASTERNAME:12%一样……
 PRINTFORML 不知道她们互相是怎么看待对方的呢……
 PRINTFORML 想问问……但是不知道问谁比较好……%MASTERNAME:12%吗？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_906_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_906(ARG)
-
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
- 
-
 ;==========================================================
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;恋人，未交流的日记
 ;1000 - 稍微多一点点
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
 @DIARY_Moe_K12_1000_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1000(ARG)
-
 PRINTFORML 今天，不想让%MASTERNAME:12%担心
 PRINTFORML 所以，学着%MASTERNAME:12%的样子，收拾好了家里
 PRINTFORML %MASTERNAME:12%看到，肯定会夸奖的吧？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1001_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1001(ARG)
-
 PRINTFORML 在路边发现了能吃的蘑菇
 PRINTFORML 按照%MASTERNAME:12%的口味的话……
 PRINTFORML 怎么做呢……要仔细思考一下呢
 PRINTFORML 要是能问问%MASTERNAME:12%就好了
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1002_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1002(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 今天等%MASTERNAME:12%等了一天啦
 PRINTFORML 怎么还没见到人，不会是出意外了吧
 PRINTFORML 好担心
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1003_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1003(ARG)
-
 PRINTFORML 今天没看见%MASTERNAME:12%
 PRINTFORML 到处都去找了
 PRINTFORML 还是没有找到%MASTERNAME:12%
 PRINTFORML 好担心，是有很重要的事情吗
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1004_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1004(ARG)
-
 PRINTFORML 准备了很多吃的
 PRINTFORML 最后还是都送给莉格露了
 PRINTFORML 没看见%MASTERNAME:12%，露米娅没什么胃口呀
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1005_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1005(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 因为%MASTERNAME:12%理都不理露米娅！
 PRINTFORML 真是的，是因为露米娅让%MASTERNAME:12%讨厌了吗
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1006_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1006(ARG)
-
 PRINTFORML 今天发现了很多能吃的蘑菇！
 PRINTFORML 不过%MASTERNAME:12%却不在啊
 PRINTFORML 好想找你说说话……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1007_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1007(ARG)
-
 PRINTFORML 有点饿了呢……
 PRINTFORML 得自己去找找吃的呢
 PRINTFORML 要是%MASTERNAME:12%在就好了
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1008_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1008(ARG)
-
 PRINTFORML 想去买点什么……
 PRINTFORML 不过%MASTERNAME:12%不一起出门的话
 PRINTFORML 不知道买什么比较好
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1009_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1009(ARG)
-
 PRINTFORML 
 PRINTFORML 
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;恋慕与恋人，未交流的日记
 ;1020 - 稍微少一点点
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
-
 ;==========================================================
 @DIARY_Moe_K12_1020_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1020(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 因为%MASTERNAME:12%理都不理露米娅！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1021_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1021(ARG)
-
 PRINTFORML 今天发现了很多能吃的蘑菇！
 PRINTFORML 不过%MASTERNAME:12%却不感兴趣的样子
 PRINTFORML 似乎……对露米娅都不感兴趣了？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1022_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1022(ARG)
-
 PRINTFORML 有点无聊了呢……
 PRINTFORML 怎么%MASTERNAME:12%不来找露米娅了呢？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1023_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1023(ARG)
-
 PRINTFORML 想吃东西……
 PRINTFORML 但是%MASTERNAME:12%不理露米娅
 PRINTFORML 好饿……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1024_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1024(ARG)
-
 PRINTFORML 有点饿了呢……
 PRINTFORML 得自己去找找吃的呢
 PRINTFORML 想要吃%MASTERNAME:12%……不对！写错了……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1025_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1025(ARG)
-
 PRINTFORML 想去买点什么……
 PRINTFORML 不过%MASTERNAME:12%不一起出门的话
 PRINTFORML 不知道买什么比较好
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1026_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1026(ARG)
-
 PRINTFORML 今天抓到了兔子！
 PRINTFORML 如果%MASTERNAME:12%帮忙做饭就好了
 PRINTFORML 再也不想吃生的了啊……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1027_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1027(ARG)
-
 PRINTFORML 今天抓到了野鸡！
 PRINTFORML 如果%MASTERNAME:12%帮忙做饭就好了
 PRINTFORML 再也不想吃生的了啊……
- 
-
 ;==========================================================
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;朋友或思慕，未交流的日记
 ;1040 - 
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
-
 ;==========================================================
 @DIARY_Moe_K12_1040_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1040(ARG)
-
 PRINTFORML 今天没有什么收获……
 PRINTFORML 是因为之前收获了%MASTERNAME:12%吗……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1041_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1041(ARG)
-
 PRINTFORML 有点无聊了呢……
 PRINTFORML 怎么%MASTERNAME:12%不来找露米娅呢？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1042_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1042(ARG)
-
 PRINTFORML 想吃东西……
 PRINTFORML 但是%MASTERNAME:12%不理露米娅，怎么办呀
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1043_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1043(ARG)
-
 PRINTFORML 想吃东西……
 PRINTFORML 但是%MASTERNAME:12%不理露米娅……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1044_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1044(ARG)
-
 PRINTFORML 不想写——
 PRINTFORML 因为%MASTERNAME:12%理都不理露米娅！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1045_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1045(ARG)
-
 PRINTFORML 今天发现了很多能吃的蘑菇！
 PRINTFORML 不过%MASTERNAME:12%却不感兴趣的样子
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1046_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1046(ARG)
-
 PRINTFORML 今天抓到了兔子！
 PRINTFORML 如果%MASTERNAME:12%帮露米娅做饭就好了
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1047_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1047(ARG)
-
 PRINTFORML 今天抓到了野鸡！
 PRINTFORML 如果%MASTERNAME:12%帮露米娅做饭就好了
- 
-
 ;==========================================================
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;一周目黑球，未交流的日记
 ;1100 - 
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
 @DIARY_Moe_K12_1100_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1100(ARG)
-
 PRINTFORML 今天没有什么收获……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1101_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1101(ARG)
-
 PRINTFORML （一通鬼画符不知道在写什么） 
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1102_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1102(ARG)
-
 PRINTFORML 
 PRINTFORML （一片空白）
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1103_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1103(ARG)
-
 PRINTFORML 今天没有什么收获……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1104_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1104(ARG)
-
 PRINTFORML 有点无聊了呢……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1105_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1105(ARG)
-
 PRINTFORML 有点饿了呢……想吃点好吃的……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1106_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1106(ARG)
-
 PRINTFORML 今天抓到了兔子！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1107_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1107(ARG)
-
 PRINTFORML 今天抓到了野鸡！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1108_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1108(ARG)
-
 PRINTFORML 不想写——
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1109_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1109(ARG)
-
 PRINTFORML 呜呜呜……记日记好麻烦……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1110_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1110(ARG)
-
 PRINTFORML 今天发现了很多能吃的蘑菇！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1111_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1111(ARG)
-
 PRINTFORML 莉格露又不见了呢……去哪里了？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1112_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1112(ARG)
-
 PRINTFORML 有个很奇怪的人类在附近转悠……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1113_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1113(ARG)
-
 PRINTFORML 今天看见了好多人！但是感觉都很危险……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1114_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1114(ARG)
-
 PRINTFORML 想找他们交朋友……但是好怕……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1115_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1115(ARG)
-
 PRINTFORML 有虫子！趁着莉格露不在……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1116_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1116(ARG)
-
 PRINTFORML 吃到了很好吃的蘑菇！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1117_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1117(ARG)
-
 PRINTFORML 好像看见灵梦姐姐……又有什么事情发生了吗
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1118_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1118(ARG)
-
 PRINTFORML 吃到了很好吃的肉！果然烤一烤就会很香呢！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1119_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1119(ARG)
-
 PRINTFORML 怎么还有能爆炸的蘑菇啊！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1120_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1120(ARG)
-
 PRINTFORML 呜呜呜……又把衣服弄脏了……
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1121_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1121(ARG)
-
 PRINTFORML 魔理沙姐姐好像很忙的样子？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1122_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1122(ARG)
-
 PRINTFORML 爱丽丝姐姐好像很忙的样子？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1123_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1123(ARG)
-
 PRINTFORML 今天陪魔理沙姐姐做了实验呢～
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1124_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1124(ARG)
-
 PRINTFORML 今天去爱丽丝姐姐家，和上海与蓬莱一起玩了呢！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1125_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1125(ARG)
-
 PRINTFORML 用采到的蘑菇跟魔理沙姐姐换了吃的！
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1126_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1126(ARG)
-
 PRINTFORML 三月精在干嘛呢……看起来很有趣的样子？
- 
-
 ;==========================================================
 ;==========================================================
 @DIARY_Moe_K12_1127_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1127(ARG)
-
 PRINTFORML 
- 
-
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;能力提升系日记
 ;1501 - 
-
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1501_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1501(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1502_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1502(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1503_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1503(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1504_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1504(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1505_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1505(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1506_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1506(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1507_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1507(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1508_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1508(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1509_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1509(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1510_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1510(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1511_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1511(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1512_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1512(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1513_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1513(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1514_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1514(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
 ;【淫壺】取得
 ;==========================================================
 @DIARY_Moe_K12_1515_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1515(ARG)
-
 IF ARG > 699
 ;素质取得时，感度5级别
 	PRINTFORML 露米娅的小穴，最近总是会痒痒的
@@ -3732,48 +2806,30 @@ IF ARG > 699
 	PRINTFORML 要是插进肚子里面的小穴，每次被用力顶起来，脑袋一片空白，舒服得什么都思考不了
 	PRINTFORML 都怪%MASTERNAME:12%，已经变成离开肉棒就满足不了的■■小穴啦%UNICODE(0x2764)%
 	PRINTFORML 明天也要，给露米娅更多更多的■■呢%UNICODE(0x2764)%
-
 ENDIF 
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1516_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1516(ARG)
-
 PRINTFORML 
- 
-
 ;==========================================================
-
 ;==========================================================
 @DIARY_Moe_K12_1517_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1517(ARG)
-
 PRINTFORML 
- 
-
-
 ;==========================================================
-
-
 ;▼ページを増やすなら以下のテンプレをコピペしてXとYYを代入してください
 [SKIPSTART]
 ;==========================================================
 @DIARY_Moe_KX_YYY_EDIT
- 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_KX_YYY(ARG)
-
 PRINTFORML 
 RESETCOLOR
-
 ;==========================================================
 [SKIPEND]
-
 ;=============================
 ;406,日記を読む
 ;需要注意，_2才是读日记之前的台词，_1是读完之后的
@@ -3783,7 +2839,6 @@ RESETCOLOR
 ;SHIRAHU(XX)是角色的状态是否正常，没有睡着，时间停止或者烂醉那些
 ;=============================
 @M_KOJO_Moe_SUCCESS_COM_K12_406
-
 ;目前在EVETNCOM中设置了，可以在目标为露米娅时，强制call自己的函数
 IF TALENT:12:3 && ( CFLAG:12:300 == CFLAG:0:300 ) && SHIRAHU(12)
 	CALL M_KOJO_Moe_MESSAGE_COM_K12_406_2 
@@ -3806,11 +2861,9 @@ ENDIF
 #DIM CHOOSE , 10 
 CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)	
 PRINTFORML 
-
 ;很怪，看你先生的日记也会感到害羞
 ;应该怎么检测呢……
 IF SHIRAHU(12) && (TFLAG:194 == 12) 
-
 	IF !RUMIA_PAGESET:12:1 
 		PRINTFORMW 「什么也没写……有没有很失望呢……」
 		PRINTFORMDW （再等一段时间……或许就能有了呢？）
@@ -3895,21 +2948,18 @@ IF SHIRAHU(12) && (TFLAG:194 == 12)
 		PRINTFORMW 「写得不是很多……会不会有些失望呢……」
 		PRINTFORMDW （再等一段时间……或许就能有更多更多了呢？）
 	ENDIF 
-	
 ENDIF
-
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
-
 @M_KOJO_Moe_MESSAGE_COM_K12_406_2 
 CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)	
-	IF ( !(CFLAG:12:1001 || CFLAG:12:1201 ) && !TALENT:12:3 || MARK:12:3 || TCVAR:12:132) && !CFLAG:12:睡眠 && !TCVAR:12:145
+	IF ( !(CFLAG:12:1001 || CFLAG:12:1201 ) && !TALENT:12:3 || MARK:12:3 || TCVAR:12:132) && !CFLAG:12:313 && !TCVAR:12:145
 		PRINTFORMW 「……吃了你哦……」
 		CALL DOKU_COMF_FAIL		
-	ELSEIF TALENT:12:8 && !CFLAG:12:睡眠 && !TCVAR:12:145
+	ELSEIF TALENT:12:8 && !CFLAG:12:313 && !TCVAR:12:145
 		PRINTFORML 「啊……想看露米娅的日记吗……」
 		PRINTFORML 「……还是好害羞……对不起……不行哦……」
 		CALL DOKU_COMF_FAIL		
-	ELSEIF TALENT:12:3 && !CFLAG:12:睡眠 && !TCVAR:12:145
+	ELSEIF TALENT:12:3 && !CFLAG:12:313 && !TCVAR:12:145
 	;当面同意的情况
 		IF FIRSTTIME("RUMIA_ALLOW_YOU_TO_READ_DIARY")
 			IF TALENT:12:7 && FIRSTTIME("RUMIA_ALLOW_YOU_TO_READ_DIARY_PAINT")
@@ -4020,7 +3070,6 @@ CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)
 				PRINTFORML 
 				PRINTFORMDW 露米娅从柜子上拿下来日记本，递给你，便飞快的溜到一边，生怕被看见表情一样
 				PRINTFORML 
-
 			ENDIF 
 		ENDIF 
 		;直接接com触发
@@ -4036,11 +3085,8 @@ CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)
 ;=============================
 @M_KOJO_Moe_K12_漢数字変換(ARG)
 #FUNCTIONS
-
 LOCALS = 
-
 	LOCALS += "第"
-
 SELECTCASE ARG / 1000
 CASE 1
 	LOCALS += "一千"
@@ -4061,10 +3107,8 @@ CASE 8
 CASE 9
 	LOCALS += "九千"
 ENDSELECT
-
 SIF (( ARG % 1000 ) < 100) && ( ARG / 1000 > 1 )
 	LOCALS += "零"
-
 SELECTCASE ARG / 100 
 CASE 1
 	LOCALS += "一百"
@@ -4085,10 +3129,8 @@ CASE 8
 CASE 9
 	LOCALS += "九百"
 ENDSELECT
-
 SIF (( ARG % 100 ) < 10 ) && ( ARG / 100 > 1 )
 	LOCALS += "零"
-
 SELECTCASE ARG / 10
 CASE 1
 	LOCALS += "十"
@@ -4109,7 +3151,6 @@ CASE 8
 CASE 9
 	LOCALS += "九十"
 ENDSELECT
-
 SELECTCASE ARG % 10
 CASE 1
 	LOCALS += "一"
@@ -4132,13 +3173,11 @@ CASE 9
 ENDSELECT
 	LOCALS += "页"
 RETURNF LOCALS
-
 ;=============================
 ;日记用，记载当日日期
 ;最大支持100年哦，要永远永远都在一起哟
 ;=============================
 @M_KOJO_Moe_K12_適当日期設定(ARG)
-
 PRINT 第
 IF ARG > 1116
 	SELECTCASE ARG / 1240 
@@ -4225,32 +3264,6 @@ SELECTCASE ((ARG) % 124) % 10
 	CASE 9
 		PRINT 九日
 ENDSELECT
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ;==========================================================
 @DIARY_Moe_K12_1200_EDIT
 IF TALENT:12:7
@@ -4315,19 +3328,12 @@ ELSE
 		;至于我自己……怕是没人会记得了呢
 	ENDIF 
 RESETCOLOR
-
 ;==========================================================
-
-
 [SKIPSTART]
-
 @EVENTCOM 
 VARSET RESULTS 
-
 ;拟定替换自己的日记用，索性写在事件系EVENTCOM 里面了
 SIF (TFLAG:3 == 406) && (COM406_CHECK_OWNER() == XX ) && (CFLAG:XX:300 != CFLAG:MASTER:300)
 	TARGET = XX 
-
 [SKIPEND]
-
 ;==========================================================

@@ -1,11 +1,11 @@
 ﻿
 ;-------------------------------------------------
-;Eratoho The World 4.881用 露米娅Moe版口上Ver1.04 
+;Eratoho The World 4.881用 露米娅Moe版口上  
 ;-------------------------------------------------
 ;==========================================================
-
+;
 ;施工中……
-
+;
 ;==========================================================
 ;怕太阳函数，FLAGSETTING里面CALL的部分
 ;==========================================================
@@ -34,6 +34,7 @@ SUN_STRENGTH_REALITY = 0
 
 SIF ONCE("MOE_RUMIA_SUN_BURN_FIRST")
 TCVAR:12:361 = TIME 
+;-------------------------------------------------
 
 ;太阳最盛的时候……
 IF ( (TIME > 720) && (TIME < 960) ) 
@@ -45,6 +46,7 @@ ELSEIF ( (TIME > 480) && (TIME < 600) ) ||  ( (TIME > 1020) && (TIME < 1050) )
 ELSE 
 	SUN_STRENGTH += 30
 ENDIF 
+;-------------------------------------------------
 
 ;季节不一样的时候
 IF DAY:2 == 2
@@ -52,6 +54,7 @@ IF DAY:2 == 2
 ELSEIF DAY:2 == 4
 	SUN_STRENGTH -= 10
 ENDIF
+;-------------------------------------------------
 
 ;天气不一样的时候
 IF GROUPMATCH(DAY:5 , 8 , 9 , 10 , 11 , 12 )	;下雪天
@@ -63,6 +66,7 @@ ELSEIF DAY:5 == 3 	;多云
 ELSE 		;晴天或晴朗
 	SUN_STRENGTH += 20
 ENDIF 
+;-------------------------------------------------
 
 ;其他的情况
 IF SUN_STRENGTH > 0
@@ -92,7 +96,7 @@ IF SUN_STRENGTH > 0
 	SUN_STRENGTH /= 5
 
 	;在地底的时候
-	SIF GET_MAPID(CFLAG:12:現在位置) == 9
+	SIF GET_MAPID(CFLAG:12:300) == 9
 	SUN_STRENGTH /= 2
 
 	;有共用雨伞的时候
@@ -109,6 +113,7 @@ IF SUN_STRENGTH > 0
 ELSE 
 	SUN_STRENGTH = 0
 ENDIF 
+;-------------------------------------------------
 
 IF SUN_STRENGTH
 	;单日内越晒越受不了
@@ -166,18 +171,22 @@ SELECTCASE CFLAG:12:1361
 	CASE IS > 100
 		TIMES SUN_STRENGTH,0.90
 ENDSELECT
+;-------------------------------------------------
 
 ;削弱状态下，将大大减少……
 IF !CFLAG:12:1360
-	SUN_STRENGTH_REALITY = SUN_STRENGTH
-	IF SUN_STRENGTH > 200 
-		SUN_STRENGTH_REALITY = 100 
+	IF SUN_STRENGTH > 300 
+		SUN_STRENGTH = 100 
 	ELSE 
-		SUN_STRENGTH_REALITY /= 3
+		SUN_STRENGTH /= 3
 	ENDIF 
-ELSE 
-	SUN_STRENGTH_REALITY = SUN_STRENGTH
 ENDIF 
+;-------------------------------------------------
+
+SUN_STRENGTH_REALITY = SUN_STRENGTH
+
+;SUN_STRENGTH此时还是单位值，
+;-------------------------------------------------
 
 ;检测时间是否有发生变化
 IF SUN_STRENGTH_REALITY && TIME > TCVAR:12:361
@@ -201,38 +210,40 @@ IF SUN_STRENGTH_REALITY && TIME > TCVAR:12:361
 		;只有目标为露米娅时才会触发的口上
 		IF  (CFLAG:12:300 == CFLAG:0:300)  && TFLAG:104 == 12
 			IF FIRSTTIME("MOE_RUMIA_FIRST_GET_SUN_BURN_MESSAGE")
-				CALL MOE_RUMIA_SUN_BURN_MESSAGE(1,SUN_STRENGTH_REALITY)
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(1,SUN_STRENGTH)
 			ELSEIF BASE:12:1	;有气力就扣除气力
-				CALL MOE_RUMIA_SUN_BURN_MESSAGE(2,SUN_STRENGTH_REALITY)
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(2,SUN_STRENGTH)
 			ELSE 	;没有气力就扣除体力
-				CALL MOE_RUMIA_SUN_BURN_MESSAGE(3,SUN_STRENGTH_REALITY)
+				CALL MOE_RUMIA_SUN_BURN_MESSAGE(3,SUN_STRENGTH)
 			ENDIF 
 		ENDIF 
 
 		;扣除对应值，分开使用两种变量就可以保持旁白的严重性，与实际上扣除的不会冲突……
 		IF (CFLAG:12:300 == CFLAG:0:300) && TFLAG:104 == 12
-			IF BASE:12:1 > SUN_STRENGTH_REALITY ;有气力就扣除气力
+			IF (BASE:12:1 + 20)  > SUN_STRENGTH_REALITY ;有气力就扣除气力
 				IF SUN_STRENGTH_REALITY > 30
-					IF SUN_STRENGTH_REALITY > 300
+					;修正为单位值
+					IF SUN_STRENGTH > 200
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "被阳光灼伤了")
-					ELSEIF SUN_STRENGTH_REALITY > 100
+					ELSEIF SUN_STRENGTH > 100
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "被阳光晒到了")
-					ELSEIF SUN_STRENGTH_REALITY > 30
+					ELSEIF SUN_STRENGTH > 30
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "気力", "不适应阳光")
 					ENDIF 
 					WAIT 
 				ELSE 
 					BASE:12:1 -= SUN_STRENGTH_REALITY
 				ENDIF 
-			ELSEIF BASE:12:1 < SUN_STRENGTH_REALITY
-				CALL RECOVER(12 , -BASE:12:1, "気力", "被阳光灼伤了")
+			;ELSEIF BASE:12:1 < SUN_STRENGTH_REALITY
+			;	CALL RECOVER(12 , -BASE:12:1, "気力", "被阳光灼伤了")
 			ELSEIF BASE:12:0 > SUN_STRENGTH_REALITY ;没气力就扣除体力
 				IF SUN_STRENGTH_REALITY > 50
-					IF SUN_STRENGTH_REALITY > 300
+					;修正为单位值
+					IF SUN_STRENGTH > 200
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "被阳光灼伤了")
-					ELSEIF SUN_STRENGTH_REALITY > 100
+					ELSEIF SUN_STRENGTH > 100
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "被阳光晒到了")
-					ELSEIF SUN_STRENGTH_REALITY > 50
+					ELSEIF SUN_STRENGTH > 50
 						CALL RECOVER(12 , -SUN_STRENGTH_REALITY, "体力", "不适应阳光")
 					ENDIF 
 					WAIT
@@ -243,7 +254,7 @@ IF SUN_STRENGTH_REALITY && TIME > TCVAR:12:361
 				CALL RECOVER(12 , -BASE:12:0, "気力", "被阳光灼伤了")
 			ENDIF 	
 		ELSE 	;非面对面的情况，就偷偷地扣好了
-			IF BASE:12:1 ;有气力就扣除气力
+			IF (BASE:12:1 + 20 ) > SUN_STRENGTH_REALITY ;有气力就扣除气力
 				BASE:12:1 -= SUN_STRENGTH_REALITY
 			ELSE ;没气力就扣除体力
 				BASE:12:0 -= SUN_STRENGTH_REALITY
@@ -251,32 +262,65 @@ IF SUN_STRENGTH_REALITY && TIME > TCVAR:12:361
 		ENDIF 
 	ENDIF 
 ENDIF 
-
-
+;-------------------------------------------------
+;口上的部分
+;-------------------------------------------------
 @MOE_RUMIA_SUN_BURN_MESSAGE(ARG,ARG:1=0)
+CALL RUMIA_MOE_SET_COLOR(MOE_RUMIA)	
+;ARG的值是差分识别
 ;ARG:1 的值是扣除值
 IF ARG == 1 
 	;初次触发该事件
-
-
-
-
-
-
 ELSEIF ARG == 2 
 	;开始烧气力
-
-
-
-
-
-
-
+	IF ARG > 100 
+		PRINTDATAL 
+			DATAFORM 「晕乎乎的哇……」
+			DATAFORM 「诶？脑袋……有点晕……」
+			DATAFORM 「好晕哇……」
+			DATAFORM 「不太舒服呢……」
+			DATAFORM 「呜……」
+		ENDDATA
+		IF !CFLAG:12:317 
+			PRINTDATADL 
+				DATAFORM 露米娅摇摇晃晃地走着……
+				DATAFORM 露米娅努力地避让着阳光……
+				DATAFORM 露米娅有些昏昏沉沉的样子……
+			ENDDATA
+		ENDIF 
+	ELSE 
+		PRINTDATAL 
+			DATAFORM 「不太舒服呢……」
+			DATAFORM 「呜……」
+			DATAFORM 「好热……」
+			DATAFORM 「好亮啊……」
+			DATAFORM 「有太阳呢……」
+		ENDDATA
+	ENDIF 
 ELSEIF ARG == 3
 	;开始烧体力
-
-
-
-
-
+	IF ARG > 100 
+		PRINTDATAL 
+			DATAFORM 「晕乎乎的哇……」
+			DATAFORM 「诶？脑袋……有点晕……」
+			DATAFORM 「好晕哇……」
+			DATAFORM 「不太舒服呢……」
+			DATAFORM 「呜……」
+		ENDDATA
+		IF !CFLAG:12:317 
+			PRINTDATADL 
+				DATAFORM 露米娅摇摇晃晃地走着……
+				DATAFORM 露米娅努力地避让着阳光……
+				DATAFORM 露米娅有些昏昏沉沉的样子……
+			ENDDATA
+		ENDIF 
+	ELSE 
+		PRINTDATAL 
+			DATAFORM 「不太舒服呢……」
+			DATAFORM 「呜……」
+			DATAFORM 「好热……」
+			DATAFORM 「好亮啊……」
+			DATAFORM 「有太阳呢……」
+		ENDDATA
+	ENDIF 
 ENDIF 
