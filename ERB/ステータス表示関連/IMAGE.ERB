@@ -14,6 +14,8 @@
 #DIM DYNAMIC 縦位置 = 0
 #DIM DYNAMIC XRAY_VERTICAL = 0
 #DIM XRAY_LAYER
+;Better Xray
+#DIM Chara_Xray_Block_by_Better_Xray, 300
 
 SIF !ターゲット
 	RETURN RESULT
@@ -54,6 +56,18 @@ SIF FLAG:多尺寸
 FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 	SIF !ターゲット:LOCAL
 		BREAK
+	;Better xray
+	IF Xray_display_mode > 4 && CFLAG:(ターゲット:LOCAL):恶作剧 !=2 && CFLAG:(ターゲット:LOCAL):诶嘿嘿 == 0
+		IF GETBIT(Xray_display_mode, 2) && GETBIT(Xray_display_mode, 3) && 充填率((ターゲット:LOCAL), 3) == 0 && PALAM:(ターゲット:LOCAL):潤滑 <= 500
+			Chara_Xray_Block_by_Better_Xray:(ターゲット:LOCAL) = 1
+		ELSEIF !GETBIT(Xray_display_mode, 2) && GETBIT(Xray_display_mode, 3) && 充填率((ターゲット:LOCAL), 3) == 0
+			Chara_Xray_Block_by_Better_Xray:(ターゲット:LOCAL) = 1
+		ELSEIF GETBIT(Xray_display_mode, 2) && !GETBIT(Xray_display_mode, 3) && PALAM:(ターゲット:LOCAL):潤滑 <= 500
+			Chara_Xray_Block_by_Better_Xray:(ターゲット:LOCAL) = 1
+		ENDIF
+	ELSEIF GETBIT(Xray_display_mode, 1) && CFLAG:(ターゲット:LOCAL):恶作剧 !=2 && CFLAG:(ターゲット:LOCAL):诶嘿嘿 == 0
+		Chara_Xray_Block_by_Better_Xray:(ターゲット:LOCAL) = 1
+	ENDIF
 	;路人で画像未生成の場合作製する
 	IF TALENT:(ターゲット:LOCAL):路人 && !GCREATED(CFLAG:(ターゲット:LOCAL):路人子素材CFLAG開始位置)
 		CALL 路人子生成(ターゲット:LOCAL, 0)
@@ -118,7 +132,7 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 		sPrint_Text += @"</font>"
 
 	;--- ALTER
-	IF FLAG:XRay_show
+	IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:(ターゲット:LOCAL) != 1
 		iSpaceSize += (35 * 角色画像表示尺寸比/GETCONFIG("フォントサイズ"))
 	ENDIF
 	;--- END
@@ -158,7 +172,7 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 	CALL 画像セット(RESULTS:0, 縦位置, 0, 角色画像表示尺寸比, 0, 1, @"{1000+CHARA}", CALLNAME:CHARA, RESULTS:1)
 
 	;--- ALTER XRay_show add ---
-	IF FLAG:XRay_show
+	IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 		CALL 画像セット("im_av_empty", 縦位置, 0, 角色画像表示尺寸比/5, 0, 1, , , RESULTS:1)
 	ENDIF
 	;--- END ---
@@ -176,7 +190,7 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 			ENDIF
 			CALL 画像セット("im_av_chara", 縦位置, 0 , 角色画像表示尺寸比 , LOCAL:1 + 1)
 			;CALL ダミーセット(縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
-			IF FLAG:XRay_show
+			IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 				CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
 			ENDIF
 		NEXT
@@ -192,14 +206,14 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 		IF RESULTS:(LOCAL:1) == ""
 			CALL 画像セット("im_av_chara", 縦位置, 0 , 角色画像表示尺寸比 , LOCAL:1 + 1)
 			;CALL ダミーセット(縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
-			IF FLAG:XRay_show
+			IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 				CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
 			ENDIF
 		ELSEIF RESULTS:((LOCAL:1) + LOCAL:3) != ""
 			CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1, 1, @"{1000+CHARA}", CALLNAME:CHARA, RESULTS:((LOCAL:1) + LOCAL:3))
 		ELSE
 			CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
-			IF FLAG:XRay_show
+			IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 				CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
 			ENDIF
 		ENDIF
@@ -215,14 +229,14 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 			CALL 画像セット(@"フレーム\@ターゲット:LOCAL==ターゲット?_ターゲット#\@_通常", 縦位置, 0, 角色画像表示尺寸比, 最大レイヤー数 - FLAG:時間停止)
 		ENDIF
 
-		IF FLAG:XRay_show
+		IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 			CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5, 最大レイヤー数 - FLAG:時間停止)
 		ENDIF
 	ENDIF
 	;時間停止時の処理　上から背景色と同じ色を透過度入れて重ねる
 	IF FLAG:時間停止
 		CALL 画像セット("時間停止", 縦位置, 0, 角色画像表示尺寸比, 最大レイヤー数)
-		IF FLAG:XRay_show
+		IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 			CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5, 最大レイヤー数)
 		ENDIF
 	ENDIF
@@ -241,9 +255,8 @@ IF FLAG:XRay_show
 			默认角色画像横幅 = 各角色画像尺寸:CHARA:0
 			縦位置 = TEMP_HTML_MAX_HEIGHT - 默认角色画像横幅 * 角色画像表示尺寸比 / 100
 		ENDIF
-
 		;CALL 画像セット("im_av_chara_yellow", 縦位置, 0, 角色画像表示尺寸比, 最大レイヤー数+1)
-		CALL IMAGE_ALTER(CHARA,TEMP_HTML_MAX_HEIGHT,默认角色画像横幅,縦位置,最大レイヤー数)
+		CALL IMAGE_ALTER(CHARA,TEMP_HTML_MAX_HEIGHT,默认角色画像横幅,縦位置,最大レイヤー数,Chara_Xray_Block_by_Better_Xray:CHARA)
 
 	NEXT
 ENDIF
@@ -295,6 +308,10 @@ IF FLAG:画像表示設定
 ENDIF
 
 RESULT = SAVE_RESULT
+
+;Better Xray
+VARSET Chara_Xray_Block_by_Better_Xray
+
 RETURN RESULT
 
 ;=========================================================
@@ -835,6 +852,8 @@ RETURNF 0
 #DIM DYNAMIC エフェクト数 = 0
 #DIMS DYNAMIC リソース, 100
 #DIMS DYNAMIC エフェクト名
+;Better Xray
+#DIM Chara_Xray_Block_by_Better_Xray, 300
 
 ;PRINTFORML エフェクトが走ってるよ
 
@@ -930,7 +949,7 @@ IF CSTR:CHARA:汎用エフェクト != ""
 ENDIF
 
 ; --- ALTER XRAY ---
-IF FLAG:XRay_show
+IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
 	エフェクト数 = MIN(4,エフェクト数)
 ENDIF
 ; --- END ---
