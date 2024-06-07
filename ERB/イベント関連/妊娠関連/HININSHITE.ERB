@@ -59,6 +59,9 @@ ELSE
 ENDIF
 
 @避妊要求(ARG)
+;魔改修正口服避孕药（假）被重复要求避孕，之前修过一次，请勿再次删除。
+SIF TCVAR:TARGET:口服避孕药（假） == 1
+	RETURN
 SIF CFLAG:TARGET:允许无套 == 2
 	RETURN
 SIF !妊娠可否(ARG)
@@ -106,11 +109,11 @@ SIF ((CHECK_CHARA(ARG, "幽霊") || CHECK_CHARA(ARG, "人形") || CHECK_CHARA(AR
 RETURNF 1
 
 @AUTO_CONTRACEPTION(ARG)
-IF CFLAG:ARG:妊娠経過日数 <= 9 && TALENT:ARG:妊娠 && CFLAG:ARG:妊娠経過日数 >= 4
+IF CFLAG:ARG:妊娠経過日数 <= 30 && TALENT:ARG:妊娠 && CFLAG:ARG:妊娠経過日数 >= 4
 	PRINTFORMW 到安定期之前还是不要了
 	RETURN -1
 ENDIF
-IF CFLAG:ARG:妊娠経過日数 > 25 && TALENT:ARG:妊娠
+IF CFLAG:ARG:妊娠経過日数 > 70 && TALENT:ARG:妊娠
 	PRINTFORMW 因为担心小孩所以还是不要了
 	RETURN -1
 ENDIF
@@ -147,23 +150,23 @@ IF SELF_PREGNANCY && GROUPMATCH(SELECTCOM, 64, 130, 131, 132, 133)
 			RETURN -1
 	ENDSELECT
 ELSE
-PRINTFORML 因为不想给育児中的%CALLNAME:ARG%增加負担所以还是避妊吧
+	PRINTFORML 因为不想给育児中的%CALLNAME:ARG%增加負担所以还是避妊吧
 	CALL ASK_M("戴避孕套",ITEM:避孕套,@"给%CALLNAME:TARGET%喝口服避孕薬",ITEM:口服避孕薬,"放弃",1)
-SELECTCASE RESULT
-	CASE 0
-		ITEM:避孕套 --
-		TEQUIP:PLAYER:避孕套 = 1
-		PRINTL 戴上了避孕套
-		RETURN 1
-	CASE 1
-		ITEM:口服避孕薬 --
-		TCVAR:ARG:口服避孕薬 = 1
-		PRINTFORML 给%CALLNAME:ARG%喝了避孕药 
-		RETURN 1
-	CASE 2
-		PRINTFORML 虽然很遗憾但是还是放弃了
-		RETURN -1
-ENDSELECT
+	SELECTCASE RESULT
+		CASE 0
+			ITEM:避孕套 --
+			TEQUIP:PLAYER:避孕套 = 1
+			PRINTL 戴上了避孕套
+			RETURN 1
+		CASE 1
+			ITEM:口服避孕薬 --
+			TCVAR:ARG:口服避孕薬 = 1
+			PRINTFORML 给%CALLNAME:ARG%喝了避孕药 
+			RETURN 1
+		CASE 2
+			PRINTFORML 虽然很遗憾但是还是放弃了
+			RETURN -1
+	ENDSELECT
 ENDIF
 
 @ChkBeforeInsert(ARG)
@@ -176,7 +179,7 @@ ENDIF
 CALL AUTO_CONTRACEPTION(ARG)
 SIF RESULT == -1
 	RETURN -1
-	CALL 避妊要求(ARG)
+CALL 避妊要求(ARG)
 IF RESULT == -1
 	RETURN -1
 ENDIF

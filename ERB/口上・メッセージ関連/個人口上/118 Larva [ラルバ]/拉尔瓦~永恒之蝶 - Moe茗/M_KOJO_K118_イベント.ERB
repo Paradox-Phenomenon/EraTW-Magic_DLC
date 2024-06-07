@@ -19,7 +19,7 @@
 
 ;TCVAR:118:351						检测当日对话次数，在多次对话后大概会触发多次对话差分
 
-
+;TCVAR:118:370						固有指令 抚摸翅膀的间隔
 
 ;TCVAR:118:380 						检测拉尔瓦最近感觉到的其他doi对象……
 
@@ -61,6 +61,7 @@
 
 ;CFLAG:118:1721						替换原版的积攒度记录用
 
+;CFLAG:118:1750						有没有获得交尾中告示牌
 ;-------------------------------------------------
 
 ;1800	设置用CFLAG
@@ -83,7 +84,7 @@
 RESULTS =_Moe
 ;初期口上とは違う事を明示するため、口上選択時に表示されます、必ずＸＸＸを変更してください
 RESULTS:1 = Moe版
-
+;
 ;口上存在判定です、けしてコメントアウトしないでください
 ;他の処理は一切行わないように
 RETURN 1
@@ -114,7 +115,7 @@ CFLAG:118:口上内抱き寄せ判定_通常 = 0
 
 ;押し倒し禁止に1を入れると、自分から押し倒してこなくなります
 ;以下は恋慕かセフレがつくまで押し倒してこなくなる使用例
-;IF !TALENT:118:恋慕 && !TALENT:118:セフレ
+;IF !TALENT:118:3 && !TALENT:118:セフレ
 ;	CFLAG:118:押し倒し禁止 = 1
 ;ELSE
 ;	CFLAG:118:押し倒し禁止 = 0
@@ -147,7 +148,7 @@ SIF NAME:118 == "愛塔妮緹拉瓦爾"
 NAME:118 = 愛塔妮緹拉爾瓦
 
 ;或许能修复追踪指令之后无法触发口上的问题？
-IF (SELECTCOM == 482) && (STALKED == 118) && ONCE("RUMIA_HAVE_NOT_DISCLOSURE") && (!TCVAR:118:182 || !CFLAG:118:18)
+IF (SELECTCOM == 482) && (STALKED == 118) && ONCE("LARVA_HAVE_NOT_DISCLOSURE") && (!TCVAR:118:182 || !CFLAG:118:18)
 CALL AFFAIR_DISCLOSURE(118, 0)
 CFLAG:118:319 = 1 
 ENDIF 
@@ -192,7 +193,7 @@ IF CFLAG:118:18	;初见过
 	PRINTFORML 
 	PRINTFORMDL 你好，这里是《拉尔瓦～永恒之蝶》口上的Update区域
 	PRINTFORML 
-	PRINTFORML 「%MASTERNAME:118%！我是%CSTR:118:20%！这里是什么地方呀？」
+	PRINTFORML 「%MASTERNAME:118%！我是拉尔瓦！这里是什么地方呀？」
 	PRINTFORMW 「也不像是那个全是门的地方……还有看不见的墙……」
 	PRINTFORML 
 	$LARVA_UPDATE_MAIN
@@ -269,6 +270,7 @@ RETURN 1
 ;别问我为什么写在这里，不想切片了
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_Moe_MESSAGE_MARKCNG_K118
+CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
 ;このままだと地の文が表示されません
 ;地の文を表示したい方は、下記のコメントアウトを削除して下さい
 ;CALL MARK_MESSAGE
@@ -301,7 +303,7 @@ ELSEIF TFLAG:23 == 3
 	IF TALENT:118:7
 		PRINTFORMW 「……%MASTERNAME:118%%UNICODE(0x2764)%……%MASTERNAME:118%%UNICODE(0x2764)%%UNICODE(0x2764)%～」
 		PRINTFORMDL 哪怕只是高潮后的余韵，那一声声甜腻的呼唤，就像是依然被疼爱着一样
-		PRINTFORMDW 寄身于快乐中的幼小妖精，将被疼爱着的幸福感，深深地刻印在了灵魂之中
+		PRINTFORMDW 寄身于快乐中的幼小妖精，将相爱着的幸福感，深深地刻印在了灵魂之中
 	ELSE 
 		PRINTFORMW 「这个……这个是什么呀%UNICODE(0x2764)%……晕乎乎的，好厉害%UNICODE(0x2764)%」
 		PRINTFORMW 「不行呀%UNICODE(0x2764)%……%MASTERNAME:118%%UNICODE(0x2764)%……还想要%UNICODE(0x2764)%」
@@ -711,10 +713,38 @@ RETURN 1
 ;一日の開始時、正確には来訪判定時に読み込む関数
 ;ここでCFLAG:XX:翌日来訪を設定して確実に来訪させたりTCVAR:XX:発情で朝っぱらからサカらせることもできる
 ;ただし「毎朝例外なく読み込まれる」ため、条件を設定しておくことが望ましい
+;
+;
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"EVENTCOM"系
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@EVENTCOM
+;===========================================================================
+;做好严格限制，避免随意调用
+SIF !CFLAG:118:998
+RETURN 0 
+TRYCALLFORM M_KOJO_K118_{CFLAG:118:998}
 
-
+SIF RESULTS:1 != "Moe版"			;此处记得更换为你的版本名称
+RETURN 0
+;===========================================================================
+;
+;以下是在指令为406，且当前读取的日记为你的角色的日记，且检查到你的角色不在场时，
+;依然可以以更改TARGET的方式，强行触发本体内的自定义日记指令
+IF (TFLAG:3 == 406) && (COM406_CHECK_OWNER() == 118 ) && (CFLAG:118:300 != CFLAG:0:300)
+	TARGET = 118
+ENDIF
+;
+RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"EVENTTRAIN"系
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @EVENTTRAIN 
-
+;每次起床或读档后触发
+;-------------------------------------------------
+;第二天日记的触发
+CALL M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K118
+;-------------------------------------------------
 
 ;修复了0.13c会出现的自称打引号的bug
 SIF CALLNAME:118 == @"%"拉尔瓦"%"
@@ -761,6 +791,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	自机初吻 = 0
 	PRINTFORMW 「呐，%MASTERNAME:118%……」
 	PRINTFORML 
@@ -773,7 +805,7 @@ IF LOCAL
 	PRINTFORML 「%MASTERNAME:118%……那个，%CSTR:118:20%，想问你一个，有点冒犯的问题……」
 	PRINTFORMW 「就是，就是说，%MASTERNAME:118%……有没有，和别人，亲过……嘴……什么的……」
 	PRINTFORML  
-	CALL DOKU_OD_ASK_MOE_LARVA("有",1,"没有",1)
+	CALL ASK_M("有",1,"没有",1)
 	SELECTCASE RESULT 
 		CASE 0 
 			PRINTFORMW 「有嘛！」
@@ -791,6 +823,7 @@ IF LOCAL
 			ELSE 
                 CALL SET_FIRSTKISS(118, MASTER, 1,"作为礼物？")				
 			ENDIF 
+			PRINTFORML 
 			PRINTFORMW 「呜嗯%UNICODE(0x2764)%……」
 			PRINTFORML 
 			PRINTFORMDL 花蜜裹挟着些许阳光的香气，从柔软的小嘴间传递过来
@@ -798,11 +831,11 @@ IF LOCAL
 			PRINTFORML 
 			PRINTFORMW 「%MASTERNAME:118%……这个礼物，喜欢嘛……」
 			PRINTFORML 
-			CALL DOKU_OD_ASK_MOE_LARVA("喜欢",1)
+			CALL ASK_M("喜欢",1)
 			PRINTFORML 
 			PRINTFORMW 「诶嘿，喜欢就好……」
 			PRINTFORML 
-			CALL DOKU_OD_ASK_MOE_LARVA("……话说回来，礼物，是什么意思？",1)
+			CALL ASK_M("……话说回来，礼物，是什么意思？",1)
 			PRINTFORML 
 			PRINTFORML 「%MASTERNAME:118%总是带我出去玩，我又没什么礼物拿得出手……」
 			PRINTFORMW 「所以呀，%CSTR:118:20%的初吻！就当做礼物送给你啦！」
@@ -861,7 +894,7 @@ IF LOCAL
 			PRINTFORMW 「……绝对不是妖精的恶作剧啦！那个，这样的请求，感觉很过分……」
 			PRINTFORMW 「%CSTR:118:20%想，把，把……不对不对！想给%MASTERNAME:118%一个kiss……作为礼物……」
 			PRINTFORML 
-			CALL DOKU_OD_ASK_MOE_LARVA("可以呢",1,"心意领了",1)
+			CALL ASK_M("可以呢",1,"心意领了",1)
 			SELECTCASE RESULT 
 				CASE 0
 					PRINTFORML 
@@ -946,6 +979,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -970,22 +1005,22 @@ IF LOCAL
 			PRINTFORMDW 是忘记了刚刚的话题嘛？只能有些害羞地笑了起来
 			PRINTFORML 
 			PRINTFORMW 「嘿嘿……啊！像这样在一起……真好……」
-			PRINTFORMW 「和%MASTERNAME:12%相处，%CSTR:118:20%可以想到好多好多话题」
-			PRINTFORMW 「开心的事情也好，难过的事情也好，纠结的时候，找%MASTERNAME:12%就好！」
-			PRINTFORMW 「和%MASTERNAME:12%在一起的话，不管做什么事，都好有趣……」
+			PRINTFORMW 「和%MASTERNAME:118%相处，%CSTR:118:20%可以想到好多好多话题」
+			PRINTFORMW 「开心的事情也好，难过的事情也好，纠结的时候，找%MASTERNAME:118%就好！」
+			PRINTFORMW 「和%MASTERNAME:118%在一起的话，不管做什么事，都好有趣……」
 			PRINTFORML 
 			PRINTFORMDL 忽而想起什么的拉尔瓦，脸颊有些泛红地移开
 			PRINTFORMDW 身体却毫不在意距离地凑过来，蹭着你的身体撒起娇来了
 			PRINTFORML 
 			IF CFLAG:118:1 & 1 
-				PRINTFORMW 「嗯，涩涩的事情也是……不过从那之后，%MASTERNAME:12%就更加地温柔了呢」
+				PRINTFORMW 「嗯，涩涩的事情也是……不过从那之后，%MASTERNAME:118%就更加地温柔了呢」
 			ELSE 
 				PRINTFORMW 「嗯，kiss，拥抱这样的事情也是，对%CSTR:118:20%那么温柔……」
 			ENDIF 
-			PRINTFORML 「和%MASTERNAME:12%在一起的每一天，每一刻，都是那么地珍贵……」
-			PRINTFORMW 「那就这样吧～我想要%MASTERNAME:12%，答应我一件事——」
+			PRINTFORML 「和%MASTERNAME:118%在一起的每一天，每一刻，都是那么地珍贵……」
+			PRINTFORMW 「那就这样吧～我想要%MASTERNAME:118%，答应我一件事——」
 			PRINTFORML 
-			PRINTFORML 「%CSTR:118:20%呀，想和%MASTERNAME:12%，永远地在一起！」
+			PRINTFORML 「%CSTR:118:20%呀，想和%MASTERNAME:118%，永远地在一起！」
 			PRINTFORMW 「对啊，是永远的呢！就跟我名字里的那样，E-the-ni-ty地，在一起哦！」
 			PRINTFORML 
 		ELSE 
@@ -1040,25 +1075,25 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		IF TALENT:118:27 
-			PRINTFORML 「哇！真的吗？%MASTERNAME:12%别骗我噢！」
+			PRINTFORML 「哇！真的吗？%MASTERNAME:118%别骗我噢！」
 			PRINTFORMW 「真的是永远的噢，一辈子都不许变的噢——」
 			PRINTFORML 
 			PRINTFORMDL 拉尔瓦那只是开心的灿烂笑容，丝毫没有告白所应有的娇羞
 			PRINTFORMDW ……为了确认她真实的想法，还是和她解释一下刚刚那些话的含义吧……
 			PRINTFORML 
 			PRINTFORML 「原来，像刚刚那样的表现，叫做告白嘛？」
-			PRINTFORMW 「%CSTR:118:20%喜欢%MASTERNAME:12%！是这样说的吗？」
+			PRINTFORMW 「%CSTR:118:20%喜欢%MASTERNAME:118%！是这样说的吗？」
 			PRINTFORML 
 			PRINTFORMDL 拉尔瓦那大声喊出来的样子，就像是小孩子依恋信赖的人一样……
 			PRINTFORMDW 明明平常相处的时候也会害羞，这到底是单纯的喜欢呢还是爱呢……
 			PRINTFORML 
-			PRINTFORMW 「啾♡……」
+			PRINTFORMW 「啾%UNICODE(0x2764)%……」
 			PRINTFORML 
 			PRINTFORMDW 忽然凑过来的精致小脸，与嘴唇间的甜腻触感，打断了你的思绪
 			PRINTFORMDW 虽然只是短短的几秒，可刚刚所看到的眼神
 			PRINTFORMDW 那微不可辨，却又如此坚定的温柔情意，已经深深地刻在了心中
 			PRINTFORML 
-			PRINTFORMW 「安心下来了吗？%MASTERNAME:12%应该，还没说完吧？」
+			PRINTFORMW 「安心下来了吗？%MASTERNAME:118%应该，还没说完吧？」
 			PRINTFORML 
 			PRINTFORML ……
 			PRINTFORML 
@@ -1074,7 +1109,7 @@ IF LOCAL
 			PRINTFORML 
 			PRINTFORML 「那，还是说好了哦……」
 			PRINTFORMW 「以后呀，和%CSTR:118:20%……永远地在一起吧……」
-			PRINTFORMW 「就像%MASTERNAME:12%说的那样，互相都要，永远地爱着对方%UNICODE(0x2764)%……」
+			PRINTFORMW 「就像%MASTERNAME:118%说的那样，互相都要，永远地爱着对方%UNICODE(0x2764)%……」
 			EXP:118:4 ++ 
 			EXP:118:27 ++ 
 			EXP:0:4 ++ 
@@ -1111,15 +1146,19 @@ RETURN 1
 ;==================================================
 ;デート帰り
 ;==================================================
+@M_KOJO_Moe_SPEVENT_MESSAGECHECK_K118_3
+RETURN 1 
 @M_KOJO_Moe_SPEVENT_K118_3(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
-;CALL SPEVENT_MESSAGE_3(ARG,ARG:1)
+CALL SPEVENT_MESSAGE_3(ARG,ARG:1)
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -1137,7 +1176,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		IF TALENT:118:恋慕 || TALENT:118:恋人
+		IF TALENT:118:3 || TALENT:118:7
 			PRINTFORML 「呐……%CSTR:118:20%相信你了哦」
 			PRINTFORMW 「%MASTERNAME:118%不用纠结了呢，心意已经足够了哦」
 		ELSE
@@ -1152,7 +1191,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		IF TALENT:118:恋慕 || TALENT:118:恋人
+		IF TALENT:118:3 || TALENT:118:7
 			PRINTFORML 「%MASTERNAME:118%……%CSTR:118:20%还是好怕……」
 			PRINTFORML 「又担心%MASTERNAME:118%是不是变坏了，又怕%MASTERNAME:118%又干那样的事情……」
 			PRINTFORMW 「%MASTERNAME:118%……求你不要变成那样的人……」
@@ -1169,7 +1208,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		IF TALENT:118:恋慕 || TALENT:118:恋人
+		IF TALENT:118:3 || TALENT:118:7
 			PRINTFORML 「……那个时候%MASTERNAME:118%怎么会做这样的事……」
 			PRINTFORML 「还以为%MASTERNAME:118%被什么幽灵或者妖怪附身了……」
 			PRINTFORMW 「那个……真的不是吗？不是的话，或许可以听你的话……」
@@ -1197,11 +1236,9 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
 
-	;见面次数的记录
-	CFLAG:118:1101 += 1 
-
-	SIF (CFLAG:118:1150 == 1) && FIRSTTIME("M_KOJO_Moe_EVENT_K118_1_1150_1_ASK") && !CFLAG:118:318
+	SIF (CFLAG:118:1150 == 1) && FIRSTTIME("M_KOJO_Moe_EVENT_K118_1_1150_1_ASK") && !CFLAG:118:318 
 		CALL M_KOJO_Moe_Custom_EVENT_K118_ASK_QUESTION_ABOUT_GODNESS(0)
 
 	;-------------------------------------------------
@@ -1212,12 +1249,177 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		IF CFLAG:118:318 	;愤怒;心情不对
-			IF DAY:2 == 4 
+		CFLAG:118:1101 += 1 
+		IF ONCE("EVENT_K118_1_1")
+			;IF CFLAG:118:318 	;愤怒;心情不对
+			;	IF DAY:2 == 4 
+			;	ELSE 
+			;	ENDIF 
+			IF TALENT:118:3
+				IF TIME < 540 
+					IF DAY:2 == 4 
+						PRINTFORML 「啊啊——啊啾！……%MASTERNAME:118%早上好……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
+						PRINTFORMW 「呐……要抱抱……不然就得冻死啦……」
+					ELSE
+						PRINTFORML 「%MASTERNAME:118%早上好！——」
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTFORMW 「鳞粉很漂亮吧，嗯哼，%MASTERNAME:118%要不要涂点在身上？一整天都会变成闪光%MASTERNAME:118%哦！」
+					ENDIF 
+				ELSEIF TIME < 720 
+					IF DAY:2 == 4 
+						PRINTFORML 「啊啾！嘶——%MASTERNAME:118%早上好……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
+						PRINTFORMW 「早知道%MASTERNAME:118%这么晚，还不如躲被子里多睡会……」
+					ELSE ;思慕？
+						PRINTFORML 「%MASTERNAME:118%早上——啊不对，都要中午了，那就中午好！」
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTFORMW 「抖掉的话，就不用担心出门的时候也会掉粉啦！那个，今天也多陪陪我吧？」
+					ENDIF 
+				ELSEIF TIME < 960 		;16
+					IF DAY:2 == 4 
+						PRINTFORML 「呜……%MASTERNAME:118%下午好……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
+						PRINTFORMW 「%MASTERNAME:118%去那里了嘛……下午才来，冷了好久啦……」
+					ELSE
+						PRINTFORML 「%MASTERNAME:118%下午好……今天是忙什么去了呀……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTFORMW 「那个……%CSTR:118:20%睡觉前还有点时间！要不要一起玩的说……」
+					ENDIF 
+				ELSE 
+					IF DAY:2 == 4 
+						PRINTFORML 「呜……嘶……%MASTERNAME:118%一天都去哪了啦……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
+						PRINTFORMW 「呐，那个……要不要一起睡……想要%MASTERNAME:118%暖和一下～」
+					ELSE
+						PRINTFORML 「%MASTERNAME:118%晚上好……今天是忙什么去了呀……」
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTFORMW 「%CSTR:118:20%都要睡觉了……要不要，来陪%CSTR:118:20%睡觉呢……」
+					ENDIF 
+				ENDIF 
+			ELSEIF TALENT:118:8
+				IF DAY:2 == 4 	;季节
+					CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
+					PRINTDATAL 
+						DATAFORM 「%MASTERNAME:118%……啊，啊嚏！%MOE_LARVA_TIME_OUTPUT(ARG)%好……」
+						DATAFORM 「%MASTERNAME:118%%MOE_LARVA_TIME_OUTPUT(ARG)%好……啊，啊，啊啾！——」
+						DATAFORM 「啊，啊，啊啾！——%MASTERNAME:118%%MOE_LARVA_TIME_OUTPUT(ARG)%好……」
+					ENDDATA 
+					PRINTFORMDL 似乎是因为太冷了，打了个大大的喷嚏……
+					IF TIME < 540 
+						PRINTDATAW 
+							DATAFORM 「大早上的冷死了，%MASTERNAME:118%来抱抱嘛——」
+							DATAFORM 「呜……这么冷的天，一点都不想起早床！」
+							DATAFORM 「还没出太阳嘛！呜啊……」
+							;DATAFORM 「」
+						ENDDATA
+					ELSEIF TIME < 720 
+						PRINTDATAW 
+							DATAFORM 「大冷天的，才不想起床呢……」
+							DATAFORM 「呜……这么冷的天，%MASTERNAME:118%也不想起床吧？」
+							DATAFORM 「冬天的时候，能起得晚一点真好啊……」
+							;DATAFORM 「」
+						ENDDATA
+					ELSEIF TIME < 960 
+						PRINTDATAW 
+							DATAFORM 「都快过一天了……还有时间一起玩一玩嘛？」			
+							DATAFORM 「怎么现在才找我呀……早知道这么晚的话，不如躲被子里……」
+							DATAFORM 「今天有急事嘛？大冬天的也会这么忙呀……」
+						ENDDATA
+					ELSE
+						PRINTDATAW 
+							DATAFORM 「终于找到%MASTERNAME:118%了……都找你一天了呀……」
+							DATAFORM 「今天忙了一天了嘛？冬天也会有这么多事情嘛……」
+							DATAFORM 「不会是在被窝里面睡了一天吧？不是嘛……」
+						ENDDATA
+					ENDIF 
+				ELSE 
+					IF TIME < 540 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%早上好！起得真早哇——」
+							DATAFORM 「%MASTERNAME:118%好！起的很早呢！」
+						ENDDATA
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTDATAW 
+							DATAFORM 「没有睡懒觉的话，是有什么重要的事要做嘛？」
+							DATAFORM 「这么早就来这里，是来找%CSTR:118:20%玩的嘛？」
+							DATAFORM 「一大早就能遇见%MASTERNAME:118%，真好呢～」
+						ENDDATA
+					ELSEIF TIME < 720 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%上午好！该不会……睡到现在吧？」
+							DATAFORM 「%MASTERNAME:118%上午好！在家忙什么去了嘛？」
+							DATAFORM 「%MASTERNAME:118%上午好！早上没见到呢～」
+						ENDDATA
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTDATAW 
+							DATAFORM 「没关系哟，%CSTR:118:20%偶尔也会想睡懒觉呢～」
+							DATAFORM 「嗯嗯，没什么大事就好……」
+							DATAFORM 「有点好奇你早上在做什么呀，待会能说一说嘛？」
+						ENDDATA
+					ELSEIF TIME < 960 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%下午好！该不会……一口气睡到现在吧？」
+							DATAFORM 「%MASTERNAME:118%下午好！今天都去哪里了呀？」
+							DATAFORM 「%MASTERNAME:118%好！已经这么晚了呀……」
+						ENDDATA
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTDATAW 
+							DATAFORM 「本来今天想找你玩的呢……呜……」
+							DATAFORM 「一天快要过完了呀……还能玩什么呢……」
+							DATAFORM 「离晚上应该还有一段时间呢，陪一陪%CSTR:118:20%吧～」
+						ENDDATA
+					ELSE
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%晚上好……一天都快过完了哇……」
+							DATAFORM 「%MASTERNAME:118%好……已经这么晚了呀……」
+							DATAFORM 「%MASTERNAME:118%晚上好……是不是要睡觉了哇……」
+						ENDDATA
+						CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
+						PRINTDATAW 
+							DATAFORM 「今天都去做了什么呀……%CSTR:118:20%也想跟你一起玩嘛……」
+							DATAFORM 「%CSTR:118:20%已经有点困了哇……明明还想玩一会儿嘛……」
+							DATAFORM 「%CSTR:118:20%待会就要睡了呢，再玩一会儿吧！」
+						ENDDATA
+					ENDIF 
+				ENDIF 
+			ELSEIF CFLAG:118:1001 
+				IF DAY:2 == 4 
+				ELSE 
+					;朋友早9点前
+					IF TIME < 540 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%早上好！真早哇——」
+							DATAFORM 「%MASTERNAME:118%好！起的很早呢！」
+						ENDDATA
+					;朋友早12点前
+					ELSEIF TIME < 720 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%上午好！」
+							DATAFORM 「%MASTERNAME:118%好！」
+						ENDDATA
+					;朋友下午16点前
+					ELSEIF TIME < 960 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%下午好！今天过得还好嘛？」
+							DATAFORM 「%MASTERNAME:118%好！已经下午了呢！」
+						ENDDATA
+					ELSE 
+						PRINTDATAL 
+							DATAFORM 「%MASTERNAME:118%晚上好——不能太吵了哇……」
+							DATAFORM 「%MASTERNAME:118%好！已经很晚了呢……」
+						ENDDATA
+					ENDIF 
+				ENDIF
 			ELSE 
+				PRINTFORML 「%MASTERNAME:118%好——」
 			ENDIF 
 		ELSEIF CFLAG:118:1101 > 3 
-			IF TALENT:118:恋慕 || TALENT:118:思慕
+			;IF CFLAG:118:318 	;愤怒;心情不对
+			;	IF DAY:2 == 4 
+			;	ELSE 
+			;	ENDIF 
+			IF TALENT:118:3 || TALENT:118:8
 				PRINTDATAL 
 					DATAFORM 「呀吼——」
 					DATAFORM 「%MASTERNAME:118%——」
@@ -1238,7 +1440,7 @@ IF LOCAL
 				ENDDATA
 			ENDIF 
 		ELSE
-			IF TALENT:118:恋慕 || TALENT:118:思慕
+			IF TALENT:118:3 || TALENT:118:8
 				PRINTDATAL 
 					DATAFORM 「诶？%MASTERNAME:118%！」
 					DATAFORM 「呐——%MASTERNAME:118%！——」
@@ -1331,120 +1533,6 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 8
 		;待补充
-		IF CFLAG:118:318 	;愤怒;心情不对
-			IF DAY:2 == 4 
-			ELSE 
-			ENDIF 
-		ELSEIF TALENT:118:恋慕
-			IF TIME < 540 
-				IF DAY:2 == 4 
-					PRINTFORML 「啊啊——啊啾！……%MASTERNAME:118%早上好……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
-					PRINTFORMW 「呐……要抱抱……不然就得冻死啦……」
-				ELSE
-					PRINTFORML 「%MASTERNAME:118%早上好！——」
-					CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
-					PRINTFORMW 「鳞粉很漂亮吧，嗯哼，%MASTERNAME:118%要不要涂点在身上？一整天都会变成闪光%MASTERNAME:118%哦！」
-				ENDIF 
-			ELSEIF TIME < 720 
-				IF DAY:2 == 4 
-					PRINTFORML 「啊啾！嘶——%MASTERNAME:118%早上好……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
-					PRINTFORMW 「早知道%MASTERNAME:118%这么晚，还不如躲被子里多睡会……」
-				ELSE ;思慕？
-					PRINTFORML 「%MASTERNAME:118%早上——啊不对，都要中午了，那就中午好！」
-					CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
-					PRINTFORMW 「这样就不用担心出门的时候也会掉粉啦！那个，今天也多陪陪我吧？」
-				ENDIF 
-			ELSEIF TIME < 960 		;16
-				IF DAY:2 == 4 
-					PRINTFORML 「呜……%MASTERNAME:118%下午好……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
-					PRINTFORMW 「%MASTERNAME:118%去那里了嘛……下午才来，冷了好久啦……」
-				ELSE
-					PRINTFORML 「%MASTERNAME:118%下午好……今天是忙什么去了呀……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
-					PRINTFORMW 「那个……%CSTR:118:20%睡觉前还有点时间！要不要一起玩的说……」
-				ENDIF 
-			ELSE 
-				IF DAY:2 == 4 
-					PRINTFORML 「呜……嘶……%MASTERNAME:118%一天都去哪了啦……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
-					PRINTFORMW 「呐，那个……要不要一起睡……想要%MASTERNAME:118%暖和一下～」
-				ELSE
-					PRINTFORML 「%MASTERNAME:118%晚上好……今天是忙什么去了呀……」
-					CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
-					PRINTFORMW 「%CSTR:118:20%都要睡觉了……要不要，来陪%CSTR:118:20%睡觉呢……」
-				ENDIF 
-			ENDIF 
-		ELSEIF TALENT:118:思慕
-			IF DAY:2 == 4 	;季节
-				CALL MOE_LARVA_WHEN_SEE_YOU(4,1)
-				PRINTDATAL 
-					DATAFORM 「%MASTERNAME:118%……啊，啊嚏！%MOE_LARVA_TIME_OUTPUT(ARG)%好……」
-					DATAFORM 「%MASTERNAME:118%%MOE_LARVA_TIME_OUTPUT(ARG)%好……啊，啊，啊啾！——」
-					DATAFORM 「啊，啊，啊啾！——%MASTERNAME:118%%MOE_LARVA_TIME_OUTPUT(ARG)%好……」
-				ENDDATA 
-				PRINTFORMDL 似乎是因为太冷了，打了个大大的喷嚏……
-				IF TIME < 540 
-					PRINTDATAW 
-						DATAFORM 「大早上的冷死了，%MASTERNAME:118%来抱抱嘛——」
-						DATAFORM 「呜……这么冷的天，一点都不想起早床！」
-						DATAFORM 「还没出太阳嘛！呜啊……」
-						;DATAFORM 「」
-					ENDDATA
-				ELSEIF TIME < 720 
-					PRINTDATAW 
-						DATAFORM 「大冷天的，才不想起床呢……」
-						DATAFORM 「呜……这么冷的天，%MASTERNAME:118%也不想起床吧？」
-						DATAFORM 「冬天的时候，能起得晚一点真好啊……」
-						;DATAFORM 「」
-					ENDDATA
-				ELSEIF TIME < 960 
-					PRINTDATAW 
-						DATAFORM 「都快过一天了……还有时间一起玩一玩嘛？」			
-						DATAFORM 「怎么现在才找我呀……早知道这么晚的话，不如躲被子里……」
-						DATAFORM 「今天有急事嘛？大冬天的也会这么忙呀……」
-					ENDDATA
-				ELSE
-					PRINTDATAW 
-						DATAFORM 「终于找到%MASTERNAME:118%了……都找你一天了呀……」
-						DATAFORM 「今天忙了一天了嘛？冬天也会有这么多事情嘛……」
-						DATAFORM 「不会是在被窝里面睡了一天吧？不是嘛……」
-					ENDDATA
-				ENDIF 
-			ELSE 
-				IF TIME < 540 
-				ELSEIF TIME < 720 
-					PRINTFORML 「%MASTERNAME:118%上午好！该不会……睡到现在吧？」
-					CALL MOE_LARVA_WHEN_SEE_YOU(1,1)
-					PRINTFORMW 「没关系哟，%CSTR:118:20%偶尔也会想睡懒觉呢～」
-				ELSEIF TIME < 960 
-				ENDIF 
-			ENDIF 
-		ELSE
-			;朋友早9点前
-			IF TIME < 540 
-				PRINTFORML
-				PRINTFORML
-			;朋友早12点前
-			ELSEIF TIME < 720 
-				IF DAY:2 == 4 
-					PRINTFORML 
-					PRINTFORML 
-				ELSE 
-					PRINTFORML 
-					PRINTFORMW 
-				ENDIF 
-			;朋友下午16点前
-			ELSEIF TIME < 960 
-				IF DAY:2 == 4 
-		
-				ELSE 
-
-				ENDIF 
-			ENDIF 
-		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1481,6 +1569,8 @@ LOCAL = 1
 		CALL M_KOJO_Moe_Custom_EVENT_K118_ASK_QUESTION_ABOUT_GODNESS(1)
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -1592,6 +1682,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -1615,9 +1707,10 @@ IF LOCAL
 				DATAFORM 「那个……不要趁机找别人去做噢……」
 				DATAFORM 「明天，明天再说……」
 			ENDDATA
+			PRINTL 
 			PRINTFORMDW 拉尔瓦手忙脚乱地穿好了衣服，像是逃走一样赶紧回家了……
 		ELSE
-			IF TALENT:118:恋人
+			IF TALENT:118:7
 				PRINTFORML 「哈啊啊——」
 				PRINTFORMDL 拉尔瓦遮着小嘴，打了个大大的哈欠
 				PRINTFORMDW 背后的翅膀也随之低垂着，看来是累了呢
@@ -1634,13 +1727,13 @@ IF LOCAL
 								DATAFORM 「嗯哼——那就回家吧」
 							ENDDATA
 							PRINTDATAL 	
-								DATAFORM 「果然还是和%MASTERNAME:118%一起睡着，最让人安心了～」
-								DATAFORM 「就像是……老夫老妻？哼哼，%MASTERNAME:118%脸红了噢～」
-								DATAFORM 「一起回家才会安心呢～，陪%CSTR:118:20%一起睡吧%UNICODE(0x2764)%……」
+								DATAFORM 「果然还是和%MASTERNAME:118%一起睡着，最让人安心了～♪」
+								DATAFORM 「就像是……老夫老妻？哼哼，%MASTERNAME:118%脸红了噢～♪」
+								DATAFORM 「一起回家才会安心呢～♪，陪%CSTR:118:20%一起睡吧%UNICODE(0x2764)%……」
 							ENDDATA
 							PRINTFORMDW 在拉尔瓦的邀请下，你和她一起回到了家
 							;这一段实机测试可能会有未完成的部分，需要补充
-							CFLAG:0:300 = CFLAG:0:311 
+							CFLAG:0:300 = CFLAG:118:311 
 							CALL DOKU_KM_RENEW_TARGET_OF_LARVA(118)
 						CASE 1
 							PRINTFORMW 「还有点事……这么晚了，还要做什么嘛……」
@@ -1659,6 +1752,8 @@ IF LOCAL
 							PRINTFORML 「好耶！谢谢%MASTERNAME:118%……」
 							PRINTFORMDL 拉尔瓦开心地抱着你的手臂，迫不及待地想带着你回家……
 							PRINTFORMW 「欸嘿，今天一晚都要……让我在%MASTERNAME:118%的怀抱中睡着噢%UNICODE(0x2764)%……」
+							CFLAG:0:300 = CFLAG:118:311
+							CALL DOKU_KM_RENEW_TARGET_OF_LARVA(118)
 						CASE 1 
 							PRINTFORMW 「还有点事……这么晚了，还要做什么嘛……」
 							PRINTFORMW 「可别趁着%CSTR:118:20%不在，去找别的女孩子噢——」
@@ -1666,7 +1761,7 @@ IF LOCAL
 							PRINTFORMDW 你注视着拉尔瓦扑扇着翅膀的小小背影，渐渐消失在了天边
 					ENDSELECT 
 				ENDIF 
-			ELSEIF TALENT:118:恋慕
+			ELSEIF TALENT:118:3
 				PRINTDATAL 
 					DATAFORM 「呼嗯……好困……」
 					DATAFORM 「感觉很晚了呢……」
@@ -1681,18 +1776,21 @@ IF LOCAL
 				PRINTDATAW 
 					DATAFORM 「……要是能……和%CSTR:118:20%一起睡的话，我会很开心……拜拜！」
 				ENDDATA
+				PRINTL 
 				PRINTFORMDL 还没说完话呢，自己的脸蛋变红得遮不住了，飞快地跑走了
 				PRINTFORMDW 大概……是希望你去同床共枕吧……
-			ELSEIF TALENT:118:思慕
+			ELSEIF TALENT:118:8
 				PRINTDATAL 
 					DATAFORM 「呼嗯……好困……」
 					DATAFORM 「感觉很晚了呢……」
 					DATAFORM 「哈啊啊……诶？这都几点了啊……」
 				ENDDATA
-				PRINTFORMDW 拉尔瓦伸了个拦腰，看了看天空……
+				PRINTFORMDW 拉尔瓦伸了个懒腰，看了看天空……
+				PRINTL 
 				PRINTFORMW 「时候不早了呢……得回家睡觉了呢」
 				PRINTFORML 「%MASTERNAME:118%！明天再见噢，你也要早点睡！」
 				PRINTFORMW 「%CSTR:118:20%先走了噢，晚——安！」
+				PRINTL 
 				PRINTFORMDW 你目送着拉尔瓦扑扇着翅膀，渐行渐远的小小背影
 			ELSE
 				PRINTDATAL 
@@ -1703,6 +1801,7 @@ IF LOCAL
 					DATAFORM 「明天再见噢，你也要早点睡！」
 					DATAFORM 「明天再一起玩吧，晚安！」
 				ENDDATA
+				PRINTL 
 				PRINTFORMDW 拉尔瓦扑扇着翅膀飞走了
 			ENDIF 
 		ENDIF
@@ -1720,6 +1819,7 @@ IF LOCAL
 			DATAFORM  「嗯，嗯嗯，嗯……诶诶？刚刚说什么了？」
 			DATAFORM  「呜……呜嗯……呜啊啊——好困……」
 		ENDDATA
+		PRINTL 
 		IF TALENT:118:3 
 			PRINTFORMDL 忍不住困意的拉尔瓦靠在了你的身上……
 			PRINTFORMDW 似乎摸一摸脑袋就会当场睡着的样子……
@@ -1736,15 +1836,17 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		IF TALENT:118:恋人
+		IF TALENT:118:7
 			IF FIRSTTIME("MOE_LARVA_K118_FIRST_EVENT_3_3") && (CFLAG:118:311 == CFLAG:0:311)
-				PRINTFORMW 「…………」
+				PRINTFORMW 「……呼……」
+				PRINTL 
 				PRINTFORMDL 那仰躺在床上的蝴蝶妖精，放松地伸展着自己的翅膀
 				PRINTFORMDL ……明明此前，听她说，都是用翅膀裹着身体睡觉的呢
 				PRINTFORMDW 是因为怕冷呢？还是因为怕翅膀受伤呢？即便已经忘记了原因，这样的习惯依旧保留了下来
 				PRINTDL 
 				PRINTFORMDL ……不过，在你的陪伴下，在完全能依赖的对象面前
 				PRINTFORMDW 连自己都作为礼物送给了对方，似乎也没必要裹着自己了呢……
+				PRINTL 
 				PRINTFORMW 「因为，我最喜欢的人，对%CSTR:118:20%说过，我的翅膀特别漂亮……」
 				PRINTFORMDL 
 				PRINTFORMDL 傻瓜啊，正是因为漂亮，所以才不希望这双翅膀受到任何伤害啊
@@ -1767,8 +1869,8 @@ IF LOCAL
 						GOTO EVENT_K118_3_3_2
 				ENDSELECT 
 			ENDIF 
-		;ELSEIF TALENT:118:恋慕
-		ELSEIF TALENT:118:思慕 || TALENT:118:恋慕
+		;ELSEIF TALENT:118:3
+		ELSEIF TALENT:118:8 || TALENT:118:3
 			$EVENT_K118_3_3_2
 			SELECTCASE RAND:6
 				CASE 0 
@@ -2028,7 +2130,7 @@ IF LOCAL
 			;IF TALENT:118:7 
 				IF CFLAG:118:311 != CFLAG:0:311
 					PRINTFORML 「诶？%MASTERNAME:118%在我家……」
-					PRINTFORML 「虽然想说些什么……」
+					PRINTFORML 「虽然……还想和%MASTERNAME:118%聊一聊……」
 				ENDIF 
 				PRINTDATAL 
 					DATAFORM 「很晚了呢，%MASTERNAME:118%也要早点睡哇……」
@@ -2047,7 +2149,7 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			IF CFLAG:301 == CFLAG:現在位置
+			IF CFLAG:301 == CFLAG:300
 				;前のターンまで一緒に部屋にいた
 				PRINTFORMW 
 			ELSE
@@ -2130,6 +2232,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2147,7 +2251,7 @@ IF LOCAL
 				DATAFORM 拉尔瓦一看到你就移开了视线
 				DATAFORM 拉尔瓦跟你拉开了些许距离
 			ENDDATA
-			IF TALENT:118:恋慕
+			IF TALENT:118:3
 				PRINTDATADW 
 					DATAFORM 想说什么却又难以启齿的样子
 					DATAFORM 似乎还是有些介意的样子
@@ -2161,7 +2265,7 @@ IF LOCAL
 				ENDDATA
 			ENDIF 
 		ELSE 
-			IF TALENT:118:恋慕 || TALENT:118:思慕
+			IF TALENT:118:3 || TALENT:118:8
 				IF DAY:2 == 4 
 					PRINTDATAL 
 						DATAFORM 「嗨诶……」
@@ -2197,13 +2301,13 @@ IF LOCAL
 			PRINTFORMW 拉尔瓦的周围，悬浮着各种颜色的点点光芒……
 		ELSEIF MOE_LARVA_MOOD() < - 1 
 			PRINTFORM 拉尔瓦撅着小嘴扭过头去，
-			IF TALENT:118:恋慕
+			IF TALENT:118:3
 				PRINTFORML 想说什么却又难以启齿的样子
 			ELSE 
 				PRINTFORML 还是很生气的样子……
 			ENDIF 
 		ELSE 
-			IF TALENT:118:恋慕
+			IF TALENT:118:3
 				IF MOE_LARVA_MOOD() == -1 
 					PRINTDATAL 
 						DATAFORM 「啊……%MASTERNAME:118%去哪里……」
@@ -2231,7 +2335,7 @@ IF LOCAL
 				ENDIF 
 				;CFLAG:118:300 = CFLAG:0:300 
 				;我还不知道这个能不能触发
-			ELSEIF TALENT:118:思慕
+			ELSEIF TALENT:118:8
 				PRINTDATAL 
 					DATAFORM 「%MASTERNAME:118%你好！今天……诶？有事嘛？」
 					DATAFORM 「%MASTERNAME:118%好！这是去哪里啊……」
@@ -2243,7 +2347,7 @@ IF LOCAL
 				PRINTFORML 「%MASTERNAME:118%你好！」
 				PRINTFORMDL 拉尔瓦向你挥着手，大声地回应着
 				PRINTFORML 「诶？有事嘛！那就不打扰了！」
-			ELSEIF CFLAG:118:面識
+			ELSEIF CFLAG:118:18
 				PRINTFORML 「%MASTERNAME:118%你好！」
 			ELSE 
 				PRINTFORML 「啊咧？是在叫我嘛？」
@@ -2266,13 +2370,13 @@ IF LOCAL
 			PRINTFORMW 拉尔瓦的周围，悬浮着各种颜色的点点光芒……
 		ELSEIF MOE_LARVA_MOOD() < - 1 
 			PRINTFORM 拉尔瓦撅着小嘴看着你，
-			IF TALENT:118:恋慕
+			IF TALENT:118:3
 				PRINTFORML 想说什么却又难以启齿的样子
 			ELSE 
 				PRINTFORML 还是很生气的样子……
 			ENDIF 
 		ELSE 
-			IF TALENT:118:恋慕
+			IF TALENT:118:3
 				IF MOE_LARVA_MOOD() == -1 
 					PRINTFORML 「不理我……是因为%CSTR:118:20%做了错事嘛……」
 					PRINTFORML 「不要……不要讨厌%CSTR:118:20%……我不会恶作剧了啊——」
@@ -2289,7 +2393,7 @@ IF LOCAL
 							PRINTFORML 
 					ENDSELECT
 				ENDIF 
-			ELSEIF TALENT:118:思慕
+			ELSEIF TALENT:118:8
 				PRINTDATAL 
 					DATAFORM 「连招呼都来不及打……是有急事嘛？！」
 					DATAFORM 「不理我呢，是有很急的事情嘛？」
@@ -2309,7 +2413,7 @@ IF LOCAL
 					DATAFORM 「看到我了吧？怎么不打招呼……」
 					DATAFORM 「这是急着干嘛……」
 				ENDDATA
-			ELSEIF CFLAG:118:面識
+			ELSEIF CFLAG:118:18
 				PRINTFORML 「那个是……%MASTERNAME:118%？」
 				PRINTFORML 「好忙的样子……」
 			ELSE 
@@ -2336,27 +2440,29 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	IF ARG == 124
 		PRINTFORML 「摩多罗……」
 		PRINTFORMDW 拉尔瓦警觉地看向远处的隐岐奈
 		PRINTFORML 
 		;我想不出多恋人应该是什么样的
-		IF TALENT:124:恋人 && TALENT:118:恋慕
+		IF TALENT:124:7 && TALENT:118:3
 			PRINTFORML 「对啊！没错啊！就是我想找%MASTERNAME:118%怎么了？」
 			PRINTFORMW 「……你如果真的在意%MASTERNAME:118%的话，就不会给%MASTERNAME:118%接触别人的机会吧？」
 			PRINTFORML 「再说啦，%CSTR:118:20%只是个小妖精……怎么抢得过%MASTERNAME:118%……」
 			PRINTFORMW 「真的就只是玩游戏哦……什么都没有干哦，对吧，%MASTERNAME:118%～？」
 			PRINTFORML 
 			PRINTFORMDW 拉尔瓦背对着原处的秘神，用指尖抵住了嘴，向你露出狡黠的的表情……
-		ELSEIF TALENT:124:恋慕 && TALENT:118:恋人
+		ELSEIF TALENT:124:3 && TALENT:118:7
 			PRINTFORML 「嘿嘿……那个，之前好像把%MASTERNAME:118%借给你了呢……」
 			PRINTFORMW 「%CSTR:118:20%倒是无所谓啦……如果是摩多罗的话，以德报怨什么的也没关系——」
 			PRINTFORMW 「不——过——呢，%MASTERNAME:118%你可要好好记住了呢……」
 			PRINTFORML 
 			PRINTFORMDW 拉尔瓦毫无表情地看着你，用着郑重的语气说道
 			PRINTFORML 
-			PRINTFORMW 「不要让别的女孩子，像她这样伤心呀……」
-		ELSEIF TALENT:124:恋慕 && TALENT:118:恋慕
+			PRINTFORMW 「不要让别的女孩子，像她这样呀……」
+		ELSEIF TALENT:124:3 && TALENT:118:3
 			PRINTFORML 「盯……」
 			PRINTFORML 
 			PRINTFORMDW 拉尔瓦一直紧盯着隐岐奈，直到后者毫不在意气氛地凑近过来——
@@ -2365,7 +2471,7 @@ IF LOCAL
 			PRINTFORMW 「不不不不不行！今天的%MASTERNAME:118%是%CSTR:118:20%的！别跟我抢！」
 			PRINTFORML 
 			PRINTFORMDW 本就因为过于警觉，紧抱住你的拉尔瓦，几乎全身都要贴上来了……
-		ELSEIF (TALENT:124:恋慕 && TALENT:118:思慕) || (TALENT:124:思慕 && TALENT:118:恋慕) || (TALENT:124:思慕 && TALENT:118:思慕) || TALENT:124:思慕
+		ELSEIF (TALENT:124:3 && TALENT:118:8) || (TALENT:124:8 && TALENT:118:3) || (TALENT:124:8 && TALENT:118:8) || TALENT:124:8	;彼此之间非恋慕，或者对方思慕的情况
 			PRINTFORML 「盯……」
 			PRINTFORMW 「%MASTERNAME:118%……为什么她会露出这样的表情啊？」
 			PRINTFORMW 「明明什么时候都特别从容……怎么看到%MASTERNAME:118%就这样了呢？」
@@ -2385,7 +2491,7 @@ IF LOCAL
 		ENDIF 
 	;ELSEIF ARG == 14		待补充的大概有⑨，大酱，三月精，幽香，梅蒂欣，莉莉姐妹，自己的⑩等等——
 	ELSE 
-		IF TALENT:118:恋慕
+		IF TALENT:118:3
 			IF BASE:118:10 > (MAXBASE:118:10 / 2) 
 				SELECTCASE RAND:3 
 					CASE 0 
@@ -2402,7 +2508,7 @@ IF LOCAL
 				PRINTFORML 「那个……有别人过来了的说……」
 				PRINTFORMDW 拉尔瓦很从容地看向了来者
 			ENDIF 
-		ELSEIF TALENT:118:思慕
+		ELSEIF TALENT:118:8
 			PRINTFORML 「诶！有别人来了呢……」
 			PRINTFORMDW 拉尔瓦匆忙地从你身边拉开了距离……
 		ELSEIF CFLAG:118:1001 
@@ -2447,6 +2553,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2520,6 +2628,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2570,6 +2680,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2586,7 +2698,7 @@ IF LOCAL
 			PRINTFORML 「偷了什么呢？嗯哼……」
 			PRINTFORMW ……
 			PRINTFORML 「……这个是，胖次？」
-			IF FLAG:異常気象 == 7		;冷气⑨看到的差分方式
+			IF FLAG:89 == 7		;冷气⑨看到的差分方式，异常气象胖次雨
 				PRINTFORML 「说起来，今天正好是这样的天气……」
 				IF K118_CHECK_STOLEN_PANTIES(ARG == 118)
 					PRINTFORML 「这不是我早上穿的嘛……谢谢%MASTERNAME:118%帮我保管！」
@@ -2634,7 +2746,7 @@ IF LOCAL
 				PRINTFORMW 「以后再这样的话，哼哼，文姐姐那里就能多一条劲爆新闻了呢……」
 			ENDIF 
 		ELSE 
-			IF FLAG:異常気象 == 7
+			IF FLAG:89 == 7		;异常气象，胖次雨
 				PRINTFORML 「%CSTR:118:20%知道的啦，今天的天气很奇怪——」
 				IF K118_CHECK_STOLEN_PANTIES(ARG == 118)
 					PRINTFORML 「谢谢%MASTERNAME:118%帮我保管！不然的话，到哪里都找不到……」
@@ -2654,7 +2766,7 @@ IF LOCAL
 				PRINTFORMDW 为了打消拉尔瓦的疑虑，只能放弃拿回胖次的想法了……
 				;抵消原有把柄
 				CFLAG:118:10 -= 5 
-			ELSEIF TALENT:118:恋人
+			ELSEIF TALENT:118:7
 				PRINTFORML 「……%MASTERNAME:118%等一等……」
 				PRINTFORMDL 与认真盯着你的拉尔瓦对上了视线
 				PRINTFORMDL 稍微望向周围，拉尔瓦便张开小嘴，做出了很明显的口型
@@ -2677,7 +2789,7 @@ IF LOCAL
 					ELSE
 						;恢复胖次，待测试 
 						EQUIP:118:6 = PANTS_TEMP:118:K118_CHECK_STOLEN_PANTIES_TYPE(118)	;复原自机身上检测到的胖次
-						CFLAG:ARG:291 = 0
+						CFLAG:ARG:291 = 0		;没穿内裤
 						PRINTFORML 「呐，作为随便偷胖次的惩罚，趁着现在没人……再给%CSTR:118:20%穿上吧？」
 						PRINTFORML 
 						PRINTFORMDW 这哪里是惩罚……
@@ -2689,9 +2801,9 @@ IF LOCAL
 						PRINTFORML 
 						;摘自露米娅Moe版
 						PRINTFORMD 从纤细双腿之间的裙底春光，看见了
-							IF 充填率(TARGET,1) > 77
+							IF 充填率_OF_LARVA(TARGET,1) > 77
 							PRINTFORMDL 黏满了白浊，还在不断喷着精液的幼小蜜缝
-							ELSEIF 充填率(TARGET,1) > 10
+							ELSEIF 充填率_OF_LARVA(TARGET,1) > 10
 							PRINTFORMDL 黏满了白浊，从中汩汩地流着精液的幼小蜜缝
 							ELSEIF PALAM:TARGET:9 > 10000
 							PRINTFORMDL 已经完全被蜜液所浸润的秘所……
@@ -2719,7 +2831,7 @@ IF LOCAL
 					PRINTFORMDL 认真讨论起来的时候，拉尔瓦反倒脸红了起来
 					PRINTFORMW 「比如说……嗯哼，%MASTERNAME:118%应该知道什么时候——」
 				ENDIF 
-			ELSEIF TALENT:118:恋慕
+			ELSEIF TALENT:118:3
 				PRINTFORML 「……%MASTERNAME:118%等一等！」
 				PRINTFORML 拉尔瓦忽然跳过来，伸直手拦住了你……
 				IF LARVA_MOE_GET_SEX_OF_YOU_COMFIRM()
@@ -2782,6 +2894,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2791,11 +2905,81 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		;-------------------------------------------------
-		;MASTERを押し倒した（開始時）
+		;MASTERを押し倒した（開始時）	;已锁思慕
 		;記入チェック（=0, 非表示、1, 表示）
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1 && !ARG:1
+			PRINTL 
+			IF TALENT:118:27 
+				PRINTFORML 「诶哆……嘿嘿……」
+				PRINTFORMW 「不知道为什么……就是想要%MASTERNAME:118%……摸一摸……」
+				PRINTL 
+				PRINTFORMDW 拉尔瓦紧紧地拥在了身前，凑近你的耳朵边吐着甜腻的气息
+				PRINTL 
+				IF TALENT:118:3 || TALENT:118:7
+					PRINTFORML 「只是想着%MASTERNAME:118%，肚子里面，就好难受%UNICODE(0x2764)%……」
+					PRINTFORMW 「%MASTERNAME:118%的温度……%MASTERNAME:118%的味道……都好想要……好想多感受一些%UNICODE(0x2764)%……」
+					IF TALENT:118:7	
+						PRINTFORMW 「%MASTERNAME:118%%UNICODE(0x2764)%……想要%UNICODE(0x2764)%……教教我好嘛%UNICODE(0x2764)%……」
+					ELSE  
+						PRINTFORMW 「让%CSTR:118:20%……稍微地，借用一下%MASTERNAME:118%%UNICODE(0x2764)%……」
+					ENDIF 
+					PRINTFORML 
+				ELSE 
+					PRINTL 
+					PRINTFORML 「自己摸什么的，完全不够了呀%UNICODE(0x2764)%……」
+					PRINTFORMW 「只有抱住%MASTERNAME:118%的时候%UNICODE(0x2764)%……才会安心呢%UNICODE(0x2764)%……」
+					PRINTFORMW 「%MASTERNAME:118%，帮帮忙好嘛%UNICODE(0x2764)%……不想再这样了呀%UNICODE(0x2764)%……」
+				ENDIF 
+			ELSE 
+				IF TALENT:118:7 
+					PRINTFORML 「%MASTERNAME:118%%UNICODE(0x2764)%%UNICODE(0x2764)%……忍不住了哇%UNICODE(0x2764)%……」
+					PRINTFORMW 「好喜欢%MASTERNAME:118%%UNICODE(0x2764)%……喜欢%UNICODE(0x2764)%……最喜欢啦%UNICODE(0x2764)%……」
+					PRINTL 
+					PRINTFORMDL 依偎在胸前的幼小妖精停不下撒娇的话语，那娇小的身体也不安分地蹭着你
+					PRINTFORMDW 随着身体的亲密接触，女孩柔软的身体，与那若有似无的蜜香，越来越挑逗起你的欲望
+					PRINTL 
+					PRINTFORML 「嗯%UNICODE(0x2764)%……%MASTERNAME:118%的那里%UNICODE(0x2764)%……感觉到了哟%UNICODE(0x2764)%……」
+					PRINTFORMW 「想要色色了嘛%UNICODE(0x2764)%……其实，%MASTERNAME:118%也想要了呢%UNICODE(0x2764)%……」
+					IF TALENT:118:0 
+						PRINTFORMW 「虽然是小孩子一样的身体……%MASTERNAME:118%%UNICODE(0x2764)%……可以给我更多的爱吗%UNICODE(0x2764)%……」
+					ELSE 
+						PRINTFORMW 「今天也想要%UNICODE(0x2764)%……被%MASTERNAME:118%更多地爱着%UNICODE(0x2764)%……」
+					ENDIF 
+				ELSEIF TALENT:118:3
+					PRINTFORML 「%MASTERNAME:118%%UNICODE(0x2764)%%UNICODE(0x2764)%……忍不住了哇%UNICODE(0x2764)%……」
+					PRINTFORMW 「你看这里%UNICODE(0x2764)%……嘿嘿%UNICODE(0x2764)%……已经忍不住了哇%UNICODE(0x2764)%……」
+					PRINTL 
+					PRINTFORMDL 被拉尔瓦引导着伸向衣服之中，感觉到了，已经完全湿透的幼小的耻丘
+					PRINTFORMDW 不由得紧贴住拉尔瓦娇小的身体，那散发着蜜香的秘所也让你萌生了欲望
+					PRINTL 
+					PRINTFORML 「哈啊%UNICODE(0x2764)%……%MASTERNAME:118%%UNICODE(0x2764)%……再摸一摸%UNICODE(0x2764)%……」
+					IF TALENT:118:0 
+						PRINTFORMW 「虽然是小孩子一样的身体……%MASTERNAME:118%喜欢嘛%UNICODE(0x2764)%……」
+					ELSE 
+						PRINTFORMW 「今天也想要%UNICODE(0x2764)%……好好地占有一下%MASTERNAME:118%%UNICODE(0x2764)%……」
+					ENDIF 
+				;ELSEIF MOE_LARVA_SEX_FRIEND()
+				ELSE 
+					PRINTFORML 「呼呀%UNICODE(0x2764)%——」
+					PRINTL 
+					PRINTFORMDL 被忽然凑近的拉尔瓦扑倒了
+					PRINTFORMDW 伴随着不同于以往的蜜香，拉尔瓦骑在了你的身上
+					PRINTL 
+					PRINTFORMW 「嘿嘿……%CSTR:118:20%想要嘛%UNICODE(0x2764)%……想要%MASTERNAME:118%%UNICODE(0x2764)%……」
+					PRINTL 
+					PRINTFORMDL 察觉到那是因为情欲而萌发的香味时，你的股间不由自主地起了反应 
+					PRINTFORMDW 不由得紧贴住拉尔瓦娇小的身体，那散发着蜜香的秘所也让你萌生了欲望
+					PRINTL 
+					PRINTFORML 「哈啊%UNICODE(0x2764)%……%MASTERNAME:118%%UNICODE(0x2764)%……再摸一摸%UNICODE(0x2764)%……」
+					IF TALENT:118:0 
+						PRINTFORMW 「虽然是小孩子一样的身体……%MASTERNAME:118%也要好好的摸一摸噢%UNICODE(0x2764)%……」
+					ELSE 
+						PRINTFORMW 「今天也想要%UNICODE(0x2764)%……好好地占有一下%MASTERNAME:118%%UNICODE(0x2764)%……」
+					ENDIF 
+				ENDIF
+			ENDIF 
 			PRINTFORML
 			RETURN 1
 		ENDIF
@@ -2823,11 +3007,18 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1 && !ARG:1
-			PRINTFORML
+			PRINTDATAL 
+				DATAFORM 「呐%UNICODE(0x2764)%……还不够嘛%UNICODE(0x2764)%……」
+				DATAFORM 「%CSTR:118:20%还想要嘛%UNICODE(0x2764)%……呐……」
+				DATAFORM 「呐……明明%CSTR:118:20%还想做的……哼……」
+			ENDDATA
+			PRINTL 
+			PRINTFORMDL	拉尔瓦撅起小嘴紧紧地抱着你……
+			PRINTFORMDW 一番安慰后才肯依依不舍地放开……
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
-		;抱き着きモード満足終了
+		;抱き着きモード満足終了		;女同？
 		;記入チェック（=0, 非表示、1, 表示）
 		LOCAL:1 = 1
 		;-------------------------------------------------
@@ -2841,7 +3032,14 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 2
-			PRINTFORML
+			PRINTDATAL 
+				DATAFORM 「呐%UNICODE(0x2764)%……还不够嘛%UNICODE(0x2764)%……」
+				DATAFORM 「%CSTR:118:20%还想要嘛%UNICODE(0x2764)%……呐……」
+				DATAFORM 「呐……明明%CSTR:118:20%还想做的……哼……」
+			ENDDATA
+			PRINTL 
+			PRINTFORMDL	拉尔瓦撅起小嘴紧紧地抱着你……
+			PRINTFORMDW 一番安慰后才肯依依不舍地放开……
 			RETURN 1
 		ENDIF
 	ENDIF
@@ -2932,6 +3130,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2968,6 +3168,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -2976,6 +3178,22 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
+		IF TALENT:118:3 || TALENT:118:8 
+			PRINTFORML 「诶？%MASTERNAME:118%来干嘛呢……」
+			PRINTFORMDL 进入房间的时候，与床上的拉尔瓦对上了视线
+			PRINTFORMDW 似乎有些不乐意的样子，拉尔瓦揉着眼睛坐了起来……
+			PRINTFORML 「呜……好困……%CSTR:118:20%好想继续睡……哈啊……」
+			PRINTFORMW 「……把门带上……呼喵……」
+		ELSEIF CFLAG:118:1001 
+			PRINTFORML 「诶……是%MASTERNAME:118%……」
+			PRINTFORMDW 拉尔瓦坐了起来，揉着眼睛看向了你
+			PRINTFORML 「不对！为什么要趁着%CSTR:118:20%睡觉的时候来我家！」
+			PRINTFORMW 「再怎么说偷偷进女孩子房间是不对的！快出去！」
+		ELSE 
+			PRINTFORML 「吖啊啊啊你是谁啊——」
+			PRINTL 
+			PRINTFORMDW 在被看清楚脸之前赶快逃走了……
+		ENDIF 
 		PRINTFORML
 		RETURN 1
 	ENDIF
@@ -2985,7 +3203,23 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 1
-		PRINTFORML
+		SELECTCASE RAND:5
+			CASE 0
+				PRINTFORML 「呼……呼噜……」
+				PRINTFORMDW 拉尔瓦安静地睡着
+			CASE 1
+				PRINTFORML 「呼……呼嗯——……」
+				PRINTFORMDW 拉尔瓦裹着翅膀翻了个身
+			CASE 2
+				PRINTFORML 「呜嗯……呜噜——……呼……」
+				PRINTFORMDW 拉尔瓦发出了很轻微的鼾声
+			CASE 3
+				PRINTFORML 「呜……呜呼……」
+				PRINTFORMDW 拉尔瓦睡得很香甜的样子
+			CASE 4
+				PRINTFORML 「呼……」
+				PRINTFORMDW 拉尔瓦睡得很沉……
+		ENDSELECT 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2994,7 +3228,17 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 2
-		PRINTFORML
+		IF TALENT:12:7
+			PRINTFORML 「呜哇……%MASTERNAME:118%……%CSTR:118:20%起不来……」
+			PRINTFORMDL 虽然被开门声吵醒了，但拉尔瓦似乎还想睡回笼觉……
+			PRINTFORML 「%MASTERNAME:118%……好开心……可以睡在这里嘛……呼呜——」
+			PRINTFORMDW 斗不过困意的拉尔瓦还是倒了下去，发出有规律的呼吸声了
+		ELSEIF TALENT:12:3
+			PRINTFORML 「呜……%MASTERNAME:118%这么晚了还来……」
+			PRINTFORMDL 拉尔瓦坐起来揉着眼睛，看起来已经很困的样子了呢
+			PRINTFORML 「是来陪我的吗……谢谢%MASTERNAME:118%……嘿嘿……」
+			PRINTFORMDW 轻抚着拉尔瓦的小脑袋，很快就进入梦乡了呢……
+		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3003,7 +3247,35 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 3
-		PRINTFORML
+		IF TALENT:12:7
+			PRINTFORML 「呜哇……%MASTERNAME:118%……%CSTR:118:20%起不来……」
+			PRINTFORMDL 虽然被开门声吵醒了，但拉尔瓦似乎还想睡回笼觉……
+			PRINTFORML 「%MASTERNAME:118%……好开心……可以睡在这里嘛……呼呜——」
+			PRINTFORMDW 斗不过困意的拉尔瓦还是倒了下去，发出有规律的呼吸声了
+		ELSEIF TALENT:12:3
+			PRINTFORML 「呜……%MASTERNAME:118%这么晚了还来……」
+			PRINTFORMDL 拉尔瓦坐起来揉着眼睛，看起来已经很困的样子了呢
+			PRINTFORML 「是来陪我的吗……谢谢%MASTERNAME:118%……嘿嘿……」
+			PRINTFORMDW 轻抚着拉尔瓦的小脑袋，很快就进入梦乡了呢……
+		ELSE 
+			SELECTCASE RAND:5
+				CASE 0
+					PRINTFORML 「呼……呼噜……」
+					PRINTFORMDW 拉尔瓦安静地睡着
+				CASE 1
+					PRINTFORML 「呼……呼嗯——……」
+					PRINTFORMDW 拉尔瓦裹着翅膀翻了个身
+				CASE 2
+					PRINTFORML 「呜嗯……呜噜——……呼……」
+					PRINTFORMDW 拉尔瓦发出了很轻微的鼾声
+				CASE 3
+					PRINTFORML 「呜……呜呼……」
+					PRINTFORMDW 拉尔瓦睡得很香甜的样子
+				CASE 4
+					PRINTFORML 「呼……」
+					PRINTFORMDW 拉尔瓦睡得很沉……
+			ENDSELECT 
+		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3012,6 +3284,22 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 4
+		IF TALENT:118:3 || TALENT:118:8 
+			PRINTFORML 「诶？%MASTERNAME:118%来干嘛呢……」
+			PRINTFORMDL 进入房间的时候，与床上的拉尔瓦对上了视线
+			PRINTFORMDW 似乎有些不乐意的样子，拉尔瓦揉着眼睛坐了起来……
+			PRINTFORML 「呜……好困……%CSTR:118:20%好想继续睡……哈啊……」
+			PRINTFORMW 「……把门带上……呼喵……」
+		ELSEIF CFLAG:118:1001 
+			PRINTFORML 「诶……是%MASTERNAME:118%……」
+			PRINTFORMDW 拉尔瓦坐了起来，揉着眼睛看向了你
+			PRINTFORML 「不对！为什么要趁着%CSTR:118:20%睡觉的时候来我家！」
+			PRINTFORMW 「再怎么说偷偷进女孩子房间是不对的！快出去！」
+		ELSE 
+			PRINTFORML 「吖啊啊啊你是谁啊——」
+			PRINTL 
+			PRINTFORMDW 在被看清楚脸之前赶快逃走了……
+		ENDIF 
 		PRINTFORML
 		RETURN 1
 	ENDIF
@@ -3021,6 +3309,22 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 5
+		IF TALENT:118:3 || TALENT:118:8 
+			PRINTFORML 「诶？%MASTERNAME:118%来干嘛呢……」
+			PRINTFORMDL 进入房间的时候，与床上的拉尔瓦对上了视线
+			PRINTFORMDW 似乎有些不乐意的样子，拉尔瓦揉着眼睛坐了起来……
+			PRINTFORML 「呜……好困……%CSTR:118:20%好想继续睡……哈啊……」
+			PRINTFORMW 「……把门带上……呼喵……」
+		ELSEIF CFLAG:118:1001 
+			PRINTFORML 「诶……是%MASTERNAME:118%……」
+			PRINTFORMDW 拉尔瓦坐了起来，揉着眼睛看向了你
+			PRINTFORML 「不对！为什么要趁着%CSTR:118:20%睡觉的时候来我家！」
+			PRINTFORMW 「再怎么说偷偷进女孩子房间是不对的！快出去！」
+		ELSE 
+			PRINTFORML 「吖啊啊啊你是谁啊——」
+			PRINTL 
+			PRINTFORMDW 在被看清楚脸之前赶快逃走了……
+		ENDIF 
 		PRINTFORML
 		RETURN 1
 	ENDIF
@@ -3030,7 +3334,7 @@ ENDIF
 RETURN 1
 
 ;==================================================
-;お仕事中
+;お仕事中	;拉尔瓦酱没有工作
 ;==================================================
 @M_KOJO_Moe_EVENT_K118_13(ARG,ARG:1)
 ;口上主はTARGET
@@ -3041,6 +3345,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3086,6 +3392,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;持っていた食物を食べられた
 	;TCVAR:盗み食い抑制で持っていた食物を食われるのを回避できる
@@ -3117,6 +3425,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3135,6 +3445,52 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
+		PRINTL 
+		;暂定
+		;未来打算加根据总绝顶的结束差分
+		IF TALENT:118:7 
+			PRINTDATAL 
+				DATAFORM 「再抱一会儿……呜啊%UNICODE(0x2764)%……」
+				DATAFORM 「还想要抱抱呢……呼呜，呜喵%UNICODE(0x2764)%～」
+				DATAFORM 「还想要，和%MASTERNAME:118%抱一会%UNICODE(0x2764)%……」
+			ENDDATA
+			PRINTL 
+			PRINTFORMDL 相爱之后的相拥中，彼此静静地感受着对方的体温
+			PRINTFORMDW 安静地就像睡过去了一样……这样想着的你，轻轻的拍了拍拉尔瓦的后背
+			PRINTL 
+			PRINTFORML 「怎么啦！是还要做嘛？……诶……不是嘛……」
+			PRINTL 
+			PRINTFORMDW 失望的表情也很可爱呢，这样想着，不禁凑近了小妖精的脸颊亲了一口
+			PRINTL 
+			PRINTDATAW
+				DATAFORM 「咿呀%UNICODE(0x2764)%……这样被%MASTERNAME:118%渴求着……真的好幸福哇%UNICODE(0x2764)%……」
+				DATAFORM 「真是的……这样的亲亲，就应该在嘴上，懂不懂嘛%UNICODE(0x2764)%……啾%UNICODE(0x2764)%～」
+			ENDDATA
+			IF (CFLAG:118:14 == 2) && (CFLAG:118:900 == 7) && !TALENT:118:153 && !TALENT:118:27
+				PRINTDATAL
+					DATAFORM 「还有更幸福的事情%UNICODE(0x2764)%……%CSTR:118:20%，要当妈妈了呢%UNICODE(0x2764)%……」
+					DATAFORM 「在里面射了的话……要当妈妈了呢%UNICODE(0x2764)%……嘿嘿，好幸福%UNICODE(0x2764)%……」
+				ENDDATA
+			ELSE 
+				PRINTDATAL
+					DATAFORM 
+					DATAFORM 
+				ENDDATA
+			ENDIF 
+			PRINTL 
+		ELSE
+			SELECTCASE CFLAG:12:340 ;欲求不满度
+				CASE IS < 150
+						PRINTFORML 「诶？%MASTERNAME:118%……就结束嘛……」
+						PRINTFORMW 「还想抱抱嘛……还想与%MASTERNAME:118%更亲近一些……」
+				CASE IS < 350 
+						PRINTFORML 「%MASTERNAME:118%%UNICODE(0x2764)%……还不够嘛……」
+						PRINTFORMW 「%CSTR:118:20%……还想要……还想被%MASTERNAME:118%做更多的事%UNICODE(0x2764)%……」
+				CASEELSE
+						PRINTFORML 「不行嘛！%MASTERNAME:118%……还想要嘛%UNICODE(0x2764)%！」
+						PRINTFORMW 「还没满足哇……呜……明明有%MASTERNAME:118%，不想自己做那样的事嘛%UNICODE(0x2764)%！」
+			ENDSELECT
+		ENDIF 
 		PRINTFORML
 		RETURN 1
 	ENDIF
@@ -3197,6 +3553,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3235,6 +3593,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3367,6 +3727,7 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3375,6 +3736,26 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
+		PRINTL 
+		IF TALENT:118:7 
+			PRINTFORML 「那个……我知道%MASTERNAME:118%直接射进来，会特别满足……」
+			PRINTFORMW 「但是，我们之间……是有机会受精的吧……」
+			PRINTFORML 「虽然总是说%CSTR:118:20%已经是大人了……养小宝宝这种事，还是好可怕……」
+			PRINTFORMW 「%CSTR:118:20%不想要，因为小宝宝的事情……和%MASTERNAME:118%的距离就变远了呀」
+		ELSEIF MOE_LARVA_SEX_FRIEND()
+			PRINTFORML 「呜……变成大人了，就不能和以前那样毫无顾忌地做了呢……」
+			PRINTFORMW 「%CSTR:118:20%只是，想要变舒服……养孩子什么的，没有自信啦……」
+			PRINTFORML 「还想和%MASTERNAME:118%做更多快乐的事，要是有小宝宝就不能做了呀……」
+			PRINTFORMW 「所以考虑一下我的感受，好吗……」
+		ELSE 
+			PRINTFORML 「虽然……变成能养育小孩子的大人……%CSTR:118:20%很开心……」
+			PRINTFORMW 「可是，妖精带小孩子会变成什么样……连我自己都不知道……」
+			PRINTFORML 「我不知道……%MASTERNAME:118%……能在我身边陪多久……」
+			PRINTFORMW 「所以考虑一下我的感受，好吗……」
+		ENDIF 
+		PRINTFORML 
+		PRINTFORMDW 紧抱住你的拉尔瓦，颤抖着那娇小的身体……
+		PRINTFORML 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3383,6 +3764,24 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
+		PRINTL 
+		IF TALENT:118:7 
+			PRINTFORML 「真的……不行的呀……」
+			PRINTFORMW 「这样的事，%CSTR:118:20%完全没有做准备……」
+			PRINTL 
+			PRINTFORML 「我还想……再自由自在地，陪%MASTERNAME:118%度过好久好久……」
+			PRINTFORMW 「两个人就足够了……真的足够了……」
+		ELSEIF MOE_LARVA_SEX_FRIEND()	
+			PRINTFORML 「呐——，%CSTR:118:20%没有说，讨厌%MASTERNAME:118%射进来呢……」
+			PRINTL 
+			PRINTFORMW 「虽然直接射进来会很舒服，但是怀上了的话，%CSTR:118:20%就得花好多心思了呢……」
+			PRINTFORMW 「不是有那种，药嘛？吃了那个再做的话，随便射多少……都不用担心吧？」
+		ELSE 
+			PRINTFORML 「%MASTERNAME:118%……我并不讨厌……」
+			PRINTFORMW 「但是……我们是朋友吧……有了小宝宝的话，会被别人说闲话的……」
+			PRINTL 
+			PRINTFORMW 「这，这可不是告白什么的，真的是需要认真考虑的事情哇……」
+		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3391,6 +3790,27 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
+		PRINTL 
+		IF TALENT:118:7 
+			PRINTFORML 「不行！」
+			PRINTFORMW 「真是的！%MASTERNAME:118%就是个变态——」
+			PRINTFORMW 「总是想着播种要孩子什么的，就这么想看妖精孕肚的样子吗？！」
+			PRINTFORMW 「稍微考虑一下我的感受好不好……」
+		ELSEIF TALENT:118:3 
+			PRINTFORMW 「……%CSTR:118:20%还是会把%MASTERNAME:118%……当作朋友……」
+			PRINTFORMW 「所以，这样的事情……可以暂时停一会吗……」
+			PRINTFORMW 「我……呜啊忍不住了啦！%MASTERNAME:118%就是个大笨蛋——」
+		ELSEIF MOE_LARVA_SEX_FRIEND()	
+			PRINTFORMW 「……原来%MASTERNAME:118%是这样的人呢……」
+			PRINTFORMW 「精虫上脑的时候什么话都听不进……看见妖精就发情的变态萝莉控……」
+			PRINTFORMW 「喜欢看萝莉孕肚的样子……所以每次都把%CSTR:118:20%的肚子弄得比孕妇还大……」
+			PRINTFORMW 「一点都不管%CSTR:118:20%的想法……在你眼里妖精就是处理性欲的工具么？用完就能丢掉的那种？」
+			;PRINTFORMW 「还是说，就是想看真正的萝莉孕肚，」
+		ELSE 
+			PRINTFORMDW 拉尔瓦低下脑袋把触角对准了你……
+			PRINTFORML 「三——二——」
+			PRINTFORMDW 在倒计时归零之前赶快拉开了距离……
+		ENDIF 	
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3399,6 +3819,48 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
+		IF FIRSTTIME("K118_18_ALLOWED_2")
+			IF TALENT:118:7 || TALENT:118:3 || TALENT:118:8 
+				PRINTFORML 
+				PRINTFORML 「啊……真的想要射进来的话……」
+				PRINTFORMW 「应该……没问题……」
+				IF TALENT:MASTER:192 
+					PRINTFORMW 「不是在危险日的话，应该很难怀上呢，所以，可以哟……」
+				ELSE 
+					PRINTFORMW 「毕竟%MASTERNAME:118%不是妖精，而且也不在危险日，很难怀上呢……」
+				ENDIF 
+				PRINTFORMW 「那个……如果……真的怀上的话，那就……」
+				PRINTL 
+				CALL ASK_M("生下来",!FLAG:1040 , "……" ,1)
+				PRINTL 
+				IF !RESULT 
+					PRINTFORMW 「嗯嗯……%MASTERNAME:118%，答应了噢……」
+					PRINTFORMW 「不过不要因为同意了，就充满气势地射一堆哇，肚子会很奇怪的……」
+					PRINTFORMW 「还是说……已经有点期待%CSTR:118:20%挺着肚子的样子了吗？变态～」
+				ELSE 
+					PRINTFORMW 「……唉……%MASTERNAME:118%还是这样呢，想要但是又不敢说……」
+					PRINTFORMW 「明明，%CSTR:118:20%都是你的什么人了呀，纠结什么呀……」
+					PRINTFORMW 「就算真的怀上了，人家也会好好的养孩子呢%UNICODE(0x2764)%……来吧%UNICODE(0x2764)%……」
+				ENDIF 
+			ELSEIF MOE_LARVA_SEX_FRIEND()
+				PRINTFORML 
+				PRINTFORMW 「呜……变成这样什么的……都是%MASTERNAME:118%害的啦%UNICODE(0x2764)%……」
+				PRINTFORMW 「明明有可能怀孕呀……但是，为什么肚子里面……就像是烧起来一样……想要了呢%UNICODE(0x2764)%……」
+				PRINTFORMW 「怎么办呀……真的怀上小宝宝什么的……怎么办……但是又好想要%UNICODE(0x2764)%……」
+				PRINTL 
+				CALL ASK_M("怀上的话就生下来吧",!FLAG:1040 , "……" ,1)
+				PRINTL 
+				IF !RESULT 
+					PRINTFORMW 「嗯嗯，生下来……诶诶？到时候，%MASTERNAME:118%得操心了呀？」
+					PRINTFORMW 「真的是……明明%CSTR:118:20%还想多做一会儿的呢%UNICODE(0x2764)%……」
+					PRINTFORMW 「直到怀上为止……%MASTERNAME:118%每天都要……好好的把%CSTR:118:20%填满噢%UNICODE(0x2764)%……」
+				ELSE 
+					PRINTFORMW 「怀上了小宝宝的话%UNICODE(0x2764)%……就没有那么想要了对吧……」
+					PRINTFORMW 「我……我没关系的……就算有了小宝宝%CSTR:118:20%也会好好养的……」
+					PRINTFORMW 「%MASTERNAME:118%不要顾忌了呀%UNICODE(0x2764)%……快点……放进来%UNICODE(0x2764)%……」
+				ENDIF 
+			ENDIF 
+		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3407,6 +3869,51 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 5
+		PRINTL 
+		IF TALENT:118:7 	
+			PRINTFORML 「嗯……可以哟%UNICODE(0x2764)%……」
+			PRINTFORMW 「其实，%CSTR:118:20%也想象过……不敢和%MASTERNAME:118%说的事……」
+			PRINTFORMW 「%CSTR:118:20%想，有一天……能怀上%MASTERNAME:118%的孩子的话……」
+			SIF CFLAG:118:1050 >= 2
+			PRINTFORMW 「不是葵酱那样的孩子，而是……%CSTR:118:20%看着长大的孩子……」
+			PRINTFORMW 「我想看着，我的孩子，想看看她会有多可爱」
+			PRINTFORMW 「我想知道，她的翅膀，会不会和我的一样，又大又漂亮……」
+			PRINTFORMW 「想带着她去看看太阳花田的每个角落，教会她认识那里所有的花……」
+			PRINTFORMW 「想看着她快乐地长大，看着她长得比妈妈还高，能把我抱在怀里的样子……」
+			PRINTFORMW 「不只是妖精……我希望，她能像%MASTERNAME:118%那样，成为能够独当一面的大人……」
+			PRINTFORML 
+			PRINTFORMDL 无比熟悉的温柔微笑，此刻已染上了母性的光辉
+			PRINTFORMDW 即便身体还是小孩子的模样，心里已经做好了成为母亲的准备呢
+			PRINTFORMDW 突然，拉尔瓦就像是回过神了一样，忽然发出了很可爱的声音
+			PRINTFORML 
+			PRINTFORMW 「……哇喵啊！！……居然，全说出来了……」
+			PRINTFORMW 「反正，反正就是，%CSTR:118:20%想要小宝宝%UNICODE(0x2764)%……想要%MASTERNAME:118%的小宝宝%UNICODE(0x2764)%……」
+			PRINTFORMW 「……可以吗……」
+			PRINTFORML 
+			PRINTFORMDL 一直重复着的愿望，已经有好好的传达到这边了呢
+			PRINTFORMDW 用行动回答了拉尔瓦的请求，在她幸福的目光中抱住了那娇小的身体
+			PRINTFORML 
+			PRINTFORMW 「……%UNICODE(0x2764)%」
+		ELSEIF TALENT:118:3 || TALENT:118:8
+			PRINTFORML 
+			PRINTFORML 「啊……真的想要射进来的话……」
+			PRINTFORMW 「嘿嘿%UNICODE(0x2764)%……我愿意%UNICODE(0x2764)%……」
+			IF TALENT:MASTER:192 
+				PRINTFORMW 「我知道……%MASTERNAME:118%永远都不会离开%CSTR:118:20%的%UNICODE(0x2764)%……」
+			ELSE 
+				PRINTFORMW 「毕竟%MASTERNAME:118%不是妖精，可能很难怀上呢……」
+				PRINTFORMW 「而且我知道……%MASTERNAME:118%不会抛弃%CSTR:118:20%的呢%UNICODE(0x2764)%……」
+			ENDIF 
+			PRINTFORMW 「……和\@ TALENT:118:3 ? 最喜欢的 # 我喜欢的 \@%MASTERNAME:118%的孩子%UNICODE(0x2764)%……会有多可爱呢？好期待呀%UNICODE(0x2764)%～♪」
+			PRINTFORMW 「来吧%UNICODE(0x2764)%……让%CSTR:118:20%，怀上%MASTERNAME:118%的孩子吧%UNICODE(0x2764)%～」
+		ELSEIF MOE_LARVA_SEX_FRIEND()
+			PRINTFORMW 「……原来……%MASTERNAME:118%就这么想要射进来嘛……」
+			PRINTFORMW 「也不管是什么日子呢……真是个变态%UNICODE(0x2764)%……」
+			PRINTFORMW 「已经无所谓啦%UNICODE(0x2764)%……真的有小宝宝的话，有%MASTERNAME:118%在就不怕呢%UNICODE(0x2764)%……」
+			PRINTFORMW 「而且，危险日的时候，其实会更加地想要%UNICODE(0x2764)%……」
+			PRINTFORMW 「好想要被%MASTERNAME:118%顶进最深处，噗啾噗啾地射得满满的%UNICODE(0x2764)%……快点%UNICODE(0x2764)%……等不及了呀%UNICODE(0x2764)%……」
+		ENDIF 
+		PRINTW 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -3420,6 +3927,8 @@ RETURN 1
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3460,6 +3969,8 @@ RETURN 1
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3483,7 +3994,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 		IF CFLAG:317
-			IF CFLAG:衰弱
+			IF CFLAG:316 ;衰弱
 				;诶嘿嘿中に疲れて帰る
 				PRINTFORMW 
 			ELSE
@@ -3588,6 +4099,8 @@ RETURN 1
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3607,9 +4120,9 @@ IF LOCAL
 		PRINTFORML 
 		PRINTFORMW 「啊，是……」
 		PRINTFORMDW 少了%MASTERNAME:118%的那一份温暖啊
-		IF DAY < 92 
+		IF DAY < 92 	;总天数不足入冬
 			PRINTFORMDL 尽管冬天还没到来
-		ELSEIF DAY < 124 
+		ELSEIF DAY < 124 	;正在冬天
 			PRINTFORMDL 尚未离去的冬天里
 		ELSE 
 			PRINTFORMDL 在那个最暖和的冬天
@@ -3649,11 +4162,14 @@ IF LOCAL
 		PRINTFORMW 「最近发生了什么事情呢……有点好奇……」
 		PRINTFORMW 「如果想问问外面发生的事情，除了偶尔来太阳花田取材的天狗……」
 		PRINTFORML 「还有一个人……」
+		PRINTL 
 		PRINTFORMW 「……那个人，很让%CSTR:118:20%在意呢」
 		PRINTFORML 「明明别的人类都不把妖精的话当回事，%LARVA_MOE_GET_SEX_OF_YOU()%却听得进我的话……」
 		PRINTFORMW 「即使是人尽皆知的事情，%LARVA_MOE_GET_SEX_OF_YOU()%也会很认真地听我讲述……」
+		PRINTL 
 		PRINTFORML 「大概也有身为外界人的原因……不过，他应该会觉得，%CSTR:118:20%其实挺幼稚的吧……」
 		PRINTFORMW 「所以才会像对待小孩子那样，趁着%CSTR:118:20%不注意就做一些亲密的事情……」
+		PRINTL 
 		IF MARK:118:3
 			PRINTFORMW 「不知道，那之后，%MASTERNAME:118%有没有好好反省自己的问题呢……」
 			PRINTFORMW 「明明是很过分的事情，我……我还是想，试一试原谅你……」
@@ -3664,6 +4180,7 @@ IF LOCAL
 			PRINTFORMW 「不过呀，%CSTR:118:20%并不讨厌，甚至，有种想要依赖%MASTERNAME:118%的感觉……」
 			PRINTFORMW 「才，才不是那个……只是下意识地相信%MASTERNAME:118%！绝对是的！」
 		ENDIF  
+		PRINTL 
 		PRINTFORMDW ……
 		PRINTFORML 
 		PRINTFORMDW （……呐，%MASTERNAME:118%是喜欢我嘛？）
@@ -3713,7 +4230,7 @@ IF LOCAL
 		ELSE 
 			PRINTFORMDW 泛滥的蜜液散发出阵阵香甜味道，愈加刺激着蝴蝶妖精的欲求
 		ENDIF 
-		IF TALENT:0:2 & 2 
+		IF TALENT:0:2 & 2 	;自机性别
 			PRINTFORMDW 被%MASTERNAME:118%凶恶的肉棒插入的感触，与此时的快感相重叠——
 		ELSE
 			PRINTFORMDW 被%MASTERNAME:118%凶器般的指尖抚摸着的感触，与此时的快感相重叠——
@@ -3725,7 +4242,7 @@ IF LOCAL
 		PRINTFORML 
 		PRINTFORMDL 从被手指抠挖着的幼嫩膣穴中，喷洒出了大片爱液
 		PRINTFORMDW 而后，湿润而又温暖的感触，从已经麻木的下半身，慢慢地明晰了
-		SIF FLAG:1075
+		SIF FLAG:1075	;漏尿允许
 		PRINTFORMDW 让人一闻到就无比羞耻的，尿液的味道，与方才的淫靡香气，混合在了一起
 		PRINTFORML 
 		PRINTFORMW 「哈啊……嗯……呼嗯……」
@@ -3740,14 +4257,14 @@ IF LOCAL
 		PRINTFORMW 「%CSTR:118:20%呀，已经离不开你了呢%UNICODE(0x2764)%……」
 		PRINTFORML 
 		PRINTFORMW 
-		CALL AddEXP("Ｃ経験", 118, 12)
-		CALL AddEXP("Ｃ絶頂経験", 118, 7)
-		CALL AddEXP("Ｖ経験", 118, 10)
-		CALL AddEXP("Ｖ絶頂経験", 118, 4)
-		CALL AddEXP("絶頂経験", 118, 11)
-		CALL AddEXP("自慰経験", 118, 17)
+		CALL AddEXP_FOR_LARVA(0, 118, 12)	;C经验
+		CALL AddEXP_FOR_LARVA(5, 118, 7)		;C绝顶经验
+		CALL AddEXP_FOR_LARVA(1, 118, 10)		;V经验
+		CALL AddEXP_FOR_LARVA(6, 118, 4)		;V绝顶经验
+		CALL AddEXP_FOR_LARVA(10, 118, 11)	;绝顶经验
+		CALL AddEXP_FOR_LARVA(22, 118, 17)	;自慰经验
 		SIF FLAG:1075
-		CALL AddEXP("放尿経験",118, 2)
+		CALL AddEXP_FOR_LARVA(13,118, 2)		;放尿经验
 		PRINTFORMW 
 		RETURN 1
 	ENDIF
@@ -3759,7 +4276,7 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 4
 		PRINTFORML 「和%MASTERNAME:118%认识了这么久了呢……」
 		PRINTFORMW 「%MASTERNAME:118%，真的好喜欢和%CSTR:118:20%做快乐的事情」
-		SIF MARK:118:3 
+		SIF MARK:118:3 	;反发
 		PRINTFORML 「虽然做过好过分的事情……不过——」
 		PRINTFORMW 「总是把%CSTR:118:20%弄得肚子里面暖乎乎的，真的好舒服……」
 		PRINTFORMW 「嘿嘿，会这样温柔地抱住我的人，也就只有%MASTERNAME:118%了吧？」
@@ -3828,6 +4345,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;通常自慰
 	;記入チェック（=0, 非表示、1, 表示）
@@ -3986,6 +4505,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -4018,6 +4539,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -4051,7 +4574,7 @@ IF LOCAL
 			PRINTFORMDW 却感觉到，扑向怀中的娇小身体，与随之遍及全身的轻柔触感
 			PRINTFORMDW 那是拉尔瓦一如既往地，连翅膀都要一起抱住你的温柔拥抱
 			PRINTFORML 
-			PRINTFORML 「这种过分的事情，只许对%CSTR:118:20%……一个人做%UNICODE(0x2665)%」
+			PRINTFORML 「这种过分的事情，只许对%CSTR:118:20%……一个人做%UNICODE(0x2764)%」
 			PRINTFORMW 「以后，%MASTERNAME:118%要一直一直，陪在%CSTR:118:20%的身边——」
 			PRINTFORML 
 			PRINTFORML 
@@ -4072,7 +4595,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		IF TALENT:118:27 
+		IF TALENT:118:27 	;无知
 			PRINTFORML 「小宝宝是怎么来的，%MASTERNAME:118%有听说过吗？」
 			PRINTFORMW 「虽然大家都说，%CSTR:118:20%有了小宝宝……不过，一点都搞不懂」
 			PRINTFORMW 「……为什么头晕想吐，吃不下东西什么的，就是因为肚子里有小宝宝呢？」
@@ -4081,11 +4604,11 @@ IF LOCAL
 			PRINTFORMDW 这样想着，只能给拉尔瓦进行了为时已晚的性教育讲座……
 			PRINTFORML 
 			PRINTFORML 「原来做那种舒服的事情……就会很容易怀上小宝宝……」
-			PRINTFORMW 「因为让什么都不知道的%CSTR:118:20%怀孕……所以就做得那么激烈嘛？」
+			PRINTFORMW 「因为能让什么都不知道的%CSTR:118:20%，怀上你的孩子……所以就做得那么激烈嘛？」
 			PRINTFORML 
 			PRINTFORMDW 拉尔瓦混杂着担忧与难过的眼神，让你愧疚得难以直视
 			PRINTFORML 
-			IF MARK:118:3
+			IF MARK:118:3	;反发刻印
 				PRINTFORML 「还是说，害怕%CSTR:118:20%生起气来，才不敢和我说清楚……」
 				PRINTFORMW 「……可是，至少先考虑一下……%CSTR:118:20%的感受，好不好……」
 				PRINTFORML 
@@ -4112,7 +4635,7 @@ IF LOCAL
 				PRINTFORML 「%MASTERNAME:118%，一起来帮忙吧！」
 				PRINTFORMW 「因为这是%MASTERNAME:118%的孩子……只是%CSTR:118:20%一个人的话，会很困难……」
 				PRINTFORML 「嘿嘿，这大概就是作为父亲的责任吧？孩子他爸？」
-				PRINTFORMW 「陪在我身边吧，%MASTERNAME:118%%UNICODE(0x2665)%——」
+				PRINTFORMW 「陪在我身边吧，%MASTERNAME:118%%UNICODE(0x2764)%——」
 				PRINTFORML 
 				PRINTFORML 
 				PRINTFORML 
@@ -4132,6 +4655,36 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
+		IF TALENT:118:27
+			PRINTFORML 「小宝宝是怎么来的，%MASTERNAME:118%有听说过吗？」
+			PRINTFORMW 「虽然大家都说，%CSTR:118:20%有了小宝宝……不过，一点都搞不懂」
+			PRINTFORMW 「……为什么头晕想吐，吃不下东西什么的，就是因为肚子里有小宝宝呢？」
+			PRINTFORML 
+			PRINTFORMDL 到了这一步还隐瞒下去的话，这孩子迟早会自己找出答案的……
+			PRINTFORMDW 这样想着，只能给拉尔瓦进行了为时已晚的性教育讲座……
+			PRINTFORML 
+			PRINTFORML 「原来做那种舒服的事情……就会很容易怀上小宝宝……」
+			PRINTFORMW 「因为能让什么都不知道的%CSTR:118:20%，怀上你的孩子……所以就做得那么激烈嘛？」
+			PRINTFORML 
+			PRINTFORMDW 拉尔瓦混杂着担忧与难过的眼神，让你愧疚得难以直视
+			PRINTFORML 
+			PRINTFORML 「还是说，害怕%CSTR:118:20%生起气来，才不敢和我说清楚……」
+			PRINTFORMW 「……可是，至少先考虑一下……%CSTR:118:20%的感受，好不好……」
+			PRINTFORML 
+			PRINTFORMDL 啪嗒的泪滴声，在寂静的空气中分外清脆
+			PRINTFORMDW 转头看去，只看见拉尔瓦飞快地抹去眼泪，用翅膀遮住了眼睛
+			PRINTFORML 
+			PRINTFORML 「……%MASTERNAME:118%，会负责吧？」
+			PRINTFORMW 「就算做过过分的事……%CSTR:118:20%现在只能依靠着%MASTERNAME:118%」
+			PRINTFORMW 「明明让我怀孕这件事好过分，我，我却不能离开%MASTERNAME:118%了……」
+			PRINTFORMW 「为什么啊……」
+			PRINTFORML 
+			PRINTFORMW 
+			PRINTFORMW 
+			TALENT:118:27 = 0 
+			PRINTFORMDW 拉尔瓦失去了[无知]……畜生
+		ELSE 
+		ENDIF 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -4157,6 +4710,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -4206,6 +4761,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG
 		;-------------------------------------------------
 		CASE 0
@@ -4281,7 +4838,7 @@ ELSEIF ARGS == "二人で"
 ENDIF
 
 ;使用例
-;IF !TALENT:XX:恋慕
+;IF !TALENT:XX:3
 ;	PRINTFORMW %CALLNAME:XX%はガードが堅いぞ！
 ;	RETURN -1
 ;ENDIF
@@ -4300,6 +4857,8 @@ ENDIF
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG
 		;-------------------------------------------------
 		CASE 0
@@ -4371,6 +4930,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG
 		;-------------------------------------------------
 		CASE 0
@@ -4476,6 +5037,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -4484,7 +5047,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		IF TALENT:118:恋慕
+		IF TALENT:118:3
 			PRINTFORML 「……%MASTERNAME:118%！讨厌！」
 			PRINTFORMDW 拉尔瓦气的背过身去，蝴蝶翅膀剧烈地颤抖着……
 		ELSE 
@@ -4515,6 +5078,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;-------------------------------------------------
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
@@ -4548,11 +5113,12 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
 	;壊れるまでしてあげる
+		PRINTL 
 		PRINTFORML 「做到……做不了为止嘛？」
-		PRINTFORML 「呼呼——很有勇气呢%UNICODE(0x2764)%……」
+		PRINTFORMW 「呼呼——很有勇气呢%UNICODE(0x2764)%……」
 		PRINTFORML 
 		PRINTFORMDL 凑近你耳边的拉尔瓦，一口咬住了你的耳朵
-		PRINTFORMDL 毫不在乎你的反应，绕着耳廓细心吮吸着
+		PRINTFORMDW 毫不在乎你的反应，绕着耳廓细心吮吸着
 		PRINTFORMDW 如同恶作剧一般伸进你口中的小手，堵住了你的话语
 		PRINTFORML 
 		PRINTFORMW 「现在后悔可来不及了呢，做到不能做为止，这可是%MASTERNAME:118%要求的呀%UNICODE(0x2764)%」
@@ -4562,7 +5128,7 @@ IF LOCAL
 		PRINTFORML 「%MASTERNAME:118%对%CSTR:118:20%做的那些事，我呀，真的是喜欢得不得了%UNICODE(0x2764)%～」
 		PRINTFORMW 「总是让我变得那么舒服，还弄得那么激烈，好过分%UNICODE(0x2764)%～」
 		PRINTFORML 「对这样的%MASTERNAME:118%呀，%CSTR:118:20%可是要——」
-		CALL DQPRINT(@"「加·倍·奉·还%UNICODE(0x2764)%～」",1,1000)
+		CALL DQPRINT(@"「加·倍·奉·还%UNICODE(0x2764)%～」",1,200)
 		RETURN 1
 	ENDIF
 ENDIF
@@ -4582,6 +5148,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	;记录当前周目的称呼名，未初见不变化
 	IF CFLAG:118:18
 		MOE_LARVA_CALL_YOU = MASTERNAME:118
@@ -4619,13 +5187,13 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 0
-		;自己成为了全场最佳）
-		;IF (TALENT:118:7 || TALENT:118:3 || TALENT:118:184 || TALENT:118:185 ) && (MOE_LARVA_GET_OTHERS_EX_CHARANUM(0) == 118 ) &&  (MOE_LARVA_GET_OTHERS_EX_CHARANUM(1) > 118) && (ABL:118:11 > 8 )
-		;	CALL M_KOJO_Moe_Custom_EVENT_K118_MATING_BOARD(118)
+		;自己成为了全场最佳，总绝顶数达到118以上）
+		IF (TALENT:118:7 || TALENT:118:3 || TALENT:118:184 || TALENT:118:185 ) && (MOE_LARVA_GET_OTHERS_EX_CHARANUM(0) == 118 ) &&  (MOE_LARVA_GET_OTHERS_EX_CHARANUM(1) > 118) && (ABL:118:11 > 6 ) && FIRSTTIME("M_KOJO_Moe_Custom_EVENT_K118_MATING_BOARD_ONE")
+			CALL M_KOJO_Moe_Custom_EVENT_K118_MATING_BOARD(118)
 		;当日内感知到的doi对象是全场最佳）
 		;ELSEIF CFLAG:118:1001 && (MOE_LARVA_GET_OTHERS_EX_CHARANUM(0) == TCVAR:118:380) && (MOE_LARVA_GET_OTHERS_EX_CHARANUM(1) > 118) && !(TALENT:118:7 || TALENT:118:3 || TALENT:118:8) && ((CFLAG:118:311 / 100) == ( CFLAG:{MOE_LARVA_GET_OTHERS_EX_CHARANUM(0)}:311 / 100 ) )
 		;	CALL M_KOJO_Moe_Custom_EVENT_K118_MATING_BOARD(TCVAR:118:380)
-		;ENDIF 
+		ENDIF 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -4642,6 +5210,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG
 	CASE 0
 		;▼考え事,（～は考えに耽っている。）
@@ -4892,6 +5462,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	PRINTFORMW 
 ENDIF
 RETURN 1
@@ -4906,6 +5478,8 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG
 	CASE 1
 		;戦闘技能
@@ -5048,6 +5622,8 @@ CALL DAILY_MESSAGE_2(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	PRINTFORMW 
 ENDIF
 RETURN 1
@@ -5067,6 +5643,8 @@ CALL DAILY_MESSAGE_4(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	PRINTFORMW 
 ENDIF
 RETURN 1
@@ -5084,6 +5662,8 @@ CALL DAILY_MESSAGE_12(ARG, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2)
 LOCAL = 1
 ;-------------
 IF LOCAL
+	CALL LARVA_MOE_SET_COLOR(C_MOE_LARVA)
+
 	SELECTCASE ARG:1
 	CASE 1
 		;特訓を頼まれる
@@ -5214,7 +5794,7 @@ IF MOE_LARVA_CHECK_ENABLE_TO_INSERT(118)
 	PRINTFORML 
 	PRINTFORMW 「真的……能放进来嘛？明明这个地方……手指都进不来……」
 	PRINTFORML 
-	CALL DOKU_OD_ASK_MOE_LARVA("我会温柔一点的",1,"还是算了",1)
+	CALL ASK_M("我会温柔一点的",1,"还是算了",1)
 	IF RESULT == 0
 		IF TALENT:118:7 
 			PRINTFORML 「已经很温柔了呢……不过，会很疼很疼……」
@@ -5268,7 +5848,7 @@ IF MOE_LARVA_CHECK_ENABLE_TO_INSERT(118)
 				;背面座位
 		ENDSELECT
 		PRINTFORML 
-		SELECTCASE TALENT:MASTER:形状
+		SELECTCASE TALENT:MASTER:250	;形状
 			CASE 1,2
 				PRINTFORMDL 与拉尔瓦的身体一样柔嫩的肉棒，紧贴着蜜缝来回试探着
 				PRINTFORMDW 忽然伸出的白皙小手微微张开，似乎是在比对着将要容纳的尺寸
@@ -5502,7 +6082,7 @@ ELSEIF ARG == 4
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 5
 	CLEARLINE 1 
-	IF TALENT:118:恋人
+	IF TALENT:118:7
 		PRINTFORMDL 拉尔瓦紧抱着双手，审视着眼前的%GIFT_NAME%
 		IF MARK:118:3
 		PRINTFORML 「%MASTERNAME:118%……这是在故意气我吗……」

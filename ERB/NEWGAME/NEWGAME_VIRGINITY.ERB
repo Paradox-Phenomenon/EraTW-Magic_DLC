@@ -7,7 +7,7 @@
 @VIRGIN_SET
 #DIMS choices, 11
 PRINTL 
-PRINTL 在游戏開始前可以変更各角色的処女・非処女
+PRINTL 在游戏開始前可以変更对角色的処女・非処女 ＋ futa化与否＆形状进行個別設定（若体型设定里选全员futa化,此处的形状设定会失效）
 PRINTL 全体設定即可对所有人生効
 DRAWLINE
 VARSET choices
@@ -17,7 +17,7 @@ choices:2 '= "你是笨蛋吗肯定得全员处女啊"
 choices:3 '= "幻想少女很長寿所以肯定経験豊富吧"
 choices:4 '= "干脆全部都变的风骚吧"
 choices:5 '= "雖然全員都是処女但是褲腰帯都很鬆"
-choices:6 '= "不管是不是処女都很想受種的樣子"
+choices:9 '= "不管是不是処女都很想受種的樣子"
 SIF 全員の貞操
 	choices:全員の貞操 '= "<font color='#67e47e'>(有効)</font>" + choices:全員の貞操
 SIF 全員の貞操 ||SUMCARRAY(初期貞操)
@@ -57,7 +57,7 @@ SELECTCASE RESULT
 		PRINTFORMW 麻烦的家伙。
 		全員の貞操 = RESULT
 		PRINTW 在全員风骚処女的状態下開始游戏。
-	CASE 6
+	CASE 9
 		全員の貞操 = RESULT
 		PRINTW 在全員渴望受種的状態下開始游戏。	
 	CASEELSE
@@ -101,8 +101,11 @@ DO
 LOOP 1
 
 初期貞操:CHARA_ID:0 ++
-SIF 初期貞操:CHARA_ID:0 >= 6
+IF 初期貞操:CHARA_ID:0 >= 8 && 初期貞操:CHARA_ID:0 < 10
+	初期貞操:CHARA_ID:0 = 9
+ELSEIF 初期貞操:CHARA_ID:0 >= 10
 	初期貞操:CHARA_ID:0 = 0
+ENDIF
 
 SELECTCASE 初期貞操:CHARA_ID:0
 	CASE 0
@@ -117,6 +120,12 @@ SELECTCASE 初期貞操:CHARA_ID:0
 		PRINTFORMW %CALLNAME:CHARA_ID%変得风骚了
 	CASE 5
 		PRINTFORMW %CALLNAME:CHARA_ID%变成风骚処女了
+	CASE 6
+		PRINTFORMW %CALLNAME:CHARA_ID%をふたなりにします
+	CASE 7
+		PRINTFORMW %CALLNAME:CHARA_ID%を処女かつふたなりにします
+	CASE 9 
+		PRINTFORMW %CALLNAME:CHARA_ID%変得渴望受種了
 	CASEELSE
 		THROW 貞操設定不適切
 ENDSELECT
@@ -140,6 +149,10 @@ SELECTCASE ARG
 	CASE 5
 		RETURNF "[骚処]"
 	CASE 6
+		RETURNF "[ふた]"
+	CASE 7
+		RETURNF "[双処]"
+	CASE 9
 		RETURNF "[受種渴求]"
 	CASEELSE
 		THROW 貞操設定不適切
@@ -178,6 +191,15 @@ SELECTCASE ARG:1
 		TALENT:ARG:風騷 = 1
 		TALENT:ARG:貞操 = -1
 	CASE 6
+		CALL SET_FUTANARI(ARG)
+		SIF 全員扶她化 != 1
+			CALL SET_FUTANARI_SHAPE(ARG)
+	CASE 7
+		CALL SET_VIRGIN(ARG)
+		CALL SET_FUTANARI(ARG)
+		SIF 全員扶她化 != 1
+			CALL SET_FUTANARI_SHAPE(ARG)
+	CASE 9
 		TALENT:ARG:無知 = 0
 		SIF TALENT:ARG:性別嗜好 == 1
 			TALENT:ARG:性別嗜好 = 0
@@ -433,6 +455,7 @@ TALENT:ARG:体型 = -2
 ;扶她
 ;-----------------------------------------------------------
 @SET_FUTANARI(ARG)
+;PRINTFORML %CALLNAME:ARG%のふたなり関数呼び出し
 TALENT:ARG:性別 = 3
 IF RAND:100 == 1
 	TALENT:ARG:形状 = 10
@@ -459,3 +482,91 @@ ELSE
 ENDIF
 MAXBASE:ARG:勃起 = 1500
 MAXBASE:ARG:精力 = 1000
+
+
+;-----------------------------------------------------------
+;ふたなり形状
+;-----------------------------------------------------------
+@SET_FUTANARI_SHAPE(ARG)
+;PRINTFORML %CALLNAME:ARG%のふたなり形状関数呼び出し
+$LOOP
+PRINTFORML %CALLNAME:ARG%の男性器形状を設定してください。
+PRINTL [1] 未成熟
+PRINTL [2] 粗チン
+PRINTL [3] 普通
+PRINTL [4] 発光する
+PRINTL [5] イボ付き
+PRINTL [6] ごんぶと
+INPUT
+IF RESULT == 5
+	PRINTW そんなの入れられても痛いだけで気持ちよくないですよ？
+	PRINTL [0] じゃあやめとく
+	PRINTL [1] 余計なお世話だ
+	INPUT
+	IF RESULT == 1
+		PRINTW このドＭ！
+		PRINTFORMW %CALLNAME:ARG%の男性器にイボが生えました
+		TALENT:ARG:形状 = 5
+	ELSE
+		GOTO LOOP
+	ENDIF
+ELSEIF RESULT == 4
+	PRINTL 意味わかんないんですけど
+	PRINTL [0] ごめん間違えた
+	PRINTL [1] ホタルイカと同じ原理で光るんです
+	INPUT
+	IF RESULT == 1
+		PRINTW 物好きですね。
+		PRINTFORMW %CALLNAME:ARG%の男性器が発光するようになりました
+		TALENT:ARG:形状 = 4
+	ELSE
+		GOTO LOOP
+	ENDIF
+ELSEIF RESULT == 6
+	PRINTL デカけりゃいいと安易に考えてはいませんか？大きいと血液が行き渡りにくくなる分柔らかくなります。
+	PRINTL それに大事なのはサイズの大小ではなく自分の穴との相性です。サイズが合わないと互いに苦しい思いをするだけですよ。
+	PRINTL [0] ちょっと自信が無いからやめとく
+	PRINTL [1] 私は自分が苦しい思いをしてでも衝動に歪む少女の顔が見たいんです
+	INPUT
+	IF RESULT == 1
+		PRINTW こじらせてますね。
+		PRINTFORMW %CALLNAME:ARG%の男性器が大きくなりました
+		TALENT:ARG:形状 = 6
+	ELSE
+		GOTO LOOP
+	ENDIF
+ELSEIF RESULT == 3
+	PRINTL やっぱり普通が一番ですよね？
+	PRINTL [0] 何か物足りない
+	PRINTL [1] それでいい
+	INPUT
+	IF RESULT == 1
+		PRINTFORMW %CALLNAME:ARG%の男性器は至って普通の形です
+		TALENT:ARG:形状 = 3
+	ELSE
+		GOTO LOOP
+	ENDIF
+ELSEIF RESULT == 2
+	PRINTL そんなのを生やされる身にもなってあげてください。
+	PRINTL [0] 流石にちょっとかわいそう
+	PRINTL [1] それがいい
+	INPUT
+	IF RESULT == 1
+		PRINTW せっかく生やしたのに……。
+		PRINTFORMW %CALLNAME:ARG%の男性器が見るも哀れな姿になりました
+		TALENT:ARG:形状 = 2
+	ELSE
+		GOTO LOOP
+	ENDIF
+ELSEIF RESULT == 1
+	PRINTL そこだけ成長しているのも変な話ですよね。
+	PRINTL [0] アンバランスなのもいいかも
+	PRINTL [1] 丁度いいのが似合ってる
+	INPUT
+	IF RESULT == 1
+		PRINTFORMW %CALLNAME:ARG%の男性器は可愛らしいサイズになりました
+		TALENT:ARG:形状 = 1
+	ELSE
+		GOTO LOOP
+	ENDIF
+ENDIF

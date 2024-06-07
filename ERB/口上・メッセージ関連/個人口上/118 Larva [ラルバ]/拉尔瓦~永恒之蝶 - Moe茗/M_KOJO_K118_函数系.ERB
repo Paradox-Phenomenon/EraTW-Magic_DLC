@@ -116,7 +116,7 @@ CASE 2
 		;玩家
 		SELECTCASE LOCALS:1
 			CASE "老公","亲爱的","宝宝","达令" 
-				IF !TALENT:118:恋人 || !(TALENT:118:恋慕 || TALENT:118:思慕)
+				IF !TALENT:118:7 || !(TALENT:118:3 || TALENT:118:8)
 					PRINTFORMW 「%LOCALS:1%……好奇怪的名字……」
 					PRINTFORMW 「不行不行！换一个！这么叫总觉得会被人误会……」
 					GOTO RE_INPUT
@@ -160,10 +160,10 @@ SELECTCASE LOCAL
 		
 	CASE 3
 	;彩蛋一号
-		IF TALENT:118:恋人 && TALENT:118:恋慕
+		IF TALENT:118:7 && TALENT:118:3
 			PRINTFORMW 「%RESULTS%……诶嘿嘿%UNICODE(0x2764)%，%RESULTS%%UNICODE(0x2764)%～……」
 			PRINTFORMW 「这样叫才对嘛……嘿嘿，%CSTR:118:20%真的能这样叫你嘛！%RESULTS%！」
-		ELSEIF TALENT:118:恋人 && TALENT:118:思慕
+		ELSEIF TALENT:118:7 && TALENT:118:8
 			PRINTFORMW 「%RESULTS%……%RESULTS%%UNICODE(0x2764)%！这样叫可以嘛……」
 			PRINTFORMW 「你要是很喜欢的话，%RESULTS%～……嘿嘿，看起来很喜欢呢！」 		
 		ENDIF
@@ -214,7 +214,7 @@ ENDIF
 
 IF 季节 == 4 
 	IF 动作 == 1 
-		SELECTCASE RAND:2 
+		SELECTCASE RAND:3
 			CASE 0
 				PRINTFORMDL 拉尔瓦用蝴蝶翅膀裹着自己，摇摇晃晃地飘了过来——
 			CASE 1
@@ -223,7 +223,7 @@ IF 季节 == 4
 					PRINTFORMD 踩着雪
 					PRINTFORMDL 小跑过来——
 			CASE 2
-				PRINTFORML 
+				PRINTFORMDL 拉尔瓦吸着鼻涕凑近了你……
 		ENDSELECT
 	ENDIF 
 ELSEIF 季节 == 1 || 季节 == 3 || 季节 == 4
@@ -400,11 +400,11 @@ SELECTCASE 身体部位
 		精液量 = EX:角色登録番号:15
 	CASE 3
 		;------ ALTER 精液填充加算
-		精液量 = EX:角色登録番号:14 + EX:角色登録番号:15 + (EX:角色登録番号:子宮内精液)
+		精液量 = EX:角色登録番号:14 + EX:角色登録番号:15 + (EX:角色登録番号:18)
 		;------ END
 		;精液量 = EX:角色登録番号:14 + EX:角色登録番号:15
 	CASE 4
-		精液量 = EX:角色登録番号:子宮内精液
+		精液量 = EX:角色登録番号:18
 ENDSELECT
 
 ;該当部位の容量を取得
@@ -545,8 +545,8 @@ ENDIF
 			A += ABL:9
 		ENDIF
 		;ABL:従順
-		IF ABL:従順
-			A += ABL:従順 * 4
+		IF ABL:10
+			A += ABL:10 * 4
 		ENDIF
 		;ABL:15
 		IF ABL:15
@@ -697,7 +697,7 @@ ENDIF
 			A += ABL:PLAYER:16 * 2
 		ENDIF
 		;魅惑
-		IF TALENT:PLAYER:魅惑
+		IF TALENT:PLAYER:93
 			A += 6
 		ENDIF
 		;謎之魅力
@@ -747,19 +747,19 @@ ENDIF
 			A += MARK:快楽刻印 * 3
 		ENDIF
 		;PALAM:潤滑（の不足）
-		IF PALAM:潤滑 < PALAMLV:3
+		IF PALAM:9 < PALAMLV:3
 			A -= 5
 		ENDIF
 		;PALAM:欲情
-		IF GETPALAMLV(PALAM:欲情,5)
-			A += GETPALAMLV(PALAM:欲情,5) * 3
+		IF GETPALAMLV(PALAM:11,5)
+			A += GETPALAMLV(PALAM:11,5) * 3
 		ENDIF
 		;害羞
 		IF TALENT:羞恥心 > 0
 			A -= 2
 		ENDIF
 		;否定快感
-		IF TALENT:快感応答 < 0 && !TALENT:恋慕
+		IF TALENT:快感応答 < 0 && !TALENT:3
 			A -= 5
 		ENDIF
 		;討厭男人（恋慕、親愛で無効）
@@ -767,18 +767,18 @@ ENDIF
 			A -= 12
 		ENDIF
 		;恋慕
-		IF TALENT:恋慕 && ASSIPLAY == 0
+		IF TALENT:3 && ASSIPLAY == 0
 			A += 15
 			S = 15
 		ENDIF
 		;親愛
-		IF TALENT:恋慕 > 1 && ASSIPLAY == 0
+		IF TALENT:3 > 1 && ASSIPLAY == 0
 			A += 5
 			S = 5
 		ENDIF
 		;処女
 		LOCAL = MAX(10,40 - EXP:Ｖ経験)
-		IF TALENT:処女
+		IF TALENT:0
 			A -= LOCAL
 		;V経験
 		ELSEIF EXP:Ｖ経験 < EXPLV:2
@@ -834,7 +834,7 @@ ENDIF
 ;==================================================
 @MOE_LARVA_GET_OTHERS_EX_CHARANUM(ARG=0)
 #FUNCTION 
-#DIM TOTAL_EX	;总绝顶数
+#DIM TOTAL_EX , 1000	;总绝顶数
 #DIM CHARA_ID	;当前选择的角色编号
 #DIM MAX_EX	;值为当前绝顶值最大的角色编号
 ;EX:選択中角色ID:LOCAL
@@ -893,6 +893,21 @@ ELSEIF  変動数 < 0
 ENDIF 
 
 
+;==================================================
+;获得经验函数
+;为了适配不同的版本所制作，用ID直接指代对应经验
+
+;==================================================
+@AddEXP_FOR_LARVA(VAR_ID,C_ID,変動数)
+#DIM VAR_ID
+#DIM C_ID
+#DIM 変動数
+
+SIF 変動数 == 0
+	RETURN
+
+EXP:C_ID:VAR_ID += 変動数
+CALL COLORMESSAGE(@"%EXPNAME:VAR_ID%＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
 
 
 ;==================================================
@@ -975,6 +990,7 @@ SIF FLAG:1031
 SETCOLOR C_MOE_LARVA
 RETURN RESULT
 
+;-------------------------------------------------
 @DOKU_KM_RENEW_TARGET_OF_LARVA(ARG)
 ;优化用函数，用于替代简单粗暴的INFO_RENEW_TARGET来更新target，防止其他人的FLAGSETTING被反复执行
 ;ARG是外部输入的角色编号。只要在自己的flagset里做好反重复执行就好了
@@ -993,6 +1009,7 @@ FLAG:7 = LOCAL
 ;GRAVITY换成SUIKA是一样的。谁能想到我能如此操作呢？
 RETURN 1
 
+;-------------------------------------------------
 @DOKU_KM_RENEW_AND_SET_TARGET_OF_LARVA(ARG)
 IF CFLAG:ARG:300 != CFLAG:0:300
 CALL DOKU_KM_RENEW_TARGET_OF_LARVA(ARG)
@@ -1004,4 +1021,10 @@ CALL KOJO_MESSAGE_SEND("GRAVITY",-1, ARG,-1,-1)
 FLAG:7 = LOCAL
 RETURN 1
 
+;-------------------------------------------------
+@DOKU_COMF_FAVOR_MOOD_FIX_FOR_LARVA
+;指令不失败、但不加target的好感情绪，只用在m_kojo%%message系，用来防止移动/收音机/眺望天空等加好感的bug
+CALL DOKU_FAVOR_TRUST_CALC_FIX(TARGET,-99999,-99999)
+TFLAG:99 = -1
+RETURN 1
 
