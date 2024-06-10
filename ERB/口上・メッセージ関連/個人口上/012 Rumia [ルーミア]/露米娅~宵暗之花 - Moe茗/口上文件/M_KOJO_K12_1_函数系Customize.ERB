@@ -43,9 +43,9 @@ IF ARGS == "SETUP"
 	ENDIF 
 ELSEIF ARGS == "MOVE"
 ENDIF 
-;原版的@キャラデータ12，可以通过改变STR的方式，强行覆写掉
+;原版的@角色データ12，可以通过改变STR的方式，强行覆写掉
 ;具体的写法还没找出来，先放在这里好了
-@M_KOJO_Moe_キャラデータ_K12_EVENTTRAIN
+@M_KOJO_Moe_角色データ_K12_EVENTTRAIN
 
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 ;露米亜的移动轨迹
@@ -1310,6 +1310,7 @@ ENDIF
 ;把露米娅送回自己家的情况，我还没设计好……
 ;我知道可能会出现很大的bug……但是心力有限……
 ;24.04.23 精简掉了原来更换初期位置的用法，现在将直接在EVENTTRAIN中强行变位置，实测可行
+;24.06.06 发现非主地图会把人送进隙间，需要制定非主地图的方案
 ;-------------------------------------------------
 ;过夜 前置函数
 ;在需要触发当日过夜的情况CALL 它就可以了
@@ -1334,7 +1335,11 @@ ENDIF
 			;TARGET決定
 		NEXT
 		IF RESULT 
-			CFLAG:12:1302 = CFLAG:12:311	;事件发生在露米娅家
+			IF MAIN_MAP == 5
+				CFLAG:12:1302 = CFLAG:12:311	;事件发生在露米娅家
+			ELSE
+				CFLAG:12:1302 = 530	;事件发生在露米娅家，完成后会赶到古木的大树
+			ENDIF 
 		ELSE
 			CFLAG:12:1302 = CFLAG:MASTER:311	;事件发生在自己家
 		ENDIF 
@@ -1350,9 +1355,9 @@ ENDIF
 ;-------------------------------------------------
 @RUMIA_OVER_NIGHT_WITH_YOU_IN_EVENTTRAIN
 	IF (CFLAG:12:1302 == CFLAG:12:311)	;事件发生在露米娅家
-		CFLAG:0:300 = CFLAG:12:300	;传送至露米娅家
+		CFLAG:0:300 = CFLAG:12:1302	;传送至露米娅家
 	ELSE ;剧情上是送回露米娅家了
-		CFLAG:12:300 = CFLAG:0:300	;传送至露米娅处
+		CFLAG:12:300 = CFLAG:12:1302	;传送至露米娅处
 	ENDIF 
 	;思慕早上特殊对话
     SIF FIRSTTIME("RUMIA_LIKE_YOU_GOOD_MORNING") && CFLAG:12:1008 && (CFLAG:12:1018 == 3) && TALENT:12:8	
