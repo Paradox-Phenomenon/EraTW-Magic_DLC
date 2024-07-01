@@ -7,6 +7,8 @@
 #DIM 土地の恵み
 #DIM CHARA
 #DIM 採集位置
+;lockpick and treasure system
+#DIM DYNAMIC TREASURE_CHEST_FIND
 ;あからさまな人の敷地での無断採集は放棄、弾幕勝負で勝ってれば腕づくで
 IF FLAG:催眠強度 <= 50
 	SELECTCASE CFLAG:MASTER:現在位置
@@ -75,47 +77,55 @@ REND
 ;PRINTFORML 採集位置{採集位置}
 ;PRINTFORML 採集パワー{採集パワー}
 
-$TREASURSARCH
+IF LOCKPICK_SYSTEM == 1 && !RAND:10
+	TREASURE_CHEST_FIND = 1
+	CALL TREASURE_CHEST
+	SIF RESULT == 1
+		TFLAG:SELECTCOM的分岐 = 999999
+ELSE
+	$TREASURSARCH
+	CALL Gathering_Drawing(採集位置, 採集パワー, 土地の恵み)
 
-CALL Gathering_Drawing(採集位置, 採集パワー, 土地の恵み)
-
-採集物 = RESULT:0
-TFLAG:194 = RESULT:1
-VARSET RESULT
-;試行回数を１回増やす
-LOCAL:4 ++
-;採集物が気に入らない場合は引き直し
-IF 採集物 != 0
-	IF !FLAG:採集再抽選
-		CLEARLINE 3
-	ELSE
-		SETCOLOR 0x00FF00
-		PRINTFORM 发现了%ITEMNAME:(採集物)%
-		RESETCOLOR
-		PRINTFORML (所持数：{ITEM:(採集物)})。要採集吗？
-		CALL ASK_YN("採集","再次探索")
-		IF !RESULT
-			CLEARLINE 4
+	採集物 = RESULT:0
+	TFLAG:194 = RESULT:1
+	VARSET RESULT
+	;試行回数を１回増やす
+	LOCAL:4 ++
+	;採集物が気に入らない場合は引き直し
+	IF 採集物 != 0
+		IF !FLAG:採集再抽選
+			CLEARLINE 3
 		ELSE
-			CLEARLINE 4
-			採集物 = 0
-			TFLAG:194 = 0
-			REPEAT 5
-				REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA%一起 #  \@採集中.%"." * COUNT%
-				TWAIT 150, 1
-			REND
+			SETCOLOR 0x00FF00
+			PRINTFORM 发现了%ITEMNAME:(採集物)%
+			RESETCOLOR
+			PRINTFORML (所持数：{ITEM:(採集物)})。要採集吗？
+			CALL ASK_YN("採集","再次探索")
+			IF !RESULT
+				CLEARLINE 4
+			ELSE
+				CLEARLINE 4
+				採集物 = 0
+				TFLAG:194 = 0
+				REPEAT 5
+					REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA%一起 #  \@採集中.%"." * COUNT%
+					TWAIT 150, 1
+				REND
+			ENDIF
 		ENDIF
 	ENDIF
-ENDIF
 
-;試行回数３回以下で採集物が確保されていない場合はループ
-SIF LOCAL:4 <= 3 && 採集物 == 0
-	GOTO TREASURSARCH
+	;試行回数３回以下で採集物が確保されていない場合はループ
+	SIF LOCAL:4 <= 3 && 採集物 == 0
+		GOTO TREASURSARCH
 
-;道具入手処理 99個以上にならないようにする
-IF 採集物 != 0
-	LOCALS = %ITEMNAME:採集物%
-	CALL GET_ITEM(LOCALS, TFLAG:194 , 2)
+	;道具入手処理 99個以上にならないようにする
+	IF 採集物 != 0
+		LOCALS = %ITEMNAME:採集物%
+		CALL GET_ITEM(LOCALS, TFLAG:194 , 2)
+	ENDIF
+	;フラグ引き渡し
+	TFLAG:SELECTCOM的分岐 = 採集物
 ENDIF
 
 ;基本の経験
@@ -154,7 +164,11 @@ IF FLAG:70
 	ENDIF
 ELSE
 	;時間経過
-	TIME += 60
+	IF !TREASURE_CHEST_FIND
+		TIME += 60
+	ELSE
+		TIME += 20
+	ENDIF
 	;虹龍洞は空気が单薄的（無い）ので体力を余計に消耗する　ITEM:空色の勾玉の実装が待たれる
 	IF 採集位置 == 68
 		DOWNBASE:MASTER:体力 = 320 - (ABL:MASTER:戦闘能力 * 10)
@@ -268,9 +282,6 @@ IF CHARA > 0
 			SOURCE:CHARA:達成 = 110
 	ENDSELECT
 ENDIF
-
-;フラグ引き渡し
-TFLAG:SELECTCOM的分岐 = 採集物
 
 RETURN 1
 

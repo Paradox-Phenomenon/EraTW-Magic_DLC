@@ -39,7 +39,14 @@ NEXT
 ;全角色決定後、連動角色を設定する
 FOR LOCAL, 1, CHARANUM
 	VARSET RESULT
-	CALLFORM CHARAMOVE_DATA_{LOCAL}(1)
+	;addition custom code, for custom charadata movement
+	CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 1)
+	IF RESULT == -1 ;do nothing
+		VARSET RESULT
+	ELSEIF RESULT || RESULT:1 ;use these values
+	ELSE
+	CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
+	ENDIF
 	;依存連動
 	IF RESULT
 		CFLAG:LOCAL:遭遇位置 = CFLAG:RESULT:遭遇位置
@@ -55,7 +62,14 @@ NEXT
 		IF CFLAG:LOCAL:遭遇位置
 			PRINTFORM %CALLNAME:LOCAL, 18, LEFT%%NAME_FROM_PLACE(CFLAG:LOCAL:遭遇位置)%
 			VARSET RESULT
-			CALLFORM CHARAMOVE_DATA_{LOCAL}(1)
+			;addition custom code, for custom charadata movement
+			CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 1)
+			IF RESULT == -1 ;do nothing
+				VARSET RESULT
+			ELSEIF RESULT || RESULT:1 ;use these values
+			ELSE
+			CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
+			ENDIF
 			IF RESULT
 				PRINTFORM （依存連動）
 			ELSEIF RESULT:1
@@ -115,7 +129,13 @@ WHILE 1
 	ENDIF
 	;出現場所かチェック
 	RESULT = 0
-	CALLFORM CHARAMOVE_DATA_{CHARA}(7, P_ID)
+	CALL KOJO_CHECK(CHARA, "CHARADATA", "MOVE", 7, P_ID)
+	IF RESULT
+		RESULT = RESULT:1
+	ELSE
+	;addition custom code, duplicated characters
+	CALLFORM CHARAMOVE_DATA_{NO:CHARA}(7, P_ID)
+	ENDIF 
 	SIF !RESULT
 		CONTINUE
 	CFLAG:CHARA:遭遇位置 = P_ID
@@ -218,7 +238,14 @@ FOR LPCOUNT, 1, EX_CHARANUM
 		ELSE
 			FOR LPCOUNT2, 1, 10
 				P_ID = MAPID * 100 + LPCOUNT2 * 10
-				CALLFORM CHARAMOVE_DATA_{LOCAL}(7, P_ID)
+				;addition custom code, for custom charadata movement
+				RESULT:1 = 0
+				CALL KOJO_CHECK(LOCAL , "CHARADATA", "MOVE", 7 , P_ID)
+				IF RESULT
+					RESULT = RESULT:1
+				ELSE
+				CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(7, P_ID)
+				ENDIF 
 				IF RESULT
 					PRINT ○
 					BREAK

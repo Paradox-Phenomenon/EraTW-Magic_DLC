@@ -2,7 +2,7 @@
 ;不確定tw能不能支持，如果能就好了，不能隨時存檔還是挺麻煩的，能用把這句話刪了
 ;我稍微优化了下逻辑,删掉了我感觉冗余的东西,同时加上了默认存档信息
 ;见你漏写了很多PRINTFORM,不想查了,全给你换成FORM了
-@隨時操作存檔(操作模式)
+@Real_Time_Save(操作模式 = 1001, IS_REAL_TIME_SAVE = 0)
 #DIM 最大存檔數量
 #DIM 存檔編號
 #DIM 操作模式               ;1001為存檔，1002為讀檔，1003為刪檔，默認模式為存檔
@@ -11,14 +11,16 @@
 #DIM 行數
 #DIM 選擇的存檔位
 #DIM 彩蛋計數器              ;圖一樂	原理精精液液一下午就是为了写这个啊
+#DIM PREV_REDRAW
+#DIM IS_REAL_TIME_SAVE
 
 ;魔改添加非就寝时段存档执行开关
-SIF Real_Time_Save == 0
-	RETURN
-
-SAVENOS 最大存檔數量
-最大頁數 = 最大存檔數量 / 20
-SIF 最大存檔數量 % 20
+PREV_REDRAW = CURRENTREDRAW()
+REDRAW 0
+;SAVENOS 最大存檔數量
+最大存檔數量 = 1000
+最大頁數 = 最大存檔數量 / 40
+SIF 最大存檔數量 % 40
     最大頁數 ++
 行數 = LINECOUNT
 彩蛋計數器 = 0
@@ -58,40 +60,102 @@ IF 操作模式 == 1003
 ELSE
 	PRINTBUTTON "[刪檔]", 1003
 ENDIF
-PRINTFORML
-SETCOLOR C_RED
-PRINTFORML 溫馨提示：非就寢時段存檔目前處於測試階段，且非就寢時段存檔的讀取會有較長的讀取時間，若有任何問題請反饋
-RESETCOLOR
+IF Real_Time_Save == 1
+    PRINTFORML
+    SETCOLOR C_RED
+    PRINTFORML 溫馨提示：非就寢時段存檔目前處於測試階段，且非就寢時段存檔的讀取會有較長的讀取時間，若有任何問題請反饋
+    RESETCOLOR
+ENDIF
 CUSTOMDRAWLINE ━
-FOR 存檔編號, 20 * (頁碼 - 1), MIN(20 * 頁碼, 最大存檔數量)
+FOR 存檔編號, 40 * (頁碼 - 1), MIN(40 * 頁碼, 最大存檔數量)
     VARSET RESULT:0
     RESULTS:0 = 
 	CALL saveColor(存檔編號)
-	PRINTFORML [{存檔編號, 2}] - %RESULTS:0%
+    SIF STRFIND(RESULTS:0, "自动存档") != -1
+        SETCOLOR C_GREEN
+    SIF NEW_SAVE_MARK:存檔編號 == 1
+        FONTSTYLE 1
+	PRINTFORML \@ NEW_SAVE_MARK:存檔編號 == 1 ? %"[NEW!]", 6%# %" " * 6, 6%\@[{存檔編號, 4}] - %RESULTS:0%
+    FONTSTYLE 0
 	RESETCOLOR
 NEXT
 ;自動存檔編號為99
 VARSET RESULT:0
 RESULTS:0 = 
-CALL saveColor(99)
-PRINTFORML [{99, 2}] - %RESULTS:0%
+CALL saveColor(1000)
+SIF STRFIND(RESULTS:0, "自动存档") != -1
+    SETCOLOR C_GREEN
+SIF NEW_SAVE_MARK:1000 == 1
+    FONTSTYLE 1
+PRINTFORML \@ NEW_SAVE_MARK:1000 == 1 ? %"[NEW!]", 6%# %" " * 6, 6%\@[{1000, 4}] - %RESULTS:0%
+FONTSTYLE 0
 RESETCOLOR
-SIF 頁碼 > 1
-    PRINTFORM 上一頁[998, 3]
-SIF 頁碼 < 4 && 20 * 頁碼 < 最大存檔數量
-    PRINTFORM 下一頁[999, 3]
-PRINTFORML
-PRINTFORML 退出[1000]
+IF 頁碼 == 1
+    {
+    HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜＜　］　　</nonbutton>
+    <nonbutton title = '上十页'>　　［　＜＜　］　　</nonbutton>
+    <nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
+    <button title = '下一页' value = '9997'>　　［　＞　］　　</button>
+    <button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
+    <button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
+    }
+ELSEIF 頁碼 == 最大頁數
+    {
+    HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
+    <button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
+    <button title = '上一页' value = '9996'>　　［　＜　］　　</button>
+    <nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
+    <nonbutton title = '下十页'>　　［　＞＞　］　　</nonbutton>
+    <nonbutton title = '跳转至尾页'>　　［　＞＞＞　］　　</nonbutton>"
+    }
+ELSEIF INRANGE(頁碼, 11, 最大頁數 - 11)
+    {
+    HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
+    <button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
+    <button title = '上一页' value = '9996'>　　［　＜　］　　</button>
+    <button title = '下一页' value = '9997'>　　［　＞　］　　</button>
+    <button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
+    <button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
+    }
+ELSEIF INRANGE(頁碼, 1, 10)
+    {
+    HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
+    <nonbutton title = '上十页'>　　［　＜＜　］　　</nonbutton>
+    <button title = '上一页' value = '9996'>　　［　＜　］　　</button>
+    <button title = '下一页' value = '9997'>　　［　＞　］　　</button>
+    <button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
+    <button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
+    }
+ELSEIF INRANGE(頁碼, 最大頁數 - 11, 最大頁數)
+    {
+    HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
+    <button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
+    <button title = '上一页' value = '9996'>　　［　＜　］　　</button>
+    <button title = '下一页' value = '9997'>　　［　＞　］　　</button>
+    <nonbutton title = '下十页'>　　［　＞＞　］　　</nonbutton>
+    <button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
+    }
+ENDIF
+HTML_PRINT @"<button value = '10000' title = '退出'>　　［ＥＸＩＴ］　　</button>"
 CUSTOMDRAWLINE ━
 INPUT
 SELECTCASE RESULT
-    CASE 998
+    CASE 9994
+        頁碼 = 1
+    CASE 9995
+        頁碼 -= 10
+    CASE 9996
         頁碼 --
-    CASE 999
+    CASE 9997
         頁碼 ++
-    CASE 1000
+    CASE 9998
+        頁碼 += 10
+    CASE 9999
+        頁碼 = 最大頁數
+    CASE 10000
         CLEARLINE LINECOUNT - 行數
-        RETURN 0
+        REDRAW PREV_REDRAW
+        RETURN 1
     CASE 1001
         SIF 操作模式 != 1001
             操作模式 = 1001
@@ -102,7 +166,7 @@ SELECTCASE RESULT
         SIF 操作模式 != 1003
             操作模式 = 1003
     CASEELSE
-        IF INRANGE(RESULT, 0, 最大存檔數量) || RESULT == 99
+        IF INRANGE(RESULT, 0, 最大存檔數量)
             選擇的存檔位 = RESULT
             VARSET RESULT:0
             RESULTS:0 = 
@@ -120,7 +184,7 @@ SELECTCASE RESULT
                         IF !RESULT
 							;两个代码都一样,应该考虑做成函数,减少篇幅,方便维护
 							;存档
-							CALL saveManageSaveGame(選擇的存檔位)
+							CALL saveManageSaveGame(選擇的存檔位, IS_REAL_TIME_SAVE)
                         ELSE
                             PRINTFORMW 未替換存檔
                         ENDIF
@@ -161,7 +225,7 @@ SELECTCASE RESULT
                         CALL ASK_YN
                         IF !RESULT
 							;存档
-							CALL saveManageSaveGame(選擇的存檔位)
+							CALL saveManageSaveGame(選擇的存檔位, IS_REAL_TIME_SAVE)
                         ELSE
                             PRINTFORMW 未存儲存檔
                         ENDIF
@@ -340,20 +404,33 @@ GOTO 開始位置
     ENDSELECT
 
 ;存档
-@saveManageSaveGame(選擇的存檔位)
+@saveManageSaveGame(選擇的存檔位, MODE = 0)
 	#DIM 選擇的存檔位
 	#DIMS 存檔備注信息
+    #DIM MODE
 	GETTIME
 	存檔備注信息 '= @"%RESULTS% "
-	PRINTFORML 需要添加備注信息嗎？
-	CALL ASK_YN
-	IF !RESULT
-		存檔備注信息 += @"{DAY:0, 3, RIGHT}日"  
-		INPUTS
-		存檔備注信息 += RESULTS
-	ELSE
-		存檔備注信息 += createSaveInfo(1)
-	ENDIF
-	SaveDataInTrain = 1
-	SAVEDATA 選擇的存檔位, 存檔備注信息
-	PRINTFORMW 已存檔{選擇的存檔位}，存檔備注信息：%存檔備注信息%
+    IF MODE == 2
+        存檔備注信息 += createSaveInfo(MODE)
+        SAVEDATA 選擇的存檔位, 存檔備注信息
+    ELSE
+        PRINTFORML 需要添加備注信息嗎？
+        CALL ASK_YN
+        IF !RESULT
+            存檔備注信息 += @"{DAY:0, 3, RIGHT}日"  
+            INPUTS
+            存檔備注信息 += RESULTS
+            SIF MODE == 1
+                存檔備注信息 += " ⭐即时存档⭐ "
+        ELSE
+            存檔備注信息 += createSaveInfo(MODE)
+        ENDIF
+        SIF MODE == 1
+            SaveDataInTrain = 1
+        SAVEDATA 選擇的存檔位, 存檔備注信息
+        PRINTFORMW 已存檔{選擇的存檔位}，存檔備注信息：%存檔備注信息%
+    ENDIF
+    IF STRFIND(存檔備注信息, "⭐即时存档⭐") == -1
+        NEW_SAVE_MARK:選擇的存檔位 = 1
+        SAVEGLOBAL
+    ENDIF

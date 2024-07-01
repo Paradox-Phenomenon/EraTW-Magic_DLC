@@ -64,6 +64,37 @@ CASE 4
 	SIF SELECT_MENU - 400 != DISH_ASSI
 		SELECT_MENU = 0
 ENDSELECT
+;材料修整PLUS
+IF SELECT_MENU > 0 && STRLENS(DISH_TYPE) > 0
+	CALL DISHDATA(SELECT_MENU, DISH_TYPE, 練習モード)
+	;表示外なら選択リセット
+	IF !RESULT
+		SELECT_MENU = 0
+		SELECT_ING = -1
+	;作れないなら材料だけリセットして表示する
+	ELSEIF RESULT < 10
+		SELECT_ING = -1
+	;作れるなら材料を設定
+	ELSEIF RESULT == 10
+		RESULT = 0
+		;選択中の材料があったら選択を保持する
+		FOR LOCAL, 1, 11
+			IF DISH_ING:LOCAL == SELECT_ING && SELECT_ING >= 0
+				RESULT = 1
+				BREAK
+			ENDIF
+		NEXT
+		;選択中の材料がなければ材料を再設定
+		IF !RESULT
+			FOR LOCAL, 1, 11
+				IF ITEM:(DISH_ING:LOCAL)
+					SELECT_ING = DISH_ING:LOCAL
+					BREAK
+				ENDIF
+			NEXT
+		ENDIF
+	ENDIF
+ENDIF
 
 ;メニュー表示
 DRAWLINEFORM ＝

@@ -97,31 +97,31 @@ RETURNF RGBCOLOR( TIMESF(GETRED(LOCAL),ARG), TIMESF(GETGREEN(LOCAL),ARG), TIMESF
 ;グラデーション機能を用意することもできそうですが、背景色もあるし、現状必要ないと思ってやってません。
 ;この関数は口上・開発chのCrow君から輸入して改変したものです。さんくす
 ;-------------------------------------------------
-;本体にあるからコメントアウト
-;@PRINT_COLORBAR(ARG, ARG:1, ARG:2, ARGS = "*", ARGS:1 = ".", ARG:3 = -1, ARG:4 = -1)
-;#LOCALSIZE 5
-;VARSET LOCAL
-;ARG:3 = ARG:3 < 0 ? GETCOLOR() # ARG:3
-;ARG:4 = ARG:4 < 0 ? GETCOLOR() # ARG:4
-;LOCAL:1 = ARG * ARG:2 / ARG:1
-;LOCAL:2 = GETCOLOR()
-;FOR LOCAL, 1, ARG:2 + 1
-;	IF LOCAL:1 >= LOCAL
-;		IF !LOCAL:3
-;			SETCOLOR ARG:3
-;			LOCAL:3 = 1
-;		ENDIF
-;		PRINTFORM %ARGS%
-;	ELSE
-;		IF !LOCAL:4
-;			SETCOLOR ARG:4
-;			LOCAL:4 = 1
-;		ENDIF
-;		PRINTFORM %ARGS:1%
-;	ENDIF
-;NEXT
-;SETCOLOR LOCAL:2
-
+[SKIPSTART]
+@PRINT_COLORBAR(ARG, ARG:1, ARG:2, ARGS = "*", ARGS:1 = ".", ARG:3 = -1, ARG:4 = -1)
+#LOCALSIZE 5
+VARSET LOCAL
+ARG:3 = ARG:3 < 0 ? GETCOLOR() # ARG:3
+ARG:4 = ARG:4 < 0 ? GETCOLOR() # ARG:4
+LOCAL:1 = ARG * ARG:2 / ARG:1
+LOCAL:2 = GETCOLOR()
+FOR LOCAL, 1, ARG:2 + 1
+	IF LOCAL:1 >= LOCAL
+		IF !LOCAL:3
+			SETCOLOR ARG:3
+			LOCAL:3 = 1
+		ENDIF
+		PRINTFORM %ARGS%
+	ELSE
+		IF !LOCAL:4
+			SETCOLOR ARG:4
+			LOCAL:4 = 1
+		ENDIF
+		PRINTFORM %ARGS:1%
+	ENDIF
+NEXT
+SETCOLOR LOCAL:2
+[SKIPEND]
 
 ;-------------------------------------------------
 ;関数名:HTML_COLORBAR
@@ -500,17 +500,17 @@ RETURN RESULT
 ;
 ;中抜きのハートマークを表示します
 ;-------------------------------------------------
-;すでに本体同梱してあるのでコメントアウト
 ;@HEART(ARG = 1, ARGS = "ＭＳ Ｐゴシック")
 ;#LOCALSIZE 1
 ;#LOCALSSIZE 1
 ;LOCAL = RESULT
 ;LOCALS = %GETFONT()%
-;
+;ARGS '= CHKFONTNAME(ARGS)
+
 ;SETFONT CHKFONT(ARGS) ? ARGS # LOCALS
-;
+
 ;CALL SYMBOLPRINT(ARG, UNICODE(0x2661))
-;
+
 ;SETFONT LOCALS
 ;RETURN LOCAL
 
@@ -1104,7 +1104,11 @@ CLEARLINE 150
 REDRAW 3
 RETURN RESULT
 
-
+@RGBTOHEX, ARGS
+#FUNCTION
+SPLIT ARGS, "//", LOCALS
+LOCAL = (TOINT(LOCALS:0) << 16) + (TOINT(LOCALS:1) << 8) + TOINT(LOCALS:2)
+RETURNF LOCAL
 ;-------------------------------------------------
 ;全画面カットイン関数@FULLCUTIN
 ;	引数0：左端からのインデント
@@ -1114,8 +1118,15 @@ RETURN RESULT
 ;空行で画面を掃除して、全画面分のカットインを表示します
 ;行揃えやフォントなどのオプションはまだほとんど設定していません。アイデアだけとりあえず。
 ;-------------------------------------------------
-@FULLCUTIN(ARG, ARG:1, ARGS = "VOID", ARGS:1 = "VOID", ARGS:2 = "VOID", ARGS:3 = "VOID", ARGS:4 = "VOID", ARGS:5 = "VOID", ARGS:6 = "VOID", ARGS:7 = "VOID", ARGS:8 = "VOID", ARGS:9 = "VOID", ARGS:10 = "VOID", ARGS:11 = "VOID", ARGS:12 = "VOID", ARGS:13 = "VOID", ARGS:14 = "VOID", ARGS:15 = "VOID", ARGS:16 = "VOID", ARGS:17 = "VOID", ARGS:18 = "VOID", ARGS:19 = "VOID", ARGS:20 = "VOID", ARGS:21 = "VOID", ARGS:22 = "VOID", ARGS:23 = "VOID", ARGS:24 = "VOID", ARGS:25 = "VOID", ARGS:26 = "VOID", ARGS:27 = "VOID", ARGS:28 = "VOID", ARGS:29 = "VOID", ARG:2 = 8)
+@FULLCUTIN(ARG, ARG:1, ARGS = "VOID", ARGS:1 = "VOID", ARGS:2 = "VOID", ARGS:3 = "VOID", ARGS:4 = "VOID", ARGS:5 = "VOID", ARGS:6 = "VOID", ARGS:7 = "VOID", ARGS:8 = "VOID", ARGS:9 = "VOID", ARGS:10 = "VOID", ARGS:11 = "VOID", ARGS:12 = "VOID", ARGS:13 = "VOID", ARGS:14 = "VOID", ARGS:15 = "VOID", ARGS:16 = "VOID", ARGS:17 = "VOID", ARGS:18 = "VOID", ARGS:19 = "VOID", ARGS:20 = "VOID", ARGS:21 = "VOID", ARGS:22 = "VOID", ARGS:23 = "VOID", ARGS:24 = "VOID", ARGS:25 = "VOID", ARGS:26 = "VOID", ARGS:27 = "VOID", ARGS:28 = "VOID", ARGS:29 = "VOID", ARG:2 = 8, strSetting)
 #LOCALSIZE 1
+#DIMS DYNAMIC strSetting
+
+IF ARG < 0
+	ARG = 0
+	ALIGNMENT CENTER
+ENDIF
+
 ;表示オン
 IF ANIME_CONFIG("FULLCUTIN")
 	FOR LOCAL, 0, 30
@@ -1135,7 +1146,15 @@ IF ANIME_CONFIG("FULLCUTIN")
 	;FULLCUTINがオンならフェードは強制
 	CALLF ANIME_CONFIG("ONCE")
 	CALL FADEIN(ARG:2, ARGS, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27, ARGS:28, ARGS:29)
-	TWAIT 2000, 0
+	IF STRLENS(strSetting)
+		SELECTCASE strSetting
+			CASE "Time"
+				CALL ANIMATION_BGCOLOR_TRANSITION(GETBGCOLOR(), (TIME ? RGBTOHEX("0//0//30") # RGBTOHEX("20//10//0")), 20, 200, -30 )
+				TWAIT 1000, 0
+		ENDSELECT
+	ELSE
+		TWAIT 2000, 0
+	ENDIF
 	CALLF ANIME_CONFIG("ONCE")
 	CALL FADEOUT(ARG:2, ARGS, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27, ARGS:28, ARGS:29, 1)
 	TWAIT 500, 0
@@ -1156,6 +1175,7 @@ ELSE
 	PRINTL 
 	PRINTL 
 ENDIF
+ALIGNMENT LEFT
 RETURN RESULT
 
 
@@ -1167,3 +1187,56 @@ RETURN RESULT
 #LOCALSIZE 1
 CALL FULLCUTIN(ARG, ARG:1, ARGS, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27, ARGS:28, ARGS:29, ARG:2)
 RETURN RESULT
+;-------------------------------------------------
+;same as FULLCUTIN2 but with color
+;specify at the source function
+;-------------------------------------------------
+@FULLCUTINCOLOR(ARG, ARG:1, strSetting, ARGS = "VOID", ARGS:2 = "VOID", ARGS:3 = "VOID", ARGS:4 = "VOID", ARGS:5 = "VOID", ARGS:6 = "VOID", ARGS:7 = "VOID", ARGS:8 = "VOID", ARGS:9 = "VOID", ARGS:10 = "VOID", ARGS:11 = "VOID", ARGS:12 = "VOID", ARGS:13 = "VOID", ARGS:14 = "VOID", ARGS:15 = "VOID", ARGS:16 = "VOID", ARGS:17 = "VOID", ARGS:18 = "VOID", ARGS:19 = "VOID", ARGS:20 = "VOID", ARGS:21 = "VOID", ARGS:22 = "VOID", ARGS:23 = "VOID", ARGS:24 = "VOID", ARGS:25 = "VOID", ARGS:26 = "VOID", ARGS:27 = "VOID", ARGS:28 = "VOID", ARGS:29 = "VOID", ARG:2 = 4)
+#LOCALSIZE 1
+#DIMS DYNAMIC strSetting
+CALL FULLCUTIN(ARG, ARG:1, ARGS, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27, ARGS:28, ARGS:29, ARG:2, strSetting)
+RETURN RESULT
+;--------------------------------------------------
+; 背景色の変遷
+;--------------------------------
+;	nFirstBgColor	: 開始背景色
+;	nLastBgColor	: 変遷後背景色
+;	nWaitCount		: 待机回数
+;	nWaitTime		: 待机時間（単位はmsec）
+;	nChangeWaitTime	: 変遷ごとに待机時間が変化させる（変動値を設定。）
+;		※ 待机時間の範囲は 50～1000msec
+;	nExtraFlag		: 特殊なフラグ（ビット管理）
+;						&0x0001	: 改行あり
+;--------------------------------------------------
+@ANIMATION_BGCOLOR_TRANSITION( nFirstBgColor, nLastBgColor, nWaitCount, nWaitTime, nChangeWaitTime, nExtraFlag )
+	#DIM nFirstBgColor
+	#DIM nLastBgColor
+	#DIM nWaitCount
+	#DIM nWaitTime
+	#DIM nChangeWaitTime
+	#DIM nExtraFlag
+
+	#DIM colorFirst_RGB, 3
+	#DIM colorLast_RGB, 3
+	#DIM nLoop
+	
+	SIF GETBIT(GLOBAL, 52) ;cancel if bg color change is disabled
+		RETURN
+
+	colorFirst_RGB:0 = nFirstBgColor / 256 / 256
+	colorFirst_RGB:1 = nFirstBgColor / 256 % 256
+	colorFirst_RGB:2 = nFirstBgColor % 256
+	colorLast_RGB:0 = nLastBgColor / 256 / 256
+	colorLast_RGB:1 = nLastBgColor / 256 % 256
+	colorLast_RGB:2 = nLastBgColor % 256
+
+	FOR nLoop, 0, nWaitCount
+		LOCAL:1 = LIMIT( colorFirst_RGB:0 + (colorLast_RGB:0 - colorFirst_RGB:0) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		LOCAL:2 = LIMIT( colorFirst_RGB:1 + (colorLast_RGB:1 - colorFirst_RGB:1) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		LOCAL:3 = LIMIT( colorFirst_RGB:2 + (colorLast_RGB:2 - colorFirst_RGB:2) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		SETBGCOLOR ((LOCAL:1 * 256 * 256) + (LOCAL:2 * 256) + (LOCAL:3))
+		LOCAL = LIMIT( nWaitTime + (nLoop * nChangeWaitTime), 50, 1000 )
+		TWAIT LOCAL, (nLoop == 0)
+		SIF nExtraFlag & 0x0001
+			PRINTL
+	NEXT

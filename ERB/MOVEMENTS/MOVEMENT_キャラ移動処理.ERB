@@ -42,7 +42,15 @@ ENDIF
 N_ID = CFLAG:ARG:現在位置
 
 ;まずその場に留まり率を設定
-CALLFORM CHARAMOVE_DATA_{ARG}(4, N_ID)
+;addition custom code, for custom charadata movement
+RESULT:1 = 0
+CALL KOJO_CHECK(ARG, "CHARADATA", "MOVE", 4, N_ID)
+IF RESULT
+	RESULT = RESULT:1
+ELSE
+;addition custom code, duplicated characters
+CALLFORM CHARAMOVE_DATA_{NO:ARG}(4, N_ID)
+ENDIF 
 留まり率 = RESULT
 ;待機場所は固定
 IF N_ID == MAXROOM
@@ -104,7 +112,12 @@ CALL FISHER_YATES_SHAFFLE(MAXROOM - MINROOM())
 WHILE 1
 	;引力点の設定を行う
 	TCVAR:ARG:引力点 = 0
-	CALLFORM CHARAMOVE_DATA_{ARG}(8)
+	;addition custom code, for custom charadata movement
+	CALL KOJO_CHECK(ARG, "CHARADATA", "MOVE", 8)
+	IF !RESULT 
+	;addition custom code, duplicated characters
+	CALLFORM CHARAMOVE_DATA_{NO:ARG}(8)
+	ENDIF
 	CALL KOJO_MESSAGE_SEND("GRAVITY", 1, ARG)
 	;引力点または脱出用のG_POINTがある場合は引力点に向かって移動する,G_POINTは条件無し
 	IF 引力点発動可(ARG) || G_POINT
@@ -297,7 +310,15 @@ SIF CFLAG:MASTER:現在位置 == 移動先 && CAN_MOVE(N_ID, 移動先) == 3
 SIF TALENT:ARG:掃除係 && CFLAG:ARG:神社在住 && BETWEENTIME(720, 1080)
 	移動率 += YOGORE:移動先 / 300
 ;角色ごとの移動率設定
-CALLFORM CHARAMOVE_DATA_{ARG}(4, 移動先)
+;addition custom code, for custom charadata movement
+RESULT:1 = 0
+CALL KOJO_CHECK(ARG, "CHARADATA", "MOVE", 4, 移動先)
+IF RESULT
+	RESULT = RESULT:1
+ELSE
+;addition custom code, duplicated characters
+CALLFORM CHARAMOVE_DATA_{NO:ARG}(4, 移動先)
+ENDIF 
 移動率 = 移動率 + RESULT
 
 ;お風呂に入りたい時は入りに行く
