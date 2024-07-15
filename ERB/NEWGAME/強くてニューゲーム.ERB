@@ -88,7 +88,7 @@ VARSET MOBGIRL_PLACE, 99
 PICKUPCHARA MASTER
 VARSET JUEL
 ;你リセット
-PRINTFORML 要重置%CALLNAME:MASTER%的経験・能力麼？
+PRINTFORML 要重置%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的経験・能力麼？
 CALL COLORMESSAGE(@"在实绩取得的素质是无法取消的所以不推荐",C_YELLOW,1)
 CALL ASK_YN
 IF !RESULT
@@ -224,7 +224,7 @@ BASE:MASTER:体力 = MAXBASE:MASTER:体力
 BASE:MASTER:気力 = MAXBASE:MASTER:気力
 BASE:MASTER:精力 = MAXBASE:MASTER:精力
 IF !FLAG:扮演
-	PRINTFORML 要进行%CALLNAME:MASTER%的自定义吗？
+	PRINTFORML 要进行%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的自定义吗？
 	CALL ASK_YN
 	IF !RESULT
 		CALL CUSTOM_TERMINAL(MASTER)
@@ -235,24 +235,24 @@ ENDIF
 ;BASEの成長値の加算処理
 LOCAL = 0
 IF 前回の体力増加量 > 0 && (MAXBASE:MASTER:体力 != 前回の体力)
-	PRINTFORML "之前的世界"的経験是%CALLNAME:MASTER%的程度
-	PRINTFORML ……%CALLNAME:MASTER%的体力増加了{前回の体力増加量}
+	PRINTFORML "之前的世界"的経験是%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的程度
+	PRINTFORML ……%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的体力増加了{前回の体力増加量}
 	MAXBASE:MASTER:体力 += 前回の体力増加量
 	BASE:MASTER:体力 = MAXBASE:MASTER:体力
 	LOCAL ++
 ENDIF
 IF 前回の気力増加量 > 0 && (MAXBASE:MASTER:気力 != 前回の気力)
 	SIF !LOCAL
-		PRINTFORML "之前的世界"的経験是%CALLNAME:MASTER%的程度
-	PRINTFORML ……%CALLNAME:MASTER%的気力増加了{前回の気力増加量}
+		PRINTFORML "之前的世界"的経験是%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的程度
+	PRINTFORML ……%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的気力増加了{前回の気力増加量}
 	MAXBASE:MASTER:気力 += 前回の気力増加量
 	BASE:MASTER:気力 = MAXBASE:MASTER:気力
 	LOCAL ++
 ENDIF
 IF 前回の精力増加量 > 0 && (MAXBASE:MASTER:精力 != 前回の精力)
 	SIF !LOCAL
-		PRINTFORML "之前的世界"的経験是%CALLNAME:MASTER%的程度
-	PRINTFORML ……%CALLNAME:MASTER%の精力が{前回の精力増加量}増加した
+		PRINTFORML "之前的世界"的経験是%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的程度
+	PRINTFORML ……%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%の精力が{前回の精力増加量}増加した
 	MAXBASE:MASTER:精力 += 前回の精力増加量
 	BASE:MASTER:精力 = MAXBASE:MASTER:精力
 	LOCAL ++
@@ -301,7 +301,7 @@ VARSET 前回の胖次
 ;ARG=角色ナンバー
 ;現在同角色口上は最大で四つまで想定
 ;-----------------------------------------------------------
-@KOJO_MULTIPLE(C_ID)
+@KOJO_MULTIPLE(C_ID, SELECT_SWITCH)
 #DIM C_ID
 #DIM DYNAMIC 口上カウント
 #DIM DYNAMIC 口上数
@@ -310,8 +310,9 @@ VARSET 前回の胖次
 #DIM DYNAMIC kojoIdList, 10
 #DIM DYNAMIC vernier
 #DIM DYNAMIC SUM_FOR_DEBUG
+#DIMS DYNAMIC SELECT_SWITCH
 ;同角色口上複数確認 and record the name of kojo
-FOR 口上カウント,0,5
+FOR 口上カウント,0,10
 	VARSET RESULT
 	VARSET RESULTS
 	vernier = 口上カウント
@@ -323,7 +324,7 @@ FOR 口上カウント,0,5
 	IF RESULT
 		SIF RESULTS:1 == ""
 			RESULTS:1 = 初期
-		kojoNamesList:vernier = %CALLNAME:C_ID%%RESULTS:1%口上
+		kojoNamesList:vernier = %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%%RESULTS:1%口上
 		kojoIdList:vernier = 口上カウント
 		; vernier ++
 		IF !GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
@@ -353,29 +354,32 @@ IF !口上数
 		RETURN 1
 	RETURN 0
 ENDIF
-	;新規別人口上追加
 IF 口上実装数 == 1
-;只存在一个口上时，寻找口上编号
-	FOR 口上カウント,0,5
-		SIF	GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
-			CFLAG:C_ID:口上セレクタ = 口上カウント
-	NEXT
-ELSEIF 口上実装数 > 1
-	PRINTFORML %CALLNAME:C_ID%存在複数个口上
-	PRINTFORML 要変更吗
-	CALL ASK_YN
-	;口上選択
-	IF !RESULT
-		LOCALS:0 = 要使用哪个口上呢
-		CALL CHOICE(LOCALS:0, kojoNamesList:0, kojoNamesList:1, kojoNamesList:2, kojoNamesList:3, kojoNamesList:4)
-		CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
-		RETURN 2
+	;只存在一个口上时，寻找口上编号
+		FOR 口上カウント,0,5
+			SIF	GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
+				CFLAG:C_ID:口上セレクタ = 口上カウント
+		NEXT
+ENDIF
+	;新規別人口上追加
+IF !STRLENS(SELECT_SWITCH)
+	IF 口上実装数 > 1
+		PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%存在複数个口上
+		PRINTFORML 要変更吗
+		CALL ASK_YN
+		;口上選択
+		IF !RESULT
+			LOCALS:0 = 要使用哪个口上呢
+			CALL CHOICE(LOCALS:0, kojoNamesList:0, kojoNamesList:1, kojoNamesList:2, kojoNamesList:3, kojoNamesList:4, kojoNamesList:5, kojoNamesList:6, kojoNamesList:7, kojoNamesList:8, kojoNamesList:9)
+			CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
+			RETURN 2
+		ELSE
+			PRINTFORML 未进行変更
+			RETURN 1
+		ENDIF
 	ELSE
-		PRINTFORML 未进行変更
-		RETURN 1
+		RETURN 2
 	ENDIF
-ELSE
-	RETURN 2
 ENDIF
 ; SIF 口上実装数
 ; 	RETURN 1

@@ -34,12 +34,12 @@ FOR LOCAL, 1, CHARANUM
 	ELSE
 		TRYCALLFORM M_KOJO_K{LOCAL}
 	ENDIF
-	PRINTFORML 正在確認%CALLNAME:LOCAL%%RESULTS:1%的口上是否存在UPDATE
+	PRINTFORML 正在確認%NAME_OUTPUT_TRANSLATION("CALLNAME", LOCAL)%%RESULTS:1%的口上是否存在UPDATE
 	TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{LOCAL}
 	WAIT
 NEXT
 
-@UPDATE_OF_KOJO_MODDING
+@UPDATE_AND_SELECTION_OF_KOJO_MODDING(WORK_MODE)
 #DIM DYNAMIC MAXPAGE_MODE_0
 #DIM DYNAMIC MAXPAGE_MODE_1
 #DIM DYNAMIC MAXPAGE
@@ -54,13 +54,15 @@ NEXT
 #DIMS DYNAMIC HTML
 #DIMS DYNAMIC COLOR
 #DIM DYNAMIC REDRAW_RECORD
-#DIM UPDATE_OF_KOJO_OPERATE_MODE = 1
+#DIM OPERATE_MODE = 1
+#DIMS DYNAMIC WORK_MODE
+#DIM DYNAMIC NUM_OF_KOJO
 CURRENTREDRAW
 REDRAW_RECORD = RESULT
 REDRAW 0
 ;确认角色口上存在情况
 VARSET RESULT
-FOR LOCAL, 1, CHARANUM
+FOR LOCAL, 0, CHARANUM
 	IF CFLAG:LOCAL:口上セレクタ
 		TRYCCALLFORM M_KOJO_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}
 		CATCH
@@ -86,8 +88,8 @@ MAXPAGE_MODE_1 = (NUM_OF_CHARA_WITH_KOJO - 1) / 20 + 1
 VARSET RESULT
 IF FLAG:並び替え
 	CALL CHARASORT_EX
-	LOCAL:1 = 1
-	FOR LOCAL, 1, EX_CHARANUM
+	LOCAL:1 = 0
+	FOR LOCAL, 0, EX_CHARANUM
 		SIF RESULT:LOCAL < 0 
 			CONTINUE
 		LIST_OF_CHARA_ALTERED_BY_TOUHOU:(LOCAL:1) = RESULT:LOCAL
@@ -95,8 +97,8 @@ IF FLAG:並び替え
 	NEXT
 ENDIF
 ;制作过滤无口上角色时的角色列表
-LOCAL:2 = 1
-FOR LOCAL, 1, CHARANUM
+LOCAL:2 = 0
+FOR LOCAL, 0, CHARANUM
 	SIF !MARK_KOJO_AVAILABLE:LOCAL
 		CONTINUE
 	IF FLAG:並び替え
@@ -108,7 +110,7 @@ FOR LOCAL, 1, CHARANUM
 NEXT
 
 IF FLAG:並び替え
-	FOR LOCAL, 1, NUM_OF_CHARA_WITH_KOJO + 1
+	FOR LOCAL, 0, NUM_OF_CHARA_WITH_KOJO
 		IF !LIST_OF_CHARA_WITH_KOJO:LOCAL
 			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJO, -1, 0, LOCAL
 			LOCAL --
@@ -116,21 +118,25 @@ IF FLAG:並び替え
 	NEXT
 ENDIF
 
-
-
 LINE_RECORD = LINECOUNT
 
 WHILE 1
 	DRAWLINE
 	DRAWLINE
-	HTML_PRINT @"<i><b><u>　　　　角色口上ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
-	HTML_PRINT @"<i><font color = '#0x00FF00'>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</font></i>"
-	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
-		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有口上角色'>　　过滤无口上角色功能开启　　</nonbutton></i>"
+	IF WORK_MODE == "SELECTION"
+		RESETCOLOR
+		PRINTFORML %UNICODE(0x3000) * 4%角色口上选择界面%UNICODE(0x3000) * 4%
+		PRINTFORML ＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞
 	ELSE
-		HTML_PRINT @"<i><nonbutton title = '已显示全部角色，包括无口上角色'>　　过滤无口上角色功能关闭　　</nonbutton></i>"
+		HTML_PRINT @"<i><b><u>　　　　角色口上ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
+		HTML_PRINT @"<i><font color = '#0x00FF00'>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</font></i>"
 	ENDIF
-	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+	IF OPERATE_MODE == 1
+		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有口上角色'><font color='#0x90EE90'>　　过滤无口上角色功能开启　　</font></nonbutton></i>"
+	ELSE
+		HTML_PRINT @"<i><nonbutton title = '已显示全部角色，包括无口上角色'><font color='#0x404040'>　　过滤无口上角色功能关闭　　</font></nonbutton></i>"
+	ENDIF
+	IF OPERATE_MODE == 1
 		MAXPAGE = MAXPAGE_MODE_1
 	ELSE
 		MAXPAGE = MAXPAGE_MODE_0
@@ -140,12 +146,13 @@ WHILE 1
 	ELSEIF PAGE < 0 
 		PAGE = 0
 	ENDIF
-	FOR LOCAL, PAGE * 20 + 1, (PAGE + 1) * 20 + 1
+	FOR LOCAL, PAGE * 20, (PAGE + 1) * 20
 		VARSET HTML
 		VARSET RESULT
 		VARSET RESULTS
-		IF UPDATE_OF_KOJO_OPERATE_MODE == 1
-			SIF LOCAL > NUM_OF_CHARA_WITH_KOJO
+		VARSET C_ID
+		IF OPERATE_MODE == 1
+			SIF LOCAL > NUM_OF_CHARA_WITH_KOJO - 1
 				BREAK
 			SIF LIST_OF_CHARA_WITH_KOJO:LOCAL
 				C_ID = LIST_OF_CHARA_WITH_KOJO:LOCAL
@@ -158,56 +165,123 @@ WHILE 1
 				C_ID = LOCAL
 			ENDIF
 		ENDIF
-		IF CFLAG:C_ID:口上セレクタ
+		IF WORK_MODE == "SELECTION"
+			RESETCOLOR
+			PRINTPLAINFORM [{LOCAL, 4, LEFT}] - %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID), 25, LEFT%
+			IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > 0
+				VARSET RESULT
+				VARSET RESULTS
+				IF CFLAG:C_ID:口上セレクタ
+					TRYCALLFORM M_KOJO_K{C_ID}_{CFLAG:C_ID:口上セレクタ}
+				ELSE
+					TRYCALLFORM M_KOJO_K{C_ID}
+				ENDIF
+				SIF !STRLENS(RESULTS:1) && RESULT == 1 && CFLAG:C_ID:口上セレクタ == 0
+					RESULTS:1 = 初期
+				SIF STRLENS(RESULTS:1)
+					PRINTFORM %UNICODE(0x3000) * 4%%RESULTS:1%口上
+			ENDIF
+			PRINTL
+			VARSET NUM_OF_KOJO
+			FOR LOCAL:3, 0, 10
+				VARSET RESULT
+				VARSET RESULTS
+				IF LOCAL:3 > 0
+					TRYCALLFORM M_KOJO_K{C_ID}_{LOCAL:3}
+				ELSE
+					TRYCALLFORM M_KOJO_K{C_ID}
+				ENDIF
+				SIF RESULT == 1
+					NUM_OF_KOJO ++
+				SIF !STRLENS(RESULTS:1) && RESULT == 1 && CFLAG:C_ID:口上セレクタ == 0
+					RESULTS:1 = 初期
+				IF RESULT == 1 && CFLAG:C_ID:口上セレクタ == LOCAL:3
+					SETCOLOR C_GREEN
+					PRINTPLAINFORM %UNICODE(0x3000) * 3%└ %RESULTS:1%口上
+					RESETCOLOR
+					PRINTL
+				ELSEIF RESULT == 1
+					SETCOLOR C_ORANGE
+					PRINTBUTTON @"%UNICODE(0x3000) * 3%└ %RESULTS:1%口上", 2000 + C_ID * 10 + LOCAL:3
+					RESETCOLOR
+					PRINTL
+				ENDIF
+			NEXT
+			SIF NUM_OF_KOJO == 1
+				CLEARLINE 1
+		ELSE
+			VARSET RESULT
+			IF CFLAG:C_ID:口上セレクタ
 				TRYCALLFORM M_KOJO_K{C_ID}_{CFLAG:C_ID:口上セレクタ}
 			ELSE
 				TRYCALLFORM M_KOJO_K{C_ID}
+			ENDIF
+			SIF !STRLENS(RESULTS:1) && RESULT == 1 && CFLAG:C_ID:口上セレクタ == 0
+				RESULTS:1 = 初期
+			RESETCOLOR
+			VARSET COLOR
+			TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
+			COLOR '= "0x" + hex_to_str(GETCOLOR())
+			HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{LOCAL, 4, LEFT}"
+			HTML += @"]  -  %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID), 16, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
+			IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > 0 
+				HTML += @"----------------%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%%RESULTS:1%口上</font></button>"
+			ELSE
+				HTML += @"----------------无口上</font></button>"
+			ENDIF
+			HTML_PRINT HTML
+			RESETCOLOR
 		ENDIF
-		SIF !STRLENS(RESULTS:1)
-			RESULTS:1 = 初期
-		RESETCOLOR
-		VARSET COLOR
-		TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
-		COLOR '= "0x" + hex_to_str(GETCOLOR())
-		HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{LOCAL, 4, LEFT}"
-		HTML += @"]  -  %CALLNAME:C_ID, 16, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
-		IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > 0 
-			HTML += @"----------------%CALLNAME:C_ID%%RESULTS:1%口上</font></button>"
-		ELSE
-			HTML += @"----------------无口上</font></button>"
-		ENDIF
-		HTML_PRINT HTML
-		RESETCOLOR
 	NEXT
-	IF PAGE == 0
-		{
-		HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜　］　　</nonbutton>
-		<nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
-		<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
-		<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
-		}
-	ELSEIF PAGE == MAXPAGE - 1
-		{
-		HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
-		<button value = '1001' title = '上一页'>　　［　＜　］　　</button>	
-		<nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
-		<nonbutton title = '跳转至尾页'>　　［　＞＞　］　　</nonbutton>"
-		}
-	ELSEIF INRANGE(PAGE, 0, MAXPAGE - 2)
-		{
-		HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
-		<button value = '1001' title = '上一页'>　　［　＜　］　　</button>
-		<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
-		<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
-		}
+	IF WORK_MODE == "SELECTION"
+		IF PAGE == 0
+			PRINTPLAINFORM %UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%
+			PRINTPLAINFORM %UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 1002
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 1003
+		ELSEIF PAGE == MAXPAGE - 1
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］", 1000
+			PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 1001
+			PRINTPLAINFORM %UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%
+			PRINTPLAINFORM %UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%
+		ELSEIF INRANGE(PAGE, 0, MAXPAGE - 2)
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%", 1000
+			PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 1001
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 1002
+			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 1003
+		ENDIF
+	ELSE
+		IF PAGE == 0
+			{
+			HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜　］　　</nonbutton>
+			<nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
+			<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
+			<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+			}
+		ELSEIF PAGE == MAXPAGE - 1
+			{
+			HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
+			<button value = '1001' title = '上一页'>　　［　＜　］　　</button>	
+			<nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
+			<nonbutton title = '跳转至尾页'>　　［　＞＞　］　　</nonbutton>"
+			}
+		ELSEIF INRANGE(PAGE, 0, MAXPAGE - 2)
+			{
+			HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
+			<button value = '1001' title = '上一页'>　　［　＜　］　　</button>
+			<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
+			<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+			}
+		ENDIF
 	ENDIF
-	IF UPDATE_OF_KOJO_OPERATE_MODE == 1
+	IF OPERATE_MODE == 1
 		HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有口上角色'>　　［过滤功能：开启］　　</button>"
 	ELSE
 		HTML_PRINT @"<button value = '1004' title = '已显示全部角色，包括无口上角色'>　　［过滤功能：关闭］　　</button>"
 	ENDIF
-	HTML_PRINT @"<button value = '1005' title = '经典模式，一次性全过一遍'>　　［ＵＰＤＡＴＥ全体进行］　　</button>"
-	HTML_PRINT @"<button value = '1100'>　　［退出口上ＵＰＤＡＴＥ］　　</button>"
+	SIF !STRLENS(WORK_MODE)
+		HTML_PRINT @"<button value = '1005' title = '经典模式，一次性全过一遍'>　　［ＵＰＤＡＴＥ全体进行］　　</button>"
+	HTML_PRINT @"<button value = '1100'>　　［退出］　　</button>"
 	DRAWLINE
 	DRAWLINE
 	VARSET RESULT
@@ -223,7 +297,7 @@ WHILE 1
 		CASE 1003
 			PAGE = MAXPAGE - 1
 		CASE 1004
-			UPDATE_OF_KOJO_OPERATE_MODE = !UPDATE_OF_KOJO_OPERATE_MODE
+			OPERATE_MODE = !OPERATE_MODE
 		CASE 1 TO 500
 			VARSET RESULTS
 			TARGET = CHOOSE_COMMAND
@@ -232,7 +306,7 @@ WHILE 1
 			ELSE
 				TRYCALLFORM M_KOJO_K{CHOOSE_COMMAND}
 			ENDIF
-			PRINTFORML 正在確認%CALLNAME:CHOOSE_COMMAND%%RESULTS:1%的口上是否存在UPDATE
+			PRINTFORML 正在確認%NAME_OUTPUT_TRANSLATION("CALLNAME", CHOOSE_COMMAND)%%RESULTS:1%的口上是否存在UPDATE
 			TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{CHOOSE_COMMAND}
 			WAIT
 			PRINTL
@@ -241,6 +315,9 @@ WHILE 1
 		CASE 1100
 			CLEARLINE LINECOUNT - LINE_RECORD
 			BREAK
+		CASE 2000 TO 5000
+			C_ID = (CHOOSE_COMMAND - 2000) / 10
+			CFLAG:C_ID:口上セレクタ = (CHOOSE_COMMAND - 2000) % 10
 	ENDSELECT
 	CLEARLINE LINECOUNT - LINE_RECORD
 	CONTINUE
@@ -261,7 +338,7 @@ WAIT
 #DIM        BODY_PARTS
 #DIMS CONST PARTS_NAME = "阴茎", "阴蒂", "指", "口", "胸", "膣", "肛門", "足"
 #DIMS CONST POSITION_NAME = "正常位", "后背位", "骑乘位" , "对面位", "背面位", "小人飞机杯"
-PRINTFORML %CALLNAME:C_ID%的接触：
+PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的接触：
 FOR BODY_PARTS, 0, 8
 	SIF PARTS_NAME:BODY_PARTS == "阴茎" && !GETBIT(TALENT:C_ID:性別, 1)
 		CONTINUE
@@ -274,7 +351,7 @@ FOR BODY_PARTS, 0, 8
 	PRINTL
 NEXT
 IF CFLAG:C_ID:诶嘿嘿 > 0
-	PRINTFORM %CALLNAME:C_ID%的体位：
+	PRINTFORM %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的体位：
 	IF TEQUIP:C_ID:体位 > 0
 		PRINTFORM %POSITION_NAME:(TEQUIP:C_ID:体位 - 1)%
 	ELSE
@@ -708,3 +785,80 @@ IF CHEST_LOOT:1 > 0
 	CALL GET_ITEM(LOCALS, AMOUNT_OF_CHEST_LOOT:1, 2)
 ENDIF
 RETURN 1
+
+@NAME_OUTPUT_TRANSLATION(ARGS, ARG)
+#FUNCTIONS
+SELECTCASE ARGS
+	CASE "NAME"
+		SELECTCASE ARG
+			CASE MASTER TO [[小兎姫]]
+				RETURNF @"%NAME:ARG%"
+			CASE [[エリス]]
+				RETURNF @"伊莉丝"
+			CASE [[サリエル]]
+				RETURNF @"萨丽艾尔"
+			CASE [[サラ]]
+				RETURNF @"萨拉"
+			CASE [[オレンジ]]
+				RETURNF @"奥莲姬"
+			CASE [[コンガラ]]
+				RETURNF @"矜羯羅"	
+			CASE [[ユウゲンマガン]]
+				RETURNF @"幽玄魔眼"
+			CASE [[キクリ]]
+				RETURNF @"菊理"
+			CASE [[美天]]
+				RETURNF @"孙美天"
+			CASE [[慧ノ子]]
+				RETURNF @"三头·慧之子"
+			CASE [[ちやり]]
+				RETURNF @"天火人·血枪"
+			CASE [[日狭美]]
+				RETURNF @"豫母都·日狭美"
+			CASE [[残無]]
+				RETURNF @"日白·残无"
+			CASE [[瑞霊]]
+				RETURNF @"宫出口·瑞灵"
+			CASE IS <= [[路人子]]
+				RETURNF @"%NAME:ARG%"
+			CASEELSE
+				RETURNF "NULL"
+		ENDSELECT
+	CASE "CALLNAME"
+		SELECTCASE ARG
+			CASE MASTER TO [[小兎姫]]
+				RETURNF @"%CALLNAME:ARG%"
+			CASE [[エリス]]
+				RETURNF @"伊莉丝"
+			CASE [[サリエル]]
+				RETURNF @"萨丽艾尔"
+			CASE [[サラ]]
+				RETURNF @"萨拉"
+			CASE [[オレンジ]]
+				RETURNF @"奥莲姬"
+			CASE [[コンガラ]]
+				RETURNF @"矜羯羅"	
+			CASE [[ユウゲンマガン]]
+				RETURNF @"幽玄魔眼"
+			CASE [[キクリ]]
+				RETURNF @"菊理"
+			CASE [[美天]]
+				RETURNF @"美天"
+			CASE [[慧ノ子]]
+				RETURNF @"慧之子"
+			CASE [[ちやり]]
+				RETURNF @"血枪"
+			CASE [[日狭美]]
+				RETURNF @"日狭美"
+			CASE [[残無]]
+				RETURNF @"残无"
+			CASE [[瑞霊]]
+				RETURNF @"瑞灵"
+			CASE IS <= [[路人子]]
+				RETURNF @"%CALLNAME:ARG%"
+			CASEELSE
+				RETURNF "NULL"
+		ENDSELECT
+	CASEELSE
+		RETURNF "NULL"
+ENDSELECT
