@@ -1,0 +1,933 @@
+;activate the event for morning/night subevents
+;original functions are not implemented in TW
+;conditions and descriptions are ported from the original game era命蓮寺OvDr!!Ver1.4 + modifications to apply exp and sex effects from nasikuzusi.erb (onabare event)
+;seeing morning event will set cMorningGreeting flag which is different from TCVAR:今日会ったか when deciding whether you met the character today or not. cMorningGreeting will merely hide the line about not greeting them early.
+;the reason for that is because many of the greeting events are ties to this flag so they must be seen for proper progression, and we can't let the morning event replace the morning greeting event
+;if there are discrepancies in the dialogue, then the flags can be set manually anyway
+
+;todo - this function can be potentially reused for other characters from that game who have had their dialogues ported, needs further editing for that
+;another point is that looping is inefficient and it'll run into same variants couple times, creating a bit of lag, but it's not super impactful
+@DAYEVENT(ARGS, ARG)
+#DIM DYNAMIC nEventCheck
+#DIM DYNAMIC nExp,58
+#DIM DYNAMIC nSexCount
+#DIM nTarg
+#DIMS DYNAMIC kPrefix
+
+nTarg = TARGET
+TARGET = ARG
+
+;SIF TARGET != 41 ;must be nue
+;	RETURN
+
+SIF Morning_Event_Guaranteed:TARGET:0
+	GOTO HYPNO_SKIP
+
+IF ARGS == "night" && DAY - LastHomeVisit:TARGET:0 <= 7 ;introduce some sort of randomness for night events
+	SELECTCASE DAY - LastHomeVisit:TARGET:0
+		CASE IS < 3
+			RETURN
+		CASE 3
+			SIF PERCENT(85)
+				RETURN
+		CASE 4
+			SIF PERCENT(70)
+				RETURN
+		CASE 5
+			SIF PERCENT(50)
+				RETURN
+		CASE 6
+			SIF PERCENT(35)
+				RETURN
+		CASE 7
+			SIF PERCENT(15)
+				RETURN
+	ENDSELECT
+ENDIF
+
+CALL KOJO_ACTIVE_INFO(TARGET)
+kPrefix '= RESULTS
+TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(0) ;cond
+SIF RESULT
+	GOTO END
+	
+$HYPNO_SKIP ;added
+SIF CFLAG:MASTER:初期位置 != CFLAG:MASTER:現在位置 ;if not sleeping at your original spot
+	GOTO END
+	
+VARSET LOCAL
+
+CALL SET_KOJO_COLOR(NO:TARGET)
+DEBUGPRINTFORML ------------------
+SELECTCASE ARGS
+	CASE "day"
+		;original code checks for morning wood to activate lewd portion, but I don't think you can wake up in tw with erection
+		
+		;lewd event
+		IF !RAND:2 && CFLAG:溜まってる度 > 300 && GET_TARGETNUM() > 1 ;can't do lewd if there's someone else in the room
+			DO
+				;failsafe to break the loop if all cases were denied
+				SIF nEventCheck >= 7
+					BREAK
+				SELECTCASE RAND:3
+					;フェラ、クンニで起こされる
+					CASE 0
+						DEBUGPRINTFORML Running DAYEVENT: Day: Lewd: Oral Caress
+						SIF GETBIT(nEventCheck,0)
+							CONTINUE
+							
+						SETBIT nEventCheck,0
+						
+						SIF Morning_Event_Guaranteed:TARGET:0 ;added
+							GOTO HYPNO_SKIP_ORAL
+
+						RESULT = 0
+						TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(1) ;cond
+						IF !RESULT ;if unchanged (0), fall back to the original cond
+							RESULT = ABL:欲望 >= 3 && ABL:技巧 >= 3 && EXP:奉仕快楽経験 >= 50 && EXP:口淫経験 >= 20
+						ENDIF
+						IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+							DEBUGPRINTFORML Oral Caress \@ RESULT == -1 ? Disallowed # Fail \@
+							CONTINUE
+						ENDIF
+							
+						$HYPNO_SKIP_ORAL ;added
+						PALAM:欲情 += 1000
+						PALAM:恭順 += 500
+						PALAM:優越 += 300
+						IF GETBIT(TALENT:MASTER:2,0)
+							STAIN:口 = 1 ;pussy juice
+							STAIN:手 = 1
+							STAIN:MASTER:口 = 1
+						ELSE
+							STAIN:口 = 6 ;penis + semen
+							STAIN:手 = 2 ;penis
+							STAIN:MASTER:Ｐ = 6
+						ENDIF
+						
+						CALL PRINT_FACE, TARGET, "発情", "服", "", "吐息"
+						PRINTFORMD As soon as you wake up, you see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)%'s head lodged between your legs as she gives you a 
+						IF GETBIT(TALENT:MASTER:2,0)
+							PRINTFORMDL cunnilingus.
+							PRINTFORMDW As you lick away your own juices clinging to her face, she shivers somewhat ticklishly, looking embarrassed.
+						ELSE
+							PRINTFORMDL blowjob.
+							PRINTFORMDW After she slurps and swallows your %SEMEN(MASTER,1)%, she casually greets you good morning.
+						ENDIF
+						
+						TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_4(1)
+						
+						nExp:4 += 3 + ABL:Ｍ感覚 * 2 ;m exp
+						nExp:25 = nExp:4 ;bj exp
+						SIF HAS_PENIS(MASTER)
+							nExp:14 = 1 ;swallow
+						LOCAL = (ABL:舌 + 1) * 20 + BASE:MASTER:精力 /25
+
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｍ","Ｍ感覚",20,1)
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｃ","Ｃ感覚",10,1)
+						RESULT = 1
+					;パイズリで起こされる
+					CASE 1
+						DEBUGPRINTFORML Running DAYEVENT: Day: Lewd: Paizuri
+						SIF GETBIT(nEventCheck,1)
+							CONTINUE
+							
+						SETBIT nEventCheck,1
+
+						SIF Morning_Event_Guaranteed:TARGET:0 && GETBIT(TALENT:MASTER:2,1) ;added
+							GOTO HYPNO_SKIP_PAIZURI
+							
+						RESULT = 0
+						TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(2) ;cond
+						IF !RESULT ;if unchanged (0), fall back to the original cond
+							RESULT = ABL:欲望 >= 3 && ABL:技巧 >= 5 && EXP:奉仕快楽経験 >= 50 && EXP:乳交経験 >= 10 && GETBIT(TALENT:MASTER:2,1)
+						ENDIF
+						IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+							DEBUGPRINTFORML Paizuri \@ RESULT == -1 ? Disallowed # Fail \@
+							CONTINUE
+						ENDIF
+							
+						$HYPNO_SKIP_PAIZURI
+						PALAM:恭順 += 1000
+						PALAM:快Ｂ += 500
+						PALAM:潤滑 += 500
+						PALAM:欲情 += 300
+						STAIN:0 = 6
+						STAIN:5 = 6
+						STAIN:MASTER:2 = 6
+						
+						CALL PRINT_FACE, TARGET, "発情", "裸", "", "吐息"
+						PRINTFORMDL You wake up from feeling a strange sensation in your lower abdomen.
+						;貧乳の場合
+						IF TALENT:バストサイズ < 0
+							PRINTFORMDL As you take a sneak peek, you notice %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% toying with your %TINKO(MASTER)% with her %OPPAI_DESCRIPTION_TR(TARGET)%.
+							PRINTFORMDW Apparently she's trying to practice her paizuri skills...
+						;巨乳の場合	
+						ELSEIF TALENT:バストサイズ > 0
+							PRINTFORMDW %BREAKENG(@"You look over to see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% sandwiching your %TINKO()% between her %OPPAI_DESCRIPTION_TR(TARGET)% and rubbing it up and down.")%
+						;それ以外
+						ELSE
+							PRINTFORMDW %BREAKENG(@"You look over to see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% rubbing your %TINKO()% with her %OPPAI_DESCRIPTION_TR(TARGET)% and swallowing the %SEMEN(MASTER,1)% that's coming out.")%
+						ENDIF
+						
+						TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_4(2)
+						
+						nExp:3 += 3 + ABL:Ｂ感覚 * 2 ;b exp
+						nExp:26 = nExp:4 ;paizuri exp
+						nExp:8 += nExp:3 / 2 ;b orgasm
+						nExp:10 += nExp:3 / 2 ;orgasm
+						SIF EXP:精飲経験
+							nExp:14 = 1 ;swallow
+						LOCAL = (ABL:胸 + 1) * 20 + BASE:MASTER:精力 /25
+
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｂ","Ｂ感覚",20,1)
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｃ","Ｃ感覚",10,1)
+						RESULT = 1
+					;騎乗位、貝合わせ
+					CASE 2
+						DEBUGPRINTFORML Running DAYEVENT: Day: Lewd: Cowgirl
+						SIF GETBIT(nEventCheck,2)
+							CONTINUE
+							
+						SETBIT nEventCheck,2
+
+						SIF Morning_Event_Guaranteed:TARGET:0 && !TALENT:処女 && !IS_DOUTEI(MASTER) ;added
+							GOTO HYPNO_SKIP_COWGIRL
+						
+						RESULT = 0
+						TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(3) ;cond
+						IF !RESULT ;if unchanged (0), fall back to the original cond
+							RESULT = ABL:欲望 >= 5 && EXP:奉仕快楽経験 >= 50
+							SIF RESULT && HAS_PENIS(MASTER) ;for non-les scenario
+								RESULT = !TALENT:処女 && !IS_DOUTEI(MASTER) && EXP:Ｖ性交経験 >= 50
+						ENDIF
+						IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+							DEBUGPRINTFORML Cowgirl \@ RESULT == -1 ? Disallowed # Fail \@
+							CONTINUE
+						ENDIF
+						
+						$HYPNO_SKIP_COWGIRL
+						PALAM:潤滑 += 2300
+						PALAM:快Ｖ += 800
+						PALAM:欲情 += 700
+						PALAM:恭順 += 500
+						
+						CALL PRINT_FACE, TARGET, "オナニー", "裸", "", "吐息"
+						IF HAS_PENIS(MASTER)
+							PRINTFORMDL %BREAKENG(@"As you wake up, you feel a sense of supple weight around your waist, and something warm and tight around your %TINKO()%.")%
+							PRINTFORMDW You look over to see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% riding you on top while panting...
+						ELSE
+							PRINTFORMDL As you wake up, you find yourself lying in a weird position.
+							PRINTFORMDW %BREAKENG(@"You look over to see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% lifting one of your legs and pushing her body in between, rubbing your vaginas together as she keeps moaning...")%
+						ENDIF
+						
+						TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_4(3, 0)
+						nSexCount = MAX(RESULT-1, 0) ;get additional sex count from returning result from the event
+						IF HAS_PENIS(MASTER)
+							PRINTFORMDL With a sudden stop, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% sits down and relinquishes your load from you with a smirk on her face.
+							PRINTFORMDL %BREAKENG(@"She then stands up, pulling out your spent member with a wet pop as your semen trickles down from her slit...")%
+						ENDIF
+						;have sex once + sex count above
+						nExp:10 += 2 + nSexCount ;orgasm
+						nExp:6 += 2 + nSexCount ;v orgasm
+						nExp:1 += 6 + nSexCount ;v exp
+						
+						DOWNBASE:体力 = 100
+						DOWNBASE:気力 = 150
+						
+						IF HAS_PENIS(MASTER)
+							LOCAL = MAX((ABL:膣 + 1) * 20 + BASE:MASTER:精力 / 25, 1)
+							nExp:20 += 3 + nSexCount ;v sex exp
+							nExp:16 += 1 + nSexCount ;v creampie
+							EXP:MASTER:挿入経験 += 3 + nSexCount
+							EXP:MASTER:射精経験 += 1 + nSexCount
+							IF nSexCount > 0
+								FOR LOCAL:1,1,nSexCount
+									LOCAL:2 += LOCAL + RAND:(LOCAL)
+								NEXT
+							ELSE
+								LOCAL:2 = LOCAL
+							ENDIF
+							CALL ADD_SAMEN_V(TARGET, LOCAL:2)
+							BASE:MASTER:勃起 = 0
+						ENDIF
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｖ","Ｖ感覚",15,1)
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｃ","Ｃ感覚",10,1)
+						
+						PRINTL
+						PRINTFORMDL Your next move is to...
+						CALL ASK_YN("Fix your clothes and get up from the bed", "Demand more and push her down!")
+						
+						IF RESULT ;activate sex
+							TFLAG:193 = 1
+							;騎乗位のままウフフモード化
+							IF HETEROSEX(MASTER,TARGET) == 0
+								STAIN:3 = 6
+								STAIN:6 = 6
+								STAIN:MASTER:2 = 6
+							ENDIF
+							CFLAG:うふふ = 1
+							CFLAG:MASTER:うふふ = 1
+							CFLAG:前ターン位置 = CFLAG:現在位置
+							CALL DATUI_BOTTOM(MASTER,0)
+							CALL DATUI_BOTTOM_T(TARGET,1)
+							TCVAR:23 = 0
+							TCVAR:MASTER:22 = 0
+						ELSE
+							PRINTFORMDL Phew...
+							PRINTFORMDL Looks like you both need a shower after this.
+						ENDIF
+						TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_4(3, 1)
+						LOCAL:9 = 1
+						RESULT = 1
+				ENDSELECT
+			LOOP RESULT <= 0 && nEventCheck < 7
+			;we should get result from successful kojo call and break the loop (went ahead and put result everywhere at the end anyway just to make sure)
+			;process lewd section if it was activated
+			IF RESULT > 0
+				BASE:ムード = 700 ;mood up
+				BASE:理性 = 0 ;reason down
+				CFLAG:ディレイ = 30 ;set delay so you don't get pushed down immediately
+				CFLAG:溜まってる度 /= 2 ;halve the horny
+					
+				DOWNBASE:MASTER:体力 = 100
+				DOWNBASE:MASTER:気力 = 150
+				
+				IF HAS_PENIS(MASTER) && !LOCAL:9 ;ignore sex event since it's already handled there
+					EXP:MASTER:射精経験 ++
+					DOWNBASE:MASTER:精力 = LOCAL
+					BASE:MASTER:勃起 = 0
+				ENDIF
+				EXP:MASTER:絶頂経験 ++
+				
+				CALL JUEL_UP_SPECIAL(TARGET,"欲情","欲望",20,1)
+				CALL ADD_EXP_LESNIAN(5, TARGET, "PRINT")
+					
+				SETCOLOR C_YELLOW
+				FOR LOCAL,0,58
+					IF nExp:LOCAL
+						PRINTFORML %EXP_TR(LOCAL)% ＋{nExp:LOCAL}
+						EXP:LOCAL += nExp:LOCAL
+					ENDIF
+				NEXT
+				RESETCOLOR
+				
+				CALL CHANGE_CFLAG(2,TARGET,ABL:親密 * 3)
+				cMorningGreeting:ARG:0 = 1 ;quasi "met today" flag, still trigger first time greetings for the day but hide "haven't met her today" line
+				GOTO END
+			ENDIF
+		ENDIF
+		
+		;if no lewd event, or all of them failed, go for a normal event instead
+		nEventCheck = 0
+		DO
+			SIF nEventCheck >= 31
+				BREAK
+			SELECTCASE RAND:5
+				;キスで起こされる
+				CASE 0
+					DEBUGPRINTFORML Running DAYEVENT: Day: Normal: Kiss
+					SIF GETBIT(nEventCheck,0)
+						CONTINUE
+						
+					SETBIT nEventCheck,0
+
+					SIF Morning_Event_Guaranteed:TARGET:0 && TALENT:キス未経験 ;added
+						GOTO HYPNO_SKIP_KISS
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(4) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = !TALENT:キス未経験 && !TALENT:MASTER:キス未経験 && ABL:親密 >= 10 && EXP:接吻経験 >= 50
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Kiss \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+						
+					$HYPNO_SKIP_KISS
+					CALL PRINT_FACE, TARGET, "発情", "服", "", "吐息"
+					PRINTFORMDL You wake up feeling a sweet and soft sensation on your mouth.
+					PRINTFORMDL As you open your eyes, you see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% locking her lips with yours.
+					PRINTFORMDW Parting your lips reluctantly, she pulls away and greets you good morning with vermilion in her cheeks.
+					
+					BASE:ムード = 500
+					BASE:理性 = 700
+					PALAM:好意 += 3000
+					PALAM:恥情 += 1000
+					PALAM:優越 += 700
+					PALAM:恭順 += 500
+
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_5(1)
+					
+					CALL MUTUAL_KISS
+					CALL ADD_EXP_LESNIAN(5, TARGET, "PRINT")
+					RESULT = 1
+				;揺さぶり起こされる
+				CASE 1
+					DEBUGPRINTFORML Running DAYEVENT: Day: Normal: Wake Up
+					SIF GETBIT(nEventCheck,1)
+						CONTINUE
+
+					SETBIT nEventCheck,1
+
+					SIF Morning_Event_Guaranteed:TARGET:0 ;added
+						GOTO HYPNO_SKIP_WAKEUP
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(5) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:親密 >= 7 && ABL:奉仕精神 >= 3
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Wake Up \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+
+					$HYPNO_SKIP_WAKEUP
+					CALL PRINT_FACE, TARGET, "笑顔", "服"
+					PRINTFORMDL You wake up from a sudden impact.
+					PRINTFORMDW As you get up, you see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% \@ CHARA_DISPOS(TARGET) >= 3 ? smirking # grinning\@ at you as she greets you good morning.
+						
+					BASE:ムード = 300
+					BASE:理性 = 900
+					PALAM:好意 += 1000
+					PALAM:優越 += 1300
+					PALAM:恭順 += 700
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_5(2)
+					RESULT = 1
+				;起こしに来たけど寝てる
+				CASE 2
+					DEBUGPRINTFORML Running DAYEVENT: Day: Normal: Sleeping Together
+					SIF GETBIT(nEventCheck,2)
+						CONTINUE
+
+					SETBIT nEventCheck,2
+					
+					SIF Morning_Event_Guaranteed:TARGET:0 ;added
+						GOTO HYPNO_SKIP_SLEEPTOGETHER
+
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(6) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:親密 >= 10 && ABL:欲望 >= 3 && EXP:愛情経験 >= 50
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Sleeping Together \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+						
+					$HYPNO_SKIP_SLEEPTOGETHER
+					CALL PRINT_FACE, TARGET, "通常", "服"
+					PRINTFORMDL You wake up to see %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% sleeping right next to you.
+					PRINTFORMDW You gently shake her awake as she gives you a hug, still looking a bit sleepy.
+						
+					BASE:ムード = 100
+					BASE:理性 = 300
+					PALAM:好意 += 4000
+					PALAM:恥情 += 2000
+					PALAM:恭順 += 1400
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_5(3)
+					RESULT = 1
+				;起きるまでじっと見てる
+				CASE 3
+					DEBUGPRINTFORML Running DAYEVENT: Day: Normal: Stare
+					SIF GETBIT(nEventCheck,3)
+						CONTINUE
+
+					SETBIT nEventCheck,3
+
+					SIF Morning_Event_Guaranteed:TARGET:0 ;added
+						GOTO HYPNO_SKIP_STARE
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(7) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:親密 >= 10 && ABL:従順 >= 7 && EXP:愛情経験 >= 50
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Stare \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+						
+					$HYPNO_SKIP_STARE
+					CALL PRINT_FACE, TARGET, "発情", "服"
+					PRINTFORMDL As you wake up, you meet your gaze with %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)%'s who is looking at you from above.
+					PRINTFORMDW She hurriedly pulls her face back and greets you good morning, her cheeks flushed red.
+						
+					BASE:ムード = 800
+					BASE:理性 = 900
+					PALAM:好意 += 2700
+					PALAM:恥情 += 3000
+					PALAM:優越 += 700
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_5(4)
+					RESULT = 1
+				;イタズラで起こされる
+				CASE 4
+					DEBUGPRINTFORML Running DAYEVENT: Day: Normal: Prank
+					SIF GETBIT(nEventCheck,4)
+						CONTINUE
+
+					SETBIT nEventCheck,4
+
+					SIF Morning_Event_Guaranteed:TARGET:0 ;added
+						GOTO HYPNO_SKIP_PRANK
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(8) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:親密 >= 5 && ABL:欲望 >= 5 && (MARK:反発刻印 || CFLAG:10 || TALENT:機嫌 < 0 || RAND:3)
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Prank \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+					
+					$HYPNO_SKIP_PRANK
+					;skip description for one special case (todo some kind of precall if we need more of these)
+					IF TARGET == 41 && CFLAG:好感度 >= 1500 && HAS_PENIS(MASTER) && FIRSTTIME("NuePrank", 1)
+					ELSE
+						CALL PRINT_FACE, TARGET, "笑顔", "服"
+						PRINTFORMDL You wake up up with a strange feeling of discomfort, noticing %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% playing a prank on you while you were asleep.
+						PRINTFORMDL She hurriedly withdraws from you and greets you good morning with a smirk on her face.
+						SIF TALENT:機嫌 < 0
+							PRINTFORMDL ...Looks like her little mischief has managed to improve her mood, at least.
+						WAIT
+					ENDIF
+					
+					BASE:ムード = 100
+					BASE:理性 = 300
+					PALAM:好意 += 1700
+					PALAM:恥情 += 1500
+					PALAM:優越 += 3000
+					TALENT:機嫌 = 1 ;improve the mood
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_5(5)
+					RESULT = 1
+			ENDSELECT
+		LOOP RESULT <= 0 && nEventCheck < 31
+		IF RESULT > 0
+			CALL CHANGE_CFLAG(2,TARGET,ABL:親密 * 5)
+			cMorningGreeting:ARG:0 = 1
+			GOTO END1
+		ENDIF
+	CASE "night"
+		DEBUGPRINTFORML Running DAYEVENT: Night
+		;target must not be exhausted
+		IF BASE:0 < 1000 || BASE:1 <= 0 || CFLAG:衰弱
+			DEBUGPRINTFORML Fail: Too exhausted
+			GOTO END
+		ENDIF
+		;I FUCKING HATE THIS SHIT AAAAAAAAAA FUCK OFF I'M SLEEPING WITH SOMEONE ELSE ALREADY AAAAAAAAAA REEEEEEEEEEEE
+		;sleep together flag check is busted, it's reset at the end of the day, check current location instead
+		
+		;if not sleeping with you, can do house invasion once per three days
+		IF CFLAG:現在位置 != CFLAG:MASTER:現在位置 && DAY - LastHomeVisit:TARGET:0 < 3
+			DEBUGPRINTFORML Fail: Visiting Too Soon: {DAY - LastHomeVisit:TARGET:0} < 3
+			GOTO END
+		ENDIF
+		;PRINTFORMW CFLAG:MASTER:添い寝中 - {CFLAG:MASTER:添い寝中}, TARGET - {TARGET}, CFLAG:添い寝中 - {CFLAG:添い寝中}
+		;if master already sleeps with someone (and it's not nue), nue won't disturb you
+		IF GET_TARGETNUM() >= 1 && CFLAG:現在位置 != CFLAG:MASTER:現在位置
+			DEBUGPRINTFORML Fail: Already Sleeping Together With Someone
+			GOTO END
+		ENDIF
+		;20:00 - 6:00 (moon viewing up to 4 am) (unless you got knocked out previously)
+		IF !(TIME:0 >= 1200 || TIME:0 <= 360)
+			IF CFLAG:MASTER:衰弱
+			ELSE
+				DEBUGPRINTFORML Fail: Time Incorrect (Must Be Between 20:00 - 6:00 (>=1200 or <= 360), Current: {TIME})
+				GOTO END
+			ENDIF
+		ENDIF
+
+		; IF !CFLAG:添い寝中
+			; PRINTFORMDW A few moments after you had gone to bed... there's a weird commotion at your room.
+			; PRINTFORMDW Looks like someone just sneaked into your room!
+			; PRINTL
+		; ENDIF
+		
+		;lewd event
+		IF PALAM:潤滑 > PALAMLV:2
+			DO
+				SIF nEventCheck >= 3
+					BREAK
+				SELECTCASE RAND:3
+				;夜這いキス
+				CASE 0
+					DEBUGPRINTFORML Running DAYEVENT: Night: Lewd: Kiss
+					SIF GETBIT(nEventCheck,0)
+						CONTINUE
+
+					SETBIT nEventCheck,0
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(9) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = !TALENT:キス未経験 && !TALENT:MASTER:キス未経験 && ABL:親密 >= 10 && EXP:接吻経験 >= 30
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Kiss \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+				
+					CALL PRINT_FACE, TARGET, "発情", "服", "", "吐息"
+					PRINTFORMDW A few moments after you had gone to bed... %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% \@ CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? sneaks into your room # turns around and gazes at you\@.
+					PRINTFORMDW As she watches you sleep, she finds herself unable to contain her feelings and steals a kiss from your lips.
+					PRINTDL ...
+					PRINTFORMDL After a while, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% parts your lips reluctantly, still reminiscing the lingering sensation.
+					PRINTFORMDW Then, she \@ CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? quietly sneaks out # snuggles up to you carefully\@, making sure not to disturb your sleep.
+					
+					CALL MUTUAL_KISS
+					
+					CALL ADD_EXP_LESNIAN(5, TARGET, "PRINT")
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_6(1)
+					RESULT = 1
+				;夜這い
+				CASE 1
+					DEBUGPRINTFORML Running DAYEVENT: Night: Lewd: Yobai
+					SIF GETBIT(nEventCheck,1)
+						CONTINUE
+
+					SETBIT nEventCheck,1
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(10) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:欲望 >= 5
+						IF RESULT && HAS_VAGINA(TARGET) && !HAS_VAGINA(MASTER) ;hetero, player fucks target
+							RESULT = !TALENT:処女 && !IS_DOUTEI(MASTER) && EXP:Ｖ性交経験 >= 50
+						ELSEIF HAS_PENIS(TARGET) && HAS_VAGINA(MASTER) ;target fucks player (futa)
+							RESULT = !TALENT:MASTER:処女 && !IS_DOUTEI(TARGET) && EXP:MASTER:Ｖ性交経験 >= 50 && EXP:挿入経験 >= 10
+						ELSEIF RESULT ;lez, pretty lenient huh
+						ENDIF
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Yobai \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+
+					nSexCount = MAX(MIN(ABL:欲望 / 2, 5) + CFLAG:溜まってる度 / 200,1)
+						
+					CALL PRINT_FACE, TARGET, "発情", "裸", "", "吐息"
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_6(2, 0)
+					PRINTFORMDL
+					
+					PRINTFORMDL While you were \@ CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? getting ready for bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% pays a sudden visit to your room # about to fall asleep, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% suddenly starts caressing you\@.
+					PRINTFORMD With her cheeks deeply flushed, she pushes you down and 
+					IF ( HAS_VAGINA(TARGET) && !HAS_VAGINA(MASTER) ) || ( HAS_PENIS(TARGET) && HAS_VAGINA(MASTER) )
+						IF !HAS_VAGINA(MASTER) && HAS_PENIS(MASTER) ;male only master, so nue would fuck female/futa master
+							PRINTFORM eagerly welcomes your %TINKO()% inside her %FSYN("vagina")%, slamming her hips hard.
+						ELSE
+							PRINTFORM presses her raging hard %TINKO(TARGET)% against your %FSYN("slit")% before penetrating it in one go.
+						ENDIF
+						CALL PRINT_BREAK,,"dc"
+					ELSE
+						PRINTFORMDL locks her lips with yours while playing with your body.
+					ENDIF
+					IF ( HAS_VAGINA(TARGET) && !HAS_VAGINA(MASTER) ) || ( HAS_PENIS(TARGET) && HAS_VAGINA(MASTER) )
+						IF !HAS_VAGINA(MASTER) && HAS_PENIS(MASTER)
+							PRINTFORMDL %BREAKENG(@"Drooling at her mouth akin to a starving beast, she thoroughly enjoys herself with your manhood, quenching the thirst of her womb...")%
+						ELSE
+							PRINTFORMDL %BREAKENG(@"%CAPITALIZE(FSYN("thrust:ing"))% herself deep inside your womb with her unabated erection, she thoroughly enjoys herself with your vagina...")%
+						ENDIF
+					ELSE
+						PRINTFORMDL %BREAKENG(@"Exploring your body while teasing it relentlessly, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% slides her fingers inside her slit as well, trying to soothe the tingling sensation taking over her...")%
+					ENDIF
+					PRINTDW ...
+					PRINTFORMDL After reaching a number of climaxes, you both feel like achieving your desire.
+					PRINTFORMD You embrace each other fondly and fall into a deep slumber together 
+					IF ( HAS_VAGINA(TARGET) && !HAS_VAGINA(MASTER) ) || ( HAS_PENIS(TARGET) && HAS_VAGINA(MASTER) )
+						PRINTFORMDW while still being connected together...
+					ELSE
+						PRINTFORMDW with your bodies still entwined...
+					ENDIF
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_6(2, 1)
+					
+					IF ( HAS_VAGINA(TARGET) && !HAS_VAGINA(MASTER) && HAS_PENIS(MASTER) ) ;player fucks nue
+						nExp:10 += 2 * nSexCount ;orgasm
+						nExp:6 += 2 * nSexCount ;v orgasm
+						nExp:1 += 2 * nSexCount ;v exp
+						
+						LOCAL = MAX((ABL:膣 + 1) * 20 + BASE:MASTER:精力 / 25, 1)
+						nExp:20 += nSexCount ;v sex exp
+						nExp:16 += nSexCount ;v creampie
+						FOR LOCAL:1,1,nSexCount
+							LOCAL:2 += LOCAL + RAND:(LOCAL)
+						NEXT
+
+						LOCAL:2 = MIN(LOCAL:2, BASE:MASTER:精力)
+						
+						EXP:MASTER:挿入経験 += nSexCount
+						EXP:MASTER:射精経験 += nSexCount
+						EXP:MASTER:絶頂経験 += nSexCount
+						
+						CALL ADD_SAMEN_V(TARGET, LOCAL:2)
+						;DOWNBASE:MASTER:精力 = LOCAL:2 (already included in the above function)
+
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｖ","Ｖ感覚",15,1)
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｃ","Ｃ感覚",10,1)
+						
+						BASE:MASTER:勃起 = 0
+					ELSEIF ( HAS_PENIS(TARGET) && HAS_VAGINA(MASTER) ) ;nue fucks player
+						nExp:10 += 2 * nSexCount ;orgasm
+						nExp:29 += 2 * nSexCount ;insertion
+						nExp:11 += 2 * nSexCount ;ejaculation
+						
+						LOCAL = MAX((ABL:MASTER:膣 + 1) * 20 + BASE:精力 / 25, 1)
+						EXP:MASTER:Ｖ経験 += nSexCount
+						EXP:MASTER:Ｖ絶頂経験 += nSexCount
+						EXP:MASTER:Ｖ性交経験 += nSexCount
+						EXP:MASTER:膣射経験 += nSexCount
+						EXP:MASTER:絶頂経験 += nSexCount
+						FOR LOCAL:1,1,nSexCount
+							LOCAL:2 += LOCAL + RAND:(LOCAL)
+						NEXT
+
+						LOCAL:2 = MIN(LOCAL:2, BASE:精力)
+						
+						CALL SAMEN_SHOOT3(LOCAL:2, TARGET, MASTER)
+						BASE:精力 -= LOCAL:2
+						EX:MASTER:膣内精液 += LOCAL:2
+						CFLAG:MASTER:累計膣内精液 += LOCAL:2
+
+						STAIN:MASTER:Ｖ |= 4
+						STAIN:MASTER:膣内 |= 4
+
+						STAIN:Ｐ |= 1
+						STAIN:Ｐ |= 4
+						
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｖ","Ｖ感覚",15,1)
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｃ","Ｃ感覚",10,1)
+						
+						BASE:勃起 = 0
+					ELSE ;lez
+						nExp:10 += 2 * nSexCount ;orgasm
+						nExp:5 += 2 * nSexCount ;c orgasm
+						nExp:0 += 2 * nSexCount ;c exp
+						
+						EXP:MASTER:絶頂経験 += nSexCount
+						EXP:MASTER:Ｃ絶頂経験 += nSexCount
+						EXP:MASTER:Ｃ経験 += nSexCount
+						
+						SIF HAS_PENIS(MASTER)
+							EXP:MASTER:射精経験 += nSexCount
+						SIF HAS_PENIS(TARGET)
+							nExp:11 += nSexCount
+					
+						CALL MUTUAL_KISS(TARGET, nSexCount)
+						
+						CALL JUEL_UP_SPECIAL(TARGET,"快Ｃ","Ｃ感覚",15,1)
+						CALL JUEL_UP_SPECIAL(MASTER,"快Ｃ","Ｃ感覚",15,1)
+					ENDIF
+					
+					CALL JUEL_UP_SPECIAL(TARGET,"欲情","欲望",20,1)
+					CALL ADD_EXP_LESNIAN(5, TARGET, "PRINT")
+
+					DOWNBASE:MASTER:体力 = 100
+					DOWNBASE:MASTER:気力 = 150
+					
+					DOWNBASE:体力 = 100
+					DOWNBASE:気力 = 150
+					
+					CFLAG:溜まってる度 = 0 ;nullify horny
+					
+					SETCOLOR C_YELLOW
+					FOR LOCAL,0,58
+						IF nExp:LOCAL
+							PRINTFORML %EXP_TR(LOCAL)% ＋{nExp:LOCAL}
+							EXP:LOCAL += nExp:LOCAL
+						ENDIF
+					NEXT
+					RESETCOLOR
+					;hopefully won't glitch
+					;this just plain doesn't work as intended, disabled
+					; IF !CFLAG:添い寝中 && !FLAG:一時滞在 && !CFLAG:神社在住
+						; FLAG:一時滞在 = TARGET
+						; CFLAG:本来の初期位置 = CFLAG:初期位置
+						; CFLAG:初期位置 = CFLAG:MASTER:初期位置
+						; CFLAG:神社在住 = CFLAG:初期位置
+						; PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% will sleep over %AT_IN_ON(CFLAG:MASTER:初期位置)%.
+						; ;CALL TARGETSET_CHACK
+						; CFLAG:TARGET:同室 = 1
+						; ;添い寝フラグON
+						; CFLAG:添い寝中 = 1
+						; CFLAG:MASTER:添い寝中 = 1
+					; ELSEIF CFLAG:添い寝中
+						; CFLAG:TARGET:現在位置 = CFLAG:MASTER:現在位置
+						; ;CALL TARGETSET_CHACK
+						; CFLAG:TARGET:同室 = 1
+						; ;添い寝フラグON
+						; CFLAG:添い寝中 = 1
+						; CFLAG:MASTER:添い寝中 = 1
+					; ELSE
+					;	PRINTFORMW Later, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% decided to leave...
+					;ENDIF
+					RESULT = 1
+				ENDSELECT
+			LOOP RESULT <= 0 && nEventCheck < 3
+		ENDIF
+		IF RESULT > 0
+			LastHomeVisit:TARGET:0 = DAY
+			TCVAR:今日会ったか = DAY
+			CALL CHANGE_CFLAG(2,TARGET,ABL:親密 * 3)
+			GOTO END1
+		ENDIF
+			
+		nEventCheck = 0
+		DO
+			SIF nEventCheck >= 7
+				BREAK
+			SELECTCASE RAND:3
+				;晩酌
+				CASE 0
+					DEBUGPRINTFORML Running DAYEVENT: Night: Normal: Drink
+					SIF GETBIT(nEventCheck,0)
+						CONTINUE
+
+					SETBIT nEventCheck,0
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(11) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:奉仕精神 >= 3 && EXP:奉仕快楽経験 >= 50
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Drink \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+					
+					IF (TALENT:妊娠 || TALENT:育児中)
+						DEBUGPRINTFORML Drink Pregnancy Fail
+						CONTINUE
+					ENDIF
+						
+					BASE:酒気 += 500
+					BASE:MASTER:酒気 += 500
+						
+					CALL PRINT_FACE, TARGET, "笑顔", "服"
+					PRINTFORMDL %BREAKENG(@"\@ CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? While you were getting ready for bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% comes over to invite # While you were about to fall asleep, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% suddenly invites\@ you to have a dinner-time drink with her.")%
+					PRINTFORMDW For the next few moments, you and %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% have a good time drinking together...
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_7(1)
+					RESULT = 1
+				;夜風に当たる、お月見
+				CASE 1
+					DEBUGPRINTFORML Running DAYEVENT: Night: Normal: Moon Viewing
+					SIF GETBIT(nEventCheck,1)
+						CONTINUE
+
+					SETBIT nEventCheck,1
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(12) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						;time:5 - checks for favorable weather
+						RESULT = ABL:親密 >= 10 && (TIME:5 <= 4 || TIME:5 == 8)
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Moon Viewing \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+						
+					CALL PRINT_FACE, TARGET, "笑顔", "服"
+					IF MOON_WATCH(DAY:3) == 9
+						;お月見（満月）
+						PRINTFORMDL %BREAKENG(@"\@CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? While you were getting ready for bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% comes over to invite # While you were about to fall asleep, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% suddenly invites\@ you to a moon viewing with a \@ (TALENT:妊娠 + TALENT:育児中) ? cup of tea # drink \@ in her hand.")%
+						PRINTFORMDW %BREAKENG(@"Going outside to an appropriate spot, You and %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% then enjoy watching the beautiful full moon together until very late in the night...")%
+					ELSEIF TIME:5 <= 3
+						;夜風に当たる（夜散歩）
+						PRINTFORMDL %BREAKENG(@"\@CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? While you were getting ready for bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% comes over to invite # While you were about to fall asleep, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% suddenly invites\@ you for a night walk.")%
+						PRINTFORMDW You enjoy the night stroll while chatting together...
+					ELSE
+						;夜風に当たる（縁側で）
+						PRINTFORMDL %BREAKENG(@"\@CFLAG:現在位置 != CFLAG:MASTER:現在位置 ? While you were getting ready for bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% comes over to have a chat with you # While you were about to fall asleep, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% suddenly begins chatting with you\@.")%
+						IF TIME:5 == 4
+							LOCALS = gentle rain
+						ELSEIF TIME:5 == 8
+							LOCALS = dancing snow
+						ELSE
+							LOCALS = night breeze
+						ENDIF
+						PRINTFORMDW %BREAKENG(@"As you both come out to the veranda, for the next few moments you and %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% have a friendly conversation while enjoying the %LOCALS%...")%
+					ENDIF
+					
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_7(2)
+					RESULT = 1
+				;添い寝
+				CASE 2
+					DEBUGPRINTFORML Running DAYEVENT: Night: Normal: Sleepover
+					SIF GETBIT(nEventCheck,2)
+						CONTINUE
+
+					SETBIT nEventCheck,2
+					
+					;if already sleeping with nue
+					IF CFLAG:現在位置 == CFLAG:MASTER:現在位置
+						DEBUGPRINTFORML Sleepover Fail - Already sleeping
+						CONTINUE
+					ENDIF
+					
+					RESULT = 0
+					TRYCALLFORM K{NO:TARGET}%kPrefix%_DAYEVENT_COND(13) ;cond
+					IF !RESULT ;if unchanged (0), fall back to the original cond
+						RESULT = ABL:親密 >= 10 && ABL:欲望 >= 3 && EXP:愛情経験 >= 10 
+					ENDIF
+					IF RESULT < 1 ;if the dialogue condition returns 1, or the above check is passed then it is allowed; not allowed if the dialogue check returns -1
+						DEBUGPRINTFORML Sleepover \@ RESULT == -1 ? Disallowed # Fail \@
+						CONTINUE
+					ENDIF
+						
+					CALL PRINT_FACE, TARGET, "笑顔", "服"
+					IF TALENT:恋人
+						PRINTFORMDW As you go to bed, %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% shows up and snuggles down next to you.
+						PRINTFORMDW Cuddling together, she beams a happy smile.
+						PRINTDL ...
+						PRINTFORMDL %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% grins as she watches you sleep after you have succumbed to drowsiness.
+						PRINTFORMDL Just as she was about to go to sleep as well, she suddenly gets covered by you as you turn over in your sleep!
+						PRINTFORMDL Hearing her giggle at you, you ease back into a comfortable position and embrace each other before falling asleep together...
+					ELSE
+						PRINTFORMDW A few moments after you had gone to bed... %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% sneaks into your room.
+						PRINTFORMDW As she watches you sleep, she stares at your sleeping face for a while and blushes profusely.
+						PRINTFORMDW But in the end, she couldn't bring herself to do anything and quietly slipped into your futon.
+						PRINTFORMDW It makes her feel extremely feverish as she keeps glancing towards you all the while...
+						PRINTDL ...
+						PRINTFORMDL %BREAKENG(@"{(RAND:3+1) * 10} minutes later, when %NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET)% was all but about to give up and get up, she suddenly gets covered by you as you turn over in your sleep!")%
+						PRINTFORMDL She freezes up on the spot with an even redder face, remaining at the mercy of the situation.
+						PRINTFORMDL Looks like her sleepless nights are far from being over...
+					ENDIF
+						
+					TRYCALLFORM M_KOJO%kPrefix%_SPEVENT_K{NO:TARGET}_7(3)
+					;this might be glitchy
+					;this just plain doesn't work as intended, disabled
+					; CFLAG:TARGET:現在位置 = CFLAG:MASTER:現在位置
+					; ;CALL TARGETSET_CHACK
+					; CFLAG:TARGET:同室 = 1
+					; ;添い寝フラグON
+					; CFLAG:添い寝中 = 1
+					; CFLAG:MASTER:添い寝中 = 1
+					RESULT = 1
+			ENDSELECT
+		LOOP RESULT <= 0 && nEventCheck < 7
+		IF RESULT > 0
+			LastHomeVisit:TARGET:0 = DAY
+			TCVAR:今日会ったか = DAY
+			CALL CHANGE_CFLAG(2,TARGET,ABL:親密 * 5)
+			GOTO END1
+		ENDIF
+CASEELSE
+	THROW @"WRONG EVENT TYPE DUMBASS - %ARGS%"
+ENDSELECT
+
+$END
+TARGET = nTarg
+RETURN 0
+$END1
+TARGET = nTarg
+RETURN 1
