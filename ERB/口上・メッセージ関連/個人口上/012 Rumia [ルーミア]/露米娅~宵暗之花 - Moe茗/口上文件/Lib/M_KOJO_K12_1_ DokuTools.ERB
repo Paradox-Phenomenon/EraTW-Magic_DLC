@@ -1,0 +1,160 @@
+﻿;-------------------------------------------------
+;Eratoho The World 4.920用 露米娅Moe版口上  
+;-------------------------------------------------
+
+;==================================================
+;从帕露战神（不是）DOKU那里扒的代码工具
+;-------------------------------------------------
+;-------------------------------------------------
+;判别总体依赖度
+;这里只是判断用条件，可直接修正
+;-------------------------------------------------
+@MOE_RUMIA_GET_RELATION()
+#FUNCTION
+SIF MARK:12:3 == 3
+RETURNF -3
+SIF MARK:12:3 == 2
+RETURNF -2
+SIF MARK:12:3 == 1
+RETURNF -1
+;挚爱
+SIF TALENT:12:7 && (CFLAG:12:4 >= 10000) && (EXP:12:41 > 2000)
+RETURNF 7
+;亲爱
+SIF TALENT:12:7 && (CFLAG:12:4 >= 5000) && (EXP:12:41 > 1000)
+RETURNF 6
+;心爱
+SIF TALENT:12:7 && (CFLAG:12:4 >= 2000) && (EXP:12:41 > 400)
+RETURNF 5
+;恋人
+SIF TALENT:12:7
+RETURNF 4
+SIF TALENT:12:3
+RETURNF 3
+SIF TALENT:12:8
+RETURNF 2
+SIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2 
+RETURNF 1
+RETURNF 0
+;-------------------------------------------------
+;检测对应口上编号
+;-------------------------------------------------
+@DOKU_CHECK_KOJO(ARG,ARGS)
+;ARGS为 "初期" 则检测是否为初期口上
+;返回在RESULTS:1中的字符串即为版本名称
+VARSET RESULTS
+RESULTS:1 = "初期"
+IF CFLAG:ARG:998
+SIF RESULTS:1 == "初期"
+RETURN 0
+TRYCALLFORM M_KOJO_K{ARG}_{CFLAG:ARG:998}
+ELSE
+TRYCCALLFORM M_KOJO_K{ARG}
+CATCH
+RETURN 0
+ENDCATCH
+ENDIF
+RETURN RESULTS:1 == ARGS
+;-------------------------------------------------
+;好感度增减控制
+;-------------------------------------------------
+@DOKU_FAVOR_TRUST_CALC_FIX(ARG,ARG:1=0,ARG:2=0)
+TFLAG:97 += ARG:1
+TFLAG:98 += ARG:2
+TFLAG:99 += ARG:2
+SIF ARG:1>0
+TFLAG:193 = MAX(TFLAG:193,MOE_RUMIA_GET_RELATION())
+RETURN 1
+;-------------------------------------------------
+@DOKU_COMF_FAIL
+;指令强制失败，只用在m_kojo%%success系
+IF SELECTCOM < 200
+	IF FLAGNAME:233 == "一分时间" && FLAG:233	;？这个东西作者也不知道是什么意思
+	TIME --
+	ELSE
+	TIME -=5
+	ENDIF
+ENDIF
+TFLAG:192 = -2
+CALL DOKU_FAVOR_TRUST_CALC_FIX(TARGET,-99999,-99999)
+SELECTCOM = -1
+SIF PREVCOM == SELECTCOM
+	SELECTCOM = -2
+RETURN 1
+;-------------------------------------------------
+@DOKU_COMF_FAVOR_MOOD_FIX
+;指令不失败、但不加target的好感情绪，只用在m_kojo%%message系，用来防止移动/收音机/眺望天空等加好感的bug
+CALL DOKU_FAVOR_TRUST_CALC_FIX(TARGET,-99999,-99999)
+TFLAG:99 = -1
+RETURN 1
+;-------------------------------------------------
+@DOKU_KM_RENEW_TARGET(ARG)
+;优化用函数，用于替代简单粗暴的INFO_RENEW_TARGET来更新target，防止其他人的FLAGSETTING被反复执行
+;ARG是外部输入的角色编号。只要在自己的flagset里做好反重复执行就好了
+;KM的意思是KOJO_MESSAGE
+VARSET LOCAL
+IF !ARG
+;为了配合DOKU_MOVE对玩家进行移动的情况
+CALL INFO_RENEW_TARGET
+RETURN 1
+ENDIF
+CALL TARGETSET_CHACK("")
+LOCAL = FLAG:7
+CALL KOJO_MESSAGE_SEND("GRAVITY",-1, ARG,-1,-1)
+TFLAG:104 = TARGET
+FLAG:7 = LOCAL
+;GRAVITY换成SUIKA是一样的。谁能想到我能如此操作呢？
+RETURN 1
+;-------------------------------------------------
+@DOKU_KM_RENEW_AND_SET_TARGET(ARG)
+IF CFLAG:ARG:300 != CFLAG:0:300
+CALL DOKU_KM_RENEW_TARGET(ARG)
+RETURN 1
+ENDIF
+CALL TARGETSET_CHACK("")
+LOCAL = FLAG:7
+CALL KOJO_MESSAGE_SEND("GRAVITY",-1, ARG,-1,-1)
+FLAG:7 = LOCAL
+RETURN 1
+;-------------------------------------------------
+@DOKU_TARGET_SYSTEM(ARG,ARG:1,ARG:2 = 0)
+;ARG目标
+;ARG:1条件变量，为1则生效
+;ARG:2控制变量
+;0 锁定
+VARSET LOCAL
+IF FINDELEMENT(TARGET,ARG,1)==-1 || !ARG:1
+	CALLF DOKUDIM_TARGET_SYS_NOW(1,TFLAG:104)
+	RETURN 0
+ENDIF
+;↑不满足条件不触发
+SELECTCASE ARG:2
+	CASE 0
+	CALL DOKU_TARGET_SYSTEM_LOCK(ARG)
+	LOCAL = RESULT
+	CASE 1
+	;待定，没想到还有什么操作
+ENDSELECT
+RETURN LOCAL
+;-------------------------------------------------
+@DOKU_TARGET_SYSTEM_LOCK(ARG)
+IF ARG != TFLAG:104 && DOKUDIM_TARGET_SYS_NOW() == ARG
+	TFLAG:104 = ARG
+	CALL DOKU_KM_RENEW_AND_SET_TARGET(ARG)
+	IF CFLAG:ARG:998
+		TRYCALLFORM M_KOJO_K{ARG}_{CFLAG:ARG:998}
+	ELSE
+		TRYCALLFORM M_KOJO_K{ARG}
+	ENDIF
+		TRYCALLFORM M_KOJO%RESULTS%_DOKUTARGETSYS_K{ARG}_LOCK
+	RETURN 1
+ENDIF
+CALLF DOKUDIM_TARGET_SYS_NOW(1,TFLAG:104)
+RETURN 0
+;-------------------------------------------------
+@DOKUDIM_TARGET_SYS_NOW(ARG=0,ARG:1=0)
+#FUNCTION
+#DIM DOKUDIM_TARGET_SYS_NOW
+SIF ARG
+DOKUDIM_TARGET_SYS_NOW = ARG:1
+RETURNF DOKUDIM_TARGET_SYS_NOW

@@ -1,0 +1,562 @@
+﻿;-------------------------------------------------
+;Eratoho The World 4.920用 露米娅Moe版口上  
+;-------------------------------------------------
+;
+;================================
+;统一SUCCESS函数
+;如果与 com 对应的SUCCESS函数不存在，它将被调用
+;你可以用它,在 com 之前进行一些数据处理。
+;================================
+;@M_KOJO_Moe_SUCCESS_K12_GENERAL
+
+;================================
+;统一EXTRASOURCE函数
+;你可以用它,在某些 com 添加SOURCE补正
+;请检测SELECTCOM
+;================================
+@M_KOJO_Moe_EXTRASOURCE_SCOM_K12_GENERAL
+@M_KOJO_Moe_EXTRASOURCE_COM_K12_GENERAL
+
+;================================
+;自定义商店按钮
+;Y 是按钮的编号，范围是0-9
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+;CFLAG:12:K12C_1_思慕转恋慕确认
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_0
+custom_button_name:12:0 = 修改称呼
+SIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+	RETURN 1
+
+;按钮被按下后，触发以下函数
+@KOJO_Moe_CUSTOM_BUTTON_K12_0
+CALL M_KOJO_Moe_UPDATE_K12_SETTING_1_0
+RETURN 1 
+
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_1
+IF TALENT:12:8 || TALENT:12:184 || TALENT:12:185 
+	IF TALENT:12:8 
+		custom_button_name:12:1 = 锁定思慕
+	ELSE 
+		custom_button_name:12:1 = 锁定爱欲
+	ENDIF 
+	RETURN 1
+ELSE 
+	RETURN 0 
+ENDIF 
+
+;按钮被按下后，触发以下函数
+@KOJO_Moe_CUSTOM_BUTTON_K12_1
+LOCAL = LINECOUNT
+PRINTFORMDL 露米娅的亲密不会提升，也就不会由\@ TALENT:12:8 ? 思慕 # 爱欲 \@变成恋慕
+PRINTFORMDW 如果很喜欢露米娅现在的状态，可以选择这个，不必担心，五天之后还能进行选择
+PRINTFORMDW \@ CFLAG:12:K12C_1_思慕转恋慕确认 ? 已锁定 # 未锁定 \@
+PRINTL 
+WHILE RESULT != 2 
+	CALL ASK_M("开启锁定",1,"不锁定",1,"结束设置",1)
+	SELECTCASE RESULT 
+		CASE 0 
+			CFLAG:12:K12C_1_思慕转恋慕确认 = 1 
+			CALL COLORMESSAGE(@"已锁定当前状态",C_YELLOW,2)  
+		CASE 1 
+			SIF TALENT:12:184
+				CFLAG:12:K12C_1_爱欲转恋慕设置 = 1 	;愛欲转恋慕，确认
+			CFLAG:12:K12C_1_思慕转恋慕确认 = 1 
+			CALL COLORMESSAGE(@"已解锁当前状态",C_YELLOW,2)  
+		CASE 2 
+	ENDSELECT 
+WEND 
+CLEARLINE LINECOUNT - LOCAL 
+RETURN 1 
+
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_2
+custom_button_name:12:2 = 好感度补正
+RETURN 1
+
+;按钮被按下后，触发以下函数
+@KOJO_Moe_CUSTOM_BUTTON_K12_2
+LOCAL = LINECOUNT
+PRINTL
+PRINTFORMDL 这里可以设置本口上的好感度补正值
+PRINTFORMDL 由于原版素质会导致攻略过程过于容易，从而容易丢失很多口上
+PRINTFORMDL 因此，本口上内置对自己角色的好感度补正，以减慢攻略进度
+PRINTFORMDW 同时提供修正回原来方式的开关……
+PRINTL
+WHILE RESULT != 2 
+	CALL ASK_M("修改补正强度",1,"关闭补正",1,"结束设置",1)
+	SELECTCASE RESULT 
+		CASE 0 
+			PRINTFORMDL 这里可以修改补正的强度
+			PRINTFORMDL 强度的范围应该大于0，100为原补正强度
+			PRINTFORMDL 由于存在负补正的情况，因此设置超过100的值的时候，可能会无法推进攻略速度
+			PRINTFORMD 目前的补正状态：
+			IF CFLAG:12:K12C_1_好感度补正 == 100 || CFLAG:12:K12C_1_好感度补正 == 0 
+				CALL COLORMESSAGE(@"已开启完整补正",C_RED,1)  
+			ELSEIF CFLAG:12:K12C_1_好感度补正 == -1 
+				CALL COLORMESSAGE("已关闭补正",C_RED,1)  
+			ELSE 
+				CALL COLORMESSAGE(@"补正值为{CFLAG:12:K12C_1_好感度补正}",C_RED,1)  
+			ENDIF 
+			WHILE RESULT != 2 
+				LOCAL:1 = LINECOUNT
+				CALL COLORMESSAGE("请在下方输入补正值",C_YELLOW,1)  
+				INPUT 
+				IF RESULT < 0 
+					PRINTFORMDW 您输入的值是错误的负值
+				ELSEIF RESULT == 0 
+					PRINTFORMDL 您输入了一个0值，这会关闭原有的补正
+					PRINTFORMDL 请问确定要这么做吗？
+					CALL ASK_YN
+					IF !RESULT 
+						CFLAG:12:K12C_1_好感度补正 = - 1 
+						CALL COLORMESSAGE("已关闭补正",C_YELLOW,2)  
+					ENDIF 
+					RESULT = 2 
+				ELSE 
+					CFLAG:12:K12C_1_好感度补正 = RESULT 
+					CALL COLORMESSAGE(@"补正值已设置为{CFLAG:12:K12C_1_好感度补正}",C_YELLOW,2)  
+					RESULT = 2 
+				ENDIF 
+				CLEARLINE LINECOUNT - LOCAL:1
+			WEND 
+			RESULT = 0 
+		CASE 1 
+			CFLAG:12:K12C_1_好感度补正 = -1 
+			PRINTL 
+			CALL COLORMESSAGE("已关闭补正",C_YELLOW,2)  
+			PRINTL 
+		CASE 2 
+	ENDSELECT 
+WEND 
+CLEARLINE LINECOUNT - LOCAL 
+RETURN 1
+
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_3
+custom_button_name:12:3 = 指令使用次数
+RETURN 1
+
+;按钮被按下后，触发以下函数
+;这里直接转到历史指令记录
+@KOJO_Moe_CUSTOM_BUTTON_K12_3
+CALL M_KOJO_MOE_RUMIA_COM_RECORD_MAIN_MENU
+RETURN 1 
+
+;================================
+;自定义素质名
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+
+@KOJO_Moe_CUSTOM_TALENT_SET_K12
+;Z是素质ID，对应0~29
+;如果这个变量不是0，就表示该素质
+SIF ( CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2 ) && !(TALENT:12:3 || TALENT:12:7 || TALENT:12:184 || TALENT:12:185)
+CUSTOM_TALENT:12:0 = 1
+;素質名
+CUSTOM_TALENT_NAME:12:0 = 朋友
+;(省略可)自定义素质的显示颜色，0/普通1/粉红2/红色+粗体
+CUSTOM_TALENT_COLOR:12:0 = 0
+;(省略可)表示类别 1/種族 2/性的特徴 3/身体的特徴 4/精神的特徴 5/技術的特徴 他は「その他」
+CUSTOM_TALENT_TYPE:12:0 = 4
+;
+SIF CFLAG:12:K12C_1_EX开启 || CFLAG:12:K12C_1_EX开启_2 
+CUSTOM_TALENT:12:1 = 1 
+;素質名
+CUSTOM_TALENT_NAME:12:1 = 宵暗之花
+;(省略可)自定义素质的显示颜色，0/普通1/粉红2/红色+粗体
+CUSTOM_TALENT_COLOR:12:1 = 0xE9101A
+;(省略可)表示类别 1/種族 2/性的特徴 3/身体的特徴 4/精神的特徴 5/技術的特徴 他は「その他」
+CUSTOM_TALENT_TYPE:12:1 = 3
+;
+;
+;素質名
+IF CUSTOM_TALENT:12:2 == 1 
+	CUSTOM_TALENT_NAME:12:2 = 心爱
+ELSEIF CUSTOM_TALENT:12:2 == 2
+	CUSTOM_TALENT_NAME:12:2 = 亲爱
+ELSEIF CUSTOM_TALENT:12:2 == 3 
+	CUSTOM_TALENT_NAME:12:2 = 挚爱
+ENDIF 
+;(省略可)自定义素质的显示颜色，0/普通1/粉红2/红色+粗体
+IF CUSTOM_TALENT:12:2 == 3 
+	CUSTOM_TALENT_COLOR:12:4 = MOE_FADED_RED
+ELSE 
+	CUSTOM_TALENT_COLOR:12:3 = MOE_PINK
+ENDIF 
+;(省略可)表示类别 1/種族 2/性的特徴 3/身体的特徴 4/精神的特徴 5/技術的特徴 他は「その他」
+CUSTOM_TALENT_TYPE:12:2 = 2
+;================================
+;加载游戏时会自动读取以下函数并更新
+;如果您的kojo无需持续更新，请忽略它
+;;================================
+@KOJO_Moe_VERSION_K12
+	;返回当前口上的版本数
+	 RETURN 20240710
+
+;当存档记录的变量CFLAG:kojo_version比上面的口上版本号低，即为旧版本的时候，此处将调用
+@KOJO_Moe_VERSION_UPDATE_K12
+CALL M_KOJO_Moe_COLOR_K12_SET(MOE_GREEN)
+PRINTW 【露米娅Moe版口上】 
+;
+;20240710 更新了新CFLAG记录告白情况
+	SIF TALENT:12:7		;有恋人就赋确认值
+		SETBIT CFLAG:12:K12C_1_恋人获得形式,0  
+	SIF !FIRSTTIME_OF_Moe_K12(352)	;检测自机告白过没有
+		SETBIT CFLAG:12:K12C_1_恋人获得形式,2  
+	;告白成功方暂时无法显示
+	;
+	;转移初始有无无知的变量
+	SIF MOE_RUMIA_INITAL_TALENT:27 	
+		MOE_RUMIA_INITAL_TALENT:27 = 1 
+	CFLAG:12:1127 = 0 
+	;
+	;角色名简中化
+	IF CALLNAME:12 == "露米亜"
+		PRINTL 请问需要修改露米娅在游戏内的显示名称吗？
+		PRINTL 这会让本口上角色的称呼与全名，从"露米亜"变成"露米娅"
+		CALL ASK_YN 
+		SELECTCASE RESULT 
+			CASE 0
+				CALLNAME:12 = 露米娅 
+				NAME:12 = 露米娅 
+				PRINTW 已修改
+			CASE 1
+				PRINTW 未进行修改
+		ENDSELECT
+	ENDIF 
+	PRINTL 
+	CALL DQPRINT (@"已经更新至20240710版本",100)
+	;
+	;
+	RETURN 20240710
+
+;================================
+;角色介绍 函数
+;================================
+@CHARA_INFO_KOJO_Moe_K12
+CLEARLINE 4
+PRINT 職場 :
+IF CFLAG:12:K12C_1_已上学 || CFLAG:12:K12C_1_已上学_2
+PRINTFORML 人间之里~寺子屋
+ELSE
+PRINTFORML 
+ENDIF
+PRINTFORML 
+PRINTFORML □ 角色介绍 □---------------------------------------------------------------------
+PRINTFORML 
+PRINTFORML %CSVCSTR(12, 10)%
+SETCOLOR MOE_RUMIA
+PRINTFORML 
+PRINTFORML 外表是年幼的女孩，金发赤瞳，身着黑色衣服，头上绑着一条红色缎带
+PRINTFORML
+RESETCOLOR
+IF TALENT:12:7 && TALENT:12:3
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 与你互相流露的心意，让露米娅向往着，成为你这样的大人
+	PRINTFORML 想要努力地成长，想要给你更多的报答，想要与你相伴到老
+	;PRINTFORML 因此决定成为你的未婚妻，为了婚后生活，开始了新娘修行 Moe:这句话可能还要留一留
+	RESETCOLOR
+ELSEIF TALENT:12:7 && TALENT:12:8
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 不知恋人究竟是何意，将互相流露的心意视作朋友间的约定
+	PRINTFORML 笨拙地向你表达着爱，单纯喜欢着与你相处的感觉
+	RESETCOLOR
+ELSEIF TALENT:12:184
+	SETCOLOR MOE_PINK
+	PRINTFORML 铭刻在身体中的快乐，让幼嫩的躯体时刻都渴望你的爱抚
+	PRINTFORML 被欲求所俘虏的宵暗妖怪，成为了永远服从于你的性爱对象
+	RESETCOLOR
+ELSEIF TALENT:12:185 == 2		;炮友等于1不可能的
+	SETCOLOR MOE_PINK
+	PRINTFORML 对你怀有爱意的同时，愈发沉醉在与你的交融之中
+	PRINTFORML 相比与你相处时感受到的关心，似乎更喜欢肉体感受到的快感
+	RESETCOLOR
+ELSEIF TALENT:12:3
+	SETCOLOR MOE_ORINGE
+	PRINTFORML 年幼无知的心灵，正视起难以忘怀的深厚感情，将对你的爱视作依赖
+	PRINTFORML 毫无保留地向你表达着单纯的情感，努力想要得到你更多的关心
+	RESETCOLOR
+ELSEIF TALENT:12:8 && (CFLAG:12:2 >= 2500)
+	SETCOLOR MOE_GREEN
+	PRINTFORML 对你的思念在心中难以遮掩了
+	PRINTFORML 羞于肯定自己想法的同时，又期盼着能与你更近一步
+	RESETCOLOR
+ELSEIF TALENT:12:8 && (CFLAG:12:2 < 2500)
+	SETCOLOR MOE_GREEN
+	PRINTFORML 青涩的爱悄悄地在心中萌芽
+	PRINTFORML 浑然不知自己的变化，只想着能与你坐在一起，就会很开心
+	RESETCOLOR 
+ELSEIF !TALENT:12:8 && (CFLAG:12:2 >= 1300)
+	SETCOLOR MOE_BLUE
+	PRINTFORML 懵懂无知中将仰慕当作友情，常常将你的名字挂在嘴边
+	RESETCOLOR
+ELSEIF (CFLAG:12:2 >= 800) && (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)
+	SETCOLOR MOE_BLUE
+	PRINTFORML 很感激能陪在身边的你，将你作为最好的朋友来对待
+	RESETCOLOR
+ELSEIF   CFLAG:12:K12C_1_朋友_2 || CFLAG:12:K12C_1_朋友 
+	SETCOLOR MOE_BLUE
+	PRINTFORML 与你成为朋友后，对你十分好奇，想要更多地了解你
+	RESETCOLOR
+ELSEIF (CFLAG:12:2 <= 100)
+	SETCOLOR MOE_RUMIA
+	PRINTFORML 似乎因为对光线过于敏感，常常躲在黑暗之中
+	RESETCOLOR
+ELSEIF (CFLAG:12:2 <= 200)
+	SETCOLOR MOE_RUMIA
+	PRINTFORML 对突然出现在身边的你感到好奇，但还是有些怕生
+	RESETCOLOR
+ELSE 
+ENDIF 
+PRINTFORML 
+IF CFLAG:12:K12C_1_戒指事件触发  
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 【%MASTERNAME:12%的……未婚妻%UNICODE(0x2764)%】
+	PRINTFORML
+	RESETCOLOR
+ELSEIF TALENT:12:7
+	SETCOLOR MOE_PINK 
+	PRINTFORML 【%MASTERNAME:12%\@ MOE_RUMIA_CHECK_ANY_OTHER_LOVER() ? # 唯一 \@的恋人！】
+	PRINTFORML
+	RESETCOLOR
+ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+	SETCOLOR MOE_RUMIA
+	PRINTFORML 【%MASTERNAME:12%的好朋友！】
+	PRINTFORML
+	RESETCOLOR
+ENDIF 	
+IF TALENT:12:7 || (CFLAG:12:K12C_1_朋友_2 == 1)
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 【人见人爱的好孩子！】: 不再袭击人类，是人见人爱的好孩子！
+	PRINTFORML
+	RESETCOLOR
+ENDIF 
+IF CFLAG:12:K12C_1_已上学 || CFLAG:12:K12C_1_已上学_2
+	SETCOLOR MOE_GREEN
+	PRINTFORML 【寺子屋的妖怪学生！】：会去寺子屋上学，学习成绩还不错！
+	PRINTFORML
+	RESETCOLOR
+ENDIF 
+IF (CFLAG:12:K12C_1_已买FUMO  == 1) || (CFLAG:12:K12C_1_已买FUMO_2 == 1 )
+	SETCOLOR MOE_ORINGE
+	PRINTFORML 【会打工的妖怪女孩！】：为了能够成为大人，开始了打工生活！
+	PRINTFORML
+	RESETCOLOR
+ENDIF 
+IF (CFLAG:12:K12C_1_笨蛋组 == 1 ) || (CFLAG:12:K12C_1_笨蛋组_2 == 1)
+	SETCOLOR MOE_BLUE
+	PRINTFORML 【笨蛋组合的小太阳！】：与笨蛋们约定好了，是永远的好朋友！
+	PRINTFORML
+	RESETCOLOR
+ENDIF 
+IF (TALENT:12:7 && CFLAG:12:K12C_1_EX开启 == 1) || (TALENT:12:7 && CFLAG:12:K12C_1_EX开启_2 ==  1)
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 【宵暗之花】：这份力量……仅为守护所爱之人……
+	RESETCOLOR
+ELSEIF (CFLAG:12:K12C_1_EX开启_2 ==  1)
+	SETCOLOR MOE_FADED_RED
+	PRINTFORML 【宵暗之花】：这份力量……是何时拥有的呢……
+	RESETCOLOR
+ENDIF 
+PRINTFORML
+;CALL MOE_RUMIA_CHANGE_PAGE ;Moe不知道有什么用所以先干掉好了
+	;SELECTCASE CFLAG:12:912  
+	;	CASE IS < 2 
+	;		PRINTFORML 
+	;	CASE IS < 4
+	;		PRINTFORML 
+	;ENDSELECT
+RETURN 1
+;
+;==================================================
+;针对jpanon方面作出的，有关自定义工作的更新
+;目前还在等待测试，不确定可否实现……
+;-------------------------------------------------
+;@M_KOJO_Moe_仕事内容設定_K12(ARG:1)
+;此部分对应的补丁为ERB\MOVEMENTS\JOB_仕事内容.ERB
+;以上为自己曾经尝试过的补丁方法
+
+;ARGS有 "SETUP"和"MOVE"，前者设置工作，后者设置工作时移动
+
+
+@M_KOJO_Moe_K12_JOBNAME_SET
+;BBASaikouTW edit, custom job implemented
+;Will wake up early for the school
+CUSTOM_JOB_DESC:12:0 = 上課
+CUSTOM_JOB_DESC:12:2 = 上課
+CUSTOM_JOB_DESC:12:3 = 早課
+CUSTOM_JOB_DESC:12:4 = 課程
+
+@M_KOJO_Moe_CHECK_K12_JOB(ARGS,ARG,ARG:1)
+IF ARGS == "SETUP"
+	IF CFLAG:12:K12C_1_已上学_2 || CFLAG:12:K12C_1_已上学
+		CSTR:12:3 = 在寺子屋上课 平日 08:00～14:00
+		CFLAG:ARG:326 = 222
+		IF YOUBI_MATCH(DAY, "水金") && CFLAG:12:903 <= 20 && !INRANGE(CFLAG:12:908,1,CHILD_就学)
+			MAXBASE:12:13 = 600 * 3
+			BASE:12:13 = 600 * 3
+			TCVAR:12:325 = CLOCK_TO_TIME(8, 10)
+			TCVAR:12:326 = CLOCK_TO_TIME(14, 30)
+			CFLAG:12:390 = -270 ;Will wake up early for the school/早起上早10（确信）但是好像也会早睡5小时
+			CFLAG:12:350 = 43
+			TCVAR:12:316 = 0
+			TCVAR:12:315 = 1
+			;TCVAR:ARG:礼物 = GETNUM(ITEM, "來歷不明的肉")
+			RETURN
+		ENDIF
+	ENDIF 
+ELSEIF ARGS == "MOVE"
+ENDIF 
+;原版的@角色データ12，可以通过改变STR的方式，强行覆写掉
+;具体的写法还没找出来，先放在这里好了
+@M_KOJO_Moe_角色データ_K12_EVENTTRAIN
+
+;==================================================
+;露米亜的移动轨迹
+;用于配合自己留在补丁里面的接口
+@M_KOJO_Moe_CHECK_K12_CHARADATA(ARGS,ARG,ARG:2)
+;此部分对应的补丁为ERB\キャラデータ\Chara_data_12_ルーミア.ERB
+SELECTCASE ARGS 
+    CASE "MOVE"
+		SELECTCASE ARG
+			;連動設定（RETURN=依存する角色, RESULT:1～3=対等に連動する角色）
+			CASE 1
+			;特殊生活時間設定（CFLAG:LOCAL:生活時間補正を設定する）
+			;可以在未来实装上课的时候，在这里做更改
+			CASE 3
+				IF (CFLAG:12:K12C_1_已上学_2 || CFLAG:12:K12C_1_已上学) && YOUBI_MATCH(DAY, "水金") && CFLAG:12:903 <= 20 && !INRANGE(CFLAG:12:908,1,CHILD_就学)
+				;早⑩（确信）
+					CFLAG:12:390 = -270
+				ELSE 
+					CFLAG:12:390 = 0 
+				ENDIF 
+			;移動傾向（±～10=行きやすい/行きにくい, -100=行かない）
+			;相比原版，补充了不会进艾伦房间和浴室的设定，与在各个地方的移动倾向
+			CASE 4
+				SELECTCASE ARG:2	
+					;境内，走廊，庭
+					CASE 2, 10, 11
+						RETURN 5
+					;廚房
+					CASE 8
+						RETURN 7
+					;三妖精之家・大廳
+					CASE 27
+						RETURN -5
+					;人里的門，中央広場，南大街，東大街，北大街，西大街，龍神像
+					CASE 201, 202, 203, 204, 205, 206, 207
+						RETURN -7
+					;食料品店，甜品店，小料理屋
+					CASE 216, 217, 218
+						RETURN 7 
+					;鈴奈庵，寺子屋
+					CASE 213 , 222
+						RETURN 5 
+					;正門，庭，守衛小屋
+					CASE 301, 302, 303
+						RETURN -10 
+					;湖畔，霧之湖
+					CASE 343, 347
+						RETURN 5 
+					;琪露諾的冰屋，大妖精の棲家
+					CASE 345, 346
+						SIF CFLAG:12:K12C_1_笨蛋组_2 || CFLAG:12:K12C_1_笨蛋组 
+							RETURN 7
+					;私人房间不会去
+					CASE 303, 304, 305, 328 TO 333
+						RETURN -100
+					;私人房间不会去魔理沙宅・寝室，魔理沙宅・風呂，人偶洋館・愛麗絲的房間，人偶洋館・神綺的房間
+					CASE 512, 514, 521, 522
+						RETURN -100
+					;人偶洋館・夢子的房間，人偶洋館・風呂，人偶洋館・空的部屋，艾倫宅・風呂，艾倫宅・寝室
+					CASE 523, 526, 531, 537, 535
+						RETURN -100
+					;朱鷺子的棲息処，莉格露的棲息処，成美の小屋
+					CASE 541, 542, 544
+						RETURN -100
+					;
+					CASE 543
+						;白天很喜欢在家里
+						IF INRANGE(TIME, 480, 1020) 
+							RETURN 15
+						;總不能在外面淋雨不回家吧
+						ELSEIF TIME:5 == 4 || TIME:5 == 5 || TIME:5 == 6 
+							RETURN 7
+						ELSE 
+							RETURN 5 
+						ENDIF 
+				ENDSELECT
+			;出现场所
+			;相比原版完全改掉了，现在不会去冥界那种地方了——
+			;本来去那里就不太正常吧）
+			CASE 7
+				SELECTCASE ARG:2
+					CASE 10 , 20 , 30 , 40 , 50
+						RETURN 1      
+					CASE 210 , 220 , 230 , 240 		;二周目，或者一周目学生才会这些
+						SIF CFLAG:12:K12C_1_二周目 || CFLAG:12:K12C_1_笨蛋组 || CFLAG:12:K12C_1_笨蛋组_2
+						RETURN 1          
+					CASE 310 , 330 , 340
+						RETURN 1         
+					CASE 320
+						SIF CFLAG:12:K12C_1_笨蛋组_2 || CFLAG:12:K12C_1_笨蛋组
+							RETURN 1         
+					CASE 410 , 420 , 430 , 460 , 470
+						RETURN 1          
+					CASE 510 , 530 , 540 , 550 , 560 , 570
+						RETURN 1 
+					CASE 710 , 720 , 770
+						RETURN 1         
+					CASE 810 , 820 , 830 , 840
+						RETURN 1         
+				ENDSELECT
+			;引力設定（CFLAG:LOCAL:194を設定する）
+			;可以参考一下魔理沙的
+			CASE 8	
+				;露米娅讨厌阳光
+				IF INRANGE(TIME, 480, 1020) 
+					TCVAR:12:194 = 543
+				ENDIF
+		ENDSELECT
+	CASE "SPECIAL_MENU"
+		RETURN 0 
+ENDSELECT
+;
+;================================
+;自定义指令
+;Y 是自定义指令的编号，范围是0-29
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+[SKIPSTART]
+;指令名
+@KOJO_Moe_COM_NAME_K12_Y
+	RESULTS = com_name
+
+;指令使用条件、和通常的com_able函数一样，如果返回1，指令就会显示为可执行。
+@KOJO_Moe_COM_ABLE_K12_Y
+	RETURN 1
+
+;指令数据处理。记述经验、参数增减
+;RETURN 1=指令実行 / RETURN 0=部分取消(SOURCE計算SKIP) / RETURN -1=指令失败
+@KOJO_Moe_COM_K12_Y
+	RETURN 1
+
+;指令的文本内容。地文/口上请写在这里
+;W的値等于(270 + Y)。SELECTCOM/PREVCOM也会变化成这个值
+@M_KOJO_Moe_MESSAGE_COM_K12_W
+	RETURN 1
+
+;指令实行的可能判定
+;可以在实行指令前显示一个条件实行可否的权重比较，并且
+;可以参考 @CAN_COM9(ARG)，不能实行时请RETURN 0 ，允许实行时RETURN 1 
+;或者可以不用写这部分
+;@KOJO_Moe_CAN_COM_K12_Y(skipFlag)
+;	#DIM skipFlag
+;	SKIPDISP skipFlag
+;	SKIPDISP 0
+[SKIPEND]
+
+
