@@ -659,34 +659,11 @@ ENDIF
 [SKIPSTART]
 ;==================================================
 身体检查……大函数集
-;==================================================
-目录
-;-------------------------------------------------
-;身体检查确认用函数
-@RUMIA_BODY_MEASURE_COMFIRM
-;身体检查开始的台词
-@RUMIA_BODY_MEASURE_MESSAGE 
-;身体检查再次测定的台词
-@RUMIA_BODY_MEASURE_TWICE_AND_MORE
-;身体检查测定完成的台词
-@RUMIA_BODY_MEASURE_END
-;身体检查测定期间，成长180天后的台词
-@RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE_WHEN_MEASURE
-;每日结束后，成长180天后的台词
-@RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE_WHEN_NIGHT
-;身体检查测定期间，成长480天后的台词
-@RUMIA_BODY_GROW_UP_TO_SHORT_SIZE_WHEN_MEASURE
-;每日结束后，成长480天后的台词
-@RUMIA_BODY_GROW_UP_TO_SHORT_SIZE_WHEN_NIGHT
-;测定露米娅身体尺寸的函数
-@RUMIA_SOMATOME_TRY
-;身体尺寸生成用函数
-@RUMIA_MAKE_SIZE, ARG
 ;-------------------------------------------------
 [SKIPEND]
 ;### 身体检查用函数 ###################################
 ;此段使用的CFLAG如下
-;CFLAG:12:K12C_1_身体测定冷却 身体检查d
+;CFLAG:12:K12C_1_身体测定冷却 身体检查
 ;==================================================
 ;身体检查确认用函数，
 ;满足条件后才会CALL对应的主要函数
@@ -694,9 +671,11 @@ ENDIF
 ;通过对话和身体接触可触发
 ;RETURN 1:满足            0:不满足 
 ;-------------------------------------------------
-@RUMIA_BODY_MEASURE_COMFIRM
+@M_KOJO_Moe_K12_BODY_MEASURE_COMFIRM
 IF TALENT:12:7 && !RAND:3 && ( CFLAG:12:300 == CFLAG:12:311 ) && ONCE("RUMIA_BODY_MEASURE") && !CFLAG:12:K12C_1_身体测定冷却
-	CALL RUMIA_BODY_MEASURE_MESSAGE 
+	CALL M_KOJO_Moe_K12_BODY_MEASURE_MESSAGE("START")
+	SIF RESULT != 1 
+	CALL M_KOJO_Moe_K12_SOMATOME_TRY
 	RETURN 1
 ELSE 
 	RETURN 0 
@@ -704,32 +683,32 @@ ENDIF
 ;==================================================
 ;这个部分，是从原版中截出来的，用于测定露米娅身体尺寸的函数
 ;-------------------------------------------------
-@RUMIA_SOMATOME_TRY
+@M_KOJO_Moe_K12_SOMATOME_TRY
 $RUMIA_BODY_MEASURE_AGAIN 
 PRINTFORML 
 PRINTFORML 进行%CALLNAME:12%的身体測定
 ;CALL两遍的目的是避免原有的测定结果干扰
 CFLAG:TARGET:351 = 2
-CALL RUMIA_MAKE_SIZE(12)
+CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
 CFLAG:TARGET:351 = 1 
-CALL RUMIA_MAKE_SIZE(12)
-	IF (( DAY:0 - CFLAG:12:1234 ) >= 180 ) && FIRSTTIME("RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE")
+CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
+	IF (( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) >= 180 ) && FIRSTTIME("RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE")
 		;成为恋人180天后，触发长高文本
-		CALL RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE_WHEN_MEASURE
-	ELSEIF (( DAY:0 - CFLAG:12:1234 ) >= 480 ) && FIRSTTIME("RUMIA_BODY_GROW_UP_TO_SHORT_SIZE")
+		CALL M_KOJO_Moe_K12_BODY_GROWED_TIP_MESSAGE(1,1)
+	ELSEIF (( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) >= 480 ) && FIRSTTIME("RUMIA_BODY_GROW_UP_TO_SHORT_SIZE")
 		;成为恋人480天后，触发长高文本
-		CALL RUMIA_BODY_GROW_UP_TO_SHORT_SIZE_WHEN_MEASURE
+		CALL M_KOJO_Moe_K12_BODY_GROWED_TIP_MESSAGE(2,1)
 	ENDIF 
 CALL SHOW_SIZE(12)
-CALL ASK_M("再測定一次",1,"这样就行",1)
+CALL M_Moe_K12_ASK_M("再測定一次",1,"这样就行",1)
 SELECTCASE RESULT
 	CASE 0
 		CFLAG:TARGET:351 = 2
-		CALL RUMIA_MAKE_SIZE(12)
-		CALL RUMIA_BODY_MEASURE_TWICE_AND_MORE
+		CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
+		CALL M_KOJO_Moe_K12_BODY_MEASURE_MESSAGE("TWICE")
 		GOTO RUMIA_BODY_MEASURE_AGAIN 
 	CASE 1
-		CALL RUMIA_BODY_MEASURE_END
+		CALL M_KOJO_Moe_K12_BODY_MEASURE_MESSAGE("END")
 ENDSELECT
 ;==================================================
 ;身体尺寸生成用函数
@@ -764,7 +743,7 @@ ENDSELECT
 ;身体測定済みかつ未設定の場合も生成
 ;CSVに記入されていない場合の標準値は1000
 ;-------------------------------------------------
-@RUMIA_MAKE_SIZE, ARG
+@M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE, ARG
 #DIM 数值影响值,5
 VARSET LOCAL
 IF CFLAG:ARG:K12T_1_初见未吃饭 == 2 || (CFLAG:ARG:351 == 1 && (MAXBASE:ARG:20 == 0 || MAXBASE:ARG:21 == 0 || MAXBASE:ARG:22 == 0 || MAXBASE:ARG:23 == 0 || MAXBASE:ARG:24 == 0))
@@ -795,15 +774,15 @@ ENDIF
 ;-------------------------------------------------
 ;Moe的自定义部分 身高
 ;-------------------------------------------------
-IF ( DAY:0 - CFLAG:12:1234 ) < 480 
-	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:1234) * 190 / 480 ) )
+IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
+	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 190 / 480 ) )
 	BASE:ARG:20 *= 数值影响值:1 / 1000
 ELSE 
 	数值影响值:1 = 920
 	BASE:ARG:20 *= 数值影响值:1 / 1000
 ENDIF 
-IF ( DAY:0 - CFLAG:12:1234 ) < 180
-	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:1234) * 120 / 180 ) )
+IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 180
+	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 120 / 180 ) )
 	BASE:ARG:20 *= 数值影响值:1 / 1000
 ELSE 
 	数值影响值:1 = 850
@@ -824,10 +803,10 @@ ENDIF
 ;Moe的自定义部分 腰围
 ;-------------------------------------------------
 IF TALENT:ARG:100 == -2
-	数值影响值:2 = 1160 - ( (DAY:0 - CFLAG:12:1234) * 80 / 180 )
+	数值影响值:2 = 1160 - ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 180 )
 	BASE:ARG:23 *= 数值影响值:2 / 1000
 ELSEIF TALENT:ARG:100 == -1
-	数值影响值:2 = 1080 - ( (DAY:0 - CFLAG:12:1234) * 80 / 480 )
+	数值影响值:2 = 1080 - ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 480 )
 	BASE:ARG:23 *= 数值影响值:2 / 1000
 ENDIF
 ;-------------------------------------------------
@@ -852,10 +831,10 @@ ENDIF
 ;Moe的自定义部分 胸围
 ;-------------------------------------------------
 IF TALENT:ARG:22 == -2
-	数值影响值:3 = 840 + ( (DAY:0 - CFLAG:12:1234) * 80 / 180 )
+	数值影响值:3 = 840 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 180 )
 	BASE:ARG:22 *= 数值影响值:3 / 1000
 ELSEIF TALENT:ARG:22 == -1
-	数值影响值:3 = 920 + ( (DAY:0 - CFLAG:12:1234) * 80 / 480 )
+	数值影响值:3 = 920 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 480 )
 	BASE:ARG:22 *= 数值影响值:3 / 1000
 ENDIF 
 ;-------------------------------------------------
@@ -895,12 +874,12 @@ ENDIF
 ;Moe的自定义部分 体重
 ;-------------------------------------------------
 IF TALENT:ARG:100 == -2
-	IF ( DAY:0 - CFLAG:12:1234 ) < 480 
-		数值影响值:4 = ( (DAY:0 - CFLAG:12:1234) * 130 / 480 )  + 800 
+	IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
+		数值影响值:4 = ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 130 / 480 )  + 800 
 		BASE:ARG:21 *= 数值影响值:4 / 1000
 	ENDIF 
-	IF ( DAY:0 - CFLAG:12:1234 ) < 180
-		数值影响值:4 = ( (DAY:0 - CFLAG:12:1234) * 100 / 180 )  + 800 
+	IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 180
+		数值影响值:4 = ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 100 / 180 )  + 800 
 		BASE:ARG:21 *= 数值影响值:4 / 1000
 	ENDIF 
 ENDIF 
@@ -1061,7 +1040,7 @@ VARSET 判定无效
 		PRINTFORML 
 		PRINTFORMDL 只是风声吗？
 		PRINTFORMDW 即使吹灭了灯……窗外依旧是死一般的漆黑……
-		CALL ASK_M("不去在意，回床上睡觉",1,"走近窗户看看",1)
+		CALL M_Moe_K12_ASK_M("不去在意，回床上睡觉",1,"走近窗户看看",1)
 		SELECTCASE RESULT 
 			CASE 0 
 				PRINTFORML 
@@ -1088,7 +1067,7 @@ VARSET 判定无效
 				PRINTFORMDL 奇怪……似乎……是被黑暗笼罩住了？
 				PRINTFORMDW 向外推开窗户，向外面张望，却还是没法看见任何东西……
 				PRINTFORML 
-				CALL ASK_M("露米娅！！",1,"关窗睡觉",1)
+				CALL M_Moe_K12_ASK_M("露米娅！！",1,"关窗睡觉",1)
 					SELECTCASE RESULT
 						CASE 0 
 						PRINTFORMDW ……
@@ -1632,86 +1611,92 @@ ENDIF
 ;==================================================
 @MOE_RUMIA_CHECK_ENABLE_TO_INSERT(ARG)
 #FUNCTION
-
-A = 0
-S = 0
+#DIM 允许值
+#DIM 污垢值
+SIF !(TALENT:12:3 || TALENT:12:184 || TALENT:12:185 || (TALENT:12:8 && TALENT:12:7) )
+	RETURNF 0 
+SIF PALAM:12:9 < 3000 
+	RETURNF 0 
+SIF OUTROOF(CFLAG:12:300)
+	RETURNF 0 
+允许值 = 0
 ;全部の命令に共通の要素を考慮
 ;(従順が高いと命令に従いやすいなど)
 ;常識改変
 ;避免无此补丁的版本报错
 ;IF FLAG:催眠強度
-;	A += 30 * FLAG:催眠強度 / 100
+;	允许值 += 30 * FLAG:催眠強度 / 100
 ;ENDIF
 ;ABL:9
 IF ABL:9
-	A += ABL:9
+	允许值 += ABL:9
 ENDIF
 ;ABL:従順
 IF ABL:10
-	A += ABL:10 * 4
+	允许值 += ABL:10 * 4
 ENDIF
 ;ABL:15
 IF ABL:15
-	A += ABL:15 * 2
+	允许值 += ABL:15 * 2
 ENDIF
 ;レズ調教
 IF HETEROSEX(TARGET,PLAYER) == 1
 	;ABL:17
 	IF ABL:17
-		A += ABL:17 * 3
+		允许值 += ABL:17 * 3
 		ENDIF
 	;ABL:32
 	IF ABL:32
-		A += ABL:32 * 3
+		允许值 += ABL:32 * 3
 		ENDIF
 	;TALENT:兩面通吃
 	IF TALENT:性別嗜好 == -1
-		A += 10
+		允许值 += 10
 		ENDIF
 	;好奇心
 	IF TALENT:23 > 0
-		A += 7
+		允许值 += 7
 		ENDIF
 	;保守的
 	IF TALENT:23 < 0
-		A -= 13
+		允许值 -= 13
 		ENDIF
 ;ゲイ調教
 ELSEIF HETEROSEX(TARGET,PLAYER) == 2
 	;ABL:18
 	IF ABL:18
-		A += ABL:18 * 3
+		允许值 += ABL:18 * 3
 		ENDIF
 	;ABL:33
 	IF ABL:33
-		A += ABL:33 * 3
+		允许值 += ABL:33 * 3
 		ENDIF
 	;TALENT:兩面通吃
 	IF TALENT:性別嗜好 == -1
-		A += 10
+		允许值 += 10
 		ENDIF
 	;好奇心
 	IF TALENT:23 > 0
-		A += 7
+		允许值 += 7
 		ENDIF
 	;保守的
 	IF TALENT:23 < 0
-		A -= 13
+		允许值 -= 13
 		ENDIF
 ELSE
 	;好奇心
 	IF TALENT:23 > 0
-		A += 5
+		允许值 += 5
 		ENDIF
 	;保守的
 	IF TALENT:23 < 0
-		A -= 10
+		允许值 -= 10
 		ENDIF
 ENDIF
 
 ;刻印チェック
 IF MARK:苦痛刻印
-	A += MARK:苦痛刻印 * 5
+	允许值 += MARK:苦痛刻印 * 5
 ENDIF
 IF TALENT:13 > 0
 	T = 4
@@ -1723,207 +1708,199 @@ ENDIF
 
 ;不埒刻印および反発刻印
 IF MARK:不埒刻印
-	A += MARK:不埒刻印 * 3 * T
+	允许值 += MARK:不埒刻印 * 3 * T
 ENDIF
 IF MARK:反発刻印
-	A -= MARK:反発刻印 * 2 * T
+	允许值 -= MARK:反発刻印 * 2 * T
 ENDIF
 
 
 ;PALAM:恭順
 IF GETPALAMLV(PALAM:恭順,5)
-	A += GETPALAMLV(PALAM:恭順,5) * 3
+	允许值 += GETPALAMLV(PALAM:恭順,5) * 3
 ENDIF
 ;PALAM:恐怖
 IF GETPALAMLV(PALAM:恐怖,5)
-	A += GETPALAMLV(PALAM:恐怖,5) * 3
+	允许值 += GETPALAMLV(PALAM:恐怖,5) * 3
 ENDIF
 
 ;服従
 IF TALENT:服従
-	A += 10
+	允许值 += 10
 ENDIF
 ;隷属
 IF TALENT:服従 > 1
-	A += 20
+	允许值 += 20
 ENDIF
 ;叛逆（服従、隷属で無効）
 IF TALENT:態度 > 0 && !TALENT:服従
-	A -= 5
+	允许值 -= 5
 ENDIF
 ;堅強
 IF TALENT:10 > 0
-	A -= 5
+	允许值 -= 5
 ENDIF
 ;坦率
 IF TALENT:態度 < 0
-	A += 5
+	允许值 += 5
 ENDIF
 ;自尊心高
 IF TALENT:13 > 0
-	A -= 15
+	允许值 -= 15
 ENDIF
 ;自尊心低
 IF TALENT:13 < 0
-	A += 5
+	允许值 += 5
 ENDIF
 ;喜歡引人注目
 IF TALENT:26
-	A += 2
+	允许值 += 2
 ENDIF
 ;圧抑
 IF TALENT:自己愛 < 0
-	A -= 10
+	允许值 -= 10
 ENDIF
 ;抵抗
 IF TALENT:抵抗
-	A -= 10
+	允许值 -= 10
 ENDIF
 ;把柄
 IF TALENT:34
-	A += 12
+	允许值 += 12
 ENDIF
 ;容易高潮
 IF TALENT:72
-	A += 10
+	允许值 += 10
 ENDIF
 ;迷信
 IF TALENT:85
-	A += 8
+	允许值 += 8
 ENDIF
 
 
 ;調教者の能力、素質
 ;ABL:16
 IF ABL:PLAYER:16
-	A += ABL:PLAYER:16 * 2
+	允许值 += ABL:PLAYER:16 * 2
 ENDIF
 ;魅惑
 IF TALENT:PLAYER:93
-	A += 6
+	允许值 += 6
 ENDIF
 ;謎之魅力
 IF TALENT:PLAYER:94
-	A += 8
+	允许值 += 8
 ENDIF
 ;施虐狂
 IF TALENT:PLAYER:82
-	A += 3
+	允许值 += 3
 ENDIF
 
 ;助手の素質
 ;鼓舞
 IF ASSIPLAY && TALENT:PLAYER:鼓舞
-	A += 1
+	允许值 += 1
 ENDIF
 
 IF TCVAR:145 == 1
-	A += 20
+	允许值 += 20
 ENDIF
 
 ;相性チェック
 R = NO:PLAYER
 IF RELATION:R > 0 && RELATION:R < 30
-	A -= 10
+	允许值 -= 10
 ELSEIF RELATION:R > 0 && RELATION:R < 70
-	A -= 6
+	允许值 -= 6
 ELSEIF RELATION:R > 0 && RELATION:R < 100
-	A -= 3
+	允许值 -= 3
 ELSEIF RELATION:R >= 100 && RELATION:R < 130
-	A += 3
+	允许值 += 3
 ELSEIF RELATION:R >= 100 && RELATION:R < 170
-	A += 6
+	允许值 += 6
 ELSEIF RELATION:R >= 100 && RELATION:R >= 170
-	A += 10
+	允许值 += 10
 ENDIF
 ;ABL:欲望
 IF ABL:欲望
-	A += ABL:欲望 * 3
+	允许值 += ABL:欲望 * 3
 ENDIF
 ;ABL:Ｖ感覚
 IF ABL:Ｖ感覚
-	A += ABL:Ｖ感覚 * 2
+	允许值 += ABL:Ｖ感覚 * 2
 ENDIF
 ;快楽刻印
 IF MARK:快楽刻印
-	A += MARK:快楽刻印 * 3
+	允许值 += MARK:快楽刻印 * 3
 ENDIF
 ;PALAM:潤滑（の不足）
 IF PALAM:9 < PALAMLV:3
-	A -= 5
+	允许值 -= 5
 ENDIF
 ;PALAM:欲情
 IF GETPALAMLV(PALAM:11,5)
-	A += GETPALAMLV(PALAM:11,5) * 3
+	允许值 += GETPALAMLV(PALAM:11,5) * 3
 ENDIF
 ;害羞
 IF TALENT:羞恥心 > 0
-	A -= 2
+	允许值 -= 2
 ENDIF
 ;否定快感
 IF TALENT:快感応答 < 0 && !TALENT:3
-	A -= 5
+	允许值 -= 5
 ENDIF
 ;討厭男人（恋慕、親愛で無効）
 IF OTOKOGIRAI(TARGET)
-	A -= 12
+	允许值 -= 12
 ENDIF
 ;恋慕
 IF TALENT:3 && ASSIPLAY == 0
-	A += 15
-	S = 15
+	允许值 += 15
 ENDIF
 ;親愛
 IF TALENT:3 > 1 && ASSIPLAY == 0
-	A += 5
-	S = 5
+	允许值 += 5
 ENDIF
 ;処女
 LOCAL = MAX(10,40 - EXP:Ｖ経験)
 IF TALENT:0
-	A -= LOCAL
+	允许值 -= LOCAL
 ;V経験
 ELSEIF EXP:Ｖ経験 < EXPLV:2
-	A -= 15
+	允许值 -= 15
 ENDIF
 
 ;調教者が扶她
 IF (TALENT:PLAYER:2 & 3) == 3
-	A += 4
+	允许值 += 4
 ENDIF
 
 ;媚薬
 IF TCVAR:媚薬
-	A += 6
+	允许值 += 6
 ENDIF
 
-Y = 0
+污垢值 = 0
 ;愛液的污垢
 SIF STAIN:PLAYER:2 & 1
-	Y += 1
+	污垢值 += 1
 ;精液的污垢
 SIF STAIN:PLAYER:2 & 4
-	Y += 3
+	污垢值 += 3
 ;肛門的污垢
 SIF STAIN:PLAYER:2 & 8
-	Y += 7
+	污垢值 += 7
 SIF STAIN:PLAYER:2 & 16
-	Y += 15
-Y = Y * (2 - TALENT:汚臭耐性) / 2
+	污垢值 += 15
+污垢值 = 污垢值 * (2 - TALENT:汚臭耐性) / 2
 
 ;有污垢
-IF Y
-	A -= Y
-	;汚臭鈍感
-	IF TALENT:汚臭耐性 > 0
-	ELSEIF TALENT:汚臭耐性 < 0
-	ENDIF
-ENDIF
+SIF 污垢值
+	允许值 -= 污垢值
 
 ;合計を表示(20以上で実行)
 ;以最高的背面座位为准
-V = 42
-IF A < V
+IF 允许值 < 42
 	RETURNF 0
 ELSE 
 	RETURNF 1 

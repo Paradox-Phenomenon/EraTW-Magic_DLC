@@ -51,6 +51,59 @@ IF !CFLAG:12:K12C_1_温柔启用与否
 ELSE 
     PRINTFORMDW 一点都不疼呢……
 ENDIF 
+
+;==================================================
+;成为朋友后的处理
+;代表玩家关注露米娅酱了
+@M_KOJO_MOE_K12_BECOME_FRIEND_DATA_PROCESS
+
+PRINTL 
+PRINTL ……
+PRINTL 
+CALL COLORMESSAGE("【与露米娅成为朋友了】",MOE_YELLOW,2,1)
+PRINTL 
+CFLAG:12:K12C_1_朋友_2 = 1 
+;角色名简中化处理
+IF CALLNAME:12 == "露米亜"
+	PRINTL 请问需要修改露米娅在游戏内的显示名称吗？
+	PRINTL 这会让本口上角色在系统内的称呼与全名，从"露米亜"变成"露米娅"
+	CALL ASK_YN 
+	SELECTCASE RESULT 
+		CASE 0
+			CALLNAME:12 = 露米娅 
+			NAME:12 = 露米娅 
+			PRINTW 已修改
+		CASE 1
+			PRINTW 未进行修改
+	ENDSELECT
+ENDIF 
+PRINTL 
+;口上色设定
+IF !FLAG:K12C_1_自定义颜色设置 
+	PRINTFORMW 要启用本口上的颜色设定吗？
+	PRINTFORML 
+	PRINTFORMDL 启用后，这个口上内的台词，均会有对应的口上色区分
+	PRINTFORMDW 不启用的话，大部分时候都会使用默认颜色
+	PRINTFORML 
+	CALL M_Moe_K12_ASK_M("启用",1,"不启用",1)
+	SELECTCASE RESULT 
+		CASE 0 
+			CFLAG:12:K12C_1_自定义颜色设置 = 1
+			CALL M_KOJO_Moe_COLOR_K12_SET(RESULT)
+			PRINTFORML 
+			PRINTFORMW 已启用
+			PRINTFORMW 日后如果想要更改，还请通过UPDATE菜单进行更改
+			PRINTFORML 
+		CASE 1 
+			CFLAG:12:K12C_1_自定义颜色设置 = 0 
+			CALL M_KOJO_Moe_COLOR_K12_SET(RESULT)
+			PRINTFORML 
+			PRINTFORMW 那么不启用口上色设定
+			PRINTFORMW 日后如果想要更改，还请通过UPDATE菜单进行更改
+			PRINTFORML 
+	ENDSELECT
+ENDIF 		
+
 ;==================================================
 ;有人在 函数
 ;用于检测旁边有没有人
@@ -498,7 +551,7 @@ FOR LOCAL ,1 ,CHARANUM
 	SIF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == TARGET)&& ARG:1)
 		RESULTS += @"%CALLNAME:LOCAL%、"
 NEXT 
-STRLENS RESULTS , 
+STRLENS RESULTS  
 ;切去最后一位顿号
 SUBSTRING RESULTS , 0 , (RESULT - 1)
 RETURNF RESULTS 
@@ -523,26 +576,93 @@ ELSEIF ARG
 	RETURNF 1
 ENDIF
 RETURNF 1 
+;
+;-------------------------------------------------
+;基于原版的M_Moe_K12_ASK_M
+;增加了保持原有字体和颜色的功能
+;-------------------------------------------------
+@M_Moe_K12_ASK_M(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8, ARGS:9, ARG:9)
+#LOCALSIZE 7
+#DIM CONST 選択肢上限 = 9
+#DIM PREV_REDRAW
+PREV_REDRAW = CURRENTREDRAW()
+REDRAW 0
+LOCAL:1 = GETCOLOR()
+LOCAL:2 = GETSTYLE()
+LOCALS = %GETFONT()%
+FOR LOCAL:0, 0, (選択肢上限 + 1)
+	IF ARGS:(LOCAL:0) != ""
+		IF ARG:(LOCAL:0)
+			PRINTBUTTON @"{LOCAL:0, 2, RIGHT}[%ARGS:(LOCAL:0)%]", LOCAL:0
+		ELSE
+			SETCOLOR 0x606060
+			PRINTPLAINFORM {LOCAL:0, 2, RIGHT}[%ARGS:(LOCAL:0)%]
+			RESETCOLOR
+		ENDIF
+		PRINTL
+	ENDIF
+NEXT
+$INPUT_LOOP
+INPUT
+IF RESULT < 0 || RESULT > 選択肢上限 || ARGS:RESULT == "" || !ARG:RESULT
+	CLEARLINE 1
+	GOTO INPUT_LOOP
+ENDIF
+REDRAW PREV_REDRAW
+SETCOLOR LOCAL:1
+FONTSTYLE LOCAL:2 
+SETFONT LOCALS 
+RETURN RESULT
 ;-------------------------------------------------
 ;破处与失贞（确信）
 ;-------------------------------------------------
-@RUMIA_FOUND_YOU_DURING_NIGHT_VIRGIN_GIVE
+@M_KOJO_Moe_K12_Custom_Event_VIRGIN_LOST(主动=0,修饰语="",场所="",)
+#DIM 主动
+#DIMS 修饰语
+#DIMS 场所
+;记录逆推状态
+LOCAL = CFLAG:12:317 
 TALENT:12:27 = 0
 EXP:12:1 += 1
-CALL LOST_VIRGIN(12)
+;IF TALENT:12:0 == 1 && GETBIT(TALENT:12:2,0)
+CALL COLORMESSAGE("【処女喪失】",0xF7ABA6,2,1)
+IF TALENT:12:7
+	CALL COLORMESSAGE(@"%CALLNAME:12%因为能让%MASTERNAME:12%成为第一次的对象而感到无上的幸福感的様子……",MOE_FADED_RED,2,1)
+	CFLAG:12:処女喪失対象 |= 喪失_恋慕
+ELSEIF TALENT:12:3
+	CALL COLORMESSAGE(@"%CALLNAME:12%因为把处女献给了%MASTERNAME:12%而感到幸福的様子……",MOE_PINK,2,1)
+	CFLAG:12:処女喪失対象 |= 喪失_恋慕
+ELSE 
+	CFLAG:12:処女喪失対象 |= 喪失_思慕
+ENDIF 
+CFLAG:12:処女喪失記念日 = DAY
+TALENT:12:処女 = 0
+TCVAR:12:破瓜 = 1
+CFLAG:12:処女喪失对手 = PLAYER
+
+;触发献上的修饰词
+SIF 场所 == " "
+	场所 = %PLACE_NAME(12)%
+TARGET = 12
+SIF 主动
+	CFLAG:12:317 = 2 
+CSTR:12:処女喪失履歴 = %HISTORY_LOST_TEXT(12,MASTER,"阴茎",场所,修饰语,"処女")%
+;还原逆推状态
+CFLAG:12:317 = LOCAL 
+
 IF !TALENT:0:1 && TALENT:0:2 & 2
-	    TCVAR:0:61 = 1
-        SETCOLOR MOE_PINK 
-		PRINTFORMW 童貞喪失(%CALLNAME:0%)
-        SETCOLOR MOE_RUMIA
-		TALENT:0:1 = 1
+	TCVAR:0:61 = 1
+	SETCOLOR MOE_PINK 
+	PRINTFORMW 童貞喪失(%CALLNAME:0%)
+	SETCOLOR MOE_RUMIA
+	TALENT:0:1 = 1
 ENDIF
 SIF !TALENT:12:156 && MOE_RUMIA_INITAL_TALENT:27
 TALENT:12:27 = 1           
 SIF TALENT:12:0 && (TALENT:12:3)
-			EXP:12:41 += 5
+	EXP:12:41 += 5
 SIF TALENT:12:0 && (TALENT:12:7)
-			EXP:12:41 += 5
+	EXP:12:41 += 15
 [SKIPSTART]
 IF CFLAG:12:311 == CFLAG:0:300
 	CALL SET_HISTORY_LOST_V(12, MASTER, "阴茎", "自室", "")
@@ -558,4 +678,49 @@ CATCH
 ENDCATCH 
 
 
+;==================================================
+;主动掀裙子描述函数、
+;避免重复使用文本造成虚胖
+;函数内自带胖次辨别，所以应该不用主动赋给arg
+;==================================================
+@MOE_RUMIA_PANTS_OR_PUxxY_DESCRIPTION(ARG=0)
 
+SELECTCASE TEQUIP:110 
+	CASE 1 
+		LOCALS = 张开双腿躺了下去
+	CASE 2
+		LOCALS = 挺起了屁股
+	CASE 3 ,4
+		LOCALS = 张开双腿坐了上来
+	CASE 5
+		LOCALS = 在你的腿上坐下
+ENDSELECT
+;无胖次的情况
+IF ARG == 1 
+	IF 充填率_OF_RUMIA(TARGET,1) > 77
+		PRINTFORMDL 直接裸露出的幼小蜜缝黏满了白浊，还在不断向外喷着精液
+		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，大股大股地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
+		PRINTFORMDL 裸露着的幼小蜜缝黏满了白浊，从中汩汩地流着精液
+		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF PALAM:12:9 > 10000
+		PRINTFORMDL 直接裸露的幼小蜜缝，已经湿得一塌糊涂
+		PRINTFORMDL 从微微张开的穴口流淌出的蜜液，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF PALAM:12:9 > 2000
+		PRINTFORMDL 随着女孩%LOCALS%，被蜜液微微濡湿的幼小蜜缝吸引着你的目光……
+	ELSE 
+		PRINTFORMDL 随着女孩%LOCALS%，微微张开的幼小蜜缝吸引着你的目光……
+	ENDIF
+ELSEIF !ARG
+	IF 充填率_OF_RUMIA(TARGET,1) > 77
+		PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%中间不断地漫出刚刚射进去的精液……
+	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被你射进去的精液浸染了……
+	ELSEIF PALAM:12:9 >= 10000
+		PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%散发出阵阵诱人的蜜香……
+	ELSEIF PALAM:12:9 >= 1000
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被蜜液浸染了……
+	ELSE
+		PRINTFORMDL %PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光
+	ENDIF
+ENDIF 

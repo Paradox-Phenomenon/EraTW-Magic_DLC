@@ -26,7 +26,7 @@
 ;判断按钮是否可以显示，如果返回1，则显示
 @KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_0
 custom_button_name:12:0 = 修改称呼
-SIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+SIF (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2) && !CFLAG:12:K12C_1_消失状态
 	RETURN 1
 
 ;按钮被按下后，触发以下函数
@@ -34,13 +34,186 @@ SIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
 CALL M_KOJO_Moe_UPDATE_K12_SETTING_1_0
 RETURN 1 
 
+;-------------------------------------------------
+;
+;-------------------------------------------------
+;
 ;判断按钮是否可以显示，如果返回1，则显示
 @KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_1
-IF TALENT:12:8 || TALENT:12:184 || TALENT:12:185 
+custom_button_name:12:1 = 提示盒子
+IF CFLAG:12:18 && (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2) && !CFLAG:12:K12C_1_提示盒子冷却 && !CFLAG:12:K12C_1_消失状态
+	RETURN 1
+ELSE 
+	RETURN 0
+ENDIF 
+
+;按钮被按下后，触发以下函数
+;这里直接转到历史指令记录
+@KOJO_Moe_CUSTOM_BUTTON_K12_1
+CALL M_KOJO_MOE_K12_TIPS_BOX 
+RETURN 1 
+
+@M_KOJO_MOE_K12_TIPS_BOX
+#LOCALSIZE 7
+SETCOLOR MOE_GREEN
+VARSET LOCAL 
+LOCAL:1 = LINECOUNT 
+PRINTW ……
+PRINTW 咦？这里有一个……盒子？
+PRINTW 要打开吗？
+CALL ASK_YN 
+IF !RESULT 
+	PRINTDATAW 
+		DATAFORM 盒子里面有张纸条……写着……
+		DATAFORM 盒子的内侧写了串小字……
+		DATAFORM 盒子的底下就有一串字……
+	ENDDATA
+	PRINTL 
+	PRINTL ……
+	PRINTL 
+	FOR LOCAL , 0 , 10 
+		SELECTCASE RAND:10 
+			CASE 0 
+				IF !CFLAG:12:K12C_1_二周目 && FIRSTTIME("K12_TIPS_BOX_0")
+					IF TALENT:12:7 
+						PRINTW 即便将时光扭转，曾经的回忆依旧让人难以忘却……
+					ELSE 
+						PRINTW 宵暗妖怪是很看重情意的妖怪……
+						PRINTW 甚至……哪怕被时间裹挟而去，这份回忆依旧难以忘却……
+					ENDIF 
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 1
+				IF !CFLAG:12:K12C_1_笨蛋组 && !CFLAG:12:K12C_1_笨蛋组_2 && FIRSTTIME("K12_TIPS_BOX_1")
+					PRINTW 涉世未深的小妖怪，或许对外表相仿，性格也相似的孩子，能相处得毕比较亲近？
+					PRINTW 或许，是时候带着这个小笨蛋，去找一找朋友了呢……
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 2 
+				IF !CFLAG:12:K12C_1_已买FUMO_2 && !CFLAG:12:K12C_1_已买FUMO && FIRSTTIME("K12_TIPS_BOX_2")
+					PRINTFORMW 不知道为什么，在%CALLNAME:MASTER%面前，露米娅会特意回避去香霖堂……
+					PRINTFORMW 可是，在遇见%CALLNAME:MASTER%之前……她经常会凑在店门旁边，偷偷看着里面……
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 3
+				IF !CFLAG:12:K12C_1_已上学_2 && !CFLAG:12:K12C_1_已上学 && FIRSTTIME("K12_TIPS_BOX_3_1") && ABL:12:43 
+					PRINTW 作为妖怪的露米娅，已经初步学会了识字呢……
+					PRINTW 或许，应该让她去上学了……去哪里呢……
+					PRINTW 
+					RESULT = 1 
+				ELSEIF !CFLAG:12:K12C_1_已上学_2 && !CFLAG:12:K12C_1_已上学 && FIRSTTIME("K12_TIPS_BOX_3_1_1")
+					PRINTW 虽然是野生妖怪……要是露米娅能识字的话，能不能靠知识养活自己呢？
+					PRINTW 或许，可以试试教一教她呢……
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 4
+				IF !CFLAG:12:K12C_1_EX开启 && !CFLAG:12:K12C_1_EX开启_2 && FIRSTTIME("K12_TIPS_BOX_4") && (CFLAG:12:2 >= 20000) && (CFLAG:12:4 >= 2500) && (ABL:12:42 >= 1) && TALENT:12:7
+					PRINTW 满月的夜晚，每当在月光下起舞，露米娅便会忍不住内心的悸动……
+					PRINTW 要是……能在月光下说出这样的述求……会发生什么？
+					PRINTL 
+					CALL COLORMESSAGE(@"「……露米娅……真的能这样做吗……」",MOE_FADED_RED,2,0)
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 5 
+				IF TALENT:12:27 && FIRSTTIME("K12_TIPS_BOX_5") 
+					PRINTW 作为可怜的野生妖怪……露米娅是没有监护人的……
+					PRINTFORMW 所以……什么都得靠自己……或者，%CALLNAME:MASTER%？
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 6 
+				IF (!TALENT:0:7 || (!MOE_RUMIA_CHECK_ANY_OTHER_LOVER() && TALENT:12:7)) && FIRSTTIME("K12_TIPS_BOX_6") 
+					PRINTFORMW 如果能成为%MASTERNAME:12%唯一的恋人……
+					RESULT = 1 
+				ELSEIF MOE_RUMIA_CHECK_ANY_OTHER_LOVER() && !TALENT:12:7 && FIRSTTIME("K12_TIPS_BOX_6_1") 
+					PRINTFORMW %MASTERNAME:12%……已经有恋人了……
+					RESULT = 1 
+				ELSEIF MOE_RUMIA_CHECK_ANY_OTHER_LOVER() && TALENT:12:7 && FIRSTTIME("K12_TIPS_BOX_6_2") 
+					PRINTFORMW 听说……%MASTERNAME:12%……有其他的恋人……
+					RESULT = 1 
+				ELSEIF !MOE_RUMIA_CHECK_ANY_OTHER_LOVER() && TALENT:12:7 && FIRSTTIME("K12_TIPS_BOX_6_3") 
+					PRINTFORMW 如果，%MASTERNAME:12%，从始至终只爱着露米娅一个人的话……
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 7 
+				IF !FIRSTTIME_OF_Moe_K12("M_KOJO_Moe_MESSAGE_COM_K12_368_MARRIAGE_GAME") && FIRSTTIME("K12_TIPS_BOX_7") && (MOE_RUMIA_GET_RELATION() >= 5)
+					PRINTW 路过土产屋的时候，露米娅总会不经意间瞥着橱窗里的戒指……
+					PRINTW ……等到路过店门，在外侧挂着的毛线圈，反倒吸引了她的目光……
+					PRINTL 
+					CALL COLORMESSAGE(@"「要是能送这个的话……大概也不错……」",MOE_RUMIA,2,0)
+					PRINTW 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 8 	
+				IF !FIRSTTIME_OF_Moe_K12("RUMIA_WONT_FORGET_YOU_FOREVER") && FIRSTTIME("K12_TIPS_BOX_8") && (MOE_RUMIA_GET_RELATION() == 7)
+					PRINTW 听说，在最接近天空的地方，所说的话也最容易被神明听见……
+					PRINTL 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+			CASE 9 	
+				IF !CFLAG:12:K12C_1_夜袭总次数 && (TALENT:12:3 || TALENT:12:8 || TALENT:12:7 || TALENT:12:184 || TALENT:12:185 ) && !MARK:12:3  && FIRSTTIME("K12_TIPS_BOX_9")
+					PRINTW 即便是在半夜，有时也能看见那熟悉黑球的身影……
+					PRINTW ……会不会有一天，这小妖怪会一头撞进家里呢？
+					PRINTL 
+					RESULT = 1 
+				ELSE 
+					RESULT = 0 
+				ENDIF 
+		ENDSELECT
+		SIF RESULT == 0
+			CONTINUE
+		SIF RESULT == 1 
+			BREAK 
+	NEXT 
+	IF LOCAL == 10 
+		PRINTW 目前还没有新的提示的说……
+		PRINTW ……以前的提示，还记得嘛？
+		PRINTW 忘记什么的话，也没办法咯……
+	ENDIF 
+	PRINTW 
+ELSE 
+	PRINTW 那么，盒子就收走了哦
+	PRINTW 下次要打开的话，得过很久了呢……
+ENDIF 
+CFLAG:12:K12C_1_提示盒子冷却 += 7 + RAND:7
+CLEARLINE LINECOUNT - LOCAL:1
+LOCAL:1 = LINECOUNT 
+PRINTFORMW 突然，盒子被不知何处窜出的火焰引燃了
+PRINTFORMW 不一会儿便烧得一干二净……
+RESETCOLOR 
+CLEARLINE LINECOUNT - LOCAL:1
+
+
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_2
+IF ( TALENT:12:8 || TALENT:12:184 || TALENT:12:185 ) && !CFLAG:12:K12C_1_消失状态
 	IF TALENT:12:8 
-		custom_button_name:12:1 = 锁定思慕
+		custom_button_name:12:2 = 锁定思慕
 	ELSE 
-		custom_button_name:12:1 = 锁定爱欲
+		custom_button_name:12:2 = 锁定爱欲
 	ENDIF 
 	RETURN 1
 ELSE 
@@ -48,22 +221,22 @@ ELSE
 ENDIF 
 
 ;按钮被按下后，触发以下函数
-@KOJO_Moe_CUSTOM_BUTTON_K12_1
+@KOJO_Moe_CUSTOM_BUTTON_K12_2
 LOCAL = LINECOUNT
 PRINTFORMDL 露米娅的亲密不会提升，也就不会由\@ TALENT:12:8 ? 思慕 # 爱欲 \@变成恋慕
 PRINTFORMDW 如果很喜欢露米娅现在的状态，可以选择这个，不必担心，五天之后还能进行选择
-PRINTFORMDW \@ CFLAG:12:K12C_1_思慕转恋慕确认 ? 已锁定 # 未锁定 \@
+PRINTFORMDW 目前状态为：\@ CFLAG:12:K12C_1_思慕转恋慕确认 ? 已锁定 # 未锁定 \@
 PRINTL 
 WHILE RESULT != 2 
-	CALL ASK_M("开启锁定",1,"不锁定",1,"结束设置",1)
+	CALL M_Moe_K12_ASK_M("开启锁定",1,"不锁定",1,"结束设置",1)
 	SELECTCASE RESULT 
 		CASE 0 
 			CFLAG:12:K12C_1_思慕转恋慕确认 = 1 
 			CALL COLORMESSAGE(@"已锁定当前状态",C_YELLOW,2)  
 		CASE 1 
 			SIF TALENT:12:184
-				CFLAG:12:K12C_1_爱欲转恋慕设置 = 1 	;愛欲转恋慕，确认
-			CFLAG:12:K12C_1_思慕转恋慕确认 = 1 
+				CFLAG:12:K12C_1_爱欲转恋慕设置 = 1 	;愛欲转恋慕，确认（不记得有没有实装这个了）
+			CFLAG:12:K12C_1_思慕转恋慕确认 = 0 
 			CALL COLORMESSAGE(@"已解锁当前状态",C_YELLOW,2)  
 		CASE 2 
 	ENDSELECT 
@@ -71,22 +244,36 @@ WEND
 CLEARLINE LINECOUNT - LOCAL 
 RETURN 1 
 
+;-------------------------------------------------
+
 ;判断按钮是否可以显示，如果返回1，则显示
-@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_2
-custom_button_name:12:2 = 好感度补正
-RETURN 1
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_4
+custom_button_name:12:4 = 好感度补正
+IF CFLAG:12:18 && !CFLAG:12:K12C_1_消失状态
+	RETURN 1
+ELSE 
+	RETURN 0
+ENDIF 
 
 ;按钮被按下后，触发以下函数
-@KOJO_Moe_CUSTOM_BUTTON_K12_2
+@KOJO_Moe_CUSTOM_BUTTON_K12_4
 LOCAL = LINECOUNT
 PRINTL
 PRINTFORMDL 这里可以设置本口上的好感度补正值
 PRINTFORMDL 由于原版素质会导致攻略过程过于容易，从而容易丢失很多口上
-PRINTFORMDL 因此，本口上内置对自己角色的好感度补正，以减慢攻略进度
+PRINTFORMDL 因此，本口上内置对自己角色的好感度补正，以减慢露米娅的攻略进度
 PRINTFORMDW 同时提供修正回原来方式的开关……
+PRINTFORMD 目前的补正状态：
+IF CFLAG:12:K12C_1_好感度补正 == 100 || CFLAG:12:K12C_1_好感度补正 == 0 
+	CALL COLORMESSAGE(@"已开启完整补正",C_YELLOW,1)  
+ELSEIF CFLAG:12:K12C_1_好感度补正 == -1 
+	CALL COLORMESSAGE("已关闭补正",MOE_GREEN,1)  
+ELSE 
+	CALL COLORMESSAGE(@"补正值为{CFLAG:12:K12C_1_好感度补正}",C_YELLOW,1)  
+ENDIF 
 PRINTL
 WHILE RESULT != 2 
-	CALL ASK_M("修改补正强度",1,"关闭补正",1,"结束设置",1)
+	CALL M_Moe_K12_ASK_M("修改补正强度",1,"关闭补正",1,"结束设置",1)
 	SELECTCASE RESULT 
 		CASE 0 
 			PRINTFORMDL 这里可以修改补正的强度
@@ -94,11 +281,11 @@ WHILE RESULT != 2
 			PRINTFORMDL 由于存在负补正的情况，因此设置超过100的值的时候，可能会无法推进攻略速度
 			PRINTFORMD 目前的补正状态：
 			IF CFLAG:12:K12C_1_好感度补正 == 100 || CFLAG:12:K12C_1_好感度补正 == 0 
-				CALL COLORMESSAGE(@"已开启完整补正",C_RED,1)  
+				CALL COLORMESSAGE(@"已开启完整补正",C_YELLOW,1)  
 			ELSEIF CFLAG:12:K12C_1_好感度补正 == -1 
-				CALL COLORMESSAGE("已关闭补正",C_RED,1)  
+				CALL COLORMESSAGE("已关闭补正",MOE_GREEN,1)  
 			ELSE 
-				CALL COLORMESSAGE(@"补正值为{CFLAG:12:K12C_1_好感度补正}",C_RED,1)  
+				CALL COLORMESSAGE(@"补正值为{CFLAG:12:K12C_1_好感度补正}",C_YELLOW,1)  
 			ENDIF 
 			WHILE RESULT != 2 
 				LOCAL:1 = LINECOUNT
@@ -134,17 +321,22 @@ WEND
 CLEARLINE LINECOUNT - LOCAL 
 RETURN 1
 
+;-------------------------------------------------
+
 ;判断按钮是否可以显示，如果返回1，则显示
 @KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_3
 custom_button_name:12:3 = 指令使用次数
-RETURN 1
+IF CFLAG:12:18 && (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)
+	RETURN 1
+ELSE 
+	RETURN 0
+ENDIF 
 
 ;按钮被按下后，触发以下函数
 ;这里直接转到历史指令记录
 @KOJO_Moe_CUSTOM_BUTTON_K12_3
 CALL M_KOJO_MOE_RUMIA_COM_RECORD_MAIN_MENU
 RETURN 1 
-
 ;================================
 ;自定义素质名
 ;使用的时候请删除SKIPSTART~SKIPEND。
@@ -182,9 +374,9 @@ ELSEIF CUSTOM_TALENT:12:2 == 3
 ENDIF 
 ;(省略可)自定义素质的显示颜色，0/普通1/粉红2/红色+粗体
 IF CUSTOM_TALENT:12:2 == 3 
-	CUSTOM_TALENT_COLOR:12:4 = MOE_FADED_RED
+	CUSTOM_TALENT_COLOR:12:2 = 1;MOE_FADED_RED
 ELSE 
-	CUSTOM_TALENT_COLOR:12:3 = MOE_PINK
+	CUSTOM_TALENT_COLOR:12:2 = 1	;MOE_PINK
 ENDIF 
 ;(省略可)表示类别 1/種族 2/性的特徴 3/身体的特徴 4/精神的特徴 5/技術的特徴 他は「その他」
 CUSTOM_TALENT_TYPE:12:2 = 2
@@ -199,7 +391,7 @@ CUSTOM_TALENT_TYPE:12:2 = 2
 ;当存档记录的变量CFLAG:kojo_version比上面的口上版本号低，即为旧版本的时候，此处将调用
 @KOJO_Moe_VERSION_UPDATE_K12
 CALL M_KOJO_Moe_COLOR_K12_SET(MOE_GREEN)
-PRINTW 【露米娅Moe版口上】 
+CALL DQPRINT (@"【露米娅Moe版口上】",100)
 ;
 ;20240710 更新了新CFLAG记录告白情况
 	SIF TALENT:12:7		;有恋人就赋确认值
@@ -214,6 +406,7 @@ PRINTW 【露米娅Moe版口上】
 	CFLAG:12:1127 = 0 
 	;
 	;角色名简中化
+	CALL DQPRINT (@"20240710：",100)
 	IF CALLNAME:12 == "露米亜"
 		PRINTL 请问需要修改露米娅在游戏内的显示名称吗？
 		PRINTL 这会让本口上角色的称呼与全名，从"露米亜"变成"露米娅"
@@ -228,7 +421,13 @@ PRINTW 【露米娅Moe版口上】
 		ENDSELECT
 	ENDIF 
 	PRINTL 
-	CALL DQPRINT (@"已经更新至20240710版本",100)
+
+
+
+
+
+	CALL DQPRINT (@"【露米娅Moe版口上】已更新完毕",100)
+	CALL DQPRINT (@"祝您游戏愉快",100)
 	;
 	;
 	RETURN 20240710
@@ -382,14 +581,21 @@ RETURN 1
 ;ARGS有 "SETUP"和"MOVE"，前者设置工作，后者设置工作时移动
 
 
+;-------------------------------------------------
+;这个自定义工作名称的内容，仅支持采用了EN自定义功能的版本
+;原版若出现此区域的报错，请直接注释掉这里即可
+;-------------------------------------------------
 @M_KOJO_Moe_K12_JOBNAME_SET
 ;BBASaikouTW edit, custom job implemented
 ;Will wake up early for the school
-CUSTOM_JOB_DESC:12:0 = 上課
-CUSTOM_JOB_DESC:12:2 = 上課
-CUSTOM_JOB_DESC:12:3 = 早課
-CUSTOM_JOB_DESC:12:4 = 課程
-
+IF CFLAG:12:K12C_1_已上学_2 || CFLAG:12:K12C_1_已上学
+	CUSTOM_JOB_DESC:12:0 = 上課
+	CUSTOM_JOB_DESC:12:2 = 上課
+	CUSTOM_JOB_DESC:12:3 = 早課
+	CUSTOM_JOB_DESC:12:4 = 課程
+ENDIF 
+;
+;
 @M_KOJO_Moe_CHECK_K12_JOB(ARGS,ARG,ARG:1)
 IF ARGS == "SETUP"
 	IF CFLAG:12:K12C_1_已上学_2 || CFLAG:12:K12C_1_已上学
