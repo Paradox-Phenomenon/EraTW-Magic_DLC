@@ -23,6 +23,8 @@ RETURN 0
 ;-------------------------------------------------
 SIF MOE_RUMIA_COM_RECORD:(DAY:0) == ""
 	MOE_RUMIA_COM_RECORD:(DAY:0) = /
+SIF ONCE("COM_RECORD_NOW_DAY_CLEAN")
+    VARSET MOE_RUMIA_COM_RECORD_NOW_DAY
 IF TFLAG:104 == 12 
     ;给当日使用次数赋值
     MOE_RUMIA_COM_RECORD_NOW_DAY:(TFLAG:3) ++ 
@@ -33,23 +35,6 @@ IF TFLAG:104 == 12
     ;给当日字符串记录某日情况
     MOE_RUMIA_COM_RECORD:(DAY:0) += @"/%LOCALS%/"  
 ENDIF 
-;
-;==================================================
-;每日开始时记录部分
-;将当日的使用情况清零
-;==================================================
-@EVENTTRAIN
-;-------------------------------------------------
-;做好严格限制，避免随意调用
-SIF !CFLAG:12:998
-RETURN 0 
-TRYCALLFORM M_KOJO_K12_{CFLAG:12:998}
-SIF RESULTS:1 != "Moe版"
-RETURN 0
-;-------------------------------------------------
-VARSET MOE_RUMIA_COM_RECORD_NOW_DAY
-
-
 
 ;==================================================
 ;主菜单部分
@@ -139,7 +124,7 @@ PRINTL
 INPUT 
 LOCAL:4 = RESULT 
 WHILE RESULT != -1
-    PRINTFORML %MOE_RUMIA_COM_RECORD:LOCAL:4% 
+    PRINTFORML %MOE_RUMIA_COM_RECORD:(LOCAL:4)% 
     PRINTFORML 以上是当日内对露米娅执行指令的顺序
     DRAWLINE 
     IF RESULT > DAY 
@@ -228,9 +213,9 @@ WHILE RESULT != 4
         ;计入字符串 
         LOCALS =【{LOCAL}_%TRAINNAME:LOCAL%】{MOE_RUMIA_COM_RECORD_HISTORY:LOCAL}
         ;颜色设定
-        IF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 10000 
+        IF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 1750
             SETCOLOR C_V_PINK 
-        ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 1500
+        ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 750
             SETCOLOR C_H_PINK 
         ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 150
             SETCOLOR C_PINK 

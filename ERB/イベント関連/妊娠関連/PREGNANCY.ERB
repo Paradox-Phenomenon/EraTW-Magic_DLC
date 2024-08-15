@@ -20,9 +20,11 @@ ENDSELECT
 
 EX:ARG:子宮内精液 += EX:ARG:膣内精液 / 中毒補正
 
-IF EX:ARG:子宮内精液 > EX:ARG:膣内精液
+SIF EX:ARG:子宮内精液 > EX:ARG:膣内精液
 	EX:ARG:子宮内精液 = EX:ARG:膣内精液
-ENDIF
+
+SIF !HAS_VAGINA(ARG) || (EX:ARG:子宮内精液 <= 0)
+	RETURN
 
 FOR LOCAL,0,CHARANUM
 	IF !CFLAG:ARG:(LOCAL + 2000)
@@ -36,9 +38,10 @@ NEXT
 
 
 IF !TALENT:ARG:初潮 && (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行) && EX:ARG:子宮内精液
-
 	PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%的身体还很幼小，还不能怀孕呢……
-
+	RETURN 0
+ELSEIF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && EX:ARG:子宮内精液 > 0
+	PRINTFORML 刚出产不久的%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%的身体似乎暂时不能怀孕……
 	RETURN 0
 ENDIF
 
@@ -168,7 +171,7 @@ IF 充填率(ARG,5) > 70
 		PRINTFORML 受孕概率:{MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100}/{妊娠必要値}……
 	ENDIF
 	IF !FLAG:画像表示
-		SETFONT "ＭＳ ゴシック"
+		SETFONT CHKFONTNAME("ＭＳ ゴシック")
 		PRINTL 　　　　　　　　　　　}　}　　　　　　　　　　　　 　 　 （
 		PRINTL ヽ.__　　　　　　　　　',　',　_　　　　　　　　　　　　　　）　　　　　　　　　　　　　　 　 　 　 　 　 , --､
 		PRINTL 　(　｀ヽ　　　　　　　 ヽ ﾉ　 ヽ　　　　　　　　　　　　0　　　　　　　　　　　　　　　　　　＿__ ノノ⌒＼
@@ -209,7 +212,7 @@ ELSEIF 充填率(ARG,5) > 40
 		PRINTFORML 受孕概率:{MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100}/{妊娠必要値}……
 	ENDIF
 	IF !FLAG:画像表示
-		SETFONT "ＭＳ ゴシック"
+		SETFONT CHKFONTNAME("ＭＳ ゴシック")
 		PRINTL 　　　　　　　　　　　}　}　　　　　　　　　　　　 　 　 （
 		PRINTL ヽ.__　　　　　　　　　',　',　_　　　　　　　　　　　　　　）　　　　　　　　　　　　　　 　 　 　 　 　 , --､
 		PRINTL 　(　｀ヽ　　　　　　　 ヽ ﾉ　 ヽ　　　　　　　　　　　　0　　　　　　　　　　　　　　　　　　＿__ ノノ⌒＼
@@ -250,7 +253,7 @@ ELSEIF 充填率(ARG,5) > 10
 		PRINTFORML 受孕概率:{MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100}/{妊娠必要値}……
 	ENDIF
 	IF !FLAG:画像表示
-		SETFONT "ＭＳ ゴシック"
+		SETFONT CHKFONTNAME("ＭＳ ゴシック")
 		PRINTL 　　　　　　　　　　　}　}　　　　　　　　　　　　 　 　 （
 		PRINTL ヽ.__　　　　　　　　　',　',　_　　　　　　　　　　　　　　）　　　　　　　　　　　　　　 　 　 　 　 　 , --､
 		PRINTL 　(　｀ヽ　　　　　　　 ヽ ﾉ　 ヽ　　　　　　　　　　　　0　　　　　　　　　　　　　　　　　　＿__ ノノ⌒＼
@@ -298,7 +301,7 @@ ELSE
 			CALL PrintOnanismImage(ARG)
 			PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%的卵子对%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的精子屈服了…
 			IF !FLAG:画像表示
-				SETFONT "ＭＳ ゴシック"
+				SETFONT CHKFONTNAME("ＭＳ ゴシック")
 				PRINTL 　　　　　　　　　　　　　　　　..__＿....-------....＿..
 				PRINTL 　　　　　　　　　　　　 .._..-‐'"⌒　　　　　　　　 ｀"'''ゝ､_..
 				PRINTL 　　　　　　　　　　_..‐''´　　　　　　　　　　　　　　　　　"ｰ 、..
@@ -399,8 +402,9 @@ ELSE
 				FONTBOLD
 				PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%让路人%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%怀孕了……
 				FONTREGULAR
-				FLAG:路人孕ませ数 ++
 			ENDIF
+			SIF TALENT:ARG:路人 == 1
+				FLAG:路人孕ませ数 ++
 			SIF DADDY == MASTER
 				EXP:MASTER:孕ませ経験 ++
 		ENDIF
@@ -444,7 +448,7 @@ ELSEIF CFLAG:ARG:妊娠経過日数 == 60
 	IF TALENT:ARG:胸圍 < 2
 		TALENT:ARG:胸圍 += 1
 		PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%的胸部变大了
-		CFLAG:ARG:乳品质提升 = 1
+		CFLAG:ARG:乳品质提升 ++
 	ENDIF
 	IF !TALENT:ARG:母乳体質
 		PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%好像能分泌母乳了

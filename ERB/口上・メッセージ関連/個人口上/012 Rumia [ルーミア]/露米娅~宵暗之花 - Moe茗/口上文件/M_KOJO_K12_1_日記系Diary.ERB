@@ -2837,21 +2837,21 @@ RESETCOLOR
 ;=============================
 @M_KOJO_Moe_SUCCESS_COM_K12_406
 ;目前在EVETNCOM中设置了，可以在目标为露米娅时，强制call自己的函数
-IF TALENT:12:3 && ( CFLAG:12:300 == CFLAG:0:300 ) && SHIRAHU(12)
+IF TALENT:12:3 && ( CFLAG:12:300 == CFLAG:0:300 ) && SHIRAHU(12) 
 	CALL M_KOJO_Moe_MESSAGE_COM_K12_406_2 
 	CALL RUMIA_Moe_K12_COM406
 	CALL M_KOJO_Moe_MESSAGE_COM_K12_406_1
 	TARGET = 0 
-	CALL DOKU_COMF_FAIL
+	CALL DOKU_COMF_FAIL_FOR_Moe_K12
 ELSEIF  ( CFLAG:12:300 == CFLAG:0:300 ) && SHIRAHU(12)
 	CALL M_KOJO_Moe_MESSAGE_COM_K12_406_2 
 	RETURN RESULT
 	TARGET = 0 
-	CALL DOKU_COMF_FAIL
+	CALL DOKU_COMF_FAIL_FOR_Moe_K12
 ELSE 
 	CALL RUMIA_Moe_K12_COM406
 	TARGET = 0 
-	CALL DOKU_COMF_FAIL
+	CALL DOKU_COMF_FAIL_FOR_Moe_K12
 ENDIF 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @M_KOJO_Moe_MESSAGE_COM_K12_406_1
@@ -2860,102 +2860,107 @@ CALL M_KOJO_Moe_COLOR_K12_SET(MOE_RUMIA)
 PRINTFORML 
 ;很怪，看你先生的日记也会感到害羞
 ;应该怎么检测呢……
-IF SHIRAHU(12) && (TFLAG:194 == 12) 
-	IF !RUMIA_PAGESET:12:1 
-		PRINTFORMW 「什么也没写……有没有很失望呢……」
-		PRINTFORMDW （再等一段时间……或许就能有了呢？）
-	ELSEIF FIRSTTIME("RUMIA_READ_DIARY") && RUMIA_SEARCH_DIARY(12) > 7 
-		PRINTFORMW 「诶……%MASTERNAME:12%看完了嘛……」
-		PRINTFORML 
-		PRINTFORMDW 露米娅别过头去，是因为被看到心里话嘛，不自觉地就脸红了呢
-		PRINTFORML 
-		PRINTFORMW 「所以……就没有……什么要说的吗……」
-		PRINTFORML 
-		CHOOSE:1 = 1
-		CHOOSE:2 = 1
-		CHOOSE:3 = 1
-		$M_KOJO_Moe_MESSAGE_COM_K12_406_1_ASK
-		CALL M_Moe_K12_ASK_M("那些涂黑的地方是什么",CHOOSE:1,"每天都在写日记吗",CHOOSE:2,"写得真棒呢",CHOOSE:3)
-		SELECTCASE RESULT 
-			CASE 0 
-				PRINTFORMW 「啊……那些黑色的地方吗……」
-				PRINTFORMW 「是……是只有露米娅，才能看见的字呢……」
-				PRINTFORMW 「因为，是掌控黑暗的能力嘛……」
+IF (COM406_CHECK_OWNER() == 12 )		;看的是自己的日记的情况
+	IF SHIRAHU(12) && (TFLAG:194 == 12) 
+		IF !RUMIA_PAGESET:12:1 
+			PRINTFORMW 「什么也没写……有没有很失望呢……」
+			PRINTFORMDW （再等一段时间……或许就能有了呢？）
+		ELSEIF FIRSTTIME("RUMIA_READ_DIARY") && RUMIA_SEARCH_DIARY(12) > 7 
+			PRINTFORMW 「诶……%MASTERNAME:12%看完了嘛……」
+			PRINTFORML 
+			PRINTFORMDW 露米娅别过头去，是因为被看到心里话嘛，不自觉地就脸红了呢
+			PRINTFORML 
+			PRINTFORMW 「所以……就没有……什么要说的吗……」
+			PRINTFORML 
+			CHOOSE:1 = 1
+			CHOOSE:2 = 1
+			CHOOSE:3 = 1
+			$M_KOJO_Moe_MESSAGE_COM_K12_406_1_ASK
+			CALL M_Moe_K12_ASK_M("那些涂黑的地方是什么",CHOOSE:1,"每天都在写日记吗",CHOOSE:2,"写得真棒呢",CHOOSE:3)
+			SELECTCASE RESULT 
+				CASE 0 
+					PRINTFORMW 「啊……那些黑色的地方吗……」
+					PRINTFORMW 「是……是只有露米娅，才能看见的字呢……」
+					PRINTFORMW 「因为，是掌控黑暗的能力嘛……」
+					PRINTFORML 
+					PRINTFORMDW 虽然看起来只是单纯把字涂掉……但谁知道呢
+					CHOOSE:1 = 0 
+					CHOOSE += 1 
+				CASE 1
+					PRINTFORMW 「嗯，每天都在写日记哦！」
+					PRINTFORMW 「虽然很久之前就想着，写日记好麻烦，所以总是不想写」
+					PRINTFORMW 「后来啊……与%MASTERNAME:12%成为朋友之后……就有很多能记的日记了」
+					PRINTFORML 
+					CHOOSE:2 = 0 
+					CHOOSE += 1 
+				CASE 2
+					PRINTFORML 「诶？写的很好吗……」
+					PRINTFORMW 「……哪里的说……露米娅只是每天都会记一点东西……」
+					PRINTFORMW 「而且……写的事情也很简单……只是把心底的话说出来了而已」
+					PRINTFORML 
+					CHOOSE:3 = 0 
+					CHOOSE += 1 
+			ENDSELECT
+			IF CHOOSE != 3 
+				GOTO M_KOJO_Moe_MESSAGE_COM_K12_406_1_ASK
+			ELSE 
+				PRINTFORML [0]……没有什么想说的了
+				INPUT 
+				CLEARLINE 1 
 				PRINTFORML 
-				PRINTFORMDW 虽然看起来只是单纯把字涂掉……但谁知道呢
-				CHOOSE:1 = 0 
-				CHOOSE += 1 
-			CASE 1
-				PRINTFORMW 「嗯，每天都在写日记哦！」
-				PRINTFORMW 「虽然很久之前就想着，写日记好麻烦，所以总是不想写」
-				PRINTFORMW 「后来啊……与%MASTERNAME:12%成为朋友之后……就有很多能记的日记了」
+				PRINTFORMW 「诶……就只问这么一些吗……」
 				PRINTFORML 
-				CHOOSE:2 = 0 
-				CHOOSE += 1 
-			CASE 2
-				PRINTFORML 「诶？写的很好吗……」
-				PRINTFORMW 「……哪里的说……露米娅只是每天都会记一点东西……」
-				PRINTFORMW 「而且……写的事情也很简单……只是把心底的话说出来了而已」
+				PRINTFORMDL 露米娅忽的抬起头，好像有些惊讶，又不知为何失落了起来
+				PRINTFORMDW 随即又换上了明朗的微笑，接过了你归还的日记本，紧紧地抱了在胸前
 				PRINTFORML 
-				CHOOSE:3 = 0 
-				CHOOSE += 1 
-		ENDSELECT
-		IF CHOOSE != 3 
-			GOTO M_KOJO_Moe_MESSAGE_COM_K12_406_1_ASK
+				PRINTFORML 「呜……没什么……」
+				PRINTFORMW 「下次……%MASTERNAME:12%想看的话，也可以看呢……」
+			ENDIF 
+		ELSEIF RUMIA_SEARCH_DIARY(12) > 7 
+			IF MOE_RUMIA_GET_RELATION() > 5
+				PRINTFORMW 「诶嘿嘿……看完了嘛～」
+				PRINTFORML 
+				PRINTFORMDW 露米娅接过了日记，紧紧地抱在了胸前，靠在你的胸前
+				PRINTFORML 
+				PRINTFORML 「每次回过头……去看日记中……那些珍贵的回忆……」
+				PRINTFORMW 「露米娅……就会感到非常的幸福%UNICODE(0x2764)%……」
+				PRINTFORML 
+				PRINTFORMDW 饱含着甜蜜情意的羞怯笑容，吸引着你，久久难以离开视线
+			ELSEIF TALENT:12:7
+				PRINTFORMW 「诶嘿嘿……看完了嘛～」
+				PRINTFORML 
+				PRINTFORMDW 露米娅接过日记，抱在了胸前，眼睛轻轻地闭上了
+				PRINTFORML 
+				PRINTFORML 「%MASTERNAME:12%……也应该感受到……露米娅的心意了吧……」
+				PRINTFORMW 「这样的事啊%UNICODE(0x2764)%……还能在一起，经历很多很多呢……」
+				PRINTFORML 
+			ELSE 
+				PRINTFORML 「呜呜呜！」
+				PRINTFORML 
+				PRINTFORMDL 察觉到你闭上日记的动作，躲在一旁的露米娅飞也似的拿走日记
+				PRINTFORMDW 紧紧的把日记抱在怀里，是因为心意被感受到，而害羞了嘛？
+				PRINTFORML 
+				PRINTFORMW 「……%MASTERNAME:12%，下次想看……也可以……」
+			ENDIF 
 		ELSE 
-			PRINTFORML [0]……没有什么想说的了
-			INPUT 
-			CLEARLINE 1 
-			PRINTFORML 
-			PRINTFORMW 「诶……就只问这么一些吗……」
-			PRINTFORML 
-			PRINTFORMDL 露米娅忽的抬起头，好像有些惊讶，又不知为何失落了起来
-			PRINTFORMDW 随即又换上了明朗的微笑，接过了你归还的日记本，紧紧地抱了在胸前
-			PRINTFORML 
-			PRINTFORML 「呜……没什么……」
-			PRINTFORMW 「下次……%MASTERNAME:12%想看的话，也可以看呢……」
+			PRINTFORMW 「写得不是很多……会不会有些失望呢……」
+			PRINTFORMDW （再等一段时间……或许就能有更多更多了呢？）
 		ENDIF 
-	ELSEIF RUMIA_SEARCH_DIARY(12) > 7 
-		IF MOE_RUMIA_GET_RELATION() > 5
-			PRINTFORMW 「诶嘿嘿……看完了嘛～」
-			PRINTFORML 
-			PRINTFORMDW 露米娅接过了日记，紧紧地抱在了胸前，靠在你的胸前
-			PRINTFORML 
-			PRINTFORML 「每次回过头……去看日记中……那些珍贵的回忆……」
-			PRINTFORMW 「露米娅……就会感到非常的幸福%UNICODE(0x2764)%……」
-			PRINTFORML 
-			PRINTFORMDW 饱含着甜蜜情意的羞怯笑容，吸引着你，久久难以离开视线
-		ELSEIF TALENT:12:7
-			PRINTFORMW 「诶嘿嘿……看完了嘛～」
-			PRINTFORML 
-			PRINTFORMDW 露米娅接过日记，抱在了胸前，眼睛轻轻地闭上了
-			PRINTFORML 
-			PRINTFORML 「%MASTERNAME:12%……也应该感受到……露米娅的心意了吧……」
-			PRINTFORMW 「这样的事啊%UNICODE(0x2764)%……还能在一起，经历很多很多呢……」
-			PRINTFORML 
-		ELSE 
-			PRINTFORML 「呜呜呜！」
-			PRINTFORML 
-			PRINTFORMDL 察觉到你闭上日记的动作，躲在一旁的露米娅飞也似的拿走日记
-			PRINTFORMDW 紧紧的把日记抱在怀里，是因为心意被感受到，而害羞了嘛？
-			PRINTFORML 
-			PRINTFORMW 「……%MASTERNAME:12%，下次想看……也可以……」
-		ENDIF 
-	ELSE 
-		PRINTFORMW 「写得不是很多……会不会有些失望呢……」
-		PRINTFORMDW （再等一段时间……或许就能有更多更多了呢？）
-	ENDIF 
-ENDIF
+	ENDIF
+ELSE 
+
+ENDIF 
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @M_KOJO_Moe_MESSAGE_COM_K12_406_2 
 CALL M_KOJO_Moe_COLOR_K12_SET(MOE_RUMIA)	
+IF (COM406_CHECK_OWNER() == 12 )		;看的是自己的日记的情况
 	IF ( !(CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2 ) && !TALENT:12:3 || MARK:12:3 || TCVAR:12:132) && !CFLAG:12:313 && !TCVAR:12:145
 		PRINTFORMW 「……吃了你哦……」
-		CALL DOKU_COMF_FAIL		
+		CALL DOKU_COMF_FAIL_FOR_Moe_K12		
 	ELSEIF TALENT:12:8 && !CFLAG:12:313 && !TCVAR:12:145
 		PRINTFORML 「啊……想看露米娅的日记吗……」
 		PRINTFORML 「……还是好害羞……对不起……不行哦……」
-		CALL DOKU_COMF_FAIL		
+		CALL DOKU_COMF_FAIL_FOR_Moe_K12		
 	ELSEIF TALENT:12:3 && !CFLAG:12:313 && !TCVAR:12:145
 	;当面同意的情况
 		IF FIRSTTIME("RUMIA_ALLOW_YOU_TO_READ_DIARY")
@@ -3075,6 +3080,9 @@ CALL M_KOJO_Moe_COLOR_K12_SET(MOE_RUMIA)
 		;直接接com触发
 		;CALL COM406
 	ENDIF 
+ELSE ;看的是其他人的日记的情况……
+
+ENDIF 
 ;=============================
 ;日记多少页的输出
 ;1～99まで

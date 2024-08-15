@@ -62,7 +62,7 @@ PRINTL ……
 PRINTL 
 CALL COLORMESSAGE("【与露米娅成为朋友了】",MOE_YELLOW,2,1)
 PRINTL 
-CFLAG:12:K12C_1_朋友_2 = 1 
+CFLAG:12:K12C_1_朋友 = 1 
 ;角色名简中化处理
 IF CALLNAME:12 == "露米亜"
 	PRINTL 请问需要修改露米娅在游戏内的显示名称吗？
@@ -526,12 +526,12 @@ ENDIF
 ;ARG = 1 时检测恋慕
 ;ARG:1 = 1时，不排除当前目标,默认不计入当前目标
 ;这是一个式中函数，返回值为恋人/恋慕角色的数量
-;默认会排除TARGET
+;默认会排除12
 @MOE_RUMIA_CHECK_ANY_OTHER_LOVER(ARG=0,ARG:1=0)
 #FUNCTION 
 VARSET RESULT 
 FOR LOCAL , 1 , CHARANUM 
-	IF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == TARGET) && ARG:1)
+	IF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == 12) && ARG:1)
 		RESULT ++ 
 	ENDIF 
 NEXT 
@@ -543,12 +543,12 @@ RETURNF RESULT
 ;ARG = 1 时检测恋慕
 ;ARG:1 = 1时，不排除当前目标,默认不计入当前目标
 ;这是一个式中函数，返回值为恋人/恋慕角色的并列名字
-;默认会排除TARGET
+;默认会排除12
 @MOE_RUMIA_PRINT_ANY_OTHER_LOVER(ARG=0,ARG:1=0)
 #FUNCTIONS
 RESULTS = 
 FOR LOCAL ,1 ,CHARANUM 
-	SIF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == TARGET)&& ARG:1)
+	SIF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == 12)&& ARG:1)
 		RESULTS += @"%CALLNAME:LOCAL%、"
 NEXT 
 STRLENS RESULTS  
@@ -622,7 +622,12 @@ RETURN RESULT
 #DIMS 场所
 ;记录逆推状态
 LOCAL = CFLAG:12:317 
-TALENT:12:27 = 0
+;
+IF TALENT:12:27 == 1 
+	TALENT:12:27 = 0
+	CFLAG:12:K12C_1_无知破处地文控制 = 1  
+ENDIF 
+;
 EXP:12:1 += 1
 ;IF TALENT:12:0 == 1 && GETBIT(TALENT:12:2,0)
 CALL COLORMESSAGE("【処女喪失】",0xF7ABA6,2,1)
@@ -657,8 +662,10 @@ IF !TALENT:0:1 && TALENT:0:2 & 2
 	SETCOLOR MOE_RUMIA
 	TALENT:0:1 = 1
 ENDIF
-SIF !TALENT:12:156 && MOE_RUMIA_INITAL_TALENT:27
-TALENT:12:27 = 1           
+IF !TALENT:12:156 && MOE_RUMIA_INITAL_TALENT:27 && CFLAG:12:K12C_1_无知破处地文控制
+	TALENT:12:27 = 1    
+	CFLAG:12:K12C_1_无知破处地文控制 = 0  
+ENDIF        
 SIF TALENT:12:0 && (TALENT:12:3)
 	EXP:12:41 += 5
 SIF TALENT:12:0 && (TALENT:12:7)
@@ -682,9 +689,24 @@ ENDCATCH
 ;主动掀裙子描述函数、
 ;避免重复使用文本造成虚胖
 ;函数内自带胖次辨别，所以应该不用主动赋给arg
-;==================================================
-@MOE_RUMIA_PANTS_OR_PUxxY_DESCRIPTION(ARG=0)
+;ARG:1 是自定义体位
+;ARG:2 是描述V还是A，0是V 1是A
 
+;==================================================
+@MOE_RUMIA_PANTS_OR_PUxxY_DESCRIPTION(ARG=0,ARG:1=0,ARG:2=0)
+;自动判别胖次
+IF !ARG 
+	IF EQUIP:12:5 || EQUIP:12:6 
+		ARG = 1 
+	ELSE 
+		ARG = 0 
+	ENDIF 
+ENDIF 
+;
+IF ARG:1 ;设置自定义体位描述
+	LOCAL = TEQUIP:110
+	TEQUIP:110 = ARG:1 
+ENDIF 
 SELECTCASE TEQUIP:110 
 	CASE 1 
 		LOCALS = 张开双腿躺了下去
@@ -695,32 +717,39 @@ SELECTCASE TEQUIP:110
 	CASE 5
 		LOCALS = 在你的腿上坐下
 ENDSELECT
+IF ARG:1 ;取消自定义体位描述
+	TEQUIP:110 = LOCAL 
+ENDIF 
 ;无胖次的情况
 IF ARG == 1 
 	IF 充填率_OF_RUMIA(TARGET,1) > 77
-		PRINTFORMDL 直接裸露出的幼小蜜缝黏满了白浊，还在不断向外喷着精液
+		PRINTFORMDL 直接裸露出的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@黏满了白浊，还在不断向外喷着精液
 		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，大股大股地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
 	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
-		PRINTFORMDL 裸露着的幼小蜜缝黏满了白浊，从中汩汩地流着精液
+		PRINTFORMDL 裸露着的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@黏满了白浊，从中汩汩地流着精液
 		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
 	ELSEIF PALAM:12:9 > 10000
-		PRINTFORMDL 直接裸露的幼小蜜缝，已经湿得一塌糊涂
+		PRINTFORMDL 直接裸露的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@，已经湿得一塌糊涂
 		PRINTFORMDL 从微微张开的穴口流淌出的蜜液，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
 	ELSEIF PALAM:12:9 > 2000
-		PRINTFORMDL 随着女孩%LOCALS%，被蜜液微微濡湿的幼小蜜缝吸引着你的目光……
+		PRINTFORMDL 随着女孩%LOCALS%，被蜜液微微濡湿的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@吸引着你的目光……
 	ELSE 
-		PRINTFORMDL 随着女孩%LOCALS%，微微张开的幼小蜜缝吸引着你的目光……
+		PRINTFORMDL 随着女孩%LOCALS%，微微张开的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@吸引着你的目光……
 	ENDIF
 ELSEIF !ARG
 	IF 充填率_OF_RUMIA(TARGET,1) > 77
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
 		PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%中间不断地漫出刚刚射进去的精液……
 	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
-		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被你射进去的精液浸染了……
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@的部分被你射进去的精液浸染了……
 	ELSEIF PALAM:12:9 >= 10000
-		PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%散发出阵阵诱人的蜜香……
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%，散发出阵阵诱人的蜜香……
 	ELSEIF PALAM:12:9 >= 1000
-		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近小穴的部分被蜜液浸染了……
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@的部分被蜜液浸染了……
 	ELSE
-		PRINTFORMDL %PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
 	ENDIF
 ENDIF 

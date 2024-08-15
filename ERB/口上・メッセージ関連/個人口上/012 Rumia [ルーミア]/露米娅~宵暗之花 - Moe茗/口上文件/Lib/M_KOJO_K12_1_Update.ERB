@@ -31,17 +31,17 @@ IF !ARG
 	PRINTFORMDW 露米娅从一旁小跑了过来……
 	CALL RUMIA_MOE_AA_1_1
 ENDIF 
-WHILE !(RESULT == 7) 
+WHILE !(RESULT == 8) 
 	LOCAL = LINECOUNT 
 	PRINTFORMDL
 	PRINTFORML 「那，%MASTERNAME:12%要设置什么内容呢？」
 	PRINTFORMDL
-	CALL M_Moe_K12_ASK_M("修改称呼",1,"说话的声音",1,"有影响的剧情",1,"你的日记",1,"怕太阳机制",1,"小剧场事件",1,"好感度补正",1,"设置完毕",1)		
+	CALL M_Moe_K12_ASK_M("修改称呼",1,"说话的声音",1,"有影响的剧情",1,"你的日记",1,"怕太阳机制",1,"小剧场事件",1,"好感度补正",1,"色情度补正",1,"设置完毕",1)		
 	CLEARLINE 3 
 	TRYCALLFORM M_KOJO_Moe_UPDATE_K12_SETTING_1_{RESULT}()	;1即为未初见差分……
 	CLEARLINE LINECOUNT - LOCAL 
 WEND 
-IF (RESULT == 7)	;设置完毕
+IF (RESULT == 8)	;设置完毕
 	PRINTFORMDW 好的，祝你游戏愉快 
 	PRINTFORMDL 
 	PRINTFORMW 「唔……说起来还不知道这里是哪里……不过露米娅得先睡觉啦……」
@@ -309,6 +309,76 @@ PRINTFORML
 CLEARLINE LINECOUNT - LOCAL 
 ;
 ;==================================================
+;色情度补正函数
+;-------------------------------------------------
+@M_KOJO_Moe_UPDATE_K12_SETTING_1_7(ARG)
+;==================================================
+LOCAL:1 = LINECOUNT
+PRINTFORML  
+PRINTFORML 「诶……这个，这个……」
+PRINTFORMW 「……才不会让露米娅变得更加色情呢！真是的……」
+SELECTCASE ABL:12:11
+	CASE IS < 4 
+		PRINTFORMW 「明明都是%MASTERNAME:12%想要……露米娅自己一点都没有想要呢……」
+	CASE IS < 8
+		PRINTFORMW 「……应该没有觉得露米娅很色吧？没有吧……」
+	CASE IS < 13 
+		PRINTFORMW 「……又不是露米娅想那么色情嘛，明明都是%MASTERNAME:12%的错……」
+	CASEELSE
+		PRINTFORMW 「……诶嘿嘿，那个……这么色情什么的，也不会讨厌吧？」
+ENDSELECT
+PRINTFORML  
+PRINTFORMDL 请问，是想要纯洁一点的露米娅呢？还是要色情一点的露米娅呢？ 
+PRINTFORMDW 当前状态：\@ CFLAG:12:K12C_1_积攒度补正  ? 纯洁 # 色情 \@ 
+PRINTFORML  
+RESULT = 2 
+WHILE (RESULT == 2)
+	CALL ASK_M("纯洁一点的就很不错",1,"色情一点的话大概……",1,"说明这个选项的功能",1)
+	PRINTFORML  
+	IF RESULT == 2 
+		PRINTFORMDL 这个设定，可以将露米娅的积攒度锁定在百分之二十以下
+		PRINTFORMDW 当然，发情或者使用媚药的话，还是会冲破这个限制的……
+		PRINTFORMDW 选择色情一点的话没有任何影响，因为露米娅本来就很色气嘛
+	ENDIF 
+WEND
+PRINTFORML  
+IF !RESULT
+	IF CFLAG:12:K12C_1_积攒度补正 
+		PRINTFORMDL 那么，露米娅还是原来那样的单纯女孩了呢
+	ELSE 
+		PRINTFORMDL 那么，露米娅会变得没有那么色情了呢
+	ENDIF 
+	PRINTFORMDL 
+	SELECTCASE ABL:12:11
+		CASE IS < 4 
+			PRINTFORML 「嗯嗯，这样的话……呜……不要把露米娅当小孩子啦……」
+			SIF TALENT:12:7 || CFLAG:12:1 & 1 
+				PRINTFORMW 「……实在想要的时候，也还是会帮%MASTERNAME:12%好好解决的噢……」
+		CASE IS < 8
+			PRINTFORMW 「这样的话就没有原来那样了嘛？嗯嗯！那以后不做涩涩的事也没关系！」
+			SIF TALENT:12:7 || CFLAG:12:1 & 1 
+				PRINTFORMW 「……不过呀，%MASTERNAME:12%还是和原来一样色噢……」
+		CASE IS < 13 
+			PRINTFORMW 「没有原来那么色了嘛？嗯嗯！也算是解决了一件麻烦事了呢……」
+			SIF TALENT:12:7 || CFLAG:12:1 & 1 
+				PRINTFORMW 「……呼呼……不过呀，%MASTERNAME:12%教露米娅的事情……」
+		CASEELSE
+			PRINTFORMW 「……呜……明明就是讨厌那么色情的露米娅嘛……」
+			SIF TALENT:12:7 || CFLAG:12:1 & 1 
+				PRINTFORMW 「……和%MASTERNAME:12%一起变得色情，不好么？还是说……」
+	ENDSELECT
+	CFLAG:12:K12C_1_积攒度补正 = 1 
+ELSEIF RESULT == 1 
+	IF CFLAG:12:K12C_1_积攒度补正 
+		PRINTFORMDL 那么，露米娅相比原来会更单纯一些了呢
+	ELSE 
+		PRINTFORMDL 那么，露米娅还是和原来一样色情呢
+	ENDIF 
+	PRINTFORMW 「呜……要和原来一样嘛？嗯……」
+	CFLAG:12:K12C_1_积攒度补正 = 0 
+ENDIF 
+CLEARLINE LINECOUNT - LOCAL:1
+RETURN 0 
 ;
 ;==================================================
 ;0号主菜单函数，是露米娅还未初见时触发的部分

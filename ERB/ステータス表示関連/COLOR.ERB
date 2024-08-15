@@ -217,19 +217,34 @@ RETURNF 文字列
 ;### 心形のみ別の色でPRINTするための関数 ##################
 ;文字列中に含まれる"HPH"をホット粉色カラーのハートとしてPRINTし、それ以外の文字列は通常の色で普通にPRINTする
 ;ARGS "W"=PRINTSWで表示。"L"=PRINTSLで表示。"W"でも"L"でもなければPRINTSで表示
-@HPH_PRINT,対象文字列,ARGS
+@HPH_PRINT(対象文字列,ARGS)
 #DIMS 対象文字列
 #DIM 出力文字数
 #DIM HPHインデクス値
+#DIM BPBインデクス値
+#DIM NEXTインデクス値
 
 DO
 	HPHインデクス値 = STRFIND(対象文字列, "HPH")
-	
+		BPBインデクス値 = STRFIND(対象文字列, "BPB")
+	IF HPHインデクス値 >= 0 & BPBインデクス値 < 0
+		NEXTインデクス値 = HPHインデクス値
+	ELSEIF HPHインデクス値 < 0 & BPBインデクス値 >= 0
+		NEXTインデクス値 = BPBインデクス値
+	ELSE
+		NEXTインデクス値 = MIN(HPHインデクス値, BPBインデクス値)
+	ENDIF
+
 	;対象文字列がHPHで始まらないが後ろにHPHがある場合
-	IF HPHインデクス値 >= 1
+		;対象文字列がHPHまたBPBで始まらないが後ろにHPHまたBPBがある場合
+	IF NEXTインデクス値 >= 1
 		;HPHの直前まで文字表示
-		LOCALS = %SUBSTRING(対象文字列, 0, HPHインデクス値)%
-		PRINTS @"%LOCALS%"
+		LOCALS = %SUBSTRING(対象文字列, 0, NEXTインデクス値)%
+		IF GROUPMATCH(ARGS, "DW", "DL", "dw", "dl")
+			PRINTSD @"%LOCALS%"
+		ELSE
+			PRINTS @"%LOCALS%"
+		ENDIF
 		出力文字数 = STRLENS(LOCALS)
 	;対象文字列がHPHで始まる場合
 	ELSEIF HPHインデクス値 == 0
@@ -241,13 +256,28 @@ DO
 		SETCOLOR LOCAL
 		SETFONT LOCALS:1
 		出力文字数 = 3
-	;HPHがもうない場合
+	;対象文字列がBPBで始まる場合
+	ELSEIF BPBインデクス値 == 0
+		LOCALS:1 = %GETFONT()%
+		SETFONT "Times New Roman"
+		LOCAL = GETCOLOR()
+		SETCOLOR C_H_PINK
+		PRINTFORM ///
+		SETCOLOR LOCAL
+		SETFONT LOCALS:1
+		出力文字数 = 3
+	;HPHとBPBがもうない場合
 	ELSE
 		;ここでARGSによる分岐
 		SELECTCASE ARGS
-		CASE "W"
+		CASE "DW", "dw"
+			PRINTSDW @"%対象文字列%"
+		CASE "DL", "dl"
+			PRINTSDL @"%対象文字列%"
+		;----------
+		CASE "W", "w"
 			PRINTSW @"%対象文字列%"
-		CASE "L"
+		CASE "L", "l"
 			PRINTSL @"%対象文字列%"
 		CASEELSE
 			PRINTS @"%対象文字列%"

@@ -165,6 +165,8 @@ RETURN 0
 @RUMIA_MOE_NORMAL_EVENT_TALK
 CALL M_KOJO_Moe_COLOR_K12_SET(MOE_RUMIA)			
 RESULT = 0 
+SIF !(CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2) 
+	RETURN 0 
 ;记得回来看看露米娅
 CALL M_KOJO_Moe_K12_HAVENT_PLAYED_FOR_LONG_DAYS
 SIF RESULT == 1
@@ -294,7 +296,7 @@ IF FLAG:73 == 12
 								CASE 150
 									IF ONCE("RUMIA_MOE_OUTSIDE_TALK_1501")
 										PRINTFORML 「%MASTERNAME:12%真的是，约会的话，来墓地做什么啊……」 
-										PRINTFORML 「有个举着伞的大姐姐在这里吓人的……」 
+										PRINTFORML 「有个举着伞的大姐姐……在这里吓人的……」 
 										PRINTFORMDW 露米娅因为过于害怕，紧紧地抱住了你的手……
 										RETURN 1
 									ELSE 
@@ -909,7 +911,7 @@ IF FLAG:73 == 12
 						CASE 910,920,930,940,960,970 ;地底
 							PRINTFORMW 「……好热……这里也有吃的嘛……」
 					ENDSELECT
-				ELSEIF (CFLAG:12:2 >= MIN((130 - CFLAG:12:K12C_1_好感度补正 / 2),75)) && (CFLAG:12:4 >= MIN((30 - CFLAG:12:K12C_1_好感度补正 / 10),17)) && FIRSTTIME("K12APPOINTMENT_FRIEND") && !CFLAG:12:K12C_1_朋友_2 && !CFLAG:12:K12C_1_朋友 && !(MARK:12:3) ;无亲密要求
+				ELSEIF (CFLAG:12:2 > MAX((130 - CFLAG:12:K12C_1_好感度补正 / 2),75)) && (CFLAG:12:4 > MAX((30 - CFLAG:12:K12C_1_好感度补正 / 10),17)) && FIRSTTIME("K12_APPOINTMENT_FRIEND") && !CFLAG:12:K12C_1_朋友_2 && !CFLAG:12:K12C_1_朋友 && !MARK:12:3 ;无亲密要求
 					CLEARLINE 2 
 					PRINTFORMW 「诶哆……」
 					PRINTFORMDL 正想搭话，看着正想开口的露米娅，只能先闭上了嘴
@@ -1033,16 +1035,28 @@ IF ONCE("FESTIVAL_TALK")
 				CASE 11
 					IF CFLAG:12:K12C_1_二周目
 						PRINTFORML 「今天是母亲节呢，村里让露米娅留下吃过饭的阿姨很多呢，都要准备礼物啊」
-						PRINTFORMW 「%MASTERNAME:12%也来帮忙可以吗？」
+						PRINTFORMW 「%MASTERNAME:12%也来帮忙可以吗……呜……总觉得还是算了呢……」
 					ELSE
-						PRINTFORMW 「今天是母亲节呢……感觉跟露米娅没什么关系的说……」
+						PRINTFORML 「今天是母亲节呢……感觉跟露米娅没什么关系的说……」
+						PRINTFORMW 「……一定要说的话，在传说中，天上的月亮就算我们妖怪的母亲……」
+						PRINTFORMW 「虽然的确在月圆的夜晚，露米娅会感到有力量流入了身体里……」
+						IF TALENT:0:2 & 1 && !TALENT:0:150
+							PRINTFORMW 「……不过呀，露米娅有点，在%MASTERNAME:12%身上体会到了妈妈的感觉……」
+							SIF TALENT:0:100 == TALENT:12:100
+								PRINTFORMW 「虽然说只是看起来和露米娅一样大的妈妈……诶嘿嘿……」
+							SIF TALENT:0:100 == TALENT:12:100
+								PRINTFORMW 「虽然说只是看起来比露米娅还要小的妈妈……诶嘿嘿……」
+						ELSEIF TALENT:0:150
+							PRINTFORMW 「……不过呀，露米娅有点，在%MASTERNAME:12%身上体会到了，当妈妈的感觉……」
+							PRINTFORMW 「是这样哟……人家作为妖怪的年龄，其实比%MASTERNAME:12%长很多呢……」
+						ENDIF 
 					ENDIF
 				CASE 14
 					;白色情人节？这里我是不是搞错了啊？
 					;待测试
-					SIF !(CFLAG:12:383)		;バレンタイン	;对方没有送回礼的情况
+					SIF INRANGE(CFLAG:12:383 ,0 ,100)		;バレンタイン	;对方没有送回礼的情况
 						RETURN 0  
-					PRINTFORMW 要送什么作为白色情人节的回礼呢
+					PRINTFORMW 要送什么作为白色情人节的回礼呢？
 					CALL M_Moe_K12_ASK_M("放棄",1,"跳蛋巧克力",2-(ITEM:129&&1),"手制巧克力曲奇",2-(ITEM:126&&1),"手制布丁",2-(ITEM:127&&1),"装饰蛋糕",2-(ITEM:128&&1) && CFLAG:TARGET:383 == 4)
 					SELECTCASE RESULT
 						CASE 1
@@ -1051,15 +1065,18 @@ IF ONCE("FESTIVAL_TALK")
 							PRINTFORML 「唔嗯！」
 							PRINTFORMDL 看上去还没充分咀嚼就咽下去了
 							PRINTFORMW 「怎么在肚子里跳起来了！好奇怪！」
+							CFLAG:12:383 = 101 ;修改至这个值以覆盖原版
 						CASE 2
 							PRINTFORML 「哇！好可爱的饼干！」
 							PRINTFORMDL 露米娅接过曲奇就开始啃起来
 							PRINTFORMW 「唔嗯嗯……好甜！」
+							CFLAG:12:383 = 101 ;修改至这个值以覆盖原版
 						CASE 3
 							PRINTFORML 「哇！软乎乎的布丁！」
 							PRINTFORMDL 露米娅接过勺子就开始挖起来
 							PRINTFORML 「跟甜品店的完全不一样呢！%MASTERNAME:12%加了蜂蜜吗？」
 							PRINTFORMW 「最喜欢%MASTERNAME:12%啦！」
+							CFLAG:12:383 = 101 ;修改至这个值以覆盖原版
 						CASE 4
 							PRINTFORML 「哇！好大的蛋糕！」
 							PRINTFORML 「不行……这么漂亮的蛋糕，不能独吞……」
@@ -1068,6 +1085,7 @@ IF ONCE("FESTIVAL_TALK")
 							PRINTFORMDL ……
 							PRINTFORML 「哈啊啊……感觉整个人都充满了力量了呢……」
 							PRINTFORMDW 露米娅轻飘飘的样子，根本不像吃了这么大的蛋糕……
+							CFLAG:12:383 = 101 ;修改至这个值以覆盖原版
 							;待补充
 					ENDSELECT
 				CASE 25
@@ -1100,109 +1118,109 @@ IF ONCE("FESTIVAL_TALK")
 				RETURN 0  
 			ENDSELECT
 		CASE 3
-		SELECTCASE DAY:3
-			CASE 15
-				PRINTFORML 「今天是中秋节呢！听说今天的月亮是最圆的呢！」
-				PRINTFORML 「露米娅很喜欢晒这样的月光，感觉身体充满了力量，很想在夜空中跳舞呢！」
-				PRINTFORMW 「什么时候%MASTERNAME:12%来看看露米娅跳舞呢？」
-			CASE 27
-				IF CFLAG:12:K12C_1_二周目
-					IF TALENT:12:8 || TALENT:12:3
-						PRINTFORML 「露米娅前几天帮村里完成了收割任务……」
-						PRINTFORML 「今天收到村里的感谢了呢！说是要请露米娅吃大餐什么的……」
-						PRINTFORML 「不呢，跟长辈一起吃饭，总会有些不自在的感觉……」
-						PRINTFORMW 「%MASTERNAME:12%觉得呢？要不咱们自己去外面吃吧？」
-					ELSEIF CFLAG:12:K12C_1_朋友_2
-						PRINTFORML 「露米娅前几天帮村里完成了收割任务……」
-						PRINTFORML 「今天收到村里的感谢了呢！」
-						PRINTFORMW 「%MASTERNAME:12%也一起去村里玩吧？」
+			SELECTCASE DAY:3
+				CASE 15
+					PRINTFORML 「今天是中秋节呢！听说今天的月亮是最圆的呢！」
+					PRINTFORML 「露米娅很喜欢晒这样的月光，感觉身体充满了力量，很想在夜空中跳舞呢！」
+					PRINTFORMW 「什么时候%MASTERNAME:12%来看看露米娅跳舞呢？」
+				CASE 27
+					IF CFLAG:12:K12C_1_二周目
+						IF TALENT:12:8 || TALENT:12:3
+							PRINTFORML 「露米娅前几天帮村里完成了收割任务……」
+							PRINTFORML 「今天收到村里的感谢了呢！说是要请露米娅吃大餐什么的……」
+							PRINTFORML 「不呢，跟长辈一起吃饭，总会有些不自在的感觉……」
+							PRINTFORMW 「%MASTERNAME:12%觉得呢？要不咱们自己去外面吃吧？」
+						ELSEIF CFLAG:12:K12C_1_朋友_2
+							PRINTFORML 「露米娅前几天帮村里完成了收割任务……」
+							PRINTFORML 「今天收到村里的感谢了呢！」
+							PRINTFORMW 「%MASTERNAME:12%也一起去村里玩吧？」
+						ELSE
+						RETURN 0  
+						ENDIF
+					ENDIF
+				CASE 30
+					PRINTFORML 「%MASTERNAME:12%！露米娅给你表演个节目吧？」
+					PRINTFORMDL 小妖怪驱使着黑暗变成一块床单似的，披在身上，黑暗自然地垂落下来，略微贴合着她的身形
+					PRINTFORMDL 露米娅飘了起来，乍一看，不正是一只娇小可爱的恶（饿？）鬼嘛
+					PRINTFORMW 「Trick or treat！不给糖，就搞蛋！ 」
+				CASEELSE
+					RETURN 0  
+			ENDSELECT
+		CASE 4
+			SELECTCASE DAY:3
+				CASE 3
+					PRINTFORML 「啊，天气冷起来了呢，%MASTERNAME:12%怕冷吗？」
+					PRINTFORML 「不怕的话，等下雪了，露米娅想跟%MASTERNAME:12%打雪仗呢！」
+					PRINTFORMW 「……不会跟妖精那样玩成弹幕对决的啦……」
+				CASE 14
+					IF TALENT:12:7
+						PRINTFORML 「%MASTERNAME:12%！今天是情人节呢！」
+						PRINTFORML 「露米娅带你出去，去给%MASTERNAME:12%挑礼物，可以吗？」
+						PRINTFORML 「然后又可以跟%MASTERNAME:12%玩一整天了呢！」
+						PRINTFORMW 「……啊对了，还有这个——最重要的，巧克力呢……」
+						;本命
+						CALL GET_ITEM_ID_FOR_RUMIA(123,1,2)
+					ELSEIF  TALENT:12:3
+						PRINTFORML 「诶哆……%MASTERNAME:12%……」
+						PRINTFORMDL 露米娅扭扭捏捏的，背后似乎还拿着什么东西
+						PRINTFORML 「%MASTERNAME:12%！请收下这个！」
+						PRINTFORMDL 露米娅从背后拿出一个心形的，系着蝴蝶结的小盒子
+						PRINTFORML 「今天是情人节……但这个是，露米娅自己努力学着做的，友情巧克力的说！」
+						PRINTFORML 「呜……真的是友情，友情，友情巧克力……」
+						PRINTFORMDW 小脸蛋都红透了，还在低着头自言自语呢……
+						;本命
+						CALL GET_ITEM_ID_FOR_RUMIA(123,1,2)
+					ELSEIF TALENT:12:8
+						PRINTFORML 「%MASTERNAME:12%！」
+						PRINTFORML 「这个是露米娅给你的礼物！请收下！」
+						PRINTFORMDL 小妖怪还没等你说啥就飞快的跑开了……
+						PRINTFORMDW ……今天是什么节日来着？
+						;高级
+						CALL GET_ITEM_ID_FOR_RUMIA(122,1,2)
+					ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+						PRINTFORML 「咦——今天是情人节耶！」
+						PRINTFORML 「啊！想起来之前特地准备了，给%MASTERNAME:12%的友情巧克力！」
+						PRINTFORMDL 接过了露米娅递过来的礼物盒子，重得有点坠手……
+						PRINTFORMW 「露米娅还塞了点水果什么的……只有巧克力感觉不够呢！」
+						;普通
+						CALL GET_ITEM_ID_FOR_RUMIA(121,1,2)
+						CALL GET_ITEM_ID_FOR_RUMIA(626,RAND:3,2)
+					ELSE
+						RETURN 0  
+					ENDIF
+				CASE 24
+					IF TALENT:12:3
+						PRINTFORML 「%MASTERNAME:12%，今晚是平安夜哦！」
+						PRINTFORML 「请收下这个！」
+						PRINTFORML 「露米娅给%MASTERNAME:12%准备了苹果呢……回家再吃哦」
+						PRINTFORML 「今天烤鸡店会有很多人吧？记得早点去呢。」
+						PRINTFORMW 「露米娅想要%MASTERNAME:12%，今晚守护在露米娅身旁呢……」
+					ELSEIF TALENT:12:8 || CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+						PRINTFORML 「%MASTERNAME:12%请收下这个！」
+						PRINTFORMDL 露米娅双手递给你一个小小的盒子，有些分量
+						PRINTFORMDL 你打开来，发现是一个苹果
+						PRINTFORML 「这个是从魔理沙姐姐那里要来的呢，听说平安夜要送苹果的说」
+						PRINTFORMDW 你咬了一口苹果，很甜很甜，面前的小妖怪看着你吃起苹果，笑得很开心
 					ELSE
 					RETURN 0  
 					ENDIF
-				ENDIF
-			CASE 30
-				PRINTFORML 「%MASTERNAME:12%！露米娅给你表演个节目吧？」
-				PRINTFORMDL 小妖怪驱使着黑暗变成一块床单似的，披在身上，黑暗自然地垂落下来，略微贴合着她的身形
-				PRINTFORMDL 露米娅飘了起来，乍一看，不正是一只娇小可爱的恶（饿？）鬼嘛
-				PRINTFORMW 「Trick or treat！不给糖，就搞蛋！ 」
-			CASEELSE
-				RETURN 0  
-		ENDSELECT
-		CASE 4
-		SELECTCASE DAY:3
-			CASE 3
-				PRINTFORML 「啊，天气冷起来了呢，%MASTERNAME:12%怕冷吗？」
-				PRINTFORML 「不怕的话，等下雪了，露米娅想跟%MASTERNAME:12%打雪仗呢！」
-				PRINTFORMW 「……不会跟妖精那样玩成弹幕对决的啦……」
-			CASE 14
-				IF TALENT:12:7
-					PRINTFORML 「%MASTERNAME:12%！今天是情人节呢！」
-					PRINTFORML 「露米娅带你出去，去给%MASTERNAME:12%挑礼物，可以吗？」
-					PRINTFORML 「然后又可以跟%MASTERNAME:12%玩一整天了呢！」
-					PRINTFORMW 「……啊对了，还有这个——最重要的，巧克力呢……」
-					;本命
-					CALL GET_ITEM_ID_FOR_RUMIA(123,1,2)
-				ELSEIF  TALENT:12:3
-					PRINTFORML 「诶哆……%MASTERNAME:12%……」
-					PRINTFORMDL 露米娅扭扭捏捏的，背后似乎还拿着什么东西
-					PRINTFORML 「%MASTERNAME:12%！请收下这个！」
-					PRINTFORMDL 露米娅从背后拿出一个心形的，系着蝴蝶结的小盒子
-					PRINTFORML 「今天是情人节……但这个是，露米娅自己努力学着做的，友情巧克力的说！」
-					PRINTFORML 「呜……真的是友情，友情，友情巧克力……」
-					PRINTFORMDW 小脸蛋都红透了，还在低着头自言自语呢……
-					;本命
-					CALL GET_ITEM_ID_FOR_RUMIA(123,1,2)
-				ELSEIF TALENT:12:8
-					PRINTFORML 「%MASTERNAME:12%！」
-					PRINTFORML 「这个是露米娅给你的礼物！请收下！」
-					PRINTFORMDL 小妖怪还没等你说啥就飞快的跑开了……
-					PRINTFORMDW ……今天是什么节日来着？
-					;高级
-					CALL GET_ITEM_ID_FOR_RUMIA(122,1,2)
-				ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
-					PRINTFORML 「咦——今天是情人节耶！」
-					PRINTFORML 「啊！想起来之前特地准备了，给%MASTERNAME:12%的友情巧克力！」
-					PRINTFORMDL 接过了露米娅递过来的礼物盒子，重得有点坠手……
-					PRINTFORMW 「露米娅还塞了点水果什么的……只有巧克力感觉不够呢！」
-					;普通
-					CALL GET_ITEM_ID_FOR_RUMIA(121,1,2)
-					CALL GET_ITEM_ID_FOR_RUMIA(626,RAND:3,2)
-				ELSE
+				CASE 25
+					IF TALENT:12:7
+						PRINTFORML 「今天，人里为了庆祝圣诞节，小吃摊都会有很多促销活动呢……」
+						PRINTFORMW 「不过……露米娅不太喜欢热闹，和%MASTERNAME:12%在一起就好啦……」
+					ELSEIF TALENT:12:8 || TALENT:12:3
+						PRINTFORML 「今天，人里为了庆祝圣诞节，小吃摊都会有很多很多好吃的呢……」
+						PRINTFORML 「真想和%MASTERNAME:12%一起去啊……」
+						PRINTFORMW 「%MASTERNAME:12%可以带露米娅去吗？……」
+					ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
+						PRINTFORML 「今天，人里为了庆祝圣诞节，会有很多好吃的呢……」
+						PRINTFORMW 「真想去啊……%MASTERNAME:12%可以带露米娅一起去吗？」 
+					ELSE
+						RETURN 0  
+					ENDIF
+				CASEELSE
 					RETURN 0  
-				ENDIF
-			CASE 24
-				IF TALENT:12:3
-					PRINTFORML 「%MASTERNAME:12%，今晚是平安夜哦！」
-					PRINTFORML 「请收下这个！」
-					PRINTFORML 「露米娅给%MASTERNAME:12%准备了苹果呢……回家再吃哦」
-					PRINTFORML 「今天烤鸡店会有很多人吧？记得早点去呢。」
-					PRINTFORMW 「露米娅想要%MASTERNAME:12%，今晚守护在露米娅身旁呢……」
-				ELSEIF TALENT:12:8 || CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
-					PRINTFORML 「%MASTERNAME:12%请收下这个！」
-					PRINTFORMDL 露米娅双手递给你一个小小的盒子，有些分量
-					PRINTFORMDL 你打开来，发现是一个苹果
-					PRINTFORML 「这个是从魔理沙姐姐那里要来的呢，听说平安夜要送苹果的说」
-					PRINTFORMDW 你咬了一口苹果，很甜很甜，面前的小妖怪看着你吃起苹果，笑得很开心
-				ELSE
-				RETURN 0  
-				ENDIF
-			CASE 25
-				IF TALENT:12:7
-					PRINTFORML 「今天，人里为了庆祝圣诞节，小吃摊都会有很多促销活动呢……」
-					PRINTFORMW 「不过……露米娅不太喜欢热闹，和%MASTERNAME:12%在一起就好啦……」
-				ELSEIF TALENT:12:8 || TALENT:12:3
-					PRINTFORML 「今天，人里为了庆祝圣诞节，小吃摊都会有很多很多好吃的呢……」
-					PRINTFORML 「真想和%MASTERNAME:12%一起去啊……」
-					PRINTFORMW 「%MASTERNAME:12%可以带露米娅去吗？……」
-				ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2
-					PRINTFORML 「今天，人里为了庆祝圣诞节，会有很多好吃的呢……」
-					PRINTFORMW 「真想去啊……%MASTERNAME:12%可以带露米娅一起去吗？」 
-				ELSE
-				RETURN 0  
-				ENDIF
-			CASEELSE
-				RETURN 0  
-		ENDSELECT
+			ENDSELECT
 	ENDSELECT
 	RESETCOLOR
 	RETURN 1
@@ -1316,38 +1334,38 @@ ELSEIF BASE:12:15 >= 50 ;醉酒对话待补充
 			ENDSELECT
 		ELSEIF  (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)
 			SELECTCASE RAND:5
-			CASE 0
-				PRINTFORML 「啊啊啊……」
-				PRINTFORML 「%MASTERNAME:12%在说什么来着……」
-				PRINTFORMDW 露米娅晕乎乎的靠在你身上……
-			CASE 1
-				PRINTFORMW 「露米娅好像在飞……」
-				PRINTFORMW 「但是为什么……肚子好凉……」
-				PRINTFORMDW 你把趴在地上的露米娅抱了起来……
-			CASE 2
-				PRINTFORML 「%MASTERNAME:12%说的……是——这——样——吗——」
-				PRINTFORMDL  露米娅挺起胸伸直了双手，一下子摇摇晃晃的
-				PRINTFORMDW 你赶忙扶着她坐下来
-			CASE 3
-				PRINTFORMW 「我说%MASTERNAME:12%——你怎么，不回答我呢……」
-				PRINTFORMDW 露米娅对着酒瓶说起话来……
-			CASE 4
-				PRINTFORML 「啊……好饿好饿……但是又不饿……」
-				PRINTFORML 「好想吃东西啊……啊呜！」
-				PRINTFORMDW 露米娅一口咬住了你的手臂……
-				CALL MOE_RUMIA_BITE_ONE_MOUTH
+				CASE 0
+					PRINTFORML 「啊啊啊……」
+					PRINTFORML 「%MASTERNAME:12%在说什么来着……」
+					PRINTFORMDW 露米娅晕乎乎的靠在你身上……
+				CASE 1
+					PRINTFORMW 「露米娅好像在飞……」
+					PRINTFORMW 「但是为什么……肚子好凉……」
+					PRINTFORMDW 你把趴在地上的露米娅抱了起来……
+				CASE 2
+					PRINTFORML 「%MASTERNAME:12%说的……是——这——样——吗——」
+					PRINTFORMDL  露米娅挺起胸伸直了双手，一下子摇摇晃晃的
+					PRINTFORMDW 你赶忙扶着她坐下来
+				CASE 3
+					PRINTFORMW 「我说%MASTERNAME:12%——你怎么，不回答我呢……」
+					PRINTFORMDW 露米娅对着酒瓶说起话来……
+				CASE 4
+					PRINTFORML 「啊……好饿好饿……但是又不饿……」
+					PRINTFORML 「好想吃东西啊……啊呜！」
+					PRINTFORMDW 露米娅一口咬住了你的手臂……
+					CALL MOE_RUMIA_BITE_ONE_MOUTH
 			ENDSELECT
 		ELSE 
 			PRINTFORMW 「哈啊啊啊……诶……好亮啊……」
 			PRINTFORMDW 似乎是不知道黑暗散去了，妖怪女孩摇摇晃晃地飘着
 		ENDIF
 	;检测到微醺	 待补充
-	ELSEIF !RAND:3
+	ELSEIF !RAND:2
 		[SKIPSTART]
 		IF TALENT:12:7
 		[SKIPEND]
 		IF (TALENT:12:3 || TALENT:12:8) && !RAND:2
-			SELECTCASE RAND:5
+			SELECTCASE RAND:6
 				CASE 0 
 					PRINTFORML 「因为有%MASTERNAME:12%在，喝多少也没关系！」
 					PRINTFORMW 「我知道，%MASTERNAME:12%不会看着喝醉的露米娅不管的！」
@@ -1365,6 +1383,9 @@ ELSEIF BASE:12:15 >= 50 ;醉酒对话待补充
 					PRINTFORML 「像这样从背后……嘿咻！——」
 					PRINTFORMDL 你从背后被露米娅抱住，而后……用力提了起来……
 					PRINTFORMDW 这小家伙哪来的这么大力气……
+				CASE 5
+					PRINTFORML 「%MASTERNAME:12%的味道……和酒的味道在一起，好香哇……」
+					PRINTFORMW 「可以舔一口嘛？就舔一口嘛～，不会吃掉的啦～……」
 			ENDSELECT
 		ELSEIF CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2 
 			SELECTCASE RAND:7
@@ -1405,6 +1426,10 @@ ELSEIF INROOM(CFLAG:12:300)
 	 ;室内对话，每天每种天气触发一次
 	 ;而后可以考虑加点房间描述什么的
 	 ;我是真的想掐着tw作者的脖子让他把角落里的骨头那句话给干掉啊啊啊啊啊啊啊
+	 ;24.8.6	好，干掉了，没事了
+	CALL RUMIA_SAFE_DAY_REQUIRE_MESSAGE
+	SIF RESULT == 1 
+		RETURN 1 
 	IF  (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)  ;基本要求是朋友
 		;IF CFLAG:12:300 == P543露米亜的棲息処  ;拟定加一点房间描述什么的，待补充
 		;ELSE
@@ -1433,8 +1458,14 @@ ELSEIF INROOM(CFLAG:12:300)
 								PRINTFORML 「呜……下雨了嘛……不方便出门了呢……」 		
 							CASE 2			
 								PRINTFORML 「讨厌下雨天……但是看不见太阳，也不错……」	
-						ENDSELECT				
-						PRINTFORMDL 露米娅看向了窗外，伸着手，在窗户上描绘着雨水滚落的痕迹					
+						ENDSELECT	
+						PRINTL 
+						PRINTDATAL 
+							DATAFORM 露米娅看向了窗外，伸着手，在窗户上描绘着雨水滚落的痕迹	
+							DATAFORM 露米娅用手撑起了脑袋，望着窗外雾蒙蒙的景色
+							DATAFORM 露米娅趴在窗台边，看着窗外的雨中景色……
+						ENDDATA			
+						PRINTL 
 						PRINTFORMW 「听着雨声……就有种想要睡着的感觉……%MASTERNAME:12%在的话，就不会睡着了呢！」	
 					ELSE
 						RETURN 0 
@@ -1449,7 +1480,12 @@ ELSEIF INROOM(CFLAG:12:300)
 							CASE 2			
 								PRINTFORML 「起雾了呢……雾蒙蒙的，出门飞行的话会迷路吧……」	
 						ENDSELECT				
-						PRINTFORMDL 露米娅看着窗外的氤氲雾气，撑着小脑袋，百无聊赖地捏着头发……		
+						PRINTDATAL 
+							DATAFORM 露米娅看着窗外的氤氲雾气，撑着小脑袋，百无聊赖地捏着头发……	
+							DATAFORM 露米娅用手撑起了脑袋，望着窗外雾蒙蒙的景色
+							DATAFORM 露米娅趴在窗台边，试图用手抓住厚重的雾……
+						ENDDATA			
+						PRINTFORMDL 	
 						PRINTFORMW 「好想出去玩啊……但是这么大的雾……呜……」
 					ELSE
 						RETURN 0 
@@ -2516,16 +2552,16 @@ ENDIF
 						PRINTFORML 「%MASTERNAME:12%平常都干些什么呢？」
 						PRINTFORML 「泡茶……扫地……这些都是人类要做的工作嘛？」
 						PRINTFORMW 「是为了赚钱买吃的嘛？听说人类不吃东西就会饿死，真可怜……」
-					CASE 24 
+					CASE 24,25
 						PRINTFORML 「%MASTERNAME:12%问这个缎带？不知道做什么用的呢……」
 						PRINTFORMDL 随着露米娅微微甩头的动作，那有些褪色的缎带也随着头发一同雀跃着
 						PRINTFORML 「从记得的时候就一直绑着了，露米娅自己也取不下来，只能绑在那里了……」
 						PRINTFORMW 「不过，幻想乡金头发的孩子这么多，这个缎带只有露米娅才有呢！」
-					CASE 25 
+					;CASE 25 
 						;结合约24年2月新的设定……
-						PRINTFORML 「真是的……露米娅明明没有吃过人嘛……」
-						PRINTFORML 「偷偷告诉%MASTERNAME:12%哦，其实妖怪说吃人都是吓唬你的……」
-						PRINTFORMW 「只是因为%MASTERNAME:12%是好人所以就不吓你了哦！别去和别人说呀！」
+						;PRINTFORML 「真是的……露米娅明明没有吃过人嘛……」
+						;PRINTFORML 「偷偷告诉%MASTERNAME:12%哦，其实妖怪说吃人都是吓唬你的……」
+						;PRINTFORMW 「只是因为%MASTERNAME:12%是好人所以就不吓你了哦！别去和别人说呀！」
 					CASE 26 
 						PRINTFORML 「异变的时候，其他人都莫名其妙变得好强……」
 						PRINTFORMW 「露米娅都不知道发生了什么……想去闹也找不到地方……」

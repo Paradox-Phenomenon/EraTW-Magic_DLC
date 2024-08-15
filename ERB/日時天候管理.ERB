@@ -7,6 +7,7 @@
 ;-----------------------------------------------------------
 @CHANGE_MONTH
 #DIM 神簽代
+#DIM IFS_COST
 ;日期が月を跨いだら月変更
 IF DAY:3 > 31
 	DAY:3 = 1
@@ -40,10 +41,10 @@ IF DAY:3 > 31
 					PRINTFORML 停止了訂閱。
 					FLAG:新聞購読 = 0
 				CASE 1
-					MONEY -= 1500
+					CALL PAY_MONEY_YEN(3000, 2)
 					PRINTFORML 本月繼續訂閱。
 				CASE 2
-					MONEY:2 -= 5
+					CALL PAY_MONEY_CM(10, 2)
 					PRINTFORML 本月繼續訂閱。
 			ENDSELECT
 		ENDIF
@@ -60,31 +61,15 @@ IF DAY:3 > 31
 			CALL ASK_YN
 			IF !RESULT
 				PRINTFORML 更新了契約
-				MONEY:2 -= 神簽代
+				CALL PAY_MONEY_CM(神簽代, 2)
 			ELSE
 				FLAG:神簽契約 = 0
 				PRINTFORML 結束了契約
 			ENDIF
 		ENDIF
 	ENDIF
-	IF FLAG:蟲の採集サービス
-		PRINTFORMDL
-		PRINTFORMW 虫采集服务的合同到期了。
-		PRINTFORMW 更新申请吗?
-		PRINTFORML 所持金:%金額表示(MONEY)%
-		LOCAL = CALCULATE_IFS_PRICE()
-		CALL ASK_M("不更新",1,@"更新 (%金額表示(LOCAL)%)",MONEY >= LOCAL)
-		IF RESULT > 0
-			MONEY -= LOCAL
-			PRINTFORMW 契約更新
-			PRINTFORMDL
-			PRINTFORML 现在的素材收集地点是%GET_MAPNAME(FLAG:蟲の採集サービス - 1)%。
-			PRINTFORMW 如果想要改变的话，就和%NAME_OUTPUT_TRANSLATION("CALLNAME", [[莉格露]])%打招呼吧。
-		ELSE
-			FLAG:蟲の採集サービス = 0
-		ENDIF
-		PRINTFORMDL
-	ENDIF
+	SIF FLAG:蟲の採集サービス
+		CALL IFS_SUBSCRIBE
 	SIF ENCOUNTDLC
 		CALL SP_ENCOUNT
 ENDIF

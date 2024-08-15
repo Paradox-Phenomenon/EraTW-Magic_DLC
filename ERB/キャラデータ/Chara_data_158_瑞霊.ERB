@@ -56,8 +56,8 @@ CASE "今天的睡衣"
 	CALLF MAKE_STR(V_NAME, "睡衣（裤子）套")
 CASE "便装：裙子"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("裙子", "囚人スカート"))
-CASE "便装：上半身内衣２"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("上半身内衣２", "囚人シャツ"))
+CASE "便装：上身衣服２"
+	CALLF MAKE_INT(V_NAME, CLOTHES_ID("上身衣服２", "囚人シャツ"))
 
 CASE "便装：飾品"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("飾品", "手錠"))
@@ -80,16 +80,16 @@ CASE "固有内衣布料厚度"
 
 ;料理関連
 CASE "料理：喜欢的味道"
-	CALLF MAKE_STR(V_NAME, "香料/肉料理/和風/汁物/咸/豪華/上品/豪快/辣/辣/辣/玉兎流/謎料理")
+	CALLF MAKE_STR(V_NAME, "香料/肉料理/和風/汁物/咸/豪華/上品/豪快/辣/辣/辣/玉兎流/謎料理/")
 CASE "料理：讨厌的味道"
-	CALLF MAKE_STR(V_NAME, "中華/甜/丰盛/濃厚/質素/魔界風/魔界風/魔界風/天狗流/简易/淡白")
+	CALLF MAKE_STR(V_NAME, "中華/甜/丰盛/濃厚/質素/魔界風/魔界風/魔界風/天狗流/简易/淡白/")
 CASE "料理：助手効果"
 	CALLF MAKE_STR(V_NAME, "怪しい/" * 2)
 ;贈り物関連
 CASE "感性：好き"
-	CALLF MAKE_STR(V_NAME, "黒/妖怪/可怕的/知的" + "幽霊/魔法/闇/懷舊/混沌/法具/伝来の" * 3 + "闇の/機力の/" * 5 + "渴血の/殺意の/" * 10)
+	CALLF MAKE_STR(V_NAME, "黒/妖怪/可怕的/知的/" + "幽霊/魔法/闇/懷舊/混沌/法具/伝来の/" * 3 + "闇の/機力の/" * 5 + "渴血の/殺意の/" * 10)
 CASE "感性：嫌い"
-	CALLF MAKE_STR(V_NAME, "未来/異国風の/神霊" + "護符/靴/封呪の" * 3 + "妖怪の/地霊の/廃獄の/地底の" * 5 + "巫女の/博霊の/怒りの/退魔の" * 10)
+	CALLF MAKE_STR(V_NAME, "未来/異国風の/神霊/" + "護符/靴/封呪の/" * 3 + "妖怪の/地霊の/廃獄の/地底の/" * 5 + "巫女の/博霊の/怒りの/退魔の/" * 10)
 ENDSELECT
 
 ;-------------------------------------------------
@@ -210,6 +210,7 @@ ENDIF
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I158_特殊表情(CHARA)
 #DIM CHARA
+#DIM CLIMAX_EXHAUST ;gets stale after seeing it for a while, so spice it up a little
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
@@ -222,6 +223,60 @@ ELSE
 	;通常画像
 	IF FLAG:立ち絵種類
 		;顔絵
+		IF FLAG:時間停止
+			IF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿) && !CHECK_NUDE(CHARA)
+				RESULTS:1 = 発情通常
+			ELSEIF CHECK_NUDE(CHARA)
+				RESULTS:1 '= @"%RESULTS:0%TIMESTOP"
+				SIF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿)
+					RESULTS:1 = 発情通常TIMESTOP
+			ENDIF
+		ELSEIF CFLAG:CHARA:睡眠 ;prevents overlapping status breaking the sprite
+			RESULTS:0 = 睡眠
+			RESULTS:1 = 睡眠
+		;This check doesn't work, lame
+		;Had to copy the checks here
+		;ELSEIF RESULTS:0 == "愛撫" || RESULTS:0 == "性交"
+		ELSE
+			IF IN_HEAT(CHARA)
+				IF !CHECK_NUDE(CHARA) && !IS_SEXING(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿)
+					RESULTS:1 = 発情通常
+				ELSE
+					SELECTCASE SELECTCOM
+						CASE 0 TO 15
+							RESULTS:0 = 発情
+							RESULTS:1 '= @"発情愛撫{RAND:2}"
+						CASE 60 TO 79, 317 TO 323
+							RESULTS:0 = 発情
+							RESULTS:1 = 発情性交
+					ENDSELECT
+				ENDIF
+			ELSE
+				SELECTCASE SELECTCOM
+					CASE 0 TO 15
+						RESULTS:0 '= @"愛撫{RAND:3}"
+					CASE 60 TO 79, 317 TO 323
+						RESULTS:0 '= @"性交{RAND:3}"
+					CASE 313 TO 316
+						IF CFLAG:CHARA:うふふ
+							RESULTS:0 = 愛撫
+						ELSEIF MARK:CHARA:不埒刻印 == 3
+							RESULTS:1 = 愛撫
+						ENDIF
+				ENDSELECT
+			ENDIF
+			IF NOWEX:TotalEX > 8 || NOWEX:時間停止TotalEX > 30 || MIN_ORGASM_STRENGTH(CHARA, 3)
+				;This function triggers thrice
+				;so CLIMAX_EXHAUST goes up by 3 every time this part is ran, what's even going on dude
+				;numbers assigned to the CLIMAX_EXHAUST loop dont really have significant meaning to them
+				SIF CLIMAX_EXHAUST < 6
+					RESULTS:0 = 発情強絶頂
+				CLIMAX_EXHAUST += RAND:8
+				SIF CLIMAX_EXHAUST > 10
+					CLIMAX_EXHAUST = 0
+			ENDIF
+		ENDIF
+
 	ELSE
 		;立ち絵
 	ENDIF

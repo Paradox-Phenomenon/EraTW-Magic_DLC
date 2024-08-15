@@ -5,6 +5,48 @@
 画像が表示されない場合、DL・解凍の過程で問題が起きている、ないしはセキュリティソフトが悪さをしている可能性があります。
 
 **********************************************************************************************************
+8/5
+
+eraTW用ドレミー口上ver3.8.7
+TW旧キャラ料理下着翻訳
+TW妖夢別人改変版口上ver0.4
+
+海外有志パッチによるオーバーホールだオラアッ！
+
+List of changes:
+[Rework] Applied Child Interactions Rework from JPAnon (https://gitgud.io/Legis1998/anon-tw/-/commit/7ca69aaca0880a41c0a8dfd4add8441a6b2d3397), along with children related bug fixes
+[Addition] Added numerous alternative image sets, including AI image sets from KR eraTW, EagloV's new image sets, and D・紅茶 image edits
+[Addition] Added new sprites for 小鈴's working attire
+[Addition] Updated EmueraLazyLoading to v2.3, lazyloading.dat will now be updated automatically
+[Addition] Added Image Update Function from AnonTW, along with numerous IMAGE.ERB improvements
+[Addition] Added new functionality to HPH_PRINT to support pink blushing lines with BPB
+[Addition] Translated some English strings
+[Fix] Fixed 咲夜 and マミゾウ's character files to make them properly wear alternative clothing set when visiting 人里
+[Fix] Fixed 大妖精's character file to properly show unique COM reactions with Alternative image set 2
+[Fix] Fixed duplicated 寺小屋 descriptions, moved into one function, revised conditions
+[Fix] Fixed a problem that causes 00神社's 場所_トイレ to not be considered as toilet
+[Fix] Moved Kourindou's working hours to be under one helper function for ease of work
+[Fix] General EN code clean up, reorganized EN functions
+[Fix] Fixed map pathing surrounding P280警察署 and P281小兎姫私室
+[Fix] Moved ルーミア's room description into her respective dialogue
+[Fix] Fixed a problem that causes NPCs to wander into Kourindou outside of Kourindou's working hours
+[Fix] Condition fixes in @MAP_CAN_MOVE_6
+[Fix] Multiple fixes for 瑞霊, including a clothing string, and an entire image rework
+[Fix] Fixed some issues in ERB\イベント関連\BEFORETRAIN.ERB
+[Fix] Fixed wrong loop variables in @NEWYEAR
+[Fix] Fixed a children related problem in エレン's dialogue
+[Fix] Fixed English 里香 dialogue's encoding and function typos
+[Fix] Fixed multiple 好感度 exploits
+[Fix] Disabled @COMPOSE_SPRITE as it was unoptimized
+[Fix] Updated @UNIQUE_COM_蟲の採集サービス 
+
+いっぱいあるけど特筆すべきはLazyloadingのバージョンアップ（datファイル自動更新）と
+新規画像、中でもEagloV氏（輝夜画像の人）の作の追加。
+
+パルスィちょっと翻訳。
+ミラダ持ってても訪問販売来るように。
+
+
 7/7
 
 TW用_NEWGAME-キャラ個別ふたなり化（形状選択可）
