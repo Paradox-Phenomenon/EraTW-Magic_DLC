@@ -70,8 +70,11 @@ FOR LOCAL, 0, CHARANUM
 		;兒童の行動はここで決定
 		CALL CHILD_MOVEMENT(LOCAL, TALENT:LOCAL:育児中)
 			;bug fix - cap horniness only when the child is around, according to the hint
-		;added check to see if they're sleeping 
-		IF RESULT:1 ;present
+		;added check to see if they're sleeping
+		;描写しない場合はRESULT=0
+		SIF !RESULT
+			GOTO CHILDLOOPEND
+		IF RESULT ;present
 			IF CHILD_ACT:LOCAL:CHILDNUM != "睡眠"
 				nChildrenAwake++
 				IF CFLAG:LOCAL:溜まってる度 > 300
@@ -87,9 +90,6 @@ FOR LOCAL, 0, CHARANUM
 			TCVAR:LOCAL:PENT_UP_FRUSTRATION = 0
 		ENDIF
 
-		;描写しない場合はRESULT=0
-		SIF !RESULT
-			GOTO CHILDLOOPEND
 		CHILDNUM = TALENT:LOCAL:育児中
 		兒童の名前 = %CHILDNAME:LOCAL:CHILDNUM%
 		;幼児期（0日～45日）
@@ -593,8 +593,8 @@ FOR LOCAL, 1,  描写数;MAXCHILD + 1
 	IF !BETWEENTIME(CFLAG:CHARA:起床時間, CFLAG:CHARA:就寝時間)
 		CHILD_ACT:CHARA:CHILDNUM = 睡眠
 	;8割は表示されない,例外的に末番一致でスキップする（自立先が被った場合の特別処置）
-	;ELSEIF FLAG:每日变更事件 < 800 && FLAG:每日变更事件 % 10 != CHARA % 10
-	;	CHILD_ACT:CHARA:CHILDNUM = 
+	ELSEIF FLAG:每日变更事件 < 800 && FLAG:每日变更事件 % 10 != CHARA % 10
+		CHILD_ACT:CHARA:CHILDNUM = 
 	;土日祝日はオフ
 	ELSEIF YOUBI_MATCH(DAY, "土日") || FESTIVAL() != ""
 		CHILD_ACT:CHARA:CHILDNUM = 散歩
