@@ -2231,16 +2231,28 @@ SELECTCASE RAND:5
 		
 ENDSELECT
 
-@K63_WEAR_SAILOR(ARG)
-#FUNCTION
-;恋慕限定
-SIF !TALENT:63:恋慕
-	RETURNF -1
-;満月近くは着ない
-SIF INRANGE(DAY:3, 13, 17)
-	RETURNF -1
-;春夏のみ
-SIF DAY:2 == 3 || DAY:2 == 4
-	RETURNF -1
-RETURNF 1
+@K63_PRINT_IMG(基本画像, エフェクト, MESSAGE)
+#DIMS 基本画像
+#DIMS エフェクト
+#DIMS MESSAGE
+#DIMS MESSAGE_PRINT,50
+#DIMS FONTCOLOR
 
+;画像表示フラグ
+SIF !CFLAG:63:1008
+	RETURN
+;口上色
+FONTCOLOR = 0xe35858
+CALL 画像セット(基本画像, 0, 0, 100, 0)
+SIF エフェクト != ""
+	CALL 画像セット(エフェクト, 0, 0, 100, 1)
+IF MESSAGE != ""
+	MESSAGE = %SPTALK整形(MESSAGE)%
+	SPLIT MESSAGE,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		SIF LOCAL > 1 ||  (LOCAL == 1 && エフェクト == "")
+			CALL ダミーセット(0, 0, 角色画像表示尺寸比, LOCAL)
+		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%MESSAGE_PRINT:LOCAL%</font>"
+	NEXT
+ENDIF
+CALL 画像一斉表示(0, 0, 1, -1)

@@ -615,6 +615,8 @@ CASE "下半身服装描写_ずらし可"
 CASE "下半身服装描写_裙子"
 	SIF EQUIP:ARG:裙子
 		RETURNF "裙子"
+	SIF EQUIP:ARG:連衣裙
+		RETURNF "連衣裙"
 	SIF EQUIP:ARG:和服
 		RETURNF "和服"
 	SIF EQUIP:ARG:連衣裙
@@ -624,12 +626,14 @@ ENDSELECT
 
 
 
-;全角色の衣装を默认に戻す
+;全キャラの衣装を默认に戻す
 @RESET_ALL_CLOTHES
 FOR LOCAL, 0, CHARANUM
 	CFLAG:LOCAL:7 = 0
 	CALL SELECT_CLOTHES(LOCAL, "便服")
 	CALL CTRL_CLOTHES_SET(LOCAL, "現在衣装の変更_便装")
+	CALL CTRL_CLOTHES_SET(LOCAL, "おきにいり衣装のリセット")
+	CFLAG:LOCAL:指定胖次 = 0
 	CALL CLOTHES_SETTING_TRAIN(LOCAL)
 NEXT
 
@@ -645,7 +649,7 @@ TEQUIP:ARG:1 = 0
 IF INROOM(CFLAG:ARG:現在位置)
 	SIF EQUIP:ARG:飾品 == 6
 		EQUIP:ARG:飾品 = 0
-	SIF INROOM(CFLAG:ARG:現在位置) == 1
+	SIF INROOM(CFLAG:ARG:現在位置) == 1 && !CFLAG:ARG:うふふ
 		EQUIP:ARG:靴 = 0
 ELSE
 	IF CFLAG:ARG:203
@@ -662,6 +666,7 @@ ENDIF
 
 IF CHECK_CHARA(ARG, "全裸")
 	EQUIP:ARG:0 = 0
+	EQUIP:ARG:靴 = 0
 ELSE
 	EQUIP:ARG:0 = 1
 ENDIF
@@ -758,10 +763,11 @@ RETURN 1
 
 ;一時お着替え関数
 @OKIGAE(C_ID, COS_ID, COS_TYPE)
-#DIM C_ID      ;換装を行う角色
-#DIM COS_ID    ;衣装セットのID、101以上だと角色衣装だとみなされる（角色衣装を指定したい時はNO + 100にすること）
+#DIM C_ID      ;着せ替えを行うキャラクター
+#DIM COS_ID    ;衣装セットのID、101以上だとキャラ衣装だとみなされる（キャラ衣装を指定したい時はNO + 100にすること）
 #DIMS COS_TYPE ;参照衣装文字列、キャラデータに記載があるのが前提なので、未実装だと真っ裸になる
-TCVAR:C_ID:本来的服装 = CFLAG:C_ID:基本服装セット
+SIF !TCVAR:C_ID:本来的服装
+	TCVAR:C_ID:本来的服装 = CFLAG:C_ID:基本服装セット
 CFLAG:C_ID:基本服装セット = COS_ID
 
 IF STRLENS(COS_TYPE)
@@ -791,17 +797,54 @@ CALL CLOTHES_SETTING_TRAIN(C_ID)
 @SET_UNDERWEAR(C_ID, TIME_TYPE)
 #DIM  C_ID
 #DIMS TIME_TYPE
-CALL SET_PANTS(C_ID, TIME_TYPE)
-CALL SET_BRA(C_ID, TIME_TYPE)
+#DIM DYNAMIC TOP_OVERRIDDEN
+#DIM DYNAMIC BOTTOM_OVERRIDDEN
 
-;胖次セッティング関数
+
+
+IF TIME_TYPE != "今天的睡衣"
+	LOCAL:10 = CFLAG:C_ID:基本服装セット
+
+	IF CHECK_CLO("bra_overridden", C_ID)
+		TOP_OVERRIDDEN = 1
+		IF LOCAL:10 == 100
+			CFLAG:C_ID:207 = CFLAG:C_ID:607
+			CFLAG:C_ID:208 = CFLAG:C_ID:608
+		ELSEIF LOCAL:10 > 100 ;shouldn't be possible, but covered regardless
+			CFLAG:C_ID:207 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 100, @"便装：上半身内衣１")
+			CFLAG:C_ID:208 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 100, @"便装：上半身内衣２")
+		ELSE
+			CFLAG:C_ID:207 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"上半身内衣１")
+			CFLAG:C_ID:208 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"上半身内衣２")
+		ENDIF
+	ENDIF
+	IF CHECK_CLO("panties_overridden", C_ID)
+		TOP_OVERRIDDEN = 1
+		IF LOCAL:10 == 100
+			CFLAG:C_ID:205 = CFLAG:C_ID:605
+			CFLAG:C_ID:206 = CFLAG:C_ID:606
+		ELSEIF LOCAL:10 > 100 ;shouldn't be possible, but covered regardless
+			CFLAG:C_ID:205 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 100, @"便装：下半身内衣１")
+			CFLAG:C_ID:206 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 100, @"便装：下半身内衣２")
+		ELSE
+			CFLAG:C_ID:205 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"下半身内衣１")
+			CFLAG:C_ID:206 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"下半身内衣２")
+		ENDIF
+	ENDIF
+ENDIF
+
+CALL SET_PANTS(C_ID, TIME_TYPE, BOTTOM_OVERRIDDEN)
+CALL SET_BRA(C_ID, TIME_TYPE, TOP_OVERRIDDEN)
+
+;パンツセッティング関数
 ;CFLAGに設定された衣装を上書きする
-;胖次指定がある場合には下半身内衣１を解除し
-;下半身内衣１が指定されている場合には胖次よりもそれを優先する
-@SET_PANTS(C_ID, TIME_TYPE)
+;パンツ指定がある場合には下半身内衣１を解除し
+;下半身内衣１が指定されている場合にはパンツよりもそれを優先する
+@SET_PANTS(C_ID, TIME_TYPE, OVERRIDDEN)
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM  P_ID
+#DIM  OVERRIDDEN
 IF TIME_TYPE == "今天的睡衣"
 	IF CFLAG:C_ID:指定胖次 == 100
 		P_ID =  0
@@ -827,7 +870,16 @@ IF TIME_TYPE == "今天的睡衣"
 	RETURN
 ENDIF
 
-IF CFLAG:C_ID:指定胖次 == 100
+IF OVERRIDDEN
+	IF CFLAG:C_ID:205
+		CFLAG:C_ID:206 = 0
+		RETURN
+	ELSE
+		CFLAG:C_ID:205 = 0
+		CFLAG:C_ID:きょうのぱんつ = CFLAG:C_ID:206
+		RETURN
+	ENDIF
+ELSEIF CFLAG:C_ID:指定胖次 == 100
 ;没穿内裤指定
 	P_ID =  0
 	CFLAG:C_ID:205 = 0
@@ -854,11 +906,11 @@ ENDIF
 CFLAG:C_ID:きょうのぱんつ = P_ID
 CFLAG:C_ID:206 = P_ID
 
-
-@SET_BRA(C_ID, TIME_TYPE)
+@SET_BRA(C_ID, TIME_TYPE, OVERRIDDEN)
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM  DYNAMIC B_ID
+#DIM  OVERRIDDEN
 IF TIME_TYPE == "今天的睡衣"
 	IF CFLAG:C_ID:247
 		CFLAG:C_ID:248 = 0
@@ -874,7 +926,12 @@ IF TIME_TYPE == "今天的睡衣"
 	RETURN
 ENDIF
 
-IF CFLAG:C_ID:207
+IF OVERRIDDEN
+	IF CFLAG:C_ID:207
+		CFLAG:C_ID:208 = 0
+		B_ID = CFLAG:C_ID:207
+	ENDIF
+ELSEIF CFLAG:C_ID:207
 	CFLAG:C_ID:208 = 0
 	B_ID = CFLAG:C_ID:207
 ELSEIF CFLAG:C_ID:208
@@ -1015,16 +1072,48 @@ CASE "复原衣服"
 		CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_睡衣")
 		CFLAG:C_ID:睡衣 = 1
 	ELSE
-		SELECTCASE CFLAG:C_ID:衣装一時変更
-		CASE 0
-			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_便装")
-		CASE 100
-			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_おきにいり")
-		CASE 1 TO 99
-			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_衣装セット", CFLAG:C_ID:衣装一時変更)
-		CASE 101 TO 100 + 人物数量上限
-			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_角色衣装", CFLAG:C_ID:衣装一時変更 - 100, "便装")
-		ENDSELECT
+		IF TCVAR:C_ID:EVENT_CLOTHING_SET
+			SELECTCASE TCVAR:C_ID:EVENT_CLOTHING_SET
+				CASE IS < 100
+					FOR LOCAL, 1, 23
+						EQUIP:C_ID:LOCAL = GET_INT(C_ID, "衣装セット", TCVAR:C_ID:EVENT_CLOTHING_SET, EQUIPNAME:LOCAL)
+					NEXT
+				CASE 101 TO 100 + 人物数量上限
+					FOR LOCAL, 1, 23
+						EQUIP:C_ID:LOCAL = GET_INT(C_ID, "キャラデータ", TCVAR:C_ID:EVENT_CLOTHING_SET - 100, @"便装：%EQUIPNAME:LOCAL%")
+					NEXT
+			ENDSELECT
+			CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
+		ELSE
+			SELECTCASE CFLAG:C_ID:衣装一時変更
+				CASE 0
+					SELECTCASE CFLAG:C_ID:基本服装セット
+						CASE IS < 100
+							FOR LOCAL, 1, 23
+								SIF !GROUPMATCH(LOCAL, 6, 7)							
+									CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, EQUIPNAME:LOCAL)
+							NEXT
+						CASE 100
+							FOR LOCAL, 1, 23
+								SIF !GROUPMATCH(LOCAL, 6, 7)		
+									CFLAG:C_ID:(200 + LOCAL) = CFLAG:C_ID:(600 + LOCAL)
+							NEXT
+						CASE 101 TO 100 + 人物数量上限
+							FOR LOCAL, 1, 23
+								SIF !GROUPMATCH(LOCAL, 6, 7)		
+									CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "キャラデータ", CFLAG:C_ID:基本服装セット - 100, @"便装：%EQUIPNAME:LOCAL%")
+							NEXT
+					ENDSELECT
+
+					CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_便装")
+				CASE 100
+					CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_おきにいり")
+				CASE 1 TO 99
+					CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_衣装セット", CFLAG:C_ID:衣装一時変更)
+				CASE 101 TO 100 + 人物数量上限
+					CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_キャラ衣装", CFLAG:C_ID:衣装一時変更 - 100, "便装")
+			ENDSELECT
+		ENDIF
 		CFLAG:C_ID:睡衣 = 0
 	ENDIF
 ENDSELECT
@@ -1058,19 +1147,27 @@ CASE "現在衣装の保存_おきにいり"
 	NEXT
 	CFLAG:ARG:套装 = 1
 
+	LOCAL = CURRENT_CLOTHES_SET(C_ID)
+	IF INRANGE(LOCAL, 0, 99)
+		CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = GET_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_TOP") || GET_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_BOTTOM")
+	ELSE
+		CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = 0
+	ENDIF
 ;リセット
 CASE "套装のリセット"
 	FOR LOCAL, 0, 23
 		CFLAG:C_ID:(600 + LOCAL) = 0
 	NEXT
 	SIF CFLAG:C_ID:基本服装セット == 100
-		CFLAG:C_ID:基本服装セット = 0
+		CFLAG:C_ID:基本服装セット = 100 + C_ID
 	SIF CFLAG:C_ID:睡衣指定 == 300
 		CFLAG:C_ID:睡衣指定 = 0
 	CFLAG:C_ID:套装 = 0
 
+	CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = 0
+
 ;セットした衣装をロード
-;ここらへんあくまでロード処理であって睡衣フラグ是じらないので注意ね
+;ここらへんあくまでロード処理であって睡衣フラグはいじらないので注意ね
 CASE "現在衣装の変更_便装"
 	FOR LOCAL, 1, 23
 		EQUIP:C_ID:LOCAL = CFLAG:C_ID:(200 + LOCAL)
@@ -1089,14 +1186,16 @@ CASE "現在衣装の変更_睡衣"
 		CFLAG:C_ID:245 = 0
 		CFLAG:C_ID:246 = 0
 		CFLAG:C_ID:睡衣胖次 = 0
-		CFLAG:C_ID:没穿内裤 = 1
+		SIF CFLAG:C_ID:没穿内裤 != 2
+			CFLAG:C_ID:没穿内裤 = 1
 	ELSEIF CFLAG:C_ID:没穿内裤 && CFLAG:C_ID:睡衣胖次
 		EQUIP:C_ID:下半身内衣１ = 0
 		EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:睡衣胖次
 		SIF !CFLAG:C_ID:245
 			CFLAG:C_ID:246 = CFLAG:C_ID:睡衣胖次
 		CFLAG:C_ID:睡衣胖次 = 0
-		CFLAG:C_ID:没穿内裤 = 0
+		SIF CFLAG:C_ID:没穿内裤 != 2
+			CFLAG:C_ID:没穿内裤 = 0
 	ELSEIF CFLAG:C_ID:没穿内裤 && (EQUIP:C_ID:下半身内衣１ || EQUIP:C_ID:下半身内衣２)
 		EQUIP:C_ID:下半身内衣１ = 0
 		EQUIP:C_ID:下半身内衣２ = 0
@@ -1109,7 +1208,8 @@ CASE "現在衣装の変更_おきにいり"
 	FOR LOCAL, 1, 23
 		EQUIP:C_ID:LOCAL = CFLAG:C_ID:(600 + LOCAL)
 	NEXT
-	IF CFLAG:C_ID:没穿内裤
+	IF CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR
+	ELSEIF CFLAG:C_ID:没穿内裤
 		EQUIP:C_ID:下半身内衣１ = 0
 		EQUIP:C_ID:下半身内衣２ = 0
 	ELSEIF EQUIP:C_ID:下半身内衣１
@@ -1133,13 +1233,18 @@ CASE "現在衣装の変更_角色衣装"
 
 CASE "現在衣装の変更_衣装セット"
 ;ARGで指定されたIDの衣装セットを参照する
+    ;as this should never happen, show a warning if a nonexisting clothing set is called
+    SIF !GET_EXIST("衣装セット", ARG)
+        PRINTFORML ＊WARNING＊: Clothing set {ARG} does not exist. %CALLNAME:C_ID% will be nude.
 	CFLAG:C_ID:衣装一時変更 = ARG
 	FOR LOCAL, 1, 23
 		EQUIP:C_ID:LOCAL = GET_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
 	NEXT
 	CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
 CASE "内衣一括設定"
+	SIF !GET_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_BOTTOM")
 	CALL CTRL_CLOTHES_SET(C_ID, "胖次一括設定")
+	SIF !GET_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_TOP")
 	CALL CTRL_CLOTHES_SET(C_ID, "ブラ一括設定")
 CASE "胖次一括設定"
 	IF !CFLAG:C_ID:睡衣

@@ -66,16 +66,19 @@ CASE "便装：連衣裙"
 CASE "便装：其他１"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他１", "胸针"))
 CASE "便装：帽子"
-	IF GET_MAPID(CFLAG:ARG:現在位置) == 2 && CFLAG:ARG:基本服装セット == (100 + [[影狼]])
-		CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "頭巾"))
-	ELSEIF CFLAG:ARG:口上セレクタ == 0 && CFLAG:ARG:基本服装セット == (100 + [[影狼]]) && TCVAR:ARG:363 == 101
-		CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "麦藁帽子"))
-	ENDIF
+	; IF GET_MAPID(CFLAG:ARG:現在位置) == 2 && CFLAG:ARG:基本服装セット == (100 + [[影狼]])
+	; 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "頭巾"))
+	; ELSEIF CFLAG:ARG:口上セレクタ == 0 && CFLAG:ARG:基本服装セット == (100 + [[影狼]]) && TCVAR:ARG:363 == 101
+	; 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "麦藁帽子"))
+	; ENDIF
 CASE "便装：其他２"
-	IF CFLAG:ARG:口上セレクタ == 0 && CFLAG:ARG:基本服装セット == (100 + [[影狼]]) && TCVAR:ARG:363 == 2
-		CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他２", "围巾"))
-	ENDIF
-
+	; IF CFLAG:ARG:口上セレクタ == 0 && CFLAG:ARG:基本服装セット == (100 + [[影狼]]) && TCVAR:ARG:363 == 2
+	; 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他２", "围巾"))
+	; ENDIF
+CASE "特殊衣装着用"
+	;イベント発生済みで春か夏にセーラー服着用
+	SIF TCVAR:63:371 == 1
+		CALLF MAKE_INT(V_NAME, 74)
 CASE "固有内衣形容詞"
 	CALLF MAKE_STR(V_NAME, "有“菊花杯”装饰图案")
 CASE "固有下半身内衣名"
@@ -117,7 +120,7 @@ ENDSELECT
 ;-------------------------------------------------
 ;固有料理設定
 ;DISH_NAME          料理名
-;RESULTS            料理の種類（軽食/主食/甜点）
+;RESULTS            料理の種類（軽食/主食/デザート）
 ;CALL 材料設定("")  材料の指定。"汎用"を入れると自動で汎用食材になる
 ;DISH_TASTE         味の設定
 ;DISH_COMMENT       （任意）一行コメント
@@ -125,108 +128,80 @@ ENDSELECT
 ;DISH_MAXLIMIT      （任意）料理の持続時間
 ;-------------------------------------------------
 @SPECIAL_MENU_63
-DISH_NAME = 野味菜
+DISH_NAME = ジビエ料理
 RESULTS = 主食
-CALL 材料設定("獣肉", "鳥肉", "野雞肉")
-DISH_TASTE = 肉料理/獣肉/鳥肉/咸/丰盛/濃厚/温暖/野趣/野趣/野趣/豪快/強精/
-DISH_COMMENT = 用狩猎的肉制成的猎人料理。能使人[強精]。
+CALL 材料設定("獣肉", "鳥肉", "ヤマドリ")
+DISH_TASTE = 肉料理/獣肉/鳥肉/しょっぱい/ガッツリ/濃厚/温かい/野趣/野趣/野趣/豪快/強精/
+DISH_COMMENT = 狩猟した肉を使った狩人の料理。[強精]が付く。
 RETURN 1
 
 ;IMAGE_I63_特殊表情(CHARA)--------------------------------------------------------------------
-;角色特有の表情表示条件
+;キャラクター特有の表情表示条件
 ;時間停止中でも維持する表情はこちら
 ;使用時注意点:
 ;	RESULTS:0に表情を格納
 ;	RESULTS:1にマウスオーバー時の表情を格納すること
-;	"通常","笑顔","憤怒","発情","睡眠"は本編で実装済み
+;	"通常","笑顔","怒り","発情","睡眠"は本編で実装済み
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I63_特殊表情(CHARA)
 #DIM CHARA
 IF CFLAG:CHARA:差し替え適用 == 1
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
-		IF MARK:CHARA:反発刻印 >= 1
-			RESULTS:1 = ガチギレ
-		ELSEIF TALENT:CHARA:恋慕 && !MARK:CHARA:反発刻印 && TALENT:CHARA:心情 >= 0
-			IF CFLAG:CHARA:诶嘿嘿
-				RESULTS:0 = デレデレ
-				RESULTS:1 = デレデレ
-				IF CFLAG:CHARA:积攒度 > 500
-					IF CFLAG:CHARA:诶嘿嘿 == 2
-						RESULTS:0 = 発情3
-						RESULTS:1 = 発情3
-					ELSE
-						RESULTS:0 = 誘惑
-						RESULTS:1 = 誘惑
-					ENDIF
-				ENDIF
-				IF GETPALAMLV(PALAM:CHARA:欲情, 15) >= 8
-					RESULTS:0 = トロ笑い
-					RESULTS:1 = トロ笑い
-					SIF IS_SEXING(CHARA)
-						RESULTS:1 = 接吻顔
-				ENDIF
-				IF CFLAG:CHARA:口上セレクタ == 0 && TCVAR:CHARA:362 >= 5
-				;前ターンに超強絶頂
-					RESULTS:0 = 絶頂
-					RESULTS:1 = 接吻顔
-				ELSEIF CFLAG:CHARA:口上セレクタ == 0 && TCVAR:CHARA:362 >= 2
-	 				RESULTS:0 = トロ顔
-					RESULTS:1 = 接吻顔
-				ENDIF
-			ELSEIF !CFLAG:CHARA:诶嘿嘿
-				SIF BASE:CHARA:情緒 >= 1400
-					RESULTS:0 = デレデレ
-				;やった後は平常時でもデレ顔にする予定
-				;SIF TCVAR:CHARA:361
-				;	RESULTS:0 = デレデレ
-				IF (TCVAR:CHARA:発情 && CFLAG:CHARA:积攒度 > 200) || CFLAG:CHARA:积攒度 >= 750
-					RESULTS:1 = 発情2
-					SIF TALENT:CHARA:自己愛 >= 0 && BASE:CHARA:情緒 >= 500
-						RESULTS:1 = 誘惑
-				ELSE
-					SIF !(GET_MAPID(CFLAG:CHARA:現在位置) == 2 && CFLAG:CHARA:基本服装セット == (100 + [[影狼]]))
-						RESULTS:1 = ウィンク
-				ENDIF
-				SIF CFLAG:CHARA:口上セレクタ == 0 && CFLAG:CHARA:妊娠経過日数 >= 40 && !TCVAR:63:363
-					RESULTS:1 = ボテ
+	;差し替え画像
+	IF MARK:CHARA:反発刻印 >= 1
+		RESULTS:1 = 激怒
+	ELSEIF !MARK:CHARA:反発刻印 && TALENT:CHARA:機嫌 >= 0
+	;非うふふ
+		IF !CFLAG:CHARA:うふふ
+			IF TALENT:CHARA:恋慕 || TALENT:CHARA:思慕
+				SIF RESULTS:0 == "笑顔"
+					RESULTS:0 = 笑顔２
+				SIF RESULTS:0 == "通常"
+					RESULTS:0 = 笑顔
+				SIF TALENT:CHARA:恋慕
+					RESULTS:1 = ウィンク
+			ENDIF
+			IF TALENT:CHARA:恋慕 && RESULTS:0 == "発情" && CFLAG:CHARA:溜まってる度 >= 200
+				RESULTS:1 = 発情２
+				SIF TCVAR:CHARA:発情
+					RESULTS:0 = 発情３
 			ENDIF
 		ELSE
-			;ELSEIF 
-			;ENDIF
+			SIF RESULTS:0 != "トロ顔" && RESULTS:0 != "イキ顔"
+				RESULTS:0 = 発情２
 		ENDIF
-	ELSE
-		;立絵
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立絵種類
+	IF FLAG:立ち絵種類
 		;顔絵
 	ELSE
-		;立絵
+		;立ち絵
 	ENDIF
 ENDIF
 
 ;IMAGE_I63_特殊エフェクトチェック(CHAR, エフェクト)--------------------------------------------
-;角色特有のエフェクト判定  特殊エフェクトを直接指定したい場合に参照
+;キャラクター特有のエフェクト判定  特殊エフェクトを直接指定したい場合に参照
 ;引数 "エフェクト" に固有のエフェクトが含まれるかを判定する
-;例の街道、STRFINDを使用してください
+;例の通り、STRFINDを使用してください
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I63_特殊エフェクトチェック(CHARA, エフェクト)
 #DIM CHARA
 #DIMS エフェクト
 
 IF CFLAG:CHARA:差し替え適用 == 1
-	;替换用画像
+	;差し替え画像
 	SIF STRFIND(エフェクト, "ハート") != -1
 		RETURN 1
+	SIF STRFIND(エフェクト, "子宮_顔") != -1
+		RETURN 1
+	;SIF STRFIND(エフェクト, "子宮_立ち") != -1
+	;	RETURN 1
 ENDIF
 
 RETURN 0
 
 ;IMAGE_I63_特殊エフェクト(CHARA)--------------------------------------------------------------------
-;角色特有のエフェクト表示条件
+;キャラクター特有のエフェクト表示条件
 ;使用時注意点:
 ;	RESULTS配列に特殊エフェクトを格納
 ;	RETURNで追加するエフェクト数を返却すること
@@ -236,23 +211,54 @@ RETURN 0
 #DIM DYNAMIC エフェクト数 = 0
 VARSET RESULTS
 
-IF CFLAG:CHARA:差し替え適用
-	;替换用画像
-;	IF FLAG:立絵種類
-;		IF TALENT:CHARA:恋慕 && !MARK:CHARA:反発刻印 && TALENT:CHARA:心情 >= 0
-;			;IF PREVCOM == 300
-;			IF CFLAG:CHARA:诶嘿嘿 && TCVAR:362 > 0
-;				RESULTS:エフェクト数 = ハート
-;				エフェクト数 ++
-;			ENDIF
-;		ENDIF
-;	ENDIF
+IF CFLAG:CHARA:差し替え適用 == 1
+	;差し替え画像
+	IF TALENT:CHARA:母乳体質 && NOWEX:CHARA:噴乳 && CHECK_NUDE(CHARA) && FLAG:立ち絵種類
+		RESULTS:エフェクト数 = 母乳
+		エフェクト数 += 1
+	ENDIF
+	IF 充填率(CHARA,4) > 20 && !TALENT:CHARA:妊娠 && !CFLAG:CHARA:うふふ
+		IF FLAG:立ち絵種類
+			;顔絵
+			RESULTS:エフェクト数 = 子宮
+			エフェクト数 ++
+		ELSE
+			;立ち絵
+			;RESULTS:エフェクト数 = 子宮_立ち
+			;エフェクト数 ++
+		ENDIF
+	ENDIF
+	IF TCVAR:CHARA:102 && CFLAG:CHARA:うふふ
+		RESULTS:エフェクト数 = 中出し
+		エフェクト数 ++
+	ENDIF
+	IF TALENT:CHARA:恋慕 && !MARK:CHARA:反発刻印 && TALENT:CHARA:機嫌 >= 0
+		IF CHK_DATENOW(CFLAG:CHARA:デート中) && BASE:CHARA:ムード > 1200 && !CFLAG:CHARA:うふふ
+			RESULTS:エフェクト数 = ハート
+			エフェクト数 ++
+		;欲情が高いのに欲求不満が低ければ行為後と見なす
+		ELSEIF PALAM:CHARA:欲情 >= PALAMLV:10 && CFLAG:CHARA:溜まってる度 < 200
+			RESULTS:エフェクト数 = ハート
+			エフェクト数 ++
+		ENDIF
+	ENDIF
+	IF NOWEX:CHARA:TotalEX >= 5 && CFLAG:CHARA:うふふ
+		IF !RAND:2
+			CSTR:CHARA:汎用エフェクト = ～～
+		ELSE
+			CSTR:CHARA:汎用エフェクト = んお゛お゛
+		ENDIF
+	;ELSEIF NOWEX:CHARA:TotalEX >= 3 && CFLAG:CHARA:うふふ
+	;	CSTR:CHARA:汎用エフェクト = はーっ
+	ELSEIF IS_SEXING(CHARA)
+		CSTR:CHARA:汎用エフェクト = あんあん
+	ENDIF
 ENDIF
 
 RETURN エフェクト数
 
 ;IMAGE_I63_特殊服装(CHARA)-------------------------------------------------------------------
-;角色特有の服装表示条件
+;キャラクター特有の服装表示条件
 ;エフェクトを共有する服装差分はこちらで指定する
 ;使用時注意点:
 ;	RESULTSに特殊服装を格納すること
@@ -263,34 +269,36 @@ RETURN エフェクト数
 VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用 == 1
-	;替换用画像
-	IF CHECK_NUDE(CHARA)
-		;裸
-		IF FLAG:立絵種類
-			;顔絵
-		ELSE
-			;立絵
-		ENDIF
+	IF IS_BUNNY(CHARA)
+		RESULTS = _バニー
+	ELSEIF CFLAG:CHARA:衣装一時変更 == 74
+		RESULTS = _セーラー服
+	ELSEIF K63_HOOD()
+		RESULTS = _フード
+	ENDIF
+ENDIF
+
+;IMAGE_I63_体形(CHARA)-----------------------------------------------------------------------
+;キャラクター特有の体形表示条件
+;エフェクトを共有する体形差分はこちら
+;服装を指定しても自動で表示されるので注意
+;使用時注意点:
+;	RESULTSに体形を格納すること
+;	書式は %体形%%服装% 適宜"_"等入れること
+;	"巨乳"は本編で実装済み %体形%巨乳%服装% で追記可能
+;-------------------------------------------------------------------------------------------
+@IMAGE_I63_体形(CHARA)
+#DIM CHARA
+VARSET RESULTS
+
+IF CFLAG:CHARA:差し替え適用
+	;差し替え画像
+	IF FLAG:立ち絵種類
+		;顔絵
 	ELSE
-		IF CHECK_CLO("bra_visible")
-			IF GROUPMATCH(EQUIP:CHARA:上半身下着１, 11, 12, 14, 15, 19, 20)
-				RESULTS = _下着B
-			ELSE
-				RESULTS = _下着A
-			ENDIF
-		ELSEIF GET_MAPID(CFLAG:CHARA:現在位置) == 2 && CFLAG:CHARA:基本服装セット == (100 + [[影狼]]) && !CFLAG:CHARA:うふふ
-			RESULTS = _赤ずきん
-		;服
-		ELSEIF CFLAG:CHARA:衣装一時変更 == 55 || (CFLAG:CHARA:基本服装セット == 55 && CFLAG:CHARA:衣装一時変更==0)
-			IF FLAG:立絵種類
-				;顔絵
-				RESULTS = _バニー
-			ENDIF
-		ELSEIF CFLAG:CHARA:口上セレクタ == 0 && TCVAR:CHARA:363 == 2
-			RESULTS = _冬服
-		ELSEIF CFLAG:CHARA:口上セレクタ == 0 && TCVAR:CHARA:363 == 101
-			RESULTS = _白ワンピ
-		ENDIF
+		;立ち絵
+		SIF TALENT:CHARA:妊娠 && CFLAG:CHARA:妊娠経過日数 >= 41 && CHECK_NUDE(CHARA)
+			RESULTS = 妊娠
 	ENDIF
 ENDIF
 ;********************************************************************************************
@@ -303,5 +311,37 @@ ENDIF
 #DIMS 差分
 #DIMS 乳量
 
-SIF CFLAG:CHARA:差し替え適用 == 1
-	CALL COMPOSE_SPRITE_63
+IF CFLAG:CHARA:差し替え適用 == 1
+{
+CALL COMPOSE_SPRITE_PRESET([[影狼]],"別顔_裸_/別顔_服_/別顔_服_フード_/別顔_服_セーラー服_/別顔_服_バニー_",
+"通常/笑顔/笑顔２/ウィンク/憤怒/激怒/発情/トロ顔/イキ顔/発情２/発情３/睡眠")
+}
+{
+CALL COMPOSE_SPRITE_PRESET([[影狼]],"別立ち_裸_/別立ち_服_/別立ち_服_フード_/別立ち_服_セーラー服_/別立ち_服_バニー_/別立ち_妊娠",
+"通常/笑顔/笑顔２/ウィンク/憤怒/激怒/発情/トロ顔/イキ顔/発情２/発情３/睡眠",,"別立ち")
+}
+ENDIF
+
+@K63_HOOD(ARG)
+#FUNCTION
+SIF CFLAG:63:うふふ
+	RETURNF 0
+;人里にいる、もしくは冬場で屋外
+SIF GET_MAPID(CFLAG:63:現在位置) == 2 || (OUTROOF(CFLAG:63:現在位置) && DAY:2 == 4)
+	RETURNF 1
+RETURNF 0
+
+@K63_WEAR_SAILOR(ARG)
+#FUNCTION
+;恋慕限定
+SIF !TALENT:63:恋慕
+	RETURNF -1
+;満月近くは着ない
+SIF INRANGE(DAY:3, 13, 17)
+	RETURNF -1
+;春夏のみ
+SIF DAY:2 == 3 || DAY:2 == 4
+	RETURNF -1
+SIF K63_SAILOR_CALLNAME != "着ない"
+	RETURNF -1
+RETURNF 1
