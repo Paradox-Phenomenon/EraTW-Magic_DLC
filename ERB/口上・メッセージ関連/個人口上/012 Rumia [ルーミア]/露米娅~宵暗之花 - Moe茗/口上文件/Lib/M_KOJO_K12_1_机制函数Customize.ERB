@@ -646,11 +646,12 @@ ENDIF
 		CFLAG:12:300 = CFLAG:12:K12C_1_强制过夜发生地址	;传送至露米娅处
 	ENDIF 
 	;思慕早上特殊对话
-    SIF FIRSTTIME("RUMIA_LIKE_YOU_GOOD_MORNING") && CFLAG:12:K12C_1_思慕过夜确认 && (CFLAG:12:K12C_1_强制过夜差分确认 == 3) && TALENT:12:8	
-	CALL RUMIA_LIKE_GOODMORNING
+    SIF FIRSTTIME("RUMIA_LIKE_YOU_GOOD_MORNING") && (CFLAG:12:K12C_1_强制过夜差分确认 == 3) && TALENT:12:8	
+		CALL RUMIA_LIKE_GOODMORNING
 	;夜袭后早上特殊对话？
+    ;SIF FIRSTTIME("RUMIA_LIKE_YOU_GOOD_MORNING") && (CFLAG:12:K12C_1_强制过夜差分确认 == 3) && TALENT:12:8	
 	SIF MAIN_MAP != CFLAG:12:311 / 100	;如果不在本地居住则复原非神社居住
-	CFLAG:12:30 = 0 
+		CFLAG:12:30 = 0 
 	TFLAG:104 = 12	;当前目标设定为露米娅
 	TCVAR:12:149 = 0 ;大早上的吼一声精神多了（确信）
     CFLAG:12:K12C_1_强制过夜差分确认 = 0 ;下次触发用
@@ -685,12 +686,11 @@ ENDIF
 @M_KOJO_Moe_K12_SOMATOME_TRY
 $RUMIA_BODY_MEASURE_AGAIN 
 PRINTFORML 
-PRINTFORML 进行%CALLNAME:12%的身体測定
+PRINTFORMDL 进行%CALLNAME:12%的身体測定
+PRINTL 
 ;CALL两遍的目的是避免原有的测定结果干扰
-CFLAG:TARGET:351 = 2
 CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
-CFLAG:TARGET:351 = 1 
-CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
+CFLAG:12:351 = 1
 	IF (( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) >= 180 ) && FIRSTTIME("RUMIA_BODY_GROW_UP_TO_LITTLE_SIZE")
 		;成为恋人180天后，触发长高文本
 		CALL M_KOJO_Moe_K12_BODY_GROWED_TIP_MESSAGE(1,1)
@@ -698,11 +698,11 @@ CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
 		;成为恋人480天后，触发长高文本
 		CALL M_KOJO_Moe_K12_BODY_GROWED_TIP_MESSAGE(2,1)
 	ENDIF 
-CALL SHOW_SIZE(12)
+CALL M_KOJO_Moe_K12_CUSTOM_SHOW_SIZE(12)
 CALL M_Moe_K12_ASK_M("再測定一次",1,"这样就行",1)
 SELECTCASE RESULT
 	CASE 0
-		CFLAG:TARGET:351 = 2
+		CFLAG:12:351 = 2
 		CALL M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(12)
 		CALL M_KOJO_Moe_K12_BODY_MEASURE_MESSAGE("TWICE")
 		GOTO RUMIA_BODY_MEASURE_AGAIN 
@@ -742,22 +742,27 @@ ENDSELECT
 ;身体測定済みかつ未設定の場合も生成
 ;CSVに記入されていない場合の標準値は1000
 ;-------------------------------------------------
-@M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE, ARG
+@M_KOJO_Moe_K12_CUSTOM_MAKE_SIZE(ARG)
 #DIM 数值影响值,5
 VARSET LOCAL
-IF CFLAG:ARG:K12T_1_初见未吃饭 == 2 || (CFLAG:ARG:351 == 1 && (MAXBASE:ARG:20 == 0 || MAXBASE:ARG:21 == 0 || MAXBASE:ARG:22 == 0 || MAXBASE:ARG:23 == 0 || MAXBASE:ARG:24 == 0))
+IF CFLAG:ARG:351 == 2 || (CFLAG:ARG:351 == 1 && (MAXBASE:ARG:20 == 0 || MAXBASE:ARG:21 == 0 || MAXBASE:ARG:22 == 0 || MAXBASE:ARG:23 == 0 || MAXBASE:ARG:24 == 0 || MAXBASE:ARG:25 == 0 ))
 	FOR LOCAL, 20, 25
-		MAXBASE:ARG:LOCAL = CSVBASE(ARG,LOCAL) * 980 / 1000
+		MAXBASE:ARG:LOCAL = CSVBASE(ARG,LOCAL)
 		SIF MAXBASE:ARG:LOCAL == 0
 			MAXBASE:ARG:LOCAL = 980
-		MAXBASE:ARG:LOCAL = MAXBASE:ARG:LOCAL * RAND(965, 995) / 1000
+		MAXBASE:ARG:LOCAL = MAXBASE:ARG:LOCAL * RAND(980, 1020) / 1000
 		;这里稍微提高了一点测量器具的精度
 	NEXT
 ENDIF
 ;===身高の算出===
 ;基本値
-BASE:ARG:20 = (TALENT:ARG:2 == 2) ? 1700 # 1500
-BASE:ARG:20 = BASE:ARG:20 * MAXBASE:ARG:20 / 1000
+IF (TALENT:ARG:2 == 2)
+	BASE:ARG:20 = 1700
+ELSE 
+	BASE:ARG:20 = 1500
+ENDIF 
+BASE:ARG:20 *= MAXBASE:ARG:20 
+BASE:ARG:20 /= 1000
 ;体型補正
 IF TALENT:ARG:100 == -2
 	TIMES BASE:ARG:20, 0.80
@@ -773,19 +778,18 @@ ENDIF
 ;-------------------------------------------------
 ;Moe的自定义部分 身高
 ;-------------------------------------------------
-IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
-	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 190 / 480 ) )
-	BASE:ARG:20 *= 数值影响值:1 / 1000
-ELSE 
-	数值影响值:1 = 920
-	BASE:ARG:20 *= 数值影响值:1 / 1000
-ENDIF 
 IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 180
-	数值影响值:1 = (730 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 120 / 180 ) )
-	BASE:ARG:20 *= 数值影响值:1 / 1000
+	数值影响值:1 = 960 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 120) / 180 )
+	BASE:ARG:20 *= 数值影响值:1 
+	BASE:ARG:20 /= 1000
+ELSEIF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
+	数值影响值:1 = 1080 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日 - 180) * 70) / 300)
+	BASE:ARG:20 *= 数值影响值:1 
+	BASE:ARG:20 /= 1000
 ELSE 
-	数值影响值:1 = 850
-	BASE:ARG:20 *= 数值影响值:1 / 1000
+	数值影响值:1 = 1150
+	BASE:ARG:20 *= 数值影响值:1 
+	BASE:ARG:20 /= 1000
 ENDIF 
 ;-------------------------------------------------
 ;===腰圍の算出===
@@ -802,11 +806,13 @@ ENDIF
 ;Moe的自定义部分 腰围
 ;-------------------------------------------------
 IF TALENT:ARG:100 == -2
-	数值影响值:2 = 1160 - ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 180 )
-	BASE:ARG:23 *= 数值影响值:2 / 1000
+	数值影响值:2 = 1120 - (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 40) / 180 )
+	BASE:ARG:23 *= 数值影响值:2 
+	BASE:ARG:23 /=  1000
 ELSEIF TALENT:ARG:100 == -1
-	数值影响值:2 = 1080 - ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 480 )
-	BASE:ARG:23 *= 数值影响值:2 / 1000
+	数值影响值:2 = 1080 - (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80) / 480 )
+	BASE:ARG:23 *= 数值影响值:2
+	BASE:ARG:23 /=  1000
 ENDIF
 ;-------------------------------------------------
 ;其他補正
@@ -830,11 +836,13 @@ ENDIF
 ;Moe的自定义部分 胸围
 ;-------------------------------------------------
 IF TALENT:ARG:22 == -2
-	数值影响值:3 = 840 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 180 )
-	BASE:ARG:22 *= 数值影响值:3 / 1000
+	数值影响值:3 = 840 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80) / 180 )
+	BASE:ARG:22 *= 数值影响值:3 
+	BASE:ARG:22 /= 1000
 ELSEIF TALENT:ARG:22 == -1
-	数值影响值:3 = 920 + ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80 / 480 )
-	BASE:ARG:22 *= 数值影响值:3 / 1000
+	数值影响值:3 = 920 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 80) / 480 )
+	BASE:ARG:22 *= 数值影响值:3 
+	BASE:ARG:22 /= 1000
 ENDIF 
 ;-------------------------------------------------
 ;Ｂ感覚による補正
@@ -873,13 +881,18 @@ ENDIF
 ;Moe的自定义部分 体重
 ;-------------------------------------------------
 IF TALENT:ARG:100 == -2
-	IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
-		数值影响值:4 = ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 130 / 480 )  + 800 
-		BASE:ARG:21 *= 数值影响值:4 / 1000
-	ENDIF 
 	IF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 180
-		数值影响值:4 = ( (DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 100 / 180 )  + 800 
-		BASE:ARG:21 *= 数值影响值:4 / 1000
+		数值影响值:4 =  960 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日) * 120) / 180 )
+		BASE:ARG:21 *= 数值影响值:4 
+		BASE:ARG:21 /=  1000
+	ELSEIF ( DAY:0 - CFLAG:12:K12C_1_恋人纪念日 ) < 480 
+		数值影响值:4 = 1080 + (((DAY:0 - CFLAG:12:K12C_1_恋人纪念日 - 180) * 70) / 300)
+		BASE:ARG:21 *= 数值影响值:4
+		BASE:ARG:21 /=  1000
+	ELSE 
+		数值影响值:4 = 1150
+		BASE:ARG:21 *= 数值影响值:4
+		BASE:ARG:21 /= 1000
 	ENDIF 
 ENDIF 
 SIF ARG == 12 
@@ -889,6 +902,76 @@ SIF ARG == 12
 ;其他補正
 SIF TALENT:ARG:魅力
 	TIMES BASE:ARG:21, 0.95
+
+@M_KOJO_Moe_K12_CUSTOM_SHOW_SIZE(ARG)
+#DIM L_PENIS,20 ; P尺寸計算用
+;LOCAL:21 … 妊娠時の体重の計算値
+;LOCAL:23 … 妊娠時の腰圍の計算値
+VARSET LOCAL
+IF CFLAG:ARG:身体測定 == 0
+	PRINTL
+	PRINTFORMDL □ 尺　寸 □-------------------------------------------------------------------------
+	PRINTL  未測定
+ELSE
+	PRINTL
+	PRINT □ 
+	CALL PRINTBUTTON_EX("尺寸",160,TFLAG:160)
+	PRINTL  □------------------------------------------------------------------------
+	IF !TFLAG:尺寸显示
+		;プレイヤーの身高・体重は不明
+		IF ARG == NO:0 && TALENT:ARG:性別 == 2
+			PRINTFORM  身高:???cm  体重:??kg
+		ELSE
+			;身高
+			CALL ShowScaleInCM(ARG, BASE:ARG:20, " 身高:")
+			;体重
+			IF TALENT:ARG:妊娠
+				;身高150cmで10kg程度増加
+				LOCAL:21 = BASE:ARG:体重 + (BASE:ARG:20 * BASE:ARG:20 * CFLAG:ARG:妊娠経過日数 / 2250000)
+				PRINTFORM    体重:{LOCAL:21 / 10}.{LOCAL:21 % 10}\@ TALENT:ARG:体型 == -5? g# kg\@
+				PRINTFORML  妊娠前({BASE:ARG:体重 / 10}.{BASE:ARG:体重 % 10}\@ TALENT:ARG:体型 == -5? g# kg\@)
+			ELSE
+				;小人の体重は1/10^3
+				PRINTFORML    体重:{BASE:ARG:体重 / 10}.{BASE:ARG:体重 % 10}\@ TALENT:ARG:体型 == -5? g# kg\@
+			ENDIF
+		ENDIF
+		;[男人]持ちは3尺寸は表示しない
+		IF TALENT:ARG:性別 != 2
+			;胸圍
+			CALL ShowScaleInCM(ARG, BASE:ARG:胸圍, "   Ｂ:")
+			PRINTFORM %LOCALS:0%
+			CALL PRINT_CUPSIZE, ARG
+			;腰圍
+			IF TALENT:ARG:妊娠
+				;身高150cmで30cm程度増加
+				LOCAL:23 = BASE:ARG:腰圍 + (BASE:ARG:20 * CFLAG:ARG:妊娠経過日数 / 500)
+				CALL ShowScaleInCM(ARG, LOCAL:23, "/ Ｗ:")
+				CALL ShowScaleInCM(ARG, BASE:ARG:腰圍, " 妊娠前(")
+				PRINTPLAIN )/
+			ELSE
+				CALL ShowScaleInCM(ARG, BASE:ARG:腰圍, "/ Ｗ:")
+				PRINTFORM /
+			ENDIF
+			;臀圍
+			CALL ShowScaleInCM(ARG, BASE:ARG:臀圍, " Ｈ:")
+			PRINTFORML 
+		ENDIF
+		IF HAS_PENIS(ARG)
+			;Ｐ
+			CALL GET_PENIS_SIZE, L_PENIS, ARG
+			CALL ShowScaleInCM(ARG, L_PENIS:1, " Ｐ:")
+			CALL ShowScaleInCM(ARG, L_PENIS:5, " 直径：")
+			CALL ShowScaleInCM(ARG, L_PENIS:8, "  （平常時:")
+			CALL ShowScaleInCM(ARG, L_PENIS:7, " 直径：")
+			PRINTPLAIN )
+			CALL ShowScaleInCM(ARG, L_PENIS:11, " 片玉直径：")
+			PRINTFORML 
+		ENDIF
+	ENDIF
+ENDIF
+PRINTL
+
+
 ;==================================================
 ;半夜夜袭 触发函数集
 ;-------------------------------------------------
@@ -1185,7 +1268,7 @@ LOCAL = 12
 	追加Ｂ自慰 = 0
 	自慰発生閾値 = LIMIT(650 - 200 * TALENT:12:60 - 100 * TALENT:12:快感応答 - 100 * TALENT:12:自己愛 + 200 * TALENT:12:自制心,298,999)
 	自慰発生閾値 -= 200 * TALENT:12:73
-	IF CFLAG:12:K12C_1_夜袭正戏与否 && CFLAG:12:K12C_1_夜袭正戏总次数
+	IF CFLAG:12:K12C_1_夜袭正戏与否 && CFLAG:12:K12C_1_夜袭正戏总次数 
 		PRINTFORML 
 		PRINTFORMDW %CALLNAME:12%把臉埋在了枕頭裡面…
 		PRINTFORML 
@@ -1232,11 +1315,11 @@ LOCAL = 12
 				PRINTFORML 可是，羞于坦白此事的小妖怪，没有让任何人知道，也从来没理解过这种行为的含义……
 				部位指定 = 5
 			ELSEIF (LOCAL:1 >= 80 - (MIN(ABL:LOCAL:9,4) * 10)) && !RAND:5
-				PRINTFORML 尚不明白自慰是什么的%CALLNAME:LOCAL%，用双腿夹紧了枕头%UNICODE(0x2764)%……
-				部位指定 = 4
-			ELSEIF (LOCAL:1 >= 50 - (MIN(ABL:LOCAL:9,3) * 10)) && !RAND:4
 				;PRINTFORML %CALLNAME:LOCAL%在桌子角扭動腰肢、一邊用手揉搓着小豆豆%UNICODE(0x2764)%……
 				PRINTFORML %CALLNAME:LOCAL%躺在被窩裏激烈地揉搓着蜜缝%UNICODE(0x2764)%……
+				部位指定 = 4
+			ELSEIF (LOCAL:1 >= 50 - (MIN(ABL:LOCAL:9,3) * 10)) && !RAND:4
+				PRINTFORML 尚不明白自慰是什么的%CALLNAME:LOCAL%，用双腿夹紧了枕头%UNICODE(0x2764)%……
 				部位指定 = 3
 			ELSEIF (LOCAL:1 >= 30 - (MIN(ABL:LOCAL:9,2) * 10)) && !RAND:3
 				PRINTFORML %CALLNAME:LOCAL%把書夾在胯間刺激著幼小的祕裂%UNICODE(0x2764)%……
@@ -1245,8 +1328,7 @@ LOCAL = 12
 			;	PRINTFORML %CALLNAME:LOCAL%在學習的時候把筆貼在了胯下、就這樣摩擦起秘縫%UNICODE(0x2764)%……
 			;	部位指定 = 1
 			ELSE
-				;这一部分暂时固定
-				;PRINTFORML %CALLNAME:LOCAL%躺在被窩裏一邊側躺使大腿互相摩擦一邊悶悶%UNICODE(0x2764)%……
+				PRINTFORML 难以忍受陌生情欲的%CALLNAME:LOCAL%，凑近了家里的桌子%UNICODE(0x2764)%……
 			ENDIF
 			自慰タイプ = 4
 		ELSEIF ABL:12:自慰中毒 >= 3 && (TALENT:12:8 || IS_LOVER(12) || TALENT:12:7 || TALENT:12:185) && !RAND:3
@@ -1898,7 +1980,7 @@ SIF 污垢值
 	允许值 -= 污垢值
 
 ;合計を表示(20以上で実行)
-;以最高的背面座位为准
+;以最高的背面座位为准，避免允许了但是CAN失败
 IF 允许值 < 42
 	RETURNF 0
 ELSE 

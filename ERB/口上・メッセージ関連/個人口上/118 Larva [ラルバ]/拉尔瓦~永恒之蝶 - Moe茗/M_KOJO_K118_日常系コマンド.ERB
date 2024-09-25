@@ -1852,7 +1852,7 @@ IF LOCAL
 				PRINTL 
 				PRINTFORMDW 拉尔瓦欲拒还迎的可爱样子，让你忍不住被情欲所控制，扑倒了眼前的娇小妖精
 				PRINTL 
-				IF TALENT:118:0 || (RAND:(25 - (MIN(10,ABL:118:1)) * 2 ) > RAND:12 )
+				IF TALENT:118:0 || (RAND:(25 - (MIN(10,ABL:118:1 + 1)) * 2 ) > RAND:12 )
 					PRINTDATAL 
 						DATAFORM 「今天也想被%MASTERNAME:118%%UNICODE(0x2764)%……抱在怀里温柔地抚摸%UNICODE(0x2764)%……」
 						DATAFORM 「%MASTERNAME:118%想变得舒服嘛%UNICODE(0x2764)%……嘿嘿，%CSTR:118:20%也想哇%UNICODE(0x2764)%……」
@@ -3131,7 +3131,7 @@ IF LOCAL
 			PRINTFORML 「那个，去什么地方玩呀？」
 		ENDIF 
 
-		;后面需要接地点差分，还未完工  %DATENAME_PLACE()%是地点名称，CFLAG:0:12是地点的大地图变好
+		;后面需要接地点差分，还未完工  %DATENAME_PLACE()%是地点名称，CFLAG:0:12是地点的大地图编号
 		SELECTCASE CFLAG:MASTER:12
 			CASE 0 ;博丽神社
 				IF FIRSTTIME("K118_405_FIRST_APPOINTMENT_TO_0")
@@ -5027,7 +5027,7 @@ ELSE
 ENDIF 
 RETURN 1
 ;-------------------------------------------------
-;経験の処理
+;口上消息
 ;-------------------------------------------------
 ;命令消息。 指定口上的消息。
 ;请注意，此处的指令编号为口上内编号+270后的结果
@@ -5113,3 +5113,132 @@ ELSE
 		ENDDATA
 	ENDIF 
 ENDIF 
+
+
+;==================================================
+;口上自定义指令 进行生命转换
+;在4.920及以上版本即可启用
+;==================================================
+;按钮名
+;コマンド名
+@KOJO_Moe_COM_NAME_K118_1
+	RESULTS = 进行「生命转换」
+
+
+;可行性判定，如果返回1则会显示
+;judge the button can be shown, if return 1, it will show
+;コマンド使用条件。通常のCOM_ABLE関数と同じくRETURN 1すれば実行可能としてコマンドが表示される
+@KOJO_Moe_COM_ABLE_K118_1
+;编写中，暂时ban除
+RETURN 0 
+;复制了摸頭実行判定
+SIF !TFLAG:100
+	RETURN 0
+;一括管理
+SIF GLOBAL_COMABLE(309)  
+	RETURN RESULT
+;時間停止中はスキップ
+IF !FLAG:70
+	;亲热強度1，且不在睡眠 		 !CFLAG:313 && !CFLAG:TARGET:316 && !CFLAG:334
+	SIF (TCVAR:MASTER:130 < 1) 
+		RETURN 0
+	;恶作剧中
+	SIF CFLAG:331 > 0
+		RETURN 0
+	;仕事中
+	SIF CFLAG:325 == 5
+		RETURN 0
+	;每日一次
+	SIF TCVAR:371 
+		RETURN 0
+	;支线剧情达到一定程度才会触发
+	SIF CFLAG:118:1050 >= 3
+		RETURN 0 
+ENDIF
+;気力0
+SIF BASE:MASTER:1 <= 0
+	RETURN 0
+SIF BASE:TARGET:1 <= 0
+	RETURN 0
+RETURN 1
+;因此可排出，时停中，烂醉中，陪睡中，约会中可使用，可视为摸头
+
+
+
+;执行什么命令。 描述经验和SOURCE波动
+;RETURN 1=执行命令 / RETURN 0=取消（跳过源计算） / RETURN -1=取消命令
+;コマンド実行内容。経験・SOURCE変動を記述
+;RETURN 1=コマンド実行 / RETURN 0=キャンセル(SOURCE計算SKIP) / RETURN -1=コマンド取り消し
+@KOJO_Moe_COM_K118_1
+
+;因为反发了所以拒绝了
+IF MARK:TARGET:3 
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_271("FORGIVE",1)
+	RETURN -1 
+ENDIF 
+;因为在生气所以拒绝了
+IF TCVAR:TARGET:132
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_271("FORGIVE",2)
+	RETURN -1 
+ENDIF 
+;因为剩余值不够所以拒绝了
+IF MOE_LARVA_GET_EXTRA_BASE(0) < 0 
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_271("FORGIVE")
+	RETURN -1 
+ENDIF 
+
+;一开始先询问……
+CALL M_KOJO_Moe_MESSAGE_COM_K118_271("BEFORE")
+IF RESULT == 0 	;选择放弃的分支
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_271("GIVE_UP")
+	RETURN -1 
+ENDIF
+;确认需要的口上 
+CALL M_KOJO_Moe_MESSAGE_COM_K118_271("AFFIRM")
+;
+;SOURCE，成功率处理等
+;
+
+
+
+
+
+;完成后的口上 
+CALL M_KOJO_Moe_MESSAGE_COM_K118_271("AFTER")
+
+
+;运算需要多少生命上限，检测是否满足需要
+@KOJO_Moe_COM_K118_1_CHECK
+
+
+
+
+
+;-------------------------------------------------
+;口上消息
+;-------------------------------------------------
+;命令消息。 指定口上的消息。
+;请注意，此处的指令编号为口上内编号+270后的结果
+;请注意，
+;buff以及扣除上限的处理，还是在这里做
+;口上内仅通过return值来返回参数
+@M_KOJO_Moe_MESSAGE_COM_K118_271(ARGS,ARG=0)
+SELECTCASE ARGS 
+	CASE "FORGIVE"	;因为某些原因拒绝了
+
+
+	CASE "BEFORE"	;进行前的询问
+
+
+	CASE "AFFIRM"	;确认要进行
+
+
+	CASE "AFTER"	;完成之后	
+	
+
+	CASE "GIVE_UP"	;还是不进行了
+
+
+
+
+ENDSELECT 

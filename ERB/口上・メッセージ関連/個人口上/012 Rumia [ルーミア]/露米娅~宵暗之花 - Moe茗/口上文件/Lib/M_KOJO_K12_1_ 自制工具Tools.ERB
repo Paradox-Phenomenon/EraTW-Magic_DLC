@@ -163,7 +163,7 @@ ENDIF
 ;强制约会函数
 ;强制进入约会状态和可约会状态
 ;用于初见约会分支以及外出时带上露米娅
-@K12_Moe_APPOINTMENT
+@K12_Moe_SET_APPOINTMENT
 IF GET_MAPID(CFLAG:MASTER:300) != MAIN_MAP
 	CFLAG:MASTER:320 = 60
 	CFLAG:12:320 = 60
@@ -188,7 +188,7 @@ ENDIF
 @K12_ENDAPPOINTMENT
 CFLAG:MASTER:320 = 0
 CFLAG:12:320 = 0
-CFLAG:12:12 = 0
+CFLAG:12:12 = MAIN_MAP
 FLAG:73 = 0
 CFLAG:12:352 = 0
 CFLAG:12:353 = 0
@@ -270,13 +270,17 @@ ENDIF
 ;用于变更素质……
 @MOE_RUMIA_TALENT_CHANGE 
 	CALL K12_Moe_TALANT_CHECK 
-	TALENT:12:30 = 0
+	SIF TALENT:12:30 
+		TALENT:12:30 = 0
 	;去除不重视贞操
-	TALENT:12:33 = 0
+	SIF TALENT:12:33 
+		TALENT:12:33 = 0
 	;去除不知羞耻
-	TALENT:12:24 = 1
+	SIF TALENT:12:24 == 0  
+		TALENT:12:24 = 1
 	;增加开朗
-	TALENT:12:12 = -1
+	SIF TALENT:12:12 == 0  
+		TALENT:12:12 = -1
 	;增加老实
 
 ;素质检测部分
@@ -576,6 +580,27 @@ ELSEIF ARG
 	RETURNF 1
 ENDIF
 RETURNF 1 
+;==================================================
+;首次事件检测函数
+;不写入，仅检测对应字符串有没有触发过
+;使用原版FIRSTTIME才能写入
+;-------------------------------------------------
+@ONCE_OF_Moe_K12(ARGS,ARG, ARG:1)
+#FUNCTION
+;ARG:2の変換
+ARG:1 = ARG:1 ? ARG:1 # TARGET
+ARG:1 = ARG:1 == -1 ? MASTER # ARG:1
+
+SIF CSTR:(ARG:1):1 == ""
+	CSTR:(ARG:1):1 = /
+
+LOCALS = /%ARGS%/
+IF STRCOUNT(CSTR:(ARG:1):1,LOCALS)
+	RETURNF 0
+ELSEIF ARG
+	RETURNF 1
+ENDIF
+RETURNF 1
 ;
 ;-------------------------------------------------
 ;基于原版的M_Moe_K12_ASK_M
@@ -736,7 +761,7 @@ IF ARG == 1
 	ELSE 
 		PRINTFORMDL 随着女孩%LOCALS%，微微张开的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@吸引着你的目光……
 	ENDIF
-ELSEIF !ARG
+ELSE
 	IF 充填率_OF_RUMIA(TARGET,1) > 77
 		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
 		PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%中间不断地漫出刚刚射进去的精液……
@@ -753,3 +778,24 @@ ELSEIF !ARG
 		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
 	ENDIF
 ENDIF 
+
+
+;==================================================
+;检查某个日记差分被触发的情况
+;原理是遍历当前所有已经被设置的页数，寻找到对应差分，并输出日期
+;大概只能检查事件系日记
+;-------------------------------------------------
+@M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(CHARA,NO_DIARY)
+#FUNCTION
+#DIM CHARA
+#DIM NO_DIARY
+FOR LOCAL , 1 , (RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1)
+	IF RUMIA_PAGESET:CHARA:LOCAL == NO_DIARY
+		RETURNF RUMIA_DIARY_DATE:CHARA:LOCAL
+	ELSEIF RUMIA_PAGESET:CHARA:LOCAL == 0 
+		BREAK 
+	ELSE
+		CONTINUE
+	ENDIF 
+NEXT 
+RETURNF 0 

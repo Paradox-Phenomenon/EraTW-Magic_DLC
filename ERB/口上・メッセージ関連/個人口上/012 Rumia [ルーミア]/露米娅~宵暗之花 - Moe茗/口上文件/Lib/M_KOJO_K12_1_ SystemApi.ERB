@@ -257,6 +257,22 @@ WHILE RESULT != 2
 WEND 
 CLEARLINE LINECOUNT - LOCAL 
 RETURN 1 
+;-------------------------------------------------
+
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_3
+custom_button_name:12:3 = 指令使用次数
+IF CFLAG:12:18 && (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)
+	RETURN 1
+ELSE 
+	RETURN 0
+ENDIF 
+
+;按钮被按下后，触发以下函数
+;这里直接转到历史指令记录
+@KOJO_Moe_CUSTOM_BUTTON_K12_3
+CALL M_KOJO_MOE_RUMIA_COM_RECORD_MAIN_MENU
+RETURN 1 
 
 ;-------------------------------------------------
 
@@ -292,7 +308,7 @@ WHILE RESULT != 2
 		CASE 0 
 			PRINTFORMDL 这里可以修改补正的强度
 			PRINTFORMDL 强度的范围应该大于0，100为原补正强度
-			PRINTFORMDL 由于存在负补正的情况，因此设置超过100的值的时候，可能会无法推进攻略速度
+			PRINTFORMDL 由于存在负补正的情况，因此设置超过100的值的时候，可能会完全无法增加好感度，还请注意
 			PRINTFORMD 目前的补正状态：
 			IF CFLAG:12:K12C_1_好感度补正 == 100 || CFLAG:12:K12C_1_好感度补正 == 0 
 				CALL COLORMESSAGE(@"已开启完整补正",C_YELLOW,1)  
@@ -338,19 +354,12 @@ RETURN 1
 ;-------------------------------------------------
 
 ;判断按钮是否可以显示，如果返回1，则显示
-@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_3
-custom_button_name:12:3 = 指令使用次数
-IF CFLAG:12:18 && (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2)
-	RETURN 1
-ELSE 
-	RETURN 0
-ENDIF 
-
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K12_5
+custom_button_name:12:4 = 测试
+RETURN 0 
 ;按钮被按下后，触发以下函数
-;这里直接转到历史指令记录
-@KOJO_Moe_CUSTOM_BUTTON_K12_3
-CALL M_KOJO_MOE_RUMIA_COM_RECORD_MAIN_MENU
-RETURN 1 
+@KOJO_Moe_CUSTOM_BUTTON_K12_5
+
 ;================================
 ;自定义素质名
 ;使用的时候请删除SKIPSTART~SKIPEND。
@@ -400,26 +409,29 @@ CUSTOM_TALENT_TYPE:12:2 = 2
 ;;================================
 @KOJO_Moe_VERSION_K12
 	;返回当前口上的版本数
-	 RETURN 20240710
+	 RETURN 20240825
 
 ;当存档记录的变量CFLAG:kojo_version比上面的口上版本号低，即为旧版本的时候，此处将调用
 @KOJO_Moe_VERSION_UPDATE_K12
-CALL M_KOJO_Moe_COLOR_K12_SET(MOE_GREEN)
-CALL DQPRINT (@"【露米娅Moe版口上】",100)
+#LOCALSIZE 3 
+	CALL M_KOJO_Moe_COLOR_K12_SET(MOE_GREEN)
+	CALL DQPRINT (@"【露米娅Moe版口上】",100)
 ;
 ;---------------------------------------------------------------------	;
 	;20240710 更新了新CFLAG记录告白情况
 
+;---------------------------------------------------------------------	;
 	SIF TALENT:12:7		;有恋人就赋确认值
 		SETBIT CFLAG:12:K12C_1_恋人获得形式,0  
 	SIF !FIRSTTIME_OF_Moe_K12(352)	;检测自机告白过没有
 		SETBIT CFLAG:12:K12C_1_恋人获得形式,2  
-	;告白成功方暂时无法显示
-	;
+	;告白成功时，暂时无法显示
+;---------------------------------------------------------------------	;
 	;转移初始有无无知的变量
 	SIF CFLAG:12:1127 
 		MOE_RUMIA_INITAL_TALENT:27 = 1 
 	CFLAG:12:1127 = 0 
+;---------------------------------------------------------------------	;
 	;角色名简中化
 	CALL DQPRINT (@"20240710：",100)
 	IF CALLNAME:12 == "露米亜"
@@ -437,14 +449,133 @@ CALL DQPRINT (@"【露米娅Moe版口上】",100)
 	ENDIF 
 	PRINTL 
 ;---------------------------------------------------------------------	;
-
-
+	;20240825
+	CALL DQPRINT (@"20240825：",100)
+	;根据日记补充陷落时间
+	IF TALENT:12:7 && !CFLAG:12:K12C_1_恋人纪念日
+		IF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,26)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,26)
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,28)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,28)
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,29)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,29)
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,15)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,15)
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,17)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,17)
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,19)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,19)
+		ELSE 
+			PRINTL 
+			PRINTL 检测露米娅恋人纪念日失败
+			IF !LOCAL:1
+				PRINTW 这个有可能是因为您上次使用的口上版本过早
+				LOCAL:1 = 1 
+			ENDIF 
+			PRINTW 需要您自行补充。您记得或认为的，露米娅成为恋人的日子
+			CALL COLORMESSAGE("请输入对应的游戏日",MOE_GREEN,1,0)
+			INPUT 
+			LOCAL = RESULT 
+		ENDIF 
+		CFLAG:12:K12C_1_恋人纪念日 = LOCAL 
+		CALL COLORMESSAGE(@"已确认露米娅的恋人纪念日，是第{LOCAL}天",MOE_GREEN,2,0)
+	ENDIF 
+	IF TALENT:12:3 && !CFLAG:12:K12C_1_恋慕纪念日
+		IF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,10)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,10) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,12)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,12) - 1 
+		ELSE 
+			PRINTL 
+			PRINTL 检测露米娅恋慕纪念日失败
+			IF !LOCAL:1
+				PRINTW 这个有可能是因为您上次使用的口上版本过早
+				LOCAL:1 = 1 
+			ENDIF 
+			PRINTW 需要您自行补充。您记得或认为的，露米娅获得恋慕的日子
+			CALL COLORMESSAGE("请输入对应的游戏日",MOE_GREEN,1,0)
+			INPUT 
+			LOCAL = RESULT 
+		ENDIF 
+		CFLAG:12:K12C_1_恋慕纪念日 = LOCAL 
+		CALL COLORMESSAGE(@"已确认露米娅的恋慕纪念日，是第{LOCAL}天",MOE_GREEN,2,0)
+	ENDIF 
+	IF ( M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,9) || TALENT:12:8 || TALENT:12:3 || TALENT:12:184 || TALENT:12:185) && !CFLAG:12:K12C_1_思慕纪念日 
+		IF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,9)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,9) 
+		ELSE 
+			PRINTL 
+			PRINTL 检测露米娅思慕纪念日失败
+			IF !LOCAL:1
+				PRINTW 这个有可能是因为您上次使用的口上版本过早
+				LOCAL:1 = 1 
+			ENDIF 
+			PRINTW 需要您自行补充。您记得或认为的，露米娅获得思慕的日子
+			CALL COLORMESSAGE("请输入对应的游戏日",MOE_GREEN,1,0)
+			INPUT 
+			LOCAL = RESULT 
+		ENDIF 
+		CFLAG:12:K12C_1_思慕纪念日 = LOCAL 
+		CALL COLORMESSAGE(@"已确认露米娅的思慕纪念日，是第{LOCAL}天",MOE_GREEN,2,0)
+	ENDIF 
+	IF (CFLAG:12:K12C_1_朋友 || CFLAG:12:K12C_1_朋友_2) && !CFLAG:12:K12C_1_朋友纪念日
+		IF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,3)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,3) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,6)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,6) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,7)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,7) 
+		ELSE 
+			PRINTL 
+			PRINTL 检测露米娅朋友纪念日失败
+			IF !LOCAL:1
+				PRINTW 这个有可能是因为您上次使用的口上版本过早
+				LOCAL:1 = 1 
+			ENDIF 
+			PRINTW 需要您自行补充。您记得或认为的，露米娅成为朋友的日子
+			CALL COLORMESSAGE("请输入对应的游戏日",MOE_GREEN,1,0)
+			INPUT 
+			LOCAL = RESULT 
+		ENDIF 
+		CFLAG:12:K12C_1_朋友纪念日 = LOCAL 
+		CALL COLORMESSAGE(@"已确认露米娅的朋友纪念日，是第{LOCAL}天",MOE_GREEN,2,0)
+	ENDIF 
+	IF CFLAG:12:18 && !CFLAG:12:K12C_1_初见纪念日
+		IF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,1)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,1) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,2)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,2) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,3)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,3) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,4)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,4) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,5)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,5) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,6)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,6) 
+		ELSEIF M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,7)
+			LOCAL = M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(12,7) 
+		ELSE 
+			PRINTL 
+			PRINTL 检测露米娅初见纪念日失败
+			IF !LOCAL:1
+				PRINTW 这个有可能是因为您上次使用的口上版本过早
+				LOCAL:1 = 1 
+			ENDIF 
+			PRINTW 需要您自行补充。您记得或认为的，第一次遇见露米娅的日子
+			CALL COLORMESSAGE("请输入对应的游戏日",MOE_GREEN,1,0)
+			INPUT 
+			LOCAL = RESULT 
+		ENDIF 
+		CFLAG:12:K12C_1_初见纪念日 = LOCAL 
+		CALL COLORMESSAGE(@"已确认露米娅的初见纪念日，是第{LOCAL}天",MOE_GREEN,2,0)
+	ENDIF 
 
 ;---------------------------------------------------------------------	;
 
 	CALL DQPRINT (@"【露米娅Moe版口上】已更新完毕",100)
 	CALL DQPRINT (@"祝您游戏愉快",100)
-	RETURN 20240710
+	RETURN 
 
 ;================================
 ;角色介绍 函数
@@ -625,9 +756,14 @@ ENDIF
 IF ARGS == "SETUP"
 	IF CFLAG:12:K12C_1_已上学_2 || CFLAG:12:K12C_1_已上学
 		CSTR:12:3 = 在寺子屋上课 平日 08:00～14:00
-		CFLAG:ARG:326 = 222
+		IF MAIN_MAP == 2 
+			CFLAG:12:326 = 222
+		ELSE 
+			CFLAG:12:326 = 240
+		ENDIF 
 		IF YOUBI_MATCH(DAY, "水金") && CFLAG:12:903 <= 20 && !INRANGE(CFLAG:12:908,1,CHILD_就学)
 			MAXBASE:12:13 = 600 * 3
+			SIF ONCE("M_KOJO_Moe_CHECK_K12_JOB_SET")
 			BASE:12:13 = 600 * 3
 			TCVAR:12:325 = CLOCK_TO_TIME(8, 10)
 			TCVAR:12:326 = CLOCK_TO_TIME(14, 30)
@@ -753,7 +889,18 @@ SELECTCASE ARGS
 				ENDIF
 		ENDSELECT
 	CASE "SPECIAL_MENU"
-		RETURN 0 
+		;这一部分在海外版本可能出现bug
+		;如出现bug，请将下方的注释去掉……
+		DISH_NAME = 暗之甜甜圈
+		RESULTS = 甜点
+		;RESULTS = デザート
+		DISH_ING:1 = 84
+		DISH_ING:2 = 122
+		DISH_ING:3 = 121
+		DISH_TASTE = 洋食/油炸食品/卵/甜/濃厚/松脆/软绵绵/謎料理/
+		;DISH_TASTE = 洋食/揚げ物/卵/甘い/濃厚/サクサク/ふわふわ/謎料理/
+		DISH_COMMENT = 包裹着黑暗的谜之甜甜圈。透过甜甜圈中间的洞只能看见一片漆黑。
+		RETURN 1
 ENDSELECT
 ;
 ;================================
