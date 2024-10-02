@@ -11,21 +11,24 @@
 ----------------------------------------------
 
 原始画像作者：藪蛇(Twitter：@yabuhebi1067)
-上半身裸体改图：OKT_Kridy(QQ：719539706)
-图形后期处理：你的邻居戴夫(QQ：1964257244)
-代码以及整合：米叔(Twitter：@EmiyaFang)
+上半身裸体改图：OKT_Kridy(Pixiv：@Kridy)
+图形后期处理：你的邻居戴夫
+代码整合以及上传：米叔(Twitter：@EmiyaFang)
 本绘图补丁可以在不用通知以上任何人的前提下以任何形式整合、修改、二次发布，但需要遵守原作者藪蛇的基础规约。
+由于我本人使用的是中文eratw，所以CSV文件请基于自己语言的tw自行制作。
 
 Claude3.5による翻訳結果：
-原始画像作者：藪蛇 (Twitter: @yabuhebi1067)
-上半身裸体改图：OKT_Kridy (QQ: 719539706)
-グラフィック後処理：你的邻居戴夫 (QQ: 1964257244)
-コードおよび統合：米叔 (Twitter: @EmiyaFang)
+元画像作者：藪蛇 (Twitter: @yabuhebi1067)
+上半身裸の改変画像：OKT_Kridy (Pixiv：@Kridy)
+グラフィック後処理：你的邻居戴夫
+コードの統合およびアップロード：米叔 (Twitter: @EmiyaFang)
 この描画パッチは、上記のいずれの人にも通知することなく、あらゆる形式で統合、修正、再配布が可能ですが、元の作者である藪蛇の基本規約を遵守する必要があります。
+私は中国語のeratwを使用していますので、CSVファイルはご自身の言語のtwに基づいて作成してください。
 
 Results translated by Claude 3.5:
 Original image author: 藪蛇 (Twitter: @yabuhebi1067)
-Upper body nude modification: OKT_Kridy (QQ: 719539706)
-Graphic post-processing: 你的邻居戴夫 (QQ: 1964257244)
-Code and integration: 米叔 (Twitter: @EmiyaFang)
+Upper body nude modification: OKT_Kridy (Pixiv：@Kridy)
+Graphic post-processing: 你的邻居戴夫
+Code integration and upload: 米叔 (Twitter: @EmiyaFang)
 This drawing patch can be integrated, modified, and redistributed in any form without notifying any of the above individuals, but it must comply with the basic protocol of the original author, 藪蛇.
+Since I am using the Chinese eratw, please create the CSV file based on your own language’s tw.
