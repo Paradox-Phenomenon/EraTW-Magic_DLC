@@ -1,0 +1,3968 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;日常系コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;300,会話
+;TFLAG:193(1=大成功 0=成功 -1=失敗 -2=大失敗（TARGETがMASTERより教養が4以上高い)
+;TCVAR:302(0=会話可能 1>=非恋慕時会話不能)
+;MARK:反発刻印(3以上=会話不能)(4以上はバグ
+;TCVAR:泥酔(1=通常成功or大失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_300
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_300
+;コマンド共通メッセージ(TRAIN_MESSAGE) 
+;削除すると「～話をした。」とかが消えます。また、削除した場合は自動で口上色が付きません。
+;口上メイン呼出
+CALL M_KOJO_MESSAGE_COM_K151_300_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_300_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;ここに口上書いて下さい
+	IF TFLAG:193 > -1
+		IF RAND:3
+			CALL K151_CONVERSATION_INTERACTION
+			SIF RESULT
+				RETURN 0
+		ENDIF
+
+		IF TALENT:[[ユウゲンマガン]]:恋人
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 
+				CASE 1
+					PRINTFORML 
+				CASE 2
+					PRINTFORML 
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 
+				CASE 1
+					PRINTFORML 
+				CASE 2
+					PRINTFORML 
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+			$YM_YEARNING_CONVOS
+			SELECTCASE RAND:9
+				CASE 0
+					PRINTFORMDW 幽幻魔眼皱了皱眉
+					PRINTFORMW 「最近，每次看到你，血液都会涌向这具身体的脸」
+					PRINTFORMW 「你知道这意味着什么吗？这令人困惑」
+				CASE 1
+					PRINTFORMW 「如何……交朋友？」
+					PRINTFORMW 「别人都有朋友，而我们没有，这令人困惑」
+					PRINTFORMDW 并非如此。你是她的朋友，不是吗？
+					PRINTFORMW 「真的吗？那是什么时候发生的？又是怎么发生的？」
+					PRINTFORMDW 你解释友谊就是与某人相处时感到愉快
+					PRINTFORMW 「啊……但“愉快”意味着什么？」
+					PRINTFORMDW ……这需要一段时间
+					PRINTFORMW 经过一番解释后，幽幻魔眼将手放在她的胸前
+					PRINTFORMDW 所以我们在你面前感到的那种奇怪感觉……是愉快？
+					PRINTFORMW 「那意味着你和我们是朋友？」
+					PRINTFORMDW 你点点头，有点烦躁
+					PRINTFORMW 「那很好」
+					PRINTFORMDW 她露出了一个奇怪的倒笑
+					PRINTFORMW 「我……很高兴……你是我们的朋友」
+
+				CASE 2
+					PRINTFORML 「什么是太阳？」
+					PRINTFORMW 「是女神天照，还是一个炽热的等离子体？」
+					PRINTFORMW 「我们听到了一些相互矛盾的说法」
+
+				CASE 3
+					PRINTFORMW 「告诉我们关于红线的故事」
+					PRINTFORMW 「人人都有命中注定的伴侣吗？」
+					CALL ASK_YN("确实有", "并没有")
+					IF !RESULT
+						PRINTFORMW 「有趣」
+						PRINTFORMW 「只有物质生物才会有吗？」
+						PRINTFORMW 「……我们很好奇！仅此而已！」
+						PRINTFORMDW 但她脸上的红晕却透露了更多……
+					ELSE
+						PRINTFORMW 「只是迷信吗？那真可惜」
+					ENDIF
+
+				CASE 4
+					SIF !CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0
+						GOTO YM_YEARNING_CONVOS
+					PRINTFORMW 「我们知道这有点奇怪的问题……」
+					PRINTFORMW 「如果你在乎的人对你隐瞒了一个秘密并撒了谎……」
+					PRINTFORMW 「如果那个秘密被揭开，你会原谅他吗？」
+					CALL ASK_YN("会的", "不会")
+					IF !RESULT
+						PRINTFORMW 「...」
+						PRINTFORMW 「你真善良」
+						PRINTFORMW 「我怀疑大多数人都不会这样……」
+					ELSE
+						PRINTFORMW 「...」
+						PRINTFORMW 「我明白了...」
+						PRINTFORMDW 幽幻魔眼把目光移开
+					ENDIF
+
+				CASE 5
+					SIF !TALENT:妊娠
+						GOTO YM_YEARNING_CONVOS
+					PRINTFORML 「即使我们怀有孩子，我们也没有理由离开」
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							PRINTFORMW 「我们必须好好培养它……」
+							PRINTFORMDW 幽幻魔眼吞咽了一下
+						CASE 1
+							PRINTFORMDW 幽幻魔眼露出了她奇怪的倒笑
+							PRINTFORMW 「我们渴望有更多的孩子……很多……」
+					ENDSELECT
+
+				CASE 6
+					SIF !TALENT:妊娠
+						GOTO YM_YEARNING_CONVOS
+					PRINTFORML 「如果我们的孩子看起来和我们一模一样，请不要惊讶」
+					PRINTFORMW 「这是伟大的存在的方式」
+
+				CASE 7
+					SIF !FLAG:異常気象 == 7
+						GOTO YM_YEARNING_CONVOS
+					PRINTFORMW 「内衣在空中飞舞」
+					PRINTFORMW 「这在你们的世界是常见的事情吗？」
+					PRINTFORMW 「只有在幻想乡？真奇怪……」
+
+				CASE 8
+					SIF !BASE:[[ユウゲンマガン]]:体力 < 750
+						GOTO YM_YEARNING_CONVOS
+					PRINTFORMDW 幽幻魔眼打了个哈欠
+					PRINTFORMW 「真烦人……这具身体出了问题」
+					PRINTFORMW 「如果我们还有能力，我们会摧毁它再造一个」
+					PRINTFORMW 「遗憾的是，我们似乎只能睡觉了」
+
+				CASE 9
+					PRINTFORMW 「真奇怪」
+					PRINTFORMW 「在*下面*，只要我们的意志够强，我们可以任意改变世界」
+					PRINTFORMW 「然而在物质世界，我们不能这样做」
+					PRINTFORMW 「你的世界有自己的意志吗？」
+
+			ENDSELECT
+		ELSE
+			SELECTCASE RAND:7
+				CASE 0
+					PRINTFORMW 「“下面”是什么样的？」
+					PRINTFORMDL 幽幻魔眼笑了。至少你认为那是笑
+					PRINTFORMDW 更像是一声吠叫，就像有人告诉她笑是什么样的，但她从未真正听过
+					PRINTFORMW 「你不会理解的。让我们看看能否用你的语言来描述…」
+					PRINTFORMDW 她停下来思考。她的整个身体僵硬了，几乎就像你刚刚停止了时间一样
+					PRINTFORMW 「那里有……漂亮的颜色，但很疼。我们喜欢这里，因为这里不疼」
+				CASE 1
+					PRINTFORMW 「你喜欢我们的眼睛吗？我们认为那是我们的最佳特征」
+					PRINTFORMW 「尽管它们和你的眼睛不同。在我们来自的地方，不需要眼睛也能看见」
+					PRINTFORMW 「它们是我们在你的世界中表现自己的方式。我们不知道为什么」
+				CASE 2
+					PRINTFORMW 「……你见过神绮了吗？」
+					PRINTFORMW 「……明白了」
+					PRINTFORML 「那个女人是个骗子，不值得信任」
+					PRINTFORMW 「不要相信她说的任何话。这只会导致灾难」
+					PRINTFORMDW 幽幻魔眼看起来很不安……
+				CASE 3
+					PRINTFORMW 「那个觉让我们很感兴趣。她的第三只眼真的属于她，还是像我们一样的另一个生物？」
+					PRINTFORMW 「我们想调查，但我们不希望她读取我们的心」
+					PRINTFORMW 「不是因为我们有任何秘密。我们只是担心她的安全」
+					PRINTFORMW 「如果她试图读取我们的心，我们担心那会……很混乱」
+				CASE 4
+					PRINTFORMW 「萨拉还在守护魔界的大门吗？」
+					PRINTFORMDW 幽幻魔眼叹了口气。这让她看起来挺人性的
+					PRINTFORMW 「为什么那些年她不和巫女战斗？为什么是我们做她的工作？」
+					PRINTFORMW 「好像我们没有足够的理由讨厌她……」
+				CASE 5
+					PRINTFORMW 「那个未开眼的觉妖怪让我们很感兴趣。我们是五个一体，而她是一个没有心智的个体」
+					PRINTFORMW 「如果她没有心智……我们或许可以和她谈论我们世界的事情而不会让她疯狂？」
+					PRINTFORMW 「能有一个我们不需要保守秘密的人会很好」
+					PRINTFORMDW 幽幻魔眼看起来有些……渴望
+				CASE 6
+					PRINTFORMW 「那个工程师的恶眼是模仿我们的吗？真有趣」
+					PRINTFORMW 「我们必须向她道谢。或许我们会让她成为我们教派的大祭司……」
+				CASE 7
+					PRINTFORMW 「什么是“div”？」
+					PRINTFORMW 「那位桥姬有时会在认为我们不听的时候低声说出来」
+					PRINTFORML 「我们猜那不是爱称。也许是侮辱？」
+					PRINTFORMW 「无论它是什么，我们都不喜欢被侮辱」
+					PRINTFORMDW 幽幻魔眼隐隐露出一丝微笑，但她的眼神冰冷而充满怒火
+					PRINTFORMW 「我们会在适当的时候教训她……」
+			ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;addition custom code, Character's interaction with the Shanghai doll accessory
+;triggers after COM300 dialogue by chance
+;related variables:
+;TCVAR:Shanghai_EventChance, 20 by default, meaning 20%, +10% each time Shanghai event is not triggered during COM300, resets to 20% if triggered
+;TFLAG:Shanghai_EventDisable, 1 = disabled, 0 = enabled
+@M_KOJO_MESSAGE_COM_KX_300_Shanghai
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;use visuals to separate it from regular dialogues 
+	;CALL SPTALK, TARGET, "笑顔", 0, @"「S-so… How was it?」", 1
+    ;CALL SPTALK, 0, "Expr3_B", Shanghai_MOB_ID, @"「......」", 1
+    ;PRINTFORML Ruukoto is making Shanghai taste test her handmade cookies... 
+ENDIF
+RETURN 1
+;==================================================
+;301,お茶を淹れる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_301
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_301
+CALL M_KOJO_MESSAGE_COM_K151_301_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_301_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME("MaganTea")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				PRINTFORML 「茶吗？」
+				PRINTFORMDW 幽幻魔眼冷冷地看着杯子
+				PRINTFORMW 「那你是怎么使用它的？」
+				PRINTFORMDW 你解释说将它倒入口中并吞下
+				PRINTFORMW 「你从中获得营养…真是有趣」
+				PRINTFORMW 「在我们的世界，我们不需要这种东西」
+				PRINTFORMW 「我们只是存在」
+				PRINTFORMDW 幽幻魔眼拿起杯子，轻轻啜了一口
+				PRINTFORMW 「嗯」
+				PRINTFORMDW 她又喝了一口
+				PRINTFORMW 「我们无法理解它的魅力…但为了礼貌，我们会继续饮用」
+				PRINTFORMW 「我们希望与贵维度的物种培养更好的关系」
+			CASE 2
+				PRINTFORMW 「茶？嗯？」
+				PRINTFORMW 「我一直更喜欢冰咖啡…不过我愿意尝试一下」
+				PRINTFORMDW 幽幻魔眼从你手中接过杯子，喝了一口。她的眼睛亮了起来
+				PRINTFORMW 「哇，这真的很好喝！」
+		ENDSELECT
+	ELSE
+		SELECTCASE TFLAG:193
+			CASE 1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0, 1
+						IF FIRSTTIME("GoodTea")
+							PRINTFORMW 「味道变了，某种程度上更吸引人。为什么？」
+							PRINTFORMDW 你解释说这只是运气好
+							PRINTFORMW 「什么？」
+							PRINTFORMDW 幽幻魔眼的声音依然冷淡
+							PRINTFORMW 「在你的世界里，行动并不纯粹？它们有…」
+							PRINTFORMDW 幽幻魔眼停顿了一下
+							PRINTFORMW 「副作用，对吧？相同的输入会产生不同的输出？」
+							PRINTFORMW 「你们真是奇怪的生物」
+						ELSE
+							PRINTFORMW 「你的茶又不纯了，吸引人的那种」
+							IF CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0
+								PRINTFORMDW 幽幻魔眼在对你微笑吗？
+								PRINTFORMDW 当她发现你在看她时，笑容立刻消失，回到了她那惯常的冷淡表情
+							ENDIF
+						ENDIF
+					CASE 2
+						PRINTFORMW 「哇哦，这真是太棒了！」
+						PRINTFORMDW 幽幻魔眼喝干了杯中的茶，并对你露出了笑容
+						PRINTFORMW 「你真的得教教我怎么做这种茶」
+				ENDSELECT
+			CASE 0
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORMW 「这种物质没有被施加魔法，是吗？」
+									PRINTFORML 「...没有？那为什么我们会对它上瘾？」
+									PRINTFORMW 「仅仅因为它来自你吗？」
+								CASE 1
+									PRINTFORML 「你已经给我们泡了多少杯茶了？」
+									PRINTFORMW 「一定比宇宙中的星星还多」
+									PRINTFORMW 「然而…我们从未对这种体验感到厌倦」
+								CASE 2
+									PRINTFORMW 「或许我们应该开始向信徒们要求茶作为贡品」
+									PRINTFORMW 「不过再想想，还是算了。因为没有人能像你一样泡茶」
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 「嘿嘿，舞知道你的茶之后一定会嫉妒死」
+									PRINTFORMW 「当然，她的魔法比我厉害多了，但她有个会泡茶的超帅%PRINT_MALE("男", MASTER)%朋友吗？」
+									IF TALENT:105:恋人
+										PRINTFORMW 「...哦，对，她确实有」
+										PRINTFORMDW 幽幻魔眼皱起了眉头
+									ENDIF
+								CASE 1
+									PRINTFORML 「我觉得我开始对你的茶上瘾了」
+									PRINTFORMW 「我都不记得上次喝速溶咖啡是什么时候了，我以前可是每天喝四杯！」
+								CASE 2
+									PRINTFORMW 「你觉得如果我用魔法把这茶弄得像毒药，大家会觉得我很酷吗？」
+									PRINTFORMW 「...不行吗？唉…」
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「我们不知道为什么…但我们喜欢上了这个仪式」
+							PRINTFORMDW 幽幻魔眼放下杯子，露出她那倒过来的笑容
+						CASE 1
+							PRINTFORMW 「(真奇怪...这个茶是温暖的，但和在%HIS_HER(MASTER)%身边感受到的温暖不一样...)」
+							PRINTFORMDW 幽幻魔眼自言自语着，同时从你手中接过杯子
+						CASE 2
+							PRINTFORMW 「这还挺不错的」
+							PRINTFORMDW 幽幻魔眼对你微微一笑，但当她看到你正看着她时，她的脸恢复了平常的淡漠
+						CASE 3
+							PRINTFORML 「这是个有趣的仪式」
+							PRINTFORMW 「它召唤了怎样的存在？是在我们喝完茶之前，还是之后？」
+					ENDSELECT
+				ELSE
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「啊，所以这是一个旨在促进交流与理解的仪式。多么智慧」
+							PRINTFORMDW 没那么深奥啦…
+						CASE 1
+							PRINTFORMW 「你是如何得出这个仪式的？是神告诉你的吗？」
+							PRINTFORMDW 你…其实不知道
+							PRINTFORMW 「你称之为…茶艺的技艺，是如此古老，以至于你甚至不记得它的来源？」
+							PRINTFORMW 「真是引人入胜…」
+						CASE 2
+							PRINTFORMW 「可以加点糖…不过应该还行」
+						CASE 3
+							PRINTFORML 「虽然我们享受你茶的热气，但我们没有给这个身体留味蕾，所以不能真正品味它」
+							PRINTFORMDW 幽幻魔眼皱了皱眉
+							PRINTFORMW 「茶到底是什么味道的？」
+					ENDSELECT
+				ENDIF
+			CASE -1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORML 「这茶味道好差！」
+						PRINTFORMDW 幽幻魔眼把杯子扔到地上，瞪着你
+						PRINTFORMW 「你是想用这种变质的饮品侮辱我们吗？！」
+					CASE 1
+						PRINTFORML 「嗯」
+						PRINTFORMDW 幽幻魔眼面无表情地看着你喝茶
+						PRINTFORMW 「莫名觉得没那么享受」
+					CASE 2
+						PRINTFORML 「呃」
+						PRINTFORMDW 幽幻魔眼放下杯子，露出一副怪表情
+						PRINTFORMW 「我不太清楚是什么原因，但这茶味道…有点不对」
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;302,スキンシップ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_302
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_302
+CALL M_KOJO_MESSAGE_COM_K151_302_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_302_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME("YMSkinship")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				PRINTFORMDW 幽幻魔眼在你抚摸她身体时猛地一跳
+				PRINTFORMW 「你-你在干什么？！」
+				GOTO ELDRITCH_SKINSHIP
+			CASE 1
+				PRINTFORMDW 幽幻魔眼茫然地盯着你抚摸她的身体
+				PRINTFORMW 「你在干什么？」
+				$ELDRITCH_SKINSHIP
+				PRINTFORMW 「你说这是亲密接触？」
+				PRINTFORMW 「这样做的目的是什么？」
+				PRINTFORMW 「这能帮助你的生殖能力，通过让你放松吗？那你可以继续了」
+			CASE 2
+				PRINTFORMW 「哦，你想摸我？」
+				PRINTFORMDW 幽幻魔眼对你露出一个调皮的笑
+				PRINTFORMW 「来吧，我都是你的〜」
+		ENDSELECT
+	ELSE
+		SELECTCASE TFLAG:193
+			CASE 1
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							PRINTFORMW 「啊...这感觉真好」
+							PRINTFORMDW 幽幻魔眼在你抚摸她的身体时轻声呻吟
+						CASE 2
+							PRINTFORMW 「哈啊...别停下！」
+							PRINTFORMDW 幽幻魔眼在你触碰她时喘息并轻声呻吟
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+						CASE 2
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					PRINTFORML 「请...不要停...」
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							PRINTFORMDW 幽幻魔眼的呼吸随着你的抚摸变得急促
+						CASE 1
+							PRINTFORMDW 幽幻魔眼在你抚摸她时脸红了
+					ENDSELECT
+				ELSE
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							PRINTFORMW 「这感觉真好…」
+						CASE 1
+							PRINTFORMW 「这是什么感觉？这真是…享受…」
+					ENDSELECT
+					PRINTFORMDW 当你的手在她身上游走时，幽幻魔眼发出轻微的惊喘
+				ENDIF
+
+			CASE 0
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 「啊...这身体已经习惯了你的触碰」
+									PRINTFORMW 「请多触碰我们」
+								CASE 1
+									PRINTFORML 「我们的身体不会太凉吧？」
+									PRINTFORMW 「我们不希望你觉得不舒服」
+								CASE 2
+									PRINTFORML 「嗯...」
+									PRINTFORMDW 当你抚摸她时，幽幻魔眼的手滑到了你的背上
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									CALL HPH_PRINT, @"「你可以把手再往下挪一点，如果你想HPH」", "W"
+								CASE 1
+									PRINTFORMW 「能给我按一下吗〜？」
+									PRINTFORMDW 幽幻魔眼趴下，你为她按摩背部
+									PRINTFORMW 「啊...你真擅长这个...」
+								CASE 2
+									PRINTFORMW 「亲爱的，要不要我也摸摸你〜？」
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「你触碰我们不像是伴侣。你的触碰是……温柔，我们认为这个词是对的」
+							PRINTFORMW 「好奇怪……」
+						CASE 1
+							PRINTFORML 「这是什么……我们内心的温暖？」
+							PRINTFORMW 「请不要停……」
+						CASE 2
+							PRINTFORMDL 幽幻魔眼在你抚摸她时脸红了，她的眼睛瞪大
+							PRINTFORMW 「我-我们的脸怎么了？！」
+						CASE 3
+							PRINTFORMDW 你抚摸她时，幽幻魔眼冰冷僵硬的身体变得温暖
+							PRINTFORMW 「这种感觉……不错……」
+					ENDSELECT
+				ELSE
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「这种感觉……奇怪」
+							PRINTFORMW 「我们不讨厌它，但这种感觉对我们来说是陌生的」
+						CASE 1
+							PRINTFORMW 「当你完成时，我们可以触碰你的身体吗？」
+						CASE 2
+							PRINTFORML 「触碰我们的生殖器，我们会撕裂你的灵魂」
+							PRINTFORMW 「交配是卧室的事」
+						CASE 3
+							PRINTFORMDW 无论你触碰她哪里，幽幻魔眼都没有反应
+							PRINTFORMDW 有趣...
+					ENDSELECT
+				ENDIF
+
+			CASE -1
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							PRINTFORMDW 你的%PRINT_MALE("男", [[ユウゲンマガン]])%朋友的神秘气场对你的影响不像以前那么大了，但你还是无法完全免疫
+							PRINTFORMDW 内心那个让你落荒而逃的小声音大声尖叫，让你无法忽视
+							PRINTFORMDW 你轻轻握了一下幽幻魔眼的手，然后离她远一点，直到恐慌感消失
+						CASE 2
+							PRINTFORMDL 幽幻魔眼皱了皱眉
+							PRINTFORMW 「现在不行好吗？我真的不太有兴趣」
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+						CASE 2
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							PRINTFORMDW 当你抚摸幽幻魔眼时，你的手移动得有点太低
+							PRINTFORML 「啊!」
+							PRINTFORMDW 她惊呼一声，把你的手打掉
+							PRINTFORMW 「停下！」
+						CASE 1
+							PRINTFORMW 「你为什么停下？我们正享受着……」
+							PRINTFORMDW 你不忍心告诉她，她的身体感觉……不对劲
+					ENDSELECT
+				ELSE
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							PRINTFORMW 「不要碰我们」
+							PRINTFORMDW 幽幻魔眼抓住你的手，把它从她身上移开
+						CASE 1
+							PRINTFORMDW 当你抚摸幽幻魔眼那如尸体般的身体时，你不禁打了个寒战
+							PRINTFORMW 「有什么不对劲吗？」
+							PRINTFORMDW 你摇摇头，试图忽略触碰她时那股不对劲的感觉
+					ENDSELECT
+				ENDIF
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;303,謝る
+;TFLAG:193(2=菓子折成功 1=大成功 0=成功 -1=失敗 -2=菓子折失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_303
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_303
+CALL M_KOJO_MESSAGE_COM_K151_303_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_303_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 2
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「你竟能在这个世界，以自己的意志创造出事物？」
+							PRINTFORMW 「真是高贵的尝试。我们接受你的道歉」
+
+						CASE 1
+							PRINTFORMW 「啊？这是……礼物？」
+							PRINTFORMW 「若你将其交给我们分析，我们便原谅你」
+
+						CASE 2
+							PRINTFORML 「蛋糕？给我们的？」
+							PRINTFORMDW 幽幻魔眼舔了舔嘴唇
+							PRINTFORMW 「多有趣呢！你得到原谅了」
+
+						CASE 3
+							IF FIRSTTIME("EldritchCakeApology")
+								PRINTFORML 「一种有机物质的复合体……」
+								PRINTFORMDW 幽幻魔眼眯起眼睛，盯着蛋糕
+								PRINTFORMW 「这样做的目的是什么？」
+								PRINTFORMW 「……是礼物？为了表示你认识到自己的罪行，并渴望得到赦免？」
+								PRINTFORMW 「啊，我们明白了。若你允许我们进一步检查这个，我们就原谅你」
+							ELSE
+								PRINTFORML 「又是谢罪的供品？」
+								PRINTFORMDW 幽幻魔眼从你手中接过蛋糕
+								PRINTFORMW 「你得到原谅了。现在，若你不介意，我们必须进一步检查这个构造……」
+							ENDIF
+
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「哇哦，蛋糕？」
+							PRINTFORMW 「噢……如果你道歉时那么用心，我就没法一直生你的气了」
+
+						CASE 1
+							PRINTFORML 「好吧，我原谅你……但你得帮我一起吃这个！」
+							PRINTFORMW 「我不想变胖」
+
+						CASE 2
+							PRINTFORML 「哇哦……你做了整个蛋糕？给我的？」
+							PRINTFORMDW 幽幻魔眼握住你的手
+							PRINTFORMW 「没多少人会为了向别人道歉而做到这种地步」
+							PRINTFORMW 「在那之后我怎能还生你的气呢？」
+
+					ENDSELECT
+			ENDSELECT
+
+		CASE 1
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「你真能说会道……」
+							PRINTFORMW 「好吧，你得到原谅了」
+
+						CASE 1
+							PRINTFORMW 「你乞求宽恕的方式真不错。你确定你不想加入我们的教派吗？」
+							PRINTFORMW 「真遗憾。但无论如何我们都会原谅你」
+
+						CASE 2
+							PRINTFORML 「...」
+							PRINTFORMDW 幽幻魔眼同情地看着你
+							PRINTFORML 「我们的过去也充满了罪恶……」
+							PRINTFORMW 「你得到原谅了」
+
+						CASE 3
+							PRINTFORMW 「我们并未觉得你的罪行有多冒犯」
+							PRINTFORMW 「在永恒的面前，它们又有何意义？」
+							PRINTFORMW 「不过，我们还是很感激你如此谦卑」
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「哎呀哎呀，你不用这么卑微！我又不是在角色中！」
+							PRINTFORMW 「我原谅你，我原谅你！」
+
+						CASE 1
+							PRINTFORML 「呃，我对你撒了那么久的谎……」
+							PRINTFORMW 「至少我应该对你宽容一点」
+
+						CASE 2
+							PRINTFORML 「不……我不该因为这种事记仇」
+							PRINTFORML 「除非我想变成舞一样」
+							PRINTFORMDW 幽幻魔眼打了个寒颤
+
+					ENDSELECT
+			ENDSELECT
+
+		CASE 0
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「我们原谅，但不遗忘」
+
+						CASE 1
+							PRINTFORMW 「我们会给你第二次机会……但仅此一次」
+
+						CASE 2
+							PRINTFORMW 「我们猜想物质生物总会犯错」
+							PRINTFORMW 「但不要再犯了！」
+
+						CASE 3
+							PRINTFORMW 「嗯？我们都忘记这件事了。那对我们来说没什么关系」
+
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「好吧，但别再这样做……」
+
+						CASE 1
+							PRINTFORML 「我想这事没那么严重」
+							PRINTFORMW 「但你最好别再这样了！」
+
+						CASE 2
+							PRINTFORML 「哎，你太可爱了，我没法一直生你的气」
+							PRINTFORMDW 幽幻魔眼咯咯地笑了
+
+					ENDSELECT
+			ENDSELECT
+
+		CASE -1
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「我们在你的话里没有感受到一丝诚意。再试一次」
+
+						CASE 1
+							PRINTFORMW 「半心半意的道歉比不道歉更糟。走开」
+
+						CASE 2
+							PRINTFORMW 「你真的以为我们会接受这样蹩脚的道歉吗？」
+
+						CASE 3
+							PRINTFORML 「你真的认为我们会原谅像你这样严重的侮辱吗？！」
+							PRINTFORMW 幽幻魔眼用她的七只眼睛怒视着你
+
+
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「我觉得你并不是真的感到抱歉」
+
+						CASE 1
+							PRINTFORMDW 幽幻魔眼眯起了眼睛
+							PRINTFORMW 「如果你想让我原谅你所做的事情，你得更认真地道歉」
+
+						CASE 2
+							PRINTFORMDW 幽幻魔眼抱起胳膊，默默地背对着你
+
+					ENDSELECT
+			ENDSELECT
+
+		CASE -2
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「我们不吃东西。我们对这种蔗糖混合物没有兴趣」
+
+						CASE 1
+							PRINTFORMW 「我们是不会被贿赂的。在我们用闪电打击你之前，消失在我们视线里」
+
+						CASE 2
+							PRINTFORMDL 幽幻魔眼似乎有些心动……但随即她皱起了眉头
+							PRINTFORMW 「我们不要蛋糕。我们要的是道歉」
+
+						CASE 3
+							PRINTFORMW 「你为什么认为我们要食物，难道我们有消化系统吗？」
+							PRINTFORMW 「我们只要一个真诚的道歉。这有那么难吗？」
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「你以为我是贪吃鬼吗？！」
+
+						CASE 1
+							PRINTFORMW 「经过你做的那些事，我至少要十二个蛋糕才行」
+
+						CASE 2
+							PRINTFORML 「哦，真好。居然在我节食的时候送蛋糕」
+							PRINTFORMW 「你是在故意惹我生气吗？！」
+					ENDSELECT
+			ENDSELECT
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;305,膝枕してもらう
+;TFLAG:193(-5=MASTERがTARGETよりも巨体の場合(TALENT:MASTER:体型 > TALENT:体型 + 2) 1=大成功 0=成功 -1=失敗)(-5以外は地の文分岐無し)
+;ABL:親密(6以上=顔をのぞき込みながら頭を撫でてくれる 3以上=ただ頭を撫でてくれる 2以下=縮こまっている)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_305
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_305
+CALL M_KOJO_MESSAGE_COM_K151_305_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_305_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME("YMGetLapPillow")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0,1
+				PRINTFORMDW 你想躺在我们的腿上？
+				PRINTFORMDW 为了什么目的？
+				PRINTFORMDW ……你说是亲密和感情的象征？
+				PRINTFORMW 「这会对交配过程有帮助吗？」
+				PRINTFORMW 「好吧，那就躺在我的腿上，把它们锻炼得更强壮，这样我们才能与你更持久地交配」
+			CASE 2
+		ENDSELECT
+	ELSE
+		IF TALENT:[[ユウゲンマガン]]:恋人
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「如果你想睡在我们的腿上，你可以」
+							PRINTFORMW 「我们会确保你不受伤害」
+							PRINTFORMDW 幽幻魔眼的表情变得严肃
+
+						CASE 1
+							PRINTFORMDW 我们身体的温度如何？不会太冷吧？
+							PRINTFORML 「...那很好」
+							PRINTFORMDW 幽幻魔眼露出了她那奇特的倒转微笑
+
+						CASE 2
+							PRINTFORML 「如果你睡着了……你会醒过来吧？」
+							PRINTFORMW 「我们很担心你。尤其是因为我们对你们的身体构造了解不多」
+							PRINTFORMDW 你安慰她说你会没事的
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「你舒服吗？」
+							PRINTFORMDW 你困倦地点点头
+							PRINTFORML 「那就好」
+							PRINTFORMDW 幽幻魔眼揉了揉你的头发
+
+						CASE 1
+							PRINTFORMW （我……下面没有怪味吧？）
+							PRINTFORMW （真希望我的幻象能改变我的气味……）
+
+						CASE 2
+							PRINTFORML 「你要是睡着了，最好别流口水在我身上」
+							PRINTFORMDW 你要是睡着了，最好别流口水在我身上
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「这感觉……意外的愉悦」
+				CASE 1
+					PRINTFORMDW 幽幻魔眼哼唱着一首你从未听过语言的摇篮曲
+					SELECTCASE K151_YM_NATURE()
+						CASE 0
+							IF ABL:MASTER:教養 >= 3
+								PRINTFORMDW 听起来像是……不完整的拉丁语？也许是一种方言
+							ELSE
+								PRINTFORMDW 这语言听起来有点熟悉，不过……
+							ENDIF
+						CASE 1
+							PRINTFORMDW 大多数声音你从来没听过……
+					ENDSELECT
+				CASE 2
+					PRINTFORMDW 幽幻魔眼的脸红得发烫，她轻抚着你的头发
+				CASE 3
+					PRINTFORMDW 幽幻魔眼把手放在腿上，温暖从中流过
+					PRINTFORMDW 一个热量法术。我们不希望你感到不适
+			ENDSELECT
+		ELSE
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORML 「啊？」
+					PRINTFORMDW 幽幻魔眼在轻抚你的头发时显得有些困惑
+					PRINTFORMW 「这真是让人烦恼。我的身体好像自己动起来了」
+					PRINTFORMW 「……你不介意？那好吧，我们继续」
+				CASE 1
+					PRINTFORML 「物质生物需要休息，不是吗？」
+					PRINTFORMW 「如果你乐意，可以用我们的腿」
+				CASE 2
+					PRINTFORMDW 当你躺在她腿上时，幽幻魔眼显得有些不安
+				CASE 3
+					PRINTFORMW 「那就睡吧，梦见世界的终结」
+			ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;306,お腹を撫でる
+;TFLAG:193(1=ABL:親密6以上かつ妊娠時 0=成功 -1=ABL:親密5以下)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_306
+CALL M_KOJO_MESSAGE_COM_K151_306_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_306_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSEIF FIRSTTIME("YMBellyCaress")
+		IF TALENT:妊娠
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					PRINTFORMW 「你能感觉到吗，%CALLNAME:MASTER%？我们的小星之子」
+					PRINTFORMDW 幽幻魔眼露出了她那倒过来的微笑
+					PRINTFORMW 「啊……小家伙，变得强壮吧，这样你才能抵挡外来的侵袭……」
+				CASE 2
+					PRINTFORMDW 当你抚摸她怀孕的肚子时，幽幻魔眼咯咯地笑起来
+					PRINTFORMW 「哈哈哈，好痒……！」
+					PRINTFORMDW 她把手放在你的手上，按住不动
+					PRINTFORMDW 过了一会儿，你感觉到了一次踢动
+					PRINTFORMDW 幽幻魔眼对你笑容满面
+					PRINTFORMW 「我们的孩子真有活力，对吧？」
+					PRINTFORMDW 然后她皱起了眉头
+					PRINTFORMW 「说实话，我有点担心当妈妈」
+					PRINTFORMW 「我知道你会帮我，我的父母，小萨和神绮大人也会……」
+					PRINTFORMW 「但我就是……做什么都不好，如果我当不好妈妈怎么办？」
+					PRINTFORMDW 这不是真的
+					PRINTFORMDW 你紧握她的手
+					PRINTFORMDW 她在幻术、召唤触手、表演方面都很出色……
+					PRINTFORMDW 你亲了幽幻魔眼的脸颊
+					PRINTFORMDW 而且她是个出色的%PRINT_MALE("男", [[ユウゲンマガン]])%朋友
+					PRINTFORMDW 幽幻魔眼笑了
+					PRINTFORMW 「而你真擅长恭维我〜」
+					PRINTFORMDW 她给了你一个拥抱
+					PRINTFORMW 「谢谢你逗我开心，%CALLNAME:MASTER%。你总是知道该说些什么」
+			ENDSELECT
+		ELSE
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					PRINTFORMW 「你为什么抚摸我们的腹部？」
+					PRINTFORMW 「我们的生殖器在下面」
+					PRINTFORMW 「……你对这个身体的特性感到好奇？」
+					PRINTFORMW 「如果你想知道，你可以直接问」
+					PRINTFORMW 「……你想发现我们尚不知晓的未曾设计的自然属性？」
+					PRINTFORMW 「你真是不轻易放弃啊，对吧？」
+					PRINTFORMDW 幽幻魔眼发出了她那狗吠般的笑声
+					PRINTFORMW 「好吧，你可以继续。我们认为这样无妨」
+				CASE 2
+					PRINTFORMW 「哎，哎，你在干什么？」
+					PRINTFORMDW 幽幻魔眼咯咯地笑了
+					PRINTFORMW 「停下来，我怕痒……哈哈，你这个坏蛋！」
+					PRINTFORMDW 你忍不住。你尽情地挠你的%PRINT_MALE("男", [[ユウゲンマガン]])%朋友
+					PRINTFORMDW 然后她化为一团烟雾消失了
+					PRINTFORMW 「现在轮到我了〜」
+					PRINTFORMDW 你转过身，但幽幻魔眼不在那儿。她用魔法把自己变得隐形
+					PRINTFORMDW 然后她从后面抓住你，开始反过来挠你
+					PRINTFORMDW 你在挣扎中咯咯地笑着，努力挣脱
+					PRINTFORMDW 但当你终于挣脱时，她从侧面抓住你，再次开始挠你
+					PRINTFORMDW 直到你倒在地上，笑得直不起腰，她才终于放过你……
+			ENDSELECT
+		ENDIF
+	ELSEIF TALENT:[[ユウゲンマガン]]:妊娠
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORMW （真不敢相信避孕药剂竟然失效了... 对不起，小家伙）
+					CASE 1
+						PRINTFORMW （我应该去向神绮大人请教一下如何抚养孩子...）
+					CASE 2
+						IF CFLAG:無自覚妊娠
+							PRINTFORMW （我甚至不知道自己是怎么怀孕的... 我该怎么办啊？）
+						ELSE
+							PRINTFORMW 「你能感觉到吗，小家伙？你\@ IS_MALE(MASTER) ? 爸爸 # 父亲\@的手...」
+						ENDIF
+				ENDSELECT
+			CASE 1
+				SELECTCASE RAND:3
+					CASE 0
+						IF CFLAG:無自覚妊娠
+							PRINTFORMDW 幽幻魔眼皱了皱眉
+							PRINTFORMW 「真令人烦恼，你竟然不是这孩子的\@ IS_MALE(MASTER) ? 爸爸 # 父亲\@...」
+						ELSE
+							PRINTFORML 「感谢你帮助我们怀上了这个孩子」
+							PRINTFORMW 「他会继承你的力量的」
+						ENDIF
+					CASE 1
+						PRINTFORML 「你希望再帮我们怀一个吗？」
+						PRINTFORMW 「我们希望这具身体能生下尽可能多的孩子」
+					CASE 2
+						IF EXP:出産経験 >= 10
+							PRINTFORML 「这具身体已经生下多少个孩子了？」
+							PRINTFORMW 「我已经习惯了怀孕的感觉，现在没有孩子在身边反而觉得不正常了...」
+						ELSE
+							PRINTFORMW 「很快了，小家伙... 我们会给你生个弟弟或妹妹的」
+						ENDIF
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「我还是很紧张，因为要当妈妈了...」
+						PRINTFORMW 「但我知道你会一直在我身边陪着我的」
+					CASE 1
+						IF CFLAG:無自覚妊娠
+							PRINTFORML 「有一点可以肯定，我不会像我父母那样犯同样的错误」
+							PRINTFORMW 「我会给我的孩子起一个正常的名字！」
+						ELSE
+							PRINTFORML 「你会给我们的孩子起一个正常的名字吧？」
+							PRINTFORMDW 幽幻魔眼紧张地看着你
+						ENDIF
+					CASE 2
+						PRINTFORMDW 你感觉到掌心被轻轻踢了一下
+						PRINTFORMW 「嘿嘿嘿，这小家伙精力真旺盛啊！」
+						PRINTFORMW 「也许太旺盛了。自从怀孕后，我就一直睡不好觉...」
+				ENDSELECT
+		ENDSELECT
+	ELSE
+
+		IF TALENT:[[ユウゲンマガン]]:恋人
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「...啊!」
+							PRINTFORMDW 当你抚摸着幽幻魔眼的肚子时，她喘息着
+							PRINTFORML 「那个地方...你一碰就痒痒的」
+							PRINTFORMW 「再来一次！」
+						CASE 1
+							PRINTFORML 「你是在检查我们有没有吃饱吗？」
+							PRINTFORMDW 幽幻魔眼笑了
+							PRINTFORMW 「我们不需要吃东西...但很感谢你的关心」
+						CASE 2
+							PRINTFORMW 「你是在说我们胖吗？我们不胖，我们只是骨架大！」
+							PRINTFORMW 「..那是个玩笑。你喜欢吗？」
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							CALL PRINT_STRL, @"「我发誓，如果你敢@ITALIC@想@占我便宜...」"
+							PRINTFORMDW 尽管她这么说，你要是睡着了，最好别流口水在我身上
+						CASE 1
+							PRINTFORMW 「你可以摸...但如果你开始逗我，我会用触手逗你回去的〜」
+						CASE 2
+							PRINTFORML 「我知道，我知道...我需要多运动」
+							PRINTFORMW 「我明天就去健身房，好吗？保证」
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「我们仍然不明白你为什么要这么做」
+				CASE 1
+					PRINTFORML 「你是在找我们体内的孩子吗？你找不到的」
+					PRINTFORMW 「你得先放一个进去才行〜」
+				CASE 2
+					PRINTFORML 「如果你想触摸我们，为什么不换个地方呢？更...亲密的地方？」
+					PRINTFORMW 「我们不介意哦〜」
+				CASE 3
+					PRINTFORML 「我们应该给自己更明显的腹肌吗，还是现在的身体就可以接受？」
+					PRINTFORMW 「我们承认，我们并不完全理解人类的审美标准...」
+			ENDSELECT
+		ELSE
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「你在干什么？我们不理解」
+				CASE 1
+					PRINTFORMW 「你的手好软...」
+				CASE 2
+					PRINTFORMW 「啊哈哈哈...停下！这个身体怕痒！」
+					PRINTFORMW 「要是我们能把它的神经连接得更精确点就好了...」
+				CASE 3
+					PRINTFORMDW 幽幻魔眼的腹部感觉...几乎是空的
+					PRINTFORMW 「我们除了子宫以外，没有在腹部创建任何器官。这是个错误吗？」
+			ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;307,頬をつまむ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+	;以下は先に書いた条件が優先される
+	;TALENT:恋慕(受け入れつつ笑顔でやり返す
+	;ABL:親密(6以上=おずおずとやり返す
+	;ABL:従順(5以上=されるがまま
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_307
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_307
+CALL M_KOJO_MESSAGE_COM_K151_307_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_307_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				PRINTFORMW 「嗷……别这样……」
+			CASE 1
+				PRINTFORMW 「БЁwx@ЁibЁ...」
+			CASE 2
+				PRINTFORMW 「别这么粗暴……」
+		ENDSELECT
+	;通常
+	ELSEIF FIRSTTIME("YMPinchCheek")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				PRINTFORMDW 你调皮地扯了扯幽幻魔眼的脸颊。她猛地别过头去，瞪了你一眼
+				PRINTFORMW 「嗷！你干嘛呢？！!」
+				PRINTFORMW 「……你只是想跟我玩吗？换个方式吧！」
+				PRINTFORMW 「再来一次，我就用地狱的闪电劈你！」
+			CASE 1
+				PRINTFORMDW 你调皮地扯了扯幽幻魔眼的脸颊。她猛地别过头去，瞪了你一眼
+				PRINTFORMW 「嗯？你是想检查我们的痛觉接收器吗？」
+				PRINTFORMW 「我们的工作可不马虎。它们功能完美」
+			CASE 2
+				PRINTFORMDW 你调皮地扯了扯幽幻魔眼的脸颊。她猛地别过头去，瞪了你一眼
+				PRINTFORMW 「嗷！你干嘛呢？！!」
+				PRINTFORMDW 她一边揉着脸颊，一边对你怒目而视
+				PRINTFORMW 「下次你抓我的时候，轻点好吗？我是魔法使！我们很娇弱的！」
+		ENDSELECT
+	ELSE
+		IF TALENT:[[ユウゲンマガン]]:恋人
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「这也太幼稚了……」
+							PRINTFORMDW 幽幻魔眼笑着别过头去
+						CASE 1
+							PRINTFORML 「你再不停下，我也要捏你的脸颊了」
+							PRINTFORMW 「而且我会像你一样“温柔”……」
+							PRINTFORMDW 幽幻魔眼轻笑了一声
+						CASE 2
+							PRINTFORML 「玩弄伟大者的身体……你真是毫无羞耻之心！」
+							CALL HPH_PRINT, @"「但你的无耻却有一种……难以言喻的魅力HPH」", "W"
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「天哪，你就像个孩子……」
+							PRINTFORMDW 幽幻魔眼咯咯地笑了
+						CASE 1
+							PRINTFORML 「好了，现在轮到我了！」
+							PRINTFORMDW 你为了逃命而飞奔，幽幻魔眼则追着你跑，试图抓住你的脸颊……
+						CASE 2
+							PRINTFORML 「嗷！我可怜的脸颊！」
+							PRINTFORMDW 幽幻魔眼假装痛苦地喘息着
+							PRINTFORMW 「你这粗鲁的家伙！谁来亲亲它们，让它们好受点！」
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 
+						CASE 1
+							PRINTFORML 
+						CASE 2
+							PRINTFORML 
+					ENDSELECT
+			ENDSELECT
+		ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORML 「这是……表示亲密的行为吗？」
+					PRINTFORMW 「我们以为你们是用嘴唇贴在别人的脸颊上的……」
+				CASE 1
+					PRINTFORML 「现在轮到我们了」
+					PRINTFORMDW 幽幻魔眼笑着，轻轻拽了拽你的脸颊
+				CASE 2
+					PRINTFORMW 「这很疼，你知道吗……」
+					PRINTFORMDW 幽幻魔眼撅着嘴，揉着她酸疼的脸颊
+				CASE 3
+					PRINTFORMW 「嗷，痛觉似乎正常运作中……」
+			ENDSELECT
+		ELSEIF ABL:親密 > 5
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「啊，你的脸颊又软又嫩！简直想让人吃掉……呵呵呵……」
+				CASE 1
+					PRINTFORMW 「这还挺好玩的！现在我们明白你为什么要这样对我们了」
+				CASE 2
+					PRINTFORMW 「我们相信你们有句话：'以其人之道还治其人之身'」
+					PRINTFORMDW 幽幻魔眼狡黠地笑着，轻轻拽你的脸颊
+				CASE 3
+					PRINTFORMW 「如果我们拉得太用力了，你可以喊，我们会停下的」
+					PRINTFORMW 「我们对人类的身体结构还不太熟悉，不想弄伤你」
+			ENDSELECT
+		ELSE
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「我们看不出这样做的目的……」
+				CASE 1
+					PRINTFORMW 「别碰我们的脸颊，不然我们也会对你的脸颊下手」
+				CASE 2
+					PRINTFORMW 「嘿，停下！很疼的！」
+				CASE 3
+					PRINTFORML 「我们的痛觉接收器工作得很好，谢谢」
+					PRINTFORMW 「要不要我们也测试一下你的？」
+			ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;308,頬をつつく
+;添い寝中or睡眠中限定
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_308
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_308
+CALL M_KOJO_MESSAGE_COM_K151_308_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_308_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;睡眠中
+	IF CFLAG:睡眠
+		SELECTCASE TFLAG:193
+			CASE 1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「嗯...」
+					CASE 1
+						PRINTFORMW 「哈啊……」
+					CASE 2
+						PRINTFORMW 「咦嘿嘿……痒痒的……」
+				ENDSELECT
+
+			CASE 0
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「有人在戳我……？」
+					CASE 1
+						PRINTFORMW 「фfft╚@tqsf@b@cwbЁ...」
+					CASE 2
+						PRINTFORMW 「什么东西……？」
+				ENDSELECT
+
+			CASE -1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「停下……」
+					CASE 1
+						PRINTFORMDW 幽幻魔眼嘟囔着什么，一道炽热的痛楚穿过你的手指
+						SOURCE:MASTER:苦痛 += 200
+					CASE 2
+						PRINTFORMW 「让我一个人待着，妈妈……」
+				ENDSELECT
+		ENDSELECT
+	;通常
+	ELSE
+		SELECTCASE TFLAG:193
+			CASE 1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「让我们看看你的脸颊有多坚韧」
+					CASE 1
+						PRINTFORML 「我们的身体是精心制作的，可以轻松承受无数次的脸颊戳戳」
+						PRINTFORMW 「你也能这样说吗〜？」
+					CASE 2
+						PRINTFORML 「接招吧！我的秘技：‘指符「千次戳戳」’！」
+						PRINTFORMDW 幽幻魔眼咯咯地笑着，还戳了回来
+				ENDSELECT
+
+			CASE 0
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORMW 「嗯？这可不是接吻的方式……除非这个世界的规则变了」
+								CASE 1
+									PRINTFORMW 「傻家伙，应该这样做……」
+									PRINTFORMDW 幽幻魔眼温柔地抚摸着你的脸颊
+								CASE 2
+									PRINTFORMW 「如果我们知道你那么喜欢戳我们的脸颊，我们会做得更柔软一点……」
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORMDW 幽幻魔眼用力地戳了你的脸颊
+									PRINTFORMDW 你又用力戳了她的脸颊一次
+									PRINTFORMDW 你们互相对视着笑，然后事态升级，几乎变成了互相打脸
+								CASE 1
+									PRINTFORMDW 突然间，你的手指消失了
+									PRINTFORMW 「哈！不知道手指在哪就没法戳我的脸颊——哎哟！」
+									PRINTFORMDW 即使你的手指隐形了，也还能戳到她的脸颊
+								CASE 2
+									PRINTFORMDW 幽幻魔眼打了个响指。空气中打开了一个传送门，伸出一根触手戳了你的脸颊
+									CALL HPH_PRINT, @"「现在我们扯平了HPH」", "W"
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「我们认为应该是亲吻脸颊而不是戳它。你在干什么？」
+						CASE 1
+							PRINTFORMDL 每次你戳幽幻魔眼的脸，她的皮肤都会变红
+							PRINTFORMDW 而且不仅仅是你戳的地方……
+						CASE 2
+							PRINTFORMW 「你其实应该亲我们，而不是戳我们的脸颊」
+							PRINTFORMW 「呃，我是说——」
+							PRINTFORMDW 幽幻魔眼脸红了，翻了个身
+						CASE 3
+							PRINTFORMW 「我们太累了，不想交配」
+					ENDSELECT
+				ELSE
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「嗯？你在干什么？」
+						CASE 1
+							PRINTFORMW 「你为什么要戳我们的脸颊？它很敏感」
+						CASE 2
+							PRINTFORMW 「我们在尝试睡觉，请停下」
+						CASE 3
+							PRINTFORMDL 幽幻魔眼用力还戳了你的脸颊
+							SOURCE:MASTER:苦痛 += 100
+							PRINTFORMDW 你痛得大叫，捂住了疼痛的脸颊
+							PRINTFORMW 「我们很抱歉，你没事吧？」
+							PRINTFORMDW 她听起来不太真诚……
+					ENDSELECT
+				ENDIF
+
+
+			CASE -1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「再碰我们一下，我们就把你的手指剥到见骨」
+					CASE 1
+						PRINTFORMW 「请不要这样做」
+					CASE 2
+						PRINTFORMW 「嘿，这不好笑」
+						PRINTFORMDW 幽幻魔眼背对着你生闷气
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;309,頭を撫でる
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:親密(6以上=通常成功時分岐
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_309
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗(注、抱きつきモード中は自動成功)、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_309
+CALL M_KOJO_MESSAGE_COM_K151_309_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_309_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+		PRINTFORMDW 幽幻魔眼在睡梦中嘟囔着什么并微微一笑
+	;通常
+	ELSEIF FIRSTTIME("YMHeadpat")
+	ELSE
+		SELECTCASE TFLAG:193
+			CASE 1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「多奇怪……」
+						PRINTFORMDW 幽幻魔眼皱了皱眉
+						PRINTFORMW 「为什么我们觉得那么享受呢？」
+						PRINTFORMW 「再做一次吧。也许我们就会知道了」
+					CASE 1
+						PRINTFORMW 「真奇怪，为什么这个举动让我们对你充满了这么多爱意呢？」
+						PRINTFORMDW 幽幻魔眼紧紧抱住你
+						PRINTFORMW 「请，亲爱的……不要停下……」
+					CASE 2
+						PRINTFORMW 「咦嘿嘿……」
+						PRINTFORMDW 幽幻魔眼脸红了，开心地对你微笑
+				ENDSELECT
+
+			CASE 0
+				IF TALENT:[[ユウゲンマガン]]:恋人
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORMW 「这动作真奇怪……」
+									PRINTFORMW 「但也不算讨厌」
+								CASE 1
+									PRINTFORMDW 幽幻魔眼也笨拙地伸手拍了拍你的头
+								CASE 2
+									PRINTFORMDW 当你抚摸幽幻魔眼的头发时，你注意到发根似乎汇聚成一个螺旋
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORMW 「别忘了也拍拍我所有的邪眼哦！」
+									PRINTFORMDW 幽幻魔眼咯咯地笑了
+								CASE 1
+									PRINTFORMW 「不要只拍哦！也要抚摸我的头发……」
+									PRINTFORMDW 幽幻魔眼撅了撅嘴
+								CASE 2
+									PRINTFORMDW 幽幻魔眼闭上眼睛并发出愉悦的轻叹
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:セフレ || TALENT:[[ユウゲンマガン]]:愛欲
+					SELECTCASE K151_YM_NATURE()
+						CASE 1
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+						CASE 2
+							SELECTCASE RAND:3
+								CASE 0
+									PRINTFORML 
+								CASE 1
+									PRINTFORML 
+								CASE 2
+									PRINTFORML 
+							ENDSELECT
+					ENDSELECT
+				ELSEIF TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:恋慕
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「我们也不知道为何，但你测量头骨的技术让我们感到…愉悦」
+						CASE 1
+							PRINTFORMDW 当你轻抚幽幻魔眼的头时，她以颠倒的微笑对你笑了笑
+						CASE 2
+							PRINTFORMW 「我们的头发不油腻吧？」
+							PRINTFORMW 「我们醒来时可是费心清洁过的」
+						CASE 3
+							PRINTFORMW 「你的手真是…温柔。然而，即便是在你测量我们的头骨时，我们也能感受到你的力量」
+							PRINTFORMW 「你真是个矛盾的存在…」
+					ENDSELECT
+				ELSE
+					SELECTCASE IFRAND("0TO2", 1, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "4", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「你在干什么？难道想量量我们的头骨？」
+							PRINTFORMW 「我们特意让它与你们世界的平均居民相匹配哦」
+						CASE 1
+							PRINTFORMW 「你在干什么？」
+							PRINTFORMW 「哦，这是表示亲昵的举动吗？」
+							PRINTFORMW 「你明白这救不了你的，对吧？」
+							PRINTFORMW 「我们无法阻止结局，只能延缓它的到来」
+						CASE 2
+							PRINTFORML 「你是在找我们的生殖器官吗？」
+							PRINTFORMW 「它们可不在那儿」
+						CASE 3
+							PRINTFORMDW 幽幻魔眼的头发摸起来奇怪地油腻
+							PRINTFORMW 「我，这是因为沾了体液才湿的，明白了吗？！」
+						CASE 4
+							PRINTFORML 「如果你想捏碎这个身体的头骨，那就得再用点力」
+							PRINTFORMW 「就算你成功了也无关紧要。我们会再创造一个的」
+					ENDSELECT
+				ENDIF
+
+			CASE -1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0
+						PRINTFORMW 「我们可没允许你触碰这个身体」
+						PRINTFORMW 「趁我们还没伤害你，快停手吧」
+					CASE 1
+						PRINTFORMW 「我们花费了无数岁月来塑造这个身体的头骨」
+						IF TALENT:[[ユウゲンマガン]]:恋人
+							PRINTFORMW 「请别再碰它了。你会弄坏它的」
+						ELSE
+							PRINTFORMW 「别弄坏了，否则我们会把你活剥了的」
+						ENDIF
+					CASE 2
+						PRINTFORMW 「嗷呜！」
+						PRINTFORMDW 幽幻魔眼揉了揉头，露出了痛苦的表情
+						PRINTFORMDW 看来你用的力气稍微大了点…
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;331,お茶を淹れる（薬入り）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_331
+;成否判定
+;TFLAG:192(-2=強制失敗(注、非コマンド終了）、-1＝強制失敗、0=COM依存、1=強制成功or大成功(注、睡眠薬アイスティーは眠気を感じていると飲まない)
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_331
+CALL M_KOJO_MESSAGE_COM_K151_331_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_331_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;332,お酒をふるまう
+;TFLAG:193(0=下戸飲み成功 -1=下戸飲み失敗 -2=下戸飲み大失敗 -5=下戸飲みあきらめ)
+;COM_STR(酒の名称)
+;ALCOHOL_TASTE(TFLAG:194)(15以上=気に入る 9以下=口に合わない)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_332
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存
+;TFLAG:口上特殊補正 (ここに数値を入れるとALCOHOL_TASTEを増減させられる)
+TFLAG:192 =0
+TFLAG:口上特殊補正 = 0
+
+@M_KOJO_MESSAGE_COM_K151_332
+CALL M_KOJO_MESSAGE_COM_K151_332_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_332_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+	IF FIRSTTIME("YMServeAlcohol")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				PRINTFORMW 「我们还是不要喝酒精饮料了」
+				PRINTFORMW 「我们不知道这具身体会对它有什么反应……」
+				PRINTFORMW 「如果我们喝醉了，可能会泄露出一些会让你发疯的秘密……」
+				PRINTFORMDW 幽幻魔眼犹豫了一会儿
+				PRINTFORMW 「不过，我们想稍微尝一点应该没关系吧……」
+
+			CASE 1
+				PRINTFORMDW 幽幻魔眼接过杯子，好奇地打量着
+				PRINTFORMW 「这是什么东西？」
+				PRINTFORMW 「你说这是酒精饮料？」
+				PRINTFORMW 「我们不确定这具身体能否代谢这种东西……」
+				PRINTFORMW 「但让我们试试吧」
+
+			CASE 2
+				PRINTFORMDW 幽幻魔眼迫不及待地从你手中接过杯子
+				PRINTFORMW 「自从魔法学校毕业后我就没再喝过酒了。当我开始全身心投入……那神秘的魔法研究时，我就戒酒了」
+				PRINTFORMW 「我太担心自己会喝醉，然后把所有秘密都泄露出去」
+				PRINTFORMDW 她笑了起来
+				PRINTFORMW 「不过现在我不用再担心这个问题了，对吧？」
+
+		ENDSELECT
+	ELSEIF IS_DRUNK([[ユウゲンマガン]])
+		IF ALCOHOL_TASTE(TFLAG:194) >= 15
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 2
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 2)
+						CASE 0
+							PRINTFORMW 「这...太棒了！」
+
+						CASE 1
+							PRINTFORMW 「感觉就像...电流顺着喉咙滑下去了...」
+
+						CASE 2
+							PRINTFORML 「嘿，嘿...」
+							PRINTFORMW 「再给我来一杯，我告诉你一个秘密...」
+							PRINTFORMDW 你把杯子递给幽幻魔眼，她长长地喝了一口
+							PRINTFORMW 「你看，我...呃...」
+							PRINTFORMDW 幽幻魔眼皱了皱眉
+							PRINTFORMW 「忘了。也许再喝一杯能让我想起来...」
+
+						CASE 3
+							PRINTFORML 「我爱这个！」
+							CALL HPH_PRINT, @"「但没你可爱HPH」", "W"
+					ENDSELECT
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「哦... *打嗝*」
+							PRINTFORMW 「美味！」
+
+						CASE 1
+							PRINTFORML 「и}u@╚w@e·╢vs@и@dbv@wvt╦@ubsf@fcqv@бtbds@Бw╢t╚@·fgf·fvdf╚...」
+							PRINTFORMDW 幽幻魔眼喝下你的酒时含糊不清地嘟囔些什么
+
+						CASE 2
+							PRINTFORML 「再给我们...一杯」
+							PRINTFORMW 「我们停不下来...」
+
+					ENDSELECT
+			ENDSELECT
+		ELSEIF ALCOHOL_TASTE(TFLAG:194) < 10
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 2
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 2)
+						CASE 0
+							PRINTFORMW 「呃...就算我再醉也喝不下这种东西……」
+
+						CASE 1
+							PRINTFORML 「你干嘛给我上这种鬼东西？！」
+							PRINTFORMW 「没好酒了吗？」
+
+						CASE 2
+							PRINTFORML 「烂酒必须销毁！」
+							PRINTFORMDW 幽幻魔眼集中注意力，但什么也没发生
+							PRINTFORMW 「可恶……」
+
+						CASE 3
+							PRINTFORML 「亲爱的，我爱你，但你得找点好酒」
+							PRINTFORMW 「这些东西太差劲了！」
+					ENDSELECT
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「啊！你是想让我们戒酒吗？！」
+							PRINTFORMW 「没人能命令我们！再给我们来点！」
+
+						CASE 1
+							PRINTFORML 「如果你再给我们这种劣质酒……呃……」
+							PRINTFORMDW 幽幻魔眼皱眉并揉了揉额头
+							PRINTFORMW 「对你做点事。很糟糕的事」
+
+						CASE 2
+							PRINTFORMDW 幽幻魔眼把瓶子放在地上，站起来，伸出手掌朝上
+							PRINTFORMDW 电流聚集在她手上，空气中充满臭氧味，你的手臂汗毛竖起
+							PRINTFORMDW 一秒后，一个闪电从她手掌中射出，击中了瓶子旁边的地面
+							PRINTFORMDW 幽幻魔眼皱眉，开始召唤另一个闪电
+							PRINTFORMDW 你赶紧把瓶子处理掉，以免她误伤到你
+					ENDSELECT
+			ENDSELECT
+		ELSE
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 2
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 2)
+						CASE 0
+							PRINTFORML 「嗯...」
+							PRINTFORMDW 幽幻魔眼喝了一口，皱起眉头
+							PRINTFORMW 「不是特别好，也不算坏」
+
+						CASE 1
+							PRINTFORML 「拿着，给你」
+							PRINTFORMDW 幽幻魔眼把空瓶子递给她召唤出的一只触手，然后松手
+							PRINTFORMDW 你赶紧接住，以免它摔碎在地
+
+						CASE 2
+							PRINTFORMW 「也许他们会更喜欢……」
+							PRINTFORMDW 幽幻魔眼在醉醺醺中摸索着，试图给她的邪眼喂点酒
+
+						CASE 3
+							PRINTFORMW 「亲爱的，你有没有不那么烈的？」
+							PRINTFORMW 「这东西对我没什么效果……」
+					ENDSELECT
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「那么，我们什么时候开始看到幻觉呢？」
+							PRINTFORMW 「哦？这东西不是这么工作的？好吧……」
+						CASE 1
+							PRINTFORMDW 无论喝多醉，幽幻魔眼的脸色始终如常
+							PRINTFORMDW 她的人形身体可能没有任何血液……
+						CASE 2
+							PRINTFORML 「我们可能会习惯这种感觉」
+							PRINTFORMW 「再给我们来一杯！」
+					ENDSELECT
+			ENDSELECT
+		ENDIF
+	ELSE
+		IF ALCOHOL_TASTE(TFLAG:194) >= 15
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「这酒真好！」
+							PRINTFORMDW 幽幻魔眼举起她的杯子
+							PRINTFORMW 「可以再给我们一点吗？」
+
+						CASE 1
+							PRINTFORMW 「我们没想到微生物活动能产生如此美味的饮料……」
+
+						CASE 2
+							PRINTFORML 「绝佳的年份！」
+							PRINTFORMDW 幽幻魔眼盯着空杯，眼睛眯成一条线
+							PRINTFORMW 「我们不该，但……」
+							PRINTFORMW 「再来一杯应该没关系……」
+
+						CASE 3
+							PRINTFORMW 「这种东西……会上瘾吗？」
+							PRINTFORMW 「因为这身体渴望更多……」
+
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「这真不错！」
+							PRINTFORMDW 幽幻魔眼喝干她的杯子，闭上眼睛，叹了口气
+							PRINTFORMW 「如果可以，我还想再来一点」
+
+						CASE 1
+							PRINTFORML 「你的眼光和%PRINT_MALE_CN("男人", TARGET)%一样好」
+							PRINTFORMDW 幽幻魔眼笑了
+
+						CASE 2
+							PRINTFORML 「哇，这味道真好！」
+							PRINTFORMW 「来吧，你也来一杯！」
+					ENDSELECT
+
+			ENDSELECT
+		ELSEIF ALCOHOL_TASTE(TFLAG:194) < 10
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「品质不高，再试试」
+
+						CASE 1
+							PRINTFORMW 「你是想用这劣质货激怒我们吗？！」
+
+						CASE 2
+							PRINTFORML 「太恶心了！」
+							PRINTFORMDW 幽幻魔眼把饮料吐在地上
+
+						CASE 3
+							PRINTFORMDL 一个闪烁的裂缝在幽幻魔眼的右侧打开
+							PRINTFORMDW 幽幻魔眼没有说话甚至没转头，就把瓶子扔了进去。几秒后裂缝关闭
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「呃」
+							PRINTFORMDW 幽幻魔眼皱眉
+							PRINTFORMW 「这……不好喝」
+						CASE 1
+							PRINTFORMW 「呃……我觉得这个已经变质了」
+						CASE 2
+							PRINTFORMW 「呃！我不敢相信……我自己的%PRINT_MALE("男", MASTER)%朋友要下毒害我……」
+							PRINTFORMW 「说真的，这东西太难喝了」
+					ENDSELECT
+			ENDSELECT
+		ELSE
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「味道很奇特」
+							PRINTFORMW 「如果你愿意给我们，我们还想再尝尝」
+
+						CASE 1
+							PRINTFORMW 「尝起来像……咬」
+							PRINTFORMW 「多奇怪……」
+
+						CASE 2
+							PRINTFORMW 「我不知道我担心什么」
+							PRINTFORMW 「可以再来一点吗？就够我微醺的……」
+
+						CASE 3
+							PRINTFORMW 「又来一份祭品？我们欣然接受」
+					ENDSELECT
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「这个……还行吧，我想」
+
+						CASE 1
+							PRINTFORMW 「你有没那么烈的吗？这东西对我不太适合」
+
+						CASE 2
+							PRINTFORMW 「不错！」
+							PRINTFORMDW 幽幻魔眼喝了一口
+							PRINTFORMW 「我还想要，再来点……除非你有没那么烈的」
+					ENDSELECT
+			ENDSELECT
+
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;333,愚痴を聞く
+;TFLAG:193(6=大成功(酔い) 5=成功(酔い) 4=失敗(酔い) 3=大成功 2=成功 1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_333
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_333
+CALL M_KOJO_MESSAGE_COM_K151_333_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_333_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 6
+		;大成功（酔い）
+		CASE 5
+		;成功（酔い）
+		CASE 4
+		;失敗（酔い）
+		CASE 3
+		;大成功
+		CASE 2
+		;成功
+		CASE 1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;334,杯を交わす
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:妊娠自覚状態(1=食事)
+;TALENT:酒耐性(-2=食事)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_334
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_334
+CALL M_KOJO_MESSAGE_COM_K151_334_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_334_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;335,介抱する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_335
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_335
+CALL M_KOJO_MESSAGE_COM_K151_335_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_335_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;336,膝枕する
+;ABL:親密(4以下=居心地悪げ 9以下=恥ずかしげ それ以上=幸せそう
+;TIME_PROGRESS(TFLAG:膝枕した)(44以下=失敗
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_336
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_336
+CALL M_KOJO_MESSAGE_COM_K151_336_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_336_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 > 0
+	;寝ちゃった
+	ELSE
+	;それ以外
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;350,押し倒す（時姦時イタズラする
+;TFLAG:194 (0=成功 1=人目がある　2=野外は嫌でござりまする　3=多人数プレイは勘弁　4=合意があってもムードが足りぬ　100=合意はあるが口上内特殊判定によって失敗）
+;TCVAR:抱き寄せ初回　1=普通に合意ゲット　2=先にキスぐらいしろよ　3=媚薬or発情には勝てなかったよお…　4=悔しい…刻印さえなければﾋﾞｸﾋﾞｸﾝ
+;5=強引に迫られると断れぬ(素質臆病持ち専用) 6=まんざらでもない　7=駄目　8=論外 98=口上内特殊判定による失敗 99=口上内特殊判定による成功
+;口上内特殊判定は該当するCFLAGが0だと無効
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_350
+CALL M_KOJO_MESSAGE_COM_K151_350_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_350_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;351,連れ出す
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_351
+;連れ出しにはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K151_351_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_351_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;TARGET連れ出し
+	IF CFLAG:同行 == 60
+	;TARGET以外連れ出し(TARGET同行中のみ
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;352,告白する
+;FLAG:甲斐性無(1=失敗)
+;TFLAG:193 (1=成功 0=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_352
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_352
+CALL M_KOJO_MESSAGE_COM_K151_352_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_352_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;353,イタズラする
+;FLAG:甲斐性無(1=失敗)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_353
+CALL M_KOJO_MESSAGE_COM_K151_353_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_353_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;354,添い寝する（相手は起きて布団に招く感じ）
+;CFLAG:衰弱(1以上=起きない
+;CFLAG:お招き(0以外=起きない
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_354
+CALL M_KOJO_MESSAGE_COM_K151_354_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_354_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;355,時止め（地の文の改変程度に留めるべき
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_355
+CALL M_KOJO_MESSAGE_COM_K151_355_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_355_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;356,物陰に誘う
+;ABL:露出癖 + TALENT:羞恥心で判定
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_356
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=COM依存、1=強制成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_356
+CALL M_KOJO_MESSAGE_COM_K151_356_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_356_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;360,身を任せる
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=裙子の中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_360
+CALL M_KOJO_MESSAGE_COM_K151_360_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_360_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;361,抵抗する
+;TCVAR:20(27=谷間を見せる 32=前から抱きつく 35=裙子の中を見せる 53=パイズリ 73=ぱふぱふ 77=乳を吸わせる 85=Ｖ挿入する 86=だいしゅきホールド 87=Ａ挿入する 88=腰振りＶ 89=腰振りＡ
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_361
+CALL M_KOJO_MESSAGE_COM_K151_361_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_361_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;363,読み聞かせ（[幼稚]持ち専用）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;CFLAG:添い寝中(1=布団orベッドの中で本を読む
+;MASTERがTARGETより大柄の場合、膝の上にTARGETを乗せる
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_363
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_363
+CALL M_KOJO_MESSAGE_COM_K151_363_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_363_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;364,豆まき(萃香、勇儀、スカーレット姉妹用
+;TFLAG:193(豆まきに参加してる人数
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_364
+CALL M_KOJO_MESSAGE_COM_K151_364_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_364_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;365,守矢神社へ移動(早苗、神奈子、諏訪子用
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_365
+CALL M_KOJO_MESSAGE_COM_K151_365_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_365_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;368,自由行動に付き合う 
+;技能系の行動は技能レベルが1以上なら発生
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_368
+CALL M_KOJO_MESSAGE_COM_K151_368_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_368_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE Activity_Type:TARGET
+		CASE 0
+			;▼考え事［なに考えてるの］
+			;TFLAG:193,-1=はぐらかされる
+			;PRINTFORMW 
+		CASE 1
+			;▼遊ぶ［一緒に遊ぶ］
+			;※[幼稚]持ちのみ
+			;TFLAG:193,1=大いに盛り上がる,-1=あまり盛り上がらない
+			;PRINTFORMW 
+		CASE 2
+			;▼食事［一緒に食事する］
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 3
+			;▼つまみ食い［一緒につまみ食い］
+			;※[妖精]持ちと露米亜、恋、幽幽子、紫苑のみ
+			;TFLAG:193,-1=MASTERはお腹が空いてなかった
+			;PRINTFORMW 
+		CASE 4
+			;▼掃除［掃除を手伝う］
+			;※[掃除係]持ちまたは汚臭耐性-1以下のみ
+			;PRINTFORMW 
+		CASE 5
+			;▼運動［一緒に運動する］
+			;※[音楽知識]持ちは除く（演奏になる）
+			;PRINTFORMW 
+		CASE 6
+			;▼読書［本の感想を聞く］
+			;TFLAG:193,-1=集中していて返事してくれない
+			;PRINTFORMW 
+		CASE 7
+			;▼料理［料理を手伝う］→［料理を分けてもらう］
+			;TFLAG:193,2=料理を手伝う,0=作った料理を食べる,-1==MASTERはお腹が空いてなかった（食べる時）
+			;PRINTFORMW 
+		CASE 8
+			;▼演奏［セッションする］or［伴奏する］
+			;※[音楽知識]持ちのみ（TALENT:音楽知識で変化）
+			;TALENT:音楽知識,1=演奏してる,2=歌ってる,3=踊ってる
+			;TFLAG:193,1=ノリノリ,0=成功,-1=失敗,-2=楽器がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 9
+			;▼採集［採集を手伝う］
+			;PRINTFORMW 
+		CASE 10
+			;▼釣り［一緒に釣りをする］
+			;TFLAG:193,-1=釣魚竿がなくて見てるだけ
+			;PRINTFORMW 
+		CASE 11
+			;▼実験［実験を手伝う］
+			;PRINTFORMW 
+		CASE 12
+			;▼のんびり［一緒にのんびりする］
+			;PRINTFORMW 
+		CASE 13
+			;▼晩酌［晩酌に付き合う］
+			;※酒耐性0以上のみ
+			;PRINTFORMW 
+		CASE 14
+			;▼買い物［買い物を手伝う］
+			;PRINTFORMW 
+		CASE 15
+			;▼説教［様子をうかがう］
+			;※神霊・蓬莱人は除く
+			;TFLAG:193,-1
+			;PRINTFORMW 
+		CASE 16
+			;▼落とし穴［いたずらに付き合う］or［様子をうかがう］
+			;※三月精・琪露諾・克勞恩皮絲のみ
+			;それ以外は落ちる側
+			;PRINTFORMW 
+		CASE 17
+			;▼雪だるま作り［一緒に雪作り］
+			;※冬の月のみ
+			;PRINTFORMW 
+		CASE 18
+			;▼炬燵でのんびり［炬燵でくつろぐ］
+			;※冬の月のみ
+			;PRINTFORMW 
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;402,就寝
+;TFLAG:193(0=通常 1=子供と一緒に川の字で寝る)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_402
+;就寝にTRAIN_MESSAGEは無い
+CALL M_KOJO_MESSAGE_COM_K151_402_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_402_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;403,休憩
+;CFLAG:TARGET:睡眠(1=TARGETが寝てる隣で休憩
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_403
+CALL M_KOJO_MESSAGE_COM_K151_403_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_403_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE K151_YM_NATURE()
+		CASE 0, 1
+			SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+				CASE 0
+					PRINTFORMW 「我们会在这里待着，直到星辰到位」
+					PRINTFORMW 「或者直到这具身体恢复能量，以先发生者为准」
+				CASE 1
+					PRINTFORMDL 你休息的时候，幽幻魔眼一直盯着你
+					PRINTFORMDW 有点渗人……
+				CASE 2
+					PRINTFORMW 幽幻魔眼闭上了眼睛，她的邪眼也飘落到地上，自己闭上了
+				CASE 3
+					PRINTFORMDW 幽幻魔眼的眼睛消失了，她的人形身体像提线木偶被剪断了线一样瘫软下来
+			ENDSELECT
+		CASE 2
+	ENDSELECT
+
+ENDIF
+RETURN 1
+;==================================================
+;405,出掛ける(同行時约会
+;条件が厄介なので、COMF405 出掛ける.ERBを参照のこと
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_405
+;出掛けるにTRAIN_MESSAGEは無い
+CALL M_KOJO_MESSAGE_COM_K151_405_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_405_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	;TARGETと约会
+	IF CFLAG:同行
+	;TARGET以外と约会
+	ELSEIF CFLAG:MASTER:同行
+	;お出かけお見送り
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;410,掃除
+;FLAG:70(1=時間停止中
+;TFLAG:193(0=見てるだけ 1=一緒に掃除)
+;TFLAG:194(3=汚れ高 2=汚れ中 1=汚れ低 0=汚れ最小
+;OUTROOF(CFLAG:現在位置)(野外掃除（冬は雪かき
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_410
+CALL M_KOJO_MESSAGE_COM_K151_410_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_410_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	;During sex
+	ELSEIF CFLAG:[[ユウゲンマガン]]:うふふ
+	;Your room
+	ELSEIF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置 && TFLAG:193 == 1
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						SELECTCASE TFLAG:194
+							CASE 0
+								PRINTFORMW 「你的巢穴几乎是干净的」
+								PRINTFORMDW 幽幻魔眼微笑
+								PRINTFORMW 「那很好，物质少意味着副作用更少」
+
+							CASE 1
+								PRINTFORMW 「你的巢穴平均程度的干净」
+								PRINTFORMW 「那我们就打扫一下，把平均水平提高」
+							CASE 2, 3
+								PRINTFORMW 「你的巢穴太脏了」
+								PRINTFORMDW 幽幻魔眼皱了皱眉
+								PRINTFORMW 「也许我们应该毁掉它，从头开始……」
+
+						ENDSELECT
+
+					CASE 1
+						PRINTFORML 「别担心。我们会小心对待你的财物」
+						PRINTFORMW 「伟大的存在在他人巢穴中时会表现出尊重」
+
+					CASE 2
+						PRINTFORML 「所以这是你的巢穴，是吗？」
+						PRINTFORMW 「我们很好奇会发现什么……」
+
+					CASE 3
+						PRINTFORMDL 幽幻魔眼旁边有一大堆东西
+						PRINTFORMDW 也许让她把不认识的东西单独放一边是个错误……
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「如果有不希望我看的地方，请告诉我好吗？」
+						PRINTFORMW 「每个人都有不愿意分享的东西」
+						PRINTFORMDW 幽幻魔眼苦笑了一下
+					CASE 1
+						PRINTFORML 
+					CASE 2
+						PRINTFORML 
+				ENDSELECT
+		ENDSELECT
+	; TODO: uncomment once YuugenMagan gets a room
+	; ELSEIF CFLAG:現在位置 == ???
+		; SELECTCASE K151_YM_NATURE()
+		; 	CASE 0, 1
+		; 		SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+		; 			CASE 0
+		; 				PRINTFORML 「小心你碰到的东西」
+		; 				PRINTFORMW 「这里有些东西是由奇特物质构成的」
+		; 			CASE 1
+		; 				PRINTFORML 「不要打开我们的魔法书！」
+		; 				PRINTFORMW 「它们的内容会让你疯掉的」
+		; 			CASE 2
+		; 				PRINTFORMW 「我会整理我们的衣柜」
+		; 				PRINTFORMW 「里面有…我们的皮，我们不希望给你看」
+		; 			CASE 3
+		; 				PRINTFORMDW 打扫幽幻魔眼的房间花了很久
+		; 				PRINTFORMDW 你总是发现一些怪异的东西，然后每次都得停下来问她这些是不是垃圾
+		; 		ENDSELECT
+		; 	CASE 2
+		; 		SELECTCASE RAND:3
+		; 			CASE 0
+		; 				PRINTFORML 「别清理那个角落！」
+		; 				PRINTFORMW 「那里有我的实验在进行」
+		; 			CASE 1
+		; 				IF FIRSTTIME("YMEmbarrassingPoster")
+		; 					PRINTFORMDW 当你把幽幻魔眼衣柜地上的东西捡起来放到架子上时，你发现了一卷卷的塑料…东西
+		; 					PRINTFORMDW 你展开了一个。是…一个魔界男团的海报？
+		; 					PRINTFORMW 「啊! 把那个给我！！」
+		; 					PRINTFORMDW 幽幻魔眼从你手中抢过海报
+		; 					PRINTFORMW 「可恶……我早知道应该把它们扔掉的…」
+		; 				ELSE
+		; 					PRINTFORMW 「我会自己处理衣柜的」
+		; 					PRINTFORMW 「(不想让你再发现我少年时期的东西了…)」
+		; 				ENDIF
+		; 			CASE 2
+		; 				IF TFLAG:194 > 1
+		; 					PRINTFORML 「我知道，我知道…这里乱得不成样子」
+		; 					PRINTFORMDW 幽幻魔眼皱眉
+		; 					PRINTFORMW 「母亲总是告诉我每天整理一点，但我没听……」
+		; 				ELSE
+		; 					PRINTFORML 「谢谢你帮忙保持地方的清洁」
+		; 					PRINTFORMW 「我总是懒得做任何事，只是开条到门口的路而已…」
+		; 				ENDIF
+		; 		ENDSELECT
+		; ENDSELECT
+	;Watching
+	ELSEIF TFLAG:193 == 0
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						PRINTFORML 「我们不打扫」
+						PRINTFORMW 「我们只会销毁我们不想要的东西」
+					CASE 1
+						PRINTFORMW 「你玩得开心吗？」
+					CASE 2
+						PRINTFORML 「我们……不太擅长打扫」
+						PRINTFORMW 「我们只会碍事」
+					CASE 3
+						PRINTFORMW 「打扫是信徒的事，不是伟大存在的」
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 
+					CASE 1
+						PRINTFORML 
+					CASE 2
+						PRINTFORML 
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;411,戦闘訓練
+;TFLAG:194(3=夏の昼間 2=ヤバい天気 1=悪天候 0=屋内or通常天気
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_411
+CALL M_KOJO_MESSAGE_COM_K151_411_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_411_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME("YMCombatTraining")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				PRINTFORMW 「你想和我们一起练习弹幕吗？」
+				PRINTFORMDW 幽幻魔眼露出了她那倒过来的微笑
+				PRINTFORMW 「那很好」
+				PRINTFORMW 「我们还在适应符卡规则，所以我们也想和你一起训练」
+
+			CASE 2
+				PRINTFORMW 「你想和我一起练习弹幕吗？」
+				PRINTFORMDW 幽幻魔眼咧嘴笑了
+				PRINTFORMW 「我正想问你呢！」
+				PRINTFORMW 「自从蕾米莉亜小姐还是小孩子的时候我就没有比赛过，那已经是……」
+				PRINTFORMDW 她皱了皱眉
+				PRINTFORMW 「很多很多年前了。天哪，现在我感觉自己老了……」
+				PRINTFORMW 「不过，甩掉锈迹应该能帮到我！」
+
+		ENDSELECT
+	ELSE
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+			CASE 2
+				$YM_OOC_COMBAT_TRAINING
+				SELECTCASE RAND:8
+					CASE 0
+						PRINTFORML 「我可能应该想出一些新的符卡，一旦我停止整个……」
+						PRINTFORMDL 幽幻魔眼模模糊糊地示意
+						PRINTFORMW 「神秘事物」
+						PRINTFORML 「也许其中一个是我创造一个幻影分身，你得打中真的-」
+						PRINTFORMW 「帕露西桑已经这么做了？哎呀……」
+
+					CASE 1
+						PRINTFORML 「我不知道，我有点怀念以前的决斗风格」
+						PRINTFORMW 「我应该问神绮桑，我们能不能搞个复古联盟或者什么的」
+
+					CASE 2
+						SIF ABL:MASTER:戦闘能力 <= ABL:TARGET:戦闘能力
+							GOTO YM_OOC_COMBAT_TRAINING
+
+						PRINTFORMDL 噗叽～～
+						PRINTFORML 「呃，又来了？！」
+						PRINTFORMDW 幽幻魔眼沮丧地抬起双手
+						PRINTFORMW 「我怀念可以拖延时间，等巫女被自己的阴阳玉击中的时候……」
+
+					CASE 3
+						SIF !(IN_HEAT([[ユウゲンマガン]]) || CFLAG:[[ユウゲンマガン]]:溜まってる度 >= 900 || TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:セフレ == 1)
+							GOTO YM_OOC_COMBAT_TRAINING
+
+						PRINTFORMW 「(咦嘿嘿……%CALLNAME:MASTER%让我想拿出一个为\@ TALENT:MASTER:性別 == 2 ? 他 # 她\@特制的生存卡...)」
+						PRINTFORMW 「(束符「逃脱或成为-)」
+						PRINTFORMDW 幽幻魔眼……流口水了吗？
+
+					CASE 4
+						PRINTFORMDW 幽幻魔眼完成了她第一百个俯卧撑，趴在那里
+						PRINTFORML 「呼……呼…完成了…」
+						PRINTFORMW 「但我的手臂感觉都要掉下来了……」
+
+					CASE 5
+						SIF !(IN_HEAT([[ユウゲンマガン]]) || CFLAG:[[ユウゲンマガン]]:溜まってる度 >= 500 || TALENT:[[ユウゲンマガン]]:思慕 || TALENT:[[ユウゲンマガン]]:セフレ == 1)
+							GOTO YM_OOC_COMBAT_TRAINING
+						PRINTFORMK 「(我在想我是不是可以抓住\@ TALENT:MASTER:性別 == 2 ? 他的 # 她的\@屁股假装是不小心的…)」
+						PRINTFORMDW 为什么幽幻魔眼在你们俩做深蹲的时候非要站在你后面？
+
+					CASE 6
+						PRINTFORML 「打赌1000日元我可以炸掉那边的那棵树！」
+						PRINTFORMDW 幽幻魔眼正开心地炫耀她的导弹弹幕
+
+					CASE 7
+						PRINTFORML 「我以前有个攻击招式是用我的邪眼直接打对手…」
+						PRINTFORMW 「但它们是我魔法的主要导管，所以我担心会损坏它们于是停止了」
+						PRINTFORMW 「现在我只是扔闪电」
+						PRINTFORML 「我有个很酷的符卡，我用眼睛反射闪电来做出花式投掷…」
+						PRINTFORMDW 幽幻魔眼的人形双眼闪烁着，滔滔不绝地谈论她的弹幕
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;412,勉強
+;ABL:教養(ABL:MASTER:教養より大=MASTERが教えてもらう ABL:MASTER:教養より小=TARGETが教えてもらう
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_412
+CALL M_KOJO_MESSAGE_COM_K151_412_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_412_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF ABL:[[ユウゲンマガン]]:教養 > ABL:MASTER:教養
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						PRINTFORMW 「...他是“核”的意义在于，他不仅居于宇宙的中心，还是辐射的守护神」
+						PRINTFORMW 「是不是个有趣的巧合？」
+					CASE 1
+						PRINTFORMW 「召唤闪电与召唤弹幕颇为相似」
+						PRINTFORML 「集中精神，念出咒语...」
+						PRINTFORMW 「瞄准你讨厌的人，然后释放！」
+					CASE 2
+						PRINTFORMW 「你们人类最重要的许多魔法书都是用拉丁语写的」
+						PRINTFORML 「那么首先，让我们从-」
+						PRINTFORMW 「...当然，我们不需要魔法书！我们天生就有魔力！」
+						PRINTFORML 「我们只是从...啊...」
+						PRINTFORMW 「我们的信徒那里了解到了这些书！现在，在我们被如此粗鲁地打断之前...」
+					CASE 3
+						PRINTFORMW 「我们再展示一次给你看」
+						PRINTFORMDW 幽幻魔眼牵着你的手，移向...某个地方
+						PRINTFORMW 「这就是第四空间维度。现在，穿过我们的手去触碰吧」
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 
+					CASE 1
+						PRINTFORML 
+					CASE 2
+						PRINTFORML 
+				ENDSELECT
+		ENDSELECT
+	ELSEIF ABL:[[ユウゲンマガン]]:教養 < ABL:MASTER:教養
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						PRINTFORML 「哦？有我们不知道的事情吗？」
+						PRINTFORMW 「你真是博学多才」
+					CASE 1
+						PRINTFORML 「关于物质世界，我们还有很多需要学习的地方」
+						PRINTFORMW 「如果你愿意教我们，我们很愿意学习」
+					CASE 2
+						PRINTFORMW 「哦？我们还真不知道这事」
+					CASE 3
+						PRINTFORMW 「真的吗？好奇怪啊」
+						PRINTFORMW 「你们这些物质生物真是太奇特了...」
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「哇，真的吗？」
+						PRINTFORMW 「你懂的真多...」
+					CASE 1
+						PRINTFORMW 「原来如此，我明白了...」
+						PRINTFORMDW 幽幻魔眼一边听你说，一边若有所思地点头
+					CASE 2
+						PRINTFORML 「哇...你可能比我还懂魔法！」
+						PRINTFORMW 「你是在哪所学校学习的？」
+				ENDSELECT
+		ENDSELECT
+	ELSE
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						PRINTFORML 「啊，是的...沙比斯-卡，紫色分解者」
+						PRINTFORMW 「最伟大、最美丽的高等存在！」
+						PRINTFORMW 「...至少传说是这么说的」
+					CASE 1
+						PRINTFORMW 「太棒了！你的整条手臂都包裹在闪电中！上面的每根汗毛都竖起来了！」
+						PRINTFORMW 「...哦，那是个自然现象？那算了」
+					CASE 2
+						PRINTFORMW 「翻译这句话：Idola Deus」
+						PRINTFORMW 「太棒了！你的拉丁语学习进步很大」
+					CASE 3
+						PRINTFORML 「无论有多诱人，都不要试图窥视第四堵墙」
+						PRINTFORMW 「墙另一边的东西，足以摧毁最坚强的心灵」
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORMW 「Optime acquisisti in loquendo Latine（你的拉丁语说得很好）」
+					CASE 1
+						PRINTFORML 「哇哦...五条触手！」
+						PRINTFORMW 「我花了好几个月才学会召唤这么多...」
+					CASE 2
+						PRINTFORMW 「你一直都这么\@ IS_MALE(MASTER) ? 帅气 # 漂亮\@吗，还是在练习你的幻觉魔法～？」
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;413,料理
+;TFLAG:194(100以上=禁断のメニュー 3=デザート 2=主食 1=軽食
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_413
+;TFLAG:194が100以上の場合のみ
+CALL M_KOJO_MESSAGE_COM_K151_413_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_413_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME("YMCooking")
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				PRINTFORMW 「啊...物质从一种状态转变为另一种状态」
+				PRINTFORMDW 幽幻魔眼仔细观察你摆放的食材
+				PRINTFORMW 「你会把它们液化吗？还是可能变成气体？」
+				PRINTFORMDW 你忍住叹气的冲动，花了一些时间向她解释烹饪
+			CASE 2
+				PRINTFORMDW 幽幻魔眼在你拿出食材和碗时显得很感兴趣
+				PRINTFORMW 「小萨总是说我需要学做饭...可是假装成不是自己的样子一整天之后，我总是太累了，没法练习」
+				PRINTFORMW 「不过你已经把一切都准备好了，所以...」
+				PRINTFORMDW 她拿起了一把刀
+				PRINTFORMW 「我觉得我帮不上太多忙，不过我可以切点东西和收拾东西」
+		ENDSELECT
+	ELSEIF FLAG:料理 == 551 ;YuugenMagan's special dish
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				PRINTFORMW 「我们决定创造一个自己的菜肴」
+				PRINTFORMW 「面糊的酥脆感和眼珠的汁水混合在一起，真的很美味」
+			CASE 2
+				PRINTFORMW 「告诉你哦，这个我以前从没做过，只是个灵光一现的想法」
+				PRINTFORMW 「所以如果不好吃的话...别生气哦」
+		ENDSELECT
+	ELSE
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+					CASE 0
+						PRINTFORMDL 幽幻魔眼在你准备食物时凝视着它
+						PRINTFORMW 「为什么我们看不见呢？每次我们都错过了这道菜从“不是一顿饭”到“一顿饭”的那一刻...」
+					CASE 1
+						PRINTFORML 「我们可以用我们的闪电来帮你煮...」
+						PRINTFORMW 「哦，它会把整道菜烧掉吗？那算了」
+					CASE 2
+						PRINTFORML 「嗯...这看起来真不错！」
+						PRINTFORMW 「我们会温暖地等待，直到可以大快朵颐」
+					CASE 3
+						PRINTFORMDW 幽幻魔眼把你用完的食材收拾好
+						PRINTFORMDW ...她的手是不是穿过橱柜了？
+				ENDSELECT
+			CASE 2
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORMDL 幽幻魔眼皱着眉头把一罐香料收好
+						PRINTFORMW 「真希望小时候能多帮帮我妈妈在厨房里的忙...」
+					CASE 1
+						PRINTFORMDL 幽幻魔眼把一个碗递给旁边的触手
+						PRINTFORMW 「别担心，等我们结束之后我会洗掉那些黏液的」
+					CASE 2
+						PRINTFORMW 「我得说，换换口味也不错，总比天天吃方便面好」
+				ENDSELECT
+		ENDSELECT
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;414,食事を取る
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:194(1=没穿内裤しゃぶしゃぶ 2=禁断のメニュー 31=ドーピングコンソメスープ 30=モッツァレラチーズとトマトのサラダ 34=ギンギー料理
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_414
+;成否判定
+;TFLAG:192(-2=コマンド終了(非TARGET時強制失敗)、-1＝強制失敗、0=COM依存(非TARGET時強制成功)、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_414
+CALL M_KOJO_MESSAGE_COM_K151_414_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_414_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	CALL M_KOJO_MESSAGE_COM_K151_415()
+ENDIF
+RETURN 1
+;==================================================
+;415,食事をふるまう
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TCVAR:MASTER:308(bit0=濃い味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=わさび bit6=激酸っぱ
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_415
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_415
+CALL M_KOJO_MESSAGE_COM_K151_415_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_415_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME(SELECTCOM)
+		SELECTCASE K151_YM_NATURE()
+			CASE 0, 1
+				PRINTFORMW 「这个，究竟是什么？」
+				PRINTFORMDW 你告诉她那是食物
+				PRINTFORMW 「那是什么...?」
+				PRINTFORMDW 你耐心地向幽幻魔眼解释食物的概念
+				PRINTFORMW 「啊。所以你们是吞食这种物质来维持自己的存在吗？」
+				PRINTFORMW 「这真让人感到悲哀。我们还羡慕你们能够改变...」
+				PRINTFORMW 「看来每件事都有它的代价」
+
+			CASEELSE
+				PRINTFORMW 「我才意识到...这是你第一次给我上东西」
+				PRINTFORMW 「你是不是觉得我太神秘了，不能吃东西？」
+
+		ENDSELECT
+	ELSE
+		SELECTCASE TFLAG:193
+			CASE 1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0, 1
+						SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+							CASE 0
+								PRINTFORMW 「不可思议！难怪物质的生物对吃会如此上瘾！」
+							CASE 1
+								PRINTFORMW 「要是我们早点知道吃东西能带来这样的感觉，我们早就尝试了」
+							CASE 2
+								PRINTFORMW 「啊，这味道太好了！你做得很棒」
+							CASE 3
+								PRINTFORMW 「你对这些物质实现了真正的奇迹转变」
+						ENDSELECT
+					CASE 2
+						SELECTCASE RAND:3
+							CASE 0
+								PRINTFORMW 「哇哦，这真是太厉害了！连梦子桑也比不上！」
+							CASE 1
+								PRINTFORMDW 幽幻魔眼咬了一口，她的眼睛亮了
+								PRINTFORML 「太-好-吃-了！」
+								PRINTFORMDW 她咽了下去
+								PRINTFORMW 「你真是一个很棒的厨师」
+							CASE 2
+								PRINTFORMW 「哇，我不记得上次吃到这么好吃的东西是什么时候了！」
+						ENDSELECT
+				ENDSELECT
+
+			CASE 0
+				SELECTCASE K151_YM_NATURE()
+					CASE 0, 1
+						SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+							CASE 0
+								PRINTFORMDW 幽幻魔眼若有所思地咀嚼着
+								PRINTFORML 「这些味道...当它们组合在一起时，尝起来和单独的味道不同」
+								PRINTFORMW 「这是什么原因呢？」
+							CASE 1
+								PRINTFORML 「味道很奇特」
+								PRINTFORMW 「可以再给我们一点吗？」
+							CASE 2
+								PRINTFORML 「你的料理相当令人享受」
+								PRINTFORMW 「或许你可以教我们怎么做？」
+							CASE 3
+								PRINTFORMW 「啊，我们能感觉到能量在我们体内涌动。你真是太棒了」
+						ENDSELECT
+					CASE 2
+						SELECTCASE RAND:3
+							CASE 0
+								PRINTFORMW 「这还不错！」
+							CASE 1
+								PRINTFORMW 「你是个不错的厨师」
+								PRINTFORMW 「...可以给我点建议吗？」
+							CASE 2
+								PRINTFORMW 「这比方便面好太多了！」
+						ENDSELECT
+				ENDSELECT
+
+			CASE -1
+				SELECTCASE K151_YM_NATURE()
+					CASE 0, 1
+						SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+							CASE 0
+								PRINTFORMW 「看来你的准备过程中有太多副作用了」
+							CASE 1
+								PRINTFORMW 「你是用不纯的食材准备的吗？这味道很糟糕」
+							CASE 2
+								PRINTFORMW 「这...应该是这样的味道吗？」
+							CASE 3
+								PRINTFORMW 「这顿饭里杂质太多了。再准备一份吧」
+						ENDSELECT
+					CASE 2
+						SELECTCASE RAND:3
+							CASE 0
+								PRINTFORMW 「嗯...我不是很喜欢这个」
+							CASE 1
+								PRINTFORMW 「呃..我觉得你的食材变质了...」
+							CASE 2
+								PRINTFORMW 「我不想无礼，但这真的... 不怎么样」
+						ENDSELECT
+				ENDSELECT
+
+		ENDSELECT
+
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;416,演奏する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:使用楽器(1=電子琴 2=ピアノ 3=ギター 4=トランペット 5=ヴァイオリン)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_416
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_416
+CALL M_KOJO_MESSAGE_COM_K151_416_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_416_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+	SELECTCASE TFLAG:193
+		CASE 1
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「一首连特鲁宁布拉都能被迷住的曲子」
+
+						CASE 1
+							PRINTFORML 「你的演奏真是超凡脱俗...」
+							PRINTFORMDW 幽幻魔眼侧着脑袋
+							PRINTFORMW 「我们赞成」
+
+						CASE 2
+							PRINTFORML 「自从... 我们没听过这么好的音乐了」
+							PRINTFORMDW 幽幻魔眼话音未落
+							PRINTFORMW 「算了，继续演奏吧」
+
+						CASE 3
+							PRINTFORMW 幽幻魔眼随着你的音乐节奏如醉如痴地摇摆
+					ENDSELECT
+
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「哇，听起来真不错！」
+							PRINTFORMDW 幽幻魔眼为你的表演鼓掌
+						CASE 1
+							PRINTFORML 「哇，太精彩了！」
+							PRINTFORMW 「你真有音乐天赋...」
+						CASE 2
+							PRINTFORML 「安可！安可！」
+							PRINTFORMDW 幽幻魔眼热情地鼓掌
+					ENDSELECT
+			ENDSELECT
+
+		CASE 0
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORMW 「这些声波听起来相当悦耳」
+
+						CASE 1
+							PRINTFORML 「你的手真灵巧，能创造出悦耳的声音」
+							PRINTFORMW 「是的，你将会是个很好的伙伴」
+
+						CASE 2
+							PRINTFORML 「你很有才华...」
+							PRINTFORMDW 幽幻魔眼微笑着，但似乎有点不满
+
+						CASE 3
+							PRINTFORML 「我们不知道在物质世界中可以创造出这么多的声音...」
+							PRINTFORMW 「多制造一些 」
+					ENDSELECT
+
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORML 「哇，你真的很有才华！」
+							PRINTFORMDW 幽幻魔眼对你笑容满面
+							PRINTFORMW 「能再弹一首吗？」
+						CASE 1
+							PRINTFORMW 「这与我们在魔界听的音乐完全不同」
+						CASE 2
+							PRINTFORML 「真希望我也会演奏乐器...」
+							PRINTFORMW 「你能教我吗？」
+					ENDSELECT
+			ENDSELECT
+
+		CASE -1
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO1", 1, "2", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0, "3", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 1)
+						CASE 0
+							PRINTFORML 「呃！这是什么...噪音？！」
+							PRINTFORMDW 幽幻魔眼捂住了耳朵
+
+						CASE 1
+							PRINTFORMW 「你在对那个设备做什么？！停下！」
+
+						CASE 2
+							PRINTFORMW 「停下！你让我们头疼！」
+
+						CASE 3
+							PRINTFORML 「你似乎不太明白。你的音乐太悦耳了」
+							PRINTFORMW 「让它更刺耳些」
+					ENDSELECT
+
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「你...真的需要多练习」
+						CASE 1
+							PRINTFORMDW 幽幻魔眼因为你的“表演”而皱起眉头
+						CASE 2
+							PRINTFORML 「那真是...有趣」
+							PRINTFORMDW 幽幻魔眼半心半意地鼓掌
+					ENDSELECT
+			ENDSELECT
+
+	ENDSELECT
+
+ENDIF
+RETURN 1
+;==================================================
+;417,昼寝をする
+;TFLAG:193(0=MASTERを抱き枕にして寝ている 1=MASTERの膝を枕にして寝ている 2=寝顔にキスされた 3=寝顔をのぞき込まれた 4=MASTERが膝枕されてる 5=秘処orペニス揉み
+;CFLAG:添い寝中(1=一緒に寝ている
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_417
+CALL M_KOJO_MESSAGE_COM_K151_417_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_417_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;421,願掛けする
+;条件が複雑なので、COMF421 願掛け.ERBおよび、EVENT_MESSAGE_COM400.ERBの願掛けするの項を参照のこと
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_421
+CALL M_KOJO_MESSAGE_COM_K151_421_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_421_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;422～430は、特殊コマンドなのでテンプレでは対応しません
+;==================================================
+
+;==================================================
+;431,お風呂でくつろぐ
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;TFLAG:194(1=連続入浴不可(表示しない可能性あり？
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_431
+CALL M_KOJO_MESSAGE_COM_K151_431_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_431_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;432,お風呂でくつろぐ
+;表示タイミングは入浴後なので、お風呂上がりでの
+;TFLAG:209(4=人里の銭湯で番台ちゃんを怒らせている 1=銭湯に入った
+;TFLAG:211(4=地底の温泉で番台妖怪を怒らせている 1=温泉に入った
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_432
+CALL M_KOJO_MESSAGE_COM_K151_432_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_432_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;436,読書
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+;custom code edited
+; @M_KOJO_MESSAGE_COM_K151_436
+; CALL M_KOJO_MESSAGE_COM_K151_436_1
+; RETURN RESULT
+
+; @M_KOJO_MESSAGE_COM_K151_436_1
+;==================================================
+;440,待つ
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_440
+CALL M_KOJO_MESSAGE_COM_K151_440_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_440_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;441,授業を受ける(慧音専用
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_441
+CALL M_KOJO_MESSAGE_COM_K151_441_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_441_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;442,伐採する（未実装
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_442
+CALL M_KOJO_MESSAGE_COM_K151_442_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_442_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;445,採集する
+;TFLAG:193(採集物のID, 0=『何も見つからなかった…』
+;TFLAG:194(今回採集した個数
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_445
+CALL M_KOJO_MESSAGE_COM_K151_445_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_445_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;448,罠を仕掛ける／虫トラップ
+;TFLAG:193,
+;   -1=罠が壊れた
+;    0=罠を仕掛けた
+;    1=獲物が得られた
+;   10=虫トラップを仕掛けた
+;   11=虫トラップを破棄した
+;   12=ムシを捕まえた
+;FLAG:194,獲物の番号
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_448
+CALL M_KOJO_MESSAGE_COM_K151_448_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_448_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;449,虫捕り
+;TFLAG:193,
+;   -2=殺してでもうばいとる（取っ組み合いの末逃がす）
+;   -1=ゆずってくれ！→拒否
+;    0=捕獲失敗
+;    1=MASTERが捕まえた
+;    2=キャラが捕まえたのをMASTERが褒めた
+;    3=ゆずってくれ！→渋々オッケー
+;    4=ゆずってくれ！→オールオッケー
+;TRAINMESSAGEを省略する場合は虫カゴに入れる処理を忘れないように
+;ムシの名前は MUSHI_NAME で表示したり判別したりできます
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_449
+CALL M_KOJO_MESSAGE_COM_K151_449_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_449_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;483,ムシバトル
+;TFLAG:193,
+;    1=１対１の対戦
+;    2=３～４人戦
+;    3=２対２のチーム戦
+;TFLAG:194にMASTERの順位が入っています（MASTERが1ならキャラ負け）
+;バトル中の口上はイベント口上ファイルに入っています
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_483
+CALL M_KOJO_MESSAGE_COM_K151_483_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_483_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;484,スイカ割り
+;TFLAG:193,
+;   -1=失敗
+;    0=成功
+;    1=大成功
+;    2=木刀で大成功（ボーナス点）
+;TFLAG:194
+;    0=正直者
+;    1=ウソつき
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_484
+CALL M_KOJO_MESSAGE_COM_K151_484_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_484_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;490,アイテム
+;TFLAG:193(使用アイテムのID
+;TFLAG:194(対象 0=MASTER,1=TARGET
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_490
+;アイテムにTRAIN_MESSAGEはない
+CALL M_KOJO_MESSAGE_COM_K151_490_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_490_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;约会系コマンド
+;约会系口上は文字通り外出先で発生
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+[SKIPSTART]
+;現状未実装
+;==================================================
+;600,约会会話
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_600
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K151_600_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_600_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;601,约会スキンシップ
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_601
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K151_601_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_601_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;602,约会キス
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_602
+CALL TRAIN_MESSAGE
+CALL M_KOJO_MESSAGE_COM_K151_602_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_602_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+[SKIPEND]
+;==================================================
+;603,手を繋ぐ
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗でもふりほどかれたりはしません
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_603
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_603
+CALL M_KOJO_MESSAGE_COM_K151_603_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_603_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FIRSTTIME(SELECTCOM)
+		SELECTCASE K151_YM_NATURE()
+			CASE 0
+				PRINTFORMDW 你握住了幽幻魔眼的手
+				PRINTFORMDW 它出奇地柔软…
+				PRINTFORMW 「...?」
+				PRINTFORMDW 她瞥了你一眼。她是…脸红了？
+				PRINTFORMW 「你在干什么？」
+				$HANDHOLDING_FINISH
+				PRINTFORMW 「我们自己能走得很好」
+				PRINTFORMW 「..这是一种表达感情的手势吗？啊」
+
+			CASE 1
+				PRINTFORMDW 你一握住幽幻魔眼的手就立刻缩了回来
+				PRINTFORMDW 它冰冷而僵硬。就像尸体的手
+				PRINTFORMW 「有什么不对劲吗？」
+				PRINTFORMDW 幽幻魔眼转过头，用她的七只眼睛盯着你
+				PRINTFORMW 「...我们的手很冷？这不是很正常吗？」
+				PRINTFORMW 「...嗯，也许我们应该给这副身体设计一个循环系统」
+				PRINTFORMW 「不管怎样，你为什么摸它？」
+				GOTO HANDHOLDING_FINISH
+
+
+			CASE 2
+
+			CASE 3
+		ENDSELECT
+	ELSE
+		IF TALENT:151:恋人
+			SELECTCASE K151_YM_NATURE()
+				CASE 1
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMDW 当你握住她冰冷僵硬的手时，幽幻魔眼对你微笑
+							PRINTFORML 「尽管你觉得不舒服，我们很高兴你继续握住我们的手」
+							PRINTFORMW 「对我们来说，这感觉…不错」
+						CASE 1
+							PRINTFORMDL 幽幻魔眼用另一只手搓揉自己的手，试图让它暖和起来
+							PRINTFORMW 「这样好一些吗？」
+						CASE 2
+							PRINTFORML 「这真是太亲密了...」
+							PRINTFORMDW 她的话语如耳语一般轻
+							PRINTFORMW 「甚至比交配更亲密」
+							PRINTFORMDW 她握紧了你的手
+					ENDSELECT
+
+				CASE 2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMDL 幽幻魔眼集中精神，她的脸红消失了
+							PRINTFORMW 「消失了吗？」
+							PRINTFORMDW 你点点头
+							PRINTFORMW 「那就好」
+							PRINTFORMDW 她笑了起来
+							PRINTFORMW 「我不想暴露身份，但我真的不想放开你的手...」
+
+						CASE 1
+							PRINTFORML 「我的手感觉怎么样？太软了吗？不够软？」
+							PRINTFORMW 「我也可以改变它的感觉」
+
+						CASE 2
+							PRINTFORMW 「你知道吗，在以前……舞总是取笑我即使是雪也会比我先交到%PRINT_MALE("男", MASTER)%朋友」
+							PRINTFORMW 幽幻魔眼笑了
+							PRINTFORMW 「我敢打赌，如果她现在能看到我，她会嫉妒得立刻变成一个桥姬...」
+
+					ENDSELECT
+
+			ENDSELECT
+		ELSEIF TALENT:151:セフレ || TALENT:151:愛欲
+
+			SELECTCASE K151_YM_NATURE()
+				CASE 0, 1
+					SELECTCASE IFRAND("0TO4", 1, "5", CFLAG:[[ユウゲンマガン]]:K151EN_YM_NATURE == 0)
+						CASE 0
+							PRINTFORMW 「这个动作已经成为我们的习惯」
+							PRINTFORMDW 她意思是"对我们有影响"吗？
+							PRINTFORML 「这是正确的用语吗？是的，这就是我们的意思」
+							PRINTFORMW 「你可以继续」
+
+						CASE 1
+							PRINTFORMW 「虽然对你来说很不愉快，但你还是继续这样做？」
+							PRINTFORMW 「...你说不，不是不愉快？」
+							PRINTFORMDW 幽幻魔眼瞥了你一眼，她的表情比平时更难以捉摸
+
+						CASE 2
+							PRINTFORML 「我们不明白你为什么继续对我们表示关爱」
+							PRINTFORMW 「我们是伴侣。仅此而已」
+
+						CASE 3
+							PRINTFORML 「你不羞于在公共场合这样做吗？」
+							PRINTFORMW 「在你们的文化中，公开交配是禁忌，不是吗？」
+							PRINTFORMW 「...是的，但这只是交配的前奏」
+							PRINTFORMW 「...嗯，你们的文化真是奇怪...」
+
+						CASE 4
+							PRINTFORML 「这是一个无意义的手势...」
+							PRINTFORMW 「但不知为何，对我们来说并不感觉无意义」
+							PRINTFORMW 「真奇怪。需要进一步研究」
+
+						CASE 5
+							PRINTFORMW （希望\@ TALENT:MASTER:性別 == 2 ? 他 # 她\@感觉不到我心跳得有多快...）
+
+					ENDSELECT
+
+
+				CASE 3
+
+			ENDSELECT
+		ELSEIF TALENT:151:思慕 || TALENT:151:恋慕
+			SELECTCASE K151_YM_NATURE()
+				CASE 0
+					PRINTFORMDW 她脸红了吗？
+					PRINTFORMDW 幽幻魔眼看到你在看她，脸红更深了
+					PRINTFORMW 「我…我们无法控制我们身体的反应！」
+
+				CASE 1
+
+			ENDSELECT
+		ELSE
+			SELECTCASE K151_YM_NATURE()
+				CASE 0
+
+				CASE 1
+
+			ENDSELECT
+		ENDIF
+	ENDIF
+ENDIF
+RETURN 1
+
+;==================================================
+;604,散策する
+;约会中の場合、CFLAG:現在位置に移動先の場所が既に入ってる
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_604
+;散策するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K151_604_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_604_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;605,寄り道する
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文無し
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_605
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_605
+;寄り道するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_MESSAGE_COM_K151_605_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_605_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;610,食事に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_610
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_610
+CALL M_KOJO_MESSAGE_COM_K151_610_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_610_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;613,お金稼ぎする（オミットされました
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_613
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_613
+CALL M_KOJO_MESSAGE_COM_K151_613_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_613_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;614,食材の買い出し
+;TFLAG:193(1=購入＆约会経験アップ 0=購入 -1=非購入)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_614
+CALL M_KOJO_MESSAGE_COM_K151_614_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_614_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;615,お弁当を食べる
+;実行可能場所　地蔵小路,倒垂的柳樹下,霧之湖,玄武之澤,大蛤蟆之池,絶景之丘,山之湖,天界
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:料理技能(2未満=微妙な出来 4未満=そこそこ美味しい 4以上=絶品)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_615
+CALL M_KOJO_MESSAGE_COM_K151_615_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_615_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;617,甘味処に誘う
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐は大成功のみ追加
+;==================================================
+@M_KOJO_SUCCESS_COM_K151_617
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_COM_K151_617
+CALL M_KOJO_MESSAGE_COM_K151_617_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_617_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;618,花屋（口上は表示されない模様？
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_618
+CALL M_KOJO_MESSAGE_COM_K151_618_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_618_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;620,鈴奈庵
+;TFLAG:193(1=貸し出しOK 0=貸し出し不可
+;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字引 X=4御伽草子
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_620
+CALL M_KOJO_MESSAGE_COM_K151_620_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_620_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;621,釣りをする
+;COM_STR（釣れたもの　"釣れない","ローター","木片","紙切れ", またはアイテム名、魚の種類）
+;TFLAG:194(1000以上ならTARGETが釣った)
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_621
+CALL M_KOJO_MESSAGE_COM_K151_621_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_621_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;626,土産屋
+;TFLAG:194(行動結果(-2=ひやかし -1=ウィンドウショッピング 1=400点未満（BAD） 2=～699点（NOMAL） 3=700点以上（GOOD）
+;CFLAG:性格傾向による地の文分岐あり
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_626
+CALL M_KOJO_MESSAGE_COM_K151_626_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_626_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:194
+		;ひやかし
+		CASE -2
+			;(GET_MAPID(CFLAG:MASTER:現在位置) == 5 && GIFTSHOP_NAME(5) == "香霖堂") ;kourindou check
+		;やっぱりやめる（見送り）
+		CASE -1
+
+		;400点未満（BAD）
+		CASE 1
+
+		;400点～699点（NOMAL）
+		CASE 2
+
+		;700点以上（GOOD）
+		CASE 3
+
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;660,読書 custom code edited
+;TFLAG:193(選択肢文学(1=忍殺(文学？) 2=失敗 3=文学),選択肢実用書(4=失敗 5=実用書),選択肢エッチな本(6=薄い高い本 7=保健体育 8=カーマスートラ))
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_436
+CALL M_KOJO_MESSAGE_COM_K151_436_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_436_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;698,部屋に入る
+;TARGETの部屋に入る場合のみ表示
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_698
+CALL M_KOJO_MESSAGE_COM_K151_698_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_698_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;699,外に出る
+;==================================================
+@M_KOJO_MESSAGE_COM_K151_699
+CALL M_KOJO_MESSAGE_COM_K151_699_1
+RETURN RESULT
+
+@M_KOJO_MESSAGE_COM_K151_699_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;派生コマンド
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;60,耳かき
+;前ターン膝枕後スキンシップコマンド
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K151_60
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K151_60
+CALL M_KOJO_MESSAGE_SCOM_K151_60_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K151_60_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;61,抱きまくら
+;(TARGET睡眠時間or衰弱)添い寝中、前ターン抱きつく後就寝コマンド
+;分岐無し
+;==================================================
+@M_KOJO_MESSAGE_SCOM_K151_61
+CALL M_KOJO_MESSAGE_SCOM_K151_61_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K151_61_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;62,デコちゅー
+;前ターン頭撫で後キスする
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地の文分岐無し
+;ABL:欲望(5以上=物足りない
+;ABL:親密(5以上=照れる
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K151_62
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K151_62
+CALL M_KOJO_MESSAGE_SCOM_K151_62_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K151_62_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;63,もっとキスする
+;前ターンキスする後キスする
+;分岐条件はEVENT_MESSAGE_COM500.ERB参照
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K151_63
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K151_63
+CALL M_KOJO_MESSAGE_SCOM_K151_63_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K151_63_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;80,手を引く
+;约会出発後目的地に着くまでの間
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_SUCCESS_SCOM_K151_80
+;成否判定
+;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
+TFLAG:192 =0
+
+@M_KOJO_MESSAGE_SCOM_K151_80
+CALL M_KOJO_MESSAGE_SCOM_K151_80_1
+RETURN RESULT
+@M_KOJO_MESSAGE_SCOM_K151_80_1
+;-------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 0
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
