@@ -947,3 +947,195 @@ CLEARLINE LINECOUNT - _LINECOUNT
 SIF RESULT == -1
 	PRINTFORML 还是先不打扰孩子们了
 RETURN RESULT
+[SKIPSTART]
+@照片拍摄(ARG, 拍摄察觉)
+#FUNCTIONS
+#DIMS DYNAMIC 时间描述
+#DIMS DYNAMIC 天气描述
+#DIMS DYNAMIC 地点描述
+#DIMS DYNAMIC 服装描述
+#DIMS DYNAMIC 行动描述
+#DIMS DYNAMIC 人物描述
+#DIMS DYNAMIC 完整胶片
+#DIM _COUNT
+#DIM DYNAMIC 拍摄察觉
+IF CFLAG:ARG:诶嘿嘿 == 0
+	;时间
+	SELECTCASE TIME:2
+		CASE 1
+			时间描述 = %TEXTR("破晓/拂晓/凌晨/黎明/薄晓")%
+		CASE 2
+			时间描述 = %TEXTR("早朝/早晨/上午/日间")%
+		CASE 3
+			时间描述 = %TEXTR("中午/午间/白昼/昼")%
+		CASE 4
+			时间描述 = %TEXTR("午后/下午/下昼/下晌")%
+		CASE 5
+			时间描述 = %TEXTR("落日/暮色/暮间/傍晚/薄暮")%
+		CASE 6
+			时间描述 = %TEXTR("夜晚/夜幕/晚间/夜色")%
+		CASE 7
+			时间描述 = %TEXTR("午夜/深夜/半夜/夜阑")%
+	ENDSELECT
+	时间描述 += 时
+	;天气，天界和地底不存在天气
+	IF OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))
+		IF INRANGE(FLAG:異常気象, 0, 8)
+			SELECTCASE TIME:5
+				CASE 0, 1, 2, 19
+					天气描述 = %TEXTR("晴日/晴空/晴天")%
+				CASE 3
+					天气描述 = %TEXTR("阴天/多云/云海/稠云")%
+				CASE 4, 20
+					天气描述 = %TEXTR("雨天/细雨/轻雨/小雨")%
+				CASE 5
+					天气描述 = %TEXTR("大雨/落雨")%
+				CASE 6
+					天气描述 = %TEXTR("雾雨/薄雨")%
+				CASE 7, 18
+					天气描述 = %TEXTR("青雾/雾/薄雾/雾色朦胧")%
+				CASE 8
+					天气描述 = %TEXTR("雪/落雪/飘雪/飞雪")%
+				CASE 9
+					天气描述 = %TEXTR("大雪/纷飞大学/鹅毛大雪/漫天飞雪")%
+				CASE 10
+					天气描述 = %TEXTR("冰雾/细雪")%
+				CASE 11
+					天气描述 = 雾雪
+				CASE 12
+					天气描述 = %TEXTR("雨夹雪/交加雪雨")%
+				CASE 13
+					天气描述 = %TEXTR("下落冰雹/下落冰粒")%
+				CASE 14
+					天气描述 = %TEXTR("暴雨/倾盆大雨/滂沱大雨")%
+				CASE 15
+					天气描述 = 落下大块冰雹
+				CASE 16
+					天气描述 = 交加风雨
+				CASE 17
+					天气描述 = 晴岚
+			ENDSELECT
+		ELSE
+			SELECTCASE FLAG:異常気象
+				CASE 9
+					天气描述 = %TEXTR("台风/狂风暴雨/疾风骤雨/狂风骤雨/暴风骤雨")%
+				CASE 10
+					天气描述 = %TEXTR("猛吹雪/暴雪/雪虐风饕")%
+				CASE 11
+					天气描述 = 钻石尘
+				CASE 12
+					天气描述 = %TEXTR("沙尘暴/漫天黄沙/肆虐黄风")%
+				CASE 13
+					天气描述 = %TEXTR("烈日/毒日")%
+				CASE 14
+					天气描述 = 极光
+			ENDSELECT
+		ENDIF
+	ENDIF
+
+	;地底没有明确的时间观念
+	SIF GET_MAPID(CFLAG:ARG:現在位置) == 9
+		VARSET 时间描述
+
+	IF GET_MAPID(CFLAG:ARG:現在位置) == MAIN_MAP
+		地点描述 = %STR:(8000 + CFLAG:ARG:現在位置)%
+	ELSE
+		地点描述 = %STR:(6000 + CFLAG:ARG:現在位置 / 10)%
+	ENDIF
+
+	SIF CURRENT_CLOTHES_SET(ARG) != CSVCFLAG(NO:ARG, GETNUM(CFLAG, "基本服装セット")) && (INRANGE(CURRENT_CLOTHES_SET(ARG), 1, 30) || INRANGE(CURRENT_CLOTHES_SET(ARG), 50, 99))
+		服装描述 = GET_STR(ARG, "衣装セット", CURRENT_CLOTHES_SET(ARG), "名前")
+	;自由行动、工作（正常工作或宴会）或无特殊行动
+	IF Activity_Duration:ARG > 0
+		IF !FreeAct_Chain(ARG)
+			行动描述 = %FreeAct_Name(ARG)%
+		ELSE
+			FOR _COUNT, 2, GET_TARGETNUM() + 1
+				IF RELATION:ARG:(TARGET:_COUNT) > 100 && Activity_Duration:ARG == Activity_Duration:(TARGET:_COUNT)
+					行动描述 += @"和%NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET:_COUNT)%"
+					BREAK
+				ENDIF
+			NEXT
+			行动描述 += FreeAct_Name(ARG)
+		ENDIF
+	ELSEIF CFLAG:ARG:行動 == 5
+		IF INRANGE(CFLAG:ARG:宴会参加, 1, 2) || CFLAG:ARG:職種 == JOB_酔いつぶれる
+			SELECTCASE CFLAG:ARG:職種
+				CASE JOB_宴会準備
+					行动描述 += @"进行宴会的准备工作"
+				CASE JOB_宴会参加
+					行动描述 += @"参加%EnkaiTitle%"
+				CASE JOB_宴会の片づけ
+					行动描述 += @"进行宴会的善后工作"
+				CASE JOB_酔いつぶれる
+					行动描述 += @"烂醉如泥"
+			ENDSELECT
+		ELSE
+			行动描述 += @"进行%GET_JOBNAME(ARG)%"
+		ENDIF
+	ELSE
+		; 种族 開朗／阴郁 冷漠 喜欢引人注目 心情
+		IF TALENT:ARG:思慕
+
+		ELSEIF TALENT:ARG:恋慕
+
+		ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲 || TALENT:ARG:淫乱
+
+		ELSE
+			IF (OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))) && !(GROUPMATCH(TIME:5, 0, 1, 2, 3, 7, 17, 18) || INRANGE(FLAG:異常気象, 0, 8))
+				IF 
+					SELECTCASE 
+
+
+				IF TALENT:ARG:人类 > 0
+					SELECTCASE TALENT:ARG:人类
+					ENDSELECT
+				ELSEIF TALENT:ARG:妖怪 > 0
+					SELECTCASE TALENT:ARG:妖怪
+					ENDSELECT
+				ELSEIF TALENT:ARG:妖精 > 0
+					SELECTCASE TALENT:ARG:妖精
+					ENDSELECT
+				ELSEIF TALENT:ARG:神霊 > 0
+					SELECTCASE TALENT:ARG:神霊
+					ENDSELECT
+				ELSEIF TALENT:ARG:幽霊 > 0
+					SELECTCASE TALENT:ARG:幽霊
+					ENDSELECT
+				ELSEIF TALENT:ARG:付喪神 > 0
+					SELECTCASE TALENT:ARG:付喪神
+					ENDSELECT
+				ELSEIF TALENT:ARG:人形 > 0
+					SELECTCASE TALENT:ARG:人形
+					ENDSELECT
+				ELSEIF TALENT:ARG:追加種族 > 0
+					SELECTCASE TALENT:ARG:追加種族
+					ENDSELECT
+				ENDIF
+
+			
+			
+		ENDIF
+
+	ENDIF
+	完整胶片 = %时间描述%在%天气描述%下的%地点描述%\@STRLENS(服装描述) > 0 ? ，穿着%服装描述% # \@%行动描述%的%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%
+ELSE
+ENDIF
+RETURNF 完整胶片
+
+行动描述 = 
+
+被雨淋湿了
+寻找可以挡雨的地方
+伸出手去接雨滴
+
+衣服因为湿透而变得半透明
+;小孩吗
+用力踩下地上的水坑而导致积水四溅
+抬头看天而导致雨水滴入眼睛
+扯了扯因为湿透而沾在身上的衣服
+出神地看着不断落下的雨水
+;动物吗
+抖动着甩掉身上沾着的雨水
+
+[SKIPEND]
