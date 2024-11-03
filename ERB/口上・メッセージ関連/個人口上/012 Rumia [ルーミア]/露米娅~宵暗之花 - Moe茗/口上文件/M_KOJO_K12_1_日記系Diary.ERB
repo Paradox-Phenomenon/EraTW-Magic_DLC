@@ -261,16 +261,16 @@ ENDIF
 ;ARG:3	为返回至对应页数的判别参数
 ;=============================
 @M_KOJO_Moe_DIARYSETTING_K12(ARG,ARG:1=0,ARG:2=0,ARG:3=0)
-	;日记变量设置
+	;日记大喇叭变量设置
 	IF ARG:1
 		RUMIA_DIARY:12:ARG = 2
 	ELSE 
 		RUMIA_DIARY:12:ARG = 3
 	ENDIF 
 	;避免日常系的重复日记
-	SIF !CFLAG:0:313
-	CFLAG:12:1770 = 1 
-	CALL K12_DIARY_PAGESETTING(12, ARG,ARG:3)		
+	SIF !CFLAG:0:313	;如果自机不在睡觉，说明是事件触发的
+		CFLAG:12:1770 = 1 
+	CALL K12_DIARY_PAGESETTING(12,ARG,ARG:3)		
 ;===========================================================================
 ;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
 ; 日记页数设置的函数
@@ -292,13 +292,13 @@ FOR LOCAL, 1, RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1
 		;日记日期和日记页数绑定
 		RUMIA_DIARY_DATE:CHARA:LOCAL = DAY 
 		;在设置日记页数的时候，就记录好日记的差分格式……
-		IF SETTING_NUMBER != 0
+		IF SETTING_NUMBER != 0	;此时有自定义参数
 			RUMIA_DIARY_SETTING:CHARA:LOCAL = SETTING_NUMBER
 			SETTING_NUMBER = 0 
-		ELSE 
+		ELSE 	;此时需要日记设置自定义参数
 			TRYCALLFORM DIARY_Moe_K{CHARA}_{NO_DIARY}_EDIT
 			SIF RESULT
-			RUMIA_DIARY_SETTING:CHARA:LOCAL = RESULT 
+				RUMIA_DIARY_SETTING:CHARA:LOCAL = RESULT 
 			RETURN LOCAL 
 		ENDIF 
 	ENDIF
@@ -523,7 +523,7 @@ IF !RESULT
 	RETURN
 ENDIF
 FOR DCOUNT, 1, RUMIA_MAX_DIARY_PAGE:C_ID:0 + 1
-	SIF GROUPMATCH(RUMIA_DIARY:C_ID:DCOUNT, 1 , 3)	;修改原有的判定……，如果把2加进去，会让准备当天大喇叭的也播报出来
+	SIF RUMIA_PAGESET:C_ID:DCOUNT 	;检测到有日记就显示
 		PAGENUM ++
 NEXT
 IF PAGENUM == 0
@@ -531,29 +531,44 @@ IF PAGENUM == 0
 	RETURN
 ENDIF
 FOR DCOUNT, 1, RUMIA_MAX_DIARY_PAGE:C_ID:0 + 1
-	CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, RUMIA_PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "指令")
+	IF RUMIA_DIARY:C_ID:(RUMIA_PAGESET:C_ID:DCOUNT) == 2 	;大喇叭日记的处理，预防提前看到
+		PRINTFORMDL - ルーミアの日記　%M_KOJO_Moe_K12_漢数字変換(RUMIA_PAGESET:C_ID:DCOUNT)%⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
+		PRINTFORML 
+		CALL M_KOJO_Moe_K12_適当日期設定(RUMIA_DIARY_DATE:12:(RUMIA_PAGESET:C_ID:DCOUNT))
+		PRINTFORML 
+		PRINTL 
+		CALL M_KOJO_Moe_COLOR_K12_SET(MOE_RUMIAA)	;更加便于阅读的露米娅
+		;▼在简化版中，它将从这里自动显示
+		PRINTFORMDL （似乎……还没写完呢……）
+		PRINTFORML 
+		PRINTFORMDL ⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
+		PRINTFORML 
+		RESETCOLOR
+	ELSE 
+		CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, RUMIA_PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "指令")
+	ENDIF 
 	;未読(3)だったら既読(1)にする
 	SIF RUMIA_DIARY:C_ID:(RUMIA_PAGESET:C_ID:DCOUNT) == 3
 		RUMIA_DIARY:C_ID:(RUMIA_PAGESET:C_ID:DCOUNT) = 1
 	CALL M_Moe_K12_ASK_M("察看回想",RUMIA_Moe_K12_DIARY_MEMORY_EXIST_ENSURE(RUMIA_PAGESET:C_ID:DCOUNT),"察看下一頁 ", DCOUNT < PAGENUM, "向后·翻5页", DCOUNT + 5 <= PAGENUM, "向后翻⑩页", DCOUNT + 10 <= PAGENUM, "察看前一頁", DCOUNT > 1,"察看前⑩頁",DCOUNT > 11, "閉合日記", 1)
-		IF RESULT == 0 
-			CALL RUMIA_Moe_K12_DIARY_MEMORY_COMFIRM(RUMIA_PAGESET:C_ID:DCOUNT)
-			DCOUNT -= 1 
-			CONTINUE 
-		ELSEIF RESULT == 1
-			CONTINUE
-		ELSEIF RESULT == 2
-			DCOUNT += 4
-		ELSEIF RESULT == 3
-			DCOUNT += 9
-		ELSEIF RESULT == 4
-			DCOUNT += -2
-		ELSEIF RESULT == 5
-			DCOUNT -= 11 
-		ELSEIF RESULT == 6
-			CLOSE = 1
-			BREAK
-		ENDIF
+	IF RESULT == 0 	;回想
+		CALL RUMIA_Moe_K12_DIARY_MEMORY_COMFIRM(RUMIA_PAGESET:C_ID:DCOUNT)
+		DCOUNT -= 1 
+		CONTINUE 
+	ELSEIF RESULT == 1
+		CONTINUE
+	ELSEIF RESULT == 2
+		DCOUNT += 4
+	ELSEIF RESULT == 3
+		DCOUNT += 9
+	ELSEIF RESULT == 4
+		DCOUNT += -2
+	ELSEIF RESULT == 5
+		DCOUNT -= 11 
+	ELSEIF RESULT == 6
+		CLOSE = 1
+		BREAK
+	ENDIF
 NEXT
 ;==========================================================
 ;日記の内容
@@ -1559,7 +1574,7 @@ ELSEIF ARG == 2
 	PRINTFORML 不过呀，想要露米娅怀孕的时候
 	PRINTFORML 露米娅会，很认真努力地配合的
 	PRINTFORML 才，才不是想要……
-ELSEIF ARG == 1
+ELSE	;出现了触发不了的情况，用这个作为……
 	PRINTFORML 今天起床的时候，露米娅的小穴里流血了，弄得胖次里全是血……
 	PRINTFORML 还以为，是%MASTERNAME:12%，把肚子里面戳坏了
 	PRINTFORML 后来才知道，这个其实是，露米娅的身体，可以怀孕的表现
@@ -2794,13 +2809,13 @@ PRINTFORML
 ;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
 @DIARY_Moe_K12_1515(ARG)
 IF ARG > 699
-;素质取得时，感度5级别
+	;素质取得时，感度5级别
 	PRINTFORML 露米娅的小穴，最近总是会痒痒的
 	PRINTFORML 好想要……被%MASTERNAME:12%……插进来%UNICODE(0x2764)%
 	PRINTFORML 只是插进来一点点，下半身就会一抽一抽的，一下就舒服得不得了%UNICODE(0x2764)%
 	PRINTFORML 在更深一点的地方，顶着肚皮来回摩擦的话，浑身都会舒服得发麻，好喜欢%UNICODE(0x2764)%
 	SIF ARG == 701
-	PRINTFORML 要是插进肚子里面的小穴，每次被用力顶起来，脑袋一片空白，舒服得什么都思考不了
+	PRINTFORML 要是插进肚子里面的房间，每次被用力顶起来，脑袋一片空白，舒服得什么都思考不了
 	PRINTFORML 都怪%MASTERNAME:12%，已经变成离开肉棒就满足不了的■■小穴啦%UNICODE(0x2764)%
 	PRINTFORML 明天也要，给露米娅更多更多的■■呢%UNICODE(0x2764)%
 ENDIF 
