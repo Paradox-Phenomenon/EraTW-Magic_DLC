@@ -2,7 +2,7 @@
 ;不確定tw能不能支持，如果能就好了，不能隨時存檔還是挺麻煩的，能用把這句話刪了
 ;我稍微优化了下逻辑,删掉了我感觉冗余的东西,同时加上了默认存档信息
 ;见你漏写了很多PRINTFORM,不想查了,全给你换成FORM了
-@Real_Time_Save(操作模式 = 1001, IS_REAL_TIME_SAVE = 0)
+@Real_Time_Save(操作模式 = 1001, qSave)
 #DIM 最大存檔數量
 #DIM 存檔編號
 #DIM 操作模式               ;1001為存檔，1002為讀檔，1003為刪檔，默認模式為存檔
@@ -12,7 +12,7 @@
 #DIM 選擇的存檔位
 #DIM 彩蛋計數器              ;圖一樂	原理精精液液一下午就是为了写这个啊
 #DIM PREV_REDRAW
-#DIM IS_REAL_TIME_SAVE
+#DIM qSave
 
 ;魔改添加非就寝时段存档执行开关
 PREV_REDRAW = CURRENTREDRAW()
@@ -34,6 +34,8 @@ SELECTCASE 操作模式
         PRINT 讀取
     CASE 1003
         PRINT 刪除
+    CASE 1004
+        PRINT 注釋存儲
     CASEELSE
         THROW 模式錯誤，無法進行对存檔的操作
 ENDSELECT
@@ -60,6 +62,13 @@ IF 操作模式 == 1003
 ELSE
 	PRINTBUTTON "[刪檔]", 1003
 ENDIF
+IF 操作模式 == 1004
+	SETCOLOR C_YELLOW
+	PRINT [注釋存儲]
+	RESETCOLOR
+ELSE
+	PRINTBUTTON "[注釋存儲]", 1004
+ENDIF
 IF Real_Time_Save == 1
     PRINTFORML
     SETCOLOR C_RED
@@ -71,7 +80,7 @@ FOR 存檔編號, 40 * (頁碼 - 1), MIN(40 * 頁碼, 最大存檔數量)
     VARSET RESULT:0
     RESULTS:0 = 
 	CALL saveColor(存檔編號)
-    SIF STRFIND(RESULTS:0, "自动存档") != -1
+    SIF STRFIND(RESULTS:0, "*自动存档*") != -1
         SETCOLOR C_GREEN
     SIF NEW_SAVE_MARK:存檔編號 == 1
         FONTSTYLE 1
@@ -83,7 +92,7 @@ NEXT
 VARSET RESULT:0
 RESULTS:0 = 
 CALL saveColor(1000)
-SIF STRFIND(RESULTS:0, "自动存档") != -1
+SIF STRFIND(RESULTS:0, "*自动存档*") != -1
     SETCOLOR C_GREEN
 SIF NEW_SAVE_MARK:1000 == 1
     FONTSTYLE 1
@@ -165,6 +174,9 @@ SELECTCASE RESULT
     CASE 1003
         SIF 操作模式 != 1003
             操作模式 = 1003
+    CASE 1004
+        SIF 操作模式 != 1004
+            操作模式 = 1004
     CASEELSE
         IF INRANGE(RESULT, 0, 最大存檔數量)
             選擇的存檔位 = RESULT
@@ -176,15 +188,20 @@ SELECTCASE RESULT
                 PRINTFORML %RESULTS:0%
                 PRINT 是否要
                 SELECTCASE 操作模式
-                    CASE 1001
+                    CASE 1001, 1004
 						SETCOLOR 0xff5050
                         PRINTFORML 替換該存檔？
 						RESETCOLOR
                         CALL ASK_YN
-                        IF !RESULT
+                        IF !RESULT 
 							;两个代码都一样,应该考虑做成函数,减少篇幅,方便维护
 							;存档
-							CALL saveManageSaveGame(選擇的存檔位, IS_REAL_TIME_SAVE)
+                            VARSET RESULTS
+                            IF 操作模式 == 1004
+                                PRINTFORML 請填寫您的備註（若未填入任何字符則按正常存儲自動生成備註信息）
+                                INPUTS
+                            ENDIF
+                            CALL saveManageSaveGame(選擇的存檔位, qSave, RESULTS)
                         ELSE
                             PRINTFORMW 未替換存檔
                         ENDIF
@@ -222,12 +239,17 @@ SELECTCASE RESULT
                 ENDSELECT
             ELSE
                 SELECTCASE 操作模式
-                    CASE 1001
+                    CASE 1001, 1004
                         PRINTFORML 要將存檔存儲在{選擇的存檔位}嗎？
                         CALL ASK_YN
                         IF !RESULT
 							;存档
-							CALL saveManageSaveGame(選擇的存檔位, IS_REAL_TIME_SAVE)
+                            VARSET RESULTS
+                            IF 操作模式 == 1004
+                                PRINTFORML 請填寫您的備註（若未填入任何字符則按正常存儲自動生成備註信息）
+                                INPUTS
+                            ENDIF
+							CALL saveManageSaveGame(選擇的存檔位, qSave, RESULTS)
                         ELSE
                             PRINTFORMW 未存儲存檔
                         ENDIF
@@ -406,33 +428,34 @@ GOTO 開始位置
     ENDSELECT
 
 ;存档
-@saveManageSaveGame(選擇的存檔位, MODE = 0)
-	#DIM 選擇的存檔位
-	#DIMS 存檔備注信息
-    #DIM MODE
-	GETTIME
-	存檔備注信息 '= @"%RESULTS% "
-    IF MODE == 2
-        存檔備注信息 += createSaveInfo(MODE)
-        SAVEDATA 選擇的存檔位, 存檔備注信息
-    ELSE
-        PRINTFORML 需要添加備注信息嗎？
-        CALL ASK_YN
-        IF !RESULT
-            存檔備注信息 += @"{DAY:0, 3, RIGHT}日"  
-            INPUTS
-            存檔備注信息 += RESULTS
-            SIF MODE == 1
-                存檔備注信息 += " ⭐即时存档⭐ "
-        ELSE
-            存檔備注信息 += createSaveInfo(MODE)
-        ENDIF
-        SIF MODE == 1
-            SaveDataInTrain = 1
-        SAVEDATA 選擇的存檔位, 存檔備注信息
-        PRINTFORMW 已存檔{選擇的存檔位}，存檔備注信息：%存檔備注信息%
-    ENDIF
-    IF STRFIND(存檔備注信息, "⭐即时存档⭐") == -1
-        NEW_SAVE_MARK:選擇的存檔位 = 1
-        SAVEGLOBAL
-    ENDIF
+@saveManageSaveGame(選擇的存檔位, qSave, 存檔備注信息)
+#DIM DYNAMIC 選擇的存檔位
+#DIMS DYNAMIC 存檔備注信息
+#DIM qSave
+#DIM DYNAMIC MODE
+GETTIME
+SIF !STRLENS(存檔備注信息)
+    存檔備注信息 = %createSaveInfo(qSave)%
+SIF qSave == 1 && STRFIND(存檔備注信息, "⭐即时存档⭐") == -1
+    存檔備注信息 += " ⭐即时存档⭐"
+SIF qSave == 2 && STRFIND(存檔備注信息, "*自动存档*") == -1
+    存檔備注信息 += " *自动存档*"
+; PRINTFORML 需要添加備注信息嗎？
+; CALL ASK_YN
+; IF !RESULT
+;     存檔備注信息 += @"{DAY:0, 3, RIGHT}日"  
+;     INPUTS
+;     存檔備注信息 += RESULTS
+;     SIF MODE == 1
+;         存檔備注信息 += " ⭐即时存档⭐ "
+; ELSE
+;     存檔備注信息 += createSaveInfo(MODE)
+; ENDIF
+SIF qSave == 1
+    SaveDataInTrain = 1
+SAVEDATA 選擇的存檔位, 存檔備注信息
+PRINTFORMW 已存檔{選擇的存檔位}，存檔備注信息：%存檔備注信息%
+IF STRFIND(存檔備注信息, "⭐即时存档⭐") == -1
+    NEW_SAVE_MARK:選擇的存檔位 = 1
+    SAVEGLOBAL
+ENDIF

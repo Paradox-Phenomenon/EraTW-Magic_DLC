@@ -947,7 +947,44 @@ CLEARLINE LINECOUNT - _LINECOUNT
 SIF RESULT == -1
 	PRINTFORML 还是先不打扰孩子们了
 RETURN RESULT
-[SKIPSTART]
+@射影机取得
+PRINTFORMW 轻轻擦去盒子表面的灰尘，掀开盖子
+PRINTFORMW 里面是一个老式照相机
+PRINTFORMW 在盖子上还有一张纸条
+PRINTL
+PRINTL
+PRINTL
+PRINTFORML ┌%"─" * 21%┐
+PRINTFORML ｜%" ", 6, LEFT%%"这是一台来自外界的摄像机", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"据说其出自民俗学家", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORM ｜%" ", 6, LEFT%
+SETCOLOR C_RED
+PRINTFORM %"麻生邦彦博士", 30, LEFT%
+RESETCOLOR
+PRINTFORML	%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"之手", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"可以拍摄到", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"“看不见的东西”", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"请根据您的需要", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML ｜%" ", 6, LEFT%%"尽情使用吧", 30, LEFT%%" ", 6, LEFT%｜
+PRINTFORML └%"─" * 21%┘
+PRINTL
+PRINTL
+PRINTW
+SETCOLOR C_YELLOW
+FONTSTYLE 1
+PRINTFORMW 取得了【奇怪的摄影机】
+FONTSTYLE 0
+RESETCOLOR
+射影机 = 1
+
+@摄像(ARG)
+IF AT_HOME(MASTER) && (ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_風呂 || ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_廁所)
+	PRINTFORML 这里不太适合进行拍照……
+	RETURN -1
+ENDIF
+PRINTFORMW 获得了【%照片拍摄(ARG, !RAND:5)%】的照片
+
 @照片拍摄(ARG, 拍摄察觉)
 #FUNCTIONS
 #DIMS DYNAMIC 时间描述
@@ -959,6 +996,8 @@ RETURN RESULT
 #DIMS DYNAMIC 完整胶片
 #DIM _COUNT
 #DIM DYNAMIC 拍摄察觉
+SIF !摄影系统开关 || !射影机
+	RETURNF ""
 IF CFLAG:ARG:诶嘿嘿 == 0
 	;时间
 	SELECTCASE TIME:2
@@ -977,22 +1016,22 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 		CASE 7
 			时间描述 = %TEXTR("午夜/深夜/半夜/夜阑")%
 	ENDSELECT
-	时间描述 += 时
+	时间描述 += "时"
 	;天气，天界和地底不存在天气
-	IF OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))
-		IF INRANGE(FLAG:異常気象, 0, 8)
+	IF OUTROOF(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) != 9 && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))
+		IF INRANGE(FLAG:異常気象, 0, 8) || FLAG:異常気象 > 10
 			SELECTCASE TIME:5
-				CASE 0, 1, 2, 19
+				CASE 0, 1
 					天气描述 = %TEXTR("晴日/晴空/晴天")%
-				CASE 3
+				CASE 2, 3
 					天气描述 = %TEXTR("阴天/多云/云海/稠云")%
-				CASE 4, 20
+				CASE 4
 					天气描述 = %TEXTR("雨天/细雨/轻雨/小雨")%
 				CASE 5
 					天气描述 = %TEXTR("大雨/落雨")%
 				CASE 6
 					天气描述 = %TEXTR("雾雨/薄雨")%
-				CASE 7, 18
+				CASE 7
 					天气描述 = %TEXTR("青雾/雾/薄雾/雾色朦胧")%
 				CASE 8
 					天气描述 = %TEXTR("雪/落雪/飘雪/飞雪")%
@@ -1010,10 +1049,10 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 					天气描述 = %TEXTR("暴雨/倾盆大雨/滂沱大雨")%
 				CASE 15
 					天气描述 = 落下大块冰雹
-				CASE 16
-					天气描述 = 交加风雨
-				CASE 17
-					天气描述 = 晴岚
+				; CASE 16
+				; 	天气描述 = 交加风雨
+				; CASE 17
+				; 	天气描述 = 晴岚
 			ENDSELECT
 		ELSE
 			SELECTCASE FLAG:異常気象
@@ -1021,14 +1060,14 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 					天气描述 = %TEXTR("台风/狂风暴雨/疾风骤雨/狂风骤雨/暴风骤雨")%
 				CASE 10
 					天气描述 = %TEXTR("猛吹雪/暴雪/雪虐风饕")%
-				CASE 11
-					天气描述 = 钻石尘
-				CASE 12
-					天气描述 = %TEXTR("沙尘暴/漫天黄沙/肆虐黄风")%
-				CASE 13
-					天气描述 = %TEXTR("烈日/毒日")%
-				CASE 14
-					天气描述 = 极光
+				; CASE 11
+				; 	天气描述 = 钻石尘
+				; CASE 12
+				; 	天气描述 = %TEXTR("沙尘暴/漫天黄沙/肆虐黄风")%
+				; CASE 13
+				; 	天气描述 = %TEXTR("烈日/毒日")%
+				; CASE 14
+				; 	天气描述 = 极光
 			ENDSELECT
 		ENDIF
 	ENDIF
@@ -1052,7 +1091,7 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 		ELSE
 			FOR _COUNT, 2, GET_TARGETNUM() + 1
 				IF RELATION:ARG:(TARGET:_COUNT) > 100 && Activity_Duration:ARG == Activity_Duration:(TARGET:_COUNT)
-					行动描述 += @"和%NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET:_COUNT)%"
+					行动描述 += @"和%NAME_OUTPUT_TRANSLATION("CALLNAME", TARGET:_COUNT)%一起"
 					BREAK
 				ENDIF
 			NEXT
@@ -1074,68 +1113,619 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 			行动描述 += @"进行%GET_JOBNAME(ARG)%"
 		ENDIF
 	ELSE
-		; 种族 開朗／阴郁 冷漠 喜欢引人注目 心情
-		IF TALENT:ARG:思慕
-
-		ELSEIF TALENT:ARG:恋慕
-
-		ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲 || TALENT:ARG:淫乱
-
+		IF FLAG:時間停止
+			行动描述 = %通常行动描述_时停(ARG)%
 		ELSE
-			IF (OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))) && !(GROUPMATCH(TIME:5, 0, 1, 2, 3, 7, 17, 18) || INRANGE(FLAG:異常気象, 0, 8))
-				IF 
-					SELECTCASE 
-
-
-				IF TALENT:ARG:人类 > 0
-					SELECTCASE TALENT:ARG:人类
-					ENDSELECT
-				ELSEIF TALENT:ARG:妖怪 > 0
-					SELECTCASE TALENT:ARG:妖怪
-					ENDSELECT
-				ELSEIF TALENT:ARG:妖精 > 0
-					SELECTCASE TALENT:ARG:妖精
-					ENDSELECT
-				ELSEIF TALENT:ARG:神霊 > 0
-					SELECTCASE TALENT:ARG:神霊
-					ENDSELECT
-				ELSEIF TALENT:ARG:幽霊 > 0
-					SELECTCASE TALENT:ARG:幽霊
-					ENDSELECT
-				ELSEIF TALENT:ARG:付喪神 > 0
-					SELECTCASE TALENT:ARG:付喪神
-					ENDSELECT
-				ELSEIF TALENT:ARG:人形 > 0
-					SELECTCASE TALENT:ARG:人形
-					ENDSELECT
-				ELSEIF TALENT:ARG:追加種族 > 0
-					SELECTCASE TALENT:ARG:追加種族
-					ENDSELECT
+			IF !拍摄察觉
+				IF OUTROOF(CFLAG:ARG:現在位置)
+					IF GET_MAPID(CFLAG:ARG:現在位置) != 9 && (MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界)
+						IF 天候造成的影響(ARG, CFLAG:ARG:現在位置) <= -3
+							行动描述 = %通常行动描述_未察觉_室外_天气可用_适宜气候(ARG)%
+							; 	IF OUTROOF(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) != 9
+							; 		IF (MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界)
+							; 			IF !(GROUPMATCH(TIME:5, 5, 9, 12, 13, 14, 15, 16) || GROUPMATCH(FLAG:異常気象, 9, 10, 12)) 
+							; 				SELECTCASE RAND:10
+							; 					CASE 0
+							; 						行动描述 = 静静注视着远方不知在看什么
+							; 					CASE 1
+							; 						行动描述 = 似乎被什么吸引了注意力而看向旁边
+							; 					CASE 2
+							; 						行动描述 = 正闭着眼伸了个懒腰
+							; 					CASE 3
+							; 						行动描述 = 似乎被什么东西吓了一跳
+							; 					CASE 4
+							; 						行动描述 = 正用手整理自己眼前的头发
+							; 					CASE 5
+							; 						行动描述 = 背对着镜头
+							; 					CASE 6
+							; 						行动描述 = 抬头45°角望着天空
+							; 					CASE 7
+							; 						行动描述 = 正弯下腰去不知发现了什么
+							; 					CASE 8
+							; 						行动描述 = 正放空视线发着呆
+							; 					CASE 9
+							; 						行动描述 = 低着头不知在想什么
+							; 				ENDSELECT
+							; 			ELSEIF GROUPMATCH(TIME:5, 5, 12, 14, 16) || FLAG:異常気象 == 9
+							; 				SELECTCASE RAND:4
+							; 					CASE 0
+							; 						行动描述 = 急切寻找能够避雨的地方
+							; 					CASE 1
+							; 						行动描述 = 用手臂遮挡防止雨水遮挡视野
+							; 					CASE 2
+							; 						行动描述 = 衣服因为湿透而变得半透明
+							; 					CASE 3
+							; 						行动描述 = 雨水顺着脸不断滑落
+							; 				ENDSELECT
+							; 			ELSEIF TIME:5 == 9 || FLAG:異常気象 == 9
+							; 				SELECTCASE RAND:4
+							; 					CASE 0
+							; 						行动描述 = 在大雪中蜷缩着身子
+							; 					CASE 1
+							; 						行动描述 = 被风雪吹得睁不开眼
+							; 					CASE 2
+							; 						行动描述 = 寻找着躲避风雪的地方
+							; 					CASE 3
+							; 						行动描述 = 将手放在口边呼气
+							; 				ENDSELECT
+							; 			ELSEIF GROUPMATCH(TIME:5, 13, 15)
+							; 				SELECTCASE RAND:3
+							; 					CASE 0
+							; 						行动描述 = 用手挡在头上面阻挡冰雹
+							; 					CASE 1
+							; 						行动描述 = 用手捂住刚被冰雹砸中的地方
+							; 					CASE 2
+							; 						行动描述 = 正弯腰捡起一块落在地上的冰雹
+							; 				ENDSELECT
+							; 			ELSEIF FLAG:異常気象 == 12
+							; 				SELECTCASE RAND:3
+							; 					CASE 0
+							; 						行动描述 = 被沙尘暴迷住眼睛
+							; 					CASE 1
+							; 						行动描述 = 正在清理沾在身上的沙土
+							; 					CASE 2
+							; 						行动描述 = 护住口鼻防止吸入风沙
+							; 				ENDSELECT
+							; 			ENDIF
+							; 		ELSE
+							; 			SELECTCASE RAND:3
+							; 				CASE 0
+							; 					行动描述 = 望着处在下方的云海
+							; 				CASE 1
+							; 					行动描述 = 眺望着远处的地平线
+							; 				CASE 2
+							; 					行动描述 = 抬头看向头顶的深空
+							; 			ENDSELECT
+							; 		ENDIF
+							; 	ELSEIF OUTROOF(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) == 9
+							; 		SELECTCASE RAND:10
+							; 			CASE 0
+							; 				行动描述 = 静静注视着远方不知在看什么
+							; 			CASE 1
+							; 				行动描述 = 似乎被什么吸引了注意力而看向旁边
+							; 			CASE 2
+							; 				行动描述 = 正闭着眼伸了个懒腰
+							; 			CASE 3
+							; 				行动描述 = 似乎被什么东西吓了一跳
+							; 			CASE 4
+							; 				行动描述 = 正用手整理自己眼前的头发
+							; 			CASE 5
+							; 				行动描述 = 背对着镜头
+							; 			CASE 6
+							; 				行动描述 = 抬头看着上方的岩石天顶
+							; 			CASE 7
+							; 				行动描述 = 正弯下腰去不知发现了什么
+							; 			CASE 8
+							; 				行动描述 = 正放空视线发着呆
+							; 			CASE 9
+							; 				行动描述 = 低着头不知在想什么
+							; 		ENDSELECT
+							; 	ELSE
+							; 		SELECTCASE RAND:9
+							; 			CASE 0
+							; 				行动描述 = 静静注视着窗外
+							; 			CASE 1
+							; 				行动描述 = 似乎被什么吸引了注意力而看向旁边
+							; 			CASE 2
+							; 				行动描述 = 正闭着眼伸了个懒腰
+							; 			CASE 3
+							; 				行动描述 = 靠在墙上
+							; 			CASE 4
+							; 				行动描述 = 正用手整理自己眼前的头发
+							; 			CASE 5
+							; 				行动描述 = 背对着镜头
+							; 			CASE 6
+							; 				行动描述 = 正弯下腰去不知发现了什么
+							; 			CASE 7
+							; 				行动描述 = 正放空视线发着呆
+							; 			CASE 8
+							; 				行动描述 = 低着头不知在想什么
+							; 		ENDSELECT
+							; 	ENDIF
+						ELSE
+							行动描述 = %通常行动描述_未察觉_室外_天气可用_恶劣气候(ARG)%
+						ENDIF
+					ELSE
+						行动描述 = %通常行动描述_未察觉_室外_天气不可用(ARG)%
+					ENDIF
+				ELSE
+					行动描述 = %通常行动描述_未察觉_室内(ARG)%
 				ENDIF
+			ELSE
+				行动描述 = %通常行动描述_察觉(ARG)%
+				; IF TALENT:ARG:思慕
+				; 	SELECTCASE RAND:3
+				; 		CASE 0
+				; 			行动描述 = 发现了你而眼神有些回避
+				; 		CASE 1
+				; 			行动描述 = 向这边轻轻微笑
+				; 		CASE 2
+				; 			行动描述 = 发现了你而有些慌张的遮挡
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:恋慕
+				; 	SELECTCASE RAND:3
+				; 		CASE 0
+				; 			行动描述 = 对着你开心地笑着
+				; 		CASE 1
+				; 			行动描述 = 发现了你并向你靠近了过来
+				; 		CASE 2
+				; 			行动描述 = 贴在你身边
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲 || TALENT:ARG:淫乱
+				; 	SELECTCASE RAND:3
+				; 		CASE 0
+				; 			行动描述 = 有意无意地向你展示着自己的身体
+				; 		CASE 1
+				; 			行动描述 = 用带有情欲的眼神望着你
+				; 		CASE 2
+				; 			行动描述 = 摆出暗示性的手势
+				; 	ENDSELECT
+				; ELSE
+				; 	SELECTCASE RAND:4
+				; 		CASE 0
+				; 			行动描述 = 试图用手遮住你的镜头
+				; 		CASE 1
+				; 			行动描述 = 用手遮挡着自己的脸
+				; 		CASE 2
+				; 			行动描述 = 迅速转过身去
+				; 		CASE 3
+				; 			行动描述 = 快速离开只留下模糊的虚影
+				; 	ENDSELECT
+				; ENDIF
+			ENDIF
+		ENDIF
+		; 种族 開朗／阴郁 冷漠 喜欢引人注目 心情
+		;IF TALENT:ARG:思慕
+
+		;ELSEIF TALENT:ARG:恋慕
+
+		;ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲 || TALENT:ARG:淫乱
+
+		;ELSE
+			; IF (OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))) && !(GROUPMATCH(TIME:5, 0, 1, 2, 3, 7, 17, 18) || INRANGE(FLAG:異常気象, 0, 8))
+			; 	SELECTCASE TIME:5
+			; 		CASE
+			; 	ENDSELECT
+				; IF TALENT:ARG:人类 > 0
+				; 	SELECTCASE TALENT:ARG:人类
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:妖怪 > 0
+				; 	SELECTCASE TALENT:ARG:妖怪
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:妖精 > 0
+				; 	SELECTCASE TALENT:ARG:妖精
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:神霊 > 0
+				; 	SELECTCASE TALENT:ARG:神霊
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:幽霊 > 0
+				; 	SELECTCASE TALENT:ARG:幽霊
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:付喪神 > 0
+				; 	SELECTCASE TALENT:ARG:付喪神
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:人形 > 0
+				; 	SELECTCASE TALENT:ARG:人形
+				; 	ENDSELECT
+				; ELSEIF TALENT:ARG:追加種族 > 0
+				; 	SELECTCASE TALENT:ARG:追加種族
+				; 	ENDSELECT
+				; ENDIF
 
 			
 			
-		ENDIF
+		;ENDIF
 
 	ENDIF
-	完整胶片 = %时间描述%在%天气描述%下的%地点描述%\@STRLENS(服装描述) > 0 ? ，穿着%服装描述% # \@%行动描述%的%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%
+	完整胶片 = %时间描述%\@STRLENS(天气描述) > 0 ? 在%天气描述%下的%地点描述% # 在%地点描述% \@\@STRLENS(服装描述) > 0 ? ，穿着%服装描述% # \@%行动描述%的%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%
 ELSE
 ENDIF
 RETURNF 完整胶片
 
-行动描述 = 
+; 行动描述 = 
 
-被雨淋湿了
-寻找可以挡雨的地方
-伸出手去接雨滴
+; 被雨淋湿了
+; 寻找可以挡雨的地方
+; 伸出手去接雨滴
 
-衣服因为湿透而变得半透明
-;小孩吗
-用力踩下地上的水坑而导致积水四溅
-抬头看天而导致雨水滴入眼睛
-扯了扯因为湿透而沾在身上的衣服
-出神地看着不断落下的雨水
-;动物吗
-抖动着甩掉身上沾着的雨水
+; 衣服因为湿透而变得半透明
+; ;小孩吗
+; 用力踩下地上的水坑而导致积水四溅
+; 抬头看天而导致雨水滴入眼睛
+; 扯了扯因为湿透而沾在身上的衣服
+; 出神地看着不断落下的雨水
+; ;动物吗
+; 抖动着甩掉身上沾着的雨水
+[SKIPSTART]
 
+【正高举着伞遮阳】
+
+【寻找阴凉地方避暑】
+
+【半眯着眼并用手遮挡阳光】
+
+【用着小手为自己扇风】
+
+;卧槽，冰！
+突然间想起了外界某视频网站上所流传着的抽象栗子头，股间之物不自觉的来了反应。
+
+于是便顺着那股感觉握住把柄，对，对着那抽象栗子头激烈前后起来。
+
+「哇袄！」
+
+「说的道理~」
+
+「哈比下↓」
+
+等等抽象叫声不绝于耳，而你也在这魔音缠绕中顺顺利利地打了出了一发白浊之物
+
+
+;bro以为自己是高司令
+在愣神间，%CALLNAME:MASTER%想到了自己那副容貌，那一副俊美的皮囊。
+
+想到这，作为男人的特征也不自觉的膨胀了起来。
+
+要么，便选择跟随着欲望，解开下身的衣裳，握住那根粗壮的棒儿，开始解决生理需求…
+
+而一会过后，你顺利地对着自己打出了自己的子子孙孙
 [SKIPEND]
+
+@通常行动描述_时停(ARG)
+#FUNCTIONS
+VARSET RESULTS
+RESULTS = 保持着绝对静止的状态
+RETURNF RESULTS
+@通常行动描述_未察觉_室外_天气可用_适宜气候(ARG)
+#FUNCTIONS
+VARSET RESULTS
+IF !RAND:4
+	SELECTCASE TIME:5
+		CASE 0, 1
+			IF TALENT:ARG:妖怪 == 3 || EQUIP:ARG:飾品 == 6 
+				RESULTS = 正高举着伞遮阳
+			ELSE
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 寻找阴凉地方避暑
+					CASE 1
+						RESULTS = 半眯着眼并用手遮挡阳光
+					CASE 2
+						RESULTS = 用着小手为自己扇风
+				ENDSELECT
+			ENDIF
+		CASE 4
+			IF (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行) && !RAND:3
+				RESULTS = 用力踩下地上的水坑而导致积水四溅
+			ELSEIF (TALENT:ARG:狐 || TALENT:ARG:妖狐 || TALENT:ARG:動物耳 || GROUPMATCH(TALENT:ARG:妖怪, 6, 7)) && !RAND:3
+				RESULTS = 抖动着甩掉身上沾着的雨水而显得有些炸毛
+			ELSEIF TALENT:ARG:音楽知識 == 3 && !RAND:3
+				RESULTS = 在雨中如一只鹤般高兴地翩翩起舞着
+			ELSE
+				SELECTCASE RAND:3
+					CASE 0
+						RESULTS = 伸出手去接雨滴
+					CASE 1
+						RESULTS = 抬头看天时被一滴雨水正好滴入眼睛
+					CASE 2
+						RESULTS = 出神地看着不断落下的雨水
+				ENDSELECT
+			ENDIF
+		CASEELSE
+			RESULTS = %通常行动描述_未察觉_正常通用(ARG)%
+	ENDSELECT
+ELSEIF !RAND:10
+	RESULTS = 静静注视着远方不知在看什么
+ELSE
+	RESULTS = %通常行动描述_未察觉_正常通用(ARG)%
+ENDIF
+RETURNF RESULTS
+
+@通常行动描述_未察觉_室外_天气可用_恶劣气候(ARG)
+#FUNCTIONS
+VARSET RESULTS
+SELECTCASE TIME:5
+	;烈日，夏日时对水栖生物和蕾蒂恶劣
+	; CASE 1
+	; 	IF DAY:2 == 2 && (TALENT:ARG:水棲 || TALENT:ARG:氷精 == 2)
+	; 	ENDIF
+	;大雨/豪雨，对非水栖生物恶劣
+	CASE 5, 14
+		IF !TALENT:ARG:水棲
+			SELECTCASE RAND:5
+				CASE 0
+					RESULTS = 急切寻找能够避雨的地方
+				CASE 1
+					RESULTS = 用手臂遮挡防止雨水遮挡视野
+				CASE 2
+					RESULTS = 衣服因为湿透而变得半透明
+				CASE 3
+					RESULTS = 雨水顺着脸不断滑落
+				CASE 4
+					RESULTS = 扯了扯因为湿透而沾在身上的衣服
+			ENDSELECT
+		ENDIF
+	;吹雪，对非冰精恶劣
+	CASE 9, 13
+		IF !TALENT:ARG:氷精
+			SELECTCASE RAND:4
+				CASE 0
+					RESULTS = 在大雪中蜷缩着身子
+				CASE 1
+					RESULTS = 被风雪吹得睁不开眼
+				CASE 2
+					RESULTS = 寻找着躲避风雪的地方
+				CASE 3
+					RESULTS = 将冻得有些发红的手放在口边呼气
+			ENDSELECT
+		ENDIF
+	;冰雹，对非冰精恶劣
+	CASE 13
+		IF !TALENT:ARG:氷精
+			SELECTCASE RAND:3
+				CASE 0
+					RESULTS = 用手挡在头上面阻挡冰雹
+				CASE 1
+					RESULTS = 用手捂住刚被冰雹砸中的地方
+				CASE 2
+					RESULTS = 被正好落到衣服内的冰块吓了一跳
+			ENDSELECT
+		ENDIF
+	;大冰雹，任何对象均恶劣
+	; CASE 15
+
+	CASEELSE
+ENDSELECT
+RETURNF RESULTS
+
+@通常行动描述_未察觉_室外_天气不可用(ARG)
+#FUNCTIONS
+VARSET RESULTS
+IF !RAND:5
+	IF GET_MAPID(CFLAG:ARG:現在位置) == 9
+		RESULTS = 抬头看着上方的岩石天顶
+	ELSEIF (MAIN_MAP != 8 && CFLAG:ARG:現在位置 == 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) == 天界)
+		SELECTCASE RAND:3
+			CASE 0
+				RESULTS = 望着处在下方的云海
+			CASE 1
+				RESULTS = 眺望着远处的地平线
+			CASE 2
+				RESULTS = 抬头看向头顶的深空
+		ENDSELECT
+	ENDIF
+ELSEIF !RAND:10
+	RESULTS = 静静注视着远方不知在看什么
+ELSE
+	RESULTS = %通常行动描述_未察觉_正常通用(ARG)%
+ENDIF
+RETURNF RESULTS
+
+@通常行动描述_未察觉_室内(ARG)
+#FUNCTIONS
+VARSET RESULTS
+IF !RAND:6
+	SELECTCASE RAND:2
+		CASE 0
+			RESULTS = 静静注视着窗外
+		CASE 1
+			RESULTS = 靠在墙上
+	ENDSELECT
+ELSE
+	RESULTS = %通常行动描述_未察觉_正常通用(ARG)%
+ENDIF
+RETURNF RESULTS
+
+@通常行动描述_未察觉_正常通用(ARG)
+#FUNCTIONS
+VARSET RESULTS
+SELECTCASE RAND:7
+	CASE 0
+		RESULTS = 似乎被什么吸引了注意力而看向旁边
+	CASE 1
+		RESULTS = 正闭着眼伸了个懒腰
+	CASE 2
+		RESULTS = 似乎被什么东西吓了一跳
+	CASE 3
+		RESULTS = 正用手整理自己眼前的头发
+	CASE 4
+		RESULTS = 背对着镜头
+	CASE 5
+		RESULTS = 正弯下腰去不知发现了什么
+	CASE 6
+		RESULTS = 正放空视线发着呆
+ENDSELECT
+RETURNF RESULTS
+
+@通常行动描述_察觉(ARG)
+#FUNCTIONS
+VARSET RESULTS
+IF !RAND:4
+	SELECTCASE TIME:5
+		CASE 4
+			IF TALENT:ARG:恋慕 || TALENT:ARG:恋人
+				RESULTS = 坏笑着用力踩下地上的水坑激起向着你飞来的水花
+			ELSE
+				RESULTS = %通常行动描述_察觉_通用(ARG)%
+			ENDIF
+		CASEELSE
+			RESULTS = %通常行动描述_察觉_通用(ARG)%
+	ENDSELECT
+ELSE
+	RESULTS = %通常行动描述_察觉_通用(ARG)%
+ENDIF
+RETURNF RESULTS
+
+@通常行动描述_察觉_通用(ARG)
+#FUNCTIONS
+VARSET RESULTS
+
+IF TALENT:ARG:恋慕 || TALENT:ARG:恋人
+	SELECTCASE RAND:3
+		CASE 0
+			RESULTS = 对着你开心地笑着
+		CASE 1
+			RESULTS = 发现了你并向你靠近了过来
+		CASE 2
+			RESULTS = 贴在你身边
+	ENDSELECT
+ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲
+	SELECTCASE RAND:3
+		CASE 0
+			RESULTS = 有意无意地向你展示着自己的身体
+		CASE 1
+			RESULTS = 用带有情欲的眼神望着你
+		CASE 2
+			RESULTS = 摆出暗示性的手势
+	ENDSELECT
+ELSEIF TALENT:ARG:思慕
+	SELECTCASE RAND:3
+		CASE 0
+			RESULTS = 发现了你而眼神有些回避
+		CASE 1
+			RESULTS = 向这边轻轻微笑
+		CASE 2
+			RESULTS = 发现了你而有些慌张的遮挡
+	ENDSELECT
+ELSE
+	SELECTCASE RAND:4
+		CASE 0
+			RESULTS = 试图用手遮住你的镜头
+		CASE 1
+			RESULTS = 用手遮挡着自己的脸
+		CASE 2
+			RESULTS = 迅速转过身去
+		CASE 3
+			RESULTS = 快速离开只留下模糊的虚影
+	ENDSELECT
+ENDIF
+RETURNF RESULTS
+
+
+
+
+@诱导逆推_询问(ARG)
+SIF !诱导逆推_开关
+	RETURN 0
+IF CFLAG:ARG:依頼状況 == 0 && GETBIT(诱导逆推_进程:ARG:0, 0);&& !GETBIT(诱导逆推_进程:ARG:0, 1)
+	PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%好像有事想要拜託%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%
+	; CALL SHOW_IRAI_MESSAGE(CHARA, CFLAG:CHARA:依頼内容, "依頼提示時")
+	; CALL SHOW_IRAI_DATA(CFLAG:CHARA:依頼内容, 0)
+	; PRINTFORML 依頼%TOFULL(TOSTR(CHK_SLOT))%
+	PRINTFORML 　＜那个……能找个安静的地方说吗？＞
+	PRINTFORML 　　委託者：%NAME_OUTPUT_TRANSLATION("NAME", ARG)%    -    %NAME_FROM_PLACE(CFLAG:ARG:現在位置)%
+	PRINTFORML 　委託内容：%NAME_OUTPUT_TRANSLATION("NAME", ARG)%似乎有什么重要的事想找你
+	PRINTFORML 　　　報酬：？？？
+	; SIF STRLENS(STR_DATA_IRAI(IRAI_ID, "依頼報告不要", CLIENT_ID))
+	; 	PRINTFORML 　　　報告：%STR_DATA_IRAI(IRAI_ID, "依頼報告不要", CLIENT_ID)%
+	; SIF STRLENS(STR_DATA_IRAI(IRAI_ID, "依頼備考表示", CLIENT_ID))
+	PRINTFORML 　　　備註：先带着%NAME_OUTPUT_TRANSLATION("NAME", ARG)%找一个没人的地方吧
+	CALL ASK_YN("接受委託", "拒絕")
+	IF RESULT
+		SETBIT 诱导逆推_进程:ARG:0, 1
+		PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%婉言拒绝了
+		; CALL SHOW_IRAI_MESSAGE(CHARA, CFLAG:CHARA:依頼内容, "依頼非受託時")
+		PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%看起來很可惜的樣子
+		RETURN -1
+	ELSE
+		SETBIT 诱导逆推_进程:ARG:0, 10
+		PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%接受了%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%的委託
+	ENDIF
+ENDIF
+
+@诱导逆推_强行结束(ARG)
+IF 诱导逆推_目前不可进行() == -1
+	PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%支支吾吾的说没什么事了
+	PRINTFORMW 从刚才开始就时不时瞟向旁边的人，似乎需要旁边完全没人才行呢……
+	VARSET 诱导逆推_进程:ARG:0
+	RETURN -1
+ENDIF
+IF 诱导逆推_目前不可进行() == -2
+	PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%支支吾吾的说没什么事了
+	PRINTFORMW 从刚才开始就一直关注着孩子，似乎需要旁边完全没人才行呢……
+	VARSET 诱导逆推_进程:ARG:0
+	RETURN -2
+ENDIF
+
+
+@诱导逆推_人物界面显示
+#DIM IRAI_NUM
+#DIM _COUNT
+SIF !诱导逆推_开关
+	RETURN 0
+IRAI_NUM = COUNT_IRAI_SLOT()
+FOR	_COUNT, 1, CHARANUM
+	IF GETBIT(诱导逆推_进程:_COUNT:0, 10)
+		IRAI_NUM ++
+		PRINTFORML 依頼%TOFULL(TOSTR(IRAI_NUM))%
+		PRINTFORML 　＜那个……能找个安静的地方说吗？＞
+		PRINTFORML 　　委託者：%NAME_OUTPUT_TRANSLATION("NAME", _COUNT)%    -    %NAME_FROM_PLACE(CFLAG:_COUNT:現在位置)%
+		PRINTFORML 　委託内容：%NAME_OUTPUT_TRANSLATION("CALLNAME", _COUNT)%似乎有什么重要的事想找你
+		PRINTFORML 　　　報酬：？？？
+		PRINTFORML 　　　備註：先带着%NAME_OUTPUT_TRANSLATION("CALLNAME", _COUNT)%找一个没人的地方吧
+	ENDIF
+NEXT
+
+@诱导逆推_目前不可进行(ARG)
+#FUNCTION
+#DIM _COUNT
+SIF !诱导逆推_开关
+	RETURNF 0
+SIF GET_TARGETNUM() > 1
+	RETURNF -1
+FOR _COUNT, 1,MAXCHILD + 1
+	SIF CHILD_INTERACTABLE_HERE:ARG:_COUNT == ARG
+		RETURNF -2
+NEXT
+
+@诱导逆推_执行(ARG)
+SIF !诱导逆推_开关
+	RETURN 0
+SIF FLAG:70
+	RETURN 0
+SIF CFLAG:MASTER:诶嘿嘿 != 0 || GET_TARGETNUM() > 1
+	RETURN 0
+SIF CFLAG:ARG:現在位置 % 100 == 97
+	RETURN 0
+SIF	OUTROOF(CFLAG:ARG:現在位置) && ABL:ARG:露出癖 + TALENT:ARG:羞恥心 < 3
+	RETURN 0
+PRINTL
+PRINTL
+PRINTL
+PRINTFORML 突然，整个人被一道从背后传来的力拉向了后面
+PRINTFORMW 反应过来时，身体被%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%牢牢地压住了
+IF OUTROOF(ARG)
+	CALL 潜伏場所決定処理
+	SETBIT CFLAG:TARGET:潜伏状態,0
+	SETBIT FLAG:潜伏,0
+	;開始時に潜伏率を100%に
+	BASE:MASTER:潜伏率 = 100
+ENDIF
+CFLAG:MASTER:诶嘿嘿 = 2
+CFLAG:ARG:诶嘿嘿 = 2
+TFLAG:102 = 3
+;経過時間表示用に開始時間を取っておく
+IF !UFUFU_START_TIME
+	UFUFU_START_TIME = TIME
+	UFUFU_START_DAY = DAY
+ENDIF
+VARSET 诱导逆推_进程:ARG:0

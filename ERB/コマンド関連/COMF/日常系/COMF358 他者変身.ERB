@@ -1,0 +1,80 @@
+﻿;-------------------------------------------------
+;他者変身
+;日常系コマンド　レベル1
+;-------------------------------------------------
+@COM358
+#DIM NAMENUM
+;-------------------------------------------------
+;COM別FLAGの設定
+;-------------------------------------------------
+
+;変身先選択
+NAMENUM = TARGET
+IF CFLAG:TARGET:変化先 == 0
+	PRINTFORML 誰に変身してもらう？(現在:元の姿)
+ELSE
+	PRINTFORML 誰に変身してもらう？(現在:%CALLNAME:(CFLAG:TARGET:変化先)%)
+ENDIF
+CALL SHOW_CHALALIST
+PRINTL 
+PRINTL [999] - やっぱりやめる
+INPUT
+;挿入中
+IF TCVAR:PLAYER:100 == TARGET || TCVAR:PLAYER:101 == TARGET
+	;体格差がある場合は経験がないとダメ
+	IF 挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識
+		PRINTFORML 体格差ありすぎ……
+		RETURN 0
+	ENDIF
+	;さらに体格差があると禁断の知識が必要
+	IF 挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)
+		PRINTFORML 体格差ありすぎ……
+		RETURN 0
+	ELSEIF 挿入不可(TARGET) == 3
+		PRINTFORML 体格差ありすぎ……
+		RETURN 0
+	ENDIF
+ENDIF
+
+IF !INRANGE(RESULT,1,CHARANUM)
+	PRINTL やめた
+	RETURN -1
+ELSEIF CALLNAME:RESULT == CALLNAME:NAMENUM
+	CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
+	CFLAG:TARGET:変化先 = 0
+	PRINTFORML %CALLNAME%は元の姿に戻った
+ELSE
+	CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
+	CFLAG:NAMENUM:変化先 = RESULT
+	PRINTFORML %CALLNAME:NAMENUM%は%CALLNAME:RESULT%に変身した！
+ENDIF
+
+TIME += 5
+
+;-------------------------------------------------
+;ソース追加処理
+;-------------------------------------------------
+;消費体力、気力
+
+RETURN 0
+;-------------------------------------------------
+;愛撫実行判定
+;-------------------------------------------------
+@COM_ABLE358
+SIF !TFLAG:100
+	RETURN 0
+;一括管理
+SIF GLOBAL_COMABLE(358)
+	RETURN RESULT
+SIF !TARGET
+	RETURN 0
+;時間停止中は禁止
+SIF FLAG:70 == 1
+	RETURN 0
+;変化持ち意外は駄目
+SIF !TALENT:変化
+	RETURN 0
+SIF !(TALENT:恋慕 || TALENT:愛欲)
+	RETURN 0
+
+RETURN 1
