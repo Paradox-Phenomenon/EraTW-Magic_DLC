@@ -11,45 +11,76 @@
 ;変身先選択
 NAMENUM = TARGET
 IF CFLAG:TARGET:変化先 == 0
-	PRINTFORML 誰に変身してもらう？(現在:元の姿)
+	PRINTFORML 要变身为哪位角色？(当前：原貌)
 ELSE
-	PRINTFORML 誰に変身してもらう？(現在:%CALLNAME:(CFLAG:TARGET:変化先)%)
+	PRINTFORML 要变身为哪位角色？(当前：%CALLNAME:(CFLAG:TARGET:変化先)%)
 ENDIF
 CALL SHOW_CHALALIST
 PRINTL 
-PRINTL [999] - やっぱりやめる
+PRINTFORML [998] - 恢复原状
+PRINTL [999] - 取消操作
 INPUT
-;挿入中
-IF TCVAR:PLAYER:100 == TARGET || TCVAR:PLAYER:101 == TARGET
-	;体格差がある場合は経験がないとダメ
-	IF 挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識
-		PRINTFORML 体格差ありすぎ……
-		RETURN 0
-	ENDIF
-	;さらに体格差があると禁断の知識が必要
-	IF 挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)
-		PRINTFORML 体格差ありすぎ……
-		RETURN 0
-	ELSEIF 挿入不可(TARGET) == 3
-		PRINTFORML 体格差ありすぎ……
-		RETURN 0
-	ENDIF
-ENDIF
 
-IF !INRANGE(RESULT,1,CHARANUM)
-	PRINTL やめた
-	RETURN -1
-ELSEIF CALLNAME:RESULT == CALLNAME:NAMENUM
-	CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
-	CFLAG:TARGET:変化先 = 0
-	PRINTFORML %CALLNAME%は元の姿に戻った
-ELSE
-	CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
-	CFLAG:NAMENUM:変化先 = RESULT
-	PRINTFORML %CALLNAME:NAMENUM%は%CALLNAME:RESULT%に変身した！
-ENDIF
+LOCAL = RESULT
 
-TIME += 5
+;口上での成否判定
+CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
+
+SELECTCASE TFLAG:192
+CASE 0, 1
+	;挿入中
+	IF TCVAR:PLAYER:100 == TARGET || TCVAR:PLAYER:101 == TARGET
+		;体格差がある場合は経験がないとダメ
+		IF 挿入不可(TARGET) == 1 && EXP:Ｖ経験 < 50 && !TALENT:PLAYER:禁断的知識
+			PRINTFORML 体型差异太大了……
+			TFLAG:193 = -1
+			RETURN -1
+		ENDIF
+		;さらに体格差があると禁断的知識が必要
+		IF 挿入不可(TARGET) == 2 && (!TALENT:PLAYER:禁断的知識 || EXP:Ｖ経験 < 50)
+			PRINTFORML 体型差异太大了……
+			TFLAG:193 = -1
+			RETURN -1
+		;小人
+		ELSEIF 挿入不可(TARGET) == 3
+			PRINTFORML 体型差异太大了……
+			TFLAG:193 = -1
+			RETURN -1
+		ENDIF
+	ENDIF
+
+	;解除
+	IF LOCAL == NAMENUM || LOCAL == 998
+		;元が本人
+		SIF !CFLAG:TARGET:変化先
+			GOTO CANCEL
+		CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
+		CFLAG:TARGET:変化先 = 0
+		PRINTFORML %CALLNAME%恢复了原本的样貌
+	;キャンセル
+	ELSEIF !INRANGE(LOCAL,1,CHARANUM)
+		$CANCEL
+		PRINTL 取消了
+		RETURN -1
+	;変化実行
+	ELSE
+		;同じキャラ
+		SIF CFLAG:TARGET:変化先 == LOCAL
+			GOTO CANCEL
+		CFLAG:TARGET:変化元 = CFLAG:TARGET:変化先
+		CFLAG:NAMENUM:変化先 = LOCAL
+		PRINTFORML %CALLNAME:NAMENUM%化身为%CALLNAME:LOCAL%！
+	ENDIF
+
+	IF TCVAR:PLAYER:100 == TARGET || TCVAR:PLAYER:101 == TARGET
+		TIME += 5
+	ELSE
+		TFLAG:102 = 0
+	ENDIF
+CASEELSE
+	TFLAG:193 = -1
+	TFLAG:102 = 0
+ENDSELECT
 
 ;-------------------------------------------------
 ;ソース追加処理
@@ -58,7 +89,7 @@ TIME += 5
 
 RETURN 0
 ;-------------------------------------------------
-;愛撫実行判定
+;他者変身実行判定
 ;-------------------------------------------------
 @COM_ABLE358
 SIF !TFLAG:100
@@ -71,7 +102,7 @@ SIF !TARGET
 ;時間停止中は禁止
 SIF FLAG:70 == 1
 	RETURN 0
-;変化持ち意外は駄目
+;変化持ち意外は禁止
 SIF !TALENT:変化
 	RETURN 0
 SIF !(TALENT:恋慕 || TALENT:愛欲)

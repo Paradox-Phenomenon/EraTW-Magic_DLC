@@ -268,7 +268,7 @@ FOR LOCAL, 0, CHARANUM
 	;開始位置
 	CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:初期位置
 	;服装
-	CALL SELECT_CLOTHES(LOCAL, "便服")
+	CALL SELECT_CLOTHES(LOCAL, "今日の衣装")
 	CALL CTRL_CLOTHES_SET(LOCAL, "現在衣装の変更_便装")
 	CALL 内衣確認リセット(LOCAL)
 	;これ多分問題なさそうだけど一応
@@ -312,7 +312,11 @@ VARSET 前回の胖次
 #DIM DYNAMIC vernier
 #DIM DYNAMIC SUM_FOR_DEBUG
 #DIMS DYNAMIC SELECT_SWITCH
+#DIMS DYNAMIC kojoIdtitle, 10
+#DIM DYNAMIC kojoIdcheck
+
 ;同角色口上複数確認 and record the name of kojo
+kojoIdcheck = 0
 FOR 口上カウント,0,10
 	VARSET RESULT
 	VARSET RESULTS
@@ -323,9 +327,15 @@ FOR 口上カウント,0,10
 		TRYCALLFORM M_KOJO_K{C_ID}
 	ENDIF
 	IF RESULT
-		SIF RESULTS:1 == ""
+		SIF RESULTS:1 == "" && kojoIdcheck == 0
 			RESULTS:1 = 初期
-		kojoNamesList:vernier = %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%%RESULTS:1%口上
+		SIF RESULTS:2 == ""
+			RESULTS:2 = 无简介
+		IF RESULTS:1 != ""
+			kojoNamesList:vernier = %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%%RESULTS:1%口上
+			kojoIdcheck ++
+		ENDIF
+		kojoIdtitle:vernier = %RESULTS:2%
 		kojoIdList:vernier = 口上カウント
 		; vernier ++
 		IF !GETBIT(CFLAG:C_ID:口上実装状況,口上カウント)
@@ -371,7 +381,20 @@ IF !STRLENS(SELECT_SWITCH)
 		;口上選択
 		IF !RESULT
 			LOCALS:0 = 要使用哪个口上呢
-			CALL CHOICE(LOCALS:0, kojoNamesList:0, kojoNamesList:1, kojoNamesList:2, kojoNamesList:3, kojoNamesList:4, kojoNamesList:5, kojoNamesList:6, kojoNamesList:7, kojoNamesList:8, kojoNamesList:9)
+			PRINTSL	LOCALS:0
+			FOR LOCAL, 0, 10
+				SIF !STRLENS(kojoNamesList:LOCAL)
+					CONTINUE
+				CALL kojoIdtitle_CHOICE(LOCAL, kojoNamesList:LOCAL,kojoIdtitle:LOCAL)
+			NEXT
+			$INPUT_LOOP
+			INPUT
+			IF !INRANGE(RESULT, 0, kojoIdcheck - 1)
+				;这种想看特殊剧情的人当然得给点特殊剧情照顾下
+				CALL SIMATTYAUOJISAN()
+				CLEARLINE 1
+				GOTO INPUT_LOOP
+			ENDIF
 			CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
 			RETURN 2
 		ELSE
@@ -386,6 +409,15 @@ ENDIF
 ; 	RETURN 1
 RETURN 0
 
+
+@kojoIdtitle_CHOICE(ARG, ARGS:0, ARGS:1)
+#DIMS html_kojo
+html_kojo = <p align='left'><nobr>
+html_kojo += @"  <button value='{ARG}' title='%ARGS:1%'>"
+html_kojo += @"[{ARG}] - %ARGS:0%"
+html_kojo += @"</button>"
+html_kojo += @"<br>"
+HTML_PRINT html_kojo
 ;-----------------------------------------------------------
 ;ユーザー定義の広域変数クリア
 ;-----------------------------------------------------------

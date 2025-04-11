@@ -9,9 +9,10 @@
 #DIM L_ID ;使用列表のID
 CALL MAKE_CHARA_LIST("可换装的角色列表", L_ID, ID_換装対象, 換装可能人数)
 IF 換装可能人数 <= 1
-	PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%换了衣服
+	;PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%换了衣服
 	CALL 服装換装(MASTER)
 	CALL CLOTHES_SETTING_TRAIN(MASTER)
+	PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%换了衣服
 	RETURN -1
 ENDIF
 
@@ -43,238 +44,332 @@ TFLAG:102 = 0
 @服装換装(C_ID)
 #DIM C_ID
 #DIM LINESTART2
+#DIM DYNAMIC REDRAW_RECORD
+#DIM DYNAMIC 部位选择 = 1
+#DIM DYNAMIC 换装选择
 
-LINESTART = LINECOUNT
-
-CALL SHOW_CLOTHES(C_ID, "現在的衣装")
+REDRAW_RECORD = CURRENTREDRAW()
+REDRAW 0
 PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%换衣服中
-PRINTFORML 
-PRINTFORML [7] - 衣装確認
-PRINTFORML [6] - 不穿衣服
-PRINTFORML [5] - 指定喜愛的衣装
-PRINTFORML [4] - 睡衣的变更
-PRINTFORML [3] - 便装的变更
-PRINTFORML [2] - 今天穿的衣服的变更
-PRINTFORML [1] - 胖次
-PRINTFORML 
-PRINTFORML [0] - 返回
+PRINTFORML
+LINESTART = LINECOUNT
 DO
+	CALL SHOW_CLOTHES(C_ID, "現在的衣装")
+	PRINTFORML 
+	;PRINTFORML [7] - 衣装確認
+	PRINTFORML [999] - 选项解释
+	PRINTFORML [5]   - 不穿衣服
+	;PRINTFORML [5] - 指定喜愛的衣装
+	IF C_ID == MASTER
+		HTML_PRINT "<nonbutton>[4]   - 默认睡衣的变更</nonbutton>"
+	ELSE
+		PRINTFORML [4]   - 默认睡衣的变更
+	ENDIF
+	PRINTFORML [3]   - 默认日常服装的变更
+	PRINTFORML [2]   - 当前穿着暂时变更
+	PRINTFORML [1]   - 当前胖次设定
+	PRINTFORML 
+	PRINTFORML [0] - 返回
 	INPUT
 	LINESTART2 = LINECOUNT
 	SELECTCASE RESULT
-	CASE 7
-		CALL SHOW_CHARA_CLOTHES(C_ID, 0)
-		CLEARLINE LINECOUNT - LINESTART
-		RESTART
-	CASE 6
-	CLEARLINE LINECOUNT - LINESTART
-	CALL SHOW_CLOTHES(C_ID, "套装")
-		PRINTFORML 脱掉%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的衣服，要这么做吗？ 
-		PRINTFORML [1] - 是
-		PRINTFORML [0] - 否
+	CASE 999
+		PRINTFORML 原版服装系统问题太多，因此本版本对服装进行了小幅重做，此处对各个选项的功能进行解释
+		HTML_PRINT @"<nonbutton>[5]   - %"不穿衣服", 20%: 这个不需要解释吧</nonbutton>"
+		HTML_PRINT @"<nonbutton>[4]   - %"默认睡衣的变更", 20%: 设定当前角色的默认睡衣穿搭，可以选择预设的或自设的套装，也可随意搭配，主角没有睡衣设定</nonbutton>"
+		HTML_PRINT @"<nonbutton>[3]   - %"默认日常服装的变更", 20%: 设定当前角色的默认穿搭，可以选择预设的或自设的套装，也可随意搭配</nonbutton>"
+		HTML_PRINT @"<nonbutton>[2]   - %"当前穿着暂时变更", 20%: 设定当前角色的暂时穿搭，第二天恢复默认，与预设套装（如兔女郎等）冲突</nonbutton>"
+		HTML_PRINT @"<nonbutton>[1]   - %"当前胖次变更", 20%: 设定当前角色当前的内裤，注意少数情况下角色内裤可能会根据服装变化（如执事服等）一起变化，注意睡衣和日常衣服的内裤指定不一致</nonbutton>"
+		FORCEWAIT
+	CASE 5
+	;CLEARLINE LINECOUNT - LINESTART
+	;CALL SHOW_CLOTHES(C_ID, "套装")
 		DO
+			PRINTFORML 脱掉%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的衣服，要这么做吗？ 
+			PRINTFORML [1] - 是
+			PRINTFORML [0] - 否
 			INPUT
 			SELECTCASE RESULT
 			CASE 1
-			IF C_ID != 0
-				PRINTFORML 用催眠术给%CALLNAME:C_ID%下了命令
-				PRINTFORMW 从明天开始不准再穿衣服了
-			ELSE
-			PRINTFORMW 决定自己从明天开始不穿衣服了
-			ENDIF
-		    CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_全裸")
+				IF C_ID != MASTER
+					PRINTFORML 用催眠术给%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%下了命令
+					PRINTFORMW 从明天开始不准再穿衣服了
+				ELSE
+					PRINTFORMW 决定自己从明天开始不穿衣服了
+				ENDIF
+				CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_全裸")
 				PRINTFORML
 				PRINTFORML 请问需要保留胖次吗？
-			    PRINTFORML [1] - 是
-		        PRINTFORML [0] - 否
-		        INPUT
-		        SELECTCASE RESULT
-		        CASE 1
-		        PRINTFORMW 那么胖次保留了
-		        CASE 0
-		        PRINTFORMW 那么明天开始%CALLNAME:C_ID%连胖次也不会穿了
-		        CFLAG:C_ID:指定胖次 = 100
-		        ENDSELECT  
+				PRINTFORML [1] - 是
+				PRINTFORML [0] - 否
+				INPUT
+				SELECTCASE RESULT
+				CASE 1
+					IF CFLAG:C_ID:睡衣
+						EQUIP:C_ID:下半身内衣１ = CFLAG:C_ID:245
+						EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:246
+					ELSE
+						EQUIP:C_ID:下半身内衣１ = CFLAG:C_ID:205
+						EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:206
+					ENDIF
+				PRINTFORMW 那么胖次保留了
+				CASE 0
+				PRINTFORMW 那么明天开始%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%连胖次也不会穿了
+				CFLAG:C_ID:指定胖次 = 100
+				ENDSELECT  
 				CALL DECIDE_CLOTHES(C_ID, "便装", "現在的衣装")
 			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
 			CASEELSE
-			ENDSELECT
 			CLEARLINE LINECOUNT - LINESTART2
-			RESTART
-		LOOP 1
-	CASE 5
-		$換装5
-		CALL SHOW_CLOTHES(C_ID, "套装")
-		PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的喜愛套装中
-		PRINTFORML 
-		PRINTFORML [4] - 指定现在的服装为套装
-		PRINTFORML [3] - 穿设定好的套装
-		PRINTFORML [2] - 穿和特定角色同款的衣服
-		PRINTFORML [1] - 指定的复位
-		PRINTFORML 
-		PRINTFORML [0] - 放棄
-		DO
-			INPUT
-			SELECTCASE RESULT
-			CASE 4
-				CALL DECIDE_CLOTHES(C_ID, "套装", "現在的衣装")
-			CASE 3
-				CALL COSPLAY_SET(C_ID, "套装")
-			CASE 2
-				CALL COSPLAY_CHARA(C_ID, "套装")
-			CASE 1
-				PRINTFORML 真的复位吗？
-				PRINTFORML 
-				PRINTFORML [1] - 复位
-				PRINTFORML [0] - 放棄
-				DO
-					INPUT
-					SELECTCASE RESULT
-					CASE 1
-						CALL CTRL_CLOTHES_SET(C_ID, "套装のリセット")
-					CASE 0
-						CLEARLINE LINECOUNT - LINESTART2
-						GOTO 換装5
-					CASEELSE
-						CLEARLINE 1
-						CONTINUE
-					ENDSELECT
-				LOOP 1
-			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
-				RESTART
-			CASEELSE
+			CONTINUE
 			ENDSELECT
-			CLEARLINE LINECOUNT - LINESTART2
-			GOTO 換装5
+			BREAK
 		LOOP 1
+	; CASE 5
+	; 	; $換装5
+	; 	;CALL SHOW_CLOTHES(C_ID, "套装")
+	; 	DO
+	; 		PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的喜愛套装中
+	; 		PRINTFORML 
+	; 		PRINTFORML [4] - 指定现在的服装为套装
+	; 		PRINTFORML [3] - 穿设定好的套装
+	; 		PRINTFORML [2] - 穿和特定角色同款的衣服
+	; 		PRINTFORML [1] - 指定的复位
+	; 		PRINTFORML 
+	; 		PRINTFORML [0] - 放棄
+	; 		INPUT
+	; 		SELECTCASE RESULT
+	; 		CASE 4
+	; 			CALL DECIDE_CLOTHES(C_ID, "套装", "現在的衣装")
+	; 		CASE 3
+	; 			CALL COSPLAY_SET(C_ID, "套装")
+	; 		CASE 2
+	; 			CALL COSPLAY_CHARA(C_ID, "套装")
+	; 		CASE 1
+	; 			DO
+	; 				PRINTFORML 真的复位吗？
+	; 				PRINTFORML 
+	; 				PRINTFORML [1] - 复位
+	; 				PRINTFORML [0] - 放棄
+	; 				INPUT
+	; 				SELECTCASE RESULT
+	; 				CASE 1
+	; 					CALL CTRL_CLOTHES_SET(C_ID, "套装のリセット")
+	; 				CASE 0
+	; 				CASEELSE 
+	; 					CLEARLINE 5
+	; 					CONTINUE
+	; 				ENDSELECT
+	; 				BREAK
+	; 			LOOP 1
+	; 		CASE 0
+	; 		CASEELSE
+	; 			CLEARLINE LINECOUNT - LINESTART2
+	; 			CONTINUE
+	; 		ENDSELECT
+	; 		BREAK
+	; 		; GOTO 換装5
+	; 	LOOP 1
 	CASE 4
-		IF C_ID == MASTER
-			CLEARLINE LINECOUNT - LINESTART
-			RESTART
-		ENDIF
-		$換装4
-		CALL SHOW_CLOTHES(C_ID, "今天的睡衣")
-		PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的睡衣中
-		PRINTFORML 
-		PRINTFORML [5] - 随你喜欢
-		PRINTFORML [4] - 睡觉的服装
-		PRINTFORML [3] - 指定睡衣
-		PRINTFORML [2] - 裸睡
-		PRINTFORML [1] - 只穿内裤就睡觉
-		PRINTFORML 
-		PRINTFORML [0] - 放棄
-		DO
-			INPUT
-			SELECTCASE RESULT
-			CASE 5
-				CFLAG:C_ID:睡衣指定 = 0
-			CASE 4
-				SIF CFLAG:C_ID:套装
-					CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_套装")
-			CASE 3
-				CALL COSPLAY_SELECT(C_ID, "睡衣", "睡衣セット")
-			CASE 2
-				CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_全裸")
-			CASE 1
-				CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_针织衫")
-			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
-				RESTART
-			CASEELSE
-				CLEARLINE 1
-				CONTINUE
-			ENDSELECT
-			CLEARLINE LINECOUNT - LINESTART2
-			GOTO 換装4
-		LOOP 1
+		;$換装4
+		; IF C_ID == MASTER
+		; PRINTFORMW 不可设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的睡衣
+		; BREAK
+		; ENDIF
+		FOR LOCAL, 1, 23
+			TEMP_CLOTHES:C_ID:LOCAL = CFLAG:C_ID:(240 + LOCAL)
+		NEXT
+		; DO
+		; 	CLEARLINE LINECOUNT - LINESTART2
+		; 	DRAWLINE
+		; 	PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的睡衣中
+		; 	CALL SHOW_CLOTHES(C_ID, "暂存状态")
+		; 	DRAWLINE
+		; 	FOR LOCAL:1, 1, 24
+		; 		SIF GROUPMATCH(EQUIPNAME:(LOCAL:1), "下身衣服", "上半身内衣２", "下半身内衣１")
+		; 			CONTINUE
+		; 		IF LOCAL:1 != 23
+		; 			IF 部位选择 == LOCAL:1
+		; 				SETCOLOR C_AQUA
+		; 				PRINTBUTTONLC @"[%EQUIPNAME:(LOCAL:1)%]" ,LOCAL:1 + 100
+		; 				RESETCOLOR
+		; 			ELSE
+		; 				PRINTBUTTONLC @"[%EQUIPNAME:(LOCAL:1)%]" ,LOCAL:1 + 100
+		; 			ENDIF
+		; 		ELSE
+		; 			IF 部位选择 == LOCAL:1
+		; 				SETCOLOR C_AQUA
+		; 				PRINTBUTTONLC @"[套装]" ,LOCAL:1 + 100
+		; 				RESETCOLOR
+		; 			ELSE
+		; 				PRINTBUTTONLC @"[套装]" ,LOCAL:1 + 100
+		; 			ENDIF
+		; 		ENDIF
+		; 	NEXT
+		; 	PRINTL
+		; 	DRAWLINE
+		; 	CALL 衣服选择列表(部位选择, C_ID)
+		; 	PRINTFORML [{0,2}]退出
+		; 	INPUT
+			; PRINTFORML 
+			; PRINTFORML [5] - 随你喜欢
+			; ;PRINTFORML [4] - 睡觉的服装
+			; PRINTFORML [3] - 指定设定好的套装作为睡衣
+			; PRINTFORML [2] - 裸睡
+			; PRINTFORML [1] - 只穿内裤就睡觉
+			; PRINTFORML 
+			; PRINTFORML [0] - 放棄
+			; SELECTCASE RESULT
+			; 	CASE IS > 100
+			; 		部位选择 = RESULT - 100
+			; 	CASE 100
+			; 		IF 部位选择 != 23
+			; 			TEMP_CLOTHES:C_ID:部位选择 = 0
+			; 		ELSE
+			; 			VARSET TEMP_CLOTHES
+			; 		ENDIF
+			; 	CASE IS > 0
+			; 		IF 部位选择 != 23
+			; 			SIF STRLENS(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:部位选择), RESULT, "名前"))
+			; 				TEMP_CLOTHES:C_ID:部位选择 = RESULT
+			; 		ELSE
+			; 			IF STRLENS(GET_STR(C_ID, "衣装セット", RESULT, "名前"))
+			; 				FOR LOCAL:2, 1, 23
+			; 					TEMP_CLOTHES:C_ID:(LOCAL:2) = GET_INT(C_ID, "衣装セット", LOCAL:2, EQUIPNAME:(LOCAL:2))
+			; 				NEXT
+			; 			ENDIF
+			; 		ENDIF
+			; 	CASE 0
+			; 		FOR LOCAL:3, 1, 23
+			; 			IF EQUIP:C_ID:(LOCAL:3) != TEMP_CLOTHES:C_ID:(LOCAL:3)
+			; 				PRINTFORML 确定要这样设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的睡衣吗？
+			; 				PRINTFORML （注意：非角色睡眠时间角色不会换上睡衣）
+			; 				CALL ASK_YN
+			; 				IF !RESULT
+			; 					FOR LOCAL:4, 1, 23
+			; 						CFLAG:C_ID:(240 + LOCAL:4) = TEMP_CLOTHES:C_ID:(LOCAL:4)
+			; 					NEXT
+			; 				ENDIF
+			; 				BREAK
+			; 			ENDIF
+			; 		NEXT
+			; 		VARSET TEMP_CLOTHES
+			; 		BREAK
+			; 	CASEELSE
+
+				; CASE 5
+				; 	CFLAG:C_ID:睡衣指定 = 0
+				; CASE 4
+				; 	SIF CFLAG:C_ID:套装
+				; 		CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_套装")
+				; CASE 3
+				; 	CALL COSPLAY_SELECT(C_ID, "睡衣", "睡衣セット")
+				; CASE 2
+				; 	CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_全裸")
+				; CASE 1
+				; 	CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_パンイチ")
+				; CASE 0
+				; CASEELSE
+				; 	CLEARLINE LINECOUNT - LINESTART2
+				; 	CONTINUE
+			; ENDSELECT
+			; CONTINUE
+			; GOTO 換装4
+		; LOOP 1
 	CASE 3
-		$換装3
-		CALL SHOW_CLOTHES(C_ID, "便服")
-		PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的便装中
-		PRINTFORML 
-		PRINTFORML [4] - 指定现在的服装（为发生而需要而被重写）
-		PRINTFORML [3] - 穿设定好的套装
-		PRINTFORML [2] - 穿和特定角色同款的衣服
-		PRINTFORML [1] - 由本人决定
-		PRINTFORML 
-		PRINTFORML [0] - 放棄
-		DO
-			INPUT
-			SELECTCASE RESULT
-			CASE 4
-				CALL DECIDE_CLOTHES(C_ID, "便装", "現在的衣装")
-			CASE 3
-				CALL COSPLAY_SET(C_ID, "便装")
-			CASE 2
-				CALL COSPLAY_CHARA(C_ID, "便装")
-			CASE 1
-				PRINTFORMW 便服的设定交给本人了
-				CFLAG:C_ID:基本服装セット = 0
-			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
-				RESTART
-			ENDSELECT
-			CLEARLINE LINECOUNT - LINESTART2
-			GOTO 換装3
-		LOOP 1
+		; $換装3
+		FOR LOCAL, 1, 23
+			TEMP_CLOTHES:C_ID:LOCAL = CFLAG:C_ID:(200 + LOCAL)
+		NEXT
+		; DO
+		; 	CALL SHOW_CLOTHES(C_ID, "今日の衣装")
+		; 	PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的便装中
+		; 	PRINTFORML 
+		; 	PRINTFORML [4] - 指定现在的服装（为发生而需要而被重写）
+		; 	PRINTFORML [3] - 穿设定好的套装
+		; 	PRINTFORML [2] - 穿和特定角色同款的衣服
+		; 	PRINTFORML [1] - 由本人决定
+		; 	PRINTFORML 
+		; 	PRINTFORML [0] - 放棄
+		; 	INPUT
+		; 	SELECTCASE RESULT
+		; 	CASE 4
+		; 		CALL DECIDE_CLOTHES(C_ID, "便装", "現在的衣装")
+		; 	CASE 3
+		; 		CALL COSPLAY_SET(C_ID, "便装")
+		; 	CASE 2
+		; 		CALL COSPLAY_CHARA(C_ID, "便装")
+		; 	CASE 1
+		; 		PRINTFORMW 今日の衣装的设定交给本人了
+		; 		CFLAG:C_ID:基本服装セット = 0
+		; 	CASE 0
+		; 	CASEELSE
+		; 		CLEARLINE LINECOUNT - LINESTART2
+		; 		CONTINUE
+		; 	ENDSELECT
+		; 	BREAK
+			; GOTO 換装3
+		; LOOP 1
 	CASE 2
-		$換装2
-		;#;PRINTFORML CFLAG:C_ID:衣装一時変更{CFLAG:C_ID:衣装一時変更}
-		CALL SHOW_CLOTHES(C_ID, "現在的衣装")
-		PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的现在穿的衣服设定中
-		PRINTFORML 
-		PRINTFORML [4] - 把衣服换成服装
-		PRINTFORML [3] - 穿设定好的套装
-		PRINTFORML [2] - 穿和特定角色同款的衣服
-		PRINTFORML [1] - 回到今天的默认
-		PRINTFORML 
-		PRINTFORML [0] - 放棄
-		DO
-			INPUT
-			SELECTCASE RESULT
-			CASE 4
-				IF !CFLAG:C_ID:套装
-					CLEARLINE LINECOUNT - LINESTART2
-					GOTO 換装2
-				ENDIF
-				CALL DECIDE_CLOTHES(C_ID, "現在的衣装", "套装")
-			CASE 3
-				CALL COSPLAY_SET(C_ID, "現在的衣装")
-			CASE 2
-				CALL COSPLAY_CHARA(C_ID, "現在的衣装")
-			CASE 1
-				PRINTFORMW 把今天的服装改了
-				CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_便装")
-			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
-				RESTART
-			ENDSELECT
-			CLEARLINE LINECOUNT - LINESTART2
-			GOTO 換装2
-		LOOP 1
+		;$換装2
+		FOR LOCAL, 1, 23
+			TEMP_CLOTHES:C_ID:LOCAL = EQUIP:C_ID:LOCAL
+		NEXT
+		; DO
+		; 	;#;PRINTFORML CFLAG:C_ID:衣装一時変更{CFLAG:C_ID:衣装一時変更}
+		; 	CALL SHOW_CLOTHES(C_ID, "現在的衣装")
+		; 	PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的现在穿的衣服设定中
+		; 	PRINTFORML 
+		; 	;PRINTFORML [4] - 把衣服换成服装
+		; 	PRINTFORML [3] - 穿设定好的套装
+		; 	PRINTFORML [2] - 穿和特定角色同款的衣服
+		; 	PRINTFORML [1] - 回到今天的默认
+		; 	PRINTFORML 
+		; 	PRINTFORML [0] - 放棄
+		; 	INPUT
+		; 	SELECTCASE RESULT
+		; 	CASE 4
+		; 		IF !CFLAG:C_ID:套装
+		; 			CLEARLINE LINECOUNT - LINESTART2
+		; 			;GOTO 換装2
+		; 		ENDIF
+		; 		CALL DECIDE_CLOTHES(C_ID, "現在的衣装", "套装")
+		; 	CASE 3
+		; 		CALL COSPLAY_SET(C_ID, "現在的衣装")
+		; 	CASE 2
+		; 		CALL COSPLAY_CHARA(C_ID, "現在的衣装")
+		; 	CASE 1
+		; 		PRINTFORMW 回到了今日的默认服装
+		; 		CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_便装")
+		; 	CASE 0
+		; 	CASEELSE
+		; 		CLEARLINE LINECOUNT - LINESTART2
+		; 		CONTINUE
+		; 	ENDSELECT
+		; 	BREAK
+			;GOTO 換装2
+		; LOOP 1
 	CASE 1
-		$換装1
-		PRINTFORML 斟酌%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的胖次中
-		PRINTFORML   現在穿著的胖次：%GET_STR(C_ID, "下半身内衣_ずらし可能", EQUIP:C_ID:下半身内衣２, "名前")%
-		SELECTCASE CFLAG:C_ID:指定胖次
-		CASE 0
-			PRINTFORML 　現在的胖次設定：无指定
-		CASE 100
-			PRINTFORML 　現在的胖次設定：指定不穿
-		CASEELSE
-			PRINTFORML 　現在的胖次設定：%GET_STR(C_ID, "下半身内衣_ずらし可能", CFLAG:C_ID:指定胖次, "名前")%
-		ENDSELECT
-		PRINTFORML 
-		PRINTFORML 
-		SIF C_ID == MASTER
-			PRINTFORML [3] - 着用中の胖次を脱掉
-		PRINTFORML [2] - 现在的内裤设定为喜欢的胖次
-		PRINTFORML [1] - 解除喜欢的胖次
-		PRINTFORML 
-		PRINTFORML [0] - 放棄
+		;$換装1
 		DO
+			PRINTFORML 斟酌%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的胖次中
+			PRINTFORML   現在穿著的胖次：%GET_STR(C_ID, "下半身内衣_ずらし可能", EQUIP:C_ID:下半身内衣２, "名前")%
+			SELECTCASE CFLAG:C_ID:指定胖次
+			CASE 0
+				PRINTFORML 　現在的胖次設定：无指定
+			CASE 100
+				PRINTFORML 　現在的胖次設定：指定不穿
+			CASEELSE
+				PRINTFORML 　現在的胖次設定：%GET_STR(C_ID, "下半身内衣_ずらし可能", CFLAG:C_ID:指定胖次, "名前")%
+			ENDSELECT
+			PRINTFORML 
+			PRINTFORML 
+			SIF C_ID == MASTER
+				PRINTFORML [3] - 着用中の胖次を脱掉
+			PRINTFORML [2] - 现在的内裤设定为喜欢的胖次
+			PRINTFORML [1] - 解除喜欢的胖次
+			PRINTFORML 
+			PRINTFORML [0] - 放棄
 			INPUT
 			SELECTCASE RESULT
 			CASE 3
@@ -289,18 +384,107 @@ DO
 				PRINTFORMW 解除喜欢的胖次了
 				CFLAG:C_ID:指定胖次 = 0
 			CASE 0
-				CLEARLINE LINECOUNT - LINESTART
-				RESTART
+			CASEELSE
+				CLEARLINE LINECOUNT - LINESTART2
+				CONTINUE
 			ENDSELECT
-			CLEARLINE LINECOUNT - LINESTART2
-			GOTO 換装1
+			BREAK
+			;GOTO 換装1
 		LOOP 1
 	CASE 0
+		CLEARLINE LINECOUNT - LINESTART
+		REDRAW REDRAW_RECORD
 		RETURN
 	CASEELSE
-		CLEARLINE 1
-		CONTINUE
 	ENDSELECT
+	换装选择 = RESULT
+	DO
+		CLEARLINE LINECOUNT - LINESTART2
+		DRAWLINE
+		PRINTFORML 设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的\@ 换装选择 == 4 ? 睡衣 # 衣服\@中
+		CALL SHOW_CLOTHES(C_ID, "暂存状态")
+		DRAWLINE
+		FOR LOCAL:1, 1, 24
+			SIF GROUPMATCH(EQUIPNAME:(LOCAL:1), "下身衣服", "上半身内衣２", "下半身内衣１")
+				CONTINUE
+			IF LOCAL:1 != 23
+				IF 部位选择 == LOCAL:1
+					SETCOLOR C_AQUA
+					PRINTBUTTONLC @"[%EQUIPNAME:(LOCAL:1)%]" ,LOCAL:1 + 100
+					RESETCOLOR
+				ELSE
+					PRINTBUTTONLC @"[%EQUIPNAME:(LOCAL:1)%]" ,LOCAL:1 + 100
+				ENDIF
+			ELSE
+				IF 部位选择 == LOCAL:1
+					SETCOLOR C_AQUA
+					PRINTBUTTONLC @"[套装]" ,LOCAL:1 + 100
+					RESETCOLOR
+				ELSE
+					PRINTBUTTONLC @"[套装]" ,LOCAL:1 + 100
+				ENDIF
+			ENDIF
+		NEXT
+		PRINTL
+		DRAWLINE
+		CALL 衣服选择列表(部位选择, C_ID)
+		PRINTFORML [{0,2}]退出
+		INPUT
+		SELECTCASE RESULT
+			CASE IS > 100
+				部位选择 = RESULT - 100
+			CASE 100
+				IF 部位选择 != 23
+					TEMP_CLOTHES:C_ID:部位选择 = 0
+				ELSE
+					VARSET TEMP_CLOTHES
+				ENDIF
+			CASE IS > 0
+				IF 部位选择 != 23
+					SIF STRLENS(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:部位选择), RESULT, "名前"))
+						TEMP_CLOTHES:C_ID:部位选择 = RESULT
+				ELSE
+					IF STRLENS(GET_STR(C_ID, "衣装セット", RESULT, "名前"))
+						FOR LOCAL:2, 1, 23
+							TEMP_CLOTHES:C_ID:(LOCAL:2) = GET_INT(C_ID, "衣装セット", RESULT, EQUIPNAME:(LOCAL:2))
+						NEXT
+					ENDIF
+				ENDIF
+			CASE 0
+				FOR LOCAL:3, 1, 23
+					IF EQUIP:C_ID:(LOCAL:3) != TEMP_CLOTHES:C_ID:(LOCAL:3)
+						PRINTFORML 确定要这样设定%NAME_OUTPUT_TRANSLATION("CALLNAME", C_ID)%的\@ 换装选择 == 4 ? 睡衣 # 衣服\@吗？
+						PRINTFORML （注意：除调整暂时穿搭外，换衣可能不会立刻起效）
+						CALL ASK_YN
+						IF 换装选择 == 4
+							IF !RESULT
+								FOR LOCAL:4, 1, 23
+									CFLAG:C_ID:(240 + LOCAL:4) = TEMP_CLOTHES:C_ID:(LOCAL:4)
+								NEXT
+							ENDIF
+						ELSEIF 换装选择 == 3
+							IF !RESULT
+								FOR LOCAL:4, 1, 23
+									CFLAG:C_ID:(200 + LOCAL:4) = TEMP_CLOTHES:C_ID:(LOCAL:4)
+								NEXT
+							ENDIF
+						ELSEIF 换装选择 == 2
+							IF !RESULT
+								FOR LOCAL:4, 1, 23
+									EQUIP:C_ID:(LOCAL:4) = TEMP_CLOTHES:C_ID:(LOCAL:4)
+								NEXT
+							ENDIF
+						ENDIF
+						BREAK
+					ENDIF
+				NEXT
+				VARSET TEMP_CLOTHES
+				BREAK
+			CASEELSE
+			ENDSELECT
+		CONTINUE
+	LOOP 1
+	CLEARLINE LINECOUNT - LINESTART
 LOOP 1
 
 
@@ -322,7 +506,7 @@ ELSEIF COS_CHARA == C_ID
 	CASE "套装"
 		PRINTFORMW 服装的设定中断了
 	CASE "便装"
-		PRINTFORMW 便服的设定交给本人了
+		PRINTFORMW 今日の衣装的设定交给本人了
 		CFLAG:C_ID:基本服装セット = 0
 	CASE "現在的衣装"
 		PRINTFORMW 把今天的服装改了
