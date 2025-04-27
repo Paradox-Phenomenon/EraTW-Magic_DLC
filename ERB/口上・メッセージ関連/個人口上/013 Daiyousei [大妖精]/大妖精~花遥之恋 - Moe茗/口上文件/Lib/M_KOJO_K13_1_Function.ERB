@@ -1,0 +1,269 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;函数系
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+
+;==================================================
+;
+;==================================================
+
+;==================================================
+;独有称呼设置函数
+;这一段是DOKU佬搓的版本
+	;ARG为0，则设置自机
+	;ARG为1，则设置对方自称
+	;当ARGS有指定至值时，（就叫XXX）的内容会换成ARGS
+;==================================================
+@MOE_DAI_NAME_SET(ARGS,ARG=0)
+;预处理
+SIF ARG
+	ARG = 1
+$RE_INPUT
+IF ARGS == ""
+	IF ARG
+		ARGS '= CSTR:13:20
+	ELSE
+		ARGS '= MASTERNAME:13
+	ENDIF
+	SIF ARGS == ""
+	ARGS '= CALLNAME:(ARG*13)
+ENDIF
+LOCALS '= ARGS
+
+;预处理结束
+
+PRINTBUTTON @"[就叫%LOCALS%]", 0
+IF LOCALS != CALLNAME:(ARG*13)
+	PRINTL 
+	PRINTBUTTON @"[改回%CALLNAME:(ARG*13)%]", 1
+ENDIF
+PRINTL 
+PRINTBUTTON @"[更改]", 2
+INPUT
+CLEARLINE 1
+PRINTL 
+SELECTCASE RESULT
+CASE 0
+$NAMESET_CASE0
+;CASE0 改成另外一个
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= ARGS
+	LOCAL = 0
+CASE 1
+$NAMESET_CASE1
+;CASE1 就用原来的
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= CALLNAME:(ARG*13)
+	LOCAL = 1
+;输入一个名字
+CASE 2
+	PRINTDL （请在下方输入名字）
+	INPUTS
+	LOCALS:1 '= REPLACE(RESULTS,"[\s]","")
+	IF STRLENS(LOCALS) > 10
+		PRINTW 「嗯……太长了，能不能简短一点？」  
+		GOTO RE_INPUT
+	ENDIF 
+	;统一处理
+	SELECTCASE LOCALS:1
+		CASE LOCALS
+			GOTO NAMESET_CASE0
+		CASE CALLNAME:(ARG*13)
+			GOTO NAMESET_CASE1
+		CASE ""
+			PRINTL 「那个……我没听见……」  
+			GOTO RE_INPUT
+	ENDSELECT
+	LOCALS = 2
+	
+	IF ARG
+		;角色
+		SELECTCASE LOCALS:1
+		
+		
+		ENDSELECT
+	ELSE
+		;玩家
+		SELECTCASE LOCALS:1
+
+		ENDSELECT
+	ENDIF
+	PRINTDL 确认吗？
+	PRINTBUTTON "[确认]",0
+	PRINTL 
+	PRINTBUTTON "[再想想]",1
+	INPUT
+	CLEARLINE 1
+	PRINTL 
+	IF RESULT
+		GOTO RE_INPUT
+	ENDIF
+	LOCALS '= LOCALS:1
+CASEELSE
+	GOTO RE_INPUT
+ENDSELECT
+LOCALS '= REPLACE(LOCALS,"[\s]","")
+IF ARG
+	;角色
+	CSTR:13:20 '= LOCALS
+ELSE
+	;玩家
+	MASTERNAME:13 '= LOCALS
+ENDIF
+
+;口上内容
+SELECTCASE LOCAL
+	CASE 0
+	;没有改变
+		
+	CASE 1
+	;初始名称
+		
+	CASE 2
+	;普通更改
+		
+	CASE 3
+	;彩蛋一号
+
+ENDSELECT
+RETURN LOCAL
+;
+;==================================================
+;炮友检测函数
+;==================================================
+@MOE_DAI_SEX_FRIEND()
+#FUNCTION 
+IF TALENT:13:184 || TALENT:13:185 
+	RETURNF 1
+ELSE 
+	RETURNF 0 
+ENDIF 
+
+;==================================================
+;人称
+;==================================================
+@MOE_DAI_HE_SHE(ARG=0)
+#FUNCTIONS
+#DIMS OUTPUT
+OUTPUT '= @"%TALENT:ARG:性別 == 2?"他"#"她"%"
+RETURNF OUTPUT 
+
+;==================================================
+;充填率_OF_DAI检测函数
+;避免不同版本充填率函数定义不一样
+;==================================================
+
+;身体部位 1=V, 2=A, 3=VA 4= 子宮
+@充填率_OF_DAI(角色登録番号, 身体部位)
+#FUNCTION
+#DIM 角色登録番号
+#DIM 身体部位
+#DIM 精液量
+#DIM 身体容量
+
+VARSET 精液量
+
+;該当部位の精液量の取得
+SELECTCASE 身体部位
+	CASE 1
+		精液量 = EX:角色登録番号:14
+	CASE 2
+		精液量 = EX:角色登録番号:15
+	CASE 3
+		;------ ALTER 精液填充加算
+		精液量 = EX:角色登録番号:14 + EX:角色登録番号:15 + (EX:角色登録番号:18)
+		;------ END
+		;精液量 = EX:角色登録番号:14 + EX:角色登録番号:15
+	CASE 4
+		精液量 = EX:角色登録番号:18
+ENDSELECT
+
+;該当部位の容量を取得
+SELECTCASE TALENT:角色登録番号:体型
+	CASE -5
+		身体容量 = 300
+	CASE -4 TO -2
+		身体容量 = 600
+	CASE -1
+		身体容量 = 1000
+	CASE 0
+		身体容量 = 1200
+	CASE IS > 0
+		身体容量 = 1500
+ENDSELECT
+
+;子宮ならば容量半減
+IF 身体部位 == 4
+	身体容量 /= 2
+ENDIF
+RETURNF 100 * 精液量 / 身体容量
+
+
+
+;==================================================
+;主动掀裙子描述函数、
+;避免重复使用文本造成虚胖
+;ARG:1是首句是否需要L，0为不需要
+;==================================================
+@MOE_DAI_PANTS_OR_PUxxY_DESCRIPTION(ARG=0)
+
+;函数内判别有无胖次穿着
+IF !ARG
+	SIF !EQUIP:6
+	ARG = 1 
+ENDIF 
+
+IF PALAM:13:9 >= 10000
+	PRINTFORMDL 在女孩满是黏糊糊蜜液的双腿之间
+ELSEIF PALAM:13:9 >= 2000
+	PRINTFORMDL 在女孩染上些许湿润的两腿之间
+ELSE 
+	PRINTFORMDL 在女孩白皙光洁的大腿之间
+ENDIF 
+
+;无胖次的情况
+IF ARG == 1 
+	IF 充填率_OF_DAI(13,1) > 77
+		PRINTFORMDL 直接裸露出的幼小蜜缝黏满了白浊，还在不断向外喷着精液
+		PRINTFORMDL 流淌着的精液随着她蹲下的动作，大股大股地滴落在地上……
+	ELSEIF 充填率_OF_DAI(13,1) > 10
+		PRINTFORMDL 裸露着的幼小蜜缝黏满了白浊，从中汩汩地流着精液
+		PRINTFORMDL 流淌着的精液随着她蹲下的动作，啪哒啪哒地滴落在地上……
+	ELSEIF PALAM:13:9 > 10000
+		PRINTFORMDL 直接裸露的幼小蜜缝，已经湿得一塌糊涂
+		PRINTFORMDL 从微微张开的穴口流淌出的蜜液，啪哒啪哒地滴落在地上……
+	ELSEIF PALAM:13:9 > 2000
+		PRINTFORMDL 被蜜液微微濡湿的幼小蜜缝吸引着你的目光……
+	ELSE 
+		PRINTFORMDL 微微张开的幼小蜜缝吸引着你的目光……
+	ENDIF
+ELSEIF !ARG
+	IF 充填率_OF_DAI(13,1) > 77
+		PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, 13)%中间不断地漫出精液……
+	ELSEIF 充填率_OF_DAI(13,1) > 10
+		PRINTFORMDL %PANTSNAME(EQUIP:6, 13)%靠近小穴的部分被精液浸染了……
+	ELSEIF PALAM:13:9 >= 10000
+		PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, 13)%散发出阵阵香味……
+	ELSEIF PALAM:13:9 >= 1000
+		PRINTFORMDL %PANTSNAME(EQUIP:6, 13)%靠近小穴的部分被蜜液浸染了……
+	ELSE
+		PRINTFORMDL %PANTS_DESCRIPTION(EQUIP:13:6, 13)%%PANTSNAME(EQUIP:6, 13)%吸引着你的目光
+	ENDIF
+ENDIF 

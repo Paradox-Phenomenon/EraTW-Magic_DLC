@@ -2907,13 +2907,27 @@ RETURN RESULT
 @M_KOJO_ENG01_MESSAGE_COM_K15_351_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	SIF FLAG:時間停止 || CFLAG:睡眠 ;custom code
+		RETURN 0
 	;TARGET連れ出し
 	IF CFLAG:同行 == 60
+		IF K15_HATE_ANGER()
+			PRINTFORMW 「有何貴幹？我的時間很寶貴。如果又是無聊的事，定會讓你後悔。」
+		ELSEIF TALENT:恋人 || TALENT:恋慕 || TALENT:愛欲
+			PRINTFORMW 「呵呵、要帶我去什麼好地方嗎♪」
+		ELSE
+			PRINTFORMW 「需要我陪同去其他地方？無妨。」
+		ENDIF
 	;TARGET以外連れ出し(TARGET同行中のみ
 	ELSE
+		IF TALENT:恋人 || TALENT:恋慕 || TALENT:愛欲
+			PRINTFORMW 「我也要一起同行嗎？」
+		ELSE
+			PRINTFORMW 「你要外出嗎？」
+		ENDIF
 	ENDIF
 ENDIF
 RETURN 1
@@ -3363,11 +3377,18 @@ RETURN RESULT
 @M_KOJO_ENG01_MESSAGE_COM_K15_405_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	SIF FLAG:時間停止 ;fix
+		RETURN 0
+		
 	;TARGETとデート
 	IF CFLAG:同行
+		IF K15_HATE_ANGER() ;added
+			PRINTFORML 「想要挽回自己嗎？我對你已不抱多少期待了、不過...」
+			PRINTFORML 「若能讓我驚艷的話、儘管試試看啊」
+		ENDIF
 	;TARGET以外とデート
 	ELSEIF CFLAG:MASTER:同行
 	;お出かけお見送り
@@ -3519,10 +3540,13 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	
+	SIF CFLAG:睡眠
+		RETURN 0
+	SIF FLAG:時間停止
+		RETURN 0
 	IF K15_HATE_ANGER()
 		;PRINTFORMW %CALLNAME:15% didn't say anything while studying.
-		PRINTFORMW %CALLNAME:15%在讀書時一句話也沒說。
+		PRINTFORMDW %CALLNAME:15%在讀書時一句話也沒說。
 	ELSEIF K15_LIKES_PLAYER()
 		;PRINTFORML 「May I offer some tea while we study, %CALLNAME:PLAYER%?」
 		PRINTFORML 「學習時讓我來奉上一杯茶吧，%CALLNAME:PLAYER%？」
@@ -3574,8 +3598,10 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	SIF FLAG:70
-		RETURN 1
+	SIF CFLAG:睡眠
+		RETURN 0
+	SIF FLAG:時間停止
+		RETURN 0
 
 	;first time
 	IF FIRSTTIME(SELECTCOM)
@@ -3612,7 +3638,7 @@ IF LOCAL
 		IF ABL:MASTER:料理技能 >= 5
 			;PRINTFORML %CALLNAME:15% looks at you impressed by your cooking.
 			;PRINTFORMW 「Truly a %DISHNAME% worthy of the Mistress.」
-			PRINTFORML %CALLNAME:15%認可了你的烹調技巧。
+			PRINTFORMDL %CALLNAME:15%認可了你的烹調技巧。
 				;呃 感覺咲夜也是大師吧?
 			PRINTFORMW 「這道%DISHNAME%的確值得被向大小姐奉上。」
 				;cooking skill > 2

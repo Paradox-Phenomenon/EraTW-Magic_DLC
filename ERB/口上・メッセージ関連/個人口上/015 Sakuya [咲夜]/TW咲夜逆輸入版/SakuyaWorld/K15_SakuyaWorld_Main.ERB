@@ -13,12 +13,16 @@
 	SIF MARK:15:不埒刻印  < 3
 		RETURN 1
 		
-		 ;needs blackmail   or   lustful
-	IF CFLAG:15:掌握把柄 > 0 || K15_LUST(750) || ARG:1
+		 ;needs blackmail   or   lustful (             or the timestop consent thing, added)
+	IF CFLAG:15:掌握把柄 > 0 || K15_LUST(750) || ARG:1 || CFLAG:15:K15C_TIMESTOPCONSENT > 0 ;added
 			  ;chance
 		IF ARG > RAND:100
 				;store blackmail flag
 			iBlackmail = CFLAG:15:掌握把柄 
+		
+			;added, lowers the tsp rape consent by one but only if it's bigger than 0
+			SIF CFLAG:15:K15C_TIMESTOPCONSENT > 0
+				CFLAG:15:K15C_TIMESTOPCONSENT --
 		
 			;choose action
 			VARSET LOCAL
@@ -34,8 +38,8 @@
 			WEND
 			WAIT
 			
-			;Sakuya had some blackmail and forgives you
-			SIF CFLAG:15:掌握把柄 == 0 && iBlackmail > 0
+			;Sakuya had some blackmail and forgives you (added, or the timestop consent thing is at 0)
+			SIF CFLAG:15:掌握把柄 == 0 && iBlackmail > 0 || CFLAG:15:K15C_TIMESTOPCONSENT == 0
 				CALL K15_SAKUYAWORLD_MESSAGE_FORGIVEN()
 		ELSE
 			CALL K15_SAKUYAWORLD_MESSAGE_NOACTION()
@@ -56,8 +60,27 @@ RETURN 1
 ;sakuya world forgiven blackmail message
 ;==================================================
 @K15_SAKUYAWORLD_MESSAGE_FORGIVEN(ARG)
-	;PRINTFORML You somehow have a feeling %CALLNAME:15% has forgiven you...
-	PRINTFORML 你總覺得%CALLNAME:15%像是已經原諒你了…
+	;PRINTFORMDW You somehow have a feeling %CALLNAME:15% has forgiven you...
+	PRINTFORMDW 你總覺得%CALLNAME:15%像是已經原諒你了…
+	IF CFLAG:15:K15C_TIMESTOPCONSENT != -1
+	;added
+	PRINTFORMDL 但你內心反而希望她不要停下
+	PRINTFORMDL 要讓%CALLNAME:15%在停止的時間裡繼續愛撫嗎？
+	CALL ASK_M("當然，誰准她停下了？",1,"不用，現在這樣就好",1,"不要，而且以後也別再問了（本存檔將不再出現此選項）",1)
+		SELECTCASE RESULT
+		CASE 0 ;yes
+			CFLAG:15:K15C_TIMESTOPCONSENT = 20 ;is 20 times per reset too much? questions for later
+			PRINTFORMDL %CALLNAME:15%聽到你的要求後露出了燦爛的笑容
+			PRINTFORMW 「唔呼呼～你絕對不會後悔的喲%UNICODE(0x2764)%」
+		CASE 1 ;no
+			PRINTFORMDW 你決定別節外生枝，就讓現狀維持下去
+		CASE 2 ;no and never again
+			CFLAG:15:K15C_TIMESTOPCONSENT = -1 ;setting it to -1 should kill this, at least for this save or ng+ cycle
+			PRINTFORMDL 你決定不提起這件事，畢竟你根本不想再經歷第二次
+			PRINTFORMDW 至少在你有同意權的時候不想
+	ENDSELECT
+	PRINTL
+	ENDIF
 RETURN 1
 
 ;==================================================
@@ -121,11 +144,9 @@ RETURN 0
 		;PRINTFORMDW You suddenly feel a pinch on your sides.
 		PRINTFORMDW 你突然覺得自己的肋部被捏了一下。
 	ELSEIF TALENT:15:恋慕
-		;PRINTFORMDW You suddenly feel a pleasant warmth, as if someone was hugging very tightly you for a while.
-		PRINTFORMDW 你突然感到一陣舒坦的暖意，感覺像是被誰緊緊擁抱了一會。
+		PRINTFORMDW 你突然感到全身一陣舒適的暖意，彷彿被某人緊緊擁抱了好陣子
 	ELSE
-		;PRINTFORMDW You suddenly feel a pleasant warmth, as if someone was hugging you for a while.
-		PRINTFORMDW 你突然感到一陣舒坦的暖意，感覺像是被誰抱了抱一樣。
+		PRINTFORMDW 你突然感到全身一陣舒適的暖意，彷彿被某人擁抱了好陣子
 	ENDIF
 	
 	PRINTFORMDL
@@ -583,7 +604,7 @@ RETURN 0
 	;PRINTFORMW ...
 	;PRINTFORML
 	PRINTFORML 
-	PRINTFORMW 「私の世界♪」
+	PRINTFORMW 「我的"世界"♪」
 		;差點翻成Za warudo
 	PRINTFORML
 	PRINTFORMW 「呵呵呵♪ %CALLNAME:MASTER%%UNICODE(0x2665)%」 

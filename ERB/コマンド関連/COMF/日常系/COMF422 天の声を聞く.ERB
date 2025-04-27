@@ -6,6 +6,7 @@
 PRINTL [0] - 想找人
 PRINTL [1] - 想做掃除
 PRINTL [2] - 想找住在外面的人
+PRINTL [3] - ランキング
 ;SIF STALKED
 ;	PRINTFORML [3] - 【追踪】対象変更（現在的対象：%NAME_OUTPUT_TRANSLATION("CALLNAME", STALKED)%）
 PRINTL [100] - 返回
@@ -16,6 +17,10 @@ ELSEIF RESULT == 1
 	CALL OHEYA_CHECK
 ELSEIF RESULT == 2
 	CALL BROAD_HITOSAGASI
+	TIME += 3
+	RETURN 1
+ELSEIF RESULT == 3
+	CALL RANKING
 	TIME += 3
 	RETURN 1
 ELSEIF RESULT == 100
@@ -107,6 +112,207 @@ IF ARG:1 == 1
 	ELSE
 		PRINTL 誰也不在
 	ENDIF
+ENDIF
+@RANKING
+PRINTL [0] - 子供数
+PRINTL [1] - 膣内射精数
+PRINTL [2] - 肛内射精数
+PRINTL [3] - 精飲数
+PRINTL [4] - ぶっかけ数
+PRINTL [5] - 絶頂経験
+PRINTL [6] - 噴乳経験
+PRINTL [7] - 自慰経験
+PRINTL [8] - デート経験
+PRINTL [9] - キス経験
+
+PRINTL [100] - 戻る
+INPUT
+IF RESULT>=0 && RESULT<10
+	CALL ランキング表示(RESULT)
+	RETURN -1
+ELSEIF RESULT == 100
+	RETURN -1
+ENDIF
+
+@ランキング表示(ARG)
+#DIM RANK
+#DIM ra
+#DIM ranum
+#DIM flagnum
+#DIM kind
+VARSET LOCAL
+
+;キャラ数だけLOCALの配列を準備
+;すべて1に設定しておく
+FOR RANK,1,CHARANUM
+	LOCAL:RANK = 1
+NEXT
+
+
+;flagnum:フラグナンバーを管理
+;kind:フラグ種類を管理（EXPかCFLAGか）
+IF ARG==0
+	PRINTL 子供数
+	kind = 0
+	flagnum=912
+ELSEIF ARG == 1
+	PRINTL 膣内射精数
+	kind = 1
+	flagnum=515
+ELSEIF ARG == 2
+	PRINTL 肛内射精数
+	kind = 1
+	flagnum=516
+ELSEIF ARG == 3
+	PRINTL 精飲数
+	kind = 1
+	flagnum=517
+ELSEIF ARG == 4
+	PRINTL 精浴数
+	kind = 1
+	flagnum=518
+ELSEIF ARG == 5
+	PRINTL 絶頂経験
+	kind = 2
+	flagnum=10
+ELSEIF ARG == 6
+	PRINTL 噴乳経験
+	kind = 2
+	flagnum=12
+ELSEIF ARG == 7
+	PRINTL 自慰経験
+	kind = 2
+	flagnum=22
+ELSEIF ARG == 8
+	PRINTL 约会経験
+	kind = 2
+	flagnum=77
+ELSEIF ARG == 9
+	PRINTL 亲吻経験
+	kind = 2
+	flagnum=27
+ENDIF
+
+
+;kind毎に分岐（内容はほぼ一緒）
+IF kind == 0
+	;他キャラと項目数の比較
+	;もし負けていた場合はLOCALフラグをプラス1
+	;最終的にLOCALフラグの数値が、全体の中での順位となる
+	;例:LOCALフラグが1の場合、誰にも負けてない＝ランキング1位！
+	;例:LOCALフラグが3の場合、二人に負けている＝ランキング3位
+	FOR RANK,1,CHARANUM
+		FOR ra,1,CHARANUM
+			IF CFLAG:RANK:flagnum < CFLAG:ra:flagnum
+				LOCAL:RANK ++
+			ENDIF
+		NEXT
+	NEXT
+
+	PRINTL -------------
+	PRINTFORM %CALLNAME:0% 
+	PRINTFORML {CFLAG:0:flagnum}人
+	PRINTL ----
+	
+	;LOCALフラグの数値毎に表示
+	;順位と名前を表示
+	;同値のキャラはタイとする
+	FOR ranum,1,21
+		FOR RANK,1,CHARANUM
+			IF LOCAL:RANK==ranum
+				;項目が0の場合ランク付け終了
+				IF CFLAG:(RANK):flagnum == 0
+					BREAK
+				ENDIF
+				IF ranum <= 3
+					CALL PRINT_FACE, RANK, "笑顔", "服", "", ""
+					PRINTL
+				ENDIF
+				PRINTFORM {ranum}位  
+				PRINTFORML {CFLAG:(RANK):flagnum}人
+				FOR ra,1,CHARANUM
+					IF LOCAL:ra == ranum
+						PRINTFORM %CALLNAME:(ra)% 
+					ENDIF
+				NEXT
+				SIF ranum == 3
+					WAIT
+				PRINTL
+				BREAK
+			ENDIF
+		NEXT
+	NEXT
+	PRINTL -------------
+ELSEIF kind == 1
+	FOR RANK,1,CHARANUM
+		FOR ra,1,CHARANUM
+			IF CFLAG:RANK:flagnum < CFLAG:ra:flagnum
+				LOCAL:RANK ++
+			ENDIF
+		NEXT
+	NEXT
+
+	PRINTL -------------
+	FOR ranum,1,21
+		FOR RANK,1,CHARANUM
+			IF LOCAL:RANK==ranum
+				IF CFLAG:(RANK):flagnum == 0
+					BREAK
+				ENDIF
+				PRINTFORM {ranum}位  
+				PRINTFORML {CFLAG:(RANK):flagnum}
+				IF ranum <= 3
+					CALL PRINT_FACE, RANK, "笑顔", "服", "", ""
+					PRINTL
+				ENDIF
+				FOR ra,1,CHARANUM
+					IF LOCAL:ra == ranum
+						PRINTFORM %CALLNAME:(ra)% 
+					ENDIF
+				NEXT
+				SIF ranum == 3
+					WAIT
+				PRINTL
+				BREAK
+			ENDIF
+		NEXT
+	NEXT
+	PRINTL -------------
+ELSEIF kind == 2
+	FOR RANK,1,CHARANUM
+		FOR ra,1,CHARANUM
+			IF EXP:RANK:flagnum < EXP:ra:flagnum
+				LOCAL:RANK ++
+			ENDIF
+		NEXT
+	NEXT
+
+	PRINTL -------------
+	FOR ranum,1,21
+		FOR RANK,1,CHARANUM
+			IF LOCAL:RANK==ranum
+				IF EXP:(RANK):flagnum == 0
+					BREAK
+				ENDIF
+				PRINTFORM {ranum}位  
+				PRINTFORML {EXP:(RANK):flagnum}回
+				IF ranum <= 3
+					CALL PRINT_FACE, RANK, "笑顔", "服", "", ""
+					PRINTL
+				ENDIF
+				FOR ra,1,CHARANUM
+					IF LOCAL:ra == ranum
+						PRINTFORM %CALLNAME:(ra)% 
+					ENDIF
+				NEXT
+				SIF ranum == 3
+					WAIT
+				PRINTL
+				BREAK
+			ENDIF
+		NEXT
+	NEXT
+	PRINTL -------------
 ENDIF
 
 ;聆聽天之聲

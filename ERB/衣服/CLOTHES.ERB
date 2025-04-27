@@ -918,7 +918,7 @@ IF TIME_TYPE == "今天的睡衣"
 		B_ID = CFLAG:C_ID:247
 	ELSEIF CFLAG:C_ID:248
 	ELSEIF !GETBIT(TALENT:C_ID:2, 0)
-		B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衬衫")
+		B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衫")
 	ELSE
 		B_ID = 今日の文胸(C_ID, CFLAG:C_ID:246)
 	ENDIF
@@ -937,7 +937,7 @@ ELSEIF CFLAG:C_ID:207
 	B_ID = CFLAG:C_ID:207
 ELSEIF CFLAG:C_ID:208
 ELSEIF !GETBIT(TALENT:C_ID:2, 0)
-	B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衬衫")
+	B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衫")
 ELSE
 	B_ID = 今日の文胸(C_ID, CFLAG:C_ID:きょうのぱんつ)
 ENDIF
@@ -958,6 +958,10 @@ VARSET 衣装TYPE
 ;先に睡衣の設定
 IF TIME_TYPE == "今天的睡衣"
 	SELECTCASE CFLAG:C_ID:睡衣指定
+	CASE 1000
+		CFLAG:C_ID:246 = 0
+		CALL SET_UNDERWEAR(C_ID, TIME_TYPE)
+		RETURN
 	CASE 300
 	;個別設定
 		CALL CTRL_CLOTHES_SET(C_ID, "睡衣的变更_套装")
@@ -995,6 +999,10 @@ ENDIF
 
 ;今日の衣装、明日の衣装
 SELECTCASE CFLAG:C_ID:基本服装セット
+CASE 1000
+	CFLAG:C_ID:206 = 0
+	CALL SET_UNDERWEAR(C_ID, TIME_TYPE)
+	RETURN
 CASE 100
 ;個別設定
 	CALL CTRL_CLOTHES_SET(C_ID, "便装の変更_套装")
@@ -1084,7 +1092,6 @@ CASE "复原衣服"
 						EQUIP:C_ID:LOCAL = GET_INT(C_ID, "キャラデータ", TCVAR:C_ID:EVENT_CLOTHING_SET - 100, @"便装：%EQUIPNAME:LOCAL%")
 					NEXT
 			ENDSELECT
-			CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
 		ELSE
 			SELECTCASE CFLAG:C_ID:衣装一時変更
 				CASE 0
@@ -1115,6 +1122,7 @@ CASE "复原衣服"
 					CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_キャラ衣装", CFLAG:C_ID:衣装一時変更 - 100, "便装")
 			ENDSELECT
 		ENDIF
+		CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
 		CFLAG:C_ID:睡衣 = 0
 	ENDIF
 ENDSELECT
@@ -1133,15 +1141,16 @@ EQUIP:0の扱いとしては
 #DIM  C_ID
 #DIMS TYPE
 SELECTCASE TYPE
-;リセット用に記録する
-CASE "現在衣装の保存_便装"
-	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(200 + LOCAL) = EQUIP:C_ID:LOCAL
-	NEXT
-CASE "現在衣装の保存_睡衣"
-	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(240 + LOCAL) = EQUIP:C_ID:LOCAL
-	NEXT
+; ;リセット用に記録する
+;暂时封闭
+; CASE "現在衣装の保存_便装"
+; 	FOR LOCAL, 1, 23
+; 		CFLAG:C_ID:(200 + LOCAL) = EQUIP:C_ID:LOCAL
+; 	NEXT
+; CASE "現在衣装の保存_睡衣"
+; 	FOR LOCAL, 1, 23
+; 		CFLAG:C_ID:(240 + LOCAL) = EQUIP:C_ID:LOCAL
+; 	NEXT
 CASE "現在衣装の保存_おきにいり"
 	FOR LOCAL, 1, 23
 		CFLAG:C_ID:(600 + LOCAL) = EQUIP:C_ID:LOCAL
@@ -1181,49 +1190,51 @@ CASE "現在衣装の変更_睡衣"
 	FOR LOCAL, 1, 23
 		EQUIP:C_ID:LOCAL = CFLAG:C_ID:(240 + LOCAL)
 	NEXT
-	IF CFLAG:C_ID:睡衣胖次 == 100
-		EQUIP:C_ID:下半身内衣１ = 0
-		EQUIP:C_ID:下半身内衣２ = 0
-		CFLAG:C_ID:245 = 0
-		CFLAG:C_ID:246 = 0
-		;CFLAG:C_ID:睡衣胖次 = 0
-		SIF CFLAG:C_ID:没穿内裤 != 2
-			CFLAG:C_ID:没穿内裤 = 1
-	ELSEIF CFLAG:C_ID:没穿内裤 && CFLAG:C_ID:睡衣胖次
-		EQUIP:C_ID:下半身内衣１ = 0
-		EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:睡衣胖次
-		SIF !CFLAG:C_ID:245
-			CFLAG:C_ID:246 = CFLAG:C_ID:睡衣胖次
-		;CFLAG:C_ID:睡衣胖次 = 0
-		SIF CFLAG:C_ID:没穿内裤 != 2
-			CFLAG:C_ID:没穿内裤 = 0
-	ELSEIF CFLAG:C_ID:没穿内裤 && (EQUIP:C_ID:下半身内衣１ || EQUIP:C_ID:下半身内衣２)
-		EQUIP:C_ID:下半身内衣１ = 0
-		EQUIP:C_ID:下半身内衣２ = 0
-		CFLAG:C_ID:245 = 0
-		CFLAG:C_ID:246 = 0
-	ENDIF
+	CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
+	; IF CFLAG:C_ID:睡衣胖次 == 100
+	; 	EQUIP:C_ID:下半身内衣１ = 0
+	; 	EQUIP:C_ID:下半身内衣２ = 0
+	; 	CFLAG:C_ID:245 = 0
+	; 	CFLAG:C_ID:246 = 0
+	; 	;CFLAG:C_ID:睡衣胖次 = 0
+	; 	SIF CFLAG:C_ID:没穿内裤 != 2
+	; 		CFLAG:C_ID:没穿内裤 = 1
+	; ELSEIF CFLAG:C_ID:没穿内裤 && CFLAG:C_ID:睡衣胖次
+	; 	EQUIP:C_ID:下半身内衣１ = 0
+	; 	EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:睡衣胖次
+	; 	SIF !CFLAG:C_ID:245
+	; 		CFLAG:C_ID:246 = CFLAG:C_ID:睡衣胖次
+	; 	;CFLAG:C_ID:睡衣胖次 = 0
+	; 	SIF CFLAG:C_ID:没穿内裤 != 2
+	; 		CFLAG:C_ID:没穿内裤 = 0
+	; ELSEIF CFLAG:C_ID:没穿内裤 && (EQUIP:C_ID:下半身内衣１ || EQUIP:C_ID:下半身内衣２)
+	; 	EQUIP:C_ID:下半身内衣１ = 0
+	; 	EQUIP:C_ID:下半身内衣２ = 0
+	; 	CFLAG:C_ID:245 = 0
+	; 	CFLAG:C_ID:246 = 0
+	; ENDIF
 	CFLAG:C_ID:衣装一時変更 = 0
 
 CASE "現在衣装の変更_おきにいり"
 	FOR LOCAL, 1, 23
 		EQUIP:C_ID:LOCAL = CFLAG:C_ID:(600 + LOCAL)
 	NEXT
-	IF CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR
-	ELSEIF CFLAG:C_ID:没穿内裤
-		EQUIP:C_ID:下半身内衣１ = 0
-		EQUIP:C_ID:下半身内衣２ = 0
-	ELSEIF EQUIP:C_ID:下半身内衣１
-		EQUIP:C_ID:下半身内衣２ = 0
-	ELSEIF EQUIP:C_ID:下半身内衣２
-		EQUIP:C_ID:下半身内衣１ = 0
-	ELSEIF CFLAG:C_ID:睡衣
-		EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:246
-	ELSE
-		EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:206
-	ENDIF
-	CFLAG:C_ID:衣装一時変更 = 100
-
+	; IF CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR
+	; ELSEIF CFLAG:C_ID:没穿内裤
+	; 	EQUIP:C_ID:下半身内衣１ = 0
+	; 	EQUIP:C_ID:下半身内衣２ = 0
+	; ELSEIF EQUIP:C_ID:下半身内衣１
+	; 	EQUIP:C_ID:下半身内衣２ = 0
+	; ELSEIF EQUIP:C_ID:下半身内衣２
+	; 	EQUIP:C_ID:下半身内衣１ = 0
+	; ELSEIF CFLAG:C_ID:睡衣
+	; 	EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:246
+	; ELSE
+	; 	EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:206
+	; ENDIF
+	CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
+	; CFLAG:C_ID:衣装一時変更 = 100
+	
 CASE "現在衣装の変更_角色衣装"
 ;ARGで指定された角色の衣装を参照する
 	CFLAG:C_ID:衣装一時変更 = 100 + ARG
@@ -1263,8 +1274,12 @@ CASE "胖次一括設定"
 			EQUIP:C_ID:下半身内衣２ = 0
 		ELSEIF EQUIP:C_ID:下半身内衣１
 			EQUIP:C_ID:下半身内衣２ = 0
-		ELSE
+		ELSEIF CFLAG:C_ID:睡衣胖次 == 100
+			EQUIP:C_ID:下半身内衣２ = 0
+		ELSEIF CFLAG:C_ID:睡衣胖次 > 0
 			EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:睡衣胖次
+		ELSE
+			EQUIP:C_ID:下半身内衣２ = CFLAG:C_ID:246
 		ENDIF
 	ENDIF
 CASE "ブラ一括設定"
@@ -1436,10 +1451,10 @@ LOOP 1
 #DIMS CONST 表示ラベル, 23 = "", 
 	"　装備:頭　　　", "　装備:装飾　　", "　装備:腕　　　", 
 	"　装備:外搭　　",
-	"　装備:外套　　", "　装備:外套　　", 
+	"　装備:套头衫　", "　装備:衬衫　　", 
 	"　装備:和服　　", "　装備:全身服　",
 	"　装備:裙子　　", "　装備:下身衣物", "　装備:裤子　　", 
-	"　装備:連體内衣", "　装備:連體内衣", 
+	"　装備:緊身内衣", "　装備:連體内衣", 
 	"　装備:内衣(上)", "　装備:内衣(上)", 
 	"　装備:内衣(下)", "　装備:内衣(下)", 
 	"　装備:付属　　", "　装備:付属　　", "　装備:付属　　", 
@@ -1822,16 +1837,64 @@ CFLAG:C_ID:睡衣下半身内衣確認 = 0
 RETURN
 
 ;蛇版魔改重做函数
-@衣服选择列表(ARG, ARG:1)
-IF ARG != 23
-	FOR LOCAL, 1, 100
-		SIF GET_EXIST(CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:ARG), LOCAL)
-			PRINTFORML [{LOCAL, 2}] - %GET_STR(ARG:1, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:ARG), LOCAL, "名前")%
+@衣服选择列表(换装选择, C_ID, PAGE, 部位选择屏蔽)
+#DIM DYNAMIC 换装选择
+#DIM C_ID
+#DIM REF PAGE
+#DIM REF 部位选择屏蔽
+SIF PAGE < 0
+	PAGE = 0
+IF VARSIZE("部位选择屏蔽") == 1
+	IF 换装选择 == 部位选择屏蔽
+		FOR LOCAL, 1, 25
+			IF LOCAL != 部位选择屏蔽
+				换装选择 = LOCAL
+				BREAK
+			ENDIF
+		NEXT
+	ENDIF
+ELSEIF VARSIZE("部位选择屏蔽") > 1
+	IF 部位选择屏蔽:换装选择 == 1
+		FOR LOCAL, 1, 25
+			IF !部位选择屏蔽:LOCAL
+				换装选择 = LOCAL
+				BREAK
+			ENDIF
+		NEXT
+	ENDIF
+ELSE
+	THROW WARNING:UNEXPECTED ERROR DETECTED!
+ENDIF
+IF 换装选择 == 23
+	FOR LOCAL, 20 * PAGE + 1, 20 * (PAGE + 1) + 1
+		IF PAGE != 0 && LOCAL == 20 * PAGE + 1 && !STRLENS(GET_STR(C_ID, "衣装セット", LOCAL, "名前"))
+			PAGE -= 1
+			LOCAL = 20 * PAGE + 1
+		ENDIF
+		SIF GET_EXIST("衣装セット", LOCAL) && STRLENS(GET_STR(C_ID, "衣装セット", LOCAL, "名前")) != 1
+			PRINTFORML [{LOCAL, 2}] - %GET_STR(C_ID, "衣装セット", LOCAL, "名前")%
+	NEXT
+ELSEIF 换装选择 == 24
+	FOR LOCAL, 20 * PAGE + 1, 20 * (PAGE + 1) + 1
+		IF PAGE > 4
+			PAGE -= 1
+			LOCAL = 20 * PAGE + 1
+		ENDIF
+		IF 自设套装:LOCAL:0 == 1
+			PRINTFORML [{LOCAL, 2}] - %自设套装名称:LOCAL%
+		ELSE
+			PRINTFORML [{LOCAL, 2}] - ----
+		ENDIF
 	NEXT
 ELSE
-	FOR LOCAL:1, 1, 100
-		SIF GET_EXIST("衣装セット", LOCAL:1)
-			PRINTFORML [{LOCAL:1, 2}] - %GET_STR(ARG:1, "衣装セット", LOCAL:1, "名前")%
+	FOR LOCAL, 20 * PAGE + 1, 20 * (PAGE + 1) + 1
+		IF PAGE != 0 && LOCAL == 20 * PAGE + 1 && !STRLENS(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前"))
+			PAGE -= 1
+			LOCAL = 20 * PAGE + 1
+		ENDIF
+		SIF GET_EXIST(CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL) && STRLENS(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前")) != 1
+			PRINTFORML [{LOCAL, 2}] - %GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前")%
 	NEXT
 ENDIF
 PRINTFORML [100] - 不穿
+HTML_PRINT "<button value = '1001' title = '上一页'>　［＜］　</button><button value = '1002' title = '下一页'>　［＞］　</button>"

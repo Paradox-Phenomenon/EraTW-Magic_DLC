@@ -1,0 +1,300 @@
+﻿;
+;这些函数可以按口上设置，但是custom_button_name、custom_talent等变量是角色变量。
+;有多个口上的场合，如果直接辨别ID的话，会覆盖其他人的口上（当然，XXX作为自己的口上识别标志，绝对不会也不能重复）
+;所以，要注意鉴别CFLAG:X:998是否是自己的口上编号
+;
+;该部分是4.920之后更新的，能给予口上自定义的更多接口
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"口上色判定"
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@M_KOJO_Moe_COLOR_K13
+
+SETCOLOR 0xB6FAB6 
+;b6fab6
+
+;这里可以通过SETCOLOR设置自己的口上颜色
+;在系统启用口上色设定后才可以触发
+;例：SETCOLOR 0xC07070
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"UPDATE判定"
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@M_KOJO_Moe_UPDATE_K13
+;口上独自的UPDATE用
+;当您专门为 ENCOUNTER 准备了自己的分支标志时，请使用它（原文如此）
+;在UPDATE判断中使用字符变量（如CFLAG）时，不会有自动填充，需要自己指定角色编号
+;目前可作为口上自定义设置用，可以控制一些功能是否开启
+
+IF CFLAG:13:18 && CFLAG:13:1001	;初见过，且放下过戒心
+	PRINTL 
+	PRINTFORMDW 你好，这里是大妖精Moe版口上（暂行名）的Update区域
+	PRINTL 
+	PRINTFORML 「那个……%MASTERNAME:118%……」
+	PRINTL 
+	PRINTDL 如聚光灯般洒下来的光束，照亮了黑暗之中的大妖精
+	PRINTDW 只是，看上去好像很怕的样子……
+	PRINTDL 
+	PRINTFORMW 「一醒来就到这里了，也不知道要做什么……好怕……」
+	PRINTL 
+	$LARVA_UPDATE_MAIN
+	PRINTFORML 「是，%MASTERNAME:118%有什么事吧？」
+	PRINTFORML 「快一点好嘛？人家还想回去睡觉……」
+	PRINTFORML 	
+	CALL ASK_M("修改对你的称呼",1,"结束设置",1)
+    PRINTL 
+	SELECTCASE RESULT 
+		CASE 0 
+			PRINTFORML 「诶？%MASTERNAME:13%要换名字嘛？……」
+			PRINTFORML 「只是打算，让人家换个方式叫你嘛？」
+            PRINTL 
+			CALL ASK_M("是的",1,"刚刚选错了",1)
+            PRINTL 
+			IF !RESULT 
+				IF TALENT:118:7
+					PRINTFORML 「嗯！那要怎么叫呢？」
+					PRINTFORML 「人家是随便啦，能亲密一些也可以……」
+				ELSE 
+					PRINTFORML 「嗯，那要让%CSTR:118:20%怎么叫你呢？」
+				ENDIF 
+				CALL MOE_LARVA_NAME_SET(,0)
+				PRINTFORMW 「好噢，%RESULTS%！就这样叫可以嘛？」
+				GOTO LARVA_UPDATE_MAIN
+			ELSE 
+				PRINTFORML 「选错了？是说错了的意思嘛？诶……」
+				IF TALENT:118:7
+					PRINTFORML 「那个，不要紧张噢，叫什么都没关系的啦」
+				ELSE 
+					PRINTFORML 「确实噢，要习惯新的称呼，有点难的说……」
+				ENDIF 
+				PRINTFORMW 
+				GOTO LARVA_UPDATE_MAIN
+			ENDIF 
+		CASE 1
+			PRINTL 
+			PRINTFORMDL 好的，祝你游戏愉快
+			PRINTL 
+			PRINTFORML 「%MASTERNAME:13%要走了嘛？等等我，带我一起出去嘛——」
+			PRINTFORML 「诶？怎么有点困……想睡了……」
+			PRINTFORMW 「%MASTERNAME:13%明天见……晚安的说……」
+			PRINTL 
+			;PRINTFORMD TIPS：
+			;PRINTDATADW
+				;DATAFORM 
+			;ENDDATA
+	ENDSELECT
+ENDIF 
+
+
+
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"Beforetrain判定"
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@K13_BEFORETRAIN_Moe
+;在一天开始时读取的函数，或者更准确地说，在来访判断之前读取的函数
+;在这里，您可以设置 CFLAG：XX：次日访问以确保角色来访问，或者 TCVAR:XX:発情 并使其一天都在发情（原文如此）
+;但是，由于它每天早上必定会被加载，因此需要设置条件
+
+
+
+;================================
+;统一SUCCESS函数
+;如果与 com 对应的SUCCESS函数不存在，它将被调用
+;你可以用它,在 com 之前进行一些数据处理。
+;================================
+;@M_KOJO_Moe_SUCCESS_K13_GENERAL
+
+
+
+;================================
+;统一EXTRASOURCE函数
+;你可以用它,在某些 com 添加SOURCE补正
+;请检测SELECTCOM
+;================================
+@M_KOJO_Moe_EXTRASOURCE_SCOM_K13_GENERAL
+@M_KOJO_Moe_EXTRASOURCE_COM_K13_GENERAL
+
+;================================
+;自定义商店按钮
+;Y 是按钮的编号，范围是0-9
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+[SKIPSTART]
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K13_Y
+;custom_button_name:XX:Y = ボタンY
+RETURN 1
+
+;按钮被按下后，触发以下函数
+@KOJO_Moe_CUSTOM_BUTTON_K13_Y
+
+RETURN 1
+[SKIPEND]
+;================================
+;自定义商店按钮 0 修改称呼
+;Y 是按钮的编号，范围是0-9
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+;判断按钮是否可以显示，如果返回1，则显示
+@KOJO_Moe_CUSTOM_BUTTON_CONDITION_K13_Y
+custom_button_name:13:0 = 修改称呼
+IF CFLAG:13:18 && CFLAG:13:1001
+    RETURN 1
+ELSE
+    RETURN 0 
+ENDIF 
+
+;按钮被按下后，触发以下函数
+@KOJO_Moe_CUSTOM_BUTTON_K13_Y
+PRINTL 
+PRINTFORML 「诶？%MASTERNAME:13%要换名字嘛？……」
+PRINTFORML 「只是打算，让人家换个方式叫你嘛？」
+PRINTL 
+CALL ASK_M("是的",1,"刚刚选错了",1)
+PRINTL 
+IF !RESULT 
+    IF TALENT:118:7
+        PRINTFORML 「嗯！那要怎么叫呢？」
+        PRINTFORML 「人家是随便啦，能亲密一些也可以……」
+    ELSE 
+        PRINTFORML 「嗯，那要让%CSTR:118:20%怎么叫你呢？」
+    ENDIF 
+    PRINTL 
+    CALL MOE_LARVA_NAME_SET(,0)
+    PRINTL 
+    PRINTFORMW 「好！%RESULTS%……就这样叫吧」
+ELSE 
+    PRINTFORML 「选错了？是说错了的意思嘛？诶……」
+    IF TALENT:118:7
+        PRINTFORML 「那个，不要紧张噢，叫什么都没关系的啦」
+    ELSE 
+        PRINTFORML 「确实噢，要习惯新的称呼，有点难的说……」
+    ENDIF 
+ENDIF 
+
+RETURN 1
+
+;================================
+;自定义素质名
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+[SKIPSTART]
+@KOJO_Moe_CUSTOM_TALENT_SET_K13
+;Z是素质ID，对应0~29
+;如果这个变量不是0，就表示该素质
+CUSTOM_TALENT:XX:Z = 1
+;素質名
+CUSTOM_TALENT_NAME:XX:Z = 自定义素质名
+;(省略可)自定义素质的显示颜色，0/普通1/粉红2/红色+粗体
+CUSTOM_TALENT_COLOR:XX:Z = 1
+;(省略可)表示类别 1/種族 2/性的特徴 3/身体的特徴 4/精神的特徴 5/技術的特徴 他は「その他」
+CUSTOM_TALENT_TYPE:XX:Z = 2
+[SKIPEND]
+
+;================================
+;自定义指令
+;Y 是自定义指令的编号，范围是0-29
+;使用的时候请删除SKIPSTART~SKIPEND。
+;================================
+[SKIPSTART]
+;指令名
+@KOJO_Moe_COM_NAME_K13_Y
+	RESULTS = com_name
+
+;指令使用条件、和通常的com_able函数一样，如果返回1，指令就会显示为可执行。
+@KOJO_Moe_COM_ABLE_K13_Y
+	RETURN 1
+
+;指令数据处理。记述经验、参数增减
+;RETURN 1=指令実行 / RETURN 0=部分取消(SOURCE計算SKIP) / RETURN -1=指令失败
+@KOJO_Moe_COM_K13_Y
+	RETURN 1
+
+;指令的文本内容。地文/口上请写在这里
+;W的値等于(270 + Y)。SELECTCOM/PREVCOM也会变化成这个值
+@M_KOJO_Moe_MESSAGE_COM_K13_W
+	RETURN 1
+
+;指令实行的可能判定
+;可以在实行指令前显示一个条件实行可否的权重比较，并且
+;可以参考 @CAN_COM9(ARG)，不能实行时请RETURN 0 ，允许实行时RETURN 1 
+;或者可以不用写这部分
+;@KOJO_Moe_CAN_COM_K13_Y(skipFlag)
+;	#DIM skipFlag
+;	SKIPDISP skipFlag
+;	SKIPDISP 0
+[SKIPEND]
+
+
+;================================
+;加载游戏时会自动读取以下函数并更新
+;如果您的kojo无需持续更新，请忽略它
+;;================================
+;@KOJO_Moe_VERSION_K13
+	;返回当前口上的版本数
+	; RETURN now_version
+
+;当存档记录的变量CFLAG:kojo_version比上面的口上版本号低，即为旧版本的时候，此处将调用
+;@KOJO_Moe_VERSION_UPDATE_K13
+	;
+	; RETURN now_version
+
+;================================
+;自定义移动倾向以及特殊食物
+;这部分可用于自定义口上移动倾向和独有食材
+;它会完全覆盖原版设置，因此仅在启用的时候取消注释
+;此处以灵梦原版的移动倾向为例子
+;------------------------------------------------------------
+[SKIPSTART]
+@M_KOJO_Moe_CHECK_K13_CHARADATA(ARGS,ARG,ARG:2)
+SELECTCASE ARGS 
+    ;移动倾向自定义
+    CASE "MOVE"
+        SELECTCASE ARG
+            ;連動設定（RETURN=依存するキャラ, RESULT:1～3=対等に連動するキャラ）
+            CASE 1
+            ;特殊生活時間設定（CFLAG:LOCAL:生活時間補正を設定する）
+            CASE 3
+            ;移動傾向（±～10=是可能移动的权重值, -100=绝对不会前往）
+            CASE 4
+                SELECTCASE ARG:2
+                    ;よく居る
+                    ;CASE P2境内, P10縁側
+                    ;    RETURN 5
+                    ;他所
+                    ;CASE P30三妖精の家・風呂, P39夢幻遺跡・浴室, P56あうんの棲家
+                    ;    RETURN -100
+                    ;addition custom code, kourindou
+                    ;CASE P502香霖堂
+                    ;    RETURN 3
+                ENDSELECT
+            ;出現場所
+            CASE 7
+                SELECTCASE ARG:2
+                    ;CASE 桜並木の鳥居, 神社境内, 神社本堂, 神社縁側
+                    ;    RETURN 1
+                    ;CASE 広場, 商家町, 呑屋小道, 長屋街
+                    ;    RETURN 1
+                    ;addition custom code, kourindou
+                    ;CASE 香霖堂
+                    ;    RETURN 1
+                ENDSELECT
+            ;引力設定（CFLAG:LOCAL:引力点を設定する）
+            CASE 8
+        ENDSELECT
+
+		;我试图更改名为“角色数据”的设置，但失败了。
+		;似乎需要进行彻底的更改。很抱歉我无法构建这些。
+
+	;角色特殊料理
+	CASE "SPECIAL_MENU"
+		;DISH_NAME = 红白馒头
+		;RESULTS = 甜点
+		;CALL 材料設定("甜味料")
+		;DISH_TASTE = 和食/饅頭/甜/上品/芸術的/软糯的/祝福/
+		;DISH_COMMENT = 庆祝喜事时食用的喜庆馒头。具有[祝福]的效果。
+		;RETURN 1
+ENDSELECT
+[SKIPEND]

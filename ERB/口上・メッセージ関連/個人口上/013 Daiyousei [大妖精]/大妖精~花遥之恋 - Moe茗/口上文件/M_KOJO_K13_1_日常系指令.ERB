@@ -1,0 +1,3702 @@
+﻿;※※※※※※※※※※※※※※※※※※※※※※※※※
+;日常系指令
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;300,会話
+;TFLAG:193(1=大成功 0=成功 -1=失敗 -2=大失敗（TARGET的教养等级比MASTER高出4级以上)
+;TCVAR:302(0=会話可能 1>=非恋慕時会話不能)
+;MARK:反発刻印(3以上=会話不能)
+;TCVAR:泥酔(1=通常成功or大失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_300
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+;可选项：关于地文描述的显示设置
+;如果返回0，则地文与口上都会显示；如果返回1，则地文会隐藏，口上会显示；如果返回2，则地文会显示，口上会隐藏；如果返回3则均会被隐藏
+;==================================================
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_300
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_300
+;指令共通メッセージ(TRAIN_MESSAGE) 
+;4.920之前的指令地文，是使用函数TRAIN_MESSAGE来控制的
+;如果删除它，例如「TARGET和你无聊地说着话」这种叙述将不显示，且您的口上不会自动启用口上色
+;下面是调用口上的主函数
+CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_300_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	;请在这个区间里输入口上的输出内容
+		;成为朋友\放下戒心
+	SIF !CFLAG:13:1001
+	CALL Moe_DAI_FIRST_BECOME_FRINED
+	SIF RESULT == 1 
+		RETURN 1
+
+	$M_KOJO_Moe_MESSAGE_COM_K13_300_1_START
+	;约会期间可能触发
+	IF FLAG:73 == 13 
+		;愤怒？
+		SIF CFLAG:318 == 1
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_14 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;会话失败 
+		SIF TFLAG:193 < 0 
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_11 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;醉酒对话
+		SIF BASE:13:15 > MAXBASE:13:15 / 2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_13 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;天气对话
+		SIF ONCE("K13_REACT_FOR_WEATHER") && !RAND:3
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_4
+		SIF RESULT == 1 
+			RETURN 1
+
+		;位置对话
+		SIF  !RAND:3
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_5
+		SIF RESULT == 1 
+			RETURN 1
+
+		;约会对话
+		SIF  !RAND:3 
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_6
+		SIF RESULT == 1 
+			RETURN 1
+
+		;恋人对话
+		SIF TALENT:13:7 && RAND:3 > RAND:2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_7
+		SIF RESULT == 1 
+			RETURN 1
+		
+		;恋慕对话
+		SIF TALENT:13:3 && RAND:5 > RAND:4
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_8
+		SIF RESULT == 1 
+			RETURN 1
+
+		;炮友对话
+		SIF MOE_DAI_SEX_FRIEND() && RAND:2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_10
+		SIF RESULT == 1 
+			RETURN 1		
+		
+		;思慕对话
+		SIF TALENT:13:8 && RAND:4 > RAND:3
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_9
+		SIF RESULT == 1 
+			RETURN 1
+
+		;剧情相关
+		SIF CFLAG:13:1001 && !RAND:2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_2
+		SIF RESULT == 1 
+			RETURN 1
+
+		;设定相关
+		CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_1
+		SIF RESULT == 1 
+			RETURN 1
+
+	;非约会
+	ELSE 
+
+		;愤怒？
+		SIF CFLAG:318 == 1
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_14 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;会话失败 
+		SIF TFLAG:193 < 0 
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_11 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;醉酒对话
+		SIF BASE:13:15 > MAXBASE:13:15 / 2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_13 
+		SIF RESULT == 1 
+			RETURN 1
+
+		;天气对话
+		SIF ONCE("K13_REACT_FOR_WEATHER") && !RAND:7
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_4
+		SIF RESULT == 1 
+			RETURN 1
+
+		;季节对话
+		SIF ONCE("K13_REACT_FOR_SEASON") && !RAND:7
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_3
+		SIF RESULT == 1 
+			RETURN 1
+
+		;联动对话
+		SIF ONCE("K13_REACT_FOR_OTHER") && !RAND:10
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_12
+		SIF RESULT == 1 
+			RETURN 1
+
+		;位置对话
+		SIF RAND:3 
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_5
+		SIF RESULT == 1 
+			RETURN 1
+
+		;恋人对话
+		SIF TALENT:13:7 && !RAND:3
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_7
+		SIF RESULT == 1 
+			RETURN 1
+		
+		;恋慕对话
+		SIF (TALENT:13:3 && !RAND:3) || (TALENT:13:3 && TALENT:13:7 && (RAND:5) )
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_8
+		SIF RESULT == 1 
+			RETURN 1
+
+		;炮友对话
+		SIF MOE_DAI_SEX_FRIEND() && RAND:2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_10
+		SIF RESULT == 1 
+			RETURN 1		
+
+		;思慕对话
+		SIF TALENT:13:3 && RAND:3
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_9
+		SIF RESULT == 1 
+			RETURN 1
+
+		;剧情相关
+		SIF CFLAG:13:1001 && RAND:2
+			CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_2
+		SIF RESULT == 1 
+			RETURN 1
+
+		;设定相关
+		CALL M_KOJO_Moe_MESSAGE_COM_K13_300_1_Custom_1
+		SIF RESULT == 1 
+			RETURN 1
+		;
+		GOTO M_KOJO_Moe_MESSAGE_COM_K13_300_1_START
+	ENDIF 
+	;
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;301,泡茶
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_301
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_301
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_301
+CALL M_KOJO_Moe_MESSAGE_COM_K13_301_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_301_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	IF TALENT:13:7 && 0  ;待补充
+		SELECTCASE RAND:5 
+			CASE 0 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 1 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 2 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 3 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 4 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+		ENDSELECT 
+	ELSEIF TALENT:13:3 && RAND:5 
+		SELECTCASE RAND:4  
+			CASE 0 
+				PRINTFORML 「%MASTERNAME:13%想喝茶了嘛？嗯嗯，那我来好嘛？」
+				PRINTFORMDL 大妖精抢着想要泡茶，索性让她自己泡了起来
+				PRINTFORMDL 只用茶壶少了很少的水，茶叶也放得少了一些
+				PRINTFORMDL 不过，斟茶的动作因此变得轻松了，泡出来的茶……
+				PRINTFORML 「诶嘿嘿，泡茶泡得好喝就对了嘛，才不管加了什么呢……」
+				PRINTFORMDL 果然是装着方糖的小袋子！就说刚刚为什么大妖精背着手泡茶嘛……
+			CASE 1 
+				PRINTFORML 「%MASTERNAME:13%又要泡蜂蜜茶了呢，好期待噢～♪」
+				PRINTFORMDL 看着大妖精开心得晃起双腿的样子，不由得多放了一些蜂蜜
+				PRINTFORML 「呜哇！加，加那么多什么的，会变胖的啦」
+				PRINTFORMDL 想象着大妖精变胖了一些的样子……不由得笑了出来 
+				PRINTFORML 「诶呀笑什么啦！女孩子肯定要在意自己的体重的……」
+			CASE 2 
+				PRINTFORML 「喜欢哪种茶……呜……」
+				PRINTFORMDL 同时泡了一杯红茶和一杯绿茶，让大妖精自己选
+				PRINTFORML 「这个随便啦！只要是%MASTERNAME:13%泡的茶，都很甜噢……」
+				PRINTFORML 「就连%MASTERNAME:13%也……啊！没，没什么……」
+				PRINTFORMDL 说着说着自己都脸红了……
+			CASE 3 
+				PRINTFORMDL 在你泡茶的时候，大妖精聚精会神地看着你的动作……
+				PRINTFORML 「诶？啊！那个，因为想学一学%MASTERNAME:13%的手法……」
+				PRINTFORML 「人家也想泡出%MASTERNAME:13%那样的茶，作为心意，什么的……」
+				PRINTFORMDL 捧着茶水的大妖精，脸颊也随着话语微微泛红了
+				PRINTFORMDL 下次就由她来泡吧？不禁这样想着
+			CASE 4 
+				PRINTFORML 
+		ENDSELECT 
+	ELSEIF (TALENT:13:8 || TALENT:13:3) && RAND:5 
+		SELECTCASE RAND:7 
+			CASE 0,1
+				IF !RAND:2 
+					PRINTFORML 「是茶嘛？嗯嗯，那人家就不客气了噢……」
+					PRINTFORMDL 大妖精用双手端过了茶杯，低着脑袋脸颊微红的样子
+					PRINTFORMDL 将茶水端到嘴前轻轻抿了一口，偷偷抬着眼睛瞄着你……
+					PRINTFORML 「啊！没什么……很，很好喝噢……」
+					PRINTFORMDL 似乎并没有完全留意茶水味道的样子……
+				ELSE 
+					PRINTFORML 「哇……闻起来好香噢……」
+					PRINTFORMDL 大妖精用双手端过茶杯，用指尖感受着茶杯的温度
+					PRINTFORML 「很，很暖和……没那么烫，是特意冷了冷嘛？」
+					PRINTFORMDL 因为怕大妖精烫到，所以稍微加了一些凉开水
+					PRINTFORML 「哇！谢谢你……」
+				ENDIF 
+			CASE 2 
+				PRINTFORMDL 因为大妖精喜欢吃甜食，所以给她准备了奶茶
+				PRINTFORML 「哇！这个……谢，谢谢你！我不客气啦！」
+				PRINTFORMDL 大妖精接过奶茶，迫不及待地喝了一口 
+				PRINTFORML 「那个……%MASTERNAME:13%喜欢喝这个嘛……」
+				PRINTFORML 「喜欢的话，那%MASTERNAME:13%也试试嘛！真的很好喝！」
+			CASE 3 
+				PRINTFORMDL 只是喝茶的话有点太单调了，给大妖精准备了点心
+				PRINTFORML 「诶？这个是饼干嘛？谢谢%MASTERNAME:13%！」
+				PRINTFORMDL 大妖精将饼干用牙齿轻轻咬住，伴着咔嚓的声音咬了一口
+				PRINTFORMDL 似乎是饼干太好吃了，大妖精的眼睛都亮了起来，将剩下的饼干一次塞进嘴里
+				PRINTFORML 「呜……唔嗯，很，很好吃！」
+				PRINTFORMDL 就连嘴角沾上饼干屑了，也没有注意到……
+			CASE 4 
+				PRINTFORMDL 因为大妖精喜欢喝花茶，所以自然是往茶杯里放了花瓣
+				PRINTFORML 「今天也是花茶嘛？诶嘿嘿……」
+				PRINTFORMDL 大妖精将茶杯捧在手心，还没等冷下来就喝了一口
+				PRINTFORML 「呜！哇……有点，有点烫……诶嘿嘿，人家太急了……」
+				PRINTFORMDL 大妖精吐着被烫到的舌头，不好意思地吹起了热气
+				PRINTFORML 「呼……只是花香也很好闻噢，我不客气啦——」
+			CASE 5
+				PRINTFORML 「谢谢%MASTERNAME:13%的茶呢！诶嘿嘿……」
+				PRINTFORMDL 不知为何，大妖精看上去有些害羞，但是又很开心地笑着
+				PRINTFORML 「因为，妖精们都是直接喝露水，茶什么的，很少能喝到……」
+				PRINTFORML 「不管是茶还是%MASTERNAME:13%都很棒……啊……没，没什么……」
+				PRINTFORMDL 似乎不小心说出了心里话，大妖精的脸颊瞬间红透了 
+			CASE 6 
+				PRINTFORML 「那，那个，让我也来泡一下试试，可以嘛……」
+				PRINTFORMDL 大妖精拿起茶壶，小心地地向茶杯中撒进茶叶
+				PRINTFORMDL 倒热水的时候小心翼翼地，手指尖都在微微颤抖着
+				PRINTFORMDL 不由得将茶壶的把手和她的小手一起握住……
+				PRINTFORML 「哇！那个，我，我自己，自己来啦……」
+				PRINTFORMDL 大妖精的脸蛋瞬间红透了，低下脑袋不敢动一下手……
+		ENDSELECT 
+	ELSEIF CFLAG:13:1001 
+		IF TFLAG:193 < 0  
+			SELECTCASE RAND:3
+				CASE 0 
+					PRINTFORML 「那个……这个味道，好苦噢……」
+					PRINTFORML 「人家不喜欢苦茶啦……先苦后甜也好呀」
+					PRINTFORMDL 大妖精将抿了一口的茶放在一旁……
+				CASE 1 
+					PRINTFORML 「呜……那个……」
+					PRINTFORMDL 大妖精喝了一口茶之后，眉头微微皱了起来
+					PRINTFORML 「人家就算是妖精，也能喝出茶叶的品质噢……」
+				CASE 2 
+					PRINTFORML 「那个……茶的种类，能换一下嘛？」
+					PRINTFORML 「天天只喝一种茶当然容易腻嘛……」
+					PRINTFORMDL 大妖精有些不太情愿地喝着茶……
+			ENDSELECT 
+		ELSE 
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「是红茶嘛？嗯嗯，我试试噢……」
+					PRINTFORMDL 大妖精小心地接过茶杯，轻轻吹了吹热气
+					PRINTFORML 「好香噢，有一点甜甜的味道，很好喝噢」
+					PRINTFORMDL 大妖精将茶杯捧在手心，小口小口地啜吸着茶水
+				CASE 1 
+					PRINTFORML 「那个……这个是什么花呀？」
+					PRINTFORMDL 因为大妖精看上去很喜欢花香，所以给大妖精泡了茉莉花茶
+					PRINTFORML 「诶嘿嘿，那个，很好喝噢，比平常的茶更让人清爽」
+					PRINTFORMDL 是因为喝到了喜欢的味道嘛？大妖精歪着脑袋微笑了起来
+				CASE 2 
+					PRINTFORML 「这个罐子……是蜂蜜吗？！」
+					PRINTFORMDL 看见你拿出蜂蜜罐子，大妖精有些好奇地凑近了过来
+					PRINTFORMDL 果然妖精都抵挡不住甜食的诱惑呢……
+					PRINTFORMDL 将加好蜂蜜的茶端给大妖精，她尝了一口之后，两眼都发光了
+					PRINTFORML 「哇……本来有点苦的茶，变得甜甜的，超好喝噢……」
+				CASE 3 
+					PRINTFORML 「虽然我也会泡茶噢，但是，可以的话还是希望你来……」
+					PRINTFORML 「那当然是因为，%MASTERNAME:13%泡的茶很好喝啦」
+					PRINTFORML 「能让不喜欢喝茶的妖精静下来喝茶，%MASTERNAME:13%泡的茶就有这种魔力噢」
+					PRINTFORMDL 没看出来大妖精不喜欢喝茶……真的是因为茶很好喝吗？
+				CASE 4 
+					PRINTFORML 「诶？同时泡了两杯……不一样的？」
+					PRINTFORMDL 泡了一杯红茶和一杯绿茶，让大妖精自己选了一杯
+					IF !RAND:10 && TFLAG:193 > 0  
+						PRINTFORMDL 似乎两杯泡得都很好，大妖精歪着脑袋纠结了很久
+						PRINTFORMDL 最后……两杯都端到了自己的面前
+						PRINTFORML 「嘻嘻……我都想喝，可以嘛？」
+						PRINTFORMDL 看着大妖精的笑容，有些没法拒绝……
+					ELSEIF !RAND:2 
+						PRINTFORMDL 稍微歪着脑袋想了一会之后，大妖精选了红茶
+						PRINTFORML 「因为红茶有水果的香味！而且甜甜的，很好喝……」
+						PRINTFORMDL 大妖精含着甜甜的茶水品味着，笑容也变得甜甜的啦
+					ELSE 
+						PRINTFORMDL 大妖精纠结了很久，终于还是选择了绿茶
+						PRINTFORML 「因为绿茶很提神！一口下去，满满的都是清香……呼——」
+						PRINTFORMDL 每喝一口绿茶大妖精便吐出一口气，让空气也变得充满了清新味道
+					ENDIF 
+			ENDSELECT 
+		ENDIF 
+	ELSE 
+		SELECTCASE RAND:4 
+			CASE 0 
+				PRINTFORML 「怎，怎么啦……」
+				PRINTFORMDL 大妖精看着你给的茶，有些怀疑的样子
+				PRINTFORML 「那个！把你自己的那杯给我！不然我不喝……」
+				PRINTFORMDL 警戒意识还是很强呢……
+			CASE 1 
+				PRINTFORML 「茶嘛……嗯，谢，谢谢……」
+				PRINTFORMDL 大妖精颤抖着手接过茶
+				PRINTFORMDL 不知是因为很烫还是紧张，茶托撞着茶杯叮叮当当地响个不停……
+				PRINTFORML 「那，那个……没，没什么的说……」
+			CASE 2 
+				PRINTFORML 「那个……我，我不需要的……谢谢……」
+				PRINTFORMDL 虽然嘴上拒绝了茶，但是真的端给大妖精的时候，她还是害怕地接了过去……
+				PRINTFORMDL 但是……放在一边并没有喝？
+				PRINTFORML 「啊！因为，因为很烫……不行吗？」
+			CASE 3 
+				PRINTFORML 「嗯？是花瓣的香味……诶？给我吗？」
+				PRINTFORMDL 给大妖精端上花茶的时候，她惊讶地抬起了脑袋
+				PRINTFORML 「哇……这个……嗯，谢，谢谢你……」
+				PRINTFORMDL 吹了吹热气之后稍微抿了一口，看起来很中意这个味道
+			CASE 4 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+		ENDSELECT 
+	ENDIF 
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;302,身体接觸
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_302
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_302
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_302
+CALL M_KOJO_Moe_MESSAGE_COM_K13_302_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_302_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	IF TALENT:13:7 && 0  ;待补充
+		SELECTCASE RAND:5 
+			CASE 0 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 1 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 2 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 3 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+			CASE 4 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+		ENDSELECT 
+	ELSEIF TALENT:13:3 
+		SELECTCASE RAND:5 
+			CASE 0 
+				PRINTFORML 「哇……又要摸翅膀了吗……」
+				PRINTFORMDL 大妖精的翅膀似乎适应了你的抚摸
+				PRINTFORMDL 哪怕是抚摸也只是绕着你的指尖轻轻打着转，似乎很留恋指尖的触感
+				PRINTFORML 「诶嘿嘿……主动摸的话，就没那么痒……咿呀！」
+				PRINTFORMDL 轻轻掐住翅膀捏住，大妖精便惊叫了起来，手中的翅膀也挣扎着想要挣脱
+				PRINTFORML 「真，真是的……会疼的啦！」
+			CASE 1 
+				PRINTFORML 「诶？怎么啦？要帮人家捏肩膀吗……嗯……」
+				PRINTFORMDL 从背后将手搭在大妖精的肩膀上，揉捏着那纤细的肩颈
+				PRINTFORMDL 稍微揉捏着僵硬的地方，大妖精便有些舒服得轻呼出声
+				PRINTFORML 「呜，喵哇……呜，发出奇怪的声音了……」
+				PRINTFORMDL 随即害羞地捂住小嘴，就连耳朵尖都红透了
+			CASE 2 
+				PRINTFORMDL 看着大妖精那小巧的脸颊，忍不住将手伸了过去
+				PRINTFORML 「诶？呜哇！诶……干，干什么啦……」
+				PRINTFORMDL 掐住她软糯的脸蛋，那原本白皙而又柔嫩的皮肤越来越红……
+				PRINTFORMDL 在大妖精生气之前松开了手，那红扑扑的脸蛋顿时气鼓鼓了起来
+				PRINTFORML 「干，干什么啦！！呜……」
+				PRINTFORMDL 看上去一点都没生气，反而像是像撒娇一样凑得更近……
+			CASE 3 
+				PRINTFORML 「头发……呜，没乱的啦……」
+				PRINTFORMDL 虽然大妖精的头发没有变乱，但还是伸出手抚摸了起来
+				PRINTFORMDL 大妖精的脸蛋瞬间红透了，低下脑袋一动不动地接受着抚摸
+				PRINTFORML 「那，那个……别弄乱噢……」
+				PRINTFORMDL 将垂落的头发别到了她的耳朵后面，即便是羞得不敢抬头，也还是浅浅地笑着呢
+				PRINTFORML 「谢……谢谢你……」
+			CASE 4 
+				PRINTFORML 「啊……」
+				PRINTFORMDL 大妖精似乎在发呆的样子……不由得戳了戳她的额头
+				PRINTFORML 「哇呜！干，干什么呀——」
+				PRINTFORML 「啊，那，那个……刚刚在想事情……」
+				PRINTFORMDL 是什么事情呢？不由得好奇了起来
+				PRINTFORML 「没！没，没什么……真的，真的没什么啦……」
+				PRINTFORMDL 问到这个的时候，大妖精飞快地脸红了，语无伦次了起来
+		ENDSELECT 
+	ELSEIF TALENT:13:8 
+		SELECTCASE RAND:5 
+			CASE 0 
+				PRINTFORML 「呀……翅膀，不要碰啦……」
+				PRINTFORMDL 轻轻地摸上了大妖精的翅膀，被触碰到时大妖精的身体猛地颤抖了一下
+				PRINTFORMDL 下意识想要扇起的翅膀也僵硬了，一动不动地任由你抚摸……
+				PRINTFORML 「都说了……呜，不要……不要碰啦……」
+				PRINTFORMDL 大妖精因为翅膀被按揉着而发出了恳求的声音……
+			CASE 1 
+				PRINTFORML 「哇！衣领我自己来就……」
+				PRINTFORMDL 伸手帮大妖精整理衣领时，指尖不小心碰到了那纤细的脖颈
+				PRINTFORMDL 大妖精微红的脸颊瞬间染上了红霞，忍不住别过了脸
+				PRINTFORML 「真是的……我自己就能弄好的啦……」
+				PRINTFORMDL 低下脑袋抓紧了裙摆，似乎害羞得不敢看你了
+			CASE 2 
+				PRINTFORML 「诶？头发乱了嘛？那我自己来……」
+				PRINTFORMDL 大妖精解开了侧马尾上的扎带，放下了一侧稍长些的头发
+				PRINTFORMDL 趁机拿起梳子插进头发时，大妖精的身体忽然变得僵硬了
+				PRINTFORML 「咿呀！干，干什么……呜……没，没事……」
+				PRINTFORMDL 从背后慢慢地梳理着大妖精的头发，她的耳朵尖都红透了……
+			CASE 3 
+				PRINTFORML 「鞋子上很脏嘛？这个没关系啦……」
+				PRINTFORML 「……呜！一定要现在帮忙擦吗……」
+				PRINTFORMDL 蹲下去帮大妖精用纸巾擦干净了鞋子
+				PRINTFORMDL 鼻尖不小心碰到了她的裙摆，能感觉到女孩子特有的甜香
+				PRINTFORML 「好，好了吗……」
+				PRINTFORMDL 即便是擦干净站起了身，大妖精还是紧抓着裙子低着脑袋，十分害羞的样子
+			CASE 4 
+				PRINTFORML 「啊？那个……」
+				PRINTFORMDL 摘起一朵小花，插在了大妖精的头发里
+				PRINTFORMDL 花朵映衬着女孩那微红了的脸颊，看起来更可爱了
+				PRINTFORML 「哇！才，才没有……」
+				PRINTFORMDL 大妖精慌忙将红透的脸蛋藏在翅膀后，害羞得说不出一句完整的话
+		ENDSELECT 
+	ELSEIF CFLAG:13:1001 
+		SELECTCASE RAND:4 
+			CASE 0 
+				PRINTFORML 「哇！怎，怎么啦——」
+				PRINTFORMDL 大妖精的脑袋上不知何时挂上了几片枯叶
+				PRINTFORMDL 帮她拨去枯叶时，手指也不时碰到那柔顺的头发
+				PRINTFORML 「嗯……那个，谢，谢谢你……」
+				PRINTFORMDL 大妖精小脸红扑扑地，小声地向你道着谢
+			CASE 1 
+				PRINTFORML 「诶？干什么呀……」
+				PRINTFORMDL 大妖精扎着的马尾上，系着的蝴蝶结有些歪了
+				PRINTFORMDL 想要帮忙整理的时候，蝴蝶结自己松掉了……
+				PRINTFORML 「那个，我，我自己来就好……」
+				PRINTFORMDL 大妖精熟练地将蝴蝶结系好，即便没有镜子也很合适
+			CASE 2 
+				PRINTFORML 「咿呀！摸，摸哪里！……」
+				PRINTFORMDL 稍微碰了一下大妖精的翅膀，她就像只炸毛的猫一样跳了起来
+				PRINTFORMDL 妖精的翅膀居然有这么敏感嘛……
+				PRINTFORML 「因为是很重要的东西啦！不准碰啦！」
+			CASE 3 
+				PRINTFORML 「那个……没，没什么啦……」
+				PRINTFORMDL 大妖精的膝盖上似乎有着些许擦伤
+				PRINTFORML 「因为，因为一下子就能好……你看！」
+				PRINTFORMDL 眨眼间，那白皙皮肤上的血痕就自己愈合了
+				PRINTFORML 「诶嘿嘿……人家可是很强的大妖精噢……」
+			CASE 4 
+				PRINTFORML 
+				PRINTFORML 
+				PRINTFORML 
+		ENDSELECT 
+	ELSE 
+		SELECTCASE RAND:3 
+			CASE 0 
+				PRINTFORML 「哇！干，干什么！——」
+				PRINTFORMDL 大妖精抱着自己的身体，和你拉开了距离
+				PRINTFORML 「不，不要碰人家……」
+			CASE 1 
+				PRINTFORML 「……咿呀！」
+				PRINTFORMDL 大妖精因为你忽然的触碰，吓得飞了起来
+				PRINTFORML 「不，不能随便碰女孩子的身体——」
+			CASE 2 
+				PRINTFORML 「怎，怎么了？」
+				PRINTFORMDL 想要靠近大妖精时，却被她注意到了
+				PRINTFORMDL 紧张地看着这边，似乎准备好随时逃走……
+		ENDSELECT
+	ENDIF 
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;303,道歉
+;TFLAG:193(2=点心盒成功 1=大成功 0=成功 -1=失敗 -2=点心盒失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_303
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_303
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_303
+CALL M_KOJO_Moe_MESSAGE_COM_K13_303_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_303_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193 
+		CASE 2 
+			IF (TALENT:13:3 || (TALENT:13:8 && !MARK:13:3)) && 0 
+				SELECTCASE RAND:2
+					CASE 0 
+						PRINTFORML 
+						PRINTFORML 
+						PRINTFORML 
+					CASE 1
+						PRINTFORML 
+						PRINTFORML 
+						PRINTFORML 
+				ENDSELECT
+			ELSE 
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORML 「哇……这个，这个……买那么贵的干嘛呀……」
+						PRINTFORMDL 似乎是因为礼物太过贵重，大妖精有些被吓到了
+						PRINTFORML 「虽然人家是喜欢甜食没错，但是，呜……」
+						PRINTFORML 「之前的事嘛？没，没关系啦，毕竟%MASTERNAME:13%给我买了那么贵的礼物……」
+						PRINTFORML 「嗯！原谅%MASTERNAME:13%啦！」
+					CASE 1
+						PRINTFORMDL 即便是拿出了名贵的点心，大妖精也只是看了看便扭回了脑袋
+						PRINTFORML 「……才，才不会被点心收买……」
+						PRINTFORMDL 诶呀那只能扔掉啦……想要收回来的时候，却被大妖精按住了手
+						PRINTFORML 「不，不准浪费食物！这么好吃的东西，丢掉什么的……啊呜～♪」
+						PRINTFORML 「诶嘿嘿……之前的事情，原谅你了噢……」
+					CASE 2 
+						PRINTFORML 「诶？哇！这个，这个……」
+						PRINTFORMDL 大妖精因为过于名贵的点心，惊讶地捂住了嘴
+						PRINTFORML 「我，我不能收这么贵的……那个……」
+						PRINTFORMDL 保持着距离的她，似乎是想要拒绝，又很想吃的样子
+						PRINTFORMDL 终于，她还是忍不住伸出了手，将点心盒收了下来
+						PRINTFORML 「嘿嘿……那个，之前的事，没关系了噢……」
+				ENDSELECT
+			ENDIF 
+		CASE 1,0
+			IF TALENT:13:3 || (TALENT:13:8 && !MARK:13:3)
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORML 「哼……才，才不要……」
+						PRINTFORMDL 大妖精依旧背对着你，翅膀微微颤抖着……
+						PRINTFORMDL 只是，绕到她面前的时候，才发现她的眼眶都红了
+						PRINTFORML 「才，才不是……呜……没关系就是啦！」
+						PRINTFORMDL 大妖精终于忍不住叫了起来，原本要哭出来的表情也破涕为笑
+						PRINTFORML 「那，那下次再也不能这样了……」
+					CASE 1
+						PRINTFORMDL 将刚刚找到的漂亮野花，递到了大妖精的面前
+						PRINTFORML 「诶……哼，这样就想……干，干什么呀——」
+						PRINTFORMDL 只是送给她还不够呢，于是将花朵插进了她的头发里
+						PRINTFORMDL 拿起镜子给她看时，大妖精气鼓鼓的脸蛋愣住了，马上就红了起来
+						PRINTFORML 「笨，笨蛋……这样，呜……还，挺好看的……」
+						PRINTFORML 「那个……之前的事，下，下不为例！」
+					CASE 2 
+						PRINTFORMDL 凑近了躲在\@INROOM(CFLAG:13:300)?椅子后面#树后面\@的大妖精……
+						PRINTFORML 「走，走开啦……呜……」
+						PRINTFORMDL 虽然嘴上说着驱赶的话，可大妖精却没有逃开
+						PRINTFORMDL 索性直接贴在她身边坐下，那小小的尖叫声也传了过来
+						PRINTFORML 「呀……那个……那个……」
+						PRINTFORMDL 只是距离得近了一些，大妖精便害羞得忘了生气了呢
+				ENDSELECT
+			ELSE 
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORML 「呜……才不是因为这个生气的……」
+						PRINTFORML 「诶呀算啦算啦，原谅%MASTERNAME:13%好啦……」
+					CASE 1
+						PRINTFORML 「其实，人家也没有那么生气……」
+						PRINTFORML 「因为%MASTERNAME:13%很过分，不过，现在原谅你了噢……」
+					CASE 2 
+						PRINTFORMDL 似乎是道歉的话语太过夸张了，大妖精终于忍不住笑了出来
+						PRINTFORML 「噗……太，太狡猾了，这么说的话……」
+						PRINTFORML 「我不生气了噢，不过，下不为例哦！」
+				ENDSELECT
+			ENDIF 
+		CASE -1 
+			IF TALENT:13:3 || (TALENT:13:8 && !MARK:13:3)
+				SELECTCASE RAND:2   
+					CASE 0 	
+						PRINTFORML 「问题才不是%MASTERNAME:13%犯了什么错……」
+						PRINTFORML 「是态度！态度的问题啦……呜……」
+						PRINTFORMDL 大妖精扭过了脑袋一言不发，生起了闷气 
+					CASE 1 	
+						PRINTFORML 「那个……嗯，没，没关系……」
+						PRINTFORMDL 大妖精低着脑袋颤抖着声音，身体也与这边保持着距离
+						PRINTFORMDL 完全不像是没关系的样子……
+				ENDSELECT
+			ELSEIF MARK:13:3 
+				SELECTCASE RAND:3 
+					CASE 0 	
+						PRINTFORML 「说完了嘛……嗯」
+						PRINTFORML 「现在说这些，还有什么用呢？」
+						PRINTFORMDL 大妖精的声音很轻，表情也只是平淡地微笑着
+						PRINTFORMDL 可是……无法靠近她的感觉，还是没有改变……
+					CASE 1 
+						PRINTFORML 「嗯嗯，对哦，你错了……」
+						PRINTFORML 「既然知道错了，为什么……那个时候要这么做呢？」
+						PRINTFORMDL 大妖精依然是微笑着，可笑容里却没有一丝温度
+						PRINTFORMDL 像是人偶一样，保持着干涩而又保持着距离的笑容
+					CASE 2 
+						PRINTFORML 「担心我嘛？……不噢，我很好的」
+						PRINTFORML 「要是没有%MASTERNAME:13%，可能，会更好……」
+						PRINTFORMDL 大妖精静静地看着你，面无表情
+						PRINTFORMDL 那语气平静得不像妖精，让人心里发凉……
+				ENDSELECT
+			ELSE 
+				SELECTCASE RAND:2 
+					CASE 0 	
+						PRINTFORML 「呜……我才不是因为这个生气的啦！」
+						PRINTFORML 「%MASTERNAME:13%就是个笨蛋——」
+						PRINTFORMDL 大妖精生气地叫了起来，转过身去生起了闷气
+					CASE 1 	
+						PRINTFORML 「不要把人家当成小孩子一样糊弄啦！」
+						PRINTFORML 「人家才不是小孩……呜……」
+						PRINTFORMDL 大妖精低着脑袋掐着裙子，眼泪在眼眶里打着转……
+				ENDSELECT
+			ENDIF 
+		CASE -2
+			IF MARK:13:3 
+				PRINTFORML 「……我不是能用零食收买的妖精……」
+				PRINTFORML 「多贵也不要」
+				PRINTFORMDL 大妖精保持着远远的距离，用眼睛瞪着你……
+			ELSE 
+				IF TALENT:13:3 || (TALENT:13:8 && !MARK:13:3)
+					PRINTFORML 「不要把人家当成小孩子一样糊弄啦！」
+					PRINTFORML 「人家才不是小孩……呜……」
+					PRINTFORMDL 大妖精低着脑袋掐着裙子，眼泪在眼眶里打着转……
+				ELSE 
+					PRINTFORML 「这个点心……我不能收的，太贵了……」
+					PRINTFORML 「就算是赔礼也不要」
+					PRINTFORMDL 大妖精低着脑袋抓住了裙摆，似乎还在生着闷气
+				ENDIF 
+			ENDIF 
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;304,幫忙干活
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:350(仕事内容请参考 ERB\MOVEMENTS\JOB_仕事内容.ERB 
+;TCVAR:手伝えない(=2 代表帮忙也不会加快进度的工作、時間停止时不能帮忙的工作 永琳の診察等)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_304
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_304
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_304
+CALL M_KOJO_Moe_MESSAGE_COM_K13_304_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_304_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;305,索求膝枕
+;TFLAG:193(-5=MASTER的体型比TARGET大太多了(TALENT:MASTER:体型 > TALENT:体型 + 2) 1=大成功 0=成功 -1=失敗)(-5以外没有地文的差分)
+;ABL:親密(5以上=一边看着%CALLNAME:MASTER%的脸一边温柔的抚摸起来… 3以上=温柔地抚摸着%CALLNAME:MASTER%的头… 2以下=紧绷着身体一动不动…)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_305
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_305
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_305
+CALL M_KOJO_Moe_MESSAGE_COM_K13_305_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_305_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+ENDIF
+RETURN 1
+;==================================================
+;306,撫摸肚子
+;TFLAG:193(1=ABL:親密5以上且妊娠時 0=成功 -1=ABL:親密5以下)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_306
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_306
+CALL M_KOJO_Moe_MESSAGE_COM_K13_306_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_306_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;通常
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;307,捏臉蛋
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+	;TALENT:恋慕(一边露出害羞的表情一边做出反击…
+	;ABL:親密(5以上=也怯生生的把手伸向了%CALLNAME:PLAYER%的脸…
+	;ABL:従順(5以上=一边露出害羞的表情一边任%CALLNAME:PLAYER%为所欲为…
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_307
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗(注意：拥抱模式下必定成功)、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_307
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_307
+CALL M_KOJO_Moe_MESSAGE_COM_K13_307_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_307_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;308,捅臉頰
+;陪睡中限定指令
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_308
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗(注意：拥抱模式下必定成功)、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_308
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_308
+CALL M_KOJO_Moe_MESSAGE_COM_K13_308_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_308_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;睡眠中
+	IF CFLAG:睡眠
+	;通常
+	ELSE
+	ENDIF
+
+ENDIF
+RETURN 1
+;==================================================
+;309,摸頭
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:親密(5以上=通常成功時分岐
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_309
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗(注意：拥抱模式下必定成功)、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_309
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_309
+CALL M_KOJO_Moe_MESSAGE_COM_K13_309_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_309_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	;時間停止中
+	IF FLAG:70
+	;睡眠中
+	ELSEIF CFLAG:睡眠
+	;通常
+	ELSE
+		IF FIRSTTIME("309_1_0")
+			IF (TALENT:13:3 || TALENT:13:8) && 0 
+
+			ELSE 
+				PRINTFORML 「哇！哇呜！%MASTERNAME:13%要干什么——」
+				PRINTL 
+				PRINTFORMDL 想将手伸向大妖精的脑袋，她却吓得跳了起来
+				PRINTL 
+				PRINTFORML 「摸，摸头嘛……这，这样会不会有点……」
+				PRINTL 
+				PRINTFORMDL 虽然嘴上说着拒绝的话，可是她的身体却没有逃开
+				PRINTFORMDL 将手放在大妖精的头上，她便忍不住抖了抖身体
+				PRINTL 
+				PRINTFORML 「呀……有点，暖暖的，很舒服……」
+				PRINTL 
+				PRINTFORMDL 大妖精眯起眼睛享受着抚摸，翅膀也随着你的动作微微扇动着
+				PRINTFORMDL 摸着摸着，原本有些困惑的表情也变得放松了下来，微微地笑了起来
+				PRINTL 
+				PRINTFORML 「……诶？哇！摸了多久呀……」
+				PRINTL 
+				PRINTFORMDL 直到收回了手，大妖精才反应了过来，慌忙从你身边跳开
+				PRINTFORMDL 不好意思地掐着裙子，脸上也泛起了红晕
+				PRINTL 
+				PRINTFORML 「那个……谢谢……这样，没关系噢」
+				PRINTFORML 「想摸的话，跟，跟人家说就好……」
+			ENDIF 
+		ELSEIF TALENT:13:3 && RAND:5
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「那个……听说摸多了会长不高呀……」
+					PRINTFORMDL 享受着大妖精头发的触感时，她有些担心地反问了回来
+					PRINTFORMDL 不过从认识到现在大妖精也没有长高过……
+					PRINTFORML 「呜，那肯定是因为%MASTERNAME:13%摸太多了啦……」
+					PRINTFORMDL 虽然小声责怪着，但是大妖精完全没有不想要摸头的样子
+				CASE 1	
+					PRINTFORML 「哇！%MASTERNAME:13%想要摸头嘛……」
+					PRINTFORMDL 才刚伸出手，大妖精便微微低下脑袋，乖巧地接受了抚摸
+					PRINTFORMDL 像是小动物一样，不仅是顺从了你的动作，还主动蹭着你的掌心
+					PRINTFORML 「诶嘿嘿……有点，想要更多的摸摸……」
+					PRINTFORMDL 即便是低着脑袋，大妖精还是露出了像是花儿一样的微笑 
+				CASE 2
+					PRINTFORML 「那个……有点……呜！——」
+					PRINTFORMDL 摸着摸着，大妖精便忍不住凑得更近，几乎要贴在你身上了
+					PRINTFORMDL 索性轻轻搂住了她的后背，保持着拥抱的姿势摸着她的脑袋
+					PRINTFORML 「……呜……才，才没有……想，这样……」
+					PRINTFORMDL 能明显地感觉到她的体温越来越高，心跳声也变得越来越快…… 
+				CASE 3
+					PRINTFORML 「%MASTERNAME:13%的手……好温柔……」
+					PRINTFORMDL 大妖精低着脑袋红透了脸颊，声音也颤抖着越来越小
+					PRINTFORMDL 那可爱的脸蛋红得跟苹果似的，就连耳朵尖上都泛起了红晕 
+					PRINTFORML 「咿呀！耳朵……耳朵不能碰……」
+					PRINTFORMDL 虽然身体都吓得跳了起来，大妖精却没有逃开
+					PRINTFORMDL 不由得更进一步的摸弄着她的耳朵，直到连耳朵也红透了……
+				CASE 4
+					PRINTFORMDL 即便大妖精盯着你伸出的手……但还是摸上了她的脑袋
+					PRINTFORML 「哇呜！……%MASTERNAME:13%……欺负人……」
+					PRINTFORMDL 虽然嘴上说着生气的话，可大妖精却完全没有躲开的意思
+					PRINTFORMDL 故意放轻动作时，她又不满地嘟起了小嘴，主动往你手里蹭了蹭
+					PRINTFORML 「呜……不要放开好嘛……欺负一下，也没关系……」
+			ENDSELECT 
+		ELSEIF (TALENT:13:8 || TALENT:13:3)&& RAND:4
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「呜！%MASTERNAME:13%的手……」
+					PRINTFORMDL 才刚伸出手，大妖精便微微低下脑袋，乖巧地接受了抚摸
+					PRINTFORMDL 像是小动物一样，不仅是顺从了你的动作，还主动蹭着你的掌心
+					PRINTFORML 「嘻嘻……这样的感觉，很不错噢……」
+					PRINTFORMDL 为了夸奖这样的大妖精，稍微多抚摸了一小会
+				CASE 1	
+					PRINTFORML 「……嗯……呜哇！」
+					PRINTFORMDL 趁着大妖精发呆的时候，将手搭在了她的头上
+					PRINTFORML 「哇……趁着人家不注意的时候……」
+					PRINTFORMDL 虽然小声地责怪着你，但是大妖精似乎并不讨厌这样
+					PRINTFORMDL 她的脸上露出了微微的笑容，翅膀也轻轻地扇动着
+				CASE 2
+					PRINTFORMDL 想伸出手抚摸大妖精的脑袋时，被她有些气鼓鼓地盯了过来
+					PRINTFORML 「真是的，就这么想摸人家嘛……呜……」
+					PRINTFORMDL 即便表情保持着有点生气的样子，大妖精却低下了脑袋
+					PRINTFORMDL 看来是默许了摸头呢，那自然是伸出手贴在头发上摸了起来
+					PRINTFORML 「……嗯，呜……真是一点都不客气呢……」
+				CASE 3
+					PRINTFORML 「那个……%MASTERNAME:13%……」
+					PRINTFORML 「摸人家的脑袋什么的，很好玩嘛？」
+					PRINTFORMDL 被摸着脑袋的大妖精抬起了脑袋，歪着脸蛋有些疑惑的样子
+					PRINTFORML 「因为，因为……摸头什么的，是那些小妖精才会想要的事」
+					PRINTFORML 「但是，人家却有点像她们那样了，而且，也不讨厌……」
+					PRINTFORMDL 说到这里的大妖精又低下了脑袋，脸颊上泛起了红晕
+					PRINTFORMDL 不过她的表情却是微微地笑着，似乎还是很享受着摸头的感觉
+				CASE 4
+					PRINTFORML 「%MASTERNAME:13%真是的……总喜欢这样……」
+					PRINTFORMDL 大妖精低下了脑袋，任由你的手指穿过那柔软的发丝
+					PRINTFORMDL 顺着柔顺的头发梳理下来，让原本有些紧张的她也放松了些许
+					PRINTFORML 「……这样的话，%MASTERNAME:13%……会很高兴嘛？」
+					PRINTFORMDL 听到了肯定的回答，大妖精的脸上露出了微微的笑容，马上又脸红了些许
+			ENDSELECT 
+		ELSE 	
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「哇！%MASTERNAME:13%……」
+					PRINTFORMDL 虽然摸上去的时候，大妖精紧张地缩了缩脖子
+					PRINTFORMDL 不过，马上又往你的掌心里蹭了蹭，享受着手心的温暖
+					PRINTFORML 「诶嘿嘿……很暖和噢」
+				CASE 1	
+					PRINTFORML 「%MASTERNAME:13%的手掌……原来有这样的感觉噢……」
+					PRINTFORMDL 大妖精享受着抚摸，翅膀也随着你的动作微微扇动着
+					PRINTFORMDL 那柔顺的头发在手心里流动着，似乎都没法握住似的
+				CASE 2
+					PRINTFORML 「%MASTERNAME:13%想摸人家的头嘛？嗯嗯，可以噢」
+					PRINTFORMDL 大妖精乖巧地端坐了下来，双手交叠着按在裙摆之间
+					PRINTFORMDL 用手拂过大妖精的头发，轻轻的摸着她的脑袋
+					PRINTFORML 「哇……嘿嘿，有种被夸奖的感觉……」
+				CASE 3
+					PRINTFORML 「那个……这个，只是朋友之间的礼仪……吧？」
+					PRINTFORMDL 似乎是有些太习惯抚摸了，大妖精有些不安地低下了脑袋
+					PRINTFORMDL 不过并没有想要逃开的意思，反而是微微地靠近了你
+					PRINTFORML 「是的话，那就，那就多摸一下嘛……」
+				CASE 4
+					PRINTFORML 「诶……这样，不觉得，有点奇怪嘛……」
+					PRINTFORMDL 大妖精的脸上泛起了红晕，低下脑袋小声嘀咕着
+					PRINTFORMDL 不过并没有要推开的意思，而是安静地接受着抚摸
+					PRINTFORML 「不过，是%MASTERNAME:13%的话……诶嘿嘿……」
+			ENDSELECT 
+		ENDIF 
+	ENDIF
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;331,泡茶(下药)
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_331
+;成否判定
+;TFLAG:192(-2=強制失敗(注、非强制中止指令）、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功(注、睡眠薬アイスティーは眠気を感じていると飲まない)
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_331
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_331
+CALL M_KOJO_Moe_MESSAGE_COM_K13_331_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_331_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;332,勸酒
+;TFLAG:193(0=劝酒成功 -1=劝酒失敗 -2=劝酒大失敗 -5=对方完全戒酒)
+;COM_STR(酒の名称)
+;ALCOHOL_TASTE(TFLAG:194)(15以上=很中意的样子 9以下=不合口味的样子)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_332
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=根据COM文件决定
+;TFLAG:口上特殊補正 (如果在此处输入数字，则可以增加或减少ALCOHOL_TASTE，即对某种酒的喜好程度。)
+TFLAG:192 =0
+TFLAG:口上特殊補正 = 0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_332
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_332
+CALL M_KOJO_Moe_MESSAGE_COM_K13_332_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_332_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;333,聽牢騷
+;TFLAG:193(6=大成功(酔酒状态) 5=成功(酔酒状态) 4=失敗(酔酒状态) 3=大成功 2=成功 1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_333
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_333
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_333
+CALL M_KOJO_Moe_MESSAGE_COM_K13_333_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_333_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 6
+		;大成功（酔酒状态）
+		CASE 5
+		;成功（酔酒状态）
+		CASE 4
+		;失敗（酔酒状态）
+		CASE 3
+		;大成功
+		CASE 2
+		;成功
+		CASE 1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;334,碰杯
+;宴会限定指令
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;CFLAG:妊娠自覚状態(1=食事)
+;TALENT:酒耐性(-2=食事)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_334
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_334
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_334
+CALL M_KOJO_Moe_MESSAGE_COM_K13_334_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_334_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;335,照料
+;宴会限定指令
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_335
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_335
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_335
+CALL M_KOJO_Moe_MESSAGE_COM_K13_335_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_335_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:193
+		CASE 1
+		;大成功
+		CASE 0
+		;成功
+		CASE -1
+		;失敗
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;336,膝枕
+;ABL:親密(4以下=感覺不太好… 9以下=好像很害羞的様子…… 9以上=好像很幸福的様子……
+;TIME_PROGRESS(TFLAG:膝枕した)，时间间隔44以下=失敗
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_336
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_336
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_336
+CALL M_KOJO_Moe_MESSAGE_COM_K13_336_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_336_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 > 0
+	;寝ちゃった
+	ELSE
+	;除此以外
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;337,和孩子互动
+;地文内包含巨量差分，请自行查看ERB\口上・メッセージ関連\EVENT_MESSAGE_COM300.ERB
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_337
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_337
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_337
+CALL M_KOJO_Moe_MESSAGE_COM_K13_337_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_337_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF TFLAG:193 > 0
+	;寝ちゃった
+	ELSE
+	;除此以外
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;350,推倒（時姦時名为恶作剧
+;地文路径 ERB\口上・メッセージ関連\EVENT_MESSAGE_COM_押し倒し.ERB
+;TFLAG:194 (0=成功 1=有路人　2=不想在户外做　3=不想多人一起做　4=还没有做的心情（即使有合意）　100=有合意，但是因为口上特殊判定而强制失败
+;TCVAR:抱き寄せ初回　1=普通地获得合意　2=还没有KISS过就获得合意　3=媚药或者发情期时获得合意…　4=使用奇迹之石后获得合意
+;5=被逼迫要求做且无法拒绝(拥有胆怯素质才有可能触发) 6=被拒绝了，但是并不是不高兴　7=被普通地拒绝　8=被强硬地拒绝 9=即便禁止插入，也允许了推倒 98=口上内特殊判定加持时失敗 99=口上内特殊判定加持时成功
+;如果flagsetting内口上内特殊判定未设置为1，则特殊判定将不会生效
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_350
+IF TCVAR:181 
+	TCVAR:191 = 0 
+	RETURN 1 
+ELSE 
+	RETURN 0
+ENDIF 
+
+@M_KOJO_Moe_MESSAGE_COM_K13_350
+CALL M_KOJO_Moe_MESSAGE_COM_K13_350_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_350_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	;并不是都需要写，部分内容可以合并在一起
+	IF FLAG:70 
+		IF TALENT:13:7 
+			PRINTFORMDL 在时间停止的状态下，将心爱的大妖精抱了起来
+			PRINTFORMDW 想必是恋人的她会允许吧？怀着些许罪恶感将大妖精推倒了
+		ENDIF 
+	ELSEIF TFLAG:194 
+		;非初次，拒绝
+		SELECTCASE TFLAG:194
+			CASE 1,2,3 		;有路人;不想在户外做;不想多人一起做
+				IF TALENT:13:7 
+					PRINTFORML 「这！这里！那个……」
+					PRINTFORMW 「……会被当成，欺负妖精的大坏蛋噢……」
+					PRINTFORMDL 
+					PRINTFORMDL 看着紧抓着裙摆不放的大妖精，自己也有些害羞了……
+					PRINTFORMDW 那，去没人的地方的话……
+					PRINTFORMDL 
+					PRINTFORMW 「哇！才，才没有说可以……别，别盯着人家啦！」
+				ELSE 
+					PRINTFORMW 「在这里……嗯？什么啊！」
+					PRINTFORML 
+					PRINTFORMDW 大妖精顿时抓住裙摆大叫了起来，看向你的表情又羞又恼
+					PRINTFORMDW 啊……在这个地方确实不该这么说……
+				ENDIF 
+			CASE 4 		;还没有做的心情（即使有合意）
+				IF TALENT:13:7 
+					IF BASE:13:10 > BASE:13:11  
+						PRINTFORMW 「诶嘿嘿……那个，只是抱抱可以嘛？」
+						PRINTFORMDW 主动抱了过来的大妖精，小脸上只是满满的欢喜与期待 
+						PRINTFORMDW 不由得挠了挠这可爱妖精的鼻尖，和她毫无邪念地打闹了起来
+					ELSE 
+						PRINTFORMW 「哇——哇呜！干，干什么啦！」
+						PRINTFORMDW 搂住大妖精的身体时，她好像是有些被吓到了，在怀里挣扎个不停
+						PRINTFORMDW 看上去还没有准备好……下次一定吧
+					ENDIF 
+				ELSE
+					PRINTFORMW 「呀！干，干什么……」
+					PRINTFORMDW 刚想抱住大妖精的时候，大妖精却像是意识到了一样跳开了
+					PRINTFORMDW 那红扑扑的脸蛋不敢看向你，似乎相比情欲更多的是害羞呢
+				ENDIF 
+			CASE 100	;有合意，但是因为口上特殊判定而强制失败
+
+		ENDSELECT 
+	ELSEIF TCVAR:181
+		;初次拥抱，允许或失败都有
+		SELECTCASE TCVAR:181
+			CASE 1,2		;普通地获得合意
+				IF TALENT:13:7 
+					PRINTFORMW 「诶……怎么啦？」
+					PRINTFORMDL 
+					PRINTFORMDW 听到了你的呼唤，大妖精用温和的语气回答着
+					PRINTFORMDW 就连那清澈的眼眸，也只是好奇地看着你……
+					PRINTFORMDW 看着这像是小孩子一样的大妖精，想要推倒的手却有些犹豫
+					PRINTFORML 
+					PRINTFORML 「%MASTERNAME:13%到底怎么了嘛，脸也有点红扑扑的」
+					PRINTFORMW 「是发烧了嘛？让我看看……咿呀！」
+					PRINTFORML 
+					PRINTFORMDL 趁着大妖精贴近你的额头时，随着一阵可爱的惊呼，抱住她的身体一起倒了下去
+					PRINTFORMDW 大妖精被你突然的举动吓了一跳，直到意识到自己被\@INROOM(CFLAG:13:300)?压倒在床上#抱在怀里\@才反应过来
+					PRINTFORMDL 
+					PRINTFORML 「哇！等，等一下……我，我还没……」
+					PRINTFORMDL 
+					PRINTFORMDW 淡绿色的短发在\@INROOM(CFLAG:13:300)?白皙的床单#草地\@上铺开，翅膀也不安地拍打起来
+					PRINTFORMDW 只是，大妖精那娇小而又柔软的身体，却没有半点挣扎的意思
+					PRINTFORMDW 这到底是准还是不准呢？索性凑近她的耳边轻声地寻求着许可
+					PRINTFORMDL 
+					PRINTFORML 「笨，笨蛋……抱都抱住了，还问这个干嘛……」
+					PRINTFORML 「没有不愿意啦……那个……」
+					PRINTFORMDL 
+					PRINTFORMDL 挣扎着抬起了脑袋的大妖精，看着你的眼眸满是羞涩与期待
+					PRINTFORMDW 终于克服了害羞的心情呢，当然是以温柔的笑容回答着
+					PRINTFORML 
+					PRINTFORMW 「……要温柔一点噢……」
+				ELSE 
+					PRINTFORMW 「哇！%MASTERNAME:13%……干嘛……」
+					PRINTFORMDL 
+					PRINTFORMDL 被抱住的时候，大妖精只是跟以前一样红着脸蛋回应着
+					PRINTFORMDW 可随着拥抱越来越紧，她像是意识到了什么，小脸唰地红透了……
+					PRINTFORMDW 虽然有所挣扎，可妖精的力量实在太弱了，有种欲拒还迎的错觉……
+					PRINTFORMDL 
+					PRINTFORMW 「等，等一下嘛……这样，这样也……呜……」
+					PRINTFORMDL 
+					PRINTFORMDW 看不见脸蛋的大妖精，连声音也变得有些哭腔了
+					PRINTFORMDW 是害怕了嘛？急忙想要放开的时候，大妖精却自己抱了回来
+					PRINTFORMDW 并不是平常的那种拥抱，而是能听到她心跳声的那种紧紧相拥 
+					PRINTFORMDL 
+					PRINTFORMW 「好怕……%MASTERNAME:13%讨厌我……」
+					PRINTFORMW 「人家……才不是随便的妖精……但是……好怕……」
+					PRINTFORMDL 
+					PRINTFORMDW 是害怕自己做完就被抛弃嘛？大妖精的身体在怀里止不住地颤抖着
+					PRINTFORMDW 心疼地抚摸着怀里的她，向她许诺以后也会珍惜她的感情
+					PRINTFORMDL 
+					PRINTFORMW 「……真的的话……就……」
+					PRINTFORMW 「嗯……对哦……可以，继续嘛……」
+					PRINTFORMDL 
+					PRINTFORMDW 透过单薄的衣裳，大妖精那急促的心跳越来越快……
+					PRINTFORMDW 就连翅膀也像是拥抱一样抱住了你，似乎是想要更紧地贴在一起……
+				ENDIF 
+			CASE 3,4		;媚药或者发情期时获得合意…;使用奇迹之石后获得合意…
+				PRINTFORMW 「诶……怎么啦？」
+				PRINTFORML 
+				PRINTFORMDL 听到了你的呼唤，大妖精好奇地扭过了脑袋
+				PRINTFORMDW 似乎是隐约意识到要发生什么，脸蛋也变得红扑扑的了
+				PRINTFORMDW 这样大概是可以吧？将她拉近了怀里，保持着相拥的姿势倒了下去
+				PRINTFORML 
+				PRINTFORMW 「咿呀！哇……好近噢……」
+				PRINTFORML 
+				PRINTFORMDW 伴随着可爱的惊呼与温热的吐息，大妖精那小小的身体压在了自己的身上
+				PRINTFORMDW 即便是吓了一跳，可反应过来的大妖精，还是用有些飘飘然的笑容看着你……
+				PRINTFORML 
+				PRINTFORMW 「诶嘿嘿……好热，这是，要做什么呀——哇……」
+				PRINTFORML 
+				IF TALENT:13:7 
+					PRINTFORMDW 即便是将大妖精压在身下，她也毫无抵抗的样子
+					PRINTFORMDW 不仅如此，还主动地搂住了你的脖子，凑近了你的胸口
+					PRINTFORML 
+					PRINTFORMW 「嘻嘻……%MASTERNAME:13%的味道……」
+					PRINTFORMW 「想要做嘛？……我也，想要和%MASTERNAME:13%……诶嘿嘿……」
+					PRINTFORML 
+					PRINTFORMDW 现在才想起来害羞了嘛？大妖精忍不住将脸蛋埋进了你的胸口
+					PRINTFORMDW 自然是抚摸起那纤细的柔软娇躯，享受着那妖精独有的芬芳醇香……
+				ELSE 
+					PRINTFORMDW 直到将大妖精压在身下，她才后知后觉地挣扎起来
+					PRINTFORML 
+					PRINTFORMW 「唔嗯……%MASTERNAME:13%……不要这样……」
+					PRINTFORMW 「才不是随便的妖精……但是……呜……不是不行啦……」
+					PRINTFORMW 「只有这次可以噢……」
+					PRINTFORML 
+					PRINTFORMDW 现在才想起来害羞了嘛？大妖精忍不住用手遮住了早已通红的脸蛋
+					PRINTFORMDW 自然是抚摸起那纤细的柔软娇躯，享受着那妖精独有的芬芳醇香……
+				ENDIF 
+			CASE 5		;被逼迫要求做且无法拒绝(拥有胆怯素质才有可能触发，实际好感相当于6)
+				IF TALENT:13:7 
+					PRINTFORMW 「诶……怎，怎么啦？」
+					PRINTFORML 
+					PRINTFORMDL 似乎是意识到了你的意图，大妖精的声音有些颤抖着
+					PRINTFORMDW 那看过来的眼眸里，流露着一丝不安的神情 
+					PRINTFORMDW 是自己的欲求被发现了吗……
+					PRINTFORML 
+					PRINTFORMW 「啊！那，那个，到底怎么了嘛……」
+					PRINTFORMW 「虽然不知道发生了什么，那个，有事的话，可以找人家……」
+					PRINTFORML 
+					PRINTFORMDW 啊，对啊，大妖精是不会拒绝恋人的要求的嘛
+					PRINTFORMDW 这样想着，将她的身体拉近了怀里，保持着相拥的姿势倒了下去 
+					PRINTFORMDL 
+					PRINTFORMW 「哇！……啊！这，这是……呜……」
+					PRINTFORML 
+					PRINTFORMDL 大妖精的身体在怀里止不住地颤抖着
+					PRINTFORMDW 就连声音也颤抖了起来，一点点地没了声音
+					PRINTFORMDW 直到声音消失了，都没有挣扎过……
+					PRINTFORMDL 
+					PRINTFORMW 「对不起……明明……已经是恋人了……」
+					PRINTFORMW 「我却……好怕……怕疼，还怕%MASTERNAME:13%不珍惜人家……」
+					PRINTFORML 
+					PRINTFORMDW 原来是这样啊……大妖精，在害怕自己被抛弃…… 
+					PRINTFORMDW 心疼地抚摸着怀里的她，向她许诺会温柔地对她，以后也会珍惜她的感情
+					PRINTFORMDL 
+					PRINTFORMW 「嗯……」
+					PRINTFORMW 「……要温柔一点噢……」
+				ELSE 
+					PRINTFORMW 「哇！干，干什么……」
+					PRINTFORML 
+					PRINTFORMDW 看上去就很柔弱的大妖精，果然跟预料中一样一推就倒
+					PRINTFORMDW 就连反抗着的动作都毫无力量，推倒妖精什么的实在是太容易了
+					PRINTFORMDL 
+					PRINTFORML 「……不要，不要啊！——不要……」
+					PRINTFORML 
+					PRINTFORMDW 把激烈挣扎着的大妖精按在身下，直到她自己都完全没了力气
+					PRINTFORMDW 最后，放弃了挣扎的大妖精，躺在身下扑簌扑簌地哭了起来
+					PRINTFORMDW 怀着些许施虐的快感，伸出手开始抚摸她幼小的身体……
+				ENDIF 
+			;CASE 6		;被拒绝了，但是并不是不高兴，有胆怯所以不会再有这个了
+			CASE 7,8		;被普通地拒绝
+				IF TALENT:13:7 
+					PRINTFORMDW 想要推倒大妖精的时候，她却微微低下了脑袋
+					PRINTFORML 
+					PRINTFORMW 「……我……我还不想做……」
+					PRINTFORMW 「可以等人家，更喜欢你一些吗？」
+					PRINTFORML 
+					PRINTFORMDL 将微微发抖着的大妖精，用毫无欲望的拥抱拥在怀里
+					PRINTFORMDW 依偎在怀里的大妖精感觉到了安全感，渐渐地放松了下来
+					PRINTFORMDW 推倒的事情就先放在一边吧
+				ELSE 
+					PRINTFORMDW 想要推倒大妖精的时候，她吓得飞快地朝后退了几步
+					PRINTFORML 
+					PRINTFORMW 「……哇！不，不可以这样……」
+					PRINTFORMW 「我才不是随便的妖精！就算喜欢也不行！」
+					PRINTFORML 
+					PRINTFORMDW 只能连忙放开了双手，向她表示了歉意
+				ENDIF 
+			CASE 9		;即便禁止插入，也允许了推倒
+
+			CASE 98		;口上内特殊判定加持时失敗
+
+			CASE 99		;口上内特殊判定加持时成功
+
+		ENDSELECT
+	ELSE 
+		;非初次 成功 待补充
+		IF TALENT:13:7 
+			SELECTCASE RAND:5 
+				CASE 0 
+					IF PREVCOM == 301 
+						PRINTFORMDL 趁着大妖精仔细地清洁好茶杯时，将大妖精拦腰抱起
+						PRINTFORML 「哇！哇呜……现在，想要做嘛……」
+						PRINTFORMDL 大妖精因为熟悉的气息而感到安心，像是小猫一样依偎在你的怀里
+						PRINTFORMDL 忍不住吻上那红扑扑的脸蛋时，她也主动伸出手环绕上你的脖子
+						PRINTFORML 「呜……唔嗯……」
+					ELSE
+						PRINTFORML 「要，要干嘛……」
+						PRINTFORMDL 怀着些许想要恶作剧的心思，让大妖精遮住眼睛躺了下去
+						PRINTFORMDL 顺从地躺下的大妖精很快就意识到了不对，睁开眼才发现已经被你推倒了
+						PRINTFORML 「哇！呜……大骗子……」
+						PRINTFORMDL 虽然嘴上小声责怪着，但是那红扑扑的脸蛋却有些期待地看了过来
+					ENDIF 
+				CASE 1 
+					PRINTFORMDL 一边抱着娇小的大妖精，一边抚摸着她的脑袋
+					PRINTFORMDL 不一会儿，大妖精便忍不住打起了瞌睡，在怀里迷迷糊糊了起来
+					PRINTFORMDL 趁此机会将大妖精推倒，等她反应过来时，早已因爱抚忍不住呜咽声了
+					PRINTFORML 「啊！咿呀……坏，坏蛋……」
+					PRINTFORMDL 明明嘴上小声地责怪着，可那主动伸展开的娇躯，一点都没有抵抗呢
+				CASE 2 
+					PRINTFORMDL 故意做出闻着什么味道的样子，最后闻到了大妖精身上
+					PRINTFORML 「啊！哇，不要当小狗狗啦……哇呜！」
+					PRINTFORMDL 对亲密接触没什么反抗的大妖精，很容易就能推倒在身下
+					PRINTFORMDL 虽然隐隐约约知道要做什么，可还是打闹了一小会
+					PRINTFORML 「诶嘿嘿……那个啊，要温柔一些噢」
+				CASE 3 
+					PRINTFORML 「诶？叫人家过来，干什么呀？」
+					PRINTFORMDL 假装要给大妖精看手里的东西，趁着她放松警惕的时候将其拉住
+					PRINTFORML 「哇！哇呜——诶……呜，又想干坏事了……」
+					PRINTFORMDL 失去了平衡的大妖精窝在了你的怀里，责怪的声音却显得软绵绵的
+					PRINTFORMDL 享受着大妖精害羞的反应，忍不住将她推倒在了身下
+				CASE 4
+					PRINTFORMDL 像平常那样抱住大妖精时，心里却多了些坏心思
+					PRINTFORML 「嗯……哇！%MASTERNAME:13%摸哪里哇！」
+					PRINTFORMDL 轻轻抚摸上大妖精的翅膀根部，她便像是触电一样叫了起来
+					PRINTFORMDL 只是稍微多家刺激，大妖精便瘫软着身体，像是小猫一样依偎在你的怀里了 
+					PRINTFORML 「呀……哇！还，还要摸哪里——」
+			ENDSELECT
+		ELSEIF MOE_DAI_SEX_FRIEND()
+			SELECTCASE RAND:3  
+				CASE 0 
+					PRINTFORML 「诶嘿嘿……那个，今天也要做吗？」
+					PRINTFORMDL 大妖精十分自然地接受了拥抱
+					PRINTFORMDL 明明抱住之前还是天真的样子，抬起脑袋的时候却已经有些潮红了呢
+					PRINTFORML 「嗯，因为……想要变舒服一些……」
+					PRINTFORMDL 将小声嘀咕着的大妖精温柔地推倒了
+				CASE 1 
+					PRINTFORML 「嗯嗯，今天的礼仪——」
+					PRINTFORMDL 主动地牵起裙角行礼的大妖精，似乎牵得有点太高了……
+					PRINTFORMDL 向前伸直了双臂，将下半身%PANTSNAME(EQUIP:6, TARGET)%掀给你看了个干净……
+					PRINTFORML 「因为，%MASTERNAME:13%也给人家看那里，所以说要互相——哇！」
+					PRINTFORMDL 忍不住将这样可爱又色情的大妖精扑倒了
+				CASE 2 
+					PRINTFORML 「哇！可，可以噢」
+					PRINTFORMDL 看着一脸单纯却又爽快地答应了的大妖精，不由得怀疑她到底更想要做什么
+					PRINTFORML 「诶嘿嘿……因为，人家很怕孤单什么的……」
+					PRINTFORML 「能一直被%MASTERNAME:13%做温柔又舒服的事，我也很满足哟」
+					PRINTFORML 「感觉像是被%MASTERNAME:13%依靠了呢……哇！那我要更努力一些～♪」
+					PRINTFORMDL 大妖精跃跃欲试地扑在你的身上，乖巧地将身体贴在了你的怀里 
+				CASE 3 
+					PRINTFORML 
+					PRINTFORML 
+					PRINTFORML 
+			ENDSELECT
+		ELSE 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「哇……那个……」
+					PRINTFORML 「……虽然不讨厌，那个……总是找人家什么的……」
+					PRINTFORMDL 被抱住的大妖精似乎有些纠结，脸蛋红扑扑地不敢看你
+					PRINTFORMDL 自然是轻轻摸着大妖精的脑袋表示安慰，向她表示自己很喜欢这样……
+					PRINTFORML 「相比身体，人家更想……哇！没，没什么……做，做吧……」
+				CASE 1 
+					PRINTFORML 「诶……怎，怎么啦……」
+					PRINTFORMDL 就算是被紧紧地抱住，大妖精也假装着不懂，天真地反问着
+					PRINTFORMDL 只是，那微微颤抖着的娇小身体，分明是有些期待了呢
+					PRINTFORML 「哇！呜……一定要说出来嘛……」
+					PRINTFORML 「没说不可以啊……啊！想要温柔一些……」
+				CASE 2 
+					PRINTFORMDL 假装着要摔倒的样子扑向了大妖精
+					PRINTFORMDL 本来就很柔弱的大妖精，自然是还没站稳就和你一起跌进了\@INROOM(CFLAG:13:300)?床单上#花丛里\@
+					PRINTFORML 「咿呀！没事吧……诶？哇！摸，摸哪里啊——」
+					PRINTFORMDL 虽然失声叫了出来，可大妖精却完全没有要起身的样子
+					PRINTFORMDL 轻轻抱住顺从的大妖精，爱抚着她那幼小的身体……
+				CASE 3 
+					PRINTFORML 
+					PRINTFORML 
+					PRINTFORML 
+			ENDSELECT
+		ENDIF 
+	ENDIF 
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;351,帯出去
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_351
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_351
+;带出去这个指令没有可用的TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K13_351_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_351_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;带TARGET离开
+	IF CFLAG:同行 == 60
+	;取消与TARGET的同行状态
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;352,告白
+;FLAG:甲斐性無(1=失敗)
+;TFLAG:193 (1=成功 0=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_352
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+;MOE_DAI_SEX_FRIEND()
+IF !(TALENT:13:3 || TALENT:13:8)
+	TFLAG:192 = -1 
+ELSE 
+	TFLAG:192 = 0
+ENDIF 
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_352
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_352
+CALL M_KOJO_Moe_MESSAGE_COM_K13_352_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_352_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	PRINTFORMW 「诶？怎么啦……」
+	PRINTFORML 
+	PRINTFORMDW 突然被叫起名字的大妖精，回过头望向了你
+	PRINTFORMDW 那纯净的眼眸温柔而又清澈地注视着你，像是无暇的水晶一样
+	IF TFLAG:193 > 0 ;告白成功
+		PRINTFORMDW 看着那温柔似水的表情，早就埋藏在心底的话语也终于鼓起了勇气说了出来
+		PRINTFORML 
+		CALL ASK_M("大妖精，其实，我一直都很我喜欢你",1)
+		PRINTFORML 
+		IF TALENT:13:3
+			PRINTFORMW 「诶？等，等等……」
+			PRINTFORML 
+			PRINTFORMDW 突如其来的告白让大妖精愣住了，那双清澈的眼眸也睁得大大的
+			PRINTFORMDL 
+			PRINTFORMW 「真，真的吗……」
+			PRINTFORMW 「这，这种玩笑什么的，一点都不好笑啦！」
+			PRINTFORML 
+			PRINTFORMDW 大妖精羞得紧闭着双眼，朝着你大叫了起来
+			PRINTFORMDW 似乎是反应过来这样不太合适，她又红着脸蛋低下了脑袋
+			PRINTFORMDL 
+			PRINTFORMW 「因为，%MASTERNAME:13%总是喜欢作弄人家……」
+			PRINTFORMW 「那个……真的不是……玩笑吧」
+			PRINTFORMDL 
+			PRINTFORMDW 那委屈的语气里，夹杂着抑制不住的喜悦与期待
+			PRINTFORMDW 自然是回以了肯定的回答，看着她的脸蛋红得像是苹果一样 
+			PRINTFORMDL 
+			PRINTFORMW 「诶呀……呜……那个……」
+			PRINTFORMW 「真是的……明明%MASTERNAME:13%早就看出来了……」
+			PRINTFORMW 「是，是什么时候……喜欢，人家的……」
+			PRINTFORMDL 
+			CALL ASK_M("从第一次见面的时候就……",1,"已经喜欢很久了……",1,"最近才……",1)
+			PRINTFORML 
+			SELECTCASE RESULT 
+				CASE 0 	
+					PRINTFORMW 「哇！呜……那个……」
+					PRINTFORMW 「和人家做朋友也是为了这个……太狡猾了……」
+				CASE 1 	
+					PRINTFORMW 「诶……喜欢很久……是，是多久嘛……」
+					PRINTFORMW 「诶嘿嘿……能让%MASTERNAME:13%喜欢什么的……好开心」
+				CASE 2	
+					PRINTFORMW 「最近喜欢的嘛……诶嘿嘿，那就是攻略完成了嘛？」
+					PRINTFORMW 「能让%MASTERNAME:13%喜欢什么的……好开心」
+			ENDSELECT
+			PRINTFORML 
+			PRINTFORMDW 虽然嘴上说着责怪的话，但是大妖精的小嘴却微微翘了起来 
+			PRINTFORMDL 
+			PRINTFORMW 「明明人家……还没想过，这样的事情……」
+			PRINTFORMW 「作为妖精，看着%MASTERNAME:13%的生活就已经很满足了……能喜欢我什么的……」
+			PRINTFORMW 「呜……真的……好开心……」
+			PRINTFORML 
+			PRINTFORMDW 那越来越小的声音渐渐地变得颤抖，几乎快要哭出来了
+			PRINTFORMDW 急忙搂住她的娇小的肩膀，轻轻摸着她的脑袋以示安慰
+			PRINTFORMDL 
+			PRINTFORMW 「哇！……呜……喜欢……」
+		ELSEIF TALENT:13:8 
+			PRINTFORMW 「诶？呜！呜哇！……」
+			PRINTFORML 
+			PRINTFORMDW 突如其来的告白让大妖精瞬间僵住了身体
+			PRINTFORMDW 就连脸颊上都泛起了红晕，像是被烫伤了似的
+			PRINTFORML 
+			PRINTFORMW 「那，那个……不要开这样的玩笑呀……」
+			PRINTFORML 
+			CALL ASK_M("才不是玩笑！",1)
+			PRINTFORML 
+			PRINTFORMW 「哇！呜……」
+			PRINTFORML 
+			PRINTFORMDW 大妖精手足无措地低下了脑袋，连耳朵尖都变得通红
+			PRINTFORMDW 似乎羞得一句话也说不出来了……
+			PRINTFORMDW 但是……她的嘴角，却微微地翘了起来……
+			PRINTFORML 
+			PRINTFORML 「真，真是的……%MASTERNAME:13%明明知道人家会害羞……」
+			PRINTFORMW 「那个……我，我……哇完全不知道怎么回答啦——」
+			PRINTFORML 
+			PRINTFORMDW 捂住通红的脸颊扭过脑袋的大妖精，看上去更加可爱了
+			PRINTFORMDW 就连翅膀都欢快地扇着，是欣喜的表现呢
+			PRINTFORML 
+			CALL ASK_M("没关系，能感觉到心意就好",1)
+			PRINTFORML 
+			PRINTFORMW 「心，心意什么的……呜……」
+			PRINTFORMW 「%MASTERNAME:13%……能，抱一抱你嘛……」
+			PRINTFORML 
+			CALL ASK_M("可以噢",1)
+			PRINTFORML 
+			PRINTFORMW 「嗯——」
+			PRINTFORMDL 
+			PRINTFORMDW 将轻轻扑过来的大妖精揽在怀里，搂住了她娇小的肩膀
+		ENDIF 
+		PRINTFORMDW 透过那紧贴着的身体，飞快地跳着的心跳声，清晰地传递到了彼此的心里
+		PRINTFORMDW 那份相互爱恋着的心意，已经不需要言语来证明了 
+		PRINTFORML 
+		PRINTFORMW 「那，今天开始……我们就不是朋友了呢」
+		PRINTFORMW 「是比朋友更好的，最好的朋友噢……哇啊不要直接说出来啦！」
+		PRINTFORML 
+		PRINTFORMDL 仰起脑袋小声叫起来的大妖精，好像又害羞起来了呢
+		PRINTFORMDW 欣赏着女孩这一刻的羞怯模样，将这一刻她最可爱的样子记在了心底
+		PRINTFORML 
+		PRINTFORMW 「以后……可以叫我，大酱嘛？」
+		PRINTFORML 
+		CALL ASK_M("嗯，大酱",1)
+		PRINTFORML 
+		PRINTFORML ……
+		PRINTFORML 
+	ELSE 
+		PRINTFORMDL 看着那温柔似水的表情，告白的话语却怎么也说不出口 
+		PRINTFORMDW 不知不觉中，大妖精似乎被看得害羞了，扭过了脑袋不敢看你
+		PRINTFORMDL 
+		PRINTFORMW 「又……又干什么呀……」
+	ENDIF 
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;353,猥褻（睡眠时恶作剧）
+;FLAG:甲斐性無(1=失敗)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_353
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_353
+CALL M_KOJO_Moe_MESSAGE_COM_K13_353_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_353_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;354,陪睡
+;CFLAG:衰弱(1以上=睡着了，微微扭动着身体
+;CFLAG:お招き(0以外=睡着了，微微扭动着身体
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_354
+RETURN 1
+
+@M_KOJO_Moe_MESSAGE_COM_K13_354
+CALL M_KOJO_Moe_MESSAGE_COM_K13_354_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_354_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	IF CFLAG:TARGET:316
+		IF TALENT:13:7 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORMDL 熟睡中的大妖精放松着身体，翅膀在被窝里伸展着
+					PRINTFORMDL 小心地抬起翅膀钻进被窝躺下，看着大妖精微笑着的睡颜
+					PRINTFORMDL 那甜蜜的笑容看起来分外幸福，不由得将她小小的身体搂进怀里
+				CASE 1
+					PRINTFORMDL 睡着的大妖精均匀绵长地呼吸着，似乎因为你的陪伴而睡得很香
+					PRINTFORMDL 扶住她的肩膀搂进怀里时，大妖精便在怀里伸展着身体，任由你搂得更紧
+					PRINTFORMDL 不知何时抓紧你衣角的小手，像是生怕你离开一样攥着
+				CASE 2
+					PRINTFORMDL 熟睡中的大妖精完全放下了防备，就连被你抱住都毫无反抗
+					PRINTFORMDL 软绵绵地瘫软在你怀里，持续着均匀绵长的呼吸，睡得很香的样子
+					PRINTFORMDL 看着大妖精那天真而又可爱的睡颜，渐渐地变成了幸福的微笑……
+			ENDSELECT
+		ELSE
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORMDL 大妖精的睡颜天真而又无邪，那粉嫩的小嘴微微张着
+					PRINTFORMDL 不时发出几声可爱的呼噜，嘴角边似乎快要流口水了……
+				CASE 1
+					PRINTFORMDL 大妖精睡得很香甜，那精致的脸蛋看下去像是人偶一样
+					PRINTFORMDL 只是，只要贴近过去，她便会在无意识之中靠近你的身体……
+				CASE 2
+					PRINTFORMDL 大妖精蜷缩着小小的身体，像是小孩子一样安静地睡着
+					PRINTFORMDL 轻轻抚摸着她的头发，便能看到她幸福的睡颜……
+			ENDSELECT
+		ENDIF 
+	ELSE 
+		IF TALENT:13:7 
+			IF CFLAG:13:311 == CFLAG:0:311 && 0 
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORML 「哇！……%MASTERNAME:13%终于来睡觉了……诶嘿嘿……」
+						PRINTFORML 
+						PRINTFORMDL 才刚在被窝里躺下来，大妖精便主动地贴了上来
+						PRINTFORMDL 像只小动物一样扑进你的怀里，脑袋也在胸口蹭来蹭去
+						PRINTFORML 
+						PRINTFORML 「嘻嘻……这样贴在一起，超级暖和的……」
+						PRINTFORML 
+						PRINTFORMDL 那幼小的身体像是人偶一样，窝在怀里让你感到分外满足
+					CASE 1
+						PRINTFORMDL 掀起被子躺进去的同时，大妖精忽然紧紧地抱了上来
+						PRINTFORML 
+						PRINTFORML 「诶嘿嘿……抓到%MASTERNAME:13%啦！」
+						PRINTFORML 
+						PRINTFORMDL 她整个人儿都趴在你胸口上，那红扑扑的小脸上满是幸福的笑容
+						PRINTFORMDL 自然是将这可爱的小妖精紧紧搂住，回以更加深情的拥抱……
+					CASE 2
+						PRINTFORMDL 钻进大妖精的被窝的同时，注视着她那已经红润起来的小脸
+						PRINTFORML 
+						PRINTFORML 「那个……呜，%MASTERNAME:13%不要总盯着人家啦……」
+						PRINTFORMDL 
+						PRINTFORMDL 大妖精害羞得用被子遮住红润的脸颊，只露出了亮晶晶的眼睛
+						PRINTFORMDL 这样看着也很可爱呢……
+				ENDSELECT
+			ELSE 
+				PRINTDATAL 
+					DATAFORM 「哇！今天要……和我一起睡嘛？」
+					DATAFORM 「诶？%MASTERNAME:13%，想一起睡觉嘛？」
+					DATAFORM 「哇！%MASTERNAME:13%……」
+				ENDDATA
+				PRINTL 
+				SELECTCASE RAND:3 
+					CASE 0 
+						PRINTFORMDL 掀起大妖精的被窝时，她缩起了那小小的身体
+						PRINTFORMDL 直到自己钻进去躺下来，大妖精才意识到是想要一起睡觉
+						PRINTL 
+						PRINTFORML 「诶嘿嘿……%MASTERNAME:13%……」
+						PRINTFORML 
+						PRINTFORMDL 本来还很害羞地躲在一边的大妖精，突然就自己贴近了你身边呢
+					CASE 1
+						PRINTFORMDL 钻进大妖精的被窝时，她红润着脸蛋不敢凑近
+						PRINTFORMDL 直到自己贴近过去，她才肯依靠过来，像抱玩偶一样搂住了你的手臂
+						PRINTL 
+						PRINTFORML 「嘻嘻……这样抱着，最舒服啦……」
+						PRINTFORMDL 
+						PRINTFORMDL 她娇小的身体挂在手臂上，抱着就不肯撒手……
+					CASE 2
+						PRINTFORMDL 躺进了大妖精的被窝后，大妖精害羞地用被子遮住了脸颊
+						PRINTFORMDL 不过，贴近到她的身边后，她那不安分的小手也在被窝里摸索着……
+						PRINTL 
+						PRINTFORML 「哇！……被，被%MASTERNAME:13%，抓住啦……」
+						PRINTFORML 
+						PRINTFORMDL 自然是抓住那不安分的小手，将彼此的手指扣在了一起
+				ENDSELECT
+			ENDIF 
+		ELSE 
+			PRINTDATAL 
+				DATAFORM 「哇！今天要……和我一起睡嘛？」
+				DATAFORM 「诶？%MASTERNAME:13%，这是……」
+				DATAFORM 「哇！%MASTERNAME:13%……」
+			ENDDATA
+			PRINTL 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORMDL 大妖精因为你躺进了被窝，立刻红透了脸蛋躲了开来
+					PRINTFORMDL 
+					PRINTFORML 「那个……%MASTERNAME:13%……这样，好，好近……」
+					PRINTFORML 
+					PRINTFORMDL 她紧张地按住被角，似乎生怕你靠近她一样……
+					PRINTFORMDL 只不过，被窝之下，那有些清凉的脚丫却伸了过来，似乎有些冷的样子……
+				CASE 1
+					PRINTFORMDL 本来在被窝里安心地躺着的大妖精，因为你的陪睡而紧张地缩了缩
+					PRINTFORMDL 不过，意识到不是想做的时候，她稍微安心地放松下了身体
+					PRINTFORMDL 
+					PRINTFORML 「一起，睡觉什么的……呜……好，好奇怪的说……」
+					PRINTFORML 
+					PRINTFORMDL 说着说着，大妖精便拉住了被角，用被子遮住了自己的红润的脸颊
+				CASE 2
+					PRINTFORMDL 轻轻闭着眼睛的大妖精，因为你的陪睡而醒来了
+					PRINTFORMDL 她立刻把半张脸埋进了被子里，只露出一双亮晶晶的眼睛盯着这边
+					PRINTFORMDL 
+					PRINTFORML 「要，要干嘛……只是睡觉嘛？呜……可，可以……」
+					PRINTFORML 
+					PRINTFORMDL 她似乎像是期待着一样，紧盯着你钻进被子的动作……
+			ENDSELECT
+		ENDIF 
+	ENDIF 
+ENDIF
+RETURN 1
+;==================================================
+;355,時間停止（应该仅限于对此时地文的修改（原文如此）
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_355
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_355
+CALL M_KOJO_Moe_MESSAGE_COM_K13_355_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_355_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;356,邀请去阴暗处
+;ABL:露出癖 + TALENT:羞恥心 >= 3 或者 无知 就能成功
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_356
+;成否判定
+;TFLAG:192(-1＝強制失敗、0=根据COM文件决定、1=強制成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_356
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_356
+CALL M_KOJO_Moe_MESSAGE_COM_K13_356_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_356_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;360,任憑擺佈
+;TCVAR:20(27=展示乳沟 32=从身前抱住 35=自己掀起裙子 53=乳交 73=洗面奶（用胸部搓脸） 77=要求吸乳头 85=Ｖ挿入状态 86=要求膣内射精 87=Ａ挿入状态 88=V插入时动腰 89=A插入时动腰
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_360
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_360
+CALL M_KOJO_Moe_MESSAGE_COM_K13_360_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_360_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TCVAR:20 
+		CASE 27 	;展示乳沟
+
+		CASE 32 	;从身前抱住
+
+		CASE 35 	;自己掀起裙子
+
+		CASE 53 	;乳交
+
+		CASE 73 	;洗面奶（用胸部搓脸）
+
+		CASE 77 	;要求吸乳头
+
+		CASE 85 	;Ｖ挿入状态
+
+		CASE 86 	;要求膣内射精
+
+		CASE 87 	;Ａ挿入状态
+
+		CASE 88 	;V插入时动腰
+
+		CASE 89 	;A插入时动腰
+	
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;361,抵抗する
+;TCVAR:20(27=展示乳沟 32=从身前抱住 35=自己掀起裙子 53=乳交 73=洗面奶（用胸部搓脸） 77=要求吸乳头 85=Ｖ挿入状态 86=要求膣内射精 87=Ａ挿入状态 88=V插入时动腰 89=A插入时动腰
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_361
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_361
+CALL M_KOJO_Moe_MESSAGE_COM_K13_361_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_361_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TCVAR:20 
+		CASE 27 	;展示乳沟
+
+		CASE 32 	;从身前抱住
+
+		CASE 35 	;自己掀起裙子
+
+		CASE 53 	;乳交
+
+		CASE 73 	;洗面奶（用胸部搓脸）
+
+		CASE 77 	;要求吸乳头
+
+		CASE 85 	;Ｖ挿入状态
+
+		CASE 86 	;要求膣内射精
+
+		CASE 87 	;Ａ挿入状态
+
+		CASE 88 	;V插入时动腰
+
+		CASE 89 	;A插入时动腰
+	
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;==================================================
+;363,朗読
+;（持有 幼稚 时，携带特定书籍才可使用）
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(没有地文分歧
+;CFLAG:陪睡中，在\@ INROOM(CFLAG:MASTER:現在位置) == 2 ? 床 # 鋪蓋 \@上讀起了書…
+;MASTER的体型大于TARGET，会在TARGET的膝枕上读书
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_363
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_363
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_363
+CALL M_KOJO_Moe_MESSAGE_COM_K13_363_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_363_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;364,撒豆子(萃香、勇儀、斯卡雷特姐妹可用
+;TFLAG:193(撒豆子参加的人数
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_364
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_364
+CALL M_KOJO_Moe_MESSAGE_COM_K13_364_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_364_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;365,素材購入
+;对象存在CFLAG:素材販売时才可使用
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_365
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_365
+CALL M_KOJO_Moe_MESSAGE_COM_K13_365_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_365_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;368,陪同行動 
+;如果某个技能等级为1以上，则会发生基于技能的自由行动
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_368
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_368
+CALL M_KOJO_Moe_MESSAGE_COM_K13_368_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_368_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE Activity_Type:TARGET
+		CASE 0
+			;▼思考事情［在思考什么］
+			;TFLAG:193,-1=TARGET随便敷衍过去了
+			;PRINTFORMW 
+		CASE 1
+			;▼游玩［一起玩］
+			;※[幼稚]限定
+			;TFLAG:193,1=气氛变得热烈了,-1=有点冷场了
+			;PRINTFORMW 
+		CASE 2
+			;▼食事［一起吃饭］
+			;TFLAG:193,-1=MASTER其实也没那么饿
+			;PRINTFORMW 
+		CASE 3
+			;▼吃小零食［一起吃小零食］
+			;※[妖精]种族角色、露米娅、古明地恋、幽幽子、紫苑等人会触发这个
+			;TFLAG:193,-1=MASTER其实也没那么饿
+			;PRINTFORMW 
+		CASE 4
+			;▼掃除［帮忙扫除］
+			;※[掃除係]限定，或者TARGET拥有污臭敏感 -1 或更少
+			;PRINTFORMW 
+		CASE 5
+			;▼運動［一起做运动］
+			;※拥有[音楽知識]或者无战斗能力则不会触发
+			;PRINTFORMW 
+		CASE 6
+			;▼読書［询问阅读感想］
+			;TFLAG:193,-1=沉浸在书中无法回话的样子
+			;PRINTFORMW 
+		CASE 7
+			;▼料理［帮忙做饭］→［求分点饭菜］
+			;TFLAG:193,2=一起做饭,0=肚子多少填满了,-1==MASTER并没有那么饿
+			;PRINTFORMW 
+		CASE 8
+			;▼演奏［协同合奏］or［进行伴奏］
+			;※TARGET拥有[音楽知識]（随着TALENT:音楽知識的种类而変化）
+			;TALENT:音楽知識,1=演奏,2=唱歌,3=跳舞
+			;TFLAG:193,1=兴致勃勃地,0=成功,-1=失敗,-2=没有可以用的乐器
+			;PRINTFORMW 
+		CASE 9
+			;▼採集［帮忙探集］
+			;※对象拥有采集等级
+			;PRINTFORMW 
+		CASE 10
+			;▼垂钓［一起钓鱼］
+			;TFLAG:193,-1=在钓鱼中的TARGET旁发呆
+			;PRINTFORMW 
+		CASE 11
+			;▼実験［帮忙做实验］
+			;※对象拥有调和等级
+			;PRINTFORMW 
+		CASE 12
+			;▼放松［一起放松］
+			;PRINTFORMW 
+		CASE 13
+			;▼晩酌［陪同喝酒］
+			;※酒耐性0以上才会触发
+			;PRINTFORMW 
+		CASE 14
+			;▼买东西［帮忙买东西］
+			;在有商店的位置才能触发
+			;PRINTFORMW 
+		CASE 15
+			;▼説教［去看看情况］
+			;※神霊・蓬莱人之外才会被说教
+			;PRINTFORMW 
+		CASE 16
+			;▼落穴［一起恶作剧］or［去看看情况］
+			;※三月精、琪露诺、克劳恩皮丝才会做这种事
+			;除此以外的人全都有可能掉坑里
+			;PRINTFORMW 
+		CASE 17
+			;▼制作雪雕［一起堆雪］
+			;※冬天限定
+			;PRINTFORMW 
+		CASE 18
+			;▼悠闲地缩进被炉［在被炉里放松］
+			;※冬天限定
+			;PRINTFORMW 
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;自由行動判定用関数
+;如果您在与上述模板对应的 CASE 编号中返回 -1，这个自由行动将不会被触发
+@M_KOJO_Moe_自由行動判定_K13(ARG)
+SELECTCASE ARG
+	;CASE 1, 2, 5
+	;	RETURN -1
+	CASEELSE
+		RETURN 0
+ENDSELECT
+
+;==================================================
+;402,就寝
+;TFLAG:193(0=通常 1=家族三人排成了川字)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_402
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_402
+;就寝没有TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K13_402_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_402_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;403,休憩
+;CFLAG:TARGET:睡眠(1=陪在睡着的TARGET旁边睡了一会儿
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_403
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_403
+CALL M_KOJO_Moe_MESSAGE_COM_K13_403_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_403_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	IF CFLAG:TARGET:313 || CFLAG:TARGET:316 ;大妖精睡着时
+		IF TALENT:13:7 
+			SELECTCASE RAND:2 
+				CASE 0 	
+					PRINTFORMDL 作为大妖精的恋人，自然是在她睡着的时候陪着她一起休息
+					PRINTFORMDL 啊……躺下的时候大妖精翻了个身，她的翅膀也啪唧一下拍在了脸上
+					PRINTFORMDL 虽然是半透明的翅膀，但还是当作眼罩用一下吧……
+				CASE 1 	
+					PRINTFORMDL 躺在大妖精的身边，趁着她睡着的时候把玩着她的翅膀
+					PRINTFORMDL 似乎睡着了完全没有感觉呢，那柔软而又轻盈的翅膀在手里毫无反应
+					PRINTFORMDL 玩着玩着也有些困了，索性从背后抱住大妖精渐渐睡着了……
+			ENDSELECT
+		;ELSEIF TALENT:13:3  
+		;	SELECTCASE RAND:2 
+		;		CASE 0 	
+		;			PRINTFORMDL 
+		;			PRINTFORMDL 
+		;			PRINTFORMDL 
+		;		CASE 1 	
+		;			PRINTFORMDL 
+		;			PRINTFORMDL 
+		;			PRINTFORMDL 
+		;	ENDSELECT
+		ELSE 
+			SELECTCASE RAND:2 
+				CASE 0 	
+					PRINTFORMDL 看着大妖精那可爱的睡颜，自己也有些困了
+					PRINTFORMDL 保持着和她那小小身体的距离，在旁边睡着了
+					PRINTFORMDL 希望醒来的时候不要吓到她……
+				CASE 1 	
+					PRINTFORMDL 在睡着的大妖精看了她一会儿，自己也有些想睡觉了
+					PRINTFORMDL 索性在她的身边保持着距离，跟她一起睡着
+					PRINTFORMDL 啊……妖精的味道，似乎闻着能睡得更香……
+			ENDSELECT
+		ENDIF 
+	ELSE 
+		IF TALENT:13:7 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「%MASTERNAME:13%要睡觉嘛？诶嘿嘿……」
+					PRINTFORML 「那个……睡觉的时候，会感觉怀里空落落的嘛？」
+					PRINTFORMDL 有这样嘛？被这样问了之后才发现好像有一点
+					PRINTFORMDL 与此同时，大妖精也红着脸颊凑近了你，靠近了你的怀里
+					PRINTFORML 「把人家……当成抱枕，会舒服一些嘛？」
+					PRINTFORMDL 主动地窝进怀里的大妖精，抱起来的感觉让人分外满足
+					PRINTFORMDL 虽然这样自己也有些害羞了……但还是搂住这样的妖精抱枕渐渐睡着了
+				CASE 1 
+					PRINTFORML 「%MASTERNAME:13%累了嘛？……」
+					PRINTFORMDL 大妖精坐在了你身边，用小小的肩膀贴近了你
+					PRINTFORML 「很累的话，可以靠在我身上噢……我会撑住的！」
+					PRINTFORMDL 虽然大妖精的肩膀显得很柔弱，但还是轻轻靠着她睡着了
+					PRINTFORML ……
+					PRINTFORMDL 醒来时发现自己不知何时躺了下来，而且……
+					PRINTFORMDL 直接躺在了大妖精的大腿上，向后靠着的大妖精也迷迷糊糊的
+					PRINTFORML 「呀！那个……靠久了有点累，所以就……」
+					PRINTFORML 「没，没关系吧？人家当然是随便啦」
+				CASE 2 
+					PRINTFORML 「%MASTERNAME:13%，我也可以一起躺一下嘛？……」
+					PRINTFORMDL 大妖精跟着你一起躺在了床上
+					PRINTFORMDL 只是一起为了休息而躺下的大妖精，侧过身盯着你的脸庞……
+					PRINTFORML 「不用怕噢，我会一直在这里陪你的噢……」
+					PRINTFORMDL 她背后的翅膀弯向身前，用尖端轻轻地抚摸着你的脸颊
+					PRINTFORMDL 有点痒……但是，这令人安心的抚弄，让你渐渐地睡着了……
+			ENDSELECT
+		ELSEIF TALENT:13:3 && RAND:5 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「那个……可以，凑过来嘛？」
+					PRINTFORMDL 主动地跟着你躺下来的大妖精，小脸红红地凑了过来
+					PRINTFORML 「这样的话，比较安心……诶嘿嘿」
+					PRINTFORMDL 红着脸蛋笑起来的大妖精，实在是不忍心拒绝啊
+					PRINTFORMDL 自然是容许了她的靠近，看着她那羞涩的笑容又藏在翅膀后面了
+					PRINTFORML 「呜……不用趁机一直看啦……不然睡不着哇——」
+				CASE 1 
+					PRINTFORML 「诶嘿嘿……看到%MASTERNAME:13%睡着，我也想睡了呢」
+					PRINTFORML 「那个，能睡在%MASTERNAME:13%身边嘛？只是休息……真的只是休息啦——」
+					PRINTFORMDL 说着说着，大妖精自己就忍不住脸红起来，用手遮住了脸蛋……
+					PRINTFORMDL 只能扭过身去背对着大妖精，等她自己冷静下来，自己从背后抱住了你的后背
+					PRINTFORML 「嘻嘻……那个，只是对大人的撒娇噢……」
+					PRINTFORMDL 那也是撒娇嘛，当然是默许了她在背后蹭了蹭……
+				CASE 2
+					PRINTFORML 「那个……%MASTERNAME:13%睡着了嘛？」
+					PRINTFORML 「好像真的睡着了呢，那，那样的话……呜……」
+					PRINTFORML 「最，最，最喜……哇啊还是说不出来……」
+					PRINTFORMDL 睡着的时候，隐隐约约地听到了大妖精的自言自语……
+					PRINTFORMDL 到底是在做梦呢还是真的在说这样的话呢……
+					PRINTFORML 「哇！怎，怎么这么快就醒了……」
+					PRINTFORML 「刚……刚刚什么都没说！」
+			ENDSELECT	
+		ELSEIF ( TALENT:13:3 || TALENT:13:8 || MOE_DAI_SEX_FRIEND()) && RAND:5 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「那个……睡醒的时候，可以叫醒一下人家嘛？」
+					PRINTFORMDL 想要睡觉之前，大妖精拉了拉你的衣袖
+					PRINTFORML 「因为，不想一醒来的时候，发现%MASTERNAME:13%不见了……」
+					PRINTFORMDL 自然是答应了大妖精的要求，看着她安心地睡着
+					PRINTFORMDL 是以前有过这样的事嘛？有些小小地心疼她了
+				CASE 1
+					PRINTFORML 「%MASTERNAME:13%？是想睡觉了嘛？」
+					PRINTFORMDL 大妖精看上去好像并没有很累，但是还是趴在了你的旁边
+					PRINTFORML 「诶嘿嘿……那个，感觉%MASTERNAME:13%看着人家睡觉，更容易睡着呢」
+					PRINTFORML 「有几次我都没睡着噢，不过%MASTERNAME:13%一下就睡着啦」
+					PRINTFORMDL 看着大妖精侧躺着一脸乖巧的样子，心里不禁一阵温暖
+					PRINTFORMDL 在大妖精温柔的注视中，渐渐地睡去了
+				CASE 2 
+					PRINTFORML 「%MASTERNAME:13%累了嘛？那个……」
+					PRINTFORML 「不，不介意的话！可以，可以……靠在人家身上……」
+					PRINTFORMDL 可是一睡就是一个小时，大妖精受不了这么久吧……
+					PRINTFORML 「那，那就……躺腿上可以嘛……呜……」
+					PRINTFORMDL 刚说完，大妖精便脸红得过分了，一句话也说不出来
+					PRINTFORMDL 还是不太合适吧……在大妖精还在害羞的时候渐渐睡着了
+			ENDSELECT 
+		ELSEIF CFLAG:13:1001 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「那个……我也可以一起睡一下嘛？」
+					PRINTFORML 「我不会像别的妖精那样恶作剧噢……」
+					PRINTFORMDL 默许了大妖精在自己的身旁一起休息
+					PRINTFORMDL 看着她像是小猫一样蜷缩着身体，自己也渐渐的一起睡去了
+				CASE 1 
+					PRINTFORML 「因为妖精只有在有同伴的时候才睡得着嘛……」
+					PRINTFORML 「所以，我也可以一起睡嘛？」
+					PRINTFORMDL 获得了许可的大妖精侧躺在\@INROOM(CFLAG:13:300)?榻榻米上#草地上\@，没一会就睡着了……
+					PRINTFORMDL 欣赏着大妖精可爱的睡颜……啊，口水都流出来了……
+					PRINTFORMDL 看了一会儿眼皮也跟着沉重了，于是也闭上了眼睛 
+				CASE 2  
+					PRINTFORML 「人家好像，没那么累……」
+					PRINTFORML 「哎呀……%MASTERNAME:13%一躺下来，我也想睡了……呜……」
+					PRINTFORMDL 跟着你变得昏昏沉沉的大妖精，忽而摇晃着身体依靠到你的身上
+					PRINTFORML 「呜……哇！哇呜！对不起对不起……」
+					PRINTFORML 「不小心把%MASTERNAME:13%当成琪露诺酱了……」
+					PRINTFORMDL 看着大妖精红扑扑的脸颊有些哭笑不得……
+			ENDSELECT
+		ELSE  
+			IF !RAND:3 
+				PRINTFORML 「哇……诶？只是要睡觉吗？」
+				PRINTFORML 「这样睡什么的，我是不是应该走……」
+			ELSEIF !RAND:2 
+				PRINTFORML 「啊……第一次看到人类睡觉的样子……」
+				PRINTFORML 「原来和妖精差不多呢」
+			ELSE 
+				PRINTFORML 「这是……要睡觉吗？」
+				PRINTFORML 「当着妖精的面睡觉，还是第一次见这样的人……」
+			ENDIF 
+			PRINTDATADL 
+				DATAFORM 大妖精躲在一边的\@INROOM(CFLAG:13:300)?椅子后面#树后面\@，看着你睡觉的样子若有所思
+				DATAFORM 似乎因为闭上了眼睛的原因，能感觉到妖精特有的香味
+				DATAFORM 睡醒的时候感到了一阵风吹过，还闻到了些许清香……
+			ENDDATA
+		ENDIF 
+	ENDIF 
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;405,外出(同行時变成约会
+;由于条件很复杂，需要参考ERB\コマンド関連\COMF\日常系\COMF405 出掛ける.ERB
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_405
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_405
+;出掛没有对应的TRAIN_MESSAGE
+CALL M_KOJO_Moe_MESSAGE_COM_K13_405_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_405_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	;与TARGET约会开始了
+	IF CFLAG:同行
+	;与TARGET之外的人出发去约会了
+	ELSEIF CFLAG:MASTER:同行
+	;目送MASTER外出
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;410,掃除
+;FLAG:70(1=時間停止中
+;TFLAG:193(0=钦佩地注视 1=一起帮忙扫地)
+;TFLAG:194(3=脏污程度高 2=脏污程度中 1=脏污程度低 0=脏污程度最小
+;OUTROOF(CFLAG:現在位置)(野外掃除时，冬天会变成扫雪
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_410
+;不帮忙扫除时，返回1
+SIF !CFLAG:13:1001 
+	RETURN 1 
+
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_410
+CALL M_KOJO_Moe_MESSAGE_COM_K13_410_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_410_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	PRINTL 
+	IF FLAG:70
+	ELSE
+		IF TALENT:13:3 && RAND:3
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「那个，那里太高啦……」
+					PRINTFORMDL 似乎是\@INROOM(CFLAG:13:300)?天花板上有蜘蛛网#树上挂上了垃圾\@，因为太高没法够到……
+					PRINTFORMDL 想了想，决定让大妖精骑在肩膀上去清理高处
+					PRINTFORML 「啊……可，可以……那，%MASTERNAME:13%蹲下来……」
+					PRINTFORMDL 蹲下来让大妖精骑在肩膀上，是因为是妖精嘛？肩膀上感觉不到什么重量
+					PRINTFORMDL 啊…能闻到大妖精身上，女孩子特有的香味
+					PRINTFORML 「清理好了噢，那个……快放人家下来啦！」
+					PRINTFORML 
+					PRINTFORMDL 说起来，大妖精不是会飞嘛？
+				CASE 1 
+					PRINTFORML 「那里的污渍很高吧？让人家来——」
+					PRINTFORMDL 还没等你反应过来，大妖精就拿着抹布飞了起来
+					PRINTFORMDL 浅蓝色短裙下的%PANTSNAME(EQUIP:6, TARGET)%被你看了个清清楚楚……
+					PRINTFORML 「呼呼……抹，抹干净了噢，嗯……」
+					PRINTFORMDL 跟落在地上的大妖精对上了视线的瞬间，两个人都有些脸红了……
+					PRINTFORMDL 看来，是故意给自己看的……
+				CASE 2 
+					PRINTFORML 
+					PRINTFORML 
+					PRINTFORML 
+				CASE 3 
+					PRINTFORML 
+					PRINTFORML 
+					PRINTFORML 
+				CASE 4 
+					PRINTFORML 
+					PRINTFORML 
+					PRINTFORML 
+			ENDSELECT 
+		ELSEIF TALENT:13:8 || TALENT:13:3
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「呼……打扫得有点累了呢……」
+					PRINTFORML 「因为人家就是不喜欢做重活嘛……那个，没关系吧？」
+					PRINTFORMDL 看着帮了不少忙的大妖精，实在是不忍心让她继续打扫了
+					PRINTFORML 「好欸！那%MASTERNAME:13%也要注意休息噢……」
+					PRINTFORMDL 大妖精也不客气，跳到一旁的\@INROOM(CFLAG:13:300)?椅子上#树上\@坐着休息了起来
+				CASE 1 
+					PRINTFORMDL 正站在椅子上打扫着高处呢，忽然从余光里瞥见……
+					PRINTFORMDL 大妖精高举着扫帚拍打着天花板，不仅没扫干净还弄得到处是灰……
+					PRINTFORML 「啊！这样不行嘛……对不起……」
+					PRINTFORML 「因为……看%MASTERNAME:13%很辛苦嘛，所以想帮一下下」
+					PRINTFORMDL 感觉到大妖精的心意，不过这弄得到处都是……还是一起打扫干净了
+				CASE 2 
+					PRINTFORML 「那个，我也会扫地的！让我来好嘛？……」
+					PRINTFORMDL 把扫帚递给了大妖精，看着她啪嗒啪嗒地扫来扫去……
+					PRINTFORMDL 结果把垃圾全扫到两片区域里了，正要说她的时候，大妖精向你用手指点了点嘴唇
+					PRINTFORML 「人家知道噢，接下来要扫在一起——」
+					PRINTFORMDL 欣赏着卖力地干着活的大妖精……
+				CASE 3 
+					PRINTFORML 「诶……那里，我可以帮忙的！」
+					PRINTFORMDL 轮到要打扫高处的时候，大妖精拿着抹布想要飞起来的样子
+					PRINTFORML 「那个……转过去好不好……不然，裙子……」
+					PRINTFORMDL 啊……急忙转过身去，因为大妖精的裙子太短了，飞起来会看到里面……
+					PRINTFORMDL 趁着大妖精打扫的时候看了一眼……是%PANTSNAME(EQUIP:6, TARGET)%……
+				CASE 4 
+					PRINTFORML 「这里我来帮忙吧？嗯……啊！」
+					PRINTFORMDL 给大妖精递上扫帚的时候，不小心碰到了她的手
+					PRINTFORMDL 大妖精顿时小声地叫出了声，猛地收回了手，脸蛋也有些红扑扑的
+					PRINTFORML 「没，没关系……那个，扫把给我吧」
+					PRINTFORMDL 这次小心地递过扫帚，不让大妖精的手碰到这边
+					PRINTFORMDL 不过……为什么大妖精的样子，反而有那么一点失落了呢？
+			ENDSELECT 
+		ELSEIF CFLAG:13:1001 
+			SELECTCASE RAND:5 
+				CASE 0 
+					PRINTFORML 「诶？%MASTERNAME:13%在打扫卫生嘛？需要帮忙嘛？」
+					PRINTFORMDL 大妖精好奇地飞了过来，看着你手上的扫帚跃跃欲试的样子
+					PRINTFORML 「那个……虽然人家是妖精啦，不过我是很会打扫的那种呢」
+					PRINTFORML 「虽然红魔馆那样的地方还是不太会啦……嘿嘿……」
+					PRINTFORMDL 说到这里，大妖精不好意思地吐了吐舌头
+				CASE 1 
+					PRINTFORML 「那个……需要这么频繁地打扫嘛？」
+					IF CFLAG:13:300 == CFLAG:13:311
+						PRINTFORML 「虽然说能打扫我的房间很谢谢侬，但是不用那么干净也没关系……」
+						PRINTFORMDL 似乎因为被看到房间里有点脏，大妖精不好意思地脸红了
+						PRINTFORMDL 细心地打扫着大妖精的房间，贴心地略过了衣柜……
+					ELSEIF CFLAG:13:300 == CFLAG:0:311 
+						PRINTFORML 「还是说。因为人家在%MASTERNAME:13%的房间，所以想打扫干净嘛……」
+						PRINTFORML 「不觉得有种扫地出门的意思嘛？虽然我不是很在意啦」
+						PRINTFORMDL 大妖精一边说着，一边帮你打扫着房间
+					ELSE 
+						PRINTFORML 「因为是公共区域,所以要打扫得更干净嘛？」
+						PRINTFORML 「%MASTERNAME:13%真是个好人呢……虽然我知道有钱赚，不过……」
+						PRINTFORMDL 大妖精一边小声念叨着，一边有些不情愿地帮你打扫……
+					ENDIF 
+				CASE 2 
+					PRINTFORML 「%MASTERNAME:13%，为什么你要这么频繁地打扫卫生呀？」
+					PRINTFORMDL 似乎是打扫累了。大妖精跳到一旁的\@INROOM(CFLAG:13:300)?椅子上#树上\@坐好，晃悠着双脚休息起来
+					PRINTFORML 「虽然我自己很爱干净，但是我们妖精都觉得，打扫卫生好麻烦的……」
+					PRINTFORML 「对人类来说干净一些会比较好嘛？嗯嗯，那我来帮忙噢……」
+					PRINTFORMDL 好像很快就休息好了，大妖精又飞了过来，帮你继续打扫着卫生……
+				CASE 3 
+					PRINTFORML 「这里的灰尘好多噢，可以用风吹跑跑嘛？」
+					PRINTFORMDL 急忙拦住了想要扇翅膀的大妖精……
+					PRINTFORML 「诶？必须要用抹布来擦干净嘛……好麻烦噢」
+					PRINTFORMDL 虽然嘴上说着麻烦，但大妖精还是乖乖地拿起了抹布擦拭着灰尘
+				CASE 4 
+					PRINTFORML 「%MASTERNAME:13%！这边已经扫过啦！」
+					PRINTFORMDL 虽然的确是扫过了，但是……仔细看的话没扫干净
+					PRINTFORML 「啊……呜，%MASTERNAME:13%的标准好高噢，我觉得这样就可以……」
+					PRINTFORMDL 重新扫地的时候，大妖精也跟着你一起扫了起来 
+			ENDSELECT 
+		ELSE 
+			SELECTCASE RAND:3 
+				CASE 0 
+					PRINTFORML 「呜……那个……」
+					PRINTFORMDL 大妖精躲在一旁的\@INROOM(CFLAG:13:300)?椅子后面#树后面\@，紧张地看着这边
+					PRINTFORML 「这是……在做什么……」
+				CASE 1 
+					PRINTFORMDL 用扫帚清扫地上的落叶时，大妖精在一边的\@INROOM(CFLAG:13:300)?椅子后面#树后面\@偷看着
+					PRINTFORMDL 假装没发现她，向大妖精那边扫去时，突然听见了「咚」的一声
+					PRINTFORML 「咿呀！……呜……」
+					PRINTFORMDL 好像是观察得太认真，不小心摔倒了
+				CASE 2 
+					PRINTFORML 「哇……诶？」
+					PRINTFORMDL 大妖精似乎本以为你要拿出什么可怕的东西来，结果只是扫帚而已
+					PRINTFORMDL 虽然看上去有点失望，但还是好奇地观望着
+			ENDSELECT 
+		ENDIF  
+	ENDIF
+ENDIF
+PRINTW 
+RETURN 1
+;==================================================
+;411,戦闘訓練
+;TFLAG:194(3=夏天的烈日 2=危险的天气 1=恶劣的天气 0=屋内or通常天気
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_411
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_411
+CALL M_KOJO_Moe_MESSAGE_COM_K13_411_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_411_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;412,勉強 学习
+;ABL:教養(ABL:MASTER:教養比较大=MASTER教导TARGET ABL:MASTER:教養比较小=TARGET教导MASTER
+
+;对话系300_1_4_1有一个教写字的对话，需要注意补充到这里
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_412
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_412
+CALL M_KOJO_Moe_MESSAGE_COM_K13_412_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_412_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;413,料理
+;TFLAG:194(100以上=禁断的菜单（跳蛋食物） 3=甜点 2=主食 1=軽食
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_413
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_413
+;TFLAG:194が100以上の場合のみ
+CALL M_KOJO_Moe_MESSAGE_COM_K13_413_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_413_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+ENDIF
+RETURN 1
+;==================================================
+;414,食事を取る
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:194(1=没有内裤时吃涮涮锅（原文如此，甚至会给该食物添加精力效果，详见HRND-257） 2=禁断的菜单（跳蛋食物） 31=興奮劑高湯 30=奶酪番茄沙拉 34=银吉獣料理
+;TCVAR:MASTER:308(bit0=浓郁味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=芥末味 bit6=激酸
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_414
+;成否判定
+;TFLAG:192(-2=强制中止指令(非TARGET時強制失敗)、-1＝強制失敗、0=根据COM文件决定(非TARGET時強制成功)、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_414
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_414
+CALL M_KOJO_Moe_MESSAGE_COM_K13_414_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_414_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;415,招待吃飯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TCVAR:MASTER:308(bit0=浓郁味 bit1=薄味 bit3=激辛 bit4=激甘 bit5=芥末味 bit6=激酸
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_415
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_415
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_415
+CALL M_KOJO_Moe_MESSAGE_COM_K13_415_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_415_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;416,演奏
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;TFLAG:使用楽器(1=电子琴 2=钢琴 3=吉他 4=小号 5=小提琴)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_416
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_416
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_416
+CALL M_KOJO_Moe_MESSAGE_COM_K13_416_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_416_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;417,午睡
+;TFLAG:193(0=TARGET正抱着MASTER睡觉 1=TARGET枕在MASTER的大腿上睡觉 2=TARGET偷偷KISS了 3=TARGET偷看了寝颜 4=TARGET正在为MASTER做膝枕 5=TARGET正在摸MASTER的隐私部位
+;CFLAG:陪睡中，1=在身旁睡着
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_417
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_417
+CALL M_KOJO_Moe_MESSAGE_COM_K13_417_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_417_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;421,祈願
+;由于条件很复杂，需要参考ERB\指令関連\COMF\日常系\COMF421 願掛け.ERB
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_421
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_421
+CALL M_KOJO_Moe_MESSAGE_COM_K13_421_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_421_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;422～430的指令，由于这些是特殊指令，因此在模板中不受支持
+;==================================================
+
+;==================================================
+;431,在浴室里放鬆
+;TFLAG:209(4=人里銭湯番台的女孩投来了愤怒的视线 1=进入銭湯
+;TFLAG:211(4=地底温泉番台的妖怪投来了愤怒的视线 1=进入温泉
+;TFLAG:194(1=已经洗过了，連続入浴不可
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_431
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_431
+CALL M_KOJO_Moe_MESSAGE_COM_K13_431_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_431_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;432,銭湯
+;这个是洗澡后的口上
+;TFLAG:209(4=人里銭湯番台的女孩投来了愤怒的视线 1=进入銭湯
+;TFLAG:211(4=地底温泉番台的妖怪投来了愤怒的视线 1=进入温泉
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_432
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_432
+CALL M_KOJO_Moe_MESSAGE_COM_K13_432_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_432_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;436,読書
+;TFLAG:193(选择文学书(1=神秘武术(文学？) 2=失敗 3=文学),选择実用書(4=失敗 5=実用書),选择小黄书(6=小薄本 7=保健体育 8=欲望涌上来了))
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_436
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_436
+CALL M_KOJO_Moe_MESSAGE_COM_K13_436_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_436_1
+;==================================================
+;440,等待
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_440
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_440
+CALL M_KOJO_Moe_MESSAGE_COM_K13_440_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_440_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;441,聽課(慧音専用
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_441
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_441
+CALL M_KOJO_Moe_MESSAGE_COM_K13_441_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_441_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;442,伐採
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_442
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_442
+CALL M_KOJO_Moe_MESSAGE_COM_K13_442_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_442_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;445,採集
+;TFLAG:193(採集物的物品ID, 0=『什么都没有找到』
+;TFLAG:194(这次采集到的物品数量
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_445
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_445
+CALL M_KOJO_Moe_MESSAGE_COM_K13_445_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_445_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;448,设下罠 \ 设下昆虫诱捕装置
+;TFLAG:193,
+;   -1=罠坏掉了
+;    0=罠还在那里
+;    1=捕获到了猎物
+;   10=设置了昆虫诱捕装置
+;   11=破弃了昆虫诱捕装置
+;   12=抓到了一个虫子
+;FLAG:194,猎物的编号
+;虫子的名称 可通过 MUSHI_NAME 来表示和确定
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_448
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_448
+CALL M_KOJO_Moe_MESSAGE_COM_K13_448_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_448_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;449,捕虫
+;TFLAG:193,
+;   -2=就算杀了你，也要得到它（百分百让虫子逃走）
+;   -1=索要虫子→拒否
+;    0=没有抓到
+;    1=MASTER抓到虫子了
+;    2=MASTER称赞TARGET抓到了虫子
+;    3=索要虫子→沮丧地让出了ー
+;    4=索要虫子→一脸得意地让出了ー
+;虫子的名称 可通过 MUSHI_NAME 来表示和确定
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_449
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_449
+CALL M_KOJO_Moe_MESSAGE_COM_K13_449_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_449_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;483,斗虫
+;TFLAG:193,
+;    1=１対１対戦
+;    2=３～４人戦
+;    3=２対２の团队戦
+;TFLAG:194是MASTER的排名（MASTER排名为1代表TARGET失败）
+;战斗期间的口上包含在事件系文件中
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_483
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_483
+CALL M_KOJO_Moe_MESSAGE_COM_K13_483_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_483_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;484,打西瓜
+;TFLAG:193,
+;   -1=失敗
+;    0=成功
+;    1=大成功
+;    2=木刀大成功
+;TFLAG:194
+;    0=正直者
+;    1=说谎者（原文如此）
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_484
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_484
+CALL M_KOJO_Moe_MESSAGE_COM_K13_484_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_484_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;490,道具
+;TFLAG:193(使用道具的ID
+;TFLAG:194(使用的対象 0=MASTER,1=TARGET
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_490
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_490
+;アイテムにTRAIN_MESSAGEはない
+CALL M_KOJO_Moe_MESSAGE_COM_K13_490_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_490_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;约会系指令
+;约会系口上实际上会在外出期间被触发
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+[SKIPSTART]
+;目前未实装
+;==================================================
+;600,约会会話
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_600
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_600
+CALL M_KOJO_Moe_MESSAGE_COM_K13_600_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_600_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;601,约会时身体接触
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_601
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_601
+CALL M_KOJO_Moe_MESSAGE_COM_K13_601_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_601_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;602,约会时接吻
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_602
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_602
+CALL M_KOJO_Moe_MESSAGE_COM_K13_602_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_602_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+[SKIPEND]
+;==================================================
+;603,牽手
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失败时只会犹豫地握住手
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_603
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_603
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_603
+CALL M_KOJO_Moe_MESSAGE_COM_K13_603_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_603_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;604,散步
+;约会时、CFLAG:現在位置代表MASTER移动的目标位置
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_604
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_604
+
+CALL M_KOJO_Moe_MESSAGE_COM_K13_604_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_604_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;605,繞道
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(没有地文差分
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_605
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_605
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_605
+;寄り道するにはTRAIN_MESSAGEが無い
+CALL M_KOJO_Moe_MESSAGE_COM_K13_605_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_605_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;610,請吃飯
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_610
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_610
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_610
+CALL M_KOJO_Moe_MESSAGE_COM_K13_610_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_610_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;==================================================
+;613,賺錢	[目前已弃用]
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_613
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_613
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_613
+CALL M_KOJO_Moe_MESSAGE_COM_K13_613_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_613_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;614,採購食材
+;TFLAG:193(1=購入且获得了约会経験 0=購入 -1=非購入)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_614
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_614
+CALL M_KOJO_Moe_MESSAGE_COM_K13_614_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_614_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;615,吃便當
+;実行可能場所　地蔵小路,枝垂れ柳の下,霧の湖,玄武の沢,大蝦蟇の池,絶景の丘,山の湖,天界
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;ABL:料理技能(2未満=比较微妙 4未満=相当美味 4以上=絶品，最美味了)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_615
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_615
+CALL M_KOJO_Moe_MESSAGE_COM_K13_615_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_615_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;617,邀請去甜品店
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(地文分岐只是为了大成功而追加，并无实际加成
+;==================================================
+@M_KOJO_Moe_SUCCESS_COM_K13_617
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_617
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_617
+CALL M_KOJO_Moe_MESSAGE_COM_K13_617_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_617_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;618,花屋
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_618
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_618
+CALL M_KOJO_Moe_MESSAGE_COM_K13_618_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_618_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;620,鈴奈庵
+;TFLAG:193(1=借好书了 0=没有借书
+;ITEM:10X (X=1戦術指南書 X=2調理指南書 X=3字引 X=4御伽草子
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_620
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_620
+CALL M_KOJO_Moe_MESSAGE_COM_K13_620_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_620_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;621,釣魚
+;COM_STR（釣れたもの　"釣れない","ローター","木片","紙切れ", またはアイテム名、魚の種類）
+;COM_STR（钓到的物品包括"釣れない","ローター","木片","紙切れ", 或物品的名称、鱼的种类）
+;TFLAG:194(1000以上表示是TARGET钓到的)
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_621
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_621
+CALL M_KOJO_Moe_MESSAGE_COM_K13_621_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_621_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;626,土産屋
+;TFLAG:194(行動結果(-2=被赶出来了 -1=并没有买礼物 1=400点未満（BAD） 2=～699点（NOMAL） 3=700点以上（GOOD）
+;CFLAG:性格傾向会导致地文的分歧
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_626
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_626
+CALL M_KOJO_Moe_MESSAGE_COM_K13_626_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_626_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	SELECTCASE TFLAG:194
+		;ひやかし
+		CASE -2
+		
+		;やっぱりやめる（見送り）
+		CASE -1
+		
+		;400点未満（BAD）
+		CASE 1
+		
+		;400点～699点（NOMAL）
+		CASE 2
+		
+		;700点以上（GOOD）
+		CASE 3
+		
+	ENDSELECT
+ENDIF
+RETURN 1
+;==================================================
+;660,読書
+;TFLAG:193(选择文学书(1=神秘武术(文学？) 2=失敗 3=文学),选择実用書(4=失敗 5=実用書),选择小黄书(6=小薄本 7=保健体育 8=欲望涌上来了))
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_660
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_660
+CALL M_KOJO_Moe_MESSAGE_COM_K13_660_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_660_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;698,進入房間
+;仅在外出期间进入TARGET的房间时显示
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_698
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_698
+CALL M_KOJO_Moe_MESSAGE_COM_K13_698_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_698_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;699,外出
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_COM_K13_699
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_COM_K13_699
+CALL M_KOJO_Moe_MESSAGE_COM_K13_699_1
+RETURN RESULT
+
+@M_KOJO_Moe_MESSAGE_COM_K13_699_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;派生指令
+;※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;60,掏耳朵
+;先索求膝枕，後身体接触，身体接触会变成这个，是TARGET给MASTER掏耳朵
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(失敗するのはTARGET
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K13_60
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_SCOM_K13_60
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K13_60
+CALL M_KOJO_Moe_MESSAGE_SCOM_K13_60_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K13_60_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;61,抱枕
+;(TARGET睡眠時間or衰弱)陪睡时、前拥抱，後就寝，会让就寝变成这个
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_SCOM_K13_61
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K13_61
+CALL M_KOJO_Moe_MESSAGE_SCOM_K13_61_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K13_61_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;62,亲額頭
+;前摸头，後接吻，会让接吻变成这个
+;TFLAG:193(1=大成功 0=成功 -1=失敗)(没有地文分歧
+;ABL:欲望(5以上=欲求不满的眼神
+;ABL:親密(5以上=脸变得通红
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K13_62
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_SCOM_K13_62
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K13_62
+CALL M_KOJO_Moe_MESSAGE_SCOM_K13_62_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K13_62_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
+;==================================================
+;63,更多的接吻
+;连续接吻，第二次会变成更多的接吻
+;由于条件很复杂，需要参考ERB\口上・メッセージ関連\EVENT_MESSAGE_COM500.ERB
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K13_63
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_SCOM_K13_63
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K13_63
+CALL M_KOJO_Moe_MESSAGE_SCOM_K13_63_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K13_63_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+	IF FLAG:70
+	ELSE
+	ENDIF
+ENDIF
+RETURN 1
+;==================================================
+;80,拉手
+;约会出发后道中时，牵手后会让牵手变成拉手
+;TFLAG:193(1=大成功 0=成功 -1=失敗)
+;==================================================
+@M_KOJO_Moe_SUCCESS_SCOM_K13_80
+;成否判定
+;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
+TFLAG:192 =0
+
+;==================================================
+
+@M_KOJO_Moe_MESSAGE_MESSAGECHECK_SCOM_K13_80
+RETURN 0
+
+@M_KOJO_Moe_MESSAGE_SCOM_K13_80
+CALL M_KOJO_Moe_MESSAGE_SCOM_K13_80_1
+RETURN RESULT
+@M_KOJO_Moe_MESSAGE_SCOM_K13_80_1
+;-------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------------------------------------------
+IF LOCAL
+
+ENDIF
+RETURN 1
