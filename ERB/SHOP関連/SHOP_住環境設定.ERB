@@ -11,7 +11,7 @@ PRINTFORML [0] - 起床時間設定（現在：%時刻表示(TIME:3)%）
 PRINTFORML [1] - 私室設定（現在：%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%）
 ;SIF FLAG:住宿人物== 0
 ;	PRINTL [2] - 住宿
-PRINTFORML [3] - 只睡四小时（現在：\@ FLAG:睡四小时 ? ON # OFF \@）
+PRINTFORML [3] - 只睡\@ OneMinSleep ? 一分钟 # 四小时 \@（現在：\@ FLAG:睡四小时 ? ON # OFF \@）
 PRINTFORML [4] - 内職（現在：\@ FLAG:内職 ? ON # OFF \@）
 PRINTFORML [5] - 改名
 PRINTFORML [6] - 移動酒虫之瓶（現在：\@ !MAIN_MAP ? %STR:拠点_酒虫% # %STR:(拠点_酒虫 + 8000)% \@）
@@ -31,7 +31,7 @@ ELSEIF RESULT == 1
 ELSEIF RESULT == 3
 	FLAG:睡四小时 = !FLAG:睡四小时
 	IF FLAG:睡四小时
-		PRINTFORMW 就寝時会只睡四小时
+		PRINTFORMW 就寝時会只睡\@ OneMinSleep ? 一分钟 # 四小时 \@
 	ELSE
 		PRINTFORMW 关闭了
 	ENDIF
@@ -152,6 +152,8 @@ ENDIF
 
 @最低睡眠時間設定
 TIME:3 = (CFLAG:MASTER:就寝時間 - DAY * 1440) + 240
+SIF OneMinSleep
+	TIME:3 = (CFLAG:MASTER:就寝時間 - DAY * 1440) + 1
 SIF TIME:3 >= 1440
 	TIME:3 -= 1440
 SIF TIME:3 < 0
@@ -193,14 +195,17 @@ DO
 	PRINT [3333] - 日历
 	PRINT 　
 	PRINTL [4444] - 直接输入
-	IF 睡眠時間予測(TIME:3) < 240
+	IF !OneMinSleep && 睡眠時間予測(TIME:3) < 240
 		PRINTFORM [5555] - 
 		CALL COLORMESSAGE("至少需要睡4个小时以上", C_ORANGE, 1)
-	ELSE
+	ELSEIF !睡眠時間予測(TIME:3)
+		PRINTFORM [5555] - 
+		CALL COLORMESSAGE("至少需要睡1分钟", C_ORANGE, 1)	
+	ELSE	
 		PRINTFORML [{0,4}] - 结束
 	ENDIF
 	INPUT
-	IF RESULT == 0 && 睡眠時間予測(TIME:3) >= 240
+	IF RESULT == 0 && (睡眠時間予測(TIME:3) >= 240 || (OneMinSleep&&睡眠時間予測(TIME:3)))
 		PRINTFORM 把闹钟設定为
 		CALL COLORMESSAGE(@"%時刻表示(TIME:3)%", C_YELLOW)
 		PRINTFORMW 了。

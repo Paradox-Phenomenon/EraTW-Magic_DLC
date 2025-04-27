@@ -1110,6 +1110,9 @@ FOR LOCAL, START, START:页
 	ELSEIF  RESULT >= 700
 		SETCOLOR C_H_PINK
 	ELSEIF  RESULT < 400
+		SETCOLOR C_RED
+	;节日补正	
+	ELSEIF  RESULT <= 555
 		SETCOLOR C_GRAY
 	ENDIF
 	PRINTFORM {RESULT,4,right}
@@ -1199,7 +1202,7 @@ ELSEIF RESULT == 997
 				BREAK
 			ENDIF
 		NEXT		
-		CALL GIFT_ORDER_MADE_ORIGINAL_DESIGN("本体", 本体名称)
+		CALL GIFT_ORDER_MADE_ORIGINAL_DESIGN(CHARA,"本体", 本体名称)
 		本体センス += RESULTS
 		CALL REVIEW_GIFT(CHARA, , 本体センス)
 		PRINTFORM 评价:
@@ -1210,6 +1213,8 @@ ELSEIF RESULT == 997
 		ELSEIF  RESULT >= 700
 			SETCOLOR C_H_PINK
 		ELSEIF  RESULT < 400
+			SETCOLOR C_RED	
+		ELSEIF  RESULT <= 555
 			SETCOLOR C_GRAY
 		ENDIF
 		PRINTFORML {RESULT,4,right}
@@ -1267,6 +1272,8 @@ ELSE
 		ELSEIF  RESULT >= 700
 			SETCOLOR C_H_PINK
 		ELSEIF  RESULT < 400
+			SETCOLOR C_RED	
+		ELSEIF  RESULT <= 555
 			SETCOLOR C_GRAY
 		ENDIF
 	PRINTFORML {RESULT,4,right}
@@ -1370,6 +1377,8 @@ FOR LOCAL, START, START:页
 	ELSEIF  RESULT >= 700
 		SETCOLOR C_H_PINK
 	ELSEIF  RESULT < 400
+		SETCOLOR C_RED	
+	ELSEIF  RESULT <= 555
 		SETCOLOR C_GRAY
 	ENDIF
 	PRINTFORM {RESULT,4,right}
@@ -1460,7 +1469,7 @@ ELSEIF RESULT == 997
 				BREAK
 			ENDIF
 		NEXT		
-		CALL GIFT_ORDER_MADE_ORIGINAL_DESIGN("形容詞", 形容詞名称 + 本体名称)
+		CALL GIFT_ORDER_MADE_ORIGINAL_DESIGN(CHARA,"形容詞", 形容詞名称 + 本体名称)
 		形容詞センス += RESULTS
 		全体価格 = 本体価格 * 300 / 100
 	ENDIF
@@ -1489,160 +1498,125 @@ RETURN 形容詞
 ;-------------------------------------------------
 ;贈り物定制的SENSEを決める関数
 ;@GIFT_ORDER_MADE_FROM_MASTERの内部関数
+;ARG=TARGET
 ;-------------------------------------------------
-@GIFT_ORDER_MADE_ORIGINAL_DESIGN(ARGS, 名称)
+@GIFT_ORDER_MADE_ORIGINAL_DESIGN(ARG,ARGS, 名称)
 #DIMS 名称
 VARSET LOCALS
 IF ARGS == "本体"
-	PRINTFORML ◆想要將【%名称%】做成什麽用途呢？
-	PRINTBUTTON @" [ 用於觀賞的 ]","觀賞/"
-	PRINTBUTTON @" [ 可以把玩的 ]","握住/"
-	PRINTL
-	PRINTBUTTON @" [ 需要抱住的 ]","抱住/"
-	PRINTBUTTON @" [ 穿戴於身的 ]","穿戴/"
-	INPUTS
+	PRINTFORML ◆【%名称%】的用途？
+	CALL TagSelect(ARG,"觀賞","握住"," ","抱住","穿戴")
 		LOCALS:1 = %RESULTS%
 	PRINTFORML ◆【%名称%】是什麽呢？
-	PRINTBUTTON @" [ 弾 ]","弾/"
-	PRINTBUTTON @" [ 刃物 ]","刃物/"
-	PRINTBUTTON @" [ 食器 ]","食器/"
-	PRINTBUTTON @" [ 道具 ]","道具/"
-	PRINTBUTTON @" [ 装飾品 ]","装飾品/"
-	PRINTL
-	PRINTBUTTON @" [ 楽器 ]","楽器/"
-	PRINTBUTTON @" [ 書物 ]","書物/"
-	PRINTBUTTON @" [ 人形 ]","人形/"
-	PRINTBUTTON @" [ 置物 ]","置物/"	
-	PRINTBUTTON @" [ 美術品 ]","美術品/"
-	INPUTS
+	CALL TagSelect(ARG,"刃物","食器","道具","弾","装飾品"," ","楽器","書物","人形","置物","美術品")
 		LOCALS:2 = %RESULTS%
 	PRINTFORML ◆【%名称%】属于什麽类型？
-	PRINTBUTTON @" [ 扇 ]","扇/"
-	PRINTBUTTON @" [ 眼鏡 ]","眼鏡/"
-	PRINTBUTTON @" [ 钟表 ]","钟表/"
-	PRINTBUTTON @" [ 遺物 ]","遺物/"
-	PRINTL
-	PRINTBUTTON @" [ 面 ]","面/"
-	PRINTBUTTON @" [ 文具 ]","文具/"
-	PRINTBUTTON @" [ 照明 ]","照明/"
-	PRINTBUTTON @" [ 护符 ]","护符/"
-	PRINTBUTTON @" [ 法具 ]","法具/"
-	INPUTS
+	CALL TagSelect(ARG,"扇","眼鏡","钟表","遺物"," ","面","文具","照明","护符","法具")
 		LOCALS:3 = %RESULTS%
 	PRINTFORML ◆【%名称%】有什么性质？
-	PRINTBUTTON @" [ 布製 ]","布製/繊維/"
-	PRINTBUTTON @" [ 金属 ]","金属/鉱製/"	
-	PRINTBUTTON @" [ 宝石 ]","鉱製/宝石/"	
-	PRINTL
-	PRINTBUTTON @" [ 植物 ]","植物/生体品/"
-	PRINTBUTTON @" [ 動物 ]","動物/生体品/"		
-	PRINTBUTTON @" [ 肖像 ]","肖像/"	
-	INPUTS
-		LOCALS:4 = %RESULTS%
+	CALL TagSelect(ARG,"布製","金属","宝石"," ","植物","動物","肖像")
+	SELECTCASE RESULTS
+	CASE "布製/"
+		RESULTS+="繊維/"
+	CASE "金属/","宝石/"
+		RESULTS+=	"鉱製/"
+	CASE "植物/","動物/"
+		RESULTS+="生体品/"
+	ENDSELECT	
+		LOCALS:4 = %RESULTS%	
 	RESULTS = %LOCALS:1 + LOCALS:2 + LOCALS:3 + LOCALS:4%
+	PRINTFORML 选择的tag是%RESULTS%
 ELSEIF ARGS == "形容詞"
 	PRINTFORML ◆【%名称%】是什麽顏色？
-	PRINTBUTTON @" [ 黒 ]","黒/"*2
-	PRINTBUTTON @" [ 白 ]","白/"*2
-	PRINTBUTTON @" [ 灰 ]","灰/"*2
-	PRINTBUTTON @" [ 赤 ]","赤/"*2
-	PRINTBUTTON @" [ 黄 ]","黄/"*2
-	PRINTBUTTON @" [ 緑 ]","緑/"*2
-	PRINTBUTTON @" [ 青 ]","青/"*2
-	PRINTL
-	PRINTBUTTON @" [ 紫 ]","紫/"*2
-	PRINTBUTTON @" [ 虹 ]","虹/"*2
-	PRINTBUTTON @" [ 朱 ]","朱/"*2
-	PRINTBUTTON @" [ 粉 ]","粉色/"*2
-	PRINTBUTTON @" [ 茶 ]","茶/"*2
-	PRINTBUTTON @" [ 金 ]","金/"*2	
-	PRINTBUTTON @" [ 銀 ]","銀/"*2
-	INPUTS
-		LOCALS:1 = %RESULTS%
+	CALL TagSelect(ARG,"黒","白","灰","赤","黄","緑","青"," ","紫","虹","朱","粉","茶","金","銀")
+	SIF RESULTS=="粉/"
+		RESULTS'="粉色/"
+	LOCALS:1 = %RESULTS*2%		
 	PRINTFORML ◆【%名称%】帶來的印象是？
-	PRINTBUTTON @" [ 美的 ]","美的/"*3
-	PRINTBUTTON @" [ 可愛的 ]","可愛的/"*3
-	PRINTBUTTON @" [ 帥氣的 ]","帥氣的/"*3
-	PRINTBUTTON @" [ 可怕的 ]","可怕的/"*3
-	INPUTS
-		LOCALS:2 = %RESULTS%
+	CALL TagSelect(ARG,"美的","可愛的","帥氣的","可怕的")
+		LOCALS:2 = %RESULTS*3%
 	PRINTFORML ◆【%名称%】看起來是什麽樣子？
-	PRINTBUTTON @" [ 樸素 ]","樸素/"*2
-	PRINTBUTTON @" [ 奇妙 ]","奇妙/"*2
-	PRINTBUTTON @" [ 時尚 ]","時尚/"*2	
-	PRINTBUTTON @" [ 芸術的 ]","芸術的/"*2
-	INPUTS
-		LOCALS:3 = %RESULTS%
+	CALL TagSelect(ARG,"樸素","奇妙","時尚","芸術的")
+		LOCALS:3 = %RESULTS*2%
 	PRINTFORML ◆【%名称%】有哪种感觉？
-	PRINTBUTTON @" [ 別緻 ]","別緻/"*2
-	PRINTBUTTON @" [ 繊細 ]","繊細/"*2
-	PRINTBUTTON @" [ 知的 ]","知的/"*2
-	PRINTBUTTON @" [ 不思議 ]","不思議/"*2
-	PRINTBUTTON @" [ 洛麗塔 ]","洛麗塔/"*2
-	PRINTL
-	PRINTBUTTON @" [ 誇張 ]","誇張/"*2
-	PRINTBUTTON @" [ 威厳 ]","威厳/"*2
-	PRINTBUTTON @" [ 壮大 ]","壮大/"*2
-	PRINTBUTTON @" [ 狂熱 ]","狂熱/"*2
-	PRINTBUTTON @" [ 充滿力量 ]","充滿力量/"*2
-	INPUTS
-		LOCALS:4 = %RESULTS%
+	CALL TagSelect(ARG,"別緻","繊細","知的","不思議","洛麗塔"," ","誇張","威厳","壮大","狂熱","充滿力量"	)
+		LOCALS:4 = %RESULTS*2%
 	PRINTFORML ◆【%名称%】是什么风格？
-	PRINTBUTTON @" [ 洋風 ]","洋風/"*3	
-	PRINTBUTTON @" [ 和風 ]","和風/"*3		
-	PRINTBUTTON @" [ 大陸風 ]","大陸風/"*3
-	INPUTS
-		LOCALS:5 = %RESULTS%	
+	CALL TagSelect(ARG,"洋風","和風","大陸風")	
+		LOCALS:5 = %RESULTS*3%	
 	PRINTFORML ◆【%名称%】含有什么元素？
-	PRINTBUTTON @" [ 日 ]","日/"*2	
-	PRINTBUTTON @" [ 月 ]","月/"*2	
-	PRINTBUTTON @" [ 火 ]","火/"*2	
-	PRINTBUTTON @" [ 水 ]","水/"*2		
-	PRINTBUTTON @" [ 木 ]","木/"*2	
-	PRINTBUTTON @" [ 金 ]","金/"*2		
-	PRINTBUTTON @" [ 土 ]","土/"*2
-	PRINTL	
-	PRINTBUTTON @" [ 星 ]","星/"*2
-	PRINTBUTTON @" [ 風 ]","風/"*2
-	PRINTBUTTON @" [ 雷 ]","雷/"*2
-	PRINTBUTTON @" [ 氷 ]","氷/"*2
-	PRINTBUTTON @" [ 光 ]","光/"*2
-	PRINTBUTTON @" [ 闇 ]","闇/"*2
-	PRINTBUTTON @" [ 型 ]","型/"*2	
-	PRINTL
-	PRINTBUTTON @" [ 酒 ]","酒/"*2	
-	PRINTBUTTON @" [ 鳥 ]","鳥/"*2
-	PRINTBUTTON @" [ 魚 ]","魚/"*2								
-	PRINTBUTTON @" [ 虫 ]","虫/"*2
-	PRINTBUTTON @" [ 毒 ]","毒/"*2	
-	PRINTBUTTON @" [ 骨 ]","骨/"*2
-	PRINTBUTTON @" [ 血 ]","血/"*2
-	INPUTS
-		LOCALS:6 = %RESULTS%
+	CALL TagSelect(ARG,"日","月","火","水","木","金","土"," ","星","風","雷","氷","光","闇","型"," ","酒","鳥","魚","虫","毒","骨","血")
+		LOCALS:6 = %RESULTS*2%
 	PRINTFORML ◆【%名称%】附有哪种能力？	
-	PRINTBUTTON @" [ 魔法 ]","魔法/"*2
-	PRINTBUTTON @" [ 巫術 ]","巫術/"*2
-	PRINTBUTTON @" [ 妖術 ]","妖術/"*2
-	PRINTL		
-	PRINTBUTTON @" [ 妖怪 ]","妖怪/"*2
-	PRINTBUTTON @" [ 神霊 ]","神霊/"*2
-	PRINTBUTTON @" [ 幽霊 ]","幽霊/"*2
-	PRINTBUTTON @" [ 付喪神 ]","付喪神/"*2	
-	INPUTS
-		LOCALS:7 = %RESULTS%		
-	PRINTFORML ◆【%名称%】有什么属性？		
-	PRINTBUTTON @" [ 技術 ]","技術/"*2		
-	PRINTBUTTON @" [ 音楽 ]","音楽/"*2
-	PRINTBUTTON @" [ 精神 ]","精神/"*2
-	PRINTBUTTON @" [ 自然 ]","自然/"*2	
-	PRINTBUTTON @" [ 角色 ]","角色/"*2	
-	PRINTL	
-	PRINTBUTTON @" [ 混沌 ]","混沌/"*2
-	PRINTBUTTON @" [ 秩序 ]","秩序/"*2
-	PRINTBUTTON @" [ 未来 ]","未来/"*2
-	PRINTBUTTON @" [ 懷舊 ]","懷舊/"*2				
-	PRINTBUTTON @" [ 死生 ]","死生/"*2		
-	INPUTS
-		LOCALS:8 = %RESULTS%	
+	CALL TagSelect(ARG,"魔法","巫術","妖術"," ","妖怪","神霊","幽霊","付喪神")
+		LOCALS:7 = %RESULTS*2%		
+	PRINTFORML ◆【%名称%】有什么属性？
+	CALL TagSelect(ARG,"技術","音楽","精神","自然","角色"," ","混沌","秩序","未来","懷舊","死生")
+		LOCALS:8 = %RESULTS*2%	
 	RESULTS = %LOCALS:1 + LOCALS:2 + LOCALS:3 + LOCALS:4 + LOCALS:5 + LOCALS:6 + LOCALS:7 + LOCALS:8%
+	PRINTFORML 选择的tag是%RESULTS%
 ENDIF
+@TagSelect(ARG,ARGS:0, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27)
+;ARG=TARGET
+VARSET LOCALS
+LOCALS'="/"
+CALL REVIEW_GIFT(ARG)
+LOCALS:1'=RESULTS:1
+;SENSE_CHARA_GOOD
+LOCALS:2'=RESULTS:2
+;SENSE_CHARA_BAD
+FOR LOCAL,0,27
+	SIF !STRLENS(ARGS:LOCAL) 
+		CONTINUE
+	;空格换行
+	IF ARGS:(LOCAL)==" "
+		PRINTL
+		CONTINUE
+	ENDIF	
+	LOCALS:3'= @"%ARGS:LOCAL%/"
+	SELECTCASE LOCALS:3
+	CASE "布製/"
+		LOCALS:3+="繊維/"
+	CASE "金属/","宝石/"
+		LOCALS:3+="鉱製/"
+	CASE "植物/","動物/"
+		LOCALS:3+="生体品/"
+	CASE "粉/"
+		LOCALS:3'="粉色/"		
+	ENDSELECT	
+	CALL SetColorTag(LOCALS:1,LOCALS:2,LOCALS:3)	
+	PRINTBUTTON @" [%ARGS:LOCAL%] ", LOCALS:3
+	LOCALS+=LOCALS:3
+	RESETCOLOR
+NEXT
+$INPUT_LOOP
+INPUTS
+RESULTS:1'=RESULTS
+RESULTS:2'="/"+RESULTS:1
+IF !STRCOUNT(LOCALS,RESULTS:2)
+	SIF RESULTS:1!=""
+	CLEARLINE 1	
+	REUSELASTLINE 無效輸入
+	GOTO INPUT_LOOP
+ELSE
+	IF ARG
+		RESULTS'=RESULTS:1
+		RETURN RESULT
+	ENDIF
+ENDIF
+@SetColorTag(LOCALS:1,LOCALS:2,LOCALS:3)
+;1喜欢，2讨厌，3偏好
+IF STRCOUNT(LOCALS:1,LOCALS:3)>=5
+	SETCOLOR C_AQUA
+ELSEIF STRCOUNT(LOCALS:1,LOCALS:3)>=3
+	SETCOLOR C_GREEN
+ELSEIF STRCOUNT(LOCALS:1,LOCALS:3)
+	SETCOLOR C_PINK
+ELSEIF STRCOUNT(LOCALS:2,LOCALS:3)>=5
+	SETCOLOR C_RED
+ELSEIF STRCOUNT(LOCALS:2,LOCALS:3)>=3
+	SETCOLOR C_ORANGE
+ELSEIF STRCOUNT(LOCALS:2,LOCALS:3)
+	SETCOLOR C_GRAY	
+ENDIF
+;PRINTFORM 喜欢{STRCOUNT(LOCALS:1,LOCALS:3)} 讨厌{STRCOUNT(LOCALS:2,LOCALS:3)}
