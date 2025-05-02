@@ -1754,13 +1754,12 @@
 				PRINTL 睡一分钟补丁
 				PRINTL 
 				PRINTL 全员只需要睡一分钟，其他时间可以出门活动
-				PRINTL
-				PRINTFORML [0]关闭
-				PRINTFORML [1]启动
-				PRINTFORML [2]返回
+				PRINTL	
+				PRINTBUTTON @"\@!OneMinSleep?[启动]#[关闭]\@ ",0
+				PRINTBUTTON @"[返回] ",9
 				INPUT
-					SIF RESULT==(0||1)
-						OneMinSleep=RESULT
+				SIF !RESULT
+					INVERTBIT OneMinSleep,0
 
 				CASE 52
 				PRINTFORML 玩家立绘补丁
@@ -1770,27 +1769,56 @@
 				PRINTFORML 可在能力表示页面切换玩家立绘，目前仅有初期绘和梦月改你小姐
 				PRINTFORML 未来计划为更多的单人限定指令添加立绘显示，同时与零度的摄影功能联动
 				PRINTL
-				PRINTFORML [0]启动
-				PRINTFORML [1]关闭
+				[SKIPSTART]
+				PRINTFORML [0]关闭
+				PRINTFORML [1]启动
 				PRINTFORML [2]返回
 				PRINTL
-				WHILE 1
-					INPUT
-					SELECTCASE RESULT
-						CASE 0
-							玩家立绘开关 = 1
-							CFLAG:0:別顔有 = 1
-							CFLAG:0:別立ち有 = 1
-							BREAK
-						CASE 1
-							VARSET 玩家立绘开关
-							CFLAG:0:別顔有 = 0
-							CFLAG:0:別立ち有 = 0
-							BREAK
-						CASE 2
-							BREAK
-					ENDSELECT
-				WEND
+				INPUT
+				IF !RESULT||RESULT==1
+					玩家立绘开关=RESULT
+					IF RESULT
+						CFLAG:0:別顔有=1
+						CFLAG:0:別立ち有=1
+					ELSE
+						CFLAG:0:別顔有=0
+						CFLAG:0:別立ち有=0
+					ENDIF	
+				ENDIF						
+				[SKIPEND]
+				PRINTBUTTON @"\@!玩家立绘开关?[启动]#[关闭]\@ ",0
+				PRINTBUTTON @"[返回] ",9
+				INPUT
+				IF !RESULT
+					玩家立绘开关=!玩家立绘开关
+					CFLAG:0:別顔有=!CFLAG:0:別顔有
+					CFLAG:0:別立ち有=!CFLAG:0:別立ち有
+				ENDIF
+
+				CASE 53
+				LOCAL=LINECOUNT
+				PRINTL 玩家喜好补丁
+				PRINTL 
+				PRINTL 可以自由设定自己的喜恶，对方送礼物时会照顾你的口味。
+				PRINTL	 若找不到合适的礼物，则对方不会赠送。
+				PRINTL 				
+				PRINTBUTTON @"\@!PreferMaster?[启动]#[关闭]\@ ",0
+				SIF PreferMaster
+					PRINTBUTTON @"[设定喜好] ",1
+				SIF PfGood+PfBad!=""
+					PRINTBUTTON @"[重置] ",2				
+				PRINTBUTTON @"[返回] ",9
+				INPUT
+				SIF !RESULT
+					INVERTBIT PreferMaster,0
+				SIF (PreferMaster&&RESULT==1)||((!RESULT&&PreferMaster==1)&&PfGood+PfBad=="")
+					CALL SetPfChoice
+				SIF (PfGood+PfBad!=""&&RESULT==2)||((!RESULT&&!PreferMaster)&&PfGood+PfBad!="")
+					CALL ResetPf
+				SIF RESULT==9
+					RETURN
+				CLEARLINE LINECOUNT-LOCAL
+				RESTART
 
 			CASEELSE
 				PRINTFORML 无效输入
