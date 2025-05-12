@@ -1,4 +1,4 @@
-YuugenMagan dialogue by Vinumsabbathi
+﻿YuugenMagan dialogue by Vinumsabbathi
 v0.0.5
 Latest revision: August 21, 2024
 
