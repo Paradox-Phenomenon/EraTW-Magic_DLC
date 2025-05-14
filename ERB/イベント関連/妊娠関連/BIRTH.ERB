@@ -1,14 +1,28 @@
 ﻿@BIRTH(ARG)
 #DIM CHILDNUM
 #DIM DADDY
-
+#DIM DYNAMIC INITCHILDNUM
+#DIM DYNAMIC CHILDCOUNT
+	;Custom code, make sure pregnancy is at least 1, set variables.
+CFLAG:ARG:WithChildCount = MAX(CFLAG:ARG:WithChildCount,1)
+PregnancyProgress:ARG:0 = MAX(PregnancyProgress:ARG:0,101)
+INITCHILDNUM = (CFLAG:ARG:子供人数+1) % MAXCHILD
+CHILDCOUNT = CFLAG:ARG:子供人数
+CFLAG:ARG:LatestChildCount = COUNT_BIRTH_MATES(ARG)
+CFLAG:ARG:BirthEventsCount++
 DADDY = CFLAG:ARG:誰の子
-
+$LOOP
 DRAWLINE
 ;妊娠消去、出産経験、性別の決定、誕生日決定
-TALENT:ARG:妊娠 = 0
+;Custom code, reduce with child count and remove a pregnancy tracker once for each child.
+CFLAG:ARG:WithChildCount -= 1
+CALL REMOVE_PREGNANCY_PROGRESS(ARG)
+; TALENT:ARG:妊娠 = 0
 EXP:ARG:出産経験 += 1
-CFLAG:ARG:兒童人数 += 1
+CFLAG:ARG:兒童人数 ++
+CFLAG:ARG:育児人数 ++
+CFLAG:DADDY:育児人数 ++
+Qol_Info_Count_Array:ARG:Qol_Count_Birth ++ ;qol custom code
 CHILDNUM = CFLAG:ARG:兒童人数 % MAXCHILD
 SIF !CFLAG:ARG:兒童人数 % MAXCHILD
 	CHILDNUM = MAXCHILD
@@ -39,10 +53,32 @@ ENDIF
 
 SIF !CFLAG:ARG:無自覚妊娠 && ITEM:私達だけが知る哀嘆 == 1
 	CHILD_LOVE:ARG:CHILDNUM += 150
+; 	;Custom code, loop again if there are more children to be born.
+; SIF CFLAG:ARG:WithChildCount && PregnancyProgress:ARG:0 > 100
+; 	GOTO LOOP
+	;Custom code, only send KOJO event once, differentiate live birth and hatching, and pass the number of the first child being born as ARG:1.
+IF CFLAG:ARG:無自覚妊娠
+	LOCAL:1 = 4
+ELSEIF TALENT:ARG:恋慕
+	LOCAL:1 = 1
+ELSEIF TALENT:ARG:思慕
+	LOCAL:1 = 2
+ELSE
+	LOCAL:1 = 3
+ENDIF
+IF TALENT:ARG:Nesting
+	CALL KOJO_MESSAGE_SEND("EVENT",0,ARG,LOCAL:1,INITCHILDNUM,"HATCHING")
+ELSE
+	CALL KOJO_MESSAGE_SEND("EVENT",25,ARG,LOCAL:1,INITCHILDNUM)
+ENDIF
 
 ;あらかじめ自立先を決めちゃう（自立するときにもっかい決める）
 CALL 自立先選定(ARG, CHILDNUM)
-PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%平安无事的生下了%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的孩子
+IF FLAG:EGGNANCY && GROUPMATCH(TALENT:ARG:PregnancyType,2,3)
+	PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%が卵を産むと、すぐに子供が孵りました
+ELSE
+	PRINTFORMW \@ TALENT:ARG:Nesting ? %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%の卵が孵りました # %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%平安无事的生下了%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的孩子\@
+ENDIF
 CALL CHILD_NAME(ARG, CHILDNUM)
 PRINTFORMW \@ CHILD_SEX:ARG:CHILDNUM == 1 ? %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%一样很元気的女孩子 # %NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%一样很元気的男孩子 \@
 PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%接过刚刚诞生的小宝宝、温柔的抱住并開始喂起母乳来
@@ -61,11 +97,13 @@ PRINTFORML  %FESTIVAL()% -%GET_WEATHER()%-
 ;PRINTFORML 　髪色：
 ;PRINTFORML 　瞳色：
 PRINTL ******************************************************************
-
+	;Custom code, loop again if there are more children to be born.
+SIF CFLAG:ARG:WithChildCount && PregnancyProgress:ARG:0 > 100
+	GOTO LOOP
 
 ;育児中・母性追加
-CFLAG:ARG:育児人数 += 1
-CFLAG:DADDY:育児人数 += 1
+; CFLAG:ARG:育児人数 += 1
+; CFLAG:DADDY:育児人数 += 1
 CFLAG:ARG:出産経過日 = 1 + FLAG:妊娠日程倍率
 CFLAG:ARG:妊娠経過日数 = 0
 CFLAG:ARG:無自覚妊娠 = 0
@@ -75,7 +113,17 @@ CFLAG:ARG:妊娠自覚状態 = 0
 TALENT:ARG:母性 = 1
 
 CFLAG:ARG:産休中 = 0
-
+	;Custom code, set pregnancy or nesting progress to the next due child (if any) instead of zero.
+IF GROUPMATCH(TALENT:ARG:PregnancyType,2,3) && !FLAG:EGGNANCY
+	TALENT:ARG:Nesting = PregnancyProgress:ARG:0
+	CFLAG:ARG:妊娠経過日数 = 0
+ELSE
+	CFLAG:ARG:妊娠経過日数 = PregnancyProgress:ARG:0
+	TALENT:ARG:Nesting = 0
+		;Only unset pregnancy talent if progress is below 20.
+	SIF CFLAG:ARG:妊娠経過日数 < 20
+		TALENT:ARG:妊娠 = 0
+ENDIF
 EXP:ARG:愛情経験 += 10
 CFLAG:DADDY:兒童人数 += 1
 IF FLAG:甲斐性無 && (DADDY == MASTER || ARG == MASTER)

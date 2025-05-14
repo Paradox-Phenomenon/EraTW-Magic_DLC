@@ -1238,16 +1238,26 @@ SIF EXP:選択中角色ID:子宮口開発経験
 		NEXT
 		PRINTFORML 
 	ENDIF
+	LOCAL = CFLAG:選択中角色ID:WithChildCount
 	IF TALENT:選択中角色ID:妊娠
-	SETCOLOR C_RED	
+		SETCOLOR C_RED
 		IF CFLAG:選択中角色ID:妊娠経過日数 < 20
 			PRINTFORML 生理期停了
 		ELSEIF 選択中角色ID == MASTER
-			PRINTFORML 子宮内正孕育着%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的孩子
-			PRINTFORML 現在妊娠{CFLAG:選択中角色ID:妊娠経過日数}日
+			IF GROUPMATCH(TALENT:選択中角色ID:PregnancyType,2,3)
+				PRINTFORML 子宮内では%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%との受精卵がすくすくと育っている
+			ELSE
+				PRINTFORML 子宮内正孕育着%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的孩子
+			ENDIF
+				;Custom code, date range for hyperpregnancy.
+			IF CFLAG:選択中角色ID:妊娠経過日数 == PregnancyProgress:選択中角色ID:(LOCAL-1)
+				PRINTFORML 現在妊娠{CFLAG:選択中角色ID:妊娠経過日数}日
+			ELSE
+				PRINTFORML 現在妊娠{PregnancyProgress:選択中角色ID:(LOCAL-1)}{CFLAG:選択中角色ID:妊娠経過日数}日
+			ENDIF
 			CALL LOOK_BELLY(選択中角色ID)
 			SIF INRANGE(CFLAG:選択中角色ID:妊娠経過日数,20,29)
-					PRINT 還沒有肉眼可見的変化
+					PRINTL 還沒有肉眼可見的変化
 			PRINTL
 		ELSE
 			PRINTFORML 子宮内正孕育着%NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%的孩子
@@ -1256,6 +1266,13 @@ SIF EXP:選択中角色ID:子宮口開発経験
 			SIF INRANGE(CFLAG:選択中角色ID:妊娠経過日数,20,29)
 					PRINT 還沒有肉眼可見的変化
 			PRINTL
+		ENDIF
+	ELSEIF TALENT:選択中角色ID:Nesting
+		PRINTFORML 有精卵を育てている
+		IF TALENT:選択中角色ID:Nesting == PregnancyProgress:選択中角色ID:(LOCAL-1)
+			PRINTFORML 現在産卵から{TALENT:選択中角色ID:Nesting}日目だ
+		ELSE
+			PRINTFORML 現在産卵から{PregnancyProgress:選択中角色ID:(LOCAL-1)}から{TALENT:選択中角色ID:Nesting}日目だ
 		ENDIF
 	ENDIF
 	IF 充填率(選択中角色ID,3) >= 30

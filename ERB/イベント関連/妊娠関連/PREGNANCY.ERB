@@ -4,10 +4,9 @@
 #DIM 妊娠必要値
 #DIM 中毒補正
 #DIM 妊娠精液判定
-
-#DIM 目前懷孕值
-#DIM 懷孕必要值
-#DIM 懷孕率
+;Custom code, don't process if the character's womb or nest is at the child limit.
+SIF CFLAG:ARG:WithChildCount >= MAXCHILD
+	RETURN
 
 SELECTCASE ABL:ARG:膣射中毒
 	CASE 0 TO 2
@@ -67,7 +66,8 @@ FOR LOCAL , 0 , CHARANUM - 1
 NEXT
 
 @GET_CHILD_SUB(ARG,ARG:1)
-
+	;Addition custom code.
+#DIM DYNAMIC ConceptionCount
 ; ARG　母親　ARG:1 父親
 #DIM 妊娠必要値
 #DIM 妊娠精液判定
@@ -157,6 +157,9 @@ SIF TALENT:DADDY:濃厚精液
 	妊娠必要値 /= 4
 SIF TALENT:ARG:妊娠願望
 	妊娠必要値 = 妊娠必要値 * 8 / 10
+			;Custom code, bonus while hyperfertile for second child with normal pregnancy type or under 7 children with litter type.
+SIF (TALENT:ARG:PregnancyType == 4 && CFLAG:ARG:WithChildCount == 1) || (TALENT:ARG:PregnancyType == 5 && CFLAG:ARG:WithChildCount < 7)
+	妊娠必要値 = 妊娠必要値 * 9 / 10
 SIF ARG == 0
 	妊娠必要値 = 500
 
@@ -291,7 +294,10 @@ ELSE
 	IF MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100 > RAND:妊娠必要値
 		DRAWLINE
 		DEBUGPRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%怀上了%NAME_OUTPUT_TRANSLATION("CALLNAME", DADDY)%的孩子
-		CFLAG:ARG:妊娠経過日数 = 1 + FLAG:妊娠日程倍率
+		;CFLAG:ARG:妊娠経過日数 = 1 + FLAG:妊娠日程倍率
+				;Custom code, increase the number of unborn children, with a chance for twins or triplets if it's a live birth. Maximum of ten at one time, except for egg layers.
+		ConceptionCount += CONCEPTION_COUNT(ARG,ConceptionCount)
+		CALL ADD_PREGNANCY_PROGRESS(ARG,ConceptionCount)
 		CFLAG:ARG:誰の子 = DADDY
 		SIF FLAG:抱負 == 6
 			FLAG:抱負 = 9
@@ -403,6 +409,30 @@ ELSE
 				PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", MASTER)%让路人%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%怀孕了……
 				FONTREGULAR
 			ENDIF
+					;Custom code, egg laying.
+			IF GROUPMATCH(TALENT:ARG:PregnancyType,2,3)
+				IF FLAG:EGGNANCY
+					IF TALENT:ARG:PregnancyType == 3
+							;Skip describing the hard shell because clutch layers are bugs and fish.
+						PRINTFORMDW The \@ ConceptionCount > 1 ? 卵塊 # 卵 \@は子宮内に留まった...
+					ELSE
+						PRINTFORMDW The \@ ConceptionCount > 1 ? 卵塊が殻を形成した # 卵は殻を形成したが、子宮内に留まった \@...
+					ENDIF
+				ELSE
+					PRINTFORMDW %CALLNAME:ARG%は有精卵を産んだ
+					LOCAL:52 = 3
+					IF TALENT:ARG:恋慕
+						LOCAL:52 = 1
+					ELSEIF TALENT:ARG:愛欲
+						LOCAL:52 = 2
+					ENDIF
+					CALL KOJO_MESSAGE_SEND("EVENT", 0, ARG, LOCAL:52, ConceptionCount, "LAY_EGG")
+					IF TALENT:ARG:妊娠願望
+						TALENT:ARG:妊娠願望 = 0
+						PRINTFORMW %CALLNAME:ARG%は妊娠願望を失った
+					ENDIF
+				ENDIF
+			ENDIF
 			SIF TALENT:ARG:路人 == 1
 				FLAG:路人孕ませ数 ++
 			SIF DADDY == MASTER
@@ -443,7 +473,7 @@ IF CFLAG:ARG:妊娠経過日数 == 71
 		PRINTFORMW 因为母体有危险的可能性、%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%决定休養到出産…
 		CFLAG:ARG:産休中 = 1
 	ENDIF
-ELSEIF CFLAG:ARG:妊娠経過日数 == 60
+ELSEIF CFLAG:ARG:妊娠経過日数 == 60 || TALENT:ARG:Nesting == 60
 	DRAWLINE
 	IF TALENT:ARG:胸圍 < 2
 		TALENT:ARG:胸圍 += 1
@@ -454,7 +484,8 @@ ELSEIF CFLAG:ARG:妊娠経過日数 == 60
 		PRINTFORMW %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%好像能分泌母乳了
 		TALENT:ARG:母乳体質 = 1
 	ENDIF
-
+	SIF TALENT:ARG:Nesting
+		RETURN
 	PRINTFORML 即使从远处望去%NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%已经怀孕的情况也已经很明显了…
 	IF !CFLAG:ARG:無自覚妊娠 && CFLAG:ARG:産休タイプ == 2
 		PRINTFORML %NAME_OUTPUT_TRANSLATION("CALLNAME", ARG)%为防万一、决定去休養一段时间…

@@ -191,7 +191,6 @@ FOR LOCAL, 0, CHARANUM
 	ENDCATCH
 NEXT
 
-
 @CHARASORT_EX_TR
 #FUNCTION
 ;the only issue here is that th98 characters start from range 201+, but it doesn't seem to be a big deal here?
@@ -559,7 +558,6 @@ GIFT_GAVE:CHARA:(渡した回数 % 100) = GIFT_ID
 CFLAG:CHARA:送出的礼物 = GIFT_ID
 CALL KOJO_MESSAGE_SEND("GIFT", 6, CHARA, GIFT_ID, 本人の評価点, GIFT_NAME, GIFT_SENSE)
 PRINTFORMW Received [%GIFT_NAME%] from %NAME_OUTPUT_TRANSLATION("CALLNAME", CHARA)%!
-
 ;-------------------------------------------------
 ;create written set of flags without magic numbers and FIRSTTIME abuse
 ;original from SQ's CEVENT
@@ -667,3 +665,154 @@ FOR LOCAL, 0, 4
 		RETURNF 1
 NEXT
 RETURNF 0
+
+@BABYMULTIAWARE(Character)
+	;Returns true if the character would normally be aware that she's carrying more than one child.
+#FUNCTION
+#DIM DYNAMIC Character
+SIF CFLAG:Character:LatestChildCount > 1 && TALENT:Character:PregnancyType && !(TALENT:Character:PregnancyType == 2 && FLAG:EGGNANCY)
+	RETURNF 1
+RETURNF 0
+
+
+@TOTAL_CONCEPTION_COUNT(Character,All)
+	;Returns the number of times the character has conceived.
+	;If the maximum number of children has been exceeded, the result may be incorrect.
+	;Set All to 1 if you want to include conceptions whose pregnancy event hasn't happened yet.
+#FUNCTION
+#DIM DYNAMIC Character
+#DIM DYNAMIC LastNumber
+#DIM DYNAMIC ConceptionCount
+#DIM DYNAMIC All
+SIF !CFLAG:Character:子供人数 && !CFLAG:Character:WithChildCount
+	RETURNF 0
+LastNumber = -1
+IF CFLAG:Character:子供人数
+	FOR LOCAL,1,CFLAG:Character:子供人数+1
+		IF CHILD_BIRTHDATE:Character:LOCAL > LastNumber
+			ConceptionCount++
+			LastNumber = CHILD_BIRTHDATE:Character:LOCAL
+		ENDIF
+	NEXT
+ENDIF
+LastNumber = 1000000
+IF CFLAG:Character:WithChildCount
+	FOR LOCAL,0,CFLAG:Character:WithChildCount
+		IF VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}") < LastNumber && (All || GROUPMATCH(TALENT:Character:PregnancyType,2,3) || VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}") > 19)
+			ConceptionCount++
+			LastNumber = VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}")
+		ENDIF
+	NEXT
+ENDIF
+RETURNF ConceptionCount
+
+@CHILD_MULTIPLE_COUNT(Character,Child,SameMother=1)
+	;Returns the total number of children in the given child's birthing.
+	;If SameMother is 0, it will also count children of other characters born on the same day.
+#FUNCTION
+#DIM DYNAMIC Character
+#DIM DYNAMIC Child
+#DIM DYNAMIC SameMother
+#DIM DYNAMIC ChildCount
+SIF Child > CFLAG:Character:子供人数 || Child < 1
+	RETURNF 0
+FOR LOCAL,1,CFLAG:Character:子供人数+1
+	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+		ChildCount++
+NEXT
+IF !SameMother
+	FOR LOCAL:1,1,CHARANUM
+		SIF LOCAL:1 == Character
+			CONTINUE
+		FOR LOCAL,1,CFLAG:(LOCAL:1):子供人数+1
+			SIF CHILD_BIRTHDATE:(LOCAL:1):LOCAL == CHILD_BIRTHDATE:Character:Child
+				ChildCount++
+		NEXT
+	NEXT
+ENDIF
+RETURNF ChildCount
+
+@CHILD_MULTIPLE_FIRST(Character,Child)
+	;Returns the firstborn child in a single birthing.
+#FUNCTION
+#DIM DYNAMIC Character
+#DIM DYNAMIC Child
+FOR LOCAL,1,CFLAG:Character:子供人数+1
+	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+		RETURNF LOCAL
+NEXT
+RETURNF -1
+
+@CHILD_MULTIPLE_LAST(Character,Child)
+	;Returns the lastborn child in a single birthing.
+#FUNCTION
+#DIM DYNAMIC Character
+#DIM DYNAMIC Child
+#DIM DYNAMIC LastChild
+LastChild = -1
+FOR LOCAL,1,CFLAG:Character:子供人数+1
+	IF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+		LastChild = LOCAL
+		SIF LOCAL == CFLAG:Character:子供人数
+			RETURNF LastChild
+	ELSEIF LastChild > -1
+		RETURNF LastChild
+	ENDIF
+NEXT
+RETURNF -1
+
+;==================================================
+;Counts how many orgasms the given character had in the last sex session
+;Stolen from Suwako's dialogue
+;==================================================
+@ORGASM_COUNT(ARG = -1)
+#FUNCTION
+SIF ARG == -1
+	ARG = TARGET
+RETURNF SUMARRAY(EX:ARG:0, 0, 5)
+
+;major.minor.patch
+@FORMAT_VERSION(ARG)
+#FUNCTIONS
+RETURNF @"{ARG / 100}.{ARG % 100 / 10}.{ARG % 10}"
+
+;Prints the season (year) using the Youkai Mountain calendar
+@PRINT_DATE_F_YOUKAI_SEASON()
+#FUNCTION
+GETTIME
+LOCAL:1 = (RESULT / 10000000000000) - 1885
+RETURNF LOCAL:1
+
+;Prints the date using the Youkai Mountain calendar
+@PRINT_DATE_F_YOUKAI(ARG, ARG:1)
+#FUNCTIONS
+LOCAL:1 = PRINT_DATE_F_YOUKAI_SEASON()
+LOCAL = DAY_TO_DATE(ARG)
+LOCAL:2 = LOCAL % 1000 / 100
+LOCAL:3 = LOCAL % 1000 % 100
+SELECTCASE ARG:1
+	CASE 1
+		LOCALS = {LOCAL:1}期　%GET_MONTH(LOCAL:2)%　{LOCAL:3}日
+CASEELSE
+	LOCALS = {LOCAL:1}期　%GET_MONTH(LOCAL:2)%　{LOCAL:3}日
+ENDSELECT
+RETURNF LOCALS
+
+@TOSTR_BUSTSIZE_ATW(ARG:0)
+#FUNCTIONS
+SELECTCASE ARG:0
+	CASE -2
+		RETURNF "平坦"
+	CASE -1
+		RETURNF "小ぶり"
+	CASE 0
+		RETURNF "普通"
+	CASE 1
+		RETURNF "大きめ"
+	CASE 2
+		RETURNF "巨大"
+	; CASE 3
+	; 	RETURNF "Gigantic"
+	; CASE 4
+	; 	RETURNF "Mystifying"
+ENDSELECT
