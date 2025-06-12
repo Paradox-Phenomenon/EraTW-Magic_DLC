@@ -18,6 +18,7 @@
 ;TCVAR:43:351  弹幕格斗鬼王模式是否开启
 ;TCVAR:43:352  华扇和你先生是否有几率直接跨过推倒判定直接进爱爱（具体函数见下）
 ;TCVAR:43:353  钓鱼相关
+;TCVAR:43:354  华扇的上衣（十位 0：裸 1：“博丽巫女服” 2：“守矢巫女服” 3：连衣裙 4：和服 || 个位 0：裸 1：文胸 2：比基尼）
 ;
 ;CFLAG:43:1001  紫有没有给华扇送药膏
 ;CFLAG:43:1002  华扇乐意给你先生透露多少事
@@ -40,6 +41,7 @@ RESULTS = _TPP
 
 ;为了明确您的口上与初期口上的不同之处，此处将会在开局选择口上时显示并作为口上名称的一部分，请务必更改 XXX
 RESULTS:1 = ——金水科工
+RESULTS:2 = 尽量能保证满足不同类型的华扇厨的胃口的口上<br>若想联系请找百度贴吧：独孤孤独咕噜牛<br><br>警告：无正经涩涩内容（因为爱抚系之类的指令我还没有开始写）
 
 ;这是对存在的判断，请不要注释掉
 ;不要做任何其他的处理
@@ -97,7 +99,7 @@ RETURN 1
 ;
 
 IF TALENT:恋人 && get_targetnum() == 1 && (CFLAG:340 >= 700 || TCVAR:142 || TCVAR:140) && (GETBIT(CFLAG:1,1) || GETBIT(CFLAG:1,2)) && K43_K56_TSMIKO_WORKCHECK(43) <= 0 && (!CHK_DATENOW(CFLAG:约会中) || CFLAG:MASTER:300 == 225 || CFLAG:MASTER:300 == 935)
-	TCVAR:43:352 = 1 ;恋人独有，只有两人，欲求不满高/发情/媚药，已经爱爱过了，带合意，不在干活区间
+	TCVAR:43:352 = 1 ;恋人独有，只有两人，欲求不满高/发情/媚药，已经爱爱过了，带合意，不在干活区间，没在约会（在情人旅店里也算）
 ELSE
 	TCVAR:43:352 = 0
 ENDIF
@@ -132,6 +134,7 @@ RETURN 1
 ;TALENT的变更也可以在此处修改（但是，在见面前查看角色信息还是会显示更改前的信息，所以仅作为一个见面可修改选项）
 ;经验的变化可能会导致差异，因此建议修改 CSV 并包含它（但是别人版不能用专门的CSV，乐）
 ;注、由于初见之前依然可以看到角色的经验信息，此时将不会触发这里的修正
+PRINTL
 IF INRANGE(CFLAG:MASTER:現在位置,720,730) || CFLAG:MASTER:現在位置 == 750
 ;在华扇宅初遇华扇
 	PRINTFORML 「嗯？竟然能找到这里。」		
@@ -185,7 +188,7 @@ RETURN 1
 ;"SP_EVENT"系事件
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;==================================================
-;约会回家路上的初吻赠予（同时获得合意_接吻）
+;约会回家路上的初吻赠予（同时获得合意_接吻）（待重置）
 ;==================================================
 
 @M_KOJO_TPP_SPEVENT_MESSAGECHECK_K43_1
@@ -224,7 +227,7 @@ ENDIF
 RETURN 1
 
 ;==================================================
-;约会回家路上的告白（要求成为恋人）
+;约会回家路上的告白（要求成为恋人）（待重置）
 ;==================================================
 
 @M_KOJO_TPP_SPEVENT_MESSAGECHECK_K43_2
@@ -238,6 +241,7 @@ RETURN 0
 LOCAL = 1
 ;-------------
 IF LOCAL
+	PRINTL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -337,7 +341,6 @@ IF LOCAL
 		PRINTFORMW 「如往常一样。」
 		RETURN 1
 	ENDIF
-
 ENDIF
 RETURN 1
 
@@ -380,16 +383,14 @@ IF LOCAL
 			PRINTFORMW 「很期待与你的再次见面...%CALLNAME:MASTER%。」
 			PRINTFORMDW 说完，华扇浅笑了几下，然后独自离开了。
 		ELSEIF TALENT:思慕
-			PRINTFORML 「今天真是快乐的一天啊。」
-			PRINTFORMW 「在仙境呆久了，原来幻想乡里还有这么多美景等待去发掘呢。」
-			PRINTFORMDW 说完，华扇转过身子看了眼%CALLNAME:MASTER%。
-			PRINTFORMW 「那么，下次见了，%CALLNAME:MASTER%。」
-			PRINTFORMDW 说完这话，华扇便独自离开了。
+			PRINTFORML 「在仙境呆久了，原来幻想乡里还有这么多美景等待去发掘呢。」
+			PRINTFORMDW 说完，华扇转过身子，看了眼当了一路向导的%CALLNAME:MASTER%。
+			PRINTFORML 「那么，下次见了，%CALLNAME:MASTER%...」
+			PRINTFORMW 「如果还想出门逛逛的话，要不要考虑把我邀请上呢？」
 		ELSE
-			PRINTFORMW 「呼...偶尔从仙境中出来，四处走走，也有助于修身养性呢。」
-			PRINTFORMDW 华扇淡然看了一眼%CALLNAME:MASTER%。
-			PRINTFORMW 「期待下次见面，%CALLNAME:MASTER%。」
-			PRINTFORMDW 说完她便头也不回地走开了。
+			PRINTFORML 「呼...偶尔从仙境中出来，四处走走，也有助于修身养性呢。」
+			PRINTFORML 「那么，%CALLNAME:MASTER%，就此别过吧。我也得回去照顾那些宠物了。」
+			PRINTFORMDW 华扇说完便头也不回地走开了。
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -399,9 +400,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML	「...算了。」华扇叹了口气。
-		PRINTFORMW	「暂且原谅你...不过我不希望还有下一次。」
-		PRINTFORMDW	一贯的严肃语气...但相比一开始时的怒火旺盛，这算是被原谅了吗。
+		PRINTFORML 「...算了，过去的事情就暂时不用再提了。」
+		PRINTFORML 「但如果有下一次，我绝对不会像今天这样那么轻易地放过你。」
+		PRINTFORMDW	华扇说完这些便深呼出一口气，看起来像是放下了什么的样子...
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -410,9 +411,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML	「想要我完全回心转意，这还不够。」
-		PRINTFORMW	说罢华扇便离开了。
-		PRINTFORMDW	再努把力应该就没问题了吧，%CALLNAME:MASTER%这么想着。
+		PRINTFORML 「想要我完全回心转意，这还不够。」
+		PRINTFORMDL	说罢华扇便自己离开了。不过，她刚才的那语气里似乎也并没有那么冲了？
+		PRINTFORMDW	那么只要自己再努把力应该就能过关了吧，%CALLNAME:MASTER%这么想着。
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -421,9 +422,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORML	「...继续努力。」
-		PRINTFORMW	依旧是头也不回就走开的华扇...
-		PRINTFORMDW	不过相比于冷冰冰的华扇，这已经算是走出化冻的第一步了吧。
+		PRINTFORML 「...继续努力。」
+		PRINTFORMDL	又是这样头也不回地走开...
+		PRINTFORMDW	不过华扇离开时脸上的表情好像并没有一开始那样冷冰冰的...而且那四个字是什么意思？
 		RETURN 1
 	ENDIF
 	PRINTFORML
@@ -562,7 +563,7 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 4
 		IF CFLAG:318 == 1 || MARK:3 >= 2
 			PRINTFORML 「...」
-			PRINTFORMDW 华扇一言不发地关上了门。
+			PRINTFORMDW 华扇一言不发地将门关上，留下%CALLNAME:MASTER%一人尴尬。
 		ELSE
 			PRINTFORML 「%CALLNAME:MASTER%，你也在啊...」
 			PRINTFORMW 「啊，你还要一段时间才能忙完啊...好吧，那我先在外面等你了。」
@@ -1290,7 +1291,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 1
 	;灵梦
-		CALL KASEN_OFTE_SET(1)
+		CALL K43_OFTE_SET(1)
 		IF FLAG:潜伏
 			PRINTFORML 『...华扇，你这是在？』
 			PRINTFORMDW 灵梦一脸错愕地看着昔日威风无比的华扇被%CALLNAME:MASTER%爱抚得面色潮红。
@@ -1315,7 +1316,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 10
 	;萃香
-		CALL KASEN_OFTE_SET(10)
+		CALL K43_OFTE_SET(10)
 		IF FLAG:潜伏
 			PRINTFORML 『...诶嘿？』
 			PRINTFORMDW 萃香用饶有兴致的眼神看着正在和%CALLNAME:MASTER%交合的华扇。
@@ -1335,7 +1336,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 26
 	;紫
-		CALL KASEN_OFTE_SET(26)
+		CALL K43_OFTE_SET(26)
 		IF FLAG:潜伏
 			PRINTFORML 『阿拉阿拉。』
 			PRINTFORMDW 紫微笑着站在一旁，看着一脸尴尬的%CALLNAME:MASTER%和华扇。
@@ -1355,7 +1356,7 @@ IF LOCAL
 		RETURN 1		
 	ELSEIF ARG == 64
 	;勇仪
-		CALL KASEN_OFTE_SET(64)
+		CALL K43_OFTE_SET(64)
 		IF FLAG:潜伏
 			PRINTFORML 『这是在...干啥？』
 			PRINTFORMDW 勇仪一过来就看到华扇和%CALLNAME:MASTER%在做爱。
@@ -1381,7 +1382,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 69
 	;猯藏
-		CALL KASEN_OFTE_SET(69)
+		CALL K43_OFTE_SET(69)
 		IF FLAG:潜伏
 			PRINTFORML 『看到了珍奇无比的场面呢。』
 			PRINTFORMDW 猯藏吸了口烟，一脸得意地看着慌乱无比地遮掩身体的华扇。
@@ -1401,7 +1402,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 76
 	;小町
-		CALL KASEN_OFTE_SET(76)
+		CALL K43_OFTE_SET(76)
 		IF FLAG:潜伏
 			PRINTFORML 『哇哦。』
 			PRINTFORMDW 小町意味深长地看着与%CALLNAME:MASTER%爱爱的华扇。
@@ -1422,7 +1423,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 106
 	;堇子
-		CALL KASEN_OFTE_SET(106)
+		CALL K43_OFTE_SET(106)
 		IF FLAG:潜伏
 			PRINTFORML 『华扇酱——欸？欸欸？！』
 			PRINTFORMDW 堇子惊愕地看着和%CALLNAME:MASTER%行鱼水之欢的仙人小姐。
@@ -1442,7 +1443,7 @@ IF LOCAL
 		RETURN 1
 	ELSEIF ARG == 124
 	;摩多罗
-		CALL KASEN_OFTE_SET(124)
+		CALL K43_OFTE_SET(124)
 		IF FLAG:潜伏
 			PRINTFORML 『哇哇哇哇。...』
 			PRINTFORMDW 从后户之门里探出头的摩多罗径直撞到了华扇和%CALLNAME:MASTER%的情事。
@@ -1475,7 +1476,7 @@ IF LOCAL
 		ENDIF
 		RETURN 1
 	ENDIF
-	CALL KASEN_OFTE_SET(43)
+	CALL K43_OFTE_SET(43)
 	PRINTFORML  
 ENDIF
 RETURN 1
@@ -1723,14 +1724,14 @@ IF LOCAL
 			PRINTFORML 「...你给我过来！」
 			PRINTFORMDW %CALLNAME:MASTER%几乎是完全没反应过来发生了啥就被华扇拉到了阴暗处...
 			PRINTW
-			PRINTFORMDW 「果然得用这方式才能让你意识到事情严重性...」
-			PRINTFORMDW 一旁的空地上，下身光洁的华扇跪坐在%CALLNAME:MASTER%的大腿上，将自己的阴道和身下人的阳具相互交合。
+			PRINTFORMW 「果然得用这方式才能让你意识到事情严重性...」
+			PRINTFORMDL 一旁的空地上，下身光洁的华扇跪坐在%CALLNAME:MASTER%的大腿上，将自己的阴道和身下人的阳具相互交合。
 			PRINTFORMDW 伴着异常激烈的抽插，淫靡的水声不住地在两人的交合处渗出，而华扇本来整齐的粉色头发也不知何时散乱开来。
-			PRINTFORMDW 「你胆子还真是大...偷女孩子的内裤就算了，竟然偷的还是我的内裤...」
+			PRINTFORMDL 「你胆子还真是大...偷女孩子的内裤就算了，竟然偷的还是我的内裤...」
 			PRINTFORMDW 「你知不知道我刚才忍着下体真空和你搭话的时候到底是有多么不适应——尤其是刚才才知道原来我的内裤到了你的手上！」
-			PRINTFORMDW 「也是正好啊，这几天我一直憋闷着自己的情绪，就等着找个机会和你好好地颠鸾倒凤一顿...」
+			PRINTFORMDL 「也是正好啊，这几天我一直憋闷着自己的情绪，就等着找个机会和你好好地颠鸾倒凤一顿...」
 			PRINTFORMDW 「既然现在你自己送上门，那么就乖乖地承受我积压已久的欲求吧...呀啊！啊！啊！啊！」
-			PRINTFORMDW 语毕，华扇便加大了挪动身体的力道，用自己的秘肉拼命地抚弄%CALLNAME:MASTER%的肉竿。
+			PRINTFORMDL 语毕，华扇便加大了挪动身体的力道，用自己的秘肉拼命地抚弄%CALLNAME:MASTER%的肉竿。
 			PRINTFORMDW 华扇的一对硕大的玉兔在%CALLNAME:MASTER%的眼里跟着动作上下晃动，她的喘息声此时也似是包含着无限的情欲和快感...
 			CALL ASK_YN("（选择享受）", "（尝试主动）")
 			IF !RESULT
@@ -1757,7 +1758,9 @@ IF LOCAL
 				PRINTFORMW 「...%CALLNAME:MASTER%，我还要——呀啊！多少也轻点啊~啊~呀啊~」
 				PRINTFORMDL 本来也不需要压抑。%CALLNAME:MASTER%这么想着，一边揉弄起华扇的乳房，一边开始了在华扇阴道内的驰骋。
 				PRINTFORMDW 情爱的气氛慢慢地萦绕在二人的周围，完全不管会不会有人路过这个地方...
-				CALL K43_WOYAOSESE					
+				CALL K43_WOYAOSESE	
+				CALL 脱衣処理(TARGET, "半脱")
+				CALL 脱衣処理(MASTER, "半脱")					
 			ENDIF
 		ELSEIF TALENT:恋人 || TALENT:恋慕
 			PRINTFORMDW 而华扇的面色也愈发凝重，攥着内裤的手也愈发施力——直到最后千言万语化作嘴旁的一声叹息。
@@ -1832,7 +1835,7 @@ IF LOCAL
 			;初次逆推
 				PRINTFORMW 「呐...%CALLNAME:MASTER%...」
 				PRINTFORM 刚才还和%CALLNAME:MASTER%谈笑风生的华扇趁其不备，一把把%CALLNAME:MASTER%摁到了
-				IF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝
+				IF BEDROOM(CFLAG:MASTER:現在位置)
 					PRINTFORM 床
 				ELSE
 					PRINTFORM 地板
@@ -1859,7 +1862,7 @@ IF LOCAL
 				PRINTFORML 「现在，看啊，被欲情染红，极其有诱惑力的女体...」
 				PRINTFORMW 「还能忍住不侵犯...这不是一名修行不足的男性会做出来的事情吧？」
 				PRINTFORMDW 说着，华扇稍微调整了下坐姿，然后拉起%CALLNAME:MASTER%的一只手。
-				IF CFLAG:323 == 1
+				IF BATHCHECK(CFLAG:MASTER:現在位置)
 					PRINTFORMDL 贴在自己光滑的腰部，然后一点点上挪，直到挪到自己那丰满的乳房上。
 					PRINTFORMDW 覆住%CALLNAME:MASTER%的手，然后开始揉搓...就像%CALLNAME:MASTER%自己在揉似的。
 					PRINTFORML 「哈啊，啊，啊...」
@@ -1905,7 +1908,7 @@ IF LOCAL
 					PRINTFORMW 「呃...%CALLNAME:MASTER%的话，大概也明白——啾，唔...」
 					PRINTFORMDL 话音未落，心知肚明的%CALLNAME:MASTER%便猛地将自己的嘴唇叠在了华扇的嘴唇上。
 					PRINTFORM  随后两人相拥在一起，一边深情地热吻，一边在华扇的牵引下倒在了
-					IF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝
+					IF BEDROOM(CFLAG:MASTER:現在位置)
 						PRINTFORM 床
 					ELSE
 						PRINTFORM 地板
@@ -2375,7 +2378,7 @@ IF LOCAL
 			PRINTFORMW 「啊...总算...结束了吗...」
 			PRINTFORMDL 华扇目光略显呆滞地看着%CALLNAME:MASTER%离开自己的身体。
 			PRINTFORM 她自己则是四仰八叉地瘫在了
-			IF CFLAG:323 == 1
+			IF BATHCHECK(CFLAG:MASTER:現在位置)
 				PRINTFORM 地板上，
 			ELSE
 				PRINTFORM 床上，
@@ -3209,13 +3212,13 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 		PRINTL
-		CALL KASEN_OFTE_SET(76)
+		CALL K43_OFTE_SET(76)
 		PRINTFORML 『总感觉你这几天有些心神不宁的样子...』
-		CALL KASEN_OFTE_SET(43)
+		CALL K43_OFTE_SET(43)
 		PRINTFORMW 「我有吗？」
 		PRINTFORMDW 小町靠在华扇邸的窗户旁，看着窗户另一侧的华扇默默品味着清酒。
 		PRINTW
-		CALL KASEN_OFTE_SET(76)
+		CALL K43_OFTE_SET(76)
 		PRINTFORMW 『是因为那个人吧？』
 		PRINTFORML 『从那天开始就一直陪伴着你——游山玩水，探访美食...』
 		PRINTFORMW 『咱多少是能感觉到一点的啦，毕竟哪怕那件事之后，咱跑这里偷懒时还没撞到你如此频繁地露出微笑呢。』
@@ -3238,7 +3241,7 @@ IF LOCAL
 		PRINTFORMW 『咱是建议你趁早和%CALLNAME:MASTER%表明态度哦，不然%CALLNAME:MASTER%是真有可能被别人夺走呢。』
 		PRINTFORMW 『放心好啦，这件事四季大人是懒得管的...或者说，这也是四季大人看你表现良好，给你开的一个后门呢。』
 		PRINTW 
-		CALL KASEN_OFTE_SET(43)
+		CALL K43_OFTE_SET(43)
 		PRINTFORMDW 小町走后，华扇仔细思考着小町说的那些话。
 		PRINTFORMDL 的确，这一段时间来，%CALLNAME:MASTER%似乎有些太过靠近自己了。
 		PRINTFORMDW 而且自己还没怎么表现出厌恶感...或者说，最近几天看到%CALLNAME:MASTER%时，华扇甚至会感到有些心跳加速。
@@ -3399,12 +3402,12 @@ IF LOCAL
 				PRINTFORMDL 不知何时多了管药膏...以及一张纸条。
 				PRINTFORMDW 华扇小心翼翼地拿起纸条，然后看到上面有几行字：
 				PRINTL
-				CALL KASEN_OFTE_SET(26)
+				CALL K43_OFTE_SET(26)
 				PRINTFORML 「没想到你还真被%CALLNAME:MASTER%开发得不能自已呢。」
 				PRINTFORML 「这是我从外界得来的药膏，在去除异味上有奇效。」
 				PRINTFORMW 「放心好了，这管药膏的剂量足够，应该是能守护你的日常生活...只要别做得那么过火的话。」
 				PRINTL 
-				CALL KASEN_OFTE_SET(43)
+				CALL K43_OFTE_SET(43)
 				PRINTFORMDW 好吧，不用细猜也知道到底是谁干的...这样的话，刚才的媚态估计也被她看了遍了。
 				PRINTFORM 华扇叹了口气，拿过药膏，往手心里挤了一点，
 				IF TCVAR:43:350 == 1
@@ -4657,8 +4660,7 @@ IF LOCAL
 				ELSEIF TALENT:恋人
 					PRINTFORMDW 衣服一件件地被褪下，华扇看向%CALLNAME:MASTER%的眼神也愈发热切起来。
 					PRINTFORMDL 但%CALLNAME:MASTER%此时的心里很不爽——这该死的内衣内裤，就这么成了挡在两人中间的最后一关。
-					PRINTFORMDL 可既然是自己选的看到华扇的内衣，那么自己就不该是食言的那个——至少是现在...
-					PRINTFORMDW 不一会儿，%CALLNAME:MASTER%呼了一口气，刚想一如既往地开始前戏——
+					PRINTFORMDW 可既然是自己选的看到华扇的内衣，那么自己就不该是食言的那个——至少是现在...
 					PRINTFORMW 「呐，%CALLNAME:MASTER%...你其实也已经快要忍不住了吧？哼哼...」
 					IF FIRSTTIME("43初次脱到内衣34")
 						PRINTFORMDW 华扇说完，微笑着将手放在自己的胸罩前面——%CALLNAME:MASTER%这才发现，华扇今日的胸罩和以前的还不一样...
@@ -4668,16 +4670,16 @@ IF LOCAL
 						PRINTFORMDL %CALLNAME:MASTER%魂牵梦萦的华扇的乳房，就这样被华扇主动献到了自己的面前。
 						PRINTFORMDW 熟悉的白皙乳肉、粉嫩乳头、淡淡香气，甚至还有主人的微笑和散落的胸罩作衬托...
 						PRINTFORMDL 一瞬间，%CALLNAME:MASTER%彻底丧失理智，猛地扑上去，在华扇的乳肉上发泄起自己压抑已久的兽欲——
-						PRINTFORMDL 连揉带舔，连嘬带咬，激得身下的华扇阵阵浪叫，好一会儿才停下来。
+						PRINTFORMDL 连揉带舔，连嘬带咬，激得身下的华扇阵阵浪叫，久久不能平息。
 					ELSE
 						PRINTFORMDL 下一秒，%CALLNAME:MASTER%像是得到命令般一把抓住华扇乳罩的前段，穷尽力气将那几个扣子一把掰断。
-						PRINTFORMDL 随后便是顺从欲望的亲吻、舔舐，激得身下人浪叫连连，好一会儿才停下来。
+						PRINTFORMDL 随后便是顺从欲望的亲吻、舔舐，激得身下人浪叫连连，久久不能平息。
 					ENDIF
-					PRINTFORMDW 当然，也就在两人肆意摩擦的时候，华扇下身的内裤也已经顺着%CALLNAME:MASTER%的发泄不知去了何方...
+					PRINTFORMDL 而伴随着两人如鳗鱼般相互纠缠，华扇身下的最后一层布料不知何时也已消失不见...
 					EQUIP:TARGET:上半身内衣１ = 0
-					EQUIP:TARGET:上半身内衣２ = 0
+					EQUIP:TARGET:上半身内衣２ = 0	
 					EQUIP:TARGET:下半身内衣１ = 0
-					EQUIP:TARGET:下半身内衣２ = 0		
+					EQUIP:TARGET:下半身内衣２ = 0							
 				ELSEIF TALENT:恋慕
 					PRINTFORMDL 很快，从上到下，除了内衣内裤，华扇的身上已经是不着片缕。脱下的衣服也被肆意地扔在地上。
 					PRINTFORMW 「对我的衣服这么熟悉了呢，%CALLNAME:MASTER%...嗯~」
@@ -6120,7 +6122,7 @@ IF LOCAL:1
 		;   -1=失敗
 		;    0=成功
 		;    1=大成功
-		;    2=木刀で大成功（BONUS点）
+		;    2=木刀で大成功（ボーナス点）
 		;ARG
 		;    0=正直者
 		;    1=说谎者
