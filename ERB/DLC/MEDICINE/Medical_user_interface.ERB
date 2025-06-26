@@ -1,91 +1,91 @@
-﻿@Madical_user_interface
-WHILE 1
-	CALL Madical_interface_top
-	CALL Medical_Assistant
-	CALL Assistant_Massage
-
+﻿@COM452
+TFLAG:102=0
+CALL MedUI
+CALL MAssi
+CALL DiaAssi
 PRINTFORML [1] 开始营业    [2] 素材兑换    [3] 货币兑换    [0] 离开
 INPUT
-
-SIF RESULT == 0
-	RETURN
-CALL Main_menu(RESULT)
-WEND
-
-
-@Madical_interface_top
+SELECTCASE RESULT
+	CASE 0
+		RETURN
+	CASE 1
+		CALL PreMEv
+	CASE 2
+		CALL ItemToEP
+	CASE 3
+		CALL MoneyToEP
+ENDSELECT
+RESTART
+@COM_ABLE452
+SIF IFDr&&CFLAG:MASTER:現在位置==CFLAG:MASTER:初期位置&&TFLAG:100&&CFLAG:诶嘿嘿!=2
+	RETURN 1
+RETURN 0
+@MedUI
 ;时间
 CALL INFO_CLOCK_IMAGE(TIME)
 CALL INFO_TIME_WATCH
 ;天气
 CALL INFO_SHOW_WEATHER
 PRINTL
-PRINTFORML 医生：%CALLNAME:0%    所持金:%金額表示(MONEY)%    名望: {POPULARITY, 4, RIGHT}/ 1000    仁义: {BENEVOLENCE, 4, RIGHT}/ 1000    永琳点数(EP): {EIRIN_POINT}
+PRINTFORML 医生：%CALLNAME:0%    所持金:%金額表示(MONEY)%    名望: {POPULARITY, 4, RIGHT}/ 999    仁义: {BENEVOLENCE, 4, RIGHT}/ 999    永琳点数(EP): {EIRIN_POINT}
 ;医生状态
 CALL BASE_BAR(MASTER, "TSP", 30, "水色", "「無種類表記」")
 CALL BASE_BAR_2(MASTER, "体力", "体", 10, "緑")
 CALL BASE_BAR_2(MASTER, "気力", "気", 10, "青")
 CALL BASE_BAR_2(MASTER, "精力", "精", 10, "黄")
+CALL INFO_SITUATION
 PRINTL
-
-@Patient_Information
-CALL 画像表示(@"顔絵_服_通常_{M_C_ID}", "LEFT", 0, 0, 100)
+@PtMInfo(ARGS,ARGS:1)
+PRINTFORML %ARGS, 23% %ARGS:1%
+PRINTL
+@MIDInfo
+CALL 画像表示(@"顔絵_服_通常_{mCID}", "LEFT", 0, 0, 100)
 CALL 画像描画終了
-PRINTFORML %LOCALS, 23% 患者：%CALLNAME:M_C_ID%    好感：{CFLAG:M_C_ID:2}    信赖：{CFLAG:M_C_ID:4}
-PRINTL
-PRINTFORML %LOCALS, 23% 症状：【%STR:(BASE:M_C_ID:症状类型)%】
-PRINTL
+CALL PtMInfo(LOCALS,@"患者：%CALLNAME:mCID%    好感：{CFLAG:mCID:2}    信赖：{CFLAG:mCID:4}")
+CALL PtMInfo(LOCALS,@"症状：【%STR:(BASE:mCID:症状类型)%】")
 ;如果完成诊断，输出疾病详细数据。
-IF BASE:M_C_ID:诊断完成 >= 1
+IF BASE:mCID:诊断完成
 	PRINTFORM %LOCALS, 23% 病症残余：
-	CALL Print_Bar(BASE:M_C_ID:病症残余,BASE:M_C_ID:病症大小, 25, "RED") 
-	PRINTFORML （{BASE:M_C_ID:病症残余, 4, RIGHT} / {BASE:M_C_ID:病症大小}）
+	CALL Print_Bar(BASE:mCID:病症残余,BASE:mCID:病症大小, 25, "RED")
+	PRINTFORML （{BASE:mCID:病症残余, 4, RIGHT} / {BASE:mCID:病症大小}）
 	PRINTL
-	PRINTFORML %LOCALS, 23% 疾病防御：{BASE:M_C_ID:疾病防御}
-	PRINTL
-	PRINTFORML %LOCALS, 23% 患者体力：{BASE:M_C_ID:患者体力}
-	PRINTL
+	CALL PtMInfo(LOCALS,@"疾病防御：{BASE:mCID:疾病防御}")
+	CALL PtMInfo(LOCALS,@"患者体力：{BASE:mCID:患者体力}")
 	PRINTL
 	FOR LOCAL, 50, 86
-		SIF BASE:M_C_ID:LOCAL > 0
-			PRINTFORM %STR:(LOCAL + 19500)%：{BASE:M_C_ID:LOCAL, 4, LEFT}
+		SIF BASE:mCID:LOCAL > 0
+			PRINTFORM %STR:(LOCAL + 19500)%：{BASE:mCID:LOCAL, 3, RIGHT}  
 	NEXT
 	PRINTL
 	DRAWLINE
 	;PRINTL
 ;否则就输出白板。
 ELSE
-	PRINTFORML %LOCALS, 23% 病症残余：？？？
-	PRINTL
-	PRINTFORML %LOCALS, 23% 疾病防御：？？？    
-	PRINTL
-	PRINTFORML %LOCALS, 23% 患者体力：？？？
-	PRINTL
+	CALL PtMInfo(LOCALS,@"病症残余：？？？")
+	CALL PtMInfo(LOCALS,@"疾病防御：？？？")
+	CALL PtMInfo(LOCALS,@"患者体力：？？？")
 	PRINTL
 	DRAWLINE
 	;PRINTL
 ENDIF
-
-
-@Medical_Assistant(ARG)
-
-IF ARG == 1
-	LOCALS = 笑顔
-ELSEIF ARG == 2
-	LOCALS = 憤怒
-ELSE
-	LOCALS = 通常
-ENDIF
-
-CALL 画像表示(@"立絵_服_%LOCALS%_MOB_因幡_1", "LEFT", 0, 0, 105)
+@MAssi(ARG)
+#DIMS Emot,3 ="通常","笑顔","憤怒"
+SIF !INRANGE(ARG,0,2)
+	ARG=0
+;IF ARG == 1
+;	LOCALS = 笑顔
+;ELSEIF ARG == 2
+;	LOCALS = 憤怒
+;ELSE
+;	LOCALS = 通常
+;ENDIF
+CALL 画像表示(@"立絵_服_%Emot:ARG%_MOB_因幡_1", "LEFT", 0, 0, 105)
 CALL 画像描画終了
-
 FOR LOCAL, 0 ,11
 	PRINTFORML %LOCALS:1, 23%
 NEXT
-
-@Assistant_Massage
-SELECTCASE RAND:4 
+@DiaAssi
+SELECTCASE RAND:4
 	CASE 0
 		CALL Message_Box_mk2(@"%CALLNAME:0%接下来准备做什么呢？", "PINK", 20)
 	CASE 1
@@ -97,55 +97,27 @@ SELECTCASE RAND:4
 		PRINTL [0] 太贵了！
 		TINPUT 1500, -2, 0
 		CLEARLINE 3
-			SIF RESULT == 0
-				CALL Message_Box_mk2("嘛，总得给我们一些辛苦费吧，山上的妖怪很可怕的！", "PINK", 20)
+		SIF !RESULT
+			CALL Message_Box_mk2("嘛，总得给我们一些辛苦费吧，山上的妖怪很可怕的！", "PINK", 20)
 ENDSELECT
-
-
-@Main_menu(ARG)
-
-SELECTCASE ARG
-	CASE 1
-		CALL Medicine_Event
-	CASE 2
-		CALL Eirin_Point_Exchange
-	CASE 3
-		CALL Eirin_Point_Exchange_For_Money
-	CASE 4
-		SOURCE:1:歓楽 += 100
-		SOURCE:1:征服 += 200
-		SOURCE:1:受動 += 300
-		
-ENDSELECT
-
-
 @Message_Box(ARGS, ARGS:1, ARGS:2)
 #DIMS Border = "━"
-
 PRINTL
 PRINTFORML ┏%Border * 30%┓
-
 STRLENFORM %ARGS%
-SIF RESULT != 0
+SIF RESULT
 PRINTFORML ┃%ARGS, 60, LEFT%┃
-
 STRLENFORM %ARGS:1%
-SIF RESULT != 0
+SIF RESULT
 PRINTFORML ┃%ARGS:1, 60, LEFT%┃
-
 STRLENFORM %ARGS:2%
-SIF RESULT != 0
+SIF RESULT
 PRINTFORML ┃%ARGS:2, 60, LEFT%┃
-
 PRINTFORML ┗%Border * 30%┛
-
-
 @Message_Box_mk2(ARGS, ARGS:1, ARG)
-
 CALL Color_Palette(ARGS:1)
 SIF Color_Palette > 0
 	SETCOLOR Color_Palette
-
 STRLENFORM %ARGS%
 ;一个字符都没有的直接结束函数，没有填写显示速度的，直接打印。
 IF RESULT == 0
@@ -156,7 +128,6 @@ ELSEIF	ARG <= 0
 	RESETCOLOR
 	RETURN
 ENDIF
-	
 FOR LOCAL, 0, (RESULT + 1)
 	SIF LOCAL != 0
 		CLEARLINE 1
@@ -165,19 +136,13 @@ FOR LOCAL, 0, (RESULT + 1)
 	;TWAIT ARG, 1
 NEXT
 RESETCOLOR
-
 ;基础值，最大值，长度，颜色
 @Print_Bar(ARG, ARG:1, ARG:2, ARGS)
-#DIM Percentage
-#DIM Total
-Total = 0
-
-CALL Color_Palette(ARGS)
-Percentage = ARG:1 / ARG:2
-
-FOR LOCAL ,0 , ARG:2
+#DIM DYNAMIC Total
+FOR LOCAL,0,ARG:2
 	IF Total < ARG
-		Total += Percentage
+		Total += ARG:1 / ARG:2
+		CALL Color_Palette(ARGS)
 		SETCOLOR Color_Palette
 		PRINT ▅
 	ELSE
@@ -186,11 +151,8 @@ FOR LOCAL ,0 , ARG:2
 	ENDIF
 NEXT
 RESETCOLOR
-
-
 ;调色盘，自用颜色输出函数。
 @Color_Palette(ARGS)
-
 SELECTCASE ARGS
 	CASE "PINK", "桃"
 		Color_Palette = 0xFFCCFF
@@ -200,5 +162,3 @@ SELECTCASE ARGS
 	CASEELSE
 		Color_Palette = 0
 ENDSELECT
-
-

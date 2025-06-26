@@ -1,172 +1,208 @@
 ﻿;医疗事件
-@Medicine_Event
-
+@PreMEv
+#LOCALSIZE 2
 ;今日患者总人数
 #DIM DYNAMIC MAX_PATIENTS
-
-IF EIRIN_POINT <= 0
+VARSET LOCAL
+CALL MAble
+SIF !RESULT
+	RETURN
+SIF !SurvDr
+	POPULARITY=LIMIT(POPULARITY,-499,999)
+;基础随机1~3个人+名望奖励随机人数
+MAX_PATIENTS = RAND:3 + 1 + RAND:(PopBonus(POPULARITY)+1)
+;PRINTFORML 今天来了{MAX_PATIENTS}位患者的样子。
+CALL Message_Box(@"今天来了{MAX_PATIENTS}位预约患者的样子。")
+PRINTL
+CALL MEv(MAX_PATIENTS)
+@MAble
+RESULT=0
+IF EIRIN_POINT < 2500
 	CALL Message_Box_mk2("药品不足没法正常开业的哦！", "PINK", 20)
 	PRINTW 请兑换足额的EP点数...
-	RETURN
-;ELSEIF OPEN_TODAY 
-;	CALL Message_Box_mk2(@"%CALLNAME:0%，患者们已经离开了。", "PINK", 20)
-;	PRINTW 今天已经营业过了...
-;	RETURN
+ELSEIF !SurvDr&&OPEN_TODAY
+	CALL Message_Box_mk2(@"%CALLNAME:0%，患者们已经离开了。", "PINK", 20)
+	PRINTW 今天已经营业过了...
+ELSEIF BASE:0:0<500||BASE:0:1<500
+	CALL Message_Box_mk2(@"%CALLNAME:0%，太累可没法治病哦！", "PINK", 20)
+	WAIT
 ELSE
 	;PRINTL 要开始今天的营业吗？一天只能开业一次哦！
-	CALL Message_Box_mk2("要开始今天的营业吗？一天只能开业一次哦！", "PINK", 20)
+	IF !SurvDr
+		CALL Message_Box_mk2("要开始今天的营业吗？一天只能开业一次哦！", "PINK", 20)
+	ELSE
+		CALL Message_Box_mk2("要开始今天的营业吗？没接诊完预约患者就下班会被投诉哦！", "PINK", 20)
+	ENDIF
 	PRINTL
 	PRINTL [1]是    [0]否
 	INPUT
-
 	SIF RESULT != 1
-		RETURN
-	OPEN_TODAY = 1
+		RETURN 0
+	OPEN_TODAY=1
+	RESULT=1
 ENDIF
-
-;--------------------------------------------
-POPULARITY=LIMIT(POPULARITY,-500,1000)
-;基础随机1~3个人+名望奖励随机人数
-MAX_PATIENTS = (RAND:3 + 1) + RAND:(1 + POPULARITY_BONUS(POPULARITY))
-;PRINTFORML 今天来了{MAX_PATIENTS}位患者的样子。
-CALL Message_Box(@"今天来了{MAX_PATIENTS}位患者的样子。")
-
-PRINTL
-
-$MEDICINE_EVENT_RESTART
-
+RETURN RESULT
+@MEv(MAX_PATIENTS)
+;今日患者总人数
+#DIM DYNAMIC MAX_PATIENTS
 ;每次生成患者，最大患者数-1。
-IF MAX_PATIENTS <= 0
+IF !SurvDr&&MAX_PATIENTS <= 0
 	;PRINTL 没有更多患者了，今天营业结束。
 	CALL Message_Box("没有更多患者了，今天营业结束。")
 	PRINTL
 	RETURN
 ENDIF
-
-CALL Generate_Patient
-
+CALL RDis
+SIF !mCID
+	mCID=RAND:(CHARANUM-2)+1
 ;随机生成病症，如果旧病没有治好就跳过并恢复体力。
-IF BASE:M_C_ID:患病 <= 0 && BASE:M_C_ID:今日问诊 <= 0 && BASE:M_C_ID:近期问诊 <= 0
-	BASE:M_C_ID:症状类型 = RAND:70 + 19000
-	BASE:M_C_ID:患者体力 = RAND:1001 + 200
-	BASE:M_C_ID:病症大小 = (RAND:15 + 1) * 100
-	BASE:M_C_ID:病症残余 = BASE:M_C_ID:病症大小
-	BASE:M_C_ID:疾病防御 = (RAND:7 + 1) * 25
-	BASE:M_C_ID:医疗费 = ((BASE:M_C_ID:病症大小 * 10) + 2000 + (RAND:1001))
+IF BASE:mCID:患病<=0&&!BASE:mCID:今日问诊&&!BASE:mCID:近期问诊
+	BASE:mCID:症状类型 = RAND:70 + 19000
+	;无尽补正
+	BASE:mCID:病症大小 = (RAND:(15+PopBonus(POPULARITY)*SurvDr) + 1) * 100
+	BASE:mCID:患者体力 = RAND:1001-BASE:mCID:病症大小/10
+	BASE:mCID:病症残余 = BASE:mCID:病症大小
+	BASE:mCID:疾病防御 = (RAND:7 + 1) * 25
+	BASE:mCID:医疗费 = BASE:mCID:病症大小 * 10 + 2000 + RAND:1001
 	;依据病症难度进行适当奖励修正
-	SIF BASE:M_C_ID:病症大小 >= 1200
-		BASE:M_C_ID:医疗费 += 3000
-	SIF BASE:M_C_ID:疾病防御 >= 150
-		BASE:M_C_ID:医疗费 += 3000
-	SIF BASE:M_C_ID:患者体力 <= 300
-		BASE:M_C_ID:医疗费 += 1000
-	
+	SIF BASE:mCID:病症大小 >= 1200;12~15->3000~7000
+		BASE:mCID:医疗费 += 3000+RAND:(1+(BASE:mCID:病症大小-1100)/100)*100
+	SIF BASE:mCID:疾病防御 >= 150;150~175->3000~5000
+		BASE:mCID:医疗费 += 3000+RAND:(1+(BASE:mCID:疾病防御-125)/25)*100
+	SIF BASE:mCID:患者体力 <= 300;-200~300->1000~11000
+		BASE:mCID:医疗费 += 1000+RAND:(1+(300-BASE:mCID:患者体力)/5)*100
 	;生成疾病详细数据
-	CALL DISEASE_TYPE(M_C_ID)
-	
+	CALL DISEASE_TYPE(mCID)
 	;记录本次治疗前的疾病大小用于结算费用。
-	Disease_History = BASE:M_C_ID:病症残余
-	
+	DHis = BASE:mCID:病症残余
 	;添加患者添加患病随机数和今日问诊次数
-	BASE:M_C_ID:患病 = RAND:16 + 15
-	BASE:M_C_ID:今日问诊 ++
-	
-	;放行，最大患者数量-1，明日再来复位
-	MAX_PATIENTS --
-	BASE:LOCAL:明日再来 = 0
-	
-	PRINTFORML 患者%CALLNAME:M_C_ID%进来了...
-	PRINTW
-ELSEIF BASE:M_C_ID:患病 >= 1 && BASE:M_C_ID:今日问诊 <= 0 && BASE:M_C_ID:近期问诊 <= 0
+	BASE:mCID:患病 = RAND:16 + 15
+	BASE:mCID:今日问诊 ++
+	BASE:mCID:明日再来 = 0
+	IF BASE:mCID:患者体力 > 0
+		PRINTFORML 患者%CALLNAME:mCID%进来了...
+		;放行，最大患者数量-1
+		MAX_PATIENTS --
+		PRINTW
+	ELSE
+		PRINTFORML 紧急情况！患者%CALLNAME:mCID%被担架抬进来了！
+		;急诊不占预约
+		PRINTW
+		CALL PATIENT_COMA
+		SIF RESULT==-1
+			RESTART
+	ENDIF
+ELSEIF BASE:mCID:患病>0 && !BASE:mCID:今日问诊 && !BASE:mCID:近期问诊
 	;记录本次治疗前的疾病大小用于结算费用。
-	Disease_History = BASE:M_C_ID:病症残余
+	DHis = BASE:mCID:病症残余
 	;为患者恢复体力，并添今日问诊次数
-	BASE:M_C_ID:患者体力 += RAND:1001 + 200
-	BASE:M_C_ID:今日问诊 ++
-
+	BASE:mCID:患者体力 += RAND:1001 + 200
+	BASE:mCID:今日问诊 ++
 	;放行，最大患者数量-1，明日再来复位
 	MAX_PATIENTS --
-	BASE:LOCAL:明日再来 = 0
-	
-	PRINTFORML %CALLNAME:M_C_ID%又回来接受治疗了...
+	BASE:mCID:明日再来 = 0
+	PRINTFORML %CALLNAME:mCID%又回来接受治疗了...
 	PRINTW
 ELSE
 	;终极兜底，防止循环卡死，平时无视。
-	LOCAL:1 ++
-	SIF LOCAL:1 <= 1000
-		GOTO MEDICINE_EVENT_RESTART
+	LOCAL:1=!LOCAL:1
+	SIF LOCAL:1
+		RESTART
 	PRINTL
 	PRINTW 奇怪，人呢？总之今天没有更多病人了，营业结束。
 	RETURN
 ENDIF
-
 WHILE 1
 	;首先打印出病人信息
-	CALL Madical_interface_top
-	CALL Patient_Information
-	
+	CALL MedUI
+	CALL MIDInfo
 	PRINTL
 	PRINTL 请选择要执行的项目。
+	SIF BASE:mCID:诊断完成||BASE:0:1<500||BASE:0:0<500
+		SETCOLOR C_GRAY
 	PRINT [1]进行诊断
+	RESETCOLOR
 	PRINT_SPACE 100
+	SIF EIRIN_POINT<=2500||BASE:0:1<500||BASE:0:0<500
+		SETCOLOR C_GRAY
 	PRINT [2]开始治疗
+	RESETCOLOR
 	PRINT_SPACE 100
 	PRINT [3]劝离
 	PRINT_SPACE 100
+	SIF MAX_PATIENTS+1>0
+		SETCOLOR C_GRAY
+	SIF MAX_PATIENTS+1<=0&&SurvDr
+		SETCOLOR C_GREEN
 	PRINT [0]终止营业
+	RESETCOLOR
 	INPUT
-	
-	IF RESULT == 1
-		IF BASE:M_C_ID:诊断完成 != 1
-			PRINTW 开始进行诊断。
-			BASE:M_C_ID:诊断完成 = 1
-			;添加诊断耗时
-			TIME += 10
-		ELSE
+	IF GROUPMATCH(RESULT,1,2)&&(BASE:0:1<500||BASE:0:0<500)
+		CALL IFTire
+		CONTINUE
+	ELSEIF RESULT == 1
+		IF BASE:mCID:诊断完成
 			PRINTW 已经诊断过了。
+		ELSE
+			PRINTW 开始进行诊断。
+			BASE:mCID:诊断完成 = 1
+			;添加诊断耗时
+			CALL TPas
 		ENDIF
 	ELSEIF RESULT == 2
+		IF EIRIN_POINT<600
+			PRINTFORMW EP不足
+			CONTINUE
+		ENDIF
+		;重置药品使用次数
+		VARSET TFLAG, 0, 951,958
 		CALL DRUG_MENU
-		IF BASE:M_C_ID:病症残余 <= 0
+		IF BASE:mCID:病症残余 <= 0
 			PRINTL 闪~闪~发~光~！
 			PRINTL
-			PRINTFORML %CALLNAME:M_C_ID%康复了！！！
+			PRINTFORML %CALLNAME:mCID%康复了！！！
 			CALL MEDICAL_BILLS
 			;患者康复，重置疾病数据，保留问诊和住院数据用于其它结算。
-			VARSET BASE:M_C_ID:40, 0, 40, 86
+			VARSET BASE:mCID:40, 0, 40, 86
 			;给康复的患者生成0~5天随机问诊间隔
-			BASE:M_C_ID:近期问诊 = RAND:6
+			BASE:mCID:近期问诊 = RAND:6
 			PRINTW
-			GOTO MEDICINE_EVENT_RESTART
+			RESTART
 		ELSE
 			CALL MEDICAL_BILLS
-			GOTO MEDICINE_EVENT_RESTART
+			RESTART
 		ENDIF
 	ELSEIF RESULT == 3
 		PRINTL
-		;PRINTFORML 确定要让%CALLNAME:M_C_ID%离开吗？这样会导致名望下降哦。
-		CALL Message_Box_mk2(@"确定要让%CALLNAME:M_C_ID%离开吗？这样会导致名望下降哦。", "PINK", 20)
+		;PRINTFORML 确定要让%CALLNAME:mCID%离开吗？这样会导致名望下降哦。
+		CALL Message_Box_mk2(@"确定要让%CALLNAME:mCID%离开吗？这样会导致名望下降哦。", "PINK", 20)
 		PRINTL
 		PRINTL [1]是    [0]否
 		INPUT
-		IF RESULT == 1
-			PRINTFORML %CALLNAME:M_C_ID%走了。
-			PRINTL
-			LOCAL = RAND:5 + 1
-			PRINTFORML %CALLNAME:0% 名望 - {LOCAL}
-			PRINTW
-			POPULARITY -= LOCAL
-			;添加劝离耗时
-			TIME += 10
-			GOTO MEDICINE_EVENT_RESTART
-		ENDIF
+		SIF RESULT != 1
+			CONTINUE
+		PRINTFORML %CALLNAME:mCID%走了。
+		PRINTL
+		LOCAL = RAND:5 + 1
+		PRINTFORML %CALLNAME:0% 名望 - {LOCAL}
+		PRINTW
+		POPULARITY -= LOCAL
+		;添加劝离耗时
+		CALL TPas
+		RESTART
 	ELSE
 		;PRINTFORML 还有{MAX_PATIENTS + 1}位患者等待治疗呢，确定要终止营业吗？这样会导致名望下降哦。
-		CALL Message_Box_mk2(@"还有{MAX_PATIENTS + 1}位患者等待治疗呢，确定要终止营业吗？这样会导致名望下降哦", "PINK", 20)
+		IF MAX_PATIENTS+1>0
+			CALL Message_Box_mk2(@"还有{MAX_PATIENTS + 1}位患者等待治疗呢，确定要终止营业吗？这样会导致名望下降哦", "PINK", 20)
+		ELSEIF SurvDr
+			CALL Message_Box_mk2(@"今天预约治疗的患者已经就诊完毕，确定要不顾新来的患者终止营业吗？", "PINK", 20)
+		ENDIF
 		PRINTL
 		PRINTL [1]是    [0]否
 		INPUT
-		IF RESULT == 1
+		IF RESULT==1
+			SIF MAX_PATIENTS+1<=0
+				RETURN
 			LOCAL = (RAND:5 + 1) * (MAX_PATIENTS + 1)
 			PRINTFORML %CALLNAME:0% 名望 - {LOCAL}
 			PRINTW
@@ -174,24 +210,32 @@ WHILE 1
 		ENDIF
 	ENDIF
 WEND
-
-
-;生成患者
-@Generate_Patient
-;检查所有角色的明日再来标志，并赋值跳出循环，如果都没有，就随机生成患者。
-FOR LOCAL, 1, CHARANUM
-	IF BASE:LOCAL:明日再来 == 1 && BASE:LOCAL:今日问诊 <= 0 && BASE:LOCAL:近期问诊 <= 0
-		M_C_ID = LOCAL
+;生成患者,RandomDiseaseSufferer
+@RDis
+#LOCALSIZE 3
+;检查所有角色的明日再来标志，并赋值跳出循环，如果都没有，就随机生成患者；随机10次失败则遍历。
+FOR LOCAL,1,CHARANUM-1
+	SIF BASE:LOCAL:今日问诊>0||BASE:LOCAL:近期问诊>0||!LOCAL:1
+		CONTINUE
+	IF BASE:LOCAL:明日再来
+		mCID=LOCAL
 		RETURN
-	ELSEIF CHARANUM >= LOCAL
-		M_C_ID = RAND:(CHARANUM - 2) + 1
+	ELSEIF LOCAL:1
+		FOR LOCAL:2,0,10
+			RESULT=RAND:(CHARANUM-2)+1
+			SIF BASE:RESULT:今日问诊||BASE:RESULT:近期问诊
+				CONTINUE
+			mCID=RESULT
+			RETURN
+		NEXT
 	ENDIF
+	mCID=LOCAL
 NEXT
-
+LOCAL:1=!LOCAL:1
+SIF LOCAL:1
+	RESTART
 ;依据名望多寡获得问诊人数奖励。
-@POPULARITY_BONUS(ARG)
+@PopBonus(ARG)
 #FUNCTION
-LOCAL=0
-SIF ARG>=100
-	LOCAL=ARG/100+1-ARG/1000
-RETURNF LOCAL
+RESULT=(ARG>=100)*(ARG/100+1)
+RETURNF RESULT
