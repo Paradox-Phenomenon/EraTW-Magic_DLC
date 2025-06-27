@@ -1,173 +1,146 @@
 ﻿;射精確定後の処理
-@EJAC_CHECK_AFTER(角色登録番号)
-#DIM 角色登録番号
+@EJAC_CHECK_AFTER(ARG)
 #DIM 射精回数
 #DIM 過剰射精
 
 VARSET 射精回数
 VARSET 過剰射精
-;角色登録番号 射精する人
-IF !TCVAR:角色登録番号:要去了
-	IF BASE:角色登録番号:射精 > MAXBASE:角色登録番号:射精
-		IF BASE:角色登録番号:勃起 < 1000
-			BASE:角色登録番号:射精 = MAXBASE:角色登録番号:射精 - 1
+;ARG 射精する人
+IF !TCVAR:ARG:要去了
+	IF BASE:ARG:射精 > MAXBASE:ARG:射精
+		IF BASE:ARG:勃起 < 1000
+			BASE:ARG:射精 = MAXBASE:ARG:射精 - 1
 		ELSE
-			TCVAR:角色登録番号:要去了 = 1
+			TCVAR:ARG:要去了 = 1
 		ENDIF
 	ENDIF
 	RETURN 0
-ELSEIF TEQUIP:角色登録番号:挑逗モード && 角色登録番号 != MASTER
-	TCVAR:角色登録番号:挑逗回数 += 2
+ELSEIF TEQUIP:ARG:挑逗モード && ARG != MASTER
+	TCVAR:ARG:挑逗回数 += 2
 	RETURN 0
 ENDIF
 
 ;射精(絶頂)回数
-射精回数 = MIN(BASE:角色登録番号:射精 / MAXBASE:角色登録番号:射精, (100 + BASE:角色登録番号:精力) / 100)
+射精回数 = MIN(BASE:ARG:射精 / MAXBASE:ARG:射精, (100 + BASE:ARG:精力) / 100)
 
-
-
-
-NOWEX:角色登録番号:射精量 = BASE:角色登録番号:射精 * 10 / (ABL:角色登録番号:Ｃ感覚 / 2 + 10) / 100
+NOWEX:ARG:射精量 = BASE:ARG:射精 * 10 / (ABL:ARG:Ｃ感覚 / 2 + 10) / 100
 IF SHOOTINGSTAR == 0
-	NOWEX:角色登録番号:射精量 = NOWEX:角色登録番号:射精量 * 10 / (ABL:角色登録番号:Ｃ感覚 / 2 + 10)
+	NOWEX:ARG:射精量 = NOWEX:ARG:射精量 * 10 / (ABL:ARG:Ｃ感覚 / 2 + 10)
 ELSE
-	NOWEX:角色登録番号:射精量 = NOWEX:角色登録番号:射精量 * 10 / (ABL:角色登録番号:Ｃ感覚 / 2 + 10) * SHOOTINGSTAR_NUM
+	NOWEX:ARG:射精量 = NOWEX:ARG:射精量 * 10 / (ABL:ARG:Ｃ感覚 / 2 + 10) * SHOOTINGSTAR_NUM
 ENDIF
 
-IF NOWEX:角色登録番号:射精量 > BASE:角色登録番号:精力
-	過剰射精 = NOWEX:角色登録番号:射精量 - BASE:角色登録番号:精力
+IF NOWEX:ARG:射精量 > BASE:ARG:精力
+	過剰射精 = NOWEX:ARG:射精量 - BASE:ARG:精力
 ENDIF
 
 IF 過剰射精
 	IF TFLAG:劇毒身軀
-		DOWNBASE:角色登録番号:体力 += 過剰射精 * 1
+		DOWNBASE:ARG:体力 += 過剰射精 * 1
 	ELSE
-		DOWNBASE:角色登録番号:体力 += 過剰射精 * 1 / 2
+		DOWNBASE:ARG:体力 += 過剰射精 * 1 / 2
 	ENDIF
 ENDIF
 
-BASE:角色登録番号:精力 = MAX(0, BASE:角色登録番号:精力 - NOWEX:角色登録番号:射精量)
-TCVAR:角色登録番号:要去了 = 0
-STAIN:角色登録番号:Ｐ |= 4
+BASE:ARG:精力 = MAX(0, BASE:ARG:精力 - NOWEX:ARG:射精量)
+TCVAR:ARG:要去了 = 0
+STAIN:ARG:Ｐ |= 4
 
 ;魔改射精后增加属性上限
-IF DEVELOPMENT == 1
-	BASE:角色登録番号:体力 += 200
-	BASE:角色登録番号:気力 += 200
-	MAXBASE:角色登録番号:体力 += HEALTH_DEVELOP
-	MAXBASE:角色登録番号:気力 += STAIN_DEVELOP
-	MAXBASE:角色登録番号:精力 += SPERM_DEVELOP
-	SIF MAXBASE:MASTER:TSP >= 6666
-			MAXBASE:MASTER:TSP += TSP_DEVELOP
-ELSEIF DEVELOPMENT == 2 && 角色登録番号 == MASTER
-	BASE:角色登録番号:体力 += 200
-	BASE:角色登録番号:気力 += 200
-	MAXBASE:角色登録番号:体力 += HEALTH_DEVELOP
-	MAXBASE:角色登録番号:気力 += STAIN_DEVELOP
-	MAXBASE:角色登録番号:精力 += SPERM_DEVELOP
-	SIF MAXBASE:MASTER:TSP >= 6666
-			MAXBASE:MASTER:TSP += TSP_DEVELOP
-ENDIF
+SIF BUp:9
+	CALL EjBUp(ARG)
 
 ;BASEの処理
-BASE:角色登録番号:射精 = 0
+BASE:ARG:射精 = 0
 
-CSTR:角色登録番号:射精後処理用 = %CSTR:角色登録番号:射精判定用%
-TCVAR:角色登録番号:已射精部位FLAG = TCVAR:角色登録番号:射精部位
+CSTR:ARG:射精後処理用 = %CSTR:ARG:射精判定用%
+TCVAR:ARG:已射精部位FLAG = TCVAR:ARG:射精部位
 
 ;異常経験、射精経験、精液経験
 ;女性器がある場合？
-SIF !EXP:角色登録番号:射精経験 && TALENT:角色登録番号:性別 & 1
-	EXP:角色登録番号:異常経験 += 1
+SIF !EXP:ARG:射精経験 && TALENT:ARG:性別 & 1
+	EXP:ARG:異常経験 += 1
 
-EXP:角色登録番号:絶頂経験 ++ 
-EXP:角色登録番号:射精経験 += 射精回数
+EXP:ARG:絶頂経験 ++ 
+EXP:ARG:射精経験 += 射精回数
 
-NOWEX:角色登録番号:射精 += 射精回数
-EX:角色登録番号:射精 += 射精回数
-TCVAR:角色登録番号:挑逗回数 = 0
-TEQUIP:角色登録番号:挑逗モード = 0
-SIF AT_HOME(角色登録番号)
-	YOGORE:(CFLAG:角色登録番号:現在位置) += 射精回数 * 50
+NOWEX:ARG:射精 += 射精回数
+EX:ARG:射精 += 射精回数
+TCVAR:ARG:挑逗回数 = 0
+TEQUIP:ARG:挑逗モード = 0
+SIF AT_HOME(ARG)
+	YOGORE:(CFLAG:ARG:現在位置) += 射精回数 * 50
 
 IF TFLAG:劇毒身軀
-	DOWNBASE:角色登録番号:体力 += LIMIT(NOWEX:角色登録番号:射精量 / 4, 30, 300)
-	DOWNBASE:角色登録番号:気力 += LIMIT(NOWEX:角色登録番号:射精量 / 2, 40, 400)
+	DOWNBASE:ARG:体力 += LIMIT(NOWEX:ARG:射精量 / 4, 30, 300)
+	DOWNBASE:ARG:気力 += LIMIT(NOWEX:ARG:射精量 / 2, 40, 400)
 ELSE
-	DOWNBASE:角色登録番号:体力 += LIMIT(NOWEX:角色登録番号:射精量 / 8, 10, 100)
-	DOWNBASE:角色登録番号:気力 += LIMIT(NOWEX:角色登録番号:射精量 / 4, 20, 200)
+	DOWNBASE:ARG:体力 += LIMIT(NOWEX:ARG:射精量 / 8, 10, 100)
+	DOWNBASE:ARG:気力 += LIMIT(NOWEX:ARG:射精量 / 4, 20, 200)
 ENDIF
 
 ;MASTERでなければBASEやSOURCE等の処理を入れる
-SIF 角色登録番号 == MASTER
+SIF ARG == MASTER
 	RETURN 0
 
-IF EXP:角色登録番号:射精経験 < EXPLV:1
-	SOURCE:角色登録番号:露出 += 5000 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 2500 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:不潔 += 200 * (射精回数 + 1) / 2
-ELSEIF EXP:角色登録番号:射精経験 < EXPLV:2
-	SOURCE:角色登録番号:露出 += 2500 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 2000 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:不潔 += 150 * (射精回数 + 1) / 2
-ELSEIF EXP:角色登録番号:射精経験 < EXPLV:3
-	SOURCE:角色登録番号:露出 += 1000 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 800 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:不潔 += 100 * (射精回数 + 1) / 2
-ELSEIF EXP:角色登録番号:射精経験 < EXPLV:4
-	SOURCE:角色登録番号:露出 += 800 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 600 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:不潔 += 50 * (射精回数 + 1) / 2
-ELSEIF EXP:角色登録番号:射精経験 < EXPLV:5
-	SOURCE:角色登録番号:露出 += 400 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 400 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:不潔 += 10 * (射精回数 + 1) / 2
+IF EXP:ARG:射精経験 < EXPLV:1
+	SOURCE:ARG:露出 += 5000 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 2500 * (射精回数 + 1) / 2
+	SOURCE:ARG:不潔 += 200 * (射精回数 + 1) / 2
+ELSEIF EXP:ARG:射精経験 < EXPLV:2
+	SOURCE:ARG:露出 += 2500 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 2000 * (射精回数 + 1) / 2
+	SOURCE:ARG:不潔 += 150 * (射精回数 + 1) / 2
+ELSEIF EXP:ARG:射精経験 < EXPLV:3
+	SOURCE:ARG:露出 += 1000 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 800 * (射精回数 + 1) / 2
+	SOURCE:ARG:不潔 += 100 * (射精回数 + 1) / 2
+ELSEIF EXP:ARG:射精経験 < EXPLV:4
+	SOURCE:ARG:露出 += 800 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 600 * (射精回数 + 1) / 2
+	SOURCE:ARG:不潔 += 50 * (射精回数 + 1) / 2
+ELSEIF EXP:ARG:射精経験 < EXPLV:5
+	SOURCE:ARG:露出 += 400 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 400 * (射精回数 + 1) / 2
+	SOURCE:ARG:不潔 += 10 * (射精回数 + 1) / 2
 ELSE
-	SOURCE:角色登録番号:露出 += 200 * (射精回数 + 1) / 2
-	SOURCE:角色登録番号:屈従 += 250 * (射精回数 + 1) / 2
+	SOURCE:ARG:露出 += 200 * (射精回数 + 1) / 2
+	SOURCE:ARG:屈従 += 250 * (射精回数 + 1) / 2
 ENDIF
 
 ;-------------------------------------------------
 ;調教対象の射精チェック
 ;-------------------------------------------------
-@TARGET_EJAC_CHECK(角色登録番号)
-#DIM 角色登録番号
+@TARGET_EJAC_CHECK(ARG)
 
 ;男性器がなければ返回
-SIF !HAS_PENIS(角色登録番号)
+SIF !HAS_PENIS(ARG)
 	RETURN 0
-
-LOCAL = (CUP:角色登録番号:快Ｃ + CUP:角色登録番号:快Ｖ + CUP:角色登録番号:快Ａ + CUP:角色登録番号:快Ｂ) / 4
-
+LOCAL = (CUP:ARG:快Ｃ + CUP:ARG:快Ｖ + CUP:ARG:快Ａ + CUP:ARG:快Ｂ) / 4
 ;自制心
-SIF TALENT:角色登録番号:自制心
+SIF TALENT:ARG:自制心
 	LOCAL /= 2
-
 ;接受快感
-SIF TALENT:角色登録番号:快感応答 > 0
+SIF TALENT:ARG:快感応答 > 0
 	TIMES LOCAL , 1.20
-
 ;否定快感（淫乱、娼婦で無効）
-SIF TALENT:角色登録番号:快感応答 < 0 && !TALENT:角色登録番号:淫乱
+SIF TALENT:ARG:快感応答 < 0 && !TALENT:ARG:淫乱
 	TIMES LOCAL , 0.80
-
 ;媚薬
-SIF (TCVAR:角色登録番号:媚薬 || IsInsenceValid(角色登録番号)) && 角色登録番号 != MASTER
+SIF (TCVAR:ARG:媚薬 || IsInsenceValid(ARG)) && ARG != MASTER
 	LOCAL *= 2
-
 ;仙香玉兎
-SIF IsInsenceValid(角色登録番号)
+SIF IsInsenceValid(ARG)
 	LOCAL *= 2
-
 ;利尿剤
-SIF TCVAR:角色登録番号:利尿剤
+SIF TCVAR:ARG:利尿剤
 	LOCAL /= 2
 ;睡眠中
-SIF CFLAG:角色登録番号:睡眠
+SIF CFLAG:ARG:睡眠
 	LOCAL /= 2
-BASE:角色登録番号:射精 += LOCAL
-;SIF BASE:角色登録番号:射精 > MAXBASE:角色登録番号:射精
-;	BASE:角色登録番号:射精 = MAXBASE:角色登録番号:射精 - 1
+BASE:ARG:射精 += LOCAL
+;SIF BASE:ARG:射精 > MAXBASE:ARG:射精
+;	BASE:ARG:射精 = MAXBASE:ARG:射精 - 1
 
 ;射精処理の角色別ターミナル
 @SAMEN_SHOOT(射精した角色番号)
@@ -188,19 +161,17 @@ NEXT
 #DIM 信頼减少
 #DIM 好感度减少
 #DIM 欲求不満解消係数
-#DIM 中毒BONUS
 #DIM 路人子用
 
 CFLAG:RECEIVER:(SENDER+2500) += NOWEX:SENDER:射精量
 
-中毒BONUS = 0
-IF SENDER == MASTER && CFLAG:RECEIVER:诶嘿嘿 == 2
+IF !SENDER && CFLAG:RECEIVER:诶嘿嘿 == 2
 	SOURCE:RECEIVER:達成 += NOWEX:SENDER:射精 * 150
 	SOURCE:RECEIVER:征服 += NOWEX:SENDER:射精 * 150
 	SIF !(NOWEX:RECEIVER:Ｃ絶頂 + NOWEX:RECEIVER:Ｖ絶頂 + NOWEX:RECEIVER:Ａ絶頂 + NOWEX:RECEIVER:Ｂ絶頂 + NOWEX:RECEIVER:Ｍ絶頂)
 		SOURCE:RECEIVER:征服 += NOWEX:SENDER:射精 * 100
 ENDIF
-IF SENDER == MASTER && TALENT:RECEIVER:路人 == 1
+IF !SENDER && TALENT:RECEIVER:路人 == 1
 	路人子用 = MIN(NOWEX:SENDER:射精,3)
 	SELECTCASE TCVAR:SENDER:已射精部位FLAG
 		CASE 1
@@ -235,7 +206,7 @@ IF TEQUIP:SENDER:避孕套 && TEQUIP:TARGET:50 == PLAYER
 	;接触のリセット
 	CALL 挿入解除(RECEIVER)
 	TFLAG:套套内 = NOWEX:SENDER:射精量
-	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && SENDER == MASTER
+	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && !SENDER
 		ITEM:避孕套 --
 		TEQUIP:SENDER:避孕套 = 1
 	ENDIF
@@ -253,7 +224,7 @@ ELSEIF TEQUIP:SENDER:避孕套 && TALENT:TARGET:性別 == 3
 	;接触のリセット
 	CALL 挿入解除(TARGET)
 	TFLAG:套套内 = NOWEX:TARGET:射精量
-	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && !(SENDER == MASTER)
+	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && !(!SENDER)
 		ITEM:避孕套 --
 		TEQUIP:TARGET:避孕套 = 1
 	ENDIF
@@ -619,8 +590,8 @@ STAIN:MASTER:Ｐ |= 4
 #DIMS REVISED_FLAG
 #DIM REVISION
 #DIM 中毒レベル
-
-
+SIF !GROUPMATCH(TCVAR:SENDER:已射精部位FLAG,1,2,4)
+	RETURN
 SELECTCASE TCVAR:SENDER:已射精部位FLAG
 	CASE 1
 		中毒レベル = ABL:RECEIVER:膣射中毒
@@ -631,8 +602,6 @@ SELECTCASE TCVAR:SENDER:已射精部位FLAG
 	CASE 4
 		中毒レベル = ABL:RECEIVER:精液中毒
 		REVISED_FLAG = 口内射精補正
-	CASEELSE
-		RETURN
 ENDSELECT
 
 TCVAR:RECEIVER:REVISED_FLAG = NOWEX:SENDER:射精量 * (10 + 中毒レベル)
@@ -644,8 +613,8 @@ ELSE
 ENDIF
 
 ;同時絶頂の場合増加
-SIF SENDER == MASTER && SYNCED_ORGASM(RECEIVER)
-	REVISION = REVISION * 5 / 4
+SIF !SENDER && SYNCED_ORGASM(RECEIVER)
+	TIMES REVISION,1.25
 
 SOURCE:RECEIVER:情愛 += REVISION * 2
 SOURCE:RECEIVER:欲情 += REVISION * 2
@@ -685,45 +654,51 @@ PRINTFORML %CALLNAME:MASTER%は避孕套をつけた 残り{ITEM:避孕套}枚
 ;劇毒身軀の効果を規定 MASTER限定
 ;POINTは射精部位
 ;===========================================
-@POISONBODY(RECEIVER, SENDER, POINT)
-#DIM RECEIVER
-#DIM SENDER
+@POISONBODY(ARG, ARG:1, POINT)
 #DIM POINT
 #DIM ゲージ増加
-
-ゲージ増加 = 0
-IF TFLAG:劇毒身軀 && SENDER == MASTER
-	SELECTCASE POINT
-		;膣内。粘膜吸収1.5倍。一番効果が出る
-		CASE 1
-			ゲージ増加 += NOWEX:SENDER:射精量 * 3 / 2
-		;肛門。粘膜吸収1.0倍。
-		CASE 2
-			ゲージ増加 += NOWEX:SENDER:射精量
-		;手淫。経皮0.2倍。一応効果はある程度
-		CASE 3
-			ゲージ増加 += NOWEX:SENDER:射精量 / 5
-		;手淫→舐め取り。粘膜0.5倍
-		CASE 31
-			ゲージ増加 += NOWEX:SENDER:射精量 / 2
-		;口。粘膜吸収1.0倍。飲みこぼしなどで減免はしない
-		CASE 4
-			ゲージ増加 += NOWEX:SENDER:射精量
-		;胸。経皮0.5倍。手よりは多い
-		CASE 5
-			ゲージ増加 += NOWEX:SENDER:射精量 / 2
-		;素股。粘膜？0.75倍
-		CASE 6
-			ゲージ増加 += NOWEX:SENDER:射精量 * 3 / 4
-		;足。経皮0.2倍。一応効果はある程度
-		CASE 7
-			ゲージ増加 += NOWEX:SENDER:射精量 / 5
-		;体表。経皮0.1倍。
-		CASE 8
-			ゲージ増加 += NOWEX:SENDER:射精量 / 10
-	ENDSELECT
-	;濃厚精液の場合は２倍に補正
-	SIF TALENT:SENDER:濃厚精液
-		ゲージ増加 *= 2
-ENDIF
-TCVAR:RECEIVER:ポイズンゲージ += ゲージ増加
+SIF !(TFLAG:劇毒身軀 && !ARG:1)
+	RETURN
+ゲージ増加=NOWEX:0:射精量
+SELECTCASE POINT
+	;膣内。黏膜吸収1.5倍。一番効果が出る
+	CASE 1
+		TIMES ゲージ増加,1.5
+	;肛門。黏膜吸収1.0倍。
+	CASE 2
+	;手淫。経皮0.2倍。一応効果はある程度
+	CASE 3
+		TIMES ゲージ増加,0.2
+	;手淫→舐め取り。黏膜0.5倍
+	CASE 31
+		TIMES ゲージ増加,0.5
+	;口。黏膜吸収1.0倍。飲みこぼしなどで減免はしない
+	CASE 4
+	;胸。経皮0.5倍。手よりは多い
+	CASE 5
+		TIMES ゲージ増加,0.5
+	;素股。黏膜？0.75倍
+	CASE 6
+		TIMES ゲージ増加,0.75
+	;足。経皮0.2倍。一応効果はある程度
+	CASE 7
+		TIMES ゲージ増加,0.2
+	;体表。経皮0.1倍。
+	CASE 8
+		TIMES ゲージ増加,0.1
+ENDSELECT
+;濃厚精液の場合は２倍に補正
+SIF TALENT:0:濃厚精液
+	ゲージ増加 *= 2
+TCVAR:ARG:ポイズンゲージ += ゲージ増加
+@EjBUp(ARG)
+;EjectBaseUp
+#DIM bID,3 =0,1,6
+SIF BUp:9 == 2 && !ARG
+	RETURN
+BASE:ARG:0=BASE:ARG:0+200,BASE:ARG:1+200
+FOR LOCAL,0,3
+	MAXBASE:ARG:(bID:LOCAL)+=BUp:(bID:LOCAL)
+NEXT
+SIF !ARG&&MAXBASE:0:TSP >= 6666
+	MAXBASE:0:TSP += BUp:8
