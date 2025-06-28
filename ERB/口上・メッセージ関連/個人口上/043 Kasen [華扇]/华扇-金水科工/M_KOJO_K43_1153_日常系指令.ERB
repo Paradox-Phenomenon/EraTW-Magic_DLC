@@ -12,15 +12,27 @@
 ;成否判定
 ;TFLAG:192(-2=强制中止指令、-1＝強制失敗、0=根据COM文件决定、1=強制成功or大成功
 TFLAG:192 =0
-;CALL DOKU_COMF_FAIL
-CALL COMF_K43_TPP_300
-CALL ZDHSZY_TW4945_TPP_K43
-CALL M_KOJO_TPP_COLOR_K43
+;==================================================
+;可选项：关于地文描述的显示设置
+;如果返回0，则地文与口上都会显示；如果返回1，则地文会隐藏，口上会显示；如果返回2，则地文会显示，口上会隐藏；如果返回3则均会被隐藏
+;==================================================
+@M_KOJO_TPP_MESSAGE_MESSAGECHECK_COM_K43_300
+RETURN 1
+
+@M_KOJO_TPP_MESSAGE_COM_K43_300
+CALL M_KOJO_TPP_MESSAGE_COM_K43_300_1
+RETURN RESULT
+
+@M_KOJO_TPP_MESSAGE_COM_K43_300_1
 ;-------------------------------------------------
 ;启用（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	RESETCOLOR
+	CALL COM_K43_TPP_300
+	CALL M_KOJO_TPP_COLOR_K43
+	PRINTL
 	IF CFLAG:2 >= 10000 && CFLAG:MASTER:現在位置 == 726 && CFLAG:43:1002 == 1
 	;华扇的真实身份（10000好感+书房）
 		PRINTFORMDL 说起来，一直想问...
@@ -166,7 +178,7 @@ IF LOCAL
 			PRINTFORML 「这个观点...我大概是无法苟同。」
 			PRINTFORMDW 华扇一脸凝重的神情让%CALLNAME:MASTER%有些不安。	
 		ENDSELECT	
-	ELSEIF CFLAG:323 == 1
+	ELSEIF BATHCHECK(CFLAG:MASTER:現在位置)
 	;洗澡时
 		IF TALENT:恋人 || TALENT:恋慕
 			SELECTCASE RAND:3
@@ -710,7 +722,8 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF ONCE("泡茶选择Liedsc1Mtw")
+	PRINTL
+	IF ONCE("43泡茶选择34")
 		SELECTCASE RAND:14
 		CASE 0 TO 2
 		;绿茶
@@ -853,7 +866,8 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF CFLAG:323 == 1
+	PRINTL
+	IF BATHCHECK(CFLAG:MASTER:現在位置)
 	;洗澡时
 		IF TALENT:恋人 || TALENT:恋慕
 			SELECTCASE RAND:3
@@ -1121,6 +1135,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	SELECTCASE TFLAG:193
 	CASE 0,1,2
 	;成功
@@ -1214,7 +1229,8 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF ONCE("索求膝枕2nuh8ewdi")
+	PRINTL
+	IF ONCE("43索求膝枕34")
 		IF TALENT:恋慕 || TALENT:恋人
 			PRINTFORMW 「想要我的膝枕吗...那么，来吧。」
 			PRINTFORMDL %CALLNAME:MASTER%毫无意外地得到了华扇的积极回应。
@@ -1323,6 +1339,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	;時間停止中
 	IF FLAG:70
 		PRINTW 
@@ -1417,6 +1434,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF FLAG:70
 		PRINTW
 	ELSEIF CFLAG:睡眠
@@ -1463,6 +1481,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF FLAG:70
 		PRINTW
 	ELSEIF CFLAG:睡眠
@@ -1509,6 +1528,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF FLAG:70
 		PRINTFORMW
 	ELSEIF CFLAG:睡眠
@@ -1574,15 +1594,18 @@ RETURN 1
 ;TFLAG:口上特殊補正 (如果在此处输入数字，则可以增加或减少ALCOHOL_TASTE，即对某种酒的喜好程度。)
 TFLAG:192 =0
 TFLAG:口上特殊補正 = 0
-
+;==================================================
+SELECTCOM = -1
+SIF PREVCOM == SELECTCOM
+	SELECTCOM = -2
 CALL COMF_K43_TPP_332
-CALL ZDHSZY_TW4945_TPP_K43
 CALL M_KOJO_TPP_COLOR_K43
 ;-------------------------------------------------
 ;启用（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF !TALENT:TARGET:恋慕 && CFLAG:TARGET:烂酔奸 == 2
 		PRINTFORML 「你不会又想把我灌醉然后对我上下其手吧。」
 		PRINTFORMDW 华扇那凌厉的眼神激得%CALLNAME:MASTER%打了个寒战... 
@@ -1607,7 +1630,7 @@ IF LOCAL
 				IF CFLAG:43:1002 == 2
 					PRINTFORML 「喝多了后，总觉得现在的鬼杀酒还是缺了些旧时地狱里特有的豪迈...」
 					PRINTFORMW 「或者说因为幻想乡和地狱的联系又多了起来，所以口味之类的改进成了现在这样？」
-					PRINTFORML 华扇说完有些若有所思地将目光侧向了一遍。
+					PRINTFORML 华扇说完有些若有所思地将目光侧向了一边。
 					PRINTFORMW 「虽说身为仙人的我确实乐见于这种趋势...但作为曾经的鬼，我的心里果然还是会有些失落呢。」
 				ELSE
 					CALL K43_TONGYONGHEJIU
@@ -1649,6 +1672,7 @@ IF LOCAL
 		ENDSELECT
 	ENDIF
 ENDIF
+CALL ZDHSZY_TW4945_TPP_K43
 RETURN 1
 ;==================================================
 ;333,聽牢騷
@@ -1674,6 +1698,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	SELECTCASE TFLAG:193
 	CASE 3
 	;大成功
@@ -1805,6 +1830,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF TFLAG:193 > 0
 	;寝ちゃった
 		PRINTFORMW 「嘶...呼...嘶...呼...」
@@ -1964,6 +1990,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	;并不是都需要写，部分内容可以合并在一起
 	IF FLAG:70 
 		PRINTW
@@ -2021,7 +2048,7 @@ IF LOCAL
 				PRINTFORMW 「%CALLNAME:MASTER%...呀啊！」
 				PRINTFORMDL 再也无法抑制住自己的欲望，%CALLNAME:MASTER%突然摁住了华扇的双肩。
 				PRINTFORM 接着就像是事先排练好似的，%CALLNAME:MASTER%轻轻地将华扇放在了
-				IF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝
+				IF BEDROOM(CFLAG:MASTER:現在位置)
 					PRINTFORM 床
 				ELSE
 					PRINTFORM 地板
@@ -2033,7 +2060,7 @@ IF LOCAL
 				PRINTFORMW 「唔呣唔呣...%CALLNAME:MASTER%...」
 				PRINTFORMDL 不自觉中，沉溺于和%CALLNAME:MASTER%亲吻的华扇被摁住了双肩。
 				PRINTFORM 轻轻挣扎后，华扇便被同样溺于情欲的%CALLNAME:MASTER%给摁到了
-				IF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝
+				IF BEDROOM(CFLAG:MASTER:現在位置)
 					PRINTFORM 床
 				ELSE
 					PRINTFORM 地板
@@ -2044,7 +2071,7 @@ IF LOCAL
 				PRINTFORMW 「唔！」
 				PRINTFORMDL 再也无法抑制住自己的欲望，%CALLNAME:MASTER%突然摁住了华扇的双肩。
 				PRINTFORM 然后不顾眼前美人如何挣扎，猛地把华扇给摁到了
-				IF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝
+				IF BEDROOM(CFLAG:MASTER:現在位置)
 					PRINTFORM 床
 				ELSE
 					PRINTFORM 地板
@@ -2082,7 +2109,7 @@ IF LOCAL
 			PRINTW
 			PRINTFORMDW 似是再也控制不住代表欲望的洪水，%CALLNAME:MASTER%猛地再次沉下身子。
 			PRINTFORM 但这一次不再关注嘴唇，而是
-			IF CFLAG:323 == 1
+			IF BATHCHECK(CFLAG:MASTER:現在位置)
 				PRINTFORMDL 把头埋进华扇那极具诱惑力的乳沟...
 			ELSE
 				PRINTFORMDL 掀起道袍，头颅下探，从衬衣的缝隙中感受华扇乳房的柔软...
@@ -2174,6 +2201,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF CFLAG:同行 == 60
 	;带出去
 		IF TALENT:恋人 || TALENT:恋慕
@@ -2269,7 +2297,7 @@ IF LOCAL
 			PRINTFORMDW 随后二人就像是心有灵犀似的，互相吸吮起对方的气息，旁若无人地互相缠绕着舌头。			
 			PRINTFORMW 「唔，唔呣，啾，咕...」
 			PRINTFORMDL 从缝隙处传来的华扇的媚声无疑是最佳的催情药，完美抚平对%CALLNAME:MASTER%的惊吓的同时，还让%CALLNAME:MASTER%有了更进一步的想法。
-			IF !GETBIT(CFLAG:1,1) && get_targetnum() == 1 && (CFLAG:340 >= 700 || TCVAR:142 || TCVAR:140) && K43_K56_TSMIKO_WORKCHECK(43) <= 0 && (ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_被窝)
+			IF !GETBIT(CFLAG:1,1) && get_targetnum() == 1 && (CFLAG:340 >= 700 || TCVAR:142 || TCVAR:140) && K43_K56_TSMIKO_WORKCHECK(43) <= 0 && BEDROOM(CFLAG:MASTER:現在位置)
 				PRINTFORMDW 而华扇似乎是可以读出%CALLNAME:MASTER%的心——她握住眼前人的一只手腕，引导那只手划过自己的腰肢，然后隔着衬衫抚上自己的乳房。
 				PRINTFORMDL 伴随着柔软的触感自手心处一阵阵地传到脑海中，%CALLNAME:MASTER%也决定顺从华扇的内心——
 				PRINTFORMDL 保持着这个姿势，一点点地向床边挪动，随后一齐自由落体，震得身下的床吱呀作响。
@@ -2342,6 +2370,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	PRINTFORMDL 从%CALLNAME:MASTER%的角度看去，华扇的睡颜一如既往的平静，好像完全没有被旁人惊扰的迹象。
 	IF TALENT:恋人 || TALENT:恋慕 || TALENT:思慕
 		PRINTFORMDW 这样想着，%CALLNAME:MASTER%的脑子里突然蹦出了些异样的想法——何不用点什么法子试试华扇是否真的睡着了呢？
@@ -2422,6 +2451,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF CFLAG:43:衰弱 || CFLAG:43:睡眠 || CFLAG:TARGET:招待
 		PRINTFORML 「嘶...呼...」
 		PRINTFORMDW 华扇看起来睡得很死呢，这样的动静都惊不醒她——%CALLNAME:MASTER%如是想着。
@@ -2489,6 +2519,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF TALENT:恋人 || TALENT:恋慕
 		PRINTFORML 「%CALLNAME:MASTER%，就这么心急吗...要在这里...」
 		PRINTFORMW 「虽然说也不是不行...但问题是，路人的感觉你就一点儿都不管了吗...」
@@ -2506,17 +2537,23 @@ RETURN 1
 ;360,任憑擺佈
 ;TCVAR:20(27=展示乳沟 32=从身前抱住 35=自己掀起裙子 53=乳交 73=洗面奶（用胸部搓脸） 77=要求吸乳头 85=Ｖ挿入状态 86=要求膣内射精 87=Ａ挿入状态 88=V插入时动腰 89=A插入时动腰
 ;==================================================
-@M_KOJO_TPP_SUCCESS_COM_K43_360
-TFLAG:192 =0
+@M_KOJO_TPP_MESSAGE_MESSAGECHECK_COM_K43_360
+RETURN 1
 
-CALL COMF_K43_TPP_360
-CALL ZDHSZY_TW4945_TPP_K43
-CALL M_KOJO_TPP_COLOR_K43
+@M_KOJO_TPP_MESSAGE_COM_K43_360
+CALL M_KOJO_TPP_MESSAGE_COM_K43_360_1
+RETURN RESULT
+
+@M_KOJO_TPP_MESSAGE_COM_K43_360_1
 ;-------------------------------------------------
 ;启用（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	RESETCOLOR
+	CALL COM_K43_TPP_360
+	CALL M_KOJO_TPP_COLOR_K43
+	PRINTL
 	SELECTCASE TCVAR:20
 	CASE 27
 	;露出乳沟
@@ -2847,6 +2884,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	PRINTFORMW 「不想要，吗...？」
 ENDIF
 RETURN 1
@@ -2881,7 +2919,7 @@ IF LOCAL
 ENDIF
 RETURN 1
 ;==================================================
-;364,撒豆子(萃香、勇儀、斯卡蕾特姐妹可用（暂无安排）
+;364,撒豆子(萃香、勇儀、斯卡雷特姐妹可用（暂无安排）
 ;作者注：明明原作里有明确情节为啥华扇就没这差分呢
 ;TFLAG:193(撒豆子参加的人数
 ;==================================================
@@ -3055,6 +3093,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF CFLAG:MASTER:現在位置 == CFLAG:43:初期位置
 	;申请一起睡
 		IF TFLAG:193 == 0
@@ -3110,6 +3149,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF CFLAG:43:睡眠
 		PRINTFORMDW 在已经陷进梦乡的华扇身边小眯了一会儿。
 	ELSEIF CFLAG:318 == 1 || MARK:3 >= 2
@@ -3149,6 +3189,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	;与TARGET约会开始了
 	IF CFLAG:同行
 		IF TALENT:思慕 || TALENT:恋慕 || TALENT:恋人
@@ -3322,6 +3363,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF FLAG:70
 		PRINTW
 	ELSEIF CFLAG:318 == 1 || MARK:3 >= 2
@@ -3476,20 +3518,26 @@ IF LOCAL
 ENDIF
 RETURN 1
 ;==================================================
-;411,戦闘訓練（暂无安排）
+;411,戦闘訓練（待施工）
 ;TFLAG:194(3=夏天的烈日 2=危险的天气 1=恶劣的天气 0=屋内or通常天気
 ;==================================================
-@M_KOJO_TPP_SUCCESS_COM_K43_411
-TFLAG:192 =0
+@M_KOJO_TPP_MESSAGE_MESSAGECHECK_COM_K43_411
+RETURN 1
 
-CALL COMF_K43_TPP_411
-CALL ZDHSZY_TW4945_TPP_K43
-CALL M_KOJO_TPP_COLOR_K43
+@M_KOJO_TPP_MESSAGE_COM_K43_411
+CALL M_KOJO_TPP_MESSAGE_COM_K43_411_1
+RETURN RESULT
+
+@M_KOJO_TPP_MESSAGE_COM_K43_411_1
 ;-------------------------------------------------
 ;启用（=0, 非表示、1, 表示）
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	RESETCOLOR
+	CALL COM_K43_TPP_411
+	CALL M_KOJO_TPP_COLOR_K43
+	PRINTL
 	PRINTW
 ENDIF
 RETURN 1
@@ -3511,6 +3559,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	SELECTCASE ABL:MASTER:43
 	CASE 0,1,2
 		IF TALENT:恋慕 || TALENT:恋人
@@ -3576,6 +3625,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF TALENT:恋慕 || TALENT:恋人
 		PRINTFORMW 「嗯？这一步有我能帮上忙的地方吗？」
 		PRINTFORM 被%CALLNAME:MASTER%邀请一起做菜的华扇一边说着，一边
@@ -3628,6 +3678,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	SELECTCASE TFLAG:193
 	CASE 1
 		IF TALENT:恋人 || TALENT:恋慕
@@ -3699,6 +3750,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	SELECTCASE TFLAG:193
 	CASE 1
 		IF TALENT:恋人 || TALENT:恋慕
@@ -3770,6 +3822,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF TFLAG:193 == -1
 		IF TALENT:恋慕 || TALENT:恋人	
 			PRINTFORML 「啊哈哈...果然是很，呃...酣畅淋漓的演出呢。」
@@ -3947,6 +4000,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF BATHCHECK(CFLAG:MASTER:現在位置)
 		IF OUTROOF(CFLAG:43:300)	;在温泉放松
 			IF TALENT:恋人
@@ -3955,7 +4009,7 @@ IF LOCAL
 				PRINTFORML 「这个时候就要用些别的什么方式转移注意力呢...嗯，啊~」
 				PRINTFORMDL 华扇一边这样妩媚地嘟囔着，一边动起手掌，从水下托举起自己硕大的乳肉，旁若无人地把玩起来。
 				PRINTFORMDW 面对这雾气和泉水包绕中不断一起一伏的诱惑，%CALLNAME:MASTER%不禁咽了口口水...	
-				IF TCVAR:43:352 == 1 && RAND:10 == 0
+				IF TCVAR:43:352 == 1 && RAND:5 == 0
 					PRINTW			
 					PRINTFORMW 「呐，%CALLNAME:MASTER%...」
 					PRINTFORMDL 趁着恋人沉迷于性幻想中，微笑着的华扇偷偷地伸出了自己的右臂，抱住了身边的%CALLNAME:MASTER%。
@@ -3997,7 +4051,7 @@ IF LOCAL
 				PRINTFORML 「嗯嗯...%CALLNAME:MASTER%，让我靠你的身边稍微休息会儿吧...」
 				PRINTFORML 「当然%CALLNAME:MASTER%想的话，也可以靠在我的身上呆会儿哦...毕竟，我们是恋人啊...」
 				PRINTFORMDW 伴着华扇幸福的笑容，她那隐于水面之下的两条玉腿也开始轻轻摆动，催得平静的水面波涛阵阵...
-				IF TCVAR:43:352 == 1 && RAND:5 == 0
+				IF TCVAR:43:352 == 1 && RAND:10 == 0
 					PRINTW			
 					PRINTFORMW 「唔呣，%CALLNAME:MASTER%...」
 					PRINTFORMDL 如你所愿。%CALLNAME:MASTER%这么想着，翻过身子，将华扇压在了自己的身下。
@@ -4057,7 +4111,7 @@ IF LOCAL
 					PRINTFORMDL 而%CALLNAME:MASTER%也作出了自己的回答——将头下探，与华扇碰起双唇，随后便是恋人间独有的热吻。
 					PRINTFORMDL 紧接着%CALLNAME:MASTER%便翻过身子，把华扇压在了自己身下，用自己已经涨硬的阳具对华扇开始了初步的试探。
 					PRINTFORMDW 任凭浴缸里的水如何被此番动作压出缸边、拍到地上——此时此刻，天地之间，唯两人之胴体和爱意永恒...		
-					CALL K43_WOYAOSESE
+					CALL K43_WOYAOSESE			
 				ENDIF
 			ELSEIF TALENT:恋慕 	
 				PRINTFORML 「如此这般只有我们两人的小小天地还真是难得呢...」
@@ -4113,6 +4167,7 @@ RETURN RESULT
 LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
+	PRINTL
 	IF CFLAG:MASTER:300 == 大衆浴場		;进入人里的钱汤（400款）
 		IF TALENT:恋人 || TALENT:恋慕 
 			PRINTFORML 「这家的果汁还真是清凉又爽口呢~作为泡澡后的消遣正正好。」
