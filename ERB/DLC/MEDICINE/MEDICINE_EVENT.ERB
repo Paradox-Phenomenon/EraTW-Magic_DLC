@@ -74,7 +74,7 @@ IF ARG
 		BASE:52:63=25
 		BASE:52:73=100
 		BASE:52:77=50
-		mCID:1=6e4
+		mCID:1=53e3
 		;不明，体力-1000，病症60000，防御325，疼痛25，关节挫伤外伤50，H性25，黏液100
 		PRINTFORML 试药员%CALLNAME:mCID%被担架抬进来了……
 		PRINTW
@@ -94,21 +94,24 @@ ELSEIF BASE:mCID:患病<=0&&!BASE:mCID:今日问诊&&!BASE:mCID:近期问诊
 		BASE:mCID:病症大小+=RAND:(1+PatCnt%5*10)*100
 	SIF MeDf>=2&&!RAND:(1+PatCnt%(10/(MeDf-1)))
 		BASE:mCID:病症大小+=RAND:(1+20*(1+4*(MeDf-2)))*100
-	BASE:mCID:患者体力 = MAX(-1000*MeDf+1,RAND:1001-BASE:mCID:病症大小/10)
+	SIF MeDf>=4&&!RAND:(1+PatCnt%10)
+		BASE:mCID:病症大小+=RAND:(200*(1+(MeDf-4)*4))*100
+	BASE:mCID:患者体力 = MAX(-1000*MeDf+1,RAND:1001-RAND:(BASE:mCID:病症大小)/10)
 	;急诊补正
 	SIF BASE:mCID:患者体力<=0
 		BASE:mCID:病症大小-=MAX(BASE:mCID:患者体力/50*100,500)
 	BASE:mCID:病症残余 = BASE:mCID:病症大小
-	BASE:mCID:疾病防御 = (RAND:(MeDf*2+7) + 1) * 25;125~325,7*25~7*50
-	BASE:mCID:医疗费 = BASE:mCID:病症大小 * 10 + 2000 + RAND:1001
+	BASE:mCID:疾病防御 = (RAND:(MeDf*2+7) + 1) * 25;125~375,7*25~9*50
+	BASE:mCID:医疗费 = BASE:mCID:病症大小 + 200 + RAND:101
 	;依据病症难度进行适当奖励修正
 	SIF BASE:mCID:病症大小 >= 1200;12~15->3000~7000
-		BASE:mCID:医疗费 += 3000+RAND:(1+(BASE:mCID:病症大小-1100)/100)*1e3
+		BASE:mCID:医疗费 += 300+RAND:(1+(BASE:mCID:病症大小-1100)/100)*100
 	SIF BASE:mCID:疾病防御 >= 150;150~175->3000~5000
-		BASE:mCID:医疗费 += 3000+RAND:(1+(BASE:mCID:疾病防御-125)/25)*1e3
+		BASE:mCID:医疗费 += 300+RAND:(1+(BASE:mCID:疾病防御-125)/25)*100
 	SIF BASE:mCID:患者体力 <= 0;-200~300->1000~11000
-		BASE:mCID:医疗费 += 1000+RAND:(1+(300-BASE:mCID:患者体力)/5)*10
-	SIF MeDf>=2
+		BASE:mCID:医疗费 += 100+RAND:(1+(300-BASE:mCID:患者体力)/5)
+	;BASE:mCID:医疗费*=5/2
+	SIF BASE:mCID:病症大小>2e3&&MeDf>=2
 		BASE:mCID:医疗费*=(MeDf+1)/2
 	;生成疾病详细数据
 	CALL DISEASE_TYPE(mCID)

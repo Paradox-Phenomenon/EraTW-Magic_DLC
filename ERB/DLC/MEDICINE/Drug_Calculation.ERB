@@ -61,6 +61,8 @@ IF LOCAL:4 >= BASE:mCID:疾病防御
 	ENDIF
 	;结算药品对患者体力消耗
 	CALL CkBase(ARG)
+	SIF Drus:2
+		LOCAL:3+=mCID:1/100
 	PRINTL
 	PRINTFORML 病症残余：{BASE:mCID:病症残余} - {LOCAL:3}
 	PRINTL ↓↓↓↓
@@ -85,11 +87,32 @@ IF GROUPMATCH(ARG,104,105,106,108,109,203,208,209,307,402,405,406,407,408,409,50
 ENDIF
 Drus:1+=1
 Drus:ARG+=2
+;难度机制
+IF MeDf>=1&&!RAND:(11-MeDf*2)&&IFWorsen()
+	;体力衰减，每1/(11-2*难度)概率触发，1/9、1/7->1
+	PRINTFORML 由于疾病的原因，%CALLNAME:mCID%的体力降低了…
+	LOCAL=RAND:(10*MeDf)+5*MeDf
+	PRINTFORML 体力-{LOCAL}
+	BASE:mCID:患者体力-=LOCAL
+ENDIF
+IF MeDf>=2&&!RAND:(6-MeDf)&&IFWorsen()
+	LOCAL=(RAND:MeDf+1)*20
+	;症状恶化，每1/(6-难度)概率触发，1/4、1/3->1
+	PRINTFORML %CALLNAME:mCID%的症状恶化了…
+	PRINTFORML 病症残余+{LOCAL}
+	BASE:mCID:病症残余+=LOCAL
+ENDIF
 ;添加用药耗时
 CALL TPas
 PRINTW
+@IFWorsen
+#FUNCTION
+;病症残余阈值上限90%->30%，每级-15%，下限1000
+SIF BASE:mCID:病症残余>1000&&BASE:mCID:病症残余>mCID:1*(7-MeDf)*3/20
+	RETURNF 1
+RETURNF 0
 @TPas
-TIME+=5/(1+4*Drus)
+TIME+=(RAND:(1+5*(MeDf==5))+5)/(1+4*Drus)
 SIF NEMUKE() < 840
 	RETURN
 IF NEMUKE() >= 960
