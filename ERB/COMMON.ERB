@@ -83,21 +83,21 @@ RETURN RESULT
 ;-------------------------------------------------
 @PAY_YEN_OR_CM(ARG,ARG:1)
 PRINTFORML [0] 放弃
-PRINTFORML [1] 支付%金額表示(ARG)%　　（現在的所持金：%金額表示(MONEY)%）
-PRINTFORML [2] 支付CM%三桁区切(ARG:1)%　（現在的所持筹码：CM%三桁区切(MONEY:2)%）
+PRINTFORML [1] 支付%金額表示(ARG)%　　（现在的所持金：%金額表示(MONEY)%）
+PRINTFORML [2] 支付CM%三桁区切(ARG:1)%　（现在的所持筹码：CM%三桁区切(MONEY:2)%）
 $INPUT_LOOP
 INPUT
 SELECTCASE RESULT
 	CASE 0
 	CASE 1
 		IF MONEY < ARG
-			PRINTFORMW 金錢不足
+			PRINTFORMW 金钱不足
 			GOTO INPUT_LOOP
 		ENDIF
 		MONEY -= ARG
 	CASE 2
 		IF MONEY:2 < ARG:1
-			PRINTFORMW 籌碼不足
+			PRINTFORMW 筹码不足
 			GOTO INPUT_LOOP
 		ENDIF
 		MONEY:2 -= ARG:1
@@ -106,13 +106,13 @@ SELECTCASE RESULT
 ENDSELECT
 RETURN RESULT
 ;-------------------------------------------------
-;関数名:GET_REVISION
-;概　要:汎用補正値取得関数
-;引　数:ARG:0…参照する数値
-;戻り値:補正後の値
-;備　考:式中関数
-;ある数値を、上限値に漸近していく数値に変換したいときに
-;上昇率が小さいとすぐに上限に達する、大きいと逆になかなか上限まで近づかない
+;函数名:GET_REVISION
+;概要:通用修正值获取函数
+;参数:ARG:0…要参照的数值
+;返回值:修正后的值
+;备注:式内函数
+;当需要将某个数值转换为一个渐近上限值的数值时
+;如果上升率小，则很快达到上限；反之，如果上升率大，则难以接近上限
 ;-------------------------------------------------
 @GET_REVISION(ARG:0, 上限, 上昇率)
 #FUNCTION
@@ -202,19 +202,19 @@ ENDIF
 SIF 条件:1
 	PRINTFORM %表示:1%
 SIF 条件:1 && (条件:2 || 条件:3 || 条件:4 || 条件:5)
-	PRINT と
+	PRINT 和
 SIF 条件:2
 	PRINTFORM %表示:2%
 SIF 条件:2 && (条件:3 || 条件:4 || 条件:5)
-	PRINT と
+	PRINT 和
 SIF 条件:3
 	PRINTFORM %表示:3%
 SIF 条件:3 && (条件:4 || 条件:5)
-	PRINT と
+	PRINT 和
 SIF 条件:4
 	PRINTFORM %表示:4%
 SIF 条件:4 && 条件:5
-	PRINT と
+	PRINT 和
 SIF 条件:5
 	PRINTFORM %表示:5%
 ;-------------------------------------------------
@@ -671,24 +671,26 @@ ELSE
 ENDIF
 
 ;-------------------------------------------------
-;関数名:AddEXP
-;概　要:メッセージ付きEXP加算
-;减少にはならないようになってるので注意
+;函数名:AddEXP
+;概　要:附带信息的经验值增加
+;没理由经验会减少，不支持输出经验减少的信息
 ;-------------------------------------------------
-@AddEXP(VAR_NAME,C_ID,変動数)
+@AddEXP(VAR_NAME,C_ID,变动数)
 #DIMS VAR_NAME
 #DIM VAR_ID
 #DIM C_ID
-#DIM 変動数
+#DIM 变动数
 
-SIF 変動数 == 0
+SIF 变动数 == 0
 	RETURN
 
 VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME)
-SIF VAR_ID == -1
-	THROW 没有找到%VAR_NAME%，请保存日志报错
-EXP:C_ID:VAR_ID += 変動数
-CALL COLORMESSAGE(@"%VAR_NAME%＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
+IF VAR_ID == -1
+	PRINTFORMW 没有找到%VAR_NAME%，请保存日志报错
+	RETURN
+ENDIF
+EXP:C_ID:VAR_ID += 变动数
+CALL COLORMESSAGE(@"%VAR_NAME%＋{变动数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
 
 ;-------------------------------------------------
 ;関数名:SHIRAHU
@@ -696,10 +698,10 @@ CALL COLORMESSAGE(@"%VAR_NAME%＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
 ;-------------------------------------------------
 @SHIRAHU(ARG)
 #FUNCTION
-IF FLAG:70
+IF FLAG:70 && CFLAG:ARG:344 == 0
 	RETURNF 0
 ELSEIF !CFLAG:ARG:睡眠 && !CFLAG:ARG:陪睡中 && !TCVAR:ARG:烂醉 && !CFLAG:ARG:衰弱
-	IF TFLAG:102 == 2
+	IF TFLAG:102 > 1
 		RETURNF 2
 	ELSE
 		RETURNF 1
@@ -797,14 +799,15 @@ RETURNF WAKEUPTIME - SLEEPTIME
 ;-------------------------------------------------
 @生活時間設定(CHARA)
 #DIM CHARA
-;addition custom code, for custom charadata movement
+;新增剧本侧接口，调用剧本侧设定的角色移动数值
 CALL KOJO_CHECK(CHARA, "CHARADATA", "MOVE", 3)
-IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
-	RESULT = 0
-	TRYCALLFORM CHARAMOVE_DATA_{NO:CHARA}(3)
-ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
+IF RESULT == -1
+	;剧本侧禁用该机制
+	;对于生活时间设定，禁用等于什么都不会发生
+ELSEIF RESULT
+	;采用剧本设定的值
 ELSE 
-;addition custom code, duplicated characters
+;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
 TRYCALLFORM CHARAMOVE_DATA_{NO:CHARA}(3)
 ENDIF 
 CFLAG:CHARA:起床時間 = 時刻計算(CSVCFLAG(CHARA, GETNUM(CFLAG, "起床時間")) + CFLAG:CHARA:生活時間補正)

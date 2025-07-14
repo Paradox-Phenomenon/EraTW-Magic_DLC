@@ -3,7 +3,7 @@
 ;FLAG:51:bit表記:0メディ,1小町,2静葉,3穣子,4雛,5阿求,6蓮子,7梅莉,8琪斯美,9山女,10一輪,11村紗,12星,13響子,14芳香,15にゃんにゃん,16トジ,17フト,18わかさぎ,19弁弁,20八橋,21雷鼓,22正邪,23,24,25,26,27,28,29,30,31,32,33,34,35,
 ;FLAG:51:bit表記:
 ;FileName_BEFORETRAIN.ERB -------------------------- Rev1.00
-;朝１日斯塔ト処理
+;朝１日スタート处理
 ;CALL		SYSTEM
 ;ARG		VOID
 ;RETURN		VOID
@@ -47,7 +47,7 @@ ENDIF
 ;TRAGET初期化
 VARSET TARGET
 VARSET LOCAL
-;朝1日斯塔ト処理
+;朝1日スタート处理
 ;初期化
 
 ;(天候パッチ)現在的天候管理が0であるときは初回プレイであると判断
@@ -144,6 +144,9 @@ CALL 遭遇判定
 ;被窝に引きずり込まれる
 IF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 	同居人 = CFLAG:MASTER:招待
+;新增共用寝室角色的处理
+ELSEIF 共用寝室的同居人() && CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
+	同居人 = RESULT
 ELSEIF PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100) && CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 	同居人 = PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100)
 ENDIF
@@ -153,15 +156,15 @@ CFLAG:同居人:最後に会った日 = DAY
 IF TALENT:同居人:恋慕 && INRANGE(TIME:3, CFLAG:同居人:起床時間 - 180,CFLAG:同居人:起床時間)
 	起床妨害確率 = 20
 	SIF DAY:2 == 2
-		起床妨害確率 = 10
+		起床妨害確率 -= 10
 	SIF DAY:2 == 4
-		起床妨害確率 = 35
+		起床妨害確率 += 15
 	IF 起床妨害確率 > RAND:100
-		PRINTFORML %CALLNAME:MASTER%打算爬出被窩的時候、被%CALLNAME:同居人%抱住了
-		PRINTFORML 要求再一起睡一會
-		PRINTFORMW 沒有辦法只好在她起來前繼續躺在被窩里……
+		PRINTFORML %CALLNAME:MASTER%打算爬出被窝的时候、被%CALLNAME:同居人%抱住了
+		PRINTFORML 要求再一起睡一会
+		PRINTFORMW 没有办法只好在她起来前继续躺在被窝里……
 		EXP:同居人:愛情経験 += 5
-		CALL COLORMESSAGE(@"愛情経験＋5 （%CALLNAME:同居人%）",C_PINK,1)
+		CALL COLORMESSAGE(@"爱情经验＋5 （%CALLNAME:同居人%）",C_PINK,1)
 		追加睡眠時間 = CFLAG:同居人:起床時間 - TIME:3
 	ENDIF
 ENDIF
@@ -336,11 +339,11 @@ NEXT
 IF 0 > BASE:MASTER:精力
 	BASE:MASTER:気力 += BASE:MASTER:精力 * 5
 	IF 0 > BASE:MASTER:気力
-		PRINTFORMW 昨日の無茶な射精の反動なのか調子が悪い……
+		PRINTFORMW 也许是昨天胡来的射精的反作用，状态很差……
 		BASE:MASTER:体力 += BASE:MASTER:気力
 		BASE:MASTER:気力 = 0
 	ELSE
-		PRINTFORMW 昨日の無茶な射精の反動なのか疲れが抜け切れていない
+		PRINTFORMW 也许是昨天胡来的射精的反作用，疲劳还没有完全消除
 	ENDIF
 	BASE:MASTER:精力 = 0
 ENDIF
@@ -383,8 +386,8 @@ IF FLAG:收藏隙間 != NOW_PERIOD()
 	ITEM:易書 = MIN(易書入手数 + ITEM:易書, 500)
 	FLAG:收藏隙間 = NOW_PERIOD()
 	PRINTL
-	PRINTFORML ☆多多的补充了收藏隙間（現在：{ITEM:收藏隙間}個）
-	PRINTFORML ☆多多的补充了易書（現在：{ITEM:易書}個）
+	PRINTFORML ☆多多的补充了收藏隙间（现在：{ITEM:收藏隙間}个）
+	PRINTFORML ☆多多的补充了易书（现在：{ITEM:易書}个）
 ENDIF
 ;IF !ITEM:奇跡之石 && (FLAG:ミラダ支給 < NOW_PERIOD())
 ;	CALL COLORMESSAGE(@"獨佔愛慾的奇跡之石は知ってる？", C_D_PINK,2)
@@ -474,112 +477,84 @@ NEXT
 ;COMMENT	
 ;-----------------------------------------------------------
 @GOODMORNING
-#DIM 起床状況
-#DIM 起床場所
+#DIM 起床状况
+#DIM 起床场所
 #DIM 宴会位置是正
 #DIM  DYNAMIC CNT_BIRTHDAY
 #DIMS DYNAMIC NAME_CHILD   , 10 * 人物数量上限 + 1
 #DIM  DYNAMIC AGE_CHILD    , 10 * 人物数量上限 + 1
 VARSET LOCAL
 TARGET = 0
-起床状況 = 0
-起床場所 = 0
 
-;MASTERと同室の角色を尋找
-FOR LOCAL,1,CHARANUM
-	SIF CFLAG:MASTER:現在位置 == CFLAG:LOCAL:現在位置
-		;TARGET決定
-		TARGET = LOCAL
+;提取出统一的解除陪睡状态
+FOR LOCAL,0,CHARANUM
+	CALL SET_TOGETHER(0,LOCAL,1)
 NEXT
-;ターゲットが入れば表示
-IF TARGET
-	;IF CFLAG:TARGET:睡眠
-	IF 睡眠時間(TARGET)
-		;同棲中
-		IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
-			;同棲中かつ相手が寝てる
-			起床状況 = 3
-			FOR LOCAL,0,CHARANUM
-				CALL SET_TOGETHER(0,LOCAL,1)
-			NEXT
-			;MASTERとの接触位置をリセット
-			CALL TOUCH_SET(0,0,0,1)
-			;RETURN 1
-		;非同棲中(部屋から出て行くので、起床口上は無し → 招待就寝条件である恋慕持ち相手に何故出て行っちゃうのかわからないので忍び込みや悪戯時のみ撤退するよう変更した
-		;ついでに言えば先に部屋主が外に出ていた場合、部屋に取り残される。 もしも睡眠姦後就寝を実装した時にはここで要分岐
-		ELSE
-			FOR LOCAL,0,CHARANUM
-				CALL SET_TOGETHER(0,LOCAL,1)
-			NEXT
-			;MASTERとの接触位置をリセット
-			CALL TOUCH_SET(0,0,0,1)
-			;自分的房間じゃない、かつやましい場合、移動可能な場所へ移動
-			SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
-				CALL GETOUT(MASTER)
-			;忍び込みOFF
-			CALL SET_SNEAK(0,TARGET,2)
-			;恶作剧OFF
-			CALL SET_PRANK(0,TARGET,2)
-		ENDIF
-	ELSE
-		;同棲中
-		IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
-			;同棲中かつ相手が起きてる
-			起床状況 = 2
-			FOR LOCAL,0,CHARANUM
-				CALL SET_TOGETHER(0,LOCAL,1)
-			NEXT
-			;MASTERとの接触位置をリセット
-			CALL TOUCH_SET(0,0,0,1)
-		;非同棲中
-		ELSE
-			;非同棲かつ相手が起きてる
-			起床状況 = 1
-			;MASTARの自室で起床した
-			IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:311
-				起床場所 = 1
-				FOR LOCAL,0,CHARANUM
-					CALL SET_TOGETHER(0,LOCAL,1)
-				NEXT
-				;MASTERとの接触位置をリセット
-				CALL TOUCH_SET(0,0,0,1)
-			;TARGETの自室で起床した（恋慕付き相手的房間で添い寝後就寝時のみの筈
-			ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:311
-				起床場所 = 0
-				FOR LOCAL,0,CHARANUM
-					CALL SET_TOGETHER(0,LOCAL,1)
-				NEXT
-				;MASTERとの接触位置をリセット
-				CALL TOUCH_SET(0,0,0,1)
-			;それ以外(
+;解除与MASTER的接触状态
+CALL TOUCH_SET(0,0,0,1)
+;对共用寝室的修改，改成所有同居角色均可调用早安对话
+FOR LOCAL,1,CHARANUM
+	起床状况 = 0
+	起床场所 = 0
+	SIF CFLAG:MASTER:300 != CFLAG:LOCAL:300
+		CONTINUE
+	TARGET = LOCAL
+	IF TARGET
+		IF 睡眠時間(TARGET)
+			;同居中
+			IF CFLAG:MASTER:311 == CFLAG:TARGET:311
+				;同居中对象还在睡
+				起床状况 = 3
+				;RETURN 1
+			;非同居中（因为会离开房间，所以没有起床问候 → 考虑到作为邀请就寝条件的恋慕对象，不明白为何会离开，因此修改为只在潜入或恶作剧时撤退）
 			ELSE
-				;どこで寝てるの…？恋慕持ち角色的房間に他の恋慕持ち角色を連れ込んで寝た…？？？
-				起床場所 = -1
+				;顺便一提，如果房主先出去了，就会被留在房间里。如果将来实现睡眠奸后就寝的功能，这里需要进行分支处理
+				;如果不是自己的房间，且心虚的话，就移动到可移动的地点
+				SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:300 != CFLAG:MASTER:311
+					CALL GETOUT(MASTER)
+				;潜行OFF
+				CALL SET_SNEAK(0,TARGET,2)
+				;恶作剧OFF
+				CALL SET_PRANK(0,TARGET,2)
 			ENDIF
-			;忍び込みOFF
-			CALL SET_SNEAK(0,TARGET,2)
-			;恶作剧OFF
-			CALL SET_PRANK(0,TARGET,2)
+		ELSE
+			;同居中
+			IF CFLAG:MASTER:311 == CFLAG:TARGET:311
+				;同居中对象醒来了
+				起床状况 = 2
+			;非同居中
+			ELSE
+				;非同居中对象醒来了
+				起床状况 = 1
+				;在MASTAR的房间起床
+				IF CFLAG:MASTER:300 == CFLAG:MASTER:311
+					起床场所 = 1
+				;在TARGET的自己房间里起床了（应该只发生在与同居对象同床共枕后就寝时）
+				ELSEIF CFLAG:MASTER:300 == CFLAG:TARGET:311
+					起床场所 = 0
+				;兜底情况
+				ELSE
+					起床场所 = -1
+				ENDIF
+				;潜行OFF
+				CALL SET_SNEAK(0,TARGET,2)
+				;恶作剧OFF
+				CALL SET_PRANK(0,TARGET,2)
+			ENDIF
 		ENDIF
-		;CALL KOJO_EVENT(6, TARGET, 1)
-		;添い寝後かどうか
-		;添い寝フラグが立たないので、通常起床のみ
-		;IF CFLAG:MASTER:陪睡中
-			;CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,2,0)
-		;ELSE
-		;ENDIF
+		SIF 起床状况 == 0 || 起床场所 == -1
+			CALL MESSAGE_GOODMONING(起床状况, 起床场所)
+		SIF 起床状况 && 起床场所 != -1
+			CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,起床状况,起床场所)
 	ENDIF
-	SIF 起床状況 == 0 || 起床場所 == -1
-		CALL MESSAGE_GOODMONING(起床状況, 起床場所)
-	SIF 起床状況 && 起床場所 != -1
-		CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,起床状況,起床場所)
-ENDIF
+NEXT
+
 IF FLAG:異常気象
 	PRINTFORML 感觉好像有种不同寻常的气息
 ELSE
 	SELECTCASE TIME:5
 		CASE 0,1
-			CALL COLORMESSAGE(@"真是好天気。", C_P_GREEN, 1)
+			CALL COLORMESSAGE(@"真是好天气。", C_P_GREEN, 1)
 		CASE IS & 4
 			CALL COLORMESSAGE(@"在下雨。", C_AQUA, 1)
 		CASE IS & 8
@@ -602,8 +577,8 @@ IF DAY == FLAG:開始日 && FLAG:宴会開催FLAG
 ;宴会日
 	PRINTFORM 今天是
 	CALL 宴会予定表示
-	PRINTL 舉辦的日子
-	;ここでの宴会場代入だとCHARA_MOVEMENTで不具合が出たため上部へ移動
+	PRINTL 举办的日子
+	;ここでの宴会场代入だとCHARA_MOVEMENTで不具合が出たため上部へ移动
 	;FLAG:32 = GET_JOBPLACE("宴会")
 	IF TIME:3 >= FLAG:33
 		FOR 宴会位置是正,1,CHARANUM
@@ -620,18 +595,19 @@ ENDIF
 IF CHILD_HAPPY_BIRTHDAY(CNT_BIRTHDAY, NAME_CHILD, AGE_CHILD)
 	PRINTFORM 今天是 
 	FOR LOCAL, 1, CNT_BIRTHDAY + 1
-		PRINTFORM %NAME_CHILD:LOCAL%（満{AGE_CHILD:LOCAL}歲）
+		PRINTFORM %NAME_CHILD:LOCAL%（满{AGE_CHILD:LOCAL}岁）
 		SIF LOCAL == CNT_BIRTHDAY
 			BREAK
-		PRINTFORM  と 
+		PRINTFORM  和
 	NEXT
-	PRINTFORML  的誕生日
+	PRINTFORML  的诞生日
 ENDIF
 CALL CHARA_MOVEMENT
 SIF CFLAG:MASTER:现在忙得抽不出手
-	PRINTFORML …好像自慰自慰着就睡着了的様子…
+	PRINTFORML …好像自慰自慰着就睡着了的样子…
 
 CALL TODAYS_CHARISMA
+
 ;----------------------------------------------
 @KODUCHI
 ;小槌の代償
@@ -639,7 +615,7 @@ IF CFLAG:MASTER:小槌 > 0
 	CFLAG:MASTER:魔力回収 -= 1
 	LOCAL = CFLAG:MASTER:魔力回収
 	IF CFLAG:MASTER:小槌 == 8
-			PRINTFORMW 針妙丸的身体变回了原状
+			PRINTFORMW 针妙丸的身体变回了原状
 		TALENT:71:体型 = -5
 		SIF CFLAG:71:変異前的形状 != 0
 			TALENT:71:体型 = CFLAG:71:変異前的形状
@@ -651,14 +627,14 @@ IF CFLAG:MASTER:小槌 > 0
 		IF CFLAG:MASTER:魔力回収 < 1
 			TALENT:MASTER:形状 = CFLAG:MASTER:382
 		ELSE
-			PRINTW 曾经很大的家伙变成了可怜的模様…
+			PRINTW 曾经很大的家伙变成了可怜的模样…
 			TALENT:MASTER:形状 = 2
 		ENDIF
 	ELSEIF CFLAG:MASTER:小槌 == 5
 		IF CFLAG:MASTER:魔力回収 < 1
 			TALENT:MASTER:形状 = CFLAG:MASTER:382
 		ELSE
-			PRINTW 曾经有两个头的家伙……变得…连一个都谈不上了
+			PRINTW 曾经变成两根的家伙……变得…连一根都算不上了
 			TALENT:MASTER:183 = 0
 			TALENT:MASTER:形状 = 2
 			BASE:MASTER:精力 -= MAXBASE:MASTER:精力 / 2
@@ -681,59 +657,59 @@ IF CFLAG:MASTER:魔力回収 <= 0
 	CFLAG:MASTER:魔力回収 = 0
 ENDIF
 ;----------------------------------------------
-;おはよう共通口上
-;起床状況 = 0:非同棲相手睡眠 1:非同棲相手起き 2:同棲相手起き 3:同棲中相手睡眠 4:
-;起床場所 = 0:相手部屋 1:自室
+;早安通用问候
+;起床状况 = 0:非同居对象睡眠 1:非同居对象醒着 2:同居对象醒着 3:同居中对象睡眠 4:
+;起床场所 = 0:对方房间 1:自己房间
 ;----------------------------------------------
-@MESSAGE_GOODMONING(起床状況,起床場所)
-#DIM 起床状況
-#DIM 起床場所
+@MESSAGE_GOODMONING(起床状况,起床场所)
+#DIM 起床状况
+#DIM 起床场所
 LOCAL:9 = GETCOLOR()
 RESETCOLOR
 PRINTFORML
-SELECTCASE 起床状況
+SELECTCASE 起床状况
 CASE 0
-	;非同棲相手睡眠
-	IF !起床場所
-		;とにかくやましい時のみ摆脱よう変更
+	;非同栖相手睡眠
+	IF !起床场所
+		;とにかくやましい时のみ摆脱よう变更
 		PRINTFORMW %CALLNAME:MASTER%醒来后身旁的%CALLNAME:TARGET%还在睡着
 		IF CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧
-			IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
-				PRINTFORMW %CALLNAME:MASTER%在思考%CALLNAME:TARGET%睡醒的時候到底該怎麼辦好呢……
+			IF CFLAG:MASTER:300 == CFLAG:MASTER:311
+				PRINTFORMW %CALLNAME:MASTER%在思考%CALLNAME:TARGET%睡醒的时候到底该怎么办好呢……
 			ELSE
-				PRINTFORMW 为了不引起%CALLNAME:TARGET%注意%CALLNAME:MASTER%悄悄地离開了房间…
+				PRINTFORMW 为了不引起%CALLNAME:TARGET%注意%CALLNAME:MASTER%悄悄地离开了房间…
 			ENDIF
 		ELSE
-			PRINTFORMW %CALLNAME:MASTER%靜靜地從%CALLNAME:TARGET%旁邊離開、開始了一天的準備
+			PRINTFORMW %CALLNAME:MASTER%静静地从%CALLNAME:TARGET%旁边离开、开始了一天的准备
 		ENDIF
 	ELSE
 		;今のところ死に分岐
 		PRINTFORMW %CALLNAME:MASTER%醒来后身旁的%CALLNAME:TARGET%还在睡着
-		PRINTFORMW 雖然不知道為何%CALLNAME:TARGET%在自己的房間里睡覺、但也從\@ BEDROOM(CFLAG:MASTER:現在位置) ? 被窝 # 的旁邊 \@溜了出來、開始了一天的準備……
+		PRINTFORMW 虽然不知道为何%CALLNAME:TARGET%在自己的房间里睡觉、但也从\@ BEDROOM(CFLAG:MASTER:300) ? 被窝 # 的旁边 \@溜了出来、开始了一天的准备……
 	ENDIF
 CASE 1
-	;非同棲相手起き
-	IF 起床場所 == 0
-		;待客室睡眠かな…？ 恋慕付き確定？
-		PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁開了眼睛
-		PRINTFORMW 互相打過招呼后、從%CALLNAME:TARGET%的旁邊離開\、開始了一天的準備
-	ELSEIF 起床場所 == 1
-		;自室に角色を連れ込んだ後で（你の睡眠時間の方が早い）寝た場合や勝手に部屋に入ってくる場合（三月精とか割と頻繁）
-		;自己連れ込んだんじゃろがいっ！ って時は個人口上側で対処してください
-		PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁開了眼睛
-		PRINTFORMW 雖然不知道為何%CALLNAME:TARGET%在自己的房間里睡覺、但也從\@ BEDROOM(CFLAG:MASTER:現在位置) ? 被窝 # 的旁邊 \@溜了出來、開始了一天的準備……
+	;非同栖相手起き
+	IF 起床场所 == 0
+		;待客室睡眠かな…？ 恋慕付き确定？
+		PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁开了眼睛
+		PRINTFORMW 互相打过招呼后、从%CALLNAME:TARGET%的旁边离开\、开始了一天的准备
+	ELSEIF 起床场所 == 1
+		;自室に角色を连れ込んだ后で（你の睡眠时间の方が早い）寝た场合や胜手に房间に入ってくる场合（三月精とか割と频繁）
+		;自己连れ込んだんじゃろがいっ！ って时は个人口上侧で对处してください
+		PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁开了眼睛
+		PRINTFORMW 虽然不知道为何%CALLNAME:TARGET%在自己的房间里睡觉、但也从\@ BEDROOM(CFLAG:MASTER:300) ? 被窝 # 的旁边 \@溜了出来、开始了一天的准备……
 	ELSE
-		;ここはどこ、この子は誰状態 どうやったらこの分岐に来るかわからない…
-		PRINTFORMW 为什么在这样的地方睡觉、为什么会有%CALLNAME:TARGET%在旁边呢?、带着疑问从\@ BEDROOM(CFLAG:MASTER:現在位置) ? 被子里 # 她的身边 \@溜了出去、開始了一天的准备
+		;ここはどこ、この子は谁状态 どうやったらこの分岐に来るかわからない…
+		PRINTFORMW 自己怎么在这地方睡觉、为什么%CALLNAME:TARGET%在旁边呢?%CALLNAME:MASTER%带着疑问从\@ BEDROOM(CFLAG:MASTER:300) ? 被子里 # 她的身边 \@溜了出去、开始了一天的准备
 	ENDIF
 CASE 2
-	;同棲相手起き
-	PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁開了眼睛
-	PRINTFORMW 早上和%CALLNAME:TARGET%打了招呼后、从\@ BEDROOM(CFLAG:MASTER:現在位置) ? 被子里 # 她的身边 \@溜了出去、開始了一天的准备
+	;同栖相手起き
+	PRINTFORMW %CALLNAME:MASTER%醒来后%CALLNAME:TARGET%也睁开了眼睛
+	PRINTFORMW 早上和%CALLNAME:TARGET%打了招呼后、从\@ BEDROOM(CFLAG:MASTER:300) ? 被子里 # 她的身边 \@溜了出去、开始了一天的准备
 CASE 3
-	;同棲相手睡眠
+	;同栖相手睡眠
 	PRINTFORMW %CALLNAME:MASTER%醒来后身旁的%CALLNAME:TARGET%还在香甜的睡着
-	PRINTFORMW %CALLNAME:MASTER%为了不引起%CALLNAME:TARGET%的注意、悄悄从\@ BEDROOM(CFLAG:MASTER:現在位置) ? 被子里 # 她的身边 \@溜了出去、開始了一天的准备
+	PRINTFORMW %CALLNAME:MASTER%为了不引起%CALLNAME:TARGET%的注意、悄悄从\@ BEDROOM(CFLAG:MASTER:300) ? 被子里 # 她的身边 \@溜了出去、开始了一天的准备
 ENDSELECT
 PRINTFORML
 SETCOLOR LOCAL:9
@@ -900,9 +876,9 @@ IF ITEM:甜蜜安眠枕
 	安眠補正 = MIN(RAND:(SQRT(FLAG:チュート文累計 + 1)), 40)
 	SELECTCASE 安眠補正
 		CASE IS > 30
-			PRINTFORMW 幸好有安眠枕、真是暢快的早晨啊！
+			PRINTFORMW 幸好有安眠枕、真是畅快的早晨啊！
 		CASE IS > 20
-			PRINTFORMW 多得了安眠枕、睡得舒舒服服的疲憊都沒了…
+			PRINTFORMW 多得了安眠枕、睡得舒舒服服的疲惫都没了…
 	ENDSELECT
 ELSE
 	安眠補正 = 0

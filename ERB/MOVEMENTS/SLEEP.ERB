@@ -418,7 +418,7 @@ SIF IS_LOVER(ARG)
 SIF EXP:ARG:睡眠姦経験 > 300
 	RETURNF 1
 ;複数の角色が寝室を使ってる
-SIF 共通の寝室(ARG)
+SIF 共用寝室(ARG)
 	RETURNF 1
 IF 追い出されない
 	;縛られてる（強制）
@@ -446,7 +446,7 @@ ENDIF
 ;如果其中任何一个角色处于恋慕或爱欲状态，就可以获得使用该卧室的许可。
 ;莉莉W&B、秋姐妹、青娥和芳香、典和龙属于这种情况（这是对旧灵梦房间的处理方式）。
 ;-----------------------------------------
-@共通の寝室(ARG)
+@共用寝室(ARG)
 #FUNCTION
 SIF CFLAG:ARG:初期位置 == SUKIMA()
 	RETURNF 0
@@ -459,3 +459,47 @@ FOR LOCAL, 1, CHARANUM
 			RETURNF 1
 	ENDIF
 NEXT
+
+;-----------------------------------------
+;处理共用寝室的同居人呼出
+;自机在与共用寝室的角色同居，依不同的函数机制，会固定调用房间家主，即编号靠后的角色，或是编号靠前的角色
+;特殊的同居状态：
+;139青娥和芳香、7009莉莉W&B、717秋姐妹、740高岭和奥莲姬、852驹如和伊莉丝、853魅须丸和萨丽爱尔、854典和龙
+;陷落等级，2=恋人，1=IS_LOVER，0=以下
+;-----------------------------------------
+
+@共用寝室的同居人
+#FUNCTION
+#DIM 共用寝室 = 139,709,717,740,852,853,854
+#DIM 陷落等级,2
+#DIM 同居人,2
+VARSET 同居人
+VARSET 陷落等级
+IF FINDELEMENT(共用寝室,CFLAG:MASTER:311) == -1
+	RETURNF 0
+ELSE
+	同居人:0 = PRIVATEROOM:(CFLAG:MASTER:311 % 100)
+	FOR LOCAL, 1, CHARANUM
+		SIF LOCAL == 同居人:0
+			CONTINUE
+		IF CFLAG:LOCAL:311 == CFLAG:(同居人:0):311
+			同居人:1 = LOCAL
+			BREAK
+		ENDIF
+	NEXT
+	SIF 同居人:1 == 0
+		RETURNF 0
+	FOR LOCAL, 0, 2
+		CFLAG:(同居人:LOCAL):最後に会った日 = DAY
+		SIF IS_LOVER(同居人:LOCAL)
+			陷落等级:LOCAL = 1
+		SIF TALENT:(同居人:LOCAL):恋人
+			陷落等级:LOCAL = 2
+	NEXT
+	IF 陷落等级:0 == 陷落等级:1
+		RESULT = 同居人:(RAND:2)
+	ELSE
+		RESULT = 同居人:(陷落等级:1 > 陷落等级:0)
+	ENDIF
+RETURNF 1
+ENDIF

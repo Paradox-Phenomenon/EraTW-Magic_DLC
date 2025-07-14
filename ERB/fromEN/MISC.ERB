@@ -1,4 +1,4 @@
-﻿;--------------------------------------------------------
+;--------------------------------------------------------
 ;When I want to have BREAKENG applied on the text without moving the entire text into LOCALS first
 ;First we need to prepare the text by removing line breaks from PRINT instruction
 ;use this regex PRINT(|FORM)(L|W) (.*) and replace with PRINTFORM $3
@@ -804,11 +804,11 @@ SELECTCASE ARG:0
 	CASE -2
 		RETURNF "平坦"
 	CASE -1
-		RETURNF "小ぶり"
+		RETURNF "小巧"
 	CASE 0
 		RETURNF "普通"
 	CASE 1
-		RETURNF "大きめ"
+		RETURNF "丰满"
 	CASE 2
 		RETURNF "巨大"
 	; CASE 3
@@ -816,38 +816,51 @@ SELECTCASE ARG:0
 	; CASE 4
 	; 	RETURNF "Mystifying"
 ENDSELECT
+
+@BABYPLNOUN(Noun,Character)
+	;Calls PLNOUN() if the character would normally be aware that she's carrying more than one child.
+#FUNCTIONS
+#DIMS DYNAMIC Noun
+#DIM DYNAMIC Character
+IF BABYMULTIAWARE(Character)
+	SIF Noun == " a"
+		RETURNF 
+	RETURNF PLNOUN(Noun,CFLAG:Character:WithChildCount)
+ENDIF
+RETURNF Noun
+
 ;----------------------------------------------------------------------
 ;Like AddEXP, but unbolded and with the name at the front. Can be spaced out with OutputMode = 1 or hidden with OutputMode = -1.
 ;----------------------------------------------------------------------
-@AddEXPOrdered(VAR_NAME,C_ID,変動数,OutputMode)
+@AddEXPOrdered(VAR_NAME,C_ID,变动数,OutputMode)
 #DIMS VAR_NAME
 #DIM VAR_ID
 #DIM C_ID
-#DIM 変動数
+#DIM 变动数
 #DIM OutputMode
-SIF 変動数 == 0
+SIF 变动数 == 0
 	RETURN
 VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME,,,1)
-EXP:C_ID:VAR_ID += 変動数
+EXP:C_ID:VAR_ID += 变动数
 IF OutputMode == 1
-	CALL COLORMESSAGE(@"%CALLNAME:C_ID+"'s",14,LEFT% %EXP_TR(VAR_ID),18,LEFT% ＋%DIGIT_GROUP(変動数)%",C_YELLOW,1)
+	CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%EXP_TR(VAR_ID),18,LEFT% ＋{变动数}",C_YELLOW,1)
 ELSEIF OutputMode == 0
-	CALL COLORMESSAGE(@"%CALLNAME:C_ID+"'s"% %EXP_TR(VAR_ID)% ＋%DIGIT_GROUP(変動数)%",C_YELLOW,2)
+	CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的"%%EXP_TR(VAR_ID)% ＋{变动数}",C_YELLOW,2)
 ENDIF
 ;----------------------------------------------------------------------
 ;Like JUEL_UP_SPECIAL, but with the name at the front. Can be spaced out with OutputMode = 1 or hidden with OutputMode = -1.
 ;----------------------------------------------------------------------
-@JUEL_UP_SPECIAL_ORDERED(ARG,増やす珠,参照能力,PERCENTAGE,OutputMode,PATTERN)
-#DIMS 増やす珠
+@JUEL_UP_SPECIAL_ORDERED(ARG,增加的珠,参照能力,PERCENTAGE,OutputMode,PATTERN)
+#DIMS 增加的珠
 #DIMS 参照能力
 #DIM UP_JL
 #DIM UP_ABL
 #DIM PERCENTAGE
 #DIM OutputMode
 #DIM PATTERN
-#DIM 上昇量
+#DIM 上升量
 UP_ABL = FINDELEMENT(ABLNAME, 参照能力,,,1)
-UP_JL = FINDELEMENT(PALAMNAME, 増やす珠,,,1)
+UP_JL = FINDELEMENT(PALAMNAME, 增加的珠,,,1)
 SELECTCASE UP_ABL
 	CASE 0
 		LOCAL = JUEL_DEMAND_0(PATTERN,UP_JL,ARG)
@@ -897,10 +910,10 @@ SELECTCASE UP_ABL
 	CASE 39 ;Hypno Addiction, added
 		LOCAL = JUEL_DEMAND_39(PATTERN,UP_JL,ARG)
 ENDSELECT
-上昇量 = MAX(LOCAL * PERCENTAGE / 100, PERCENTAGE)
-JUEL:ARG:UP_JL += 上昇量
+上升量 = MAX(LOCAL * PERCENTAGE / 100, PERCENTAGE)
+JUEL:ARG:UP_JL += 上升量
 IF OutputMode == 1
-	CALL COLORMESSAGE(@"%CALLNAME:ARG+"'s",14,LEFT% %PALAM_TR(PALAMNAME:UP_JL)+" Gems",18,LEFT% ＋%DIGIT_GROUP(上昇量)%",C_PINK,1)
+	CALL COLORMESSAGE(@"%CALLNAME:ARG+"的",14,LEFT%%PALAMNAME:UP_JL+"之珠",18,LEFT% ＋{上升量}",C_PINK,1)
 ELSEIF OUTPUTMODE == 0
-	CALL COLORMESSAGE(@"%CALLNAME:ARG+"'s"% %PALAM_TR(PALAMNAME:UP_JL)+" Gems"% ＋%DIGIT_GROUP(上昇量)%",C_PINK,1)
+	CALL COLORMESSAGE(@"%CALLNAME:ARG%的%PALAMNAME:UP_JL%之珠 ＋{上升量}",C_PINK,1)
 ENDIF

@@ -16,7 +16,7 @@
 DISH_NAME = 
 DISH_TASTE = 
 DISH_COMMENT = 
-VARSET DISH_ING
+VARSET DISH_ING, -1
 DISH_TIME = 0
 DISH_MAXLIMIT = 0
 TYPECHECK = 
@@ -985,10 +985,17 @@ SELECTCASE DISH_NUM
 	;固有料理
 	CASE 401 TO 400 + CHARANUM - 1
 		RESULT = 0
-		;addition custom code, for custom charadata special menu
+		;新增剧本侧接口，调用剧本侧设定的角色固有料理
 		CALL KOJO_CHECK(SP_CHARA, "CHARADATA" , "SPECIAL_MENU")
-		SIF RESULT <= 0
+		IF RESULT == -1
+			;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
+			;这等于禁用原版的固有料理
+		ELSEIF RESULT
+			;采用剧本设定的固有料理
+		ELSE 
+			;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版的固有料理
 			TRYCALLFORM SPECIAL_MENU_{NO:SP_CHARA}
+		ENDIF
 		IF RESULT > 0
 			;TYPECHEKはローカル変数なのでRESULTSを通して入れる
 			TYPECHECK = %RESULTS%

@@ -265,7 +265,8 @@ ELSEIF !(CFLAG:ARG:1 & 4) && !(CFLAG:ARG:13 & 2) && !FLAG:告白禁止 ;CAN_MAKE
 	IF (LOCAL > 530 + TALENT:ARG:難以越過的底線 * 20)
 		CALL KOJO_MESSAGE_SEND("SP_EVENT",2,ARG,0)
 		PRINTFORML 对%CALLNAME:ARG%的告白…
-		CALL ASK_YN(@"接受（只能有{FLAG:追加恋人枠 + 1}名恋人）","拒绝")
+		LOCALS = %\@ TALENT:MASTER:左拥右抱 ? # （只能有{FLAG:追加恋人枠 + 1}名恋人）\@%
+		CALL ASK_YN(@"接受%LOCALS%","拒绝")
 		IF !RESULT
 			SETBIT CFLAG:ARG:既成事實 , 2
 			SETBIT CFLAG:MASTER:既成事實, 2
@@ -298,37 +299,37 @@ ELSE
 ENDIF
 
 @GIFT(ARG)
-#DIM 好感度上昇値
-#DIM 禮物評価
-;约会前好感度と現好感度を比較
+#DIM 好感度上升值
+#DIM 礼物评价
+;约会前好感度と现好感度を比较
 ;多人约会移除
 SIF 同行人数() > 1
 	RETURN 0
-好感度上昇値 = CFLAG:ARG:2 - TFLAG:约会前好感度
+好感度上升值 = CFLAG:ARG:2 - TFLAG:约会前好感度
 IF DAY:2 == 4 && DAY:3 == 24 && ITEM:94 && TFLAG:约会前好感度
 	PRINTFORML 要送出圣诞礼物吗？
 	CALL ASK_YN
 	IF !RESULT
-		PRINTFORMW 把禮物送給了%CALLNAME:ARG%
+		PRINTFORMW 把礼物送给了%CALLNAME:ARG%
 		ITEM:94 = 0
 		IF TALENT:ARG:恋人
-			PRINTFORMW 能看見%CALLNAME:ARG%的変得一片通紅
+			PRINTFORMW 能看见%CALLNAME:ARG%的变得一片通红
 			PRINTFORMW ……得到了对脸颊的一吻作为回礼
-			禮物評価 = 10
+			礼物评价 = 10
 		ELSEIF TALENT:ARG:恋慕
-			PRINTFORMW 能看見%CALLNAME:ARG%的変得一片通紅
-			PRINTFORMW 受到禮物的%CALLNAME:ARG%感覺非常幸福
-			禮物評価 = 7
+			PRINTFORMW 能看见%CALLNAME:ARG%的变得一片通红
+			PRINTFORMW 受到礼物的%CALLNAME:ARG%感觉非常幸福
+			礼物评价 = 7
 		ELSEIF TALENT:ARG:思慕
-			PRINTFORML %CALLNAME:ARG%驚訝之餘很開心的接受了
-			PRINTFORML %CALLNAME:ARG%面対表示好意的禮物、更加在意起%CALLNAME:MASTER%了
-			禮物評価 = 5
+			PRINTFORML %CALLNAME:ARG%惊讶之余很开心的接受了
+			PRINTFORML %CALLNAME:ARG%面对表示好意的礼物、更加在意起%CALLNAME:MASTER%了
+			礼物评价 = 5
 		ELSE
-			PRINTFORMW %CALLNAME:ARG%因為受到的高價禮物顯得有些不知所措、不過並沒有討厭
-			禮物評価 = 2
+			PRINTFORMW %CALLNAME:ARG%因为受到的高价礼物显得有些不知所措、不过并没有讨厌
+			礼物评价 = 2
 		ENDIF
-		CFLAG:ARG:2 += 好感度上昇値 * 禮物評価 / 5
-		CFLAG:ARG:4 += 好感度上昇値 * 禮物評価 / 10
+		CFLAG:ARG:2 += 好感度上升值 * 礼物评价 / 5
+		CFLAG:ARG:4 += 好感度上升值 * 礼物评价 / 10
 		RETURN 1
 	ELSE
 		RETURN 0
@@ -351,24 +352,12 @@ RETURNF LOCAL:1
 
 @CAN_MAKE_恋人()
 #FUNCTION
-SIF TALENT:MASTER:左拥右抱
+SIF POLYAMOUR_CHEAT || TALENT:MASTER:左拥右抱
 RETURNF 1
 SIF INRANGECARRAY(TALENT:恋人, 1, CHARANUM, 1, CHARANUM) <= FLAG:追加恋人枠
 		RETURNF 1
 	RETURNF 0
 
-@CAN_MAKE_原版恋人()
-#FUNCTION
-;恋人が今何人いるかカウント
-VARSET LOCAL
-FOR LOCAL, 1, CHARANUM
-	SIF TALENT:LOCAL:恋人
-		LOCAL:1 ++
-NEXT
-
-	SIF LOCAL:1 < (1 + FLAG:追加恋人枠)
-		RETURNF 1
-	RETURNF 0
 
 ;===========================================
 ;接吻経験や初吻処理などをまとめてやる関数

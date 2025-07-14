@@ -248,49 +248,66 @@ ENDIF
 
 
 @诶嘿嘿中特殊事件
-#DIM 奪主導権確率
+#DIM 夺主导权概率
 VARSET LOCAL
-;你主導
-IF CFLAG:TARGET:诶嘿嘿 == 1 && CFLAG:积攒度 > RAND(100, 300) && !TCVAR:TARGET:强行
-;攻守逆転
-	IF SHIRAHU(TARGET)
-		;&& TEQUIP:TARGET:体位 == 3
-		;強気なほど確率が高い→分母は小さい
-		;1/確率
-		奪主導権確率 = 15
-		奪主導権確率 -= TALENT:TARGET:胆量 * 2
-		奪主導権確率 -= TALENT:TARGET:応答 * 2
-		奪主導権確率 -= TALENT:TARGET:自尊心 * 2
-		奪主導権確率 += TALENT:TARGET:自制心 * 3
-		奪主導権確率 -= TALENT:TARGET:性的兴趣 * 3
-		奪主導権確率 += TALENT:TARGET:羞恥心 * 2
-		奪主導権確率 -= TALENT:TARGET:施虐狂 * 5
-		奪主導権確率 += TALENT:TARGET:受虐狂 * 5
-
-		;RANDに渡すので最低値は1
-		SIF 奪主導権確率 < 1
-			奪主導権確率 = 1
-		IF !RAND(奪主導権確率)
+LOCAL:2 = GET_TARGETNUM()
+;你主导
+IF CFLAG:TARGET:诶嘿嘿 == 1
+	;攻守逆转 2025年7月6日 新增逆推接口
+	CALL KOJO_CHECK(TARGET, "OSHITAOSARE", "OVERRIDE")
+	IF RESULT == -1
+		;口上侧判定禁止角色夺取主导
+		GOTO KOJO_FAIL
+	ELSEIF RESULT == 1
+		;口上侧判定角色夺取主导成功
+		GOTO KOJO_SUCCESS
+	ELSEIF RESULT == 0
+		;口上侧没有关于逆推可行性的判断或者采用原版的可行性判断
+	ENDIF
+	IF SHIRAHU(TARGET) && TEQUIP:TARGET:体位 == 3 && CFLAG:积攒度 > 300 && !TCVAR:TARGET:强行
+		;概率判定 格式为：1/概率 越强势概率越高→分母越小
+		夺主导权概率 = 15
+		夺主导权概率 -= TALENT:TARGET:胆量 * 2
+		夺主导权概率 -= TALENT:TARGET:応答 * 2
+		夺主导权概率 -= TALENT:TARGET:自尊心 * 2
+		夺主导权概率 += TALENT:TARGET:自制心 * 3
+		夺主导权概率 -= TALENT:TARGET:性的兴趣 * 3
+		夺主导权概率 += TALENT:TARGET:羞恥心 * 2
+		夺主导权概率 -= TALENT:TARGET:施虐狂 * 5
+		夺主导权概率 += TALENT:TARGET:受虐狂 * 5
+		CALL KOJO_CHECK(TARGET, "OSHITAOSARE", "ABLE",夺主导权概率)
+		;如果口上侧采用自定义的概率判定返回了概率值，则覆盖原版的概率
+		SIF RESULT > 0
+			夺主导权概率 = RESULT
+		SIF 夺主导权概率 < 1
+			夺主导权概率 = 1
+		IF !RAND(夺主导权概率)
+		;逆推判定成功后管理
+			$KOJO_SUCCESS
 			CFLAG:MASTER:诶嘿嘿 = 2
 			TFLAG:COMABLE管理 = 3
-			FOR LOCAL,1,CHARANUM
-				IF CFLAG:MASTER:現在位置 == CFLAG:LOCAL:現在位置
-					CFLAG:LOCAL:诶嘿嘿 = 2
-					LOCAL:1 ++
-				ENDIF
+			FOR LOCAL,1,LOCAL:2 + 1
+				;跳过本来不在诶嘿嘿的角色，防止潜伏时将在场所有人拉入啪啪啪
+				SIF CFLAG:(TARGET:LOCAL):诶嘿嘿 == 0
+					CONTINUE
+				CFLAG:(TARGET:LOCAL):诶嘿嘿 = 2
+				LOCAL:1 ++
 			NEXT
-			PRINTFORML 察覺到的時候、主導權已經被%CALLNAME:TARGET%\@ LOCAL:1 > 1 ? 她們 #  \@奪走了
+			PRINTFORML 察觉到的时候、主导权已经被%CALLNAME:TARGET%\@ LOCAL:1 > 1 ? 她们 #  \@夺走了
+			;2025年7月6日 新增逆推新事件ev10-1-2，做爱中被角色夺走主导权，实施可能性可以由KOJO_CHECK控制
+			CALL KOJO_MESSAGE_SEND("EVENT",10,TARGET,1,2)
 		ENDIF
+		$KOJO_FAIL
 	ENDIF
 ;对方主導
 ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 	IF TARGET == RANDOM_CHARANUM && TALENT:TARGET:風俗嬢 && (BASE:気力 <= 0 || CFLAG:积攒度 <= 0)
-		PRINTFORML %CALLNAME:TARGET%\@ BASE:気力 <= 0 ? 有些疲憊地 # 満足地 \@譲出了主導権
+		PRINTFORML %CALLNAME:TARGET%\@ BASE:気力 <= 0 ? 有些疲惫地 # 满足地 \@让出了主导权
 		CFLAG:TARGET:诶嘿嘿 = 1
 		CFLAG:MASTER:诶嘿嘿 = 1
 	;眼罩强化启动后无视气力过低导致的疲惫判定，【&& (TEQUIP:眼罩 == 0 || Eye_mask_Blessing == 0)】
 	ELSEIF BASE:気力 <= 0 && (TEQUIP:眼罩 == 0 || Eye_mask_Blessing == 0)
-		PRINTFORML %CALLNAME:TARGET%似乎有点疲劳、放開了%CALLNAME:MASTER%
+		PRINTFORML %CALLNAME:TARGET%似乎有点疲劳、放开了%CALLNAME:MASTER%
 		CALL 被逆推終了("疲惫")
 	ELSEIF CFLAG:积攒度 <= 0 && !TCVAR:TARGET:随便
 		PRINTFORML %CALLNAME:TARGET%好像已经满足了
@@ -299,20 +316,22 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 		CFLAG:心情不快 = 0
 		IF !FLAG:甲斐性無
 			;魔改被推到后，催眠强度大于50可以要求对方继续
-			;CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",ABL:施虐属性 >= 3)
-			CALL ASK_M("摆脱",1,"我們還沒有滿足",1,"繼續進攻",(ABL:施虐属性 >= 3 || FLAG:催眠強度 > 50))
+			CALL ASK_M("摆脱",1,"我们还没有满足",1,"继续进攻",(ABL:施虐属性 >= 3 || FLAG:催眠強度 > 50))
 			SELECTCASE RESULT
 				CASE 0
-					PRINTFORML %CALLNAME:TARGET%放開%CALLNAME:MASTER%了
+					PRINTFORML %CALLNAME:TARGET%放开%CALLNAME:MASTER%了
 					CALL 被逆推終了("満足")
 				CASE 1
 					PRINTFORML %CALLNAME:MASTER%推倒了%CALLNAME:TARGET%
 					CALL KOJO_MESSAGE_SEND("EVENT",30,TARGET,3)
 					CFLAG:MASTER:诶嘿嘿 = 1
-					FOR LOCAL,0,CHARANUM
+					FOR LOCAL,1,LOCAL:2 + 1
+						;跳过本来不在诶嘿嘿的角色，防止潜伏时将在场所有人拉入啪啪啪
+						SIF CFLAG:(TARGET:LOCAL):诶嘿嘿 == 0
+							CONTINUE
 						CFLAG:(TARGET:LOCAL):诶嘿嘿 = 1
 						IF INROOM(CFLAG:MASTER:現在位置) == 2
-							CALL DATUI_SHOES(LOCAL,0)
+							CALL DATUI_SHOES(TARGET:LOCAL,0)
 							CALL DATUI_SHOES(MASTER,0)
 						ENDIF
 					NEXT
@@ -322,8 +341,7 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 					TCVAR:TARGET:随便 = 1
 			ENDSELECT
 		ELSE
-			;CALL ASK_M("なにもしない", 1, "物欲しげな目で見つめる", 1, "もっと攻めて", ABL:サドっ気 >= 3 && ABL:MASTER:マゾっ気 >= 3)
-			CALL ASK_M("什么也不做", 1, "用充满欲望的眼神注视", 1, "更主动些", ABL:施虐属性 >= 3 && ABL:MASTER:受虐属性 >= 3)
+			CALL ASK_M("什么也不做", 1, "用渴望的眼神凝视", 1, "更主动些", ABL:施虐属性 >= 3 && ABL:MASTER:受虐属性 >= 3)
 			SELECTCASE RESULT
 				CASE 0
 					; PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%を解放した
@@ -363,7 +381,7 @@ ENDIF
 
 @風呂逐出条件(ARG)
 #FUNCTION
-SIF FLAG:70
+SIF (FLAG:70 && CFLAG:TARGET:344 == 0)
 	RETURNF 0
 SIF !GETBIT(TALENT:MASTER:2,1) && HETEROSEX(MASTER,ARG)
 	RETURNF 0

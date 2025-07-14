@@ -143,7 +143,7 @@ PRINTLC [501] - 单独口上UPDATE
 RESETCOLOR
 PRINTL
 
-IF DEBUGGERR
+IF DEBUGGER
 	SETCOLOR 241,158,194
 	PRINTLC [666] - 幻想乡之主
 	RESETCOLOR
@@ -159,6 +159,7 @@ SIF MONEY:2
 ;#;PRINTLC [620] - 生成委托
 ;#;SETCOLOR 0xFFFCAA
 ;#;PRINTFORML [777] - 主动调用函数
+;#;PRINTFORML [778] - 主动调用函数（后端）
 ;#;RESETCOLOR
 ;统计谁有口上
 CALL createKojoShopButtonTargetList
@@ -268,12 +269,31 @@ ELSEIF RESULT == 600
 ELSEIF RESULT == 667
 	CALL MY_ENKAI_SETTING
 ELSEIF RESULT == 666
-	SIF DEBUGGERR
+	SIF DEBUGGER
 		CALL DEBUG_MODE
 
 ;DEBUG调用函数
 ELSEIF RESULT == 777
 	CALL DEBUG_CALL_FUNCTION
+;DEBUG调用函数
+ELSEIF RESULT == 778
+TALENT:狂気 = 1
+CALL M_KOJO_COLOR_K123
+CALL K123_ResetEvent
+CALL M_KOJO_COLOR_K122
+CALL M_KOJO_ENCOUNTER_K122
+CALL M_KOJO_EVENT_K122_21,1
+CALL M_KOJO_COLOR_K122
+TFLAG:193 = 1
+CALL M_KOJO_MESSAGE_COM_K122_352_1
+CALL M_KOJO_COLOR_K122
+TFLAG:193 = 0
+CALL M_KOJO_MESSAGE_COM_K122_352_1
+CALL M_KOJO_COLOR_K122
+CALL M_KOJO_SPEVENT_K122_2,1
+CALL M_KOJO_COLOR_K124
+CALL M_KOJO_ENCOUNTER_K124
+RESETCOLOR
 
 ;換指定角色口上跟重置角色
 ELSEIF RESULT == 987
@@ -526,14 +546,15 @@ IF !START
 	LASTNUM = 0
 	FOR LOCAL, 1, CHARANUM
 		RESULT = 0
-		;addition custom code, for custom charadata special menu
+		;新增剧本侧接口，调用剧本侧设定的角色固有料理
 		CALL KOJO_CHECK(LOCAL, "CHARADATA" , "SPECIAL_MENU")
-		IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
+		IF RESULT == -1
+			;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 			RESULT = 0
 			TRYCALLFORM SPECIAL_MENU_{NO:LOCAL}
 		ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
 		ELSE 
-		;addition custom code, duplicated characters
+		;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
 		TRYCALLFORM SPECIAL_MENU_{NO:LOCAL}
 		ENDIF
 		SIF !RESULT
@@ -558,14 +579,15 @@ PRINTFORML ◆固有料理列表 PAGE.{页}
 DRAWLINE
 FOR LOCAL, START, START:页
 	RESULT = 0
-	;addition custom code, for custom charadata special menu
+	;新增剧本侧接口，调用剧本侧设定的角色固有料理
 	CALL KOJO_CHECK(LOCAL, "CHARADATA" , "SPECIAL_MENU")
-	IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
+	IF RESULT == -1
+		;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 		RESULT = 0
 		TRYCALLFORM SPECIAL_MENU_{NO:LOCAL}
 	ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
 	ELSE 
-	;addition custom code, duplicated characters
+	;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
 	TRYCALLFORM SPECIAL_MENU_{NO:LOCAL}
 	ENDIF
 	SIF !RESULT
@@ -613,14 +635,15 @@ ELSEIF RESULT == 998
 ELSEIF INRANGE(RESULT, 1, CHARANUM)
 	C_ID = RESULT
 	RESULT = 0
-	;addition custom code, for custom charadata special menu
+	;新增剧本侧接口，调用剧本侧设定的角色固有料理
 	CALL KOJO_CHECK(C_ID, "CHARADATA" , "SPECIAL_MENU")
-	IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
+	IF RESULT == -1
+		;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 		RESULT = 0
 		TRYCALLFORM SPECIAL_MENU_{NO:C_ID}
 	ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
 	ELSE 
-	;addition custom code, duplicated characters
+	;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
 	TRYCALLFORM SPECIAL_MENU_{NO:C_ID}
 	ENDIF
 	IF RESULT

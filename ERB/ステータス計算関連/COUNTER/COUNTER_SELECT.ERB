@@ -102,17 +102,21 @@ FOR LOCAL, 1, CCOM_MAXNUM
 	;各指令の実行可否を確認
 	TRYCALLFORM CCOM_ABLE{LOCAL}(ARG)
 	IF RESULT
-		;各指令の実行判定値を算出
-		TRYCALLFORM CCOM_ORDER{LOCAL}(LOCAL, ARG, 基本値)
-		LOCAL:10 = RESULT
-		;addition custom code - from anon
+		RESULT = 0
+		;新增剧本侧接口，调用剧本侧设定的反应指令的判定值
 		CALL KOJO_CHECK(ARG, "CCOM_ORDER", ,LOCAL, LOCAL:10)
-		SIF RESULT == -2 || RESULT > 0
-			LOCAL:10 = MAX(RESULT, 0)
-
+		IF RESULT == -1 
+			;剧本侧禁用该反应
+		ELSEIF RESULT
+			;采用剧本设定的值
+		ELSE
+			;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版数值
+			TRYCALLFORM CCOM_ORDER{LOCAL}(LOCAL, ARG, 基本値)
+		ENDIF 
+		LOCAL:10 = MAX(RESULT, 0)
 		IF LOCAL:10
 			候補:LOCAL = LOCAL:10
-			DEBUGPRINTFORML Counter{LOCAL}が候補に（判定値{LOCAL:10}）
+			DEBUGPRINTFORML Counter{LOCAL}候补中（判定值{LOCAL:10}）
 		ENDIF
 	ENDIF
 	RESULT = 0

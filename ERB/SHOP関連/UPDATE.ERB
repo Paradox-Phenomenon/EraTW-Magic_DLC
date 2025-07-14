@@ -1,4 +1,4 @@
-﻿@UPDATE
+@UPDATE
 #DIM C_ID
 #DIM 更新能力番号
 #DIM 最低能力値
@@ -254,7 +254,7 @@ FOR C_ID, 1, CHARANUM
 					;生年月日設定
 					CHILD_BIRTHDATE:C_ID:(LOCAL:1) = DAY_TO_DATE(CHILD_BIRTHDAY:C_ID:(LOCAL:1))
 					;天気は遡れないので晴天ってことで
-					CHILD_WEATHER:C_ID:(LOCAL:1) = たしか晴天
+					CHILD_WEATHER:C_ID:(LOCAL:1) = 大概是晴天
 					;爱莲の兒童は例外
 					IF C_ID == [[爱莲]]
 						CHILD_SEX:C_ID:(LOCAL:1) = 0
@@ -262,9 +262,9 @@ FOR C_ID, 1, CHARANUM
 						;初回
 						IF !兒童設定初回 && !FLAG:兒童の性別
 							兒童設定初回 = 1
-							PRINTL 請設定小孩的性別
-							PRINTL 請進行選択
-							CALL ASK_M("随机", 1, "女の子", 1, "男の子", 1)
+							PRINTL 请设定小孩的性别
+							PRINTL 请进行选择
+							CALL ASK_M("随机", 1, "女孩子", 1, "男孩子", 1)
 							SIF RESULT == 1 || RESULT == 2
 								FLAG:兒童の性別 = RESULT
 						ENDIF
@@ -273,7 +273,7 @@ FOR C_ID, 1, CHARANUM
 						ELSE
 							CHILD_SEX:C_ID:(LOCAL:1) = FLAG:兒童の性別
 						ENDIF
-						PRINTFORM %CHILDNAME:C_ID:(LOCAL:1), 15, LEFT% は \@ CHILD_SEX:C_ID:(LOCAL:1) == 1 ? 女 # 男 \@の子 で生年月日は 
+						PRINTFORM %CHILDNAME:C_ID:(LOCAL:1), 15, LEFT% 是 \@ CHILD_SEX:C_ID:(LOCAL:1) == 1 ? 女 # 男 \@孩子 出生日期是 
 						CALL PRINT_DATE(CHILD_BIRTHDAY:C_ID:(LOCAL:1))
 						PRINTFORML
 					ENDIF
@@ -309,13 +309,14 @@ FOR C_ID, 1, CHARANUM
 	FOR LOCAL:1, 0, MAXHOME
 		FOR LOCAL:2, 1, 10
 			LOCAL:3 = LOCAL:1 * 100 + LOCAL:2 * 10
-			;addition custom code, for custom charadata movement
+			;新增剧本侧接口，调用剧本侧设定的角色移动数值
 			CALL KOJO_CHECK(C_ID, "CHARADATA", "MOVE", 7, LOCAL:3)
-			IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
-				RESULT = 0
-				CALLFORM CHARAMOVE_DATA_{NO:C_ID}(7, LOCAL:3)
-			ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
-			ELSE 
+			IF RESULT == -1
+				;对于出现区域设定，保证能禁用掉原版设定中启用的真值
+			ELSEIF RESULT
+				;采用剧本设定的值，这里必然是真值
+			ELSE
+				;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版的移动数值
 				CALLFORM CHARAMOVE_DATA_{NO:C_ID}(7, LOCAL:3)
 			ENDIF 
 			IF RESULT
@@ -327,8 +328,8 @@ FOR C_ID, 1, CHARANUM
 			BREAK
 	NEXT
 	IF !LOCAL:4
-		PRINTFORML ※%CALLNAME:C_ID%({C_ID})のCHARAMOVE_DATAに問題があります
-		THROW ※%CALLNAME:C_ID%({C_ID})のCHARAMOVE_DATAに問題があります
+		PRINTFORML ※%CALLNAME:C_ID%({C_ID})的CHARAMOVE_DATA存在问题
+		THROW ※%CALLNAME:C_ID%({C_ID})的CHARAMOVE_DATA存在问题
 	ENDIF
 
 NEXT
@@ -343,8 +344,8 @@ ENDIF
 SIF VAR_FERMENT == "" || VAR_FERMENT == "0"
 	VAR_FERMENT = 普通的水
 IF GETBIT(FLAG_DAILY_EV23, 0) && !FLAG_DAILY_EV23_販売員
-	PRINTFORML 訪問销售員的模样是…
-	CALL ASK_YN("头髪後面扎成了两束的","像男孩子一样的短发")
+	PRINTFORML 访问销售员的模样是…
+	CALL ASK_YN("头发后面扎成了两束的","像男孩子一样的短发")
 	FLAG_DAILY_EV23_販売員 = RESULT + 1
 ENDIF
 
@@ -681,7 +682,7 @@ FOR C_ID, 1, CHARANUM
 NEXT
 
 SIF FLAG:3 == 0
-	PRINTL 宴会的有無设定改为了OFF
+	PRINTL 宴会的有无设定改为了OFF
 
 LOCAL = TARGET
 FOR C_ID, 1, CHARANUM
@@ -747,7 +748,7 @@ SIF !RESULT
 
 ;昆虫诱捕装置破棄
 IF MUSHI_TRAP
-	PRINTFORML 要破棄所有捕虫器吗？
+	PRINTFORML 要弃用所有捕虫器吗？
 	CALL ASK_YN
 	SIF !RESULT
 		MUSHI_TRAP = 0
@@ -793,7 +794,7 @@ NEXT
 
 IF TALENT:MASTER:体型 == -3
 	TALENT:MASTER:体型 = 0
-	PRINTFORML ---重新設定%CALLNAME:MASTER%的体型---
+	PRINTFORML ---重新设定%CALLNAME:MASTER%的体型---
 	PRINTL 
 ENDIF
 IF !FLAG:宴会開催FLAG
@@ -812,7 +813,7 @@ CALL SET_ENKAI_LOCATIONDISPLAY
 SAVESTR:本体バージョン = %eraTW_Version%
 
 IF リセット画面
-	PRINTFORML 以下的角色的口上是新実装的。
+	PRINTFORML 以下的角色的口上是新实装的。
 	PRINTFORML 请选择想要重置好感度、经验、能力等的角色。
 	$PRINT_RESETCHARA
 	FOR LOCAL,1,CHARANUM
@@ -843,7 +844,7 @@ IF リセット画面
 			ELSE
 				TRYCALLFORM M_KOJO_K{LOCAL}
 			ENDIF
-			PRINTFORML 正在確認%CALLNAME:LOCAL%%RESULTS:1%的口上是否存在UPDATE
+			PRINTFORML 正在确认%CALLNAME:LOCAL%%RESULTS:1%的口上是否存在UPDATE
 			TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{LOCAL}
 			TWAIT 40, 0
 			PRINTL 
@@ -865,20 +866,20 @@ FOR C_ID, 1, CHARANUM
 	CFLAG:MASTER:兒童人数 += CFLAG:C_ID:兒童人数
 	CFLAG:MASTER:育児人数 += CFLAG:C_ID:育児人数
 NEXT
-PRINTFORML 兒童人数:{CFLAG:MASTER:兒童人数}/育児人数:{CFLAG:MASTER:育児人数}
-	;Set birth event counts to the number of children for all characters if there's a mismatch, and initialize the pregnancy progress array.
+PRINTFORML 儿童人数:{CFLAG:MASTER:兒童人数}/育儿人数:{CFLAG:MASTER:育児人数}
+	;如果存在不匹配，则将所有角色的生育事件计数设置为子女数量，并初始化怀孕进度数组。
 CALL UPDATE_SET_PREGNANCY_COUNTERS
 PRINTL 
 ;拠点Mapの再設定
 IF CFLAG:MASTER:現在位置 != OMANEKIBEYA() && !FLAG:気絶中断
 	CALL MAP_DEFAULTRESIDENT(MAIN_MAP, 1)
-	PRINTFORML 拠点地图的設定被重設了
+	PRINTFORML 据点地图的设定被重设了
 ELSE
-	CALL COLORMESSAGE(@"※无法重設拠点地图", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"※无法重设据点地图", C_YELLOW, 1)
 	IF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 		PRINTL 理由：被招待中
 	ELSEIF FLAG:気絶中断
-		PRINTL 理由：気絶中
+		PRINTL 理由：气绝中
 	ENDIF
 	FORCEWAIT
 ENDIF
@@ -907,7 +908,7 @@ IF CFLAG:ARG:初吻喪失記念日 && CSTR:ARG:初吻喪失履歴 == ""
 		LOCALS += "献上了初吻"
 	ELSE
 		SIF CFLAG:ARG:初吻喪失対象 & 喪失_無崩し
-			LOCALS += "就那様"
+			LOCALS += "就那样"
 		LOCALS += "被夺走初吻了"
 	ENDIF
 	CSTR:ARG:初吻喪失履歴 = %LOCALS%
@@ -916,23 +917,23 @@ ENDIF
 
 IF CFLAG:ARG:尻穴処女喪失記念日 && CSTR:ARG:尻穴処女喪失履歴 == ""
 	日期 = CFLAG:ARG:尻穴処女喪失記念日
-	LOCALS:1 = %PRINT_DATE_F(日期)%、\@ CFLAG:ARG:尻穴処女喪失対象 & 喪失_時間停止? 時間停止中# \@
+	LOCALS:1 = %PRINT_DATE_F(日期)%、\@ CFLAG:ARG:尻穴処女喪失対象 & 喪失_時間停止? 时间停止中# \@
 	SIF CSTR:ARG:Ａ処女喪失位置 != ""
 		LOCALS:1 += @"在%CSTR:ARG:Ａ処女喪失位置%"
 	IF GETBIT (CFLAG:ARG:尻穴処女喪失対象,3)
-		LOCALS:1 += @"被%CALLNAME:(CFLAG:ARG:尻穴処女喪失对手)%用穿戴式假陰茎"
+		LOCALS:1 += @"被%CALLNAME:(CFLAG:ARG:尻穴処女喪失对手)%用穿戴式假阴茎"
 	ELSEIF GETBIT (CFLAG:ARG:尻穴処女喪失対象,2)
-		LOCALS:1 += @"被%CALLNAME:(CFLAG:ARG:尻穴処女喪失对手)%用肛用振動棒"
+		LOCALS:1 += @"被%CALLNAME:(CFLAG:ARG:尻穴処女喪失对手)%用肛用振动棒"
 	ELSEIF GETBIT (CFLAG:ARG:尻穴処女喪失対象,1)
 		LOCALS:1 += @"被%CALLNAME:(CFLAG:ARG:尻穴処女喪失对手)%的阴茎"
 	ENDIF
 	IF CFLAG:ARG:尻穴処女喪失対象 & 喪失_時間停止
-		LOCALS:1 += "夺走了尻穴处女"
+		LOCALS:1 += "夺走了肛门处女"
 	ELSE
-		LOCALS:1 += "奉献了尻穴処女"
+		LOCALS:1 += "奉献了肛门处女"
 	ENDIF
 	CSTR:ARG:尻穴処女喪失履歴 = %LOCALS:1%
-	PRINTFORML %CALLNAME:ARG%的尻穴処女成为了历史
+	PRINTFORML %CALLNAME:ARG%的肛门处女成为了历史
 ENDIF
 
 IF CFLAG:ARG:処女喪失記念日 && CSTR:ARG:処女喪失履歴 == ""
@@ -940,7 +941,7 @@ IF CFLAG:ARG:処女喪失記念日 && CSTR:ARG:処女喪失履歴 == ""
 	LOCAL = CFLAG:ARG:処女喪失対象
 	LOCALS:2 = %PRINT_DATE_F(日期)%、
 	SIF LOCAL & 喪失_時間停止
-		LOCALS:2 += "時間停止中"
+		LOCALS:2 += "时间停止中"
 	SIF GETBIT (LOCAL,9)
 		LOCALS:2 += "喝得酩酊大醉的时候烂醉如泥的时候"
 	SIF GETBIT (LOCAL,16)
@@ -948,9 +949,9 @@ IF CFLAG:ARG:処女喪失記念日 && CSTR:ARG:処女喪失履歴 == ""
 	SIF CSTR:ARG:処女喪失位置 != ""
 		LOCALS:2 += @"在%CSTR:ARG:処女喪失位置%\@ LOCAL & 喪失_恋慕 ? 心爱的# \@%CALLNAME:(CFLAG:ARG:処女喪失对手)%"
 	IF GETBIT (LOCAL,3)
-		LOCALS:2 += "用穿戴式假陰茎"
+		LOCALS:2 += "用穿戴式假阴茎"
 	ELSEIF GETBIT (LOCAL,2)
-		LOCALS:2 += "用振動棒"
+		LOCALS:2 += "用振动棒"
 	ELSEIF GETBIT (LOCAL,1)
 		LOCALS:2 += "的阴茎"
 	ENDIF
@@ -961,10 +962,10 @@ IF CFLAG:ARG:処女喪失記念日 && CSTR:ARG:処女喪失履歴 == ""
 	ELSE
 		SIF LOCAL & 喪失_强行
 			LOCALS:2 += "用力地"
-		LOCALS:2 += @"就那様\@ARG == MASTER ? 献上了处女# 被夺走了处女\@"
+		LOCALS:2 += @"就那样\@ARG == MASTER ? 献上了处女# 被夺走了处女\@"
 	ENDIF
 	CSTR:ARG:処女喪失履歴 = %LOCALS:2%
-	PRINTFORML %CALLNAME:ARG%的処女成为了历史
+	PRINTFORML %CALLNAME:ARG%的处女成为了历史
 ENDIF
 
 @RESET_KOJO_CHARA(ARG)

@@ -1,40 +1,55 @@
 ;----------------------------------------------------------------------
-;This function and DIALOGUE_GROUP_SEX are intended to be used during written sex scenes in character dialogues.
-;This one applies experience, gems, and semen handling for two characters. Some PALAMs are raised. Sexual frustration is also lowered.
-;As of now, the numbers are not perfectly accurate, but should at least feel appropriate to the player.
-;Time is advanced automatically by number of orgasms, unless UnawareGain is set to time stop rape.
-;There are no hard limits, e.g. you can force more orgasms than allowed by energy, or use more TSP than the player has. This is to avoid complicating usage.
-;Each character is assigned a body part to use for as many orgasms as defined by SexCount.
-;Virginity loss is also processed if a penis and vagina are used on one another.
-;これと@DIALOGUE_GROUP_SEXは口上内Hシーンで使うための関数だよ
-;2キャラ間で経験、珠、精液を変化させるよ。PLAMが上がったり欲求不満が下がったりするよ。
-;数値は完璧じゃないけどまあ妥当。
-;時姦じゃないかぎり絶頂数に応じて時間経過するよ。
-;特に制約はないから気力やTSP上限を超えた絶頂数が可能だよ。
-;SexCountによって決まる絶頂数が加算される仕様部位が各キャラに割り当てられるよ
-;仕様部位によっては処女喪失が発生するよ
-
-;(1)Character1: First character's ID.
-;最初のキャラID
-;(2)Character2: Second character's ID. Set to -1 to only process Character 1 for masturbation, or -2 for sex with characters not represented in the game code.
-;二人目のID、-1のときは自慰。-2だとキャラとして設定されてない相手。
-;(3)Part1: Character 1's body part. -2 = genitals with condom, -1 = deep genitals (V service, cervix tease), 0 = genitals, 1 = hand, 2 = mouth, 3 = breasts, 4 = thighs, 5 = feet/other sadistic, 6 = anus, 7 = toy, 8 = other service, 9+ = other.
-;一人目の仕様部位。-2=性器ゴム有　 -1 = deep genitals (子宮口など)　0=性器　1=手　2=口　3=胸　4≃太もも　5=足などサド　6=アナル　7≃道具　8≃その他奉仕　9＝その他
-;(4)Part2: Character 2's body part. -2 = genitals with condom, -1 = deep genitals (V service, cervix tease), 0 = genitals, 1 = hand, 2 = mouth, 3 = breasts, 4 = thighs, 5 = feet/other sadistic, 6 = anus, 7 = toy, 8 = other service, 9+ = other.
-;二人目の仕様部位。
-;(5)SexCount: Number of orgasms for both characters. If 0, will calculate from the character with the higher Energy. If -1, will perform one round without orgasms. If -2, will perform one round with only the first character experiencing orgasm. If -3, only the second character orgasms.
-;両者の絶頂数。0=気力が高い方を基準に算出。-1=絶頂なしで一回戦。-2=一人目のみ絶頂で一回戦。-3=二人目のみ絶頂
-;(6)ExposureGain: Exposure. 1 = Character 1 gains exposure experience and gems, 2 = Character 2 gains, 3 = both gain.
-;1=一人目に露出経験と珠が入る　2=二人目に入る　3=両者に入る
-;(7)SadoMasoGain: Sadomaso. 1 = Character 1 gains sado, Character 2 gains maso, 2 = other way around, 3&4 = as 1&2, but the maso character gains bondage experience. Stacks with feet.
-;1=一人目のS、二人目のMがアップ　2一人目のM、二人目のSがアップ　3,4=1,2と同様だがM側に緊縛経験が入る
-;(8)UnawareGain: 1 = Time stop rapes first character, 2 = time stop rapes second character, 3 = sleep rapes first character, 4 = sleep rapes second character. TSP is deducted if the player is the rapist.
-;1=一人目を時姦　2=二人目を時姦　3=一人目を睡眠姦　4=二人目を睡眠姦
-;(9)WaitAfter: Defaults to 1. If 1, will wait after processing. If calling the function more than once at the same time, set it to 0 on all but the last call. If -1, will hide output altogether.
-;デフォは1。処理の後にウェイトを入れるか。この関数を一度に複数回呼び出した場合、最後のを除いて0となる。-1にするとシステムメッセージも省略する。
-;(10)FavorGain: Defaults to 1. If 1, will add favor if the player is involved and the target is aware. If -1, will lose favor instead.
-;デフォは1。プレイヤーが参加しており相手に意識があると好感度が上がる。-1だと下がる。
+; 此函数和 @DIALOGUE_GROUP_SEX 旨在为剧本事件中文本描写的性爱场景提供数值和标志改动的一揽子方案。
+; 此函数处理两个角色之间的经验、珠（游戏货币或特殊点数）、以及精液处理。一些PALAM（参数）会提升。性欲不满也会降低。
+; 目前，数值并非完全精确，但至少应让玩家感觉合理。
+; 时间会根据高潮次数自动推进，除非 UnawareGain 设置为时间停止强奸。
+; 没有硬性限制，例如，你可以强制发生超过精力允许的高潮次数，或者使用超过玩家拥有的TSP。这是为了避免复杂化。
+; 每个角色都会被分配一个身体部位，用于达到由 SexCount 定义的高潮次数。
+; 如果阴茎和阴道搭配使用，也会处理处女丧失（破处）的情况。
+; (1) Character1: 第一个角色的ID。
+; (2) Character2: 第二个角色的ID。设置为 -1 时仅处理角色1（用于自慰），设置为 -2 时表示与游戏中未设定的角色进行性行为。
+; (3) Part1: 第一个角色的使用部位。
+;   -2 = 戴套
+;   -1 = 插入派生（G点和子宫颈）
+;   0 = 生殖器
+;   1 = 手
+;   2 = 口
+;   3 = 乳房
+;   4 = 大腿
+;   5 = 脚/其他施虐行为
+;   6 = 肛门
+;   7 = 道具
+;   8 = 其他服务
+;   9+ = 其他
+; (4) Part2: 第二个角色的使用部位。（同上）
+; (5) SexCount: 双方的高潮次数。
+;   0 = 以精力较高的角色为基准计算。
+;   -1 = 进行一回合，无高潮。
+;   -2 = 进行一回合，仅第一个角色高潮。
+;   -3 = 仅第二个角色高潮。
+; (6) ExposureGain: 露出（经验/珠）。
+;   1 = 角色1获得露出经验和珠。
+;   2 = 角色2获得。
+;   3 = 双方都获得。
+; (7) SadoMasoGain: 施虐受虐（S/M）。
+;   1 = 角色1获得S（施虐）经验，角色2获得M（受虐）经验。
+;   2 = 反之（角色1获得M，角色2获得S）。
+;   3 & 4 = 与1和2相同，但受虐方会获得紧缚经验。与脚部使用叠加。
+; (8) UnawareGain:
+;   1 = 时间停止强奸第一个角色。
+;   2 = 时间停止强奸第二个角色。
+;   3 = 睡眠强奸第一个角色。
+;   4 = 睡眠强奸第二个角色。
+;   如果玩家是施暴者，将扣除TSP。
+; (9) WaitAfter: 默认为1。
+;   如果为1，处理后会等待。
+;   如果同时多次调用此函数，除了最后一次调用外，其他都设置为0。
+;   如果为-1，将完全隐藏输出（包括系统消息）。
+; (10) FavorGain: 默认为1。
+;   如果为1，当玩家参与且目标有意识时，会增加好感度。
+;   如果为-1，则会降低好感度。
 ;----------------------------------------------------------------------
+
 @DIALOGUE_SEX(Character1,Character2,Part1,Part2,SexCount,ExposureGain,SadoMasoGain,UnawareGain,WaitAfter=1,FavorGain=1)
 #DIM DYNAMIC Character1
 #DIM DYNAMIC Character2
@@ -517,14 +532,14 @@ IF MaleVirginityLoss && WaitAfter != -1 ;Display virginity loss messages.
 	FONTBOLD
 	LOCAL:5 = GETCOLOR()
 	SETCOLOR 255,100,255
-	PRINTFORML Male Virginity Loss
+	PRINTFORML 失去了处男的童贞
 	FONTREGULAR
 	SETCOLOR LOCAL:5
 ENDIF
 IF VirginityLoss && WaitAfter != -1
 	LOCAL:5 = GETCOLOR()
 	SETCOLOR 247,171,166
-	PRINTFORML Virginity Loss
+	PRINTFORML 失去了处子之身
 	SETCOLOR LOCAL:5
 ENDIF
 IF FavorGain != 0 && (UnawareGain == 0 || (UnawareGain == 1 && Character1 == MASTER) || (UnawareGain == 2 && Character2 == MASTER) || (UnawareGain == 3 && Character1 == MASTER) || (UnawareGain == 4 && Character2 == MASTER)) && Character2 > -1
@@ -576,36 +591,68 @@ SIF WaitAfter == 1
 	WAIT
 
 ;----------------------------------------------------------------------
-;Group handling for DIALOGUE_SEX. Allows one character to have sex with up to five others, dividing Energy between each.
-;(1)Character1: First character, who is paired with the rest.
-;一人目。他のキャラ全員と順に絡む。
-;(2)Character2: Second character.
-;二人目
-;(3)Character3: Third character. -1 to omit.
-;3人目、-1でオミット
-;(4)Character4: Fourth character. -1 to omit.
-;4人目、-1でオミット
-;(5)Character5: Fifth character. -1 to omit.
-;5人目、-1でオミット
-;(6)Character6: Sixth character. -1 to omit.
-;6人目、-1でオミット
-;(7)Part1: Character 1's body part. -2 = genitals with condom, -1 = deep genitals (V service, cervix tease), 0 = genitals, 1 = hand, 2 = mouth, 3 = breasts, 4 = thighs, 5 = feet/other sadistic, 6 = anus, 7 = toy, 8 = other service, 9+ = other.
-;一人目の仕様部位。-2=性器ゴム有　 -1 = deep genitals (子宮口など)　0=性器　1=手　2=口　3=胸　4≃太もも　5=足などサド　6=アナル　7≃道具　8≃その他奉仕　9＝その他
-;(8)Part2: Character 2's body part. -2 = genitals with condom, -1 = deep genitals (V service, cervix tease), 0 = genitals, 1 = hand, 2 = mouth, 3 = breasts, 4 = thighs, 5 = feet/other sadistic, 6 = anus, 7 = toy, 8 = other service, 9+ = other.
-;2人目の仕様部位。-2=性器ゴム有　 -1 = deep genitals (子宮口など)　0=性器　1=手　2=口　3=胸　4≃太もも　5=足などサド　6=アナル　7≃道具　8≃その他奉仕　9＝その他
-;(9)SexCount: Number of orgasms for both characters. If 0, will calculate from the character with the higher Energy. If -1, will perform one round without orgasms. If -2, will perform one round with only the first character experiencing orgasm. If -3, only the second character orgasms.
-;両者の絶頂数。0=気力が高い方を基準に算出。-1=絶頂なしで一回戦。-2=一人目のみ絶頂で一回戦。-3=二人目のみ絶頂
-;(10)ExposureGain: Exposure. 1 = Character 1 gains exposure experience and gems, 2 = Character 2 gains, 3 = both gain.
-;1=一人目に露出経験と珠が入る　2=二人目に入る　3=両者に入る
-;(11)SadoMasoGain: Sadomaso. 1 = Character 1 gains sado, Character 2 gains maso, 2 = other way around, 3&4 = as 1&2, but the maso character gains bondage experience. Stacks with feet.
-;1=一人目のS、二人目のMがアップ　2一人目のM、二人目のSがアップ　3,4=1,2と同様だがM側に緊縛経験が入る
-;(12)UnawareGain: 1 = Time stop rapes first character, 2 = time stop rapes second character, 3 = sleep rapes first character, 4 = sleep rapes second character. TSP is deducted if the player is the rapist.
-;1=一人目を時姦　2=二人目を時姦　3=一人目を睡眠姦　4=二人目を睡眠姦
-;(13)WaitAfter: Defaults to 1. If 1, will wait after processing. If calling the function more than once at the same time, set it to 0 on all but the last call. If -1, will hide output altogether.
-;デフォは1。処理の後にウェイトを入れるか。この関数を一度に複数回呼び出した場合、最後のを除いて0となる。-1にするとシステムメッセージも省略する。
-;(14)FavorGain: Defaults to 1. If 1, will add favor if the player is involved and the target is aware. If -1, will lose favor instead.
-;デフォは1。プレイヤーが参加しており相手に意識があると好感度が上がる。-1だと下がる。
+; DIALOGUE_SEX 的群组处理。允许一个角色与最多五个其他角色发生性关系，并在每个角色之间分配精力。
+
+; (1) Character1: 第一个角色，他/她将与其余所有角色依次互动。
+; (2) Character2: 第二个角色。
+; (3) Character3: 第三个角色。设置为 -1 则省略。
+; (4) Character4: 第四个角色。设置为 -1 则省略。
+; (5) Character5: 第五个角色。设置为 -1 则省略。
+; (6) Character6: 第六个角色。设置为 -1 则省略。
+; (7) Part1: 第一个角色的使用部位。
+;   -2 = 戴套
+;   -1 = 插入派生（G点和子宫颈）
+;   0 = 生殖器
+;   1 = 手
+;   2 = 口
+;   3 = 乳房
+;   4 = 大腿
+;   5 = 脚/其他施虐行为
+;   6 = 肛门
+;   7 = 道具
+;   8 = 其他服务
+;   9+ = 其他
+; (8) Part2: 第二个角色的使用部位。
+;   -2 = 戴套
+;   -1 = 插入派生（G点和子宫颈）
+;   0 = 生殖器
+;   1 = 手
+;   2 = 口
+;   3 = 乳房
+;   4 = 大腿
+;   5 = 脚/其他施虐行为
+;   6 = 肛门
+;   7 = 道具
+;   8 = 其他服务
+;   9+ = 其他
+; (9) SexCount: 双方的高潮次数。
+;   0 = 以精力较高的角色为基准计算。
+;   -1 = 进行一回合，无高潮。
+;   -2 = 进行一回合，仅第一个角色高潮。
+;   -3 = 仅第二个角色高潮。
+; (10) ExposureGain: 露出（经验/珠）。
+;   1 = 角色1获得露出经验和珠。
+;   2 = 角色2获得。
+;   3 = 双方都获得。
+; (11) SadoMasoGain: 施虐受虐（S/M）。
+;   1 = 角色1获得S（施虐）经验，角色2获得M（受虐）经验。
+;   2 = 反之（角色1获得M，角色2获得S）。
+;   3 & 4 = 与1和2相同，但受虐方会获得紧缚经验。与脚部使用叠加。
+; (12) UnawareGain:
+;   1 = 时间停止强奸第一个角色。
+;   2 = 时间停止强奸第二个角色。
+;   3 = 睡眠强奸第一个角色。
+;   4 = 睡眠强奸第二个角色。
+;   如果玩家是施暴者，将扣除TSP。
+; (13) WaitAfter: 默认为1。
+;   如果为1，处理后会等待。
+;   如果同时多次调用此函数，除了最后一次调用外，其他都设置为0。
+;   如果为-1，将完全隐藏输出（包括系统消息）。
+; (14) FavorGain: 默认为1。
+;   如果为1，当玩家参与且目标有意识时，会增加好感度。
+;   如果为-1，则会降低好感度。
 ;----------------------------------------------------------------------
+
 @DIALOGUE_GROUP_SEX(ARG,ARG:1=-1,ARG:2=-1,ARG:3=-1,ARG:4=-1,ARG:5=-1,Part1,Part2,SexCount,ExposureGain,SadoMasoGain,UnawareGain,WaitAfter=1,FavorGain=1)
 #DIM DYNAMIC Character1
 #DIM DYNAMIC Character2

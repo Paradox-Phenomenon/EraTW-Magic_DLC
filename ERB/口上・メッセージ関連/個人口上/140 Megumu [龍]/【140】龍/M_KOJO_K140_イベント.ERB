@@ -16,6 +16,8 @@
 ;CFLAG:1006 没啥用的神秘小开关
 ;MASTERの恋人がその場に居るかどうか返す式中関数
 ;=-1 龙が恋人 =0 元から恋人無 =1 その場に居ない =2 恋人と同席
+;CFLAG:1500 up选项的收纳 =bit0 选项1已完成修改 =bit1 选项1已略过 =bit2 选项2已略过
+;CFLAG:1501 角色对话颜色决定
 ;-------------------------------------------------
 @K140_FIND_LOVER()
 #FUNCTION
@@ -75,8 +77,9 @@ RETURN 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K140
-   SETCOLOR 0x3456C4
-
+SETCOLOR 0x3456C4
+SIF CFLAG:140:1501
+	SETCOLOR CFLAG:140:1501
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 
@@ -84,44 +87,83 @@ RETURN 1
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K140
-;口上独自のUPDATE用
-;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
-;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
-PRINTFORMDL 为了更贴合口上、作者稍微修改了一下素质（不多）、如果不想修改素质对游玩口上也没有影响
-PRINTFORMDL 是否选择修改素质？
-PRINTFORMDL [0] 是
-PRINTFORMDL [1] 否
-PRINTFORMDL [2] 玩TW喜欢攻略龙的小朋友你们好啊......
-INPUT
-IF RESULT == 0
-PRINTFORMDL 感谢对作者XP的体谅OTZ
-TALENT:140:24 = 1
-TALENT:140:100 = 1
-TALENT:140:105 = 1
-TALENT:140:102 = 1
-;变为巨乳
-TALENT:140:105 = 1
-ELSEIF RESULT == 1
-PRINTFORMDL 可惜啊.......
-ELSEIF RESULT == 2
-
-CALL PRINT_IMAGE("Milk_megumu",1000,"left")
-PRINTFORMW 哇沃————————！！！！！！
-PRINTFORMW
-PRINTFORML （接下请自行脑补正常龙或奶龙状态为你献上的爱意满满的MV） 
-PRINTFORMW
-PRINTFORML 今夜星光闪闪
-PRINTFORMW 我爱你的心暖暖
-PRINTFORML 想你一晚又一晚
-PRINTFORMW 把爱你的心填满
-PRINTFORML 享受爱情的苦
-PRINTFORMW 做你的小公主
-PRINTFORML 月亮不睡我不睡
-PRINTFORMW 我是你的小美味～～♥
-PRINTFORMW 
-PRINTFORML
-PRINTFORML
-PRINTFORMDW 啊哈哈...刚才作者被贝利亚打晕过去了...无论发生了什么都和作者没有关系的哦.......
+;选项1，角色素质更改
+IF !GETBIT(CFLAG:140:1500,1)
+	LOCAL = LINECOUNT
+	PRINTFORMDL 为了更贴合口上、作者稍微修改了一下素质（不多）、如果不想修改素质对游玩口上也没有影响
+	PRINTFORMDL 是否选择修改素质？
+	PRINTFORMDL [0] 修改吧
+	PRINTFORMDL [1] 先不修改，下次再决定
+	PRINTFORMDL [2] 不修改，不用再次询问
+	PRINTFORMDL [3] 玩TW喜欢攻略龙的小朋友你们好啊......
+	INPUT
+	IF RESULT == 0
+		PRINTFORMDW 感谢对作者XP的体谅OTZ
+		TALENT:140:24 = 1
+		TALENT:140:100 = 1
+		TALENT:140:105 = 1
+		TALENT:140:102 = 1
+		;变为巨乳
+		TALENT:140:105 = 1
+		CFLAG:140:1500 = 3
+	ELSEIF RESULT == 1
+		PRINTFORMDW 好，下次UPDATE时再问你
+	ELSEIF RESULT == 2
+		PRINTFORMDW 可惜啊.......
+		CFLAG:140:1500 = 2
+	ELSEIF RESULT == 3
+		CALL PRINT_IMAGE("Milk_megumu",1000,"left")
+		PRINTFORMW 哇沃————————！！！！！！
+		PRINTFORMW
+		PRINTFORML （接下请自行脑补正常龙或奶龙状态为你献上的爱意满满的MV） 
+		PRINTFORMW
+		PRINTFORML 今夜星光闪闪
+		PRINTFORMW 我爱你的心暖暖
+		PRINTFORML 想你一晚又一晚
+		PRINTFORMW 把爱你的心填满
+		PRINTFORML 享受爱情的苦
+		PRINTFORMW 做你的小公主
+		PRINTFORML 月亮不睡我不睡
+		PRINTFORMW 我是你的小美味～～♥
+		PRINTFORMW 
+		PRINTFORML
+		PRINTFORML
+		PRINTFORMDW 啊哈哈...刚才作者被贝利亚打晕过去了...无论发生了什么都和作者没有关系的哦.......
+		CLEARLINE LINECOUNT - LOCAL
+		RESTART
+	ENDIF
+ENDIF
+CLEARLINE LINECOUNT - LOCAL
+;选项2 设定口上色
+IF !GETBIT(CFLAG:140:1500,2)
+	PRINTFORMD 可以调整本剧本的台词颜色，
+	CALL M_KOJO_COLOR_K140
+	PRINTFORML (现在为这样)
+	LOCAL = 0x5198F5, 0x446FFA, 0x4F6ED4, 0x3456C4
+	SETCOLOR LOCAL:0
+	PRINTL
+	PRINTL [0] - 今夜星光闪闪～我爱你的心暖暖♪
+	SETCOLOR LOCAL:1
+	PRINTL
+	PRINTL [1] - 想你一晚又一晚～把爱你的心填满♪
+	SETCOLOR LOCAL:2
+	PRINTL
+	PRINTL [2] - 享受爱情的苦～做你的小公主♪
+	SETCOLOR LOCAL:3
+	PRINTL
+	PRINTL [3] - 月亮不睡我不睡♪我是你的小美味～～♥
+	RESETCOLOR
+	DO
+	INPUT
+	SIF RESULT >= 0 && RESULT <= 3
+		BREAK
+	CLEARLINE 1
+	LOOP 1
+	CFLAG:140:1501 = LOCAL:RESULT
+	CALL M_KOJO_COLOR_K140
+	PRINTFORML 感谢您的欣赏～～
+	PRINTFORML ※您可以随时通过UPDATE更改龙龙的台词颜色
+	RESETCOLOR
 ENDIF
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

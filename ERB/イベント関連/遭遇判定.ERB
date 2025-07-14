@@ -39,14 +39,16 @@ NEXT
 ;全角色決定後、連動角色を設定する
 FOR LOCAL, 1, CHARANUM
 	VARSET RESULT
-	;addition custom code, for custom charadata movement
+	;新增剧本侧接口，调用剧本侧设定的角色移动数值
 	CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 1)
-	IF RESULT == -1 ;do nothing
+	IF RESULT == -1 
+		;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 		VARSET RESULT
-		CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
-	ELSEIF RESULT || RESULT:1 ;use these values
+	ELSEIF RESULT || RESULT:1 
+		;采用剧本设定的值
 	ELSE
-	CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
+		;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
+		CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
 	ENDIF
 	;依存連動
 	IF RESULT
@@ -58,24 +60,26 @@ FOR LOCAL, 1, CHARANUM
 	ENDIF
 NEXT
 [IF_DEBUG]
-	PRINTL 【今日の遭遇位置】※デバッグ用
+	PRINTL 【今日的遭遇位置】※DEBUG用
 	FOR LOCAL, 1, CHARANUM
 		IF CFLAG:LOCAL:遭遇位置
 			PRINTFORM %CALLNAME:LOCAL, 18, LEFT%%NAME_FROM_PLACE(CFLAG:LOCAL:遭遇位置)%
 			VARSET RESULT
-			;addition custom code, for custom charadata movement
+			;新增剧本侧接口，调用剧本侧设定的角色移动数值
 			CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 1)
-			IF RESULT == -1 ;do nothing
+			IF RESULT == -1 
+				;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 				VARSET RESULT
-				CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
-			ELSEIF RESULT || RESULT:1 ;use these values
+			ELSEIF RESULT || RESULT:1 
+				;采用剧本设定的值
 			ELSE
-			CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
+				;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
+				CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
 			ENDIF
 			IF RESULT
-				PRINTFORM （依存連動）
+				PRINTFORM （依存连动）
 			ELSEIF RESULT:1
-				PRINTFORM （対等連動）
+				PRINTFORM （对等连动）
 			ENDIF
 			PRINTL 
 		ENDIF
@@ -131,13 +135,14 @@ WHILE 1
 	ENDIF
 	;出現場所かチェック
 	RESULT = 0
+	;新增剧本侧接口，调用剧本侧设定的角色移动数值
 	CALL KOJO_CHECK(CHARA, "CHARADATA", "MOVE", 7, P_ID)
-	IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
-		RESULT = 0 
-		CALLFORM CHARAMOVE_DATA_{NO:CHARA}(7, P_ID)
-	ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
-	ELSE 
-		;addition custom code, duplicated characters
+	IF RESULT == -1
+		;对于出现区域设定，保证能禁用掉原版设定中启用的真值
+	ELSEIF RESULT
+		;采用剧本设定的值，这里必然是真值
+	ELSE
+		;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版的移动数值
 		CALLFORM CHARAMOVE_DATA_{NO:CHARA}(7, P_ID)
 	ENDIF 
 	SIF !RESULT
@@ -225,7 +230,7 @@ FOR LPCOUNT, 1, EX_CHARANUM
 		BREAK
 	LPCOUNT3 ++
 	SIF LPCOUNT3 % 10 == 1
-		PRINTFORML 　　 %" ", 18, LEFT% 移率 節度　博　寺　里　湖　竹　森　冥　山　守　地　月　自宅位置
+		PRINTFORML 　　 %" ", 18, LEFT% 移率 分寸　博　寺　里　湖　竹　森　冥　山　守　地　月　自宅位置
 	PRINTFORM [{LOCAL,3 }] %CALLNAME:LOCAL, 18, LEFT% {CFLAG:LOCAL:移動率補正, 2} 　
 	IF CFLAG:LOCAL:移動節度 > 0
 		PRINTFORM +{ABS(CFLAG:LOCAL:移動節度), 2, LEFT}　
@@ -242,13 +247,14 @@ FOR LPCOUNT, 1, EX_CHARANUM
 		ELSE
 			FOR LPCOUNT2, 1, 10
 				P_ID = MAPID * 100 + LPCOUNT2 * 10
-				;addition custom code, for custom charadata movement
-				CALL KOJO_CHECK(LOCAL , "CHARADATA", "MOVE", 7 , P_ID)
-				IF RESULT == -1 ;等于-1时,表明口上侧需要是结果为0
-					RESULT = 0
-					CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(7, P_ID)
-				ELSEIF RESULT ;等于其他正值时，表明口上侧有自己的值
-				ELSE 
+				;新增剧本侧接口，调用剧本侧设定的角色移动数值
+				CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 7, P_ID)
+				IF RESULT == -1
+					;对于出现区域设定，禁用标志(-1)能保证能禁用掉原版设定中启用的真值1
+				ELSEIF RESULT
+					;采用剧本设定的值，这里必然是真值1
+				ELSE
+					;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版的移动数值
 					CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(7, P_ID)
 				ENDIF 
 				IF RESULT
@@ -267,9 +273,9 @@ FOR LPCOUNT, 1, EX_CHARANUM
 NEXT
 MAIN_MAP = メイン保管
 DRAWLINE
-PRINTL 是全角色的出現地域。選択除了发光什么都不会发生。也有根据条件而変化的角色。
-PRINTL 移率：在拠点時的移動概率
-PRINTL 節度：在拠点時对于隐私的考慮程度
-PRINTL ☆：自宅地域　◎：經常去的地域　○：会出現的地域　－：不会出現的地域
+PRINTL 所有角色的出现区域。选择仅用于高亮显示，无实际效果。有些角色会根据条件变化。
+PRINTL 移率：在据点时的移动倾向
+PRINTL 分寸：在据点时顾及隐私的程度
+PRINTL ☆：自宅区域　◎：常去区域　○：出现区域　－：不出现区域
 PRINTL [  0] 返回
 INPUT
