@@ -490,13 +490,13 @@ ENDSELECT
 ;COMMENT
 ;-----------------------------------------------------------
 ;
-;列表関数とソート関数ができたのでかなり簡易化できたかな
-@TARGETSET_CHACK(OP)
-#DIMS OP         ;SHOW_STATUSは同室更新入れるとマズイのでスキップする用
-#DIM  TARGET_CNT ;ターゲットの数
-#DIM  L_ID       ;REF対策、渡すだけ
-#DIM  SWAP_ID    ;現在的TARGET指定処理用の一時変数
-;诶嘿嘿中はTARGETを逃がす（情事発覚とかでズレちゃうので）
+;列表函数とソート函数ができたのでかなり简易化できたかな
+@TARGETSET_CHECK(OP)
+#DIMS OP         ;用于跳过SHOW_STATUS，因为如果包含同室状态刷新会出问题（已弃用）
+#DIM  TARGET_CNT ;对象数目
+#DIM  L_ID       ;REF对策、临时用
+#DIM  SWAP_ID    ;现在的TARGET指定处理用临时变量（已转正）
+;在“诶嘿嘿”状态下，暂时保存TARGET（以免因情事败露等情况导致逻辑错乱）
 SIF !TFLAG:現在的TARGET
 	TFLAG:現在的TARGET = TARGET
 
@@ -524,7 +524,10 @@ FOR LOCAL, 1, 1 + TARGET_CNT
 	CFLAG:(TARGET:LOCAL):同室 = 1
 NEXT
 [SKIPEND]
-
+@TARGETSET_CHACK(ARGS)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL TARGETSET_CHECK(ARGS)
 
 ;====================================================
 @性技補正(ARG)
@@ -894,18 +897,18 @@ ENDSELECT
 @Counter不発指令(ARG)
 #FUNCTION
 SELECTCASE ARG
-	;(天候パッチ)「眺望天空」はCounter不発
+	;(天候パッチ)「眺望天空」はCounter不发
 	CASE 495
 		RETURNF 1
-	;炮友契約
-	CASE 357
+	;立即行为：告白&炮友契约 
+	CASE 352,357
 		RETURNF 1
-	;告白 
-	CASE 352
+	;养鸡补丁
+	CASE 499
 		RETURNF 1
-	;换装
+	;换装补丁
 	CASE 429
-		RETURNF 1		
+		RETURNF 1
 	CASE 697 TO 699
 		RETURNF 1
 	CASEELSE
@@ -967,13 +970,13 @@ IF CFLAG:睡眠
 	IF CFLAG:ARG:口内精液
 		IF TALENT:ARG:精愛味覚 == 1
 			SETCOLOR C_PINK
-			PRINTFORML ❤~
+			PRINTFORML ❤～
 			PRINTFORML 梦中的%CALLNAME:ARG%自然的饮下了%CALLNAME:MASTER%赠与的白浊，随后就像触发了什么开关一样缓缓将手移到身下，满面红潮
 			TCVAR:ARG:発情 = 1
 			CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:LOCAL:欲望,200,1000)
 		ELSEIF ABL:ARG:精液中毒 > 4
 			SETCOLOR C_YELLOW
-			PRINTFORML 嗯~
+			PRINTFORML 嗯～
 			PRINTFORML %CALLNAME:ARG%在美梦中熟练的吞下了%CALLNAME:MASTER%留在口中的罪恶，但似乎没能满足似的舔舐着口中残存的味道
 			CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:LOCAL:欲望,200,1000)
 		ELSEIF ABL:ARG:精液中毒 > 2
@@ -983,7 +986,7 @@ IF CFLAG:睡眠
 		ELSE
 			SETCOLOR C_RED
 			PRINTFORML 咳...咳...
-			PRINTFORML %CALLNAME:MASTER%処理掉了%CALLNAME:ARG%口中残留的精液，%CALLNAME:ARG%在睡梦中轻声咳了一声
+			PRINTFORML %CALLNAME:MASTER%处理掉了%CALLNAME:ARG%口中残留的精液，%CALLNAME:ARG%在睡梦中轻声咳了一声
 		ENDIF
 			CFLAG:ARG:口内精液 = 0
 			RESETCOLOR
@@ -1026,6 +1029,11 @@ ENDIF
 ;潜伏モード解除
 SIF GETBIT(FLAG:潜伏,0)
 	CALL 潜伏モード終了処理
+;----------推倒补丁测试----------
+;时停合意模式解除
+SIF GETBIT(FLAG:潜伏,3)
+	FLAG:潜伏 = 0
+;----------推倒补丁测试----------
 
 ;-------------------------------------------------
 ;関数名:ENDUFUFU_ALL
@@ -1041,6 +1049,7 @@ FOR LOCAL, 0, CHARANUM
 	ENDIF
 NEXT
 TFLAG:MASTERのＰ挿入中 = 0
+TFLAG:102 = 1
 RETURN LOCAL:1
 
 ;-------------------------------------------------------------
@@ -1105,7 +1114,7 @@ SELECTCASE BASE:ARG:酒気
 ;		RETURNF "酩酊大醉"
 	CASE IS > (MAXBASE:ARG:酒気 / 10) * 5
 	;"酔いどれ"
-		RETURNF "酔酒"
+		RETURNF "醉酒"
 	CASE IS <= (MAXBASE:ARG:酒気 / 10) * 5
 	;"ほろ酔い"
 		RETURNF "微醺"
@@ -1208,7 +1217,7 @@ HOUR   = ARG / 60
 MINUTE = ARG % 60
 SIF HOUR > 24
 	HOUR = HOUR - 24
-時刻 = %TOSTR(HOUR)%時%TOSTR(MINUTE,"00")%分
+時刻 = %TOSTR(HOUR)%时%TOSTR(MINUTE,"00")%分
 RETURNF 時刻
 
 ;-------------------------------------------------
@@ -2288,7 +2297,71 @@ NEXT
 RESULT = TEMP_RESULT
 
 ;----------------------------------------------------------------------------------------------------
-;同行中の人数を返す関数
+; 获取并排序计数分割结果的函数
+;作者：狂气小白兔----------------------------------------------------------------------------------------------------
+; 调用 @CNT_SPLIT 获取原始数据，然后根据 Sort 参数进行排序
+;・CALLFで使用のこと、REFを使用して变量を直接书き换える
+;・参数必须、单语列表/出现个数列表の配列上限に注意！
+;・区切り文字は"/"で固定 (由 @CNT_SPLIT 决定)
+;・返回值１）STR_LIST、排序后的单语列表
+;・返回值２）CNT_LIST、排序后的各单语的出现回数列表
+;・返回值３）STR_NUM、单语的种类总数
+;・返回值４）Sort、排序方式 (0:不变, 1:计数升序, 2:计数降序)
+;----------------------------------------------------------------------------------------------------
+@GET_SORTED_CNT_SPLIT(TARGET_STR, STR_LIST, CNT_LIST, STR_NUM, Sort)
+#FUNCTION
+#DIMS         TARGET_STR     ;分割对象STR
+#DIMS REF     STR_LIST       ;单语列表 (输出)
+#DIM  REF     CNT_LIST       ;各单语の出现个数列表 (输出)
+#DIM  REF     STR_NUM        ;单语の种类の总数 (输出)
+#DIM          Sort           ;排序方式 (0:不变, 1:计数升序, 2:计数降序)
+
+; 排序所需的临时变量
+#DIM          temp_i           ; 排序循环用
+#DIM          temp_j          ; 排序循环用
+#DIM          should_swap
+#DIM          temp_cnt       ; 计数交换用临时变量
+#DIMS         temp_str       ; 字符串交换用临时变量
+
+CALLF CNT_SPLIT(TARGET_STR, STR_LIST, CNT_LIST, STR_NUM)
+
+;根据 Sort 参数对获取到的数据进行排序
+IF Sort
+	; 使用冒泡排序对 CNT_LIST 进行排序，同时交换对应的 STR_LIST 元素
+	; 排序范围是已经填充的 0 到 STR_NUM-1
+	FOR temp_i, 0, STR_NUM - 1
+		FOR temp_j, 0, STR_NUM - 1 - temp_i
+			SIF temp_j + 1 >= STR_NUM
+				CONTINUE
+
+			should_swap = 0
+			IF Sort == 1 ; 升序 (如果当前比下一个大，则交换)
+				IF CNT_LIST:temp_j > CNT_LIST:(temp_j+1)
+					should_swap = 1
+				ENDIF
+			ELSEIF Sort == 2 ; 降序 (如果当前比下一个小，则交换)
+				IF CNT_LIST:temp_j < CNT_LIST:(temp_j+1)
+					should_swap = 1
+				ENDIF
+			ENDIF
+
+			IF should_swap
+				; 交换 CNT_LIST 中的元素
+				temp_cnt = CNT_LIST:temp_j
+				CNT_LIST:temp_j = CNT_LIST:(temp_j+1)
+				CNT_LIST:(temp_j+1) = temp_cnt
+
+				; 交换 STR_LIST 中的对应元素
+				temp_str '= STR_LIST:temp_j
+				STR_LIST:temp_j '= STR_LIST:(temp_j+1)
+				STR_LIST:(temp_j+1) '= temp_str
+			ENDIF
+		NEXT
+	NEXT
+ENDIF
+
+;----------------------------------------------------------------------------------------------------
+;同行中の人数を返す函数
 ;----------------------------------------------------------------------------------------------------
 @同行人数()
 #FUNCTION
@@ -2351,7 +2424,7 @@ ITEM_ID = GETNUM(ITEM, ITEM_NAME)
 
 SIF ITEM:ITEM_ID <= 0
 	RETURN
-CALL COLORMESSAGE(@"失去了{ITEM_NUM}個%ITEMNAME:ITEM_ID%", C_YELLOW, PRINT_TYPE)
+CALL COLORMESSAGE(@"失去了{ITEM_NUM}个%ITEMNAME:ITEM_ID%", C_YELLOW, PRINT_TYPE)
 ITEM:ITEM_ID = MAX(ITEM:ITEM_ID - ITEM_NUM, 0)
 
 @GET_MONEY_YEN(VALUE, PRINT_TYPE)
@@ -2505,7 +2578,7 @@ SELECTCASE ITEM_NO
 	CASE 707, 708
 		RETURNF "尾"
 	CASEELSE
-		RETURNF \@ ITEM_NUM < 10 ? つ # 個 \@
+		RETURNF \@ ITEM_NUM < 10 ? 个 # 个 \@
 ENDSELECT
 
 @IS_LOVER(ARG)
