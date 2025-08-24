@@ -22,7 +22,7 @@
 ;TCVAR:350 指令絵表示受け渡しフラグ
 ;TCVAR:351 wear body suit for today (=1 decision made, =0 not decided)
 ;******************************************************************************
-;白蓮の初期ステータス
+;白莲の初期ステータス
 ;体力2000、気力1700（ちなみに你は体力2000、気力2000）
 ;能力
 ;各種感覚0、施虐属性2、百合属性3、戦闘能力5、教養5、料理技能:3
@@ -33,7 +33,7 @@
 ;経験
 ;V経験10、百合経験30、異常経験2、料理経験80
 
-;白蓮の服装
+;白莲の服装
 ;いつもの
 ;靴、長筒襪、內褲、裙子、文胸、女式衬衫
 ;就寝時
@@ -48,7 +48,7 @@
 ;・五戒を破ってもOKと是え、トップである以上はあまり大っぴらに運動のこともできない。
 ;・MASTERは妖怪・人类のどちらも愛せうる稀有な人材ということを見込まれて入門許可されてる感じ。
 ;・诶嘿嘿時
-;　白蓮が推倒た場合は攻め気な感じ。
+;　白莲が推倒た場合は攻め気な感じ。
 ;　MASTERが推倒た場合には、
 ;　恋人、恋慕の場合…甘やかしまくりな感じ
 ;　いずれも所持しておらず、不埒刻印Lv.3の場合…積極的に責める感じ。
@@ -100,17 +100,19 @@ CFLAG:55:眠姦口上有 = 1
 ;ENDIF
 
 ; body suit for today
-IF !CFLAG:55:衣装一時変更 && TCVAR:55:351 == 0
-	IF RAND:8 == 0
-		CALL CTRL_CLOTHES_SET(55, "現在衣装の変更_衣装セット", 64)
-		CALL CLOTHES_SETTING_TRAIN(55)
-	ENDIF
-	TCVAR:55:351 = 1
-ENDIF
+;每个指令回合均可掷一次骰子，直至换上机车夹克为止，明显设计有误，现移至角色特殊换装（4.973服装更新）
+;IF !CFLAG:55:衣装一時変更 && TCVAR:55:351 == 0
+;	IF RAND:8 == 0
+;		CALL CTRL_CLOTHES_SET(55, "現在衣装の変更_衣装セット", 64)
+;		CALL CLOTHES_SETTING_TRAIN(55)
+;	ENDIF
+;	TCVAR:55:351 = 1
+;ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K55
-
+;黄蘗
+SETCOLOR 0xF3C13A
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 
@@ -123,51 +125,43 @@ ENDIF
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
 IF !CFLAG:55:1300
-	;PRINTFORML 口上に合わせて素質を要进行変更吗？
-	PRINTFORML 根据口上的需要进行素质的变更吗？
-	;【処女】【禁断的知識】
-	;PRINTFORML 【保守的】【難以越過的底線】【贞操重视】【爆乳】【Ａ敏感】を失い、【堅強】【献身的】【謎之魅力】【巨乳】【人気】を得ます。
-	PRINTFORML 【保守的】【難以越過的底線】【贞操重视】【爆乳】【Ａ敏感】失去、【堅強】【献身的】【謎之魅力】【巨乳】【人気】获得。
-	;CALL ASK_M("変更する",1,"変更しない",1,"保留（次回UPDATE時再度選択）",1)
-	CALL ASK_M("変更",1,"不変更",1,"保留（次回UPDATE時再度選択）",1)
+	PRINTFORMDL 根据剧本需要进行素质的变更吗？
+	PRINTFORMDL 会失去【保守的】【难以越过的底线】【贞操重视】【爆乳】【Ａ敏感】、获得【坚强】【献身的】【谜之魅力】【巨乳】【人气】。
+	CALL ASK_M("依作者的设定吧，但是爆乳我绝不妥协",1,"变更",1,"不变更",1,"保留（下次UPDATE时再决定）",1)
 	SELECTCASE RESULT
 		CASE 0, 1
-			;PRINTFORMW 変更を行います
-			PRINTFORMW 进行变更
+			PRINTFORMDW 进行变更
 			CFLAG:55:1300 = 1
 			
 			TALENT:55:性的兴趣 = 0
 			TALENT:55:難以越過的底線 = 0
 			TALENT:55:貞操 = 0
 			TALENT:55:Ａ感度 = 0
-			IF !RESULT
+			IF RESULT
 				TALENT:55:胸圍 = 1
 			ELSE
-				PRINTFORMW …爆乳はそのままで
+				PRINTFORMDW …爆乳依旧
 			ENDIF
 			TALENT:55:胆量 = 1
 			TALENT:55:献身的 = 1
 			TALENT:55:謎之魅力 = 1
-			TALENT:55:人気 = 1
-			
-			SIF EXP:55:Ａ経験 == 1
+			TALENT:55:人気 = 1			
+			SIF EXP:55:Ａ経験
 				EXP:55:Ａ経験 = 0
 		CASE 2
-			;PRINTFORMW 変更しません
-			PRINTFORMW 不变更
+			PRINTFORMDW 不变更
 			CFLAG:55:1300 = 1
 		CASE 3
-			;PRINTFORMW 保留します
-			PRINTFORMW 保留
+			PRINTFORMDW 暂时保留
 	ENDSELECT
 ENDIF
 
 SIF !SPRITECREATED("55_A1")
 	RETURN 1
-PRINTL 白蓮独立立绘扩展显示选项
-PRINTL 
-PRINTL [0] - ON　　　※動作重くなります
-PRINTL [1] - OFF
+PRINTDL 白莲独立立绘扩展显示选项
+PRINTDL ※这是过时选项 现在立绘可以在游戏内自由切换
+PRINTDL [0] - 开启 　　　※动作会变慢
+PRINTDL [1] - OFF
 $LOOP_SELECT
 INPUT
 IF !INRANGE(RESULT, 0, 1)
@@ -190,7 +184,7 @@ RETURN 1
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 ;拠点が命蓮寺
 IF MAIN_MAP == 1
-	PRINTFORMW 白莲看着你、露出柔和的笑容
+	PRINTFORMDW 白莲看着你、露出柔和的笑容
 	SELECTCASE TIME:2
 		CASE 1
 			PRINTFORMW 「早上好」
@@ -212,39 +206,39 @@ IF MAIN_MAP == 1
 	PRINTFORMW 「那么、还请允许我正式向新成员介绍一下自己吧」
 	PRINTFORMW 「我的名字叫白莲、是命莲寺的住持」
 	PRINTFORMW 「如果有困难的话、可以直接向我求助哦」
-	PRINTFORML 
+	PRINTFORMDL 
 	PRINTFORMW 「对了、你应该已经见过一轮和星了吧?」
 	;MASTERが女性
 	IF TALENT:PLAYER:2 == 1
 		PRINTFORMW 「大家都是好孩子、我想你很快也会成为好朋友的」
 	ELSE
 		PRINTFORML 「因为僧人们都是女性、也许会有不方便的时候、
-		PRINTFORMW 　不过大家都是好孩子、我想你很快就会习惯的」
+		PRINTFORMDW 　不过大家都是好孩子、我想你很快就会习惯的」
 	ENDIF
 	PRINTFORML
 	PRINTFORMW 「呼呼、今后还请多多关照啦。%CALLNAME:MASTER%」
 ;拠点が命蓮寺以外
 ELSE
-	PRINTFORMW 四下闲游时，%CALLNAME:MASTER%注意到某处方位被人群围得水泄不通
-	PRINTFORMW 在好奇心驱使下不自主地凑上前去、这才看到了人群之中是谁吸引了大家的目光
-	PRINTFORML 
-	PRINTFORMW 那是一位有着绮丽的发色，身穿西式礼服的女子。从她收紧的腰身和衣服各处都穿出来了交叉的丝带，
-	PRINTFORMW 这些丝带把她身体的曲线勾勒得很好
-	PRINTFORML 
-	PRINTFORMW 从她的言谈举止来看，她似乎与佛道有关。%CALLNAME:MASTER%驻足，被她绰约的风姿和有趣的言论所吸引。
-	PRINTFORML 
-	PRINTFORML 
-	PRINTFORML 
+	PRINTFORMDW 四下闲游时，%CALLNAME:MASTER%注意到某处方位被人群围得水泄不通
+	PRINTFORMDW 在好奇心驱使下不自主地凑上前去、这才看到了人群之中是谁吸引了大家的目光
+	PRINTFORMDL 
+	PRINTFORMDW 那是一位有着绮丽的发色，身穿西式礼服的女子。从她收紧的腰身和衣服各处都穿出来了交叉的丝带，
+	PRINTFORMDW 这些丝带把她身体的曲线勾勒得很好
+	PRINTFORMDL 
+	PRINTFORMDW 从她的言谈举止来看，她似乎与佛道有关。%CALLNAME:MASTER%驻足，被她绰约的风姿和有趣的言论所吸引。
+	PRINTFORMDL 
+	PRINTFORMDL 
+	PRINTFORMDL 
 	PRINTFORMW 「看你听了很久…我刚才讲的东西很有趣吗？」
-	PRINTFORMW 讲经结束后，本想跟着人群离開的%CALLNAME:MASTER%被讲师搭话了
-	PRINTFORMW 猝不及防下直白地表达了真实感想。听过后，她表现出一副安定地样子，介绍了自己的身份
+	PRINTFORMDW 讲经结束后，本想跟着人群离开的%CALLNAME:MASTER%被讲师搭话了
+	PRINTFORMDW 猝不及防下直白地表达了真实感想。听过后，她表现出一副安定地样子，介绍了自己的身份
 	PRINTFORMW 「白莲。现任命莲寺主持。」
-	PRINTFORMW 语必她恭敬了行了一礼，当%CALLNAME:MASTER%有些不知所措时，她又開展了新的话题
-	PRINTFORML 
+	PRINTFORMDW 语必她恭敬了行了一礼，当%CALLNAME:MASTER%有些不知所措时，她又开展了新的话题
+	PRINTFORMDL 
 	PRINTFORMW 「…嗯、您看起来委实不像是本地的居民、是从外面的世界来的吗…」
 	PRINTFORMW 「突然来到这种陌生的环境一定会有诸多不便、如果遇到困难请不要难为情，来我们寺里寻求帮助吧」
-	PRINTFORMW 她说到动情之处不由地牵起%CALLNAME:MASTER%的手、露出了温和的笑容。
-	PRINTFORMW 感受到手掌传来的温暖、%CALLNAME:MASTER%看着这样毫无防备的笑容一时间不知道说什么好
+	PRINTFORMDW 她说到动情之处不由地牵起%CALLNAME:MASTER%的手、露出了温和的笑容。
+	PRINTFORMDW 感受到手掌传来的温暖、%CALLNAME:MASTER%看着这样毫无防备的笑容一时间不知道说什么好
 	
 ENDIF
 RETURN 1
@@ -264,28 +258,31 @@ LOCAL = 1
 IF LOCAL
 	PRINTFORML 「…啾」
 	PRINTFORMW 「…呼呼」
-	PRINTFORMW 白莲略带羞涩地笑了笑、转身走了
-	PRINTFORML 
+	PRINTFORMDW 白莲略带羞涩地笑了笑、转身走了
+	PRINTFORMDL 
 	PRINTFORML 「我劝大家放弃烦恼、皈依佛门、
-	PRINTFORMW 　可是我却做了这样的事。」
-	PRINTFORML 她自嘲地叹口气、又回头看了看你
-	PRINTFORMW 她的眼睛湿润、脸颊微微泛着红晕
-	PRINTFORML 
+	PRINTFORMDW 　可是我却做了这样的事。」
+	PRINTFORMDL 她自嘲地叹口气、又回头看了看你
+	PRINTFORMDW 她的眼睛湿润、脸颊微微泛着红晕
+	PRINTFORMDL 
 	PRINTFORMW 「但是」
- 	PRINTFORMW 白莲三步并作两步走回、伸出一双柔荑抓住了你的手、不算用力、但也感觉得到挣不脱\n「还想再多索取一点」
-	PRINTFORMW 接着、就这样将手指互相缠绕、用力握住
+ 	PRINTFORMDL 白莲三步并作两步走回、伸出一双柔荑抓住了你的手、不算用力、但也感觉得到挣不脱
+ 	PRINTFORMW 「还想再多索取一点」
+	PRINTFORMDW 接着、就这样将手指互相缠绕、用力握住
 	PRINTFORMW 「我想就这样感受你」
-	PRINTFORMW 小声说着、依偎在你的胸前
-	PRINTFORML 
+	PRINTFORMDW 小声说着、依偎在你的胸前
+	PRINTFORMDL 
 	PRINTFORML
 	PRINTFORMW （……啊、这样的脸……我可不能给大家看）
 
-	;白蓮から接吻されたフラグ
+	;白莲から接吻されたフラグ
 	CFLAG:1202 = 1
 	;どうやらこのイベントでは接吻経験が増えないようなので、接吻経験を1追加しとく
-	EXP:接吻経験 ++
+	;原注：看来这个事件不会增加接吻经验，所以这里增加1点接吻经验
+	;可能说的是10年前的版本
+	;EXP:接吻経験 ++
 	
-	;接吻を中止したい場合は以下を開放
+	;接吻を中止したい場合は以下を开放
 	;TFLAG:193 = 1
 ENDIF
 RETURN 1
@@ -341,8 +338,8 @@ RETURN 1
 ;口上主はTARGET
 ;地の文表示
 ;--------------------------------------------------
-;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+;记入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
 ;-------------
 IF LOCAL
 	;-------------------------------------------------
@@ -420,36 +417,36 @@ IF LOCAL
 			;/現状どちらから告白されても口上は変わらない(ネタ切れ)。加筆キボンヌ
 			IF CFLAG:1202  ==  2
 					PRINTFORMW 「哈啊…」
-					PRINTFORMW 白莲放松了肩膀、微微叹息
+					PRINTFORMDW 白莲放松了肩膀、微微叹息
 					PRINTFORML
 					PRINTFORMW 「坦白了和%CALLNAME:MASTER%的关系后、不出预料的被训斥了…」
 					PRINTFORMW 「『身为宣扬佛法的人、千万不能堕落入肉欲之中！』这种训斥倒还在预料之中」
 					PRINTFORMW 「『你做过的那些事、难道以为我们都不知道吗！？』没想到还有这种话…」
 					PRINTFORMW 「啊……感觉和%CALLNAME:MASTER%做过的事、全部都被泄露出去了……」
 					PRINTFORMW 「诶呀！羞死了……」
-					PRINTFORMW ……白蓮原本白皙的皮肤、现在染上了一层诱人的红色。身子也在微微颤抖
-					PRINTFORML 
-					PRINTFORML 
-					PRINTFORMW 过了一会儿、白莲似乎平静了下来、转身对你说:
+					PRINTFORMDW ……白莲原本白皙的皮肤、现在染上了一层诱人的红色。身子也在微微颤抖
+					PRINTFORMDL 
+					PRINTFORMDL 
+					PRINTFORMDW 过了一会儿、白莲似乎平静了下来、转身对你说:
 					PRINTFORMW 「……啊!不管啦、听过了听过了」
-					PRINTFORMW 然后、直视着我的眼睛、微笑着
+					PRINTFORMDW 然后、直视着我的眼睛、微笑着
 					PRINTFORMW 「今后也请多多关照。%CALLNAME:MASTER%」
 			;MASTERが告白して恋人
 			ELSE
 					PRINTFORMW 「哈啊…」
-					PRINTFORMW 白莲放松了肩膀、微微叹息
+					PRINTFORMDW 白莲放松了肩膀、微微叹息
 					PRINTFORML
 					PRINTFORMW 「坦白了和%CALLNAME:MASTER%的关系后、不出预料的被训斥了…」
 					PRINTFORMW 「『身为宣扬佛法的人、千万不能堕落入肉欲之中！』这种训斥倒还在预料之中」
 					PRINTFORMW 「『你做过的那些事、难道以为我们都不知道吗！？』没想到还有这种话…」
 					PRINTFORMW 「啊……感觉和%CALLNAME:MASTER%做过的事、全部都被泄露出去了……」
 					PRINTFORMW 「诶呀！羞死了……」
-					PRINTFORMW ……白蓮原本白皙的皮肤、现在染上了一层诱人的红色。身子也在微微颤抖
-					PRINTFORML 
-					PRINTFORML 
-					PRINTFORMW 过了一会儿、白莲似乎平静了下来、转身对你说:
+					PRINTFORMDW ……白莲原本白皙的皮肤、现在染上了一层诱人的红色。身子也在微微颤抖
+					PRINTFORMDL 
+					PRINTFORMDL 
+					PRINTFORMDW 过了一会儿、白莲似乎平静了下来、转身对你说:
 					PRINTFORMW 「……啊!不管啦、听过了听过了」
-					PRINTFORMW 然后、直视着我的眼睛、微笑着
+					PRINTFORMDW 然后、直视着我的眼睛、微笑着
 					PRINTFORMW 「今后也请多多关照。%CALLNAME:MASTER%」
 			ENDIF
 			;恋慕かつ恋人後初遭遇済みフラグ
@@ -458,9 +455,9 @@ IF LOCAL
 		ELSEIF TALENT:恋人 && CFLAG:1201 < 6
 				PRINTFORMW 「啊、%CALLNAME:MASTER%。辛苦了」
 				PRINTFORMW 「唔……」
-				PRINTFORMW 白莲目不转睛地盯着你的脸
+				PRINTFORMDW 白莲目不转睛地盯着你的脸
 				PRINTFORMW （嗯、恋人、恋人……）
-				PRINTFORMW 啊、小脸红得好可爱。听到你说这句话后、白蓮的脸更可爱了
+				PRINTFORMDW 啊、小脸红得好可爱。听到你说这句话后、白莲的脸更可爱了
 				PRINTFORMW 「诶呀、讨厌」
 				PRINTFORML
 				PRINTFORMW 「不管怎样……今后也会生活得很愉快吧。%CALLNAME:MASTER%」
@@ -471,39 +468,39 @@ IF LOCAL
 			;非恋慕時に诶嘿嘿したことがある
 			IF CFLAG:1203 == 1
 				PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
-				PRINTFORMW 白莲看着你、脸上微微泛红
+				PRINTFORMDW 白莲看着你、脸上微微泛红
 				PRINTFORMW 「那个……今后也可以多多依赖我哦」
-				PRINTFORMW 只说了那么多、然后像喘不过气似的呼出一声、一下就把脸扭開
+				PRINTFORMDW 只说了那么多、然后像喘不过气似的呼出一声、一下就把脸扭开
 			;诶嘿嘿も初めて
 			ELSE
 				;MASTERが被逆推て诶嘿嘿
 				IF CFLAG:1200 == 2				
 					PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
-					PRINTFORMW 看到你的脸、白莲脸色暗淡、低下了头
+					PRINTFORMDW 看到你的脸、白莲脸色暗淡、低下了头
 					PRINTFORMW 「……对不起、对你做了那样的事、实在抱歉」
-					PRINTFORMW 你表示自己并不在意、而且……也没有那么讨厌
+					PRINTFORMDW 你表示自己并不在意、而且……也没有那么讨厌
 					PRINTFORMW 「…这样啊、%CALLNAME:MASTER%还是那么温柔呢」
 					PRINTFORMW 「谢谢……%CALLNAME:MASTER%」
-					PRINTFORMW 白莲深深地行了一礼
-					PRINTFORML 
+					PRINTFORMDW 白莲深深地行了一礼
+					PRINTFORMDL 
 					PRINTFORMW 「……那个、也许有点得寸进尺」
 					PRINTFORMW 「今后还能像以前那样相处吗？」
 				;MASTERが推倒て诶嘿嘿
 				ELSEIF CFLAG:1200 == 1
 					PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
-					PRINTFORMW 白莲看着你、害羞地低下了头
+					PRINTFORMDW 白莲看着你、害羞地低下了头
 					PRINTFORMW 「那个、之前的事我不介意、你不用担心的」
 					PRINTFORMW 「倒不如说、那个…今后也可以多多地……和我……」
-					PRINTFORMW 只说了那么多、然后像喘不过气似的呼出一声、一下就把脸扭開
+					PRINTFORMDW 只说了那么多、然后像喘不过气似的呼出一声、一下就把脸扭开
 				ENDIF
 			ENDIF
 			;恋慕付き诶嘿嘿初体験後初遭遇済みフラグ
 			CFLAG:1201 = 5
 		;恋慕付きで你からの接吻後初遭遇、どちらか一回のみ表示
 		ELSEIF TALENT:恋慕 && EXP:接吻経験 >= 1 && CFLAG:1201 < 4
-		PRINTFORMW 白莲心不在焉的、看着空中
+		PRINTFORMDW 白莲心不在焉的、看着空中
 			PRINTFORMW 「……啊！%CALLNAME:MASTER%」
-			PRINTFORMW 终于注意到你后、她的脸一下子就红了
+			PRINTFORMDW 终于注意到你后、她的脸一下子就红了
 			PRINTFORML
 			PRINTFORMW （冷静！这也不是有生以来第一次接吻……哈、冷静不了啊！）
 			;恋慕付き接吻後初遭遇済みフラグ
@@ -511,9 +508,9 @@ IF LOCAL
 		;恋慕取得後の初遭遇（一回のみ表示）
 		ELSEIF TALENT:恋慕 && CFLAG:1201 < 3
 			PRINTFORML
-			PRINTFORMW ……最近经常能感觉到白莲的视线
-			PRINTFORMW 「…呼呼♥」
-			PRINTFORMW 突然目光交汇、白莲温柔对我地笑了
+			PRINTFORMDW ……最近经常能感觉到白莲的视线
+			CALL HPH_PRINT,@"「…呼呼HPH」","W"
+			PRINTFORMDW 突然目光交汇、白莲温柔对我地笑了
 			;恋慕後初遭遇済みフラグ
 			CFLAG:1201 = 3
 		;非恋慕時诶嘿嘿初体験後初遭遇、どちらか一回のみ表示
@@ -522,22 +519,22 @@ IF LOCAL
 			IF CFLAG:1200 == 2
 				PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
 				PRINTFORMW 「那个……对不起。我所做的事、不知不觉就被气氛给影响了…」
-				PRINTFORMW 你表示自己并不在意、而且……也没有那么讨厌
+				PRINTFORMDW 你表示自己并不在意、而且……也没有那么讨厌
 				PRINTFORMW 「…这样啊、%CALLNAME:MASTER%还是那么温柔呢」
 				PRINTFORML 「……谢谢、%CALLNAME:MASTER%」
-				PRINTFORMW 说完、白莲匆匆地结束了谈话
+				PRINTFORMDW 说完、白莲匆匆地结束了谈话
 			;MASTERが推倒て诶嘿嘿
 			ELSEIF CFLAG:1200 == 1
 				IF MARK:不埒刻印 == 3
 					PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
-					PRINTFORMW 白蓮看着你、有些色气地笑了。
+					PRINTFORMDW 白莲看着你、有些色气地笑了。
 				ELSE
 					PRINTFORMW 「啊……我的%CALLNAME:MASTER%来了」
-					PRINTFORMW 白蓮看了你一眼、害羞地低下了头。
+					PRINTFORMDW 白莲看了你一眼、害羞地低下了头。
 					PRINTFORMW 「那个、之前的事我不介意、你不用担心的」
 					PRINTFORMW 「但是、佛理之究极是超脱烦恼与欢乐
-					PRINTFORMW 而这里是修行理解佛道的场所、还请你不要忘记这件事」
-					PRINTFORMW 被委婉地告诫了呢
+					PRINTFORMDW 而这里是修行理解佛道的场所、还请你不要忘记这件事」
+					PRINTFORMDW 被委婉地告诫了呢
 					;しかし超許す
 				ENDIF
 			ENDIF
@@ -547,35 +544,35 @@ IF LOCAL
 			PRINTFORMW 「……那个、就是」
 			PRINTFORMW 「上次见面的事还请不要外传、好吗」
 			PRINTFORMW 「……所以、那个……W……吻、还有其他的事……」说什么呢、完全听不到啊
-			PRINTFORMW 啊、白莲又脸红了、以后叫她红莲好了。
+			PRINTFORMDW 啊、白莲又脸红了、以后叫她红莲好了。
 			CFLAG:1201 = 1
 		;MASTERの体力が800以下
 		ELSEIF BASE:MASTER:体力 <= 800
-			PRINTFORML 白莲担忧地看着你的脸。
+			PRINTFORMDL 白莲担忧地看着你的脸。
 			IF RAND:3 == 0 
 				PRINTFORMW 「%CALLNAME:MASTER%看上去很累啊。该休息的时候不好好休息的话、身体会吃不消哦?」
 			ELSEIF RAND:2 == 0 
 				PRINTFORMW 「太累了也不能好好工作吧。还是早点睡、才能早点恢复好精神哦」
 			ELSE 
 				PRINTFORML 「看上去很疲劳呢。我陪着你回房间吧？」
-				PRINTFORML 你对白莲的提议表示感谢、但还是摆了摆手、一个人走了。
-				PRINTFORMW ……每一步都很沉重啊、确实很累。也许休息一下比较好。
+				PRINTFORMDL 你对白莲的提议表示感谢、但还是摆了摆手、一个人走了。
+				PRINTFORMDW ……每一步都很沉重啊、确实很累。也许休息一下比较好。
 			ENDIF 
 		;MASTERの気力が0
 		ELSEIF BASE:MASTER:気力 <= 0
 			IF RAND:3 == 0 
 				PRINTFORMW 「……感觉你现在连反应都变迟钝了。早点休息吧」
 			ELSEIF RAND:2 == 0
-				PRINTFORML 「脸上一点坚毅的感觉也没有了。没精神就快睡吧!喝~ !」
-				PRINTFORML 白莲摆出奇怪的姿势、对你大喝。
-				PRINTFORMW ……确实该休息了吗、连说出吐槽的力气都没有了。 
+				PRINTFORML 「脸上一点坚毅的感觉也没有了。没精神就快睡吧!喝～ !」
+				PRINTFORMDL 白莲摆出奇怪的姿势、对你大喝。
+				PRINTFORMDW ……确实该休息了吗、连说出吐槽的力气都没有了。 
 			ELSE 
 				PRINTFORMW 「…%CALLNAME:MASTER%、没事吧？好像很疲惫啊……」
 			ENDIF 
 		;21時から24時 ※普通22時には寝てしまうので実質1時間だけ。忍び込みして起きてきた時も出る
 		ELSEIF TIME:0 >= 1260 
 			PRINTFORML 「……哈～啊…嗯哼」
-			PRINTFORML 白莲张大嘴、伸着懒腰打着哈欠。正好撞上你
+			PRINTFORMDL 白莲张大嘴、伸着懒腰打着哈欠。正好撞上你
 			PRINTFORMW 「啊！」\n好像打算马上调整状态但是失败了\n「糟了、没管理好表情被人发现了。」
 		;恋慕
 		ELSEIF TALENT:恋慕
@@ -587,17 +584,17 @@ IF LOCAL
 				IF CFLAG:325 ==5
 					IF RAND:4 == 0
 						PRINTFORML 「来了就别急着走哦、过来帮帮我的忙嘛」
-						PRINTFORMW 白莲注意到你的到来后、開心地笑了。
+						PRINTFORMDW 白莲注意到你的到来后、开心地笑了。
 					ELSEIF RAND:3 == 0
 						PRINTFORML 「哦、你是专程来见我的吗?」
 						PRINTFORMW 「嘻嘻、那我就早点收工好了」
 					ELSEIF RAND:2 == 0
-						PRINTFORML 「啊、欢迎！现在工作太多了脱不開身。不能陪你喝茶呢！抱歉抱歉」
-						PRINTFORMW 「……但是、如果你在那里、我会很開心的。」
+						PRINTFORML 「啊、欢迎！现在工作太多了脱不开身。不能陪你喝茶呢！抱歉抱歉」
+						PRINTFORMW 「……但是、如果你在那里、我会很开心的。」
 					ELSE
 						PRINTFORML 「啊、工作好累啊……」
 						PRINTFORML 「……%CALLNAME:MASTER%！？什么时候……」
-						PRINTFORMW 本来忙于工作的白莲一注意到你、惊讶地打了招呼、然后满脸通红地躲进了工作中
+						PRINTFORMDW 本来忙于工作的白莲一注意到你、惊讶地打了招呼、然后满脸通红地躲进了工作中
 					ENDIF
 				ELSE
 					IF RAND:3 ==0
@@ -606,7 +603,7 @@ IF LOCAL
 						PRINTFORMW 「肩膀也可以哦、呼呼?～」
 					ELSEIF RAND:2 == 0
 						PRINTFORML 「啊、特地来找我吗?」
-						PRINTFORMW 正读着佛经的白莲、注意到你的进入、礼貌地一笑。
+						PRINTFORMDW 正读着佛经的白莲、注意到你的进入、礼貌地一笑。
 					ELSE
 						PRINTFORMW 「啊、%CALLNAME:MASTER%、进来吧」
 					ENDIF
@@ -614,12 +611,12 @@ IF LOCAL
 			;居間
 			CASE 108
 					IF RAND:4 == 0 
-						PRINTFORMW 白莲好像时刻在注意听这里的动静……
+						PRINTFORMDW 白莲好像时刻在注意听这里的动静……
 					ELSEIF RAND:3 == 0 
 						PRINTFORMW 「啊啦、我刚好去拿了些点心、一起吃吧？」
 					ELSEIF RAND:2 == 0
 						PRINTFORML 「啊、来得正好哦。我有点渴了正想泡茶呢
-						PRINTFORML 不介意的话、可以麻烦%CALLNAME:MASTER%帮我泡一杯吗」
+						PRINTFORMDL 不介意的话、可以麻烦%CALLNAME:MASTER%帮我泡一杯吗」
 						PRINTFORMW 「我啊、很喜欢你泡的茶呢。」
 					ELSE
 						PRINTFORMW 「诶、在打扫吗。辛苦辛苦」
@@ -627,21 +624,21 @@ IF LOCAL
 			;走廊
 			CASE 110
 					IF RAND:3 == 0 
-						PRINTFORML 坐在走廊边缘的白莲看到你的身影、表情一下子变得明朗起来。
+						PRINTFORMDL 坐在走廊边缘的白莲看到你的身影、表情一下子变得明朗起来。
 						PRINTFORML 「很少见你来呢、多坐会吧?」
 						PRINTFORMW 「坐这边啦、我这边有空位哦…」
 					ELSEIF RAND:2 == 0 
 						PRINTFORML 「天气正好呢」
-						PRINTFORMW 白莲她、看起来很開心啊
+						PRINTFORMDW 白莲她、看起来很开心啊
 					ELSE 
 						PRINTFORML 「♪～」
-						PRINTFORMW 白莲坐在走廊边缘、很悠哉地轻轻晃着腿
+						PRINTFORMDW 白莲坐在走廊边缘、很悠哉地轻轻晃着腿
 					ENDIF  
 			;廚房
 			CASE 111
 					IF RAND:4 ==0
 						PRINTFORML 「啊啦、%CALLNAME:MASTER%。莫非是过来偷偷打牙祭吗」
-						PRINTFORMW 白蓮笑得很狡猾啊。
+						PRINTFORMDW 白莲笑得很狡猾啊。
 					ELSEIF RAND:3 == 0 
 						PRINTFORML 「啊、%CALLNAME:MASTER%」
 						PRINTFORMW 「稍微有点口渴了、就想着过来接水。你也是吗？」
@@ -653,34 +650,34 @@ IF LOCAL
 						PRINTFORML 「啊啦、要做什么好吃的吗？」
 						PRINTFORMW 「要是难度太大的话、我来帮忙打打下手吧」
 				ENDIF 
-			;白蓮私室
+			;白莲私室
 			CASE 118
 				;诶嘿嘿経験済みで随机2つ追加、诶嘿嘿経験済み+恋人で随机1つ追加。
 				IF RAND:7 == 0 && (CFLAG:1200 == 1 || CFLAG:1200 == 2) && TALENT:恋人
-					PRINTFORMW 「啊、来我的房间了呢…呼呼?～♥」
+					CALL HPH_PRINT,@"「啊、来我的房间了呢…呼呼?～HPH」","W"
 				ELSEIF RAND:6 == 0 && TALENT:恋人
 					PRINTFORML 「嗯、有什么事吗？」
 					PRINTFORML 「……只是想看看我？」
-					PRINTFORMW 「…唔、真是拿你没办法。随你開心看好啦～」
+					PRINTFORMW 「…唔、真是拿你没办法。随你开心看好啦～」
 				ELSEIF RAND:5 == 0 && (CFLAG:1200 == 1 || CFLAG:1200 == 2)
 					PRINTFORML 「啊……嗯哼、是你啊%CALLNAME:MASTER%」
-					PRINTFORMW 白莲虽然看起来很平静、但脸上却微微泛着红晕。
+					PRINTFORMDW 白莲虽然看起来很平静、但脸上却微微泛着红晕。
 				ELSEIF RAND:4 == 0 && (CFLAG:1200 == 1 || CFLAG:1200 == 2)
 					PRINTFORML 「嗯、怎么了吗？」
 					PRINTFORML 「专门过来……撒娇？咳咳」
-					PRINTFORMW 白莲红着脸重复着心中的欢乐疑惑。
+					PRINTFORMDW 白莲红着脸重复着心中的欢乐疑惑。
 				ELSEIF RAND:3 == 0 
 					PRINTFORML 「诶、呼欢欢迎……%CALLNAME:MASTER%」
-					PRINTFORMW 白莲似乎掩饰不住自己的紧张。
+					PRINTFORMDW 白莲似乎掩饰不住自己的紧张。
 				ELSEIF RAND:2 == 0
 					PRINTFORML 「啊啦、是你啊」
 					PRINTFORML 「…有什么事吗?」
-					PRINTFORMW 白莲似乎很高兴。
+					PRINTFORMDW 白莲似乎很高兴。
 				ELSE
 					PRINTFORML 「啊、是来做扫除的？」
-					;汚れ度合いで分岐
-					SELECTCASE FLAG:(100 + CFLAG:MASTER:現在位置)
-						;清潔度:高
+					;污れ度合いで分岐
+					SELECTCASE YOGORE:(CFLAG:MASTER:現在位置)
+						;清洁度:高
 						CASE IS < 500
 							PRINTFORMW 「嗯、虽然很谢谢你、%CALLNAME:MASTER%。但我这也没那么脏吧。」
 						;清潔度:中
@@ -692,8 +689,8 @@ IF LOCAL
 						;垃圾山
 						CASEELSE
 							PRINTFORML 「……确实乱得不想话了、被你发现了啊。真是不好意思」
-							PRINTFORML 杂七杂八的物件散乱地丢弃在屋子里
-							PRINTFORMW ……而且到处都能看到不知道是做什么的怪异道具。听了介绍后、深深觉得造型和原材料之别出心裁简直令人赞叹
+							PRINTFORMDL 杂七杂八的物件散乱地丢弃在屋子里
+							PRINTFORMDW ……而且到处都能看到不知道是做什么的怪异道具。听了介绍后、深深觉得造型和原材料之别出心裁简直令人赞叹
 							;/ぱんつ発見のチャンス！生命のピンチ！
 					ENDSELECT
 				ENDIF
@@ -714,22 +711,22 @@ IF LOCAL
 			;他
 			CASEELSE
 				IF RAND:6 == 0
-					PRINTFORMW 「啊、%CALLNAME:MASTER%。有醋昆布吗？」（原文是“酢昆布いるかしら？”意义不明）昆布？」
+					PRINTFORMW 「啊，%CALLNAME:MASTER%。要醋昆布吗？」
 				ELSEIF RAND:5 == 0 
-					PRINTFORML 「辛苦了、%CALLNAME:MASTER%」
-					PRINTFORMW 白莲凝视着你的眼睛、温柔地微笑着。
+					PRINTFORML 「辛苦了，%CALLNAME:MASTER%」
+					PRINTFORMDW 白莲注视着你的眼睛，温柔地微笑着。
 				ELSEIF RAND:4 == 0 
-					PRINTFORML 「啊っ……」
-					PRINTFORMW 视线交汇后、白莲的脸颊微微泛红。随即躲開了你的注视
+					PRINTFORML 「啊……」
+					PRINTFORMDW 当视线相遇时，白莲的脸颊微微泛红。
 				ELSEIF RAND:3 == 0 
-					PRINTFORML 「呼呼、经常见面呢」
-					PRINTFORMW 白莲看到你的样子时、露出了開心的笑容…
+					PRINTFORML 「呵呵，经常见面呢」
+					PRINTFORMDW 白莲认出你后，脸上露出了愉快的笑容…
 				ELSEIF RAND:2 == 0 
-					PRINTFORML 「……呼呼♥」
-					PRINTFORMW 白莲看向你的目光、好像有点热切啊……
+					CALL HPH_PRINT,@"「……呼呼HPH」","L"
+					PRINTFORMDW 白莲看向你的目光、好像有点热切啊……
 				ELSE 
 					PRINTFORML 「♪～」
-					PRINTFORMW 白莲哼着小曲、看起来心情不错啊。
+					PRINTFORMDW 白莲哼着小曲、看起来心情不错啊。
 				ENDIF 
 			ENDSELECT
 		;恋慕無
@@ -742,12 +739,12 @@ IF LOCAL
 				IF CFLAG:325 ==5
 					IF RAND:4 == 0
 						PRINTFORML 「啊、工作好累啊……」
-						PRINTFORMW 自言自语的白莲、注意到你之后、不好意思地吐了下舌头。
+						PRINTFORMDW 自言自语的白莲、注意到你之后、不好意思地吐了下舌头。
 					ELSEIF RAND:3 == 0
 						PRINTFORML 「啊啦、%CALLNAME:MASTER%。有什么事吗？」
 						PRINTFORMW 「不过现在是研习佛法的时间、如果不是急事的话、还请稍后再来、可以吗？」
 					ELSEIF RAND:2 == 0
-						PRINTFORMW 「喔、欢迎。现在有点忙得脱不開身呢、还请自便。抱歉抱歉」
+						PRINTFORMW 「喔、欢迎。现在有点忙得脱不开身呢、还请自便。抱歉抱歉」
 					ELSE
 						PRINTFORMW 「欢迎、是过来帮我忙的吗？」
 					ENDIF
@@ -757,7 +754,7 @@ IF LOCAL
 						PRINTFORMW 「有点忙不过来了呢、帮我把那里的梯子拿过来好吗」
 					ELSEIF RAND:2 == 0
 						PRINTFORML 「啊、特地来找我吗?」
-						PRINTFORMW 白莲正看着面前摊開的经书、发觉你后微微一笑。
+						PRINTFORMDW 白莲正看着面前摊开的经书、发觉你后微微一笑。
 					ELSE
 						PRINTFORMW 「啊、%CALLNAME:MASTER%、进来吧」
 					ENDIF
@@ -765,7 +762,7 @@ IF LOCAL
 			;居間
 			CASE 108
 				IF RAND:4 == 0 
-					PRINTFORMW 白莲显得有些为难…是在考虑些什么事吗。
+					PRINTFORMDW 白莲显得有些为难…是在考虑些什么事吗。
 				ELSEIF RAND:3 == 0 
 					PRINTFORMW 「啊啦、我刚好去拿了些点心、一起吃吧？」
 				ELSEIF RAND:2 == 0
@@ -776,13 +773,13 @@ IF LOCAL
 			;走廊
 			CASE 110
 				IF RAND:3 == 0 
-					PRINTFORML 坐在走廊上的白莲看到你的身影、微微一笑。
+					PRINTFORMDL 坐在走廊上的白莲看到你的身影、微微一笑。
 					PRINTFORMW 「难得见你过来耶、来这坐着放松下吧?」
 				ELSEIF RAND:2 == 0 && TIME:5 != 9 && TIME:5 != 13
 					PRINTFORMW 「惠风和畅啊」
 				ELSE 
 					PRINTFORML 「♪～」
-					PRINTFORMW 白莲坐在走廊边缘、很悠哉地轻轻晃着腿
+					PRINTFORMDW 白莲坐在走廊边缘、很悠哉地轻轻晃着腿
 				ENDIF 
 			;廚房
 			CASE 111
@@ -791,21 +788,21 @@ IF LOCAL
 					PRINTFORMW 「稍微有点口渴了、就想着过来接水。你也是吗？」
 				ELSEIF RAND:2 == 0 
 					PRINTFORML 「啊啦、%CALLNAME:MASTER%。莫非是过来偷偷打牙祭吗」
-					PRINTFORMW 白蓮笑得很狡猾啊。
+					PRINTFORMDW 白莲笑得很狡猾啊。
 				ELSE 
 					PRINTFORML 「啊啦、要做什么好吃的吗？」
 					PRINTFORMW 「要是难度太大的话、我来帮忙打打下手吧」
 				ENDIF
-			;白蓮私室
+			;白莲私室
 			CASE 118
 				;诶嘿嘿経験済みで随机2つ追加
 				IF RAND:6 == 0 && (CFLAG:1200 == 1 || CFLAG:1200 == 2)
 					PRINTFORML 「啊……嗯哼、是你啊%CALLNAME:MASTER%」
-					PRINTFORMW 白莲虽然看起来很平静、但脸上却微微泛着红晕。
+					PRINTFORMDW 白莲虽然看起来很平静、但脸上却微微泛着红晕。
 				ELSEIF RAND:5 == 0 && (CFLAG:1200 == 1 || CFLAG:1200 == 2)
 					PRINTFORML 「嗯、怎么了吗？」
 					PRINTFORML 「专门过来……撒娇？咳咳」
-					PRINTFORMW 白莲红着脸重复着心中的欢乐疑惑。
+					PRINTFORMDW 白莲红着脸重复着心中的欢乐疑惑。
 				ELSEIF RAND:3 == 0 
 					PRINTFORML 「啊、是%CALLNAME:MASTER%啊、进来吧」
 					PRINTFORMW 「找我有什么事吗？」
@@ -814,9 +811,9 @@ IF LOCAL
 					PRINTFORMW 「哪里遇上麻烦了？」
 				ELSE
 					PRINTFORML 「啊、是来做扫除的？」
-					;汚れ度合いで分岐
-					SELECTCASE FLAG:(100 + CFLAG:MASTER:現在位置)
-						;清潔度:高
+					;污れ度合いで分岐
+					SELECTCASE YOGORE:(CFLAG:MASTER:現在位置)
+						;清洁度:高
 						CASE IS < 500
 							PRINTFORMW 「嗯、虽然很谢谢你、%CALLNAME:MASTER%。但我这也没那么脏吧。」
 						;清潔度:中
@@ -828,8 +825,8 @@ IF LOCAL
 						;垃圾山
 						CASEELSE
 							PRINTFORML 「……确实乱得不想话了、被你发现了啊。真是不好意思」
-							PRINTFORML 杂七杂八的物件散乱地丢弃在屋子里
-							PRINTFORMW ……而且到处都能看到不知道是做什么的怪异道具。听了介绍后、深深觉得造型和原材料之别出心裁简直令人赞叹
+							PRINTFORMDL 杂七杂八的物件散乱地丢弃在屋子里
+							PRINTFORMDW ……而且到处都能看到不知道是做什么的怪异道具。听了介绍后、深深觉得造型和原材料之别出心裁简直令人赞叹
 							;/ぱんつ発見のチャンス！生命のピンチ！
 					ENDSELECT
 				ENDIF
@@ -843,20 +840,20 @@ IF LOCAL
 			;他
 			CASEELSE
 				IF RAND:6 == 0
-					PRINTFORMW 「啊、%CALLNAME:MASTER%。有醋昆布吗？」（原文是“酢昆布いるかしら？”意义不明）昆布？」
+					PRINTFORMW 「啊，%CALLNAME:MASTER%。要醋昆布吗？」
 				ELSEIF RAND:5 == 0 
-					PRINTFORML 「辛苦了、%CALLNAME:MASTER%」
-					PRINTFORMW 白莲见到你后、温柔地问候着。
+					PRINTFORML 「辛苦了，%CALLNAME:MASTER%」
+					PRINTFORMDW 白莲看到你，温柔地微笑着。
 				ELSEIF RAND:4 == 0 
 					PRINTFORML 「……」
-					PRINTFORMW 好像在考虑什么事情。
+					PRINTFORMDW 似乎在思考着什么。
 				ELSEIF RAND:3 == 0 
-					PRINTFORMW 「呼呼、我们好像经常见面呢」
+					PRINTFORMW 「呵呵，经常见面呢」
 				ELSEIF RAND:2 == 0 
-					PRINTFORMW 「啊、遇到什么问题了吗?」
+					PRINTFORMW 「哎呀，有什么事吗？」
 				ELSE 
 					PRINTFORML 「♪～」
-					PRINTFORMW 白莲哼着小曲、看起来心情不错啊。
+					PRINTFORMDW 白莲心情很好地哼着歌。
 				ENDIF 
 		ENDSELECT
 		ENDIF
@@ -883,14 +880,14 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
 		PRINTFORML 「啊啦、%CALLNAME:MASTER%。你在里面吗」
-		PRINTFORMW 正当%CALLNAME:MASTER%在泡澡的时候传来了叩击门扉的咚咚声和圣的嗓音
+		PRINTFORMDW 正当%CALLNAME:MASTER%在泡澡的时候传来了叩击门扉的咚咚声和圣的嗓音
 		PRINTFORMW 「…真在啊。让我也进来嘛」
-		PRINTFORMW 这等诱惑一介凡夫俗子怎能把持，直接一口就给答应了
-		PRINTFORMW 「ふふっ、让您久等啦」
-		PRINTFORMW 门扉一開，用浴巾裹住身子的圣快步进入。咔哒一声关上门后她慢慢地解開浴巾，真空
-		PRINTFORMW 少见地将头发盘了起来、楚楚动人的样子实在是太妩媚了。
+		PRINTFORMDW 这等诱惑一介凡夫俗子怎能把持，直接一口就给答应了
+		PRINTFORMW 「呵呵，让您久等啦」
+		PRINTFORMDW 门扉一开，用浴巾裹住身子的圣快步进入。咔哒一声关上门后她慢慢地解开浴巾，真空
+		PRINTFORMDW 少见地将头发盘了起来、楚楚动人的样子实在是太妩媚了。
 		PRINTFORMW 「诶呀、看什么看啦。」
-		PRINTFORMW 嘴上不饶人、但是圣还是笑眯眯地凑到了%CALLNAME:MASTER%的身边
+		PRINTFORMDW 嘴上不饶人、但是圣还是笑眯眯地凑到了%CALLNAME:MASTER%的身边
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -917,7 +914,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 6
-		PRINTFORML 
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -927,7 +924,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
-		PRINTFORML 
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -967,14 +964,14 @@ IF LOCAL
 				PRINTFORMW 「早。昨晚睡得好吗?」
 			ELSEIF RAND:4 == 0
 				PRINTFORML 「还是得要早起才对身体好哦。嗯、如果下次能早起的话、就请你吃果冻怎么样？」
-				PRINTFORMW 今天的白莲心情挺好啊……就是许的奖励有点奇怪。
+				PRINTFORMDW 今天的白莲心情挺好啊……就是许的奖励有点奇怪。
 			ELSEIF RAND:3 == 0
 				PRINTFORMW 「啊、你醒了吗?」
 			ELSEIF RAND:2 == 0
 				PRINTFORMW 「你看、已经是早上了哦。到起床时间啦」
 			ELSE
 				PRINTFORML 「想要睡懒觉也会变成人生的一种烦恼哦
-				PRINTFORMW 　为了摆脱烦恼、快点起床洗脸吧」
+				PRINTFORMDW 　为了摆脱烦恼、快点起床洗脸吧」
 			ENDIF
 			RETURN 1
 		ENDIF
@@ -987,7 +984,7 @@ IF LOCAL
 			GOTO OMEZAME
 			RETURN 1
 		ENDIF
-		PRINTFORMW 
+		PRINTFORMDW 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1003,7 +1000,7 @@ IF LOCAL
 					PRINTFORML 「……啊、早上好、嘻嘻」
 					PRINTFORMW 「呼呼、你的睡相好可爱啊」
 				ELSEIF RAND:3 == 0 
-					PRINTFORML 「嗯~早啊。」
+					PRINTFORML 「嗯～早啊。」
 					PRINTFORMW 「既然醒了、那就…来一次吧？」
 				ELSEIF RAND:2 == 0
 					PRINTFORML 「啊、你醒了。」
@@ -1015,13 +1012,13 @@ IF LOCAL
 			;恋慕のみ
 			ELSE 
 				IF RAND:4 == 0 
-					PRINTFORML 「……早~」
+					PRINTFORML 「……早～」
 					PRINTFORMW 「你什么时候起的呀?」
 				ELSEIF RAND:3 == 0 
 					PRINTFORML 「呼呼、早啊。」
 					PRINTFORMW 「……感觉有点羞羞的呢」
 				ELSEIF RAND:2 == 0 
-					PRINTFORMW 「啊~唔……早、%CALLNAME:MASTER%」
+					PRINTFORMW 「啊～唔……早、%CALLNAME:MASTER%」
 				ELSE 
 					PRINTFORML 「……啊、早上好、嘻嘻」
 					PRINTFORMW 「呼呼、你的睡相好可爱啊」
@@ -1036,14 +1033,14 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
 		IF RAND:3 == 0
-			PRINTFORMW 「んん…ふふー♪%CALLNAME:MASTER%的气味…」
+			PRINTFORMW 「嗯嗯… 呼呼～♪ %CALLNAME:MASTER%的气味…」
 		ELSEIF RAND:2 == 0
-			PRINTFORML 「啊呼、嗯~嗯…」
+			PRINTFORML 「啊呼、嗯～嗯…」
 			PRINTFORMW 「再靠近一点…好吗…?」
 		ELSE
-			PRINTFORML 「嗯……咻~咻…」
-			PRINTFORML 白莲带着很舒服的表情開始了回笼觉…
-			PRINTFORMW ……虽然感觉有点不好、但也只能叫醒了吧
+			PRINTFORML 「嗯……咻～咻…」
+			PRINTFORMDL 白莲带着很舒服的表情开始了回笼觉…
+			PRINTFORMDW ……虽然感觉有点不好、但也只能叫醒了吧
 		ENDIF
 	ENDIF
 	;-------------------------------------------------
@@ -1059,7 +1056,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && !ARG:1
-			PRINTFORMW 
+			PRINTFORMDW 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -1068,14 +1065,14 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORMW 
+			PRINTFORMDW 
 			RETURN 1
 		ENDIF
-		PRINTFORMW 
+		PRINTFORMDW 
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1085,17 +1082,17 @@ RETURN 1
 @M_KOJO_EVENT_K55_3(ARG,ARG:1)
 ;口上主はTARGET
 ;--------------------------------------------------
-;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+;记入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
 ;-------------
 
 IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;自室に回去（定時になって寝る）
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;自室に回去（定时になって寝る）
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		IF CFLAG:诶嘿嘿
@@ -1107,7 +1104,7 @@ IF LOCAL
 						PRINTFORMW 「……连绵不绝的、想和你长相厮守的想法连绵不绝的涌上心头啊…」
 						PRINTFORMW 「以后……明天见……晚安、%CALLNAME:MASTER%……」
 					ELSE
-						PRINTFORMW 「……啊…库~唔……%CALLNAME:MASTER%……太激烈了……」
+						PRINTFORMW 「……啊…库～唔……%CALLNAME:MASTER%……太激烈了……」
 						PRINTFORMW 「这份爱……源源不断地…给予我……好多的喜悦…不过」
 						PRINTFORMW 「……也、明天……也还能见到你吧…？拜托了。啊、晚安……」
 					ENDIF
@@ -1115,7 +1112,7 @@ IF LOCAL
 					IF RAND:3 == 0
 						PRINTFORMW 「……啊、已经、结束了……？」
 						PRINTFORMW 「…『被大家看到疲惫的神色就露馅儿了』……确实」
-						PRINTFORMW 「呼呼、果然%CALLNAME:MASTER%は最心细了」
+						PRINTFORMW 「呼呼、果然%CALLNAME:MASTER%最心细了」
 						PRINTFORMW 「谢谢啦。那么…晚安。%CALLNAME:MASTER%」
 					ELSEIF RAND:2 == 0
 						PRINTFORMW 「呼呼、太好了、%CALLNAME:MASTER%」
@@ -1130,16 +1127,16 @@ IF LOCAL
 			;恋慕
 			ELSEIF TALENT:恋慕
 				IF BASE:TARGET:体力 <= 500
-					PRINTFORMW 「啊……嗯~差不多、该休息了呢……」
+					PRINTFORMW 「啊……嗯～差不多、该休息了呢……」
 					PRINTFORMW 「太累的话被别人察觉就不好收拾了……」
 					PRINTFORMW 「虽然、如果真被星他们发现了……」
-					PRINTFORMW 「？什么也没说哦。明天见、%CALLNAME:MASTER%、晚安~?」
+					PRINTFORMW 「？什么也没说哦。明天见、%CALLNAME:MASTER%、晚安～?」
 				ELSE
 					IF RAND:3 == 0
 						PRINTFORMW 「啊、已经这么晚了。」
 						PRINTFORMW 「稍微…有点舍不得脱身了」
-						PRINTFORML 
-						PRINTFORMW 「……哎呀、開玩笑的啦！呼呼、晚安、%CALLNAME:MASTER%」
+						PRINTFORMDL 
+						PRINTFORMW 「……哎呀、开玩笑的啦！呼呼、晚安、%CALLNAME:MASTER%」
 					ELSEIF RAND:2 == 0
 						PRINTFORMW 「…%CALLNAME:MASTER%大坏蛋」
 						PRINTFORMW 「把我、啊……」
@@ -1147,7 +1144,7 @@ IF LOCAL
 					ELSE
 						PRINTFORMW 「……啊、已经这个时间了吗?」
 						PRINTFORMW 「那我就要回房间休息啦、晚安、%CALLNAME:MASTER%」
-						PRINTFORMW 白莲目不转睛地盯着你瞧、然后微笑着离開了。
+						PRINTFORMDW 白莲目不转睛地盯着你瞧、然后微笑着离开了。
 					ENDIF
 				ENDIF
 			;恋慕、恋人無
@@ -1162,7 +1159,7 @@ IF LOCAL
 					ELSE
 						PRINTFORMW 「…哈、哈……嗯、要到什么时候?……」
 						PRINTFORMW 「…哈、这种事我还是第一…嗯、
-						PRINTFORMW 想要好好做…可是、糟了……」
+						PRINTFORMDW 想要好好做…可是、糟了……」
 					ENDIF					
 				ELSE
 					IF RAND:3 == 0
@@ -1170,7 +1167,7 @@ IF LOCAL
 						PRINTFORMW 「那我就先回房间了、你也早点休息吧」
 					ELSEIF RAND:2 == 0
 						PRINTFORMW 「…啊、结束了吗?\n……明白了、晚安。」
-						PRINTFORMW 白莲扶正衣衫、步伐急促、逃也似的走了。
+						PRINTFORMDW 白莲扶正衣衫、步伐急促、逃也似的走了。
 							IF RAND:3 == 0
 								PRINTFORML
 								PRINTFORMW （啊啊啊…！居然不知不觉就做了。我已经、没资格当修行僧了…）
@@ -1179,22 +1176,22 @@ IF LOCAL
 						PRINTFORMW 「……哈」
 						PRINTFORMW 「如果被谁猜中了、该怎么承担责任呢?」
 						PRINTFORMW 「全推给……不、是我不好。」
-						PRINTFORMW 白莲抱着头的同时、「ToboTobo」地回到了自己的房间。
+						PRINTFORMDW 白莲抱着头的同时、「ToboTobo」地回到了自己的房间。
 					ENDIF
 				ENDIF
 			ENDIF
 		ELSE
 			;恋慕かつ不埒2以上または恋人
 			IF RAND:8 == 0 && TALENT:恋慕 && (MARK:不埒刻印 > 1 || TALENT:恋人)
-				PRINTFORML 
-				PRINTFORMW 「唔~差不多该睡觉了」
-				PRINTFORML 
+				PRINTFORMDL 
+				PRINTFORMW 「唔～差不多该睡觉了」
+				PRINTFORMDL 
 				PRINTFORML 「不知为什么、可以来陪我入梦吗？」 
-				PRINTFORMW 白莲带着恶作剧般的微笑离開了……
+				PRINTFORMDW 白莲带着恶作剧般的微笑离开了……
 			ELSEIF TALENT:恋慕 && RAND:7 ==0
-				PRINTFORML 
+				PRINTFORMDL 
 				PRINTFORML 「…差不多到睡觉时间了。晚安、%CALLNAME:MASTER%」
-				PRINTFORMW 白莲瞥了你一眼、依依不舍地走了。
+				PRINTFORMDW 白莲瞥了你一眼、依依不舍地走了。
 			ELSEIF RAND:6 == 0
 				PRINTFORML 「我差不多该睡觉了、但是你也不要太熬夜哦。」
 				PRINTFORMW 「晚安、%CALLNAME:MASTER%」
@@ -1202,14 +1199,14 @@ IF LOCAL
 				PRINTFORMW 「…已经该就寝了呢。晚安、%CALLNAME:MASTER%」
 			ELSEIF RAND:4 == 0
 				PRINTFORML 「…嗯、我要碎觉」 
-				PRINTFORML 白莲迷迷糊糊地回到自己的房间。
-				PRINTFORMW ……脚下都拌蒜了。还是搀会儿吧。
+				PRINTFORMDL 白莲迷迷糊糊地回到自己的房间。
+				PRINTFORMDW ……脚下都拌蒜了。还是搀会儿吧。
 			ELSEIF RAND:3 == 0
 				PRINTFORMW 「…明天见。晚安」
 			ELSEIF RAND:2 == 0
 				PRINTFORML 「……咕…」
-				PRINTFORML 白莲嘟囔着、头一点一点的、东摇西晃着回去了
-				PRINTFORMW …虽然不太清楚、不过这样都能回去确实够厉害的。
+				PRINTFORMDL 白莲嘟囔着、头一点一点的、东摇西晃着回去了
+				PRINTFORMDW …虽然不太清楚、不过这样都能回去确实够厉害的。
 			ELSE
 				PRINTFORMW 「我困了……晚安」
 			ENDIF
@@ -1227,16 +1224,16 @@ IF LOCAL
 				PRINTFORMW 「……浮……哇、你还在啊…」
 			ELSE
 				PRINTFORML 「嗯…」
-				PRINTFORMW 白莲睡得很香
+				PRINTFORMDW 白莲睡得很香
 			ENDIF
 		ELSE
 			IF RAND:2 == 0
-				PRINTFORMW 「……噗咻~」
+				PRINTFORMW 「……噗咻～」
 			ELSE
 				PRINTFORMW （头往左偏了…哦又往右偏了…）
 			ENDIF
-			PRINTFORML 
-			PRINTFORMW 白莲睡觉时辗转不停。
+			PRINTFORMDL 
+			PRINTFORMDW 白莲睡觉时辗转不停。
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1251,15 +1248,15 @@ IF LOCAL
 		IF RAND:8 == 0
 			PRINTFORMW 「噗咻……噗咻……」
 		ELSEIF RAND:7 == 0
-			PRINTFORMW 白莲要翻身了……啊又翻回去了
+			PRINTFORMDW 白莲要翻身了……啊又翻回去了
 		ELSEIF RAND:6 == 0
 			PRINTFORML 「……嗯…………」
-			PRINTFORMW 白莲翻了下身子。 
+			PRINTFORMDW 白莲翻了下身子。 
 		ELSEIF RAND:5 == 0
 			PRINTFORMW 「…………嗯、嗯嗯…」
 		ELSEIF RAND:4 == 0
 			PRINTFORML 「呼……呼……」
-			PRINTFORMW 白莲静静地吐息着、睡着了吧。
+			PRINTFORMDW 白莲静静地吐息着、睡着了吧。
 		ELSEIF RAND:3 == 0
 			PRINTFORMW 「咻…嗯嗯…」
 		ELSEIF RAND:2 == 0
@@ -1284,18 +1281,18 @@ IF LOCAL
 		ENDIF
 		;◆
 		IF RAND:3 == 0
-			PRINTFORML 
-			PRINTFORML …现在圣的襦袢、胸口处可以一览无余地看到宝藏。
-			PRINTFORMW 
+			PRINTFORMDL 
+			PRINTFORMDL …现在圣的襦袢、胸口处可以一览无余地看到宝藏。
+			PRINTFORMDW 
 		;◆
 		ELSEIF RAND:2 == 0
-			PRINTFORML 
-			PRINTFORML 白莲心痒似地扭了扭身子。
-			PRINTFORMW 
+			PRINTFORMDL 
+			PRINTFORMDL 白莲心痒似地扭了扭身子。
+			PRINTFORMDW 
 		ELSE
-			PRINTFORML 
-			PRINTFORML 从轻启的朱唇里流出了娇艳的叹息声。
-			PRINTFORMW 
+			PRINTFORMDL 
+			PRINTFORMDL 从轻启的朱唇里流出了娇艳的叹息声。
+			PRINTFORMDW 
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1319,33 +1316,33 @@ IF LOCAL
 						;Ｃ絶頂ばかりさせた
 						IF CFLAG:1502 >= 8 && CFLAG:1503 + CFLAG:1504 + CFLAG:1505 <= 8
 							PRINTFORML 「老是欺负我这里、小滑头……」
-							PRINTFORMW 「嗯……啊…停不下来了…♥」
-							PRINTFORMW 圣的封纪上布满了血丝、阴核一点也没有萎靡的架势、一直紧绷着。
-						;Ｖ絶頂ばかりさせた
+							CALL HPH_PRINT,@"「嗯……啊…停不下来了…HPH」","W"
+							PRINTFORMDW 圣的阴唇因充血而粉嫩嫩的，蜜豆一点没有萎缩，而是紧绷得硬硬地
+						;Ｖ绝顶ばかりさせた
 						ELSEIF CFLAG:1503 >= 8 && CFLAG:1502 + CFLAG:1504 + CFLAG:1505 <= 8
-							PRINTFORML 「……嗯呜。要、要坏掉了……♥」
-							PRINTFORMW 从白莲的秘裂中、不断地溢出爱液…
+							CALL HPH_PRINT,@"「……嗯呜。要、要坏掉了……HPH」","L"
+							PRINTFORMDW 从白莲的秘裂中、不断地溢出爱液…
 						;Ｂ絶頂ばかりさせた
-						;白蓮はB敏感！
+						;白莲はB敏感！
 						ELSEIF CFLAG:1504 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1505 <= 8
 							PRINTFORML 「呜、只对胸部……真是的。%CALLNAME:MASTER%到底有多喜欢胸部啊?」
-							PRINTFORML 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳頭在行动终止之后依然坚硬地挺立着…
-							PRINTFORMW 「…明明知道我在这方面很弱的…♥」
+							PRINTFORMDL 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳头在行动终止之后依然坚硬地挺立着…
+							CALL HPH_PRINT,@"「…明明知道我在这方面很弱的…HPH」","W"
 						;Ａ絶頂ばかりさせた
 						ELSEIF CFLAG:1505 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1504 <= 10
-							PRINTFORML 「啊、啊…♥呐、你也知道吧、这里很脏的哦？」
+							CALL HPH_PRINT,@"「啊、啊…HPH呐、你也知道吧、这里很脏的哦？」","L"
 							PRINTFORML
 							PRINTFORMW 「呃…?不、我并不是讨厌那个……真是的、%CALLNAME:MASTER%好坏」
 						;四ヶ所の合計で20回以上絶頂させた
 						ELSEIF CFLAG:1502 + CFLAG:1503 + CFLAG:1504 + CFLAG:1505 >= 20
-							PRINTFORMW 「不…嗯、啊……♥…那个、太厉害了、%CALLNAME:MASTER%」
+							CALL HPH_PRINT,@"「不…嗯、啊……HPH…那个、太厉害了、%CALLNAME:MASTER%」","W"
 							PRINTFORMW 「啊、不行了、腰都直不了了啊\n…呐、就这么抱紧我、好吗？」
-							PRINTFORMW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
+							PRINTFORMDW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
 						ENDIF
 					ELSEIF RAND:7 == 0
 						PRINTFORMW 「……哈啊……哈………」
 						PRINTFORMW 「……啊、能让我稍微休息一会儿吗?…………」
-						PRINTFORMW 白莲杂乱的喘息声没过多久就变成了有规律的寝息。
+						PRINTFORMDW 白莲杂乱的喘息声没过多久就变成了有规律的寝息。
 					ELSEIF RAND:6 == 0
 						PRINTFORMW 「哈…哈……、稍微、把胸…借给我靠下……」
 						PRINTFORMW 「谢谢……很喜欢哦……呼呼………」
@@ -1356,10 +1353,10 @@ IF LOCAL
 						PRINTFORMW 「呵……咻…………」
 					ELSEIF RAND:4 == 0
 						PRINTFORML 「呼呼…太好了、%CALLNAME:MASTER%」
-						PRINTFORMW 「以后都能再……吗…♥」
+						CALL HPH_PRINT,@"「以后都能再……吗…HPH」","W"
 					ELSEIF RAND:3 == 0 
 						PRINTFORML 「…对不起……我现在是限界了。」
-						PRINTFORMW 「呐、所以、下次再来…♥」
+						CALL HPH_PRINT,@"「呐、所以、下次再来…HPH」","W"
 					ELSEIF RAND:2 == 0  
 						PRINTFORML 「啊啊…已经、到极限了…」
 						PRINTFORMW 「…真是个无底洞啊……」
@@ -1374,29 +1371,29 @@ IF LOCAL
 					;Ｃ絶頂ばかりさせた
 					IF CFLAG:1502 >= 8 && CFLAG:1503 + CFLAG:1504 + CFLAG:1505 <= 8
 						PRINTFORML 「真是的。只玩弄这里、太狡猾了……」
-						PRINTFORMW 「嗯……啊…停不下来了…♥」
-						PRINTFORMW 圣的封纪上布满了血丝、阴核一点也没有萎靡的架势、一直紧绷着。
+						CALL HPH_PRINT,@"「嗯……啊…停不下来了…HPH」","W"
+						PRINTFORMDW 圣的阴唇因充血而粉嫩嫩的，蜜豆一点没有萎缩，而是紧绷得硬硬地
 					;Ｖ絶頂ばかりさせた
 					ELSEIF CFLAG:1503 >= 8 && CFLAG:1502 + CFLAG:1504 + CFLAG:1505 <= 8
-						PRINTFORML 「……嗯呜。要、要坏掉了……♥」
-						PRINTFORMW 从白莲的秘裂中、不断地溢出爱液…
+						CALL HPH_PRINT,@"「……嗯呜。要、要坏掉了……HPH」","L"
+						PRINTFORMDW 从白莲的秘裂中、不断地溢出爱液…
 					;Ｂ絶頂ばかりさせた
-					;白蓮ははB敏感！
+					;白莲ははB敏感！
 					ELSEIF CFLAG:1504 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1505 <= 8
 						PRINTFORML 「呜、只对胸部……真是的。%CALLNAME:MASTER%到底有多喜欢胸部啊?」
-						PRINTFORML 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳頭在行动终止之后依然坚硬地挺立着…
-						PRINTFORMW 「…明明知道我在这方面很弱的…♥」
-						PRINTFORMW 白莲她、好像在说些什么。\n就是声音太小了听不见。
+						PRINTFORMDL 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳头在行动终止之后依然坚硬地挺立着…
+						CALL HPH_PRINT,@"「…明明知道我在这方面很弱的…HPH」","W"
+						PRINTFORMDW 白莲她、好像在说些什么。\n就是声音太小了听不见。
 					;Ａ絶頂ばかりさせた
 					ELSEIF CFLAG:1505 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1504 <= 10
-						PRINTFORML 「啊、啊…♥呐、你也知道吧、这里很脏的哦？」
+						CALL HPH_PRINT,@"「啊、啊…HPH呐、你也知道吧、这里很脏的哦？」","L"
 						PRINTFORML
 						PRINTFORMW 「呃…?不、我并不是讨厌那个……真是的、%CALLNAME:MASTER%好坏」
 					;四ヶ所の合計で20回以上絶頂させた
 					ELSEIF CFLAG:1502 + CFLAG:1503 + CFLAG:1504 + CFLAG:1505 >= 20
-						PRINTFORMW 「不…嗯、啊……♥…那个、太厉害了、%CALLNAME:MASTER%」
+						CALL HPH_PRINT,@"「不…嗯、啊……HPH…那个、太厉害了、%CALLNAME:MASTER%」","W"
 						PRINTFORMW 「啊、不行了、腰都直不了了啊\n…呐、就这么抱紧我、好吗？」
-						PRINTFORMW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
+						PRINTFORMDW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
 					ENDIF
 				ELSEIF RAND:4 == 0
 					PRINTFORML 「啊啊…已经、没力气了…」
@@ -1418,7 +1415,7 @@ IF LOCAL
 			PRINTFORMW 「对不起、%CALLNAME:MASTER%」
 		ELSEIF RAND:2 == 0 
 			PRINTFORML 「…%CALLNAME:MASTER%」
-			PRINTFORMW 白莲恋恋不舍地瞥了你一眼。
+			PRINTFORMDW 白莲恋恋不舍地瞥了你一眼。
 		ELSE 
 			PRINTFORML 「呼……」
 			PRINTFORMW 「那个、你和我、说不定很合得来呢……」
@@ -1434,28 +1431,28 @@ IF LOCAL
 		;浴場にいる
 		IF BATHROOM(CFLAG:現在位置)
 			PRINTFORML 「没事吧？%CALLNAME:MASTER%」
-			PRINTFORML 白莲不安地观察着你的面色。
+			PRINTFORMDL 白莲不安地观察着你的面色。
 			PRINTFORMW 「不要乱动哦、我这就去拿水…」
 		ELSEIF CFLAG:诶嘿嘿
 			PRINTFORML 「……对不起、都是因为我的错……」
-			PRINTFORMW 白莲之后整理好了%CALLNAME:MASTER%的衣服、将其送到了房间……
+			PRINTFORMDW 白莲之后整理好了%CALLNAME:MASTER%的衣服、将其送到了房间……
 		ELSE
 			;◆
 			IF RAND:3 == 0
 				PRINTFORMW 「……啊啊！没事吧、%CALLNAME:MASTER%」
 				PRINTFORML
 				PRINTFORML 「今天就请安心修养慢慢的歇会吧、好吗？」
-				PRINTFORMW 白莲说着温柔的劝诫、静静地走出了房间。
+				PRINTFORMDW 白莲说着温柔的劝诫、静静地走出了房间。
 			ELSEIF RAND:2 == 0
 				PRINTFORML 「等一下……你没问题吗？」
 				PRINTFORMW 「虽说努力是好事、但太过勤奋反倒会伤到自己的。那就得不偿失了」
 			ELSE
 				PRINTFORML 「哇…」
-				PRINTFORMW 白莲扶住了要倒下的你。
+				PRINTFORMDW 白莲扶住了要倒下的你。
 				PRINTFORMW 「听我的今天就休息吧、好吗？」
 			ENDIF
 		ENDIF
-			PRINTFORML 　
+			PRINTFORMDL 　
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1495,7 +1492,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 8
-		PRINTFORMW 
+		PRINTFORMDW 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1504,12 +1501,12 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 9
-		PRINTFORMW 
+		PRINTFORMDW 
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  「ふゎ……んぅ、ごめんなさい……」
-	PRINTFORMW 白蓮はとても眠そうだ…
+	PRINTFORML 「呼哇……嗯，对不起……」
+	PRINTFORMDW 白莲看起来很困……
 ENDIF
 RETURN 1
 
@@ -1544,21 +1541,21 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 2
 		IF CFLAG:ブチギレ
 			PRINTFORML 「……」
-			PRINTFORMW 虽然白莲回应了你的问候、但表情很是冷漠。随即离開、不知道去哪了。
+			PRINTFORMDW 虽然白莲回应了你的问候、但表情很是冷漠。随即离开、不知道去哪了。
 		;恋人かつ随机1/2
 		ELSEIF TALENT:恋人 && RAND:2 == 0 
 			IF RAND:5 == 0
-				PRINTFORML 「啊、要去帮忙吗」
-				PRINTFORMW 「那之后还请多多关照、呼呼~」
+				PRINTFORML 「啊，是工作吗」
+				PRINTFORMW 「之后要好好陪我哦。呵呵」
 			ELSEIF RAND:4 == 0
-				PRINTFORMW 白莲回应了你的问候、投来的脉脉含情的目光追着你穿过了街道。
+				PRINTFORMDW 白莲回了个礼，用余光追随着你，然后走过去了。
 			ELSEIF RAND:3 == 0
-				PRINTFORMW 白莲点了点头、向你眨了眨眼穿过了街道。
+				PRINTFORMDW 白莲回了个礼，对你眨了眨眼，然后走过去了。
 			ELSEIF RAND:2 == 0
-				PRINTFORML 「んっ…ふふ、ありがとう」
-				PRINTFORMW 在街边摸了头发后、白莲開心的眯起了眼睛……
+				PRINTFORML 「嗯… 呵呵，谢谢」
+				PRINTFORMDW 当你路过时抚摸她的头发，白莲高兴地眯起了眼睛……
 			ELSE
-				PRINTFORMW 「啊啦、辛苦辛苦」
+				PRINTFORMW 「哎呀，辛苦了」
 			ENDIF
 		ELSE
 			;MASTERの気力が0
@@ -1566,30 +1563,30 @@ IF LOCAL
 				PRINTFORMW 「看上去气色不好呢、先休息一下或许比较好哦」
 			ELSE
 				IF RAND:5 == 0
-					PRINTFORML 
+					PRINTFORMDL 
 					PRINTFORML 「啊啦、贵安」
-					PRINTFORMW 白莲看到了你、亲切地微笑着
+					PRINTFORMDW 白莲看到了你、亲切地微笑着
 				ELSEIF RAND:4 == 0
-					PRINTFORML 
-					PRINTFORMW 白莲回应了你的问候。
+					PRINTFORMDL 
+					PRINTFORMDW 白莲回应了你的问候。
 					IF TALENT:恋慕 && RAND:2 == 0
-						PRINTFORMW 擦肩而过后、她回头、用脉脉含情的目光追随着你。
+						PRINTFORMDW 擦肩而过后、她回头、用脉脉含情的目光追随着你。
 					ENDIF
 				ELSEIF RAND:3 == 0 
-					PRINTFORML 
+					PRINTFORMDL 
 					PRINTFORMW 「啊、辛苦了」
 					IF TALENT:恋慕 && RAND:2 == 0
-						PRINTFORML 
+						PRINTFORMDL 
 						PRINTFORMW 「对了、待会儿要不要过来喝杯茶呢」
 					ENDIF
 				ELSEIF RAND:2 == 0
-					PRINTFORML 白莲若有所思似的走着、
-					PRINTFORMW 在回应了你的问候后、脸上露出了柔和的笑容。
+					PRINTFORMDL 白莲若有所思似的走着、
+					PRINTFORMDW 在回应了你的问候后、脸上露出了柔和的笑容。
 				ELSE
 					PRINTFORMW 「嗯。辛苦了、%CALLNAME:MASTER%」
 				ENDIF
 			ENDIF
-			PRINTFORML 
+			PRINTFORMDL 
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1604,7 +1601,7 @@ IF LOCAL
 		ELSEIF TALENT:恋人
 			IF RAND:2 == 0
 				PRINTFORML 「啊、%CALLNAME:MASTER%。那个……」
-				PRINTFORMW 「哎…？等等嘛~为什么要无视我啊？」
+				PRINTFORMW 「哎…？等等嘛～为什么要无视我啊？」
 			ELSE
 				PRINTFORML 「啊、辛苦了…诶？」
 				PRINTFORML 「………」
@@ -1614,7 +1611,7 @@ IF LOCAL
 			IF RAND:2 == 0
 				PRINTFORML 「啊、%CALLNAME:MASTER%。那个啊……」 
 				PRINTFORML 「………」				
-				PRINTFORMW 白莲被你忽视后、就无精打采地颓下了肩膀。
+				PRINTFORMDW 白莲被你忽视后、就无精打采地颓下了肩膀。
 			ELSE
 				PRINTFORML 「啊、辛苦了…诶？」
 				PRINTFORML 「………」
@@ -1623,17 +1620,17 @@ IF LOCAL
 		ELSE
 			IF RAND:2 == 0
 				PRINTFORML 「啊、辛苦了、%CALLNAME:MASTER%…」
-				PRINTFORMW 白莲看到你无视招呼就走过街道、显得有些尴尬。
+				PRINTFORMDW 白莲看到你无视招呼就走过街道、显得有些尴尬。
 			ELSE
 				PRINTFORML 「那个、我认为无视别人可是不好的」
 				PRINTFORML 「如果我说过什么伤人的话、请一定要告诉我啊。」
-				PRINTFORMW 白莲对着即将离去的你的背影、朗声说道。
+				PRINTFORMDW 白莲对着即将离去的你的背影、朗声说道。
 			ENDIF
 		ENDIF
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1724,7 +1721,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他（角色指定無
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1766,13 +1763,13 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 2
-		PRINTFORML 
+		PRINTFORMDL 
 		;恋慕
 		IF TALENT:恋慕
 			IF RAND:2 ==0
 				PRINTFORMW 「……等等、你们……！」
-				PRINTFORMW 空气仿佛一时间凝固了一样……冷汗从你的后背慢慢地流下来。
-				PRINTFORML 
+				PRINTFORMDW 空气仿佛一时间凝固了一样……冷汗从你的后背慢慢地流下来。
+				PRINTFORMDL 
 				PRINTFORMW 「哇、不管了！让我也参加吧！」
 			ELSE
 				PRINTFORMW 「……你们、以为这里是什么场合啊！！」
@@ -1783,26 +1780,26 @@ IF LOCAL
 			PRINTFORMW 「……等等、你们……！」
 			PRINTFORMW 「啊！看来有必要进行教育目的的指导了！」
 		ENDIF
-		PRINTFORML 
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
-	;気まずそうに立ち去る
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;气まずそうに立ち去る
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 3
-		PRINTFORML 	
+		PRINTFORMDL 	
 		PRINTFORML （……那么。我就当作没看见吧。）
 		PRINTFORML （嗯嗯、这样就好。我没有做错）
 		PRINTFORML （确实、命莲寺的理想是妖怪与人类的共存嘛。）
 		PRINTFORML （关系变好之后发展成那种关系也是没办法的、因为……）
-		PRINTFORMW 白莲在暗处徘徊了几分钟后、终于离去了。
-		PRINTFORML 
+		PRINTFORMDW 白莲在暗处徘徊了几分钟后、终于离去了。
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1840,17 +1837,17 @@ IF LOCAL
 			IF RAND:2 == 0
 				PRINTFORMW 「……我明白他是一个能做到一视同仁的人。」
 				PRINTFORMW 「但是、没想到他因此而这么不检点……」
-				PRINTFORMW 白莲长长地叹了一口气。
+				PRINTFORMDW 白莲长长地叹了一口气。
 				PRINTFORMW 「嘛、算了。事到如今、只能随他高兴了」
 			ELSE 
 				PRINTFORMW 「……哈。你啊、还真是个无可救药的家伙」
-				PRINTFORML 
+				PRINTFORMDL 
 				PRINTFORMW 「啊、等等！我在训诫你呢！不准擅自行动！」 
 			ENDIF
 		ELSE
 			PRINTFORMW 「……我明白他是一个能做到一视同仁的人。」
 			PRINTFORMW 「但是、没想到他因此而这么不检点……」
-			PRINTFORMW 白莲长长地叹了一口气。
+			PRINTFORMDW 白莲长长地叹了一口气。
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1875,7 +1872,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1884,31 +1881,31 @@ RETURN 1
 ;==================================================
 @M_KOJO_EVENT_K55_8(ARG,ARG:1)
 IF TALENT:恋人
-	PRINTFORML ……
+	PRINTFORMDL ……
 	PRINTFORMW 「的确、人类和妖怪都能共同生活的世界正是命莲寺所努力构建的理想世界」
 	PRINTFORMW 「但是！这里说到底还是寺院！肌肤之亲可有违寺规！」
 	PRINTFORMW 「说到底！%CALLNAME:MASTER%、你！你……你是只属于我的……」
-	PRINTFORMW 说到这里、白莲的双目里逐渐涌出了泪水。\n圣赶忙拭去眼泪。
+	PRINTFORMDW 说到这里、白莲的双目里逐渐涌出了泪水。\n圣赶忙拭去眼泪。
 	PRINTFORMW 「咿呀！真是轻薄无耻！看招！南无三！！」
 	PRINTFORML
-	PRINTFORMW ……体验了甚至觉得去地狱会好得多的恐怖。
+	PRINTFORMDW ……体验了甚至觉得去地狱会好得多的恐怖。
 ELSEIF TALENT:恋慕
-	PRINTFORML ……
+	PRINTFORMDL ……
 	PRINTFORMW 「的确、人类和妖怪都能共同生活的世界正是命莲寺所努力构建的理想世界」
 	PRINTFORMW 「但是！这里说到底还是寺院！肌肤之亲可有违寺规！」
 	PRINTFORMW 「看招！南无三！！」
 	PRINTFORML
-	PRINTFORMW …突然觉得要不然搬去地狱住好了。
+	PRINTFORMDW …突然觉得要不然搬去地狱住好了。
 	;体力、気力减少っていうのも考えたけど、一角色のデメリットとしては稍微重いかなって。
 	PRINTFORML
 	PRINTFORMW （什么嘛、也不知道考虑人家的心情……）
 ELSE
-	PRINTFORML ……
+	PRINTFORMDL ……
 	PRINTFORMW 「的确、人类和妖怪都能共同生活的世界正是命莲寺所努力构建的理想世界」
 	PRINTFORMW 「但是！这里说到底还是寺院！肌肤之亲可有违寺规！」
 	PRINTFORMW 「看招！南无三！！」
 	PRINTFORML
-	PRINTFORMW …突然觉得要不然搬去地狱住好了。
+	PRINTFORMDW …突然觉得要不然搬去地狱住好了。
 ENDIF
 RETURN 1
 
@@ -1925,18 +1922,18 @@ IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG:1 == 1
 		PRINTFORMW 「你这个人、真是无可救药！」
-		PRINTFORML 
+		PRINTFORMDL 
 		PRINTFORMW 「……呼呼、瞧你愁眉苦脸的。一下子连说教都没心情了」
 		PRINTFORMW 「……别高兴哦。这件事如果让大家知道了会怎样、您不考虑一下吗？」
-		PRINTFORMW 白莲笑得好坏啊。切
+		PRINTFORMDW 白莲笑得好坏啊。切
 		RETURN 1
 	ENDIF
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -1954,7 +1951,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;诶嘿嘿==2（開始時）
+	;诶嘿嘿==2（开始時）
 	;記入チェック（=0, 非表示、1, 表示）
 	;被逆推ている時に立つフラグ
 	CFLAG:1211 = 1
@@ -1964,7 +1961,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG
 		;-------------------------------------------------
-		;MASTERを推倒た（開始時）
+		;MASTERを推倒た（开始時）
 		;記入チェック（=0, 非表示、1, 表示）
 		LOCAL:1 = 1
 		;-------------------------------------------------
@@ -1973,32 +1970,32 @@ IF LOCAL
 				;恋慕かつ恋人
 				;/普通にプレイしてたら多分見る機会はない。
 				IF TALENT:恋慕 && TALENT:恋人
-					PRINTFORMW 白莲就这样抱住你、把脸倚靠在你的胸前。
+					PRINTFORMDW 白莲就这样抱住你、把脸倚靠在你的胸前。
 					PRINTFORML
 					PRINTFORMW 「……呐、就这么抱抱我、好吗」
 					PRINTFORMW 「确实我是这里的住持。也因此有着不得不坚持的立场」
 					PRINTFORMW 「但是、但是啊！我……我们明明不是恋人吗……」
-					PRINTFORMW 虽然无法看清她的表情、但颤抖的话语却明明白白地体现出她的心声。
+					PRINTFORMDW 虽然无法看清她的表情、但颤抖的话语却明明白白地体现出她的心声。
 					PRINTFORMW 「%CALLNAME:MASTER%、我想要你…我想要我最爱的人！」
-					PRINTFORMW 白莲抬起了头、激动的脸上、一道泪痕清晰可见。
+					PRINTFORMDW 白莲抬起了头、激动的脸上、一道泪痕清晰可见。
 					PRINTFORML 「……怎么了？就算这么求你！你也不肯给我答复吗？\n…………原来我爱上的、
-					PRINTFORMW 是即使我说到这种程度也不愿意出手的懦夫啊……\n好痛苦……」
+					PRINTFORMDW 是即使我说到这种程度也不愿意出手的懦夫啊……\n好痛苦……」
 				;恋慕
 				ELSEIF TALENT:恋慕
-					PRINTFORMW 白莲跨坐在你的身上、用悲切的眼神俯视着你。
+					PRINTFORMDW 白莲跨坐在你的身上、用悲切的眼神俯视着你。
 					PRINTFORMW 「呐、如果还有那么一丝可怜我的话。
-					PRINTFORMW 暂时就这样、别动好吗？」
-					PRINTFORMW 轻声细语的同时、白莲静静地将手伸向你的胸口。 
+					PRINTFORMDW 暂时就这样、别动好吗？」
+					PRINTFORMDW 轻声细语的同时、白莲静静地将手伸向你的胸口。 
 					PRINTFORMW 「即使被说是不配当僧侣、因此而被怎么对待都没关系」
 					PRINTFORMW 「因为、僧侣之前、我还是一个女人啊……」
-					PRINTFORMW 白莲的脸突然贴近、用水润的眼睛注视着你。
+					PRINTFORMDW 白莲的脸突然贴近、用水润的眼睛注视着你。
 					PRINTFORMW 「拜托了、让我——哪怕下一刻结束也好——做做美梦吧……」
 				ELSE
 					PRINTFORMW 「呼呜、真是的……」
 					PRINTFORMW 「怎么、老实地什么都不做的话、可是在邀请别人为所欲为哦……」
 					PRINTFORMW 「确实我是进入佛门了……但是、我也还是有忍耐限度的」
-					PRINTFORMW 「哈啊…♥没办法了呢…一定要好好地惩罚你」
-					PRINTFORMW 白莲的眼睛、此刻简直像是发出妖艳光芒的宝石一般、紧紧盯着你
+					CALL HPH_PRINT,@"「哈啊…HPH没办法了呢…一定要好好地惩罚你」","W"
+					PRINTFORMDW 白莲的眼睛、此刻简直像是发出妖艳光芒的宝石一般、紧紧盯着你
 					PRINTFORMW 「你其实、也在期待着的吧？」
 					;非恋慕時に初诶嘿嘿フラグ
 					CFLAG:1203 = 1
@@ -2022,37 +2019,37 @@ IF LOCAL
 				IF PREVCOM == 312
 					IF RAND:4 == 0 
 						PRINTFORMW 「……哈啊…呜啊…」
-						PRINTFORMW 「呐、%CALLNAME:MASTER%。能做吧…♥」
-						PRINTFORMW 就像被情欲所驱使一样、白莲的手爱抚着你的身体……
+						CALL HPH_PRINT,@"「呐、%CALLNAME:MASTER%。能做吧…HPH」","W"
+						PRINTFORMDW 就像被情欲所驱使一样、白莲的手爱抚着你的身体……
 					ELSEIF RAND:3 == 0 
-						PRINTFORMW 白莲一下就推倒了你、接着她的舌头滑入了口唇之间。漫长而热烈的接吻、開始而不知何时结束。
-						PRINTFORMW 「啾、啾呜、啾姆、pr、啾…露、啾、rero、啊…♥」
-						PRINTFORMW 好容易双唇分离时、一线银色的细丝却又将两人的口连接着…。
+						PRINTFORMDW 白莲一下就推倒了你、接着她的舌头滑入了口唇之间。漫长而热烈的接吻、开始而不知何时结束。
+						CALL HPH_PRINT,@"「啾、啾呜、啾姆、pr、啾…露、啾、rero、啊…HPH」","W"
+						PRINTFORMDW 好容易双唇分离时、一线银色的细丝却又将两人的口连接着…。
 					ELSEIF RAND:2 == 0
 						PRINTFORMW 「呐、只靠接吻已经无法满足了啊」
 						PRINTFORMW 「而且、你也不觉得讨厌吧？」
 					ELSE
 						PRINTFORMW 「啊、好煎熬、全身都像在熊熊燃烧一样。」
-						PRINTFORMW 「你的一切、我好想要用尽全身、用尽我的所有来感受…♥」
+						CALL HPH_PRINT,@"「你的一切、我好想要用尽全身、用尽我的所有来感受…HPH」","W"
 					ENDIF
 				;摸屁股、胸愛撫、秘所愛撫、肛門愛撫、指挿入れの直後
 				ELSEIF GROUPMATCH(PREVCOM, 310, 313, 314, 315,316)
 					IF RAND:3 == 0 
-						PRINTFORML 「……哈啊、你这么爱抚了的话、我就会认真起来了啊…♥」
+						CALL HPH_PRINT,@"「……哈啊、你这么爱抚了的话、我就会认真起来了啊…HPH」","L"
 					ELSEIF RAND:2 == 0 
 						PRINTFORMW 「真是的、被随心所欲的玩弄了呢…」
-						PRINTFORMW 「这回轮到我了哟……♥」
-						PRINTFORMW 白莲用因欲情而湿润的眼睛看向了你……
+						CALL HPH_PRINT,@"「这回轮到我了哟……HPH」","W"
+						PRINTFORMDW 白莲用因欲情而湿润的眼睛看向了你……
 					ELSE
 						PRINTFORML 「用这种下流的方法挑逗我、让我变成这样……」
-						PRINTFORMW 「この責任は、きちんと取ってもらいますからね…♪」
+						PRINTFORMW 「这个责任，我会让你好好承担的哦…♪」
 					ENDIF
 				;吃飯をとる・吃飯を振る舞うの直後
 				ELSEIF PREVCOM == 414 || PREVCOM == 415
 					IF RAND:2 == 0
 						PRINTFORMW 「来做食后运动好吗…？」
 					ELSE
-						PRINTFORMW 「啊啦、这里也有珍馐呢……♥」
+						CALL HPH_PRINT,@"「啊啦、这里也有珍馐呢……HPH」","W"
 					ENDIF
 				;摸頭の直後
 				ELSEIF PREVCOM == 309
@@ -2060,31 +2057,31 @@ IF LOCAL
 						PRINTFORMW 「居然只是摸头……是故意打算使坏吗？」
 						PRINTFORMW 「我明明、已经欲火难熄了……」
 					ELSE
-						PRINTFORMW 「呐、真是的…只有头的话、可是远远不够的哦……♥」
-						PRINTFORMW 保持着跨坐在你身上的姿势的白莲、对你淫靡地微笑着。
+						CALL HPH_PRINT,@"「呐、真是的…只有头的话、可是远远不够的哦……HPH」","W"
+						PRINTFORMDW 保持着跨坐在你身上的姿势的白莲、对你淫靡地微笑着。
 					ENDIF
 				;浴場にいる
 				ELSEIF CFLAG:現在位置 == 12
 					IF RAND:2 == 0 
-						PRINTFORML 「……刚才開始就一直在看我啊、以为我没注意到吗？」
+						PRINTFORML 「……刚才开始就一直在看我啊、以为我没注意到吗？」
 					ELSE
-						PRINTFORML 「…ふふ、%CALLNAME:MASTER%。你の裸も、中々綺麗なものですね…♪」
-						PRINTFORML 「呐、我啊、快要忍耐不了了哦……♥」
-						PRINTFORMW 白莲的丰满的肉体现在不着片缕、正紧紧地贴合着你、诱惑着你……
+						PRINTFORML 「…呵呵，%CALLNAME:MASTER%。你的裸体，也真是相当漂亮呢…♪」
+						CALL HPH_PRINT,@"「呐、我啊、快要忍耐不了了哦……HPH」","L"
+						PRINTFORMDW 白莲的丰满的肉体现在不着片缕、正紧紧地贴合着你、诱惑着你……
 					ENDIF
 				ELSE
 					IF RAND:4 == 0 
 						PRINTFORML 「……呐、%CALLNAME:MASTER%……做吧。」
-						PRINTFORMW 白莲燃烧着情欲的双眼俯视着你。一股强烈的气势扑面而来。
+						PRINTFORMDW 白莲燃烧着情欲的双眼俯视着你。一股强烈的气势扑面而来。
 					ELSEIF RAND:3 == 0
 						PRINTFORML 「因为工作的缘故、感觉体内积攒了很多东西呢……」
-						PRINTFORMW 「不好意思、得稍微让你陪我排解一下哦……♥」
+						CALL HPH_PRINT,@"「不好意思、得稍微让你陪我排解一下哦……HPH」","W"
 					ELSEIF RAND:2 == 0
 						PRINTFORML 「啊……对不起……」
-						PRINTFORMW 「但是、已经是忍耐的极限了……♥」
+						CALL HPH_PRINT,@"「但是、已经是忍耐的极限了……HPH」","W"
 					ELSE
 						PRINTFORMW 「真是个下流胚子…」
-						PRINTFORMW 「让我有了这种感觉……♥」
+						CALL HPH_PRINT,@"「让我有了这种感觉……HPH」","W"
 					ENDIF
 				ENDIF
 			;恋慕無
@@ -2092,7 +2089,7 @@ IF LOCAL
 				IF RAND:4 == 0 
 					PRINTFORML 「真是个下流胚子…」
 					PRINTFORML 「让我有了这样的心情……」
-					PRINTFORMW 「这可真是、需要惩罚一下呢……♥」
+					CALL HPH_PRINT,@"「这可真是、需要惩罚一下呢……HPH」","W"
 				ELSEIF RAND:3 == 0
 					PRINTFORML 「啊、对不起……」
 					PRINTFORMW 「但是已经、无法再忍耐了……」
@@ -2101,12 +2098,12 @@ IF LOCAL
 					PRINTFORMW 「我可是会好好惩戒你的哦……」
 				ELSE
 					PRINTFORML 「真是个让人无可奈何的家伙……」
-					PRINTFORMW 「是惩罚哦。所以開心地收下吧……♥」
+					CALL HPH_PRINT,@"「是惩罚哦。所以开心地收下吧……HPH」","W"
 				ENDIF
 			ENDIF
 		ENDIF
 		;-------------------------------------------------
-		;MASTERに抱きついた（開始時）
+		;MASTERに抱きついた（开始時）
 		;記入チェック（=0, 非表示、1, 表示）
 		LOCAL:1 = 0
 		;-------------------------------------------------
@@ -2134,23 +2131,23 @@ IF LOCAL
 			;◆初めて
 			IF FIRSTTIME(TFLAG:50 + 500)
 				PRINTFORMW 「……哈！」
-				PRINTFORMW 终于、%CALLNAME:MASTER%当停下时、白莲也随即睁開双眼看你。
-				PRINTFORMW 「的……对不起、%CALLNAME:MASTER%。都是因为我的错……」
-				PRINTFORMW 「但是、你也有错啊、谁让你对我这么温柔的…」
-				PRINTFORMW 「……对不起、还是不要找借口了」
-				PRINTFORMW 「……谢谢、%CALLNAME:MASTER%、这样我就不至于堕入情欲的梦幻之中了。」
+				PRINTFORMDW 当%CALLNAME:MASTER%阻止她时，白莲睁大了眼睛。
+				PRINTFORMW 「对、对不起，%CALLNAME:MASTER%。我竟然……」
+				PRINTFORMW 「但是，你也有错哦，对我那么温柔……」
+				PRINTFORMW 「……对不起，我不再找借口了」
+				PRINTFORMW 「……我感谢你指引我，不让我沉迷于一时的情欲，%CALLNAME:MASTER%」
 				PRINTFORML
-				PRINTFORMW (只是、你这暧昧的态度、会让我好恨你……)
+				PRINTFORMW （只是，让我有这种感觉却放任不管，会让作为一个女人的我好恨你……）
 			ELSE
 				IF RAND:3 == 0 
-					PRINTFORML 「啊っ…」
-					PRINTFORML 白莲迅速地从你身上退下、急匆匆地開始整理衣着。
-					PRINTFORMW 「……呜」
+					PRINTFORML 「啊……」
+					PRINTFORMDW 白莲从你身边跳开，慌慌张张地整理着衣服。
+					PRINTFORMW 「……呜呜」
 				ELSEIF RAND:2 == 0 
-					PRINTFORML 「……欺负人」
-					PRINTFORMW 白莲在好像小声地说些什么。
+					PRINTFORML 「……坏心眼」
+					PRINTFORMDW 白莲小声嘟囔着。
 				ELSE
-					PRINTFORMW 「……哇、啊…对、对不起」
+					PRINTFORMW 「……哈、啊……对、对不起」
 				ENDIF
 			ENDIF
 		ENDIF
@@ -2200,7 +2197,7 @@ IF LOCAL
 		ENDIF
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -2234,7 +2231,7 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 2
 		IF FIRSTTIME("一緒にお風呂")
 			PRINTFORML 「……如果很想的话、其实也没问题哦。」
-			PRINTFORMW 差点没听清白莲的声音。她现在、早就脸红了吧。
+			PRINTFORMDW 差点没听清白莲的声音。她现在、早就脸红了吧。
 		ELSE
 			;恋人
 			IF TALENT:恋人
@@ -2243,21 +2240,21 @@ IF LOCAL
 					PRINTFORMW 「可以哦。嚯啦、快点过来吧」
 				ELSEIF RAND:2 == 0
 					PRINTFORML 「啊。%CALLNAME:MASTER%、这边、空间很充裕哦」
-					PRINTFORMW 白莲就那么坐在浴池里、啪嗒啪嗒地拍着水、向你示意。
+					PRINTFORMDW 白莲就那么坐在浴池里、啪嗒啪嗒地拍着水、向你示意。
 					IF RAND:2 == 0
 						PRINTFORML
-						PRINTFORML 壮观的双乳、应和着她的动作在水面也啪嗒啪嗒地晃动着
-						PRINTFORMW ……相当的壮观。
+						PRINTFORMDL 壮观的双乳、应和着她的动作在水面也啪嗒啪嗒地晃动着
+						PRINTFORMDW ……相当的壮观。
 					ENDIF
 				ELSE
 					PRINTFORML 「嚯啦、别愣在那种地方了、快进来吧」
-					PRINTFORMW 「事到如今还在意这种事、我们已经不是需要害羞的关系了吧？呼呼~」
+					PRINTFORMW 「事到如今还在意这种事、我们已经不是需要害羞的关系了吧？呼呼～」
 				ENDIF
 			;恋慕
 			ELSEIF TALENT:恋慕
 				IF RAND:3 == 0 
 					PRINTFORML 「是你啊、%CALLNAME:MASTER%。……哈啊」
-					PRINTFORML 白莲看到是你后、叹息着低下了头。
+					PRINTFORMDL 白莲看到是你后、叹息着低下了头。
 					PRINTFORMW （居然连想要赶回去的心情都没有……）
 					IF RAND:2 == 0 && (MARK:不埒刻印 > 1)
 						PRINTFORML
@@ -2265,26 +2262,26 @@ IF LOCAL
 					ENDIF
 				ELSEIF RAND:2 == 0 
 					PRINTFORML 「……想要一起进去吗？」
-					PRINTFORMW 你点了点头、白莲什么也没说就让開了路。
+					PRINTFORMDW 你点了点头、白莲什么也没说就让开了路。
 				ELSE 
 					PRINTFORML 「……」
-					PRINTFORMW 发觉进来的是%CALLNAME:MASTER%后、白莲红着脸低着头。
+					PRINTFORMDW 发觉进来的是%CALLNAME:MASTER%后、白莲红着脸低着头。
 					PRINTFORML
-					PRINTFORMW ……不过时不时地有向%CALLNAME:MASTER%的方向望去。
+					PRINTFORMDW ……不过时不时地有向%CALLNAME:MASTER%的方向望去。
 				ENDIF
 			ELSE
 				IF RAND:2 == 0 
 					PRINTFORML 「……呀！？」
-					PRINTFORMW 白莲发出了小声的尖叫、虽然、但并没有把你赶出去。
+					PRINTFORMDW 白莲发出了小声的尖叫、虽然、但并没有把你赶出去。
 				ELSE
 					PRINTFORML 「……」
-					PRINTFORMW 发觉进来的是%CALLNAME:MASTER%后、白莲红着脸低着头。
+					PRINTFORMDW 发觉进来的是%CALLNAME:MASTER%后、白莲红着脸低着头。
 				ENDIF
 			ENDIF
 		ENDIF
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -2306,7 +2303,7 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORMW 「还请离開。」
+		PRINTFORMW 「还请离开。」
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2317,10 +2314,10 @@ IF LOCAL
 	IF LOCAL:1 && ARG:1 == 1
 		IF RAND:2 == 0
 			PRINTFORMW 「……嘶噜……嘶噜……」
-			PRINTFORMW 白莲静静地吐息着、睡着了吧。
+			PRINTFORMDW 白莲静静地吐息着、睡着了吧。
 		ELSE
 			PRINTFORML 「……咕……」
-			PRINTFORMW 很好、没吵醒白莲就成功入侵了。
+			PRINTFORMDW 很好、没吵醒白莲就成功入侵了。
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -2333,14 +2330,14 @@ IF LOCAL
 		IF TALENT:恋人
 			IF RAND:2 == 0
 				PRINTFORMW 「啊啦……这就是所谓的夜袭吗」
-				PRINTFORMW 「呼呼、可以哦。欢迎光临……♥」
+				CALL HPH_PRINT,@"「呼呼、可以哦。欢迎光临……HPH」","W"
 			ELSE
 				PRINTFORMW 「啊……现在来这里……是有这么回事吗？」
 			ENDIF
 		ELSE 
 			IF RAND:2 == 0
-				PRINTFORMW (……是来夜袭吗)
-				PRINTFORMW (……啊啊、不行啊。实在是不忍心把他赶回去啊……)
+				PRINTFORMW （……是来夜袭吗）
+				PRINTFORMW （……啊啊、不行啊。实在是不忍心把他赶回去啊……）
 			ELSE 
 				PRINTFORMW 「要一起睡？」
 				PRINTFORMW 「好啊、哦稍等，我给你拿个枕头。」
@@ -2378,7 +2375,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -2396,7 +2393,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;工作開始（職場へ移動する）
+	;工作开始（職場へ移動する）
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
@@ -2409,13 +2406,13 @@ IF LOCAL
 			ELSE
 				PRINTFORMW 「呜、啊…到工作的时间了…我、得走了…」
 			ENDIF
-			PRINTFORMW 白莲整理了衣装、急匆匆地向工作场所跑去…
+			PRINTFORMDW 白莲整理了衣装、急匆匆地向工作场所跑去…
 		ELSEIF BATHROOM(CFLAG:現在位置)
 			PRINTFORMW 「呼啊、现在神清气爽了、今天照常去工作吧」
 		ELSEIF GROUPMATCH(TIME:5, 4, 5, 6) && CFLAG:現在位置 == CFLAG:職場
 			PRINTFORMW 「嗯、下雨天去很麻烦、但是因为是工作所以没办法啊」
 		ELSEIF RAND:2 == 0
-			PRINTFORMW 「那么、開始今天的工作吧」
+			PRINTFORMW 「那么、开始今天的工作吧」
 		ELSE
 			PRINTFORMW 「啊啦啊啦、已经到这个点了啊」
 		ENDIF
@@ -2442,7 +2439,7 @@ IF LOCAL
 			PRINTFORMW 「嗯。结束了结束了」
 		ELSE 
 			PRINTFORML 「那么在这里祝各位贵安……」
-			PRINTFORMW 结束了今日说法的白莲、向听众恭敬地敬了一礼。
+			PRINTFORMDW 结束了今日说法的白莲、向听众恭敬地敬了一礼。
 		ENDIF 
 		;早く終わった
 		IF TIME:0 < 960
@@ -2450,7 +2447,7 @@ IF LOCAL
 			;※でも指令実行後の時間なので直前の指令による時間経過で17時超えてしまうと出ない。手伝いは一回で1時間もかかるので注意
 			;※草蜢はどうするか考え中
 			PRINTFORML 「比预定更早结束了呢。多亏了%CALLNAME:MASTER%的帮助啊」
-			PRINTFORMW 白莲恭恭敬敬地鞠了一躬。
+			PRINTFORMDW 白莲恭恭敬敬地鞠了一躬。
 			;恋人
 			IF TALENT:恋人
 				PRINTFORML 「……呼呼、二人时间延长了呢」
@@ -2459,12 +2456,12 @@ IF LOCAL
 				PRINTFORMW 「……对了、一起喝杯茶怎么样？想多聊会……」
 			ENDIF
 		ELSE
-			PRINTFORMW 工作结束后、白莲松了一口气。
+			PRINTFORMDW 工作结束后、白莲松了一口气。
 		ENDIF
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -2474,15 +2471,15 @@ RETURN 1
 @M_KOJO_EVENT_K55_14(ARG,ARG:1)
 ;口上主はTARGET
 ;--------------------------------------------------
-;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+;记入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
 ;-------------
 
 IF LOCAL
 	;-------------------------------------------------
 	;持っていた食物を食べられた
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == -1
 		IF RAND:2 == 0 
@@ -2490,12 +2487,12 @@ IF LOCAL
 		ELSE
 			PRINTFORMW （虽说就这么直接要好像也可以…可这么直白的索取也太下作了、但是……）
 			PRINTFORML
-			PRINTFORMW ……因为白莲好像很想要的样子看着这边、%DISHNAME%送出来了。
+			PRINTFORMDW ……因为白莲好像很想要的样子看着这边、%DISHNAME%送出来了。
 		ENDIF
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 
@@ -2514,7 +2511,7 @@ IF LOCAL
 	;小分岐
 	;-------------------------------------------------
 	;未実装（推倒指令に統合？
-	;MASTERが推倒た（ウフフ開始時）
+	;MASTERが推倒た（ウフフ开始時）
 	;記入チェック（=0, 非表示、1, 表示）
 	;LOCAL:1 = 0
 	;-------------------------------------------------
@@ -2528,7 +2525,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		;诶嘿嘿状態解除を示すフラグ
+		SIF FLAG:時間停止 || CFLAG:睡眠
+			RETURN 0
+		;诶嘿嘿状态解除を示すフラグ
 		CFLAG:1211 = 0
 		IF TALENT:恋人
 			;今回一度も絶頂してない
@@ -2540,32 +2539,32 @@ IF LOCAL
 					;Ｃ絶頂ばかりさせた
 					IF CFLAG:1502 >= 8 && CFLAG:1503 + CFLAG:1504 + CFLAG:1505 <= 8
 						PRINTFORML 「老是欺负我这里、小滑头……」
-						PRINTFORMW 「嗯……啊…停不下来了…♥」
-						PRINTFORMW 圣的封纪上布满了血丝、阴核一点也没有萎靡的架势、一直紧绷着。
+						CALL HPH_PRINT,@"「嗯……啊…停不下来了…HPH」","W"
+						PRINTFORMDW 圣的阴唇因充血而粉嫩嫩的，蜜豆一点没有萎缩，而是紧绷得硬硬地
 					;Ｖ絶頂ばかりさせた
 					ELSEIF CFLAG:1503 >= 8 && CFLAG:1502 + CFLAG:1504 + CFLAG:1505 <= 8
-						PRINTFORML 「……嗯呜。要、要坏掉了……♥」
-						PRINTFORMW 从白莲的秘裂中、不断地溢出爱液…
+						CALL HPH_PRINT,@"「……嗯呜。要、要坏掉了……HPH」","L"
+						PRINTFORMDW 从白莲的秘裂中、不断地溢出爱液…
 					;Ｂ絶頂ばかりさせた
 					;聖はB敏感！
 					ELSEIF CFLAG:1504 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1505 <= 8
 						PRINTFORML 「呜、只对胸部……真是的。%CALLNAME:MASTER%到底有多喜欢胸部啊?」
-						PRINTFORML 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳頭在行动终止之后依然坚硬地挺立着…
-						PRINTFORMW 「…明明知道我在这方面很弱的…♥」
+						PRINTFORMDL 在被执拗地玩弄了的丰满的欧派后、白莲她已经稍显疲态了。但乳头在行动终止之后依然坚硬地挺立着…
+						CALL HPH_PRINT,@"「…明明知道我在这方面很弱的…HPH」","W"
 					;Ａ絶頂ばかりさせた
 					ELSEIF CFLAG:1505 >= 8 && CFLAG:1502 + CFLAG:1503 + CFLAG:1504 <= 10
-						PRINTFORML 「啊、啊…♥呐、你也知道吧、这里很脏的哦？」
+						CALL HPH_PRINT,@"「啊、啊…HPH呐、你也知道吧、这里很脏的哦？」","L"
 						PRINTFORML
 						PRINTFORMW 「呃…?不、我并不是讨厌那个……真是的、%CALLNAME:MASTER%好坏」
 					;四ヶ所の合計で20回以上絶頂させた
 					ELSEIF CFLAG:1502 + CFLAG:1503 + CFLAG:1504 + CFLAG:1505 >= 20
-						PRINTFORMW 「不…嗯、啊……♥…那个、太厉害了、%CALLNAME:MASTER%」
+						CALL HPH_PRINT,@"「不…嗯、啊……HPH…那个、太厉害了、%CALLNAME:MASTER%」","W"
 						PRINTFORMW 「啊、不行了、腰都直不了了啊\n…呐、就这么抱紧我、好吗？」
-						PRINTFORMW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
+						PRINTFORMDW 被你的双臂环抱住后、白莲幸福地把身体托付给你。
 					ENDIF
 				ELSEIF RAND:3 == 0
 					PRINTFORML 「呼呼…太好了、%CALLNAME:MASTER%」
-					PRINTFORMW 「以后都能再……吗…♥」
+					CALL HPH_PRINT,@"「以后都能再……吗…HPH」","W"
 				ELSEIF RAND:2 == 0 
 					PRINTFORML 「呼呼。满足了吗？」
 					PRINTFORMW 「那么、最后能和我kiss吧」
@@ -2581,42 +2580,42 @@ IF LOCAL
 			ELSE
 				PRINTFORML 「呼呜……那个、感觉很好」
 				PRINTFORML 「这是一点小小心意、但请收下吧…」
-				PRINTFORMW 白莲理好衣服后、亲吻了你的额头。
+				PRINTFORMDW 白莲理好衣服后、亲吻了你的额头。
 			ENDIF 
 		;恋人、恋慕無
 		ELSE
 			IF RAND:3 == 0 
-				PRINTFORMW (哈啊……就这么做了……)
+				PRINTFORMW （哈啊……就这么做了……）
 			ELSEIF RAND:2 == 0 
 				PRINTFORMW 「……满足了吗？」
 			ELSE 
-				PRINTFORMW 白莲正迅速地整理着装。
+				PRINTFORMDW 白莲正迅速地整理着装。
 			ENDIF  
 		ENDIF 
 		IF ABL:奉仕精神 >= 3 && ABL:胸 >= 2 && ABL:精液中毒 >= 3 
 			PRINTFORMW 「对了对了，稍等一下。让我把小鸡鸡弄干净。」
 			IF RAND:2 == 0  
-				PRINTFORMW %CALLNAME:MASTER%正要擦鸡鸡时，白莲用胸部夹住了%CALLNAME:MASTER%的肉棒。
-				PRINTFORMW 濡湿了肉棒的两个人的花蜜擦在白莲的乳房上。这般舍身奉献的姿态让%CALLNAME:MASTER%萎靡的肉棒重新找回了干劲…
-				PRINTFORMW 「んしょっ、んっ、んんっ……好了、重振雄风」
-				PRINTFORMW 白莲擦完肉棒，注意到%CALLNAME:MASTER%的样子，恶作剧般地扬起脖颈看着%CALLNAME:MASTER%，用手指将胸前的蜜汁一点点抹匀。
-				PRINTFORMW 在因情欲而润湿双眼，呼出热气的同时，将%CALLNAME:MASTER%泼洒的腥蜜从乳肉到乳头，再经由乳沟一直到秘裂，全都被涂抹上了…
+				PRINTFORMDW 当%CALLNAME:MASTER%想要擦拭下身时，白莲用胸部夹住了%CALLNAME:MASTER%的肉棒。
+				PRINTFORMDW 湿润肉棒的两人蜜液，被涂抹在白莲的乳房上。为了报答这献身般服侍，原本萎靡的%CALLNAME:MASTER%的肉棒再次恢复了热度……
+				PRINTFORMW 「嗯咻、嗯、嗯嗯……好了，重振雄风了哦」
+				PRINTFORMDW 擦完肉棒的白莲注意到%CALLNAME:MASTER%的样子，用恶作剧般的眼神抬头看着%CALLNAME:MASTER%，开始将附着在胸前的蜜液涂抹开来。
+				PRINTFORMDW 眼中充满情欲的光芒，吐着滚烫的呼吸，将%CALLNAME:MASTER%注入的腥臭蜜液从乳房到乳尖，从胸口到私处…被仔细涂抹……
 				PRINTFORMW 「啊…恩、啊…、哈…。呵呵，还请多多关照♪」
-				PRINTFORMW 精液被毫无保留地涂满在了全身，然后，一直等到湿漉漉的身体完全干了之后，白莲露出爽朗的笑容，亲吻了%CALLNAME:MASTER%的脸颊。
-				PRINTFORMW 但是，这副看似率真的外表下，暗自品味的是令她身心都能相互消解的快乐。长久以来被压抑的性欲被解放了，唤醒了令所爱之人愉悦的淫魔之才…
+				PRINTFORMDW 精液被毫无保留地涂满在了全身，然后，一直等到湿漉漉的身体完全干了之后，白莲露出爽朗的笑容，亲吻了%CALLNAME:MASTER%的脸颊。
+				PRINTFORMDW 然而，这副看似率真的外表下，她已经体会到了身心交融的快乐\n长久以来被压抑的性欲被解放了，唤醒了令所爱之人愉悦的淫魔之才…
 			ELSE
-				PRINTFORMW 在%CALLNAME:MASTER%要擦股间之前，白莲拿出自己的手巾，伸手去握%CALLNAME:MASTER%的肉棒。
-				PRINTFORMW 白莲温柔地用娴熟的手法，擦拭着濡湿肉棒上的蜜糖。
-				PRINTFORMW （啊…、%CALLNAME:MASTER%的小鸡鸡，因为讨厌的汁水，变得滑溜溜的……）
-				PRINTFORMW （我的身体就是因为这个被搅动了很多下呢……。哎呀，又兴奋起来了）
-				PRINTFORMW 擦完肉棒的白莲，闻着沾在手巾上的%CALLNAME:MASTER%的气味，沉浸在睦事的余韵中。
-				PRINTFORMW 像恋爱的少女一样可爱的动作，以及对雄性的精液露出恍惚表情的样子，再次激起了%CALLNAME:MASTER%的下流情緒…
+				PRINTFORMDW 在%CALLNAME:MASTER%想要擦拭下身之前，白莲拿出自己的手巾，伸向了%CALLNAME:MASTER%的肉棒。
+				PRINTFORMDW 白莲用温柔而熟练的手法，擦拭着湿润肉棒的两人蜜液。
+				PRINTFORMW （啊……，%CALLNAME:MASTER%的小鸡鸡，因为色色的汁液变得非常滑溜……）
+				PRINTFORMW （我的体内就是被它搅得乱七八糟呢……。讨厌！又要兴奋起来了）
+				PRINTFORMDW 擦完肉棒的白莲，闻着手巾上沾染的%CALLNAME:MASTER%的气味，沉浸在欢爱后的余韵中。
+				PRINTFORMDW 像恋爱少女般可爱的举止，以及脸上浮现着对雄性精液的着迷表情，再次激起了%CALLNAME:MASTER%的欲火……
 			ENDIF 
 		ENDIF
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 	;-------------------------------------------------
 	;事後描写
 	;記入チェック（=0, 非表示、1, 表示）
@@ -2677,7 +2676,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;添い寝を始めた（開始時）(存在せず
+	;添い寝を始めた（开始時）(存在せず
 	;記入チェック
 	;LOCAL:1 = 0
 	;-------------------------------------------------
@@ -2695,7 +2694,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 ;==================================================
@@ -2976,8 +2975,8 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML 
-		PRINTFORMW (…………爱死你了、%CALLNAME:MASTER%)
+		PRINTFORMDL 
+		PRINTFORMW （…………爱死你了、%CALLNAME:MASTER%）
 		PRINTFORMW （比起失去的恐惧，更希望能一起创造幸福……）
 		PRINTFORMW （我想让你更加幸福）
 		RETURN 1
@@ -2988,10 +2987,10 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML 
-		PRINTFORMW  (和那个人在一起，总觉得很幸福……)
+		PRINTFORMDL 
+		PRINTFORMW （和那个人在一起，总觉得很幸福……）
 		PRINTFORMW （但愿这份幸福永远持续下去……）
-		PRINTFORMW 带着这份小小的愿望，白莲钻进了被窝
+		PRINTFORMDW 带着这份小小的愿望，白莲钻进了被窝
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3043,11 +3042,14 @@ LOCAL = 1
 IF LOCAL
 	;-------------------------------------------------
 	;通常自慰
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML  
+		PRINTFORMW 「嗯……哈」
+		PRINTFORMDW $$$右手玩弄蜜唇，左手玩弄胸部，沉迷于自慰。
+		PRINTFORMDW 
+		PRINTFORMW （我怎么会做这种事……）
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3056,16 +3058,16 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML 「ちゅっ、ちゅぅ、ぁん、すき、すき……ッ」
-		PRINTFORMW 由于全身的压迫感和下半身的又麻又痒的感觉，%CALLNAME:MASTER%醒了。
-		PRINTFORMW 恢复视力后，在昏暗的室内看到的是，跨在%CALLNAME:MASTER%，忘情地扭动腰肢的白莲。
-		PRINTFORMW 衣服早就不知道扔在哪去了，淫乱的表情浮现出来的同时，还会俯身靠向%CALLNAME:MASTER%，用舌头舔舐。
-		PRINTFORMW 「啊……!对不起，把你吵醒了，是吧……?」
-		PRINTFORMW 注意到%CALLNAME:MASTER%的觉醒，想要离開的白莲却被一把抱住，用不知衰退的愤怒侵犯子宫，贪婪地强占了阴道。
-		PRINTFORMW 「あ、あん、あんあんあんあんッ！！　%CALLNAME:MASTER%、轻点、轻点啊！！」
+		PRINTFORML 「啾，啾，啊，喜欢，喜欢……！」
+		PRINTFORMDW 全身的压迫感和下半身甜蜜的麻痹感让%CALLNAME:MASTER%醒了过来。
+		PRINTFORMDW 在昏暗的室内，努力睁开眼睛，看到白莲正跨坐在自己身上，忘我地摇动着腰肢。
+		PRINTFORMDW 她脱掉了衣服，脸上带着淫荡的表情，时不时地压在%CALLNAME:MASTER%身上，将舌头缠绕过来。
+		PRINTFORMW 「啊……！ 对不起，吵醒你了吗……？」
+		PRINTFORMDW %CALLNAME:MASTER%抱紧了想要分开的白莲，用不知疲倦的怒蟒顶撞着子宫，贪婪地占有属于自己的肉壶。
+		PRINTFORMW 「啊，啊，啊啊啊啊啊！！ %CALLNAME:MASTER%，轻点，轻点啊！！」
 		PRINTFORMW 「啊，好……!用力、用力啊♪」
-		PRINTFORML …
-		PRINTFORMW 几次高潮之后，达成愿望的两人紧紧相拥，陷入了深深的睡眠……
+		PRINTFORMDL …
+		PRINTFORMDW 几度高潮之后，心满意足的两人就这样紧紧相拥，沉入了深深的睡眠…
 		CALL ADD_SAMEN_V(55, BASE:MASTER:精力)
 		EXP:55:精液経験 += 5
 		EXP:55:膣射経験 += 5
@@ -3084,7 +3086,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORML  
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3105,13 +3107,13 @@ IF LOCAL
 		[SKIPEND]
 		ELSE
 		ENDIF
-		PRINTFORML  
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
-	;陥落素質あり自慰中毒高め
-	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;陷落素質あり自慰中毒高め
+	;记入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 5
 		;-------------------------------------------------
@@ -3120,7 +3122,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -3129,7 +3131,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 2
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -3138,7 +3140,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 3
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -3147,7 +3149,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 4
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -3156,12 +3158,12 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 5
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;其他
 		;上の分岐を一切書かずに、ここに書くことで陥落素質あり自慰中毒高め自慰の共通口上を表示することが出来ます
-		PRINTFORML  
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3176,7 +3178,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -3185,12 +3187,27 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 2
-			PRINTFORML  
+			PRINTFORMDL 
 			RETURN 1
 		ENDIF
 		;其他
-		;上の分岐を一切書かずに、ここに書くことで自慰中毒高め自慰の共通口上を表示することが出来ます
-		PRINTFORML  
+		;上の分岐を一切书かずに、ここに书くことで自慰中毒高め自慰の共通口上を表示することが出来ます
+		IF TALENT:恋慕
+			PRINTFORML 「%CALLNAME:MASTER%……%CALLNAME:MASTER%的气味……
+			PRINTFORMDL 　嗅嗅……%CALLNAME:MASTER%的、男人的气味……」
+			PRINTFORMDW 在闻着%CALLNAME:MASTER%内衣气味的同时，白莲放纵地随着自己的欲望自慰着。
+			IF ABL:LOCAL:自慰中毒 > 3 && (TALENT:LOCAL:思慕 || TALENT:LOCAL:恋慕 || TALENT:LOCAL:恋人 || TALENT:LOCAL:愛欲 || TALENT:LOCAL:炮友) 
+				PRINTFORML 「噗啊……！ %CALLNAME:MASTER%……%CALLNAME:MASTER%！！
+				PRINTFORMDL 　原谅我这下流的样子……！
+				PRINTFORMDL 　啊，哈嗯！！ 虽然很舒服，但是不够……%CALLNAME:MASTER%的手指……
+				PRINTFORMDW 　想要小鸡鸡，想要啊……！ 呀，嗯啊啊！！」
+			ENDIF
+		ELSE
+			PRINTFORMW 「嗯……哈」
+			PRINTFORMDW $$$右手玩弄蜜唇，左手玩弄胸部，沉迷于自慰。
+			PRINTFORMDW 
+			PRINTFORMW （我怎么会做这种事……）
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3199,12 +3216,12 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
-		PRINTFORML 
+		PRINTFORMDL 
 		RETURN 1
 	ENDIF
 	;其他
 	;上の分岐を一切書かずに、ここに書くことで自慰の共通口上を表示することが出来ます
-	PRINTFORML  
+	PRINTFORMDL 
 	RETURN 1
 ENDIF
 RETURN 1
@@ -3226,9 +3243,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML 
+		PRINTFORMDL 
 		PRINTFORMW 「……不行，又不是那种关系」
-		PRINTFORMW 白莲断然拒绝。
+		PRINTFORMDW 白莲断然拒绝。
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3238,45 +3255,45 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 		IF TALENT:恋慕
-			PRINTFORML 
+			PRINTFORMDL 
 			PRINTFORMW 「一起泡澡吗?」
-			PRINTFORMW 「呵呵…帮你擦背哟♥」
-			PRINTFORMW 根本听不完、勉强抑制住因白莲邀约而手舞足蹈的冲动，故作镇静地走进更衣室
+			CALL HPH_PRINT,@"「呵呵…帮你擦背哟HPH」","W"
+			PRINTFORMDW 根本听不完、勉强抑制住因白莲邀约而手舞足蹈的冲动，故作镇静地走进更衣室
 			PRINTFORML 「我会准备的…现在就进去吗?」
-			PRINTFORMW 白莲说完当即就褪下外搭，进入浴场
+			PRINTFORMDW 白莲说完当即就褪下外衣，进入浴场
 			PRINTFORML 「……是，让您久等了。」
-			PRINTFORMW %CALLNAME:MASTER%回头一看，白莲羞红了脸，但毫不遮掩隐私部位就走了进来。
+			PRINTFORMDW %CALLNAME:MASTER%回头一看，白莲羞红了脸，但毫不遮掩隐私部位就走了进来。
 			PRINTFORML 「……别光看呀，快进去吧?」
-			PRINTFORMW 泡在浴池中，依偎在一起，感受水的缓缓流动，任由其将自己浸没
+			PRINTFORMDW 泡在浴池中，依偎在一起，感受水的缓缓流动，任由其将自己浸没
 			;刻印があるとき一定確率で
 			IF MARK:快楽刻印 > 0 && RAND:7 < MARK:快楽刻印
 				PRINTFORML 「呼…好舒服…」
-				PRINTFORMW 白莲被%CALLNAME:MASTER%搂在怀里，放松地享受着热水。
-				PRINTFORMW 感受着身前柔软贴合的肉体，%CALLNAME:MASTER%的那活硬得生疼
-				PRINTFORMW 试到勃起后，白莲抓住了%CALLNAME:MASTER%的手，带着一路到了自己的乳房上。
-				PRINTFORMW 「呵呵…软吧？对身体、我可是很有自信的♥」
-				PRINTFORMW 隔着乳房能感受到白莲的心脏早就跳得慌乱不已，%CALLNAME:MASTER%的理性融化在浴池中…
+				PRINTFORMDW 白莲被%CALLNAME:MASTER%搂在怀里，放松地享受着热水。
+				PRINTFORMDW 感受着身前柔软贴合的肉体，%CALLNAME:MASTER%的那活硬得生疼
+				PRINTFORMDW 试到勃起后，白莲抓住了%CALLNAME:MASTER%的手，带着一路到了自己的乳房上。
+				CALL HPH_PRINT,@"「呵呵…软吧？对身体、我可是很有自信的HPH」","W"
+				PRINTFORMDW 隔着乳房能感受到白莲的心脏早就跳得慌乱不已，%CALLNAME:MASTER%的理性融化在浴池中…
 			ENDIF
 		ELSE
-			PRINTFORML 
+			PRINTFORMDL 
 			PRINTFORMW 「要不要一起进去？」
 			PRINTFORMW 「……唉……好，不过」
-			PRINTFORMW 根本听不完、勉强抑制住因白莲邀约而手舞足蹈的冲动，故作镇静地走进更衣室
+			PRINTFORMDW 根本听不完、勉强抑制住因白莲邀约而手舞足蹈的冲动，故作镇静地走进更衣室
 			PRINTFORML 「……你能先进去吗……」
-			PRINTFORMW 白莲说完当即就褪下外搭，进入浴场
-			PRINTFORML %CALLNAME:MASTER%回头一看，白莲用手巾遮住了前部
+			PRINTFORMDW 白莲说完当即就褪下外衣，进入浴场
+			PRINTFORMDL %CALLNAME:MASTER%回头一看，白莲用手巾遮住了前部
 			PRINTFORMW 「……这么盯着看，南无三吗」
-			PRINTFORMW 白莲羞涩着说道。
+			PRINTFORMDW 白莲羞涩着说道。
 			;刻印があるとき一定確率で
 			IF MARK:快楽刻印 > 0 && RAND:7 < MARK:快楽刻印
-				PRINTFORML 但是，随着%CALLNAME:MASTER%的靠近，白莲的脸颊泛起异样的桃红。
-				PRINTFORMW 像是上火了似的，不时地向%CALLNAME:MASTER%的股间投去炽热的视线……
+				PRINTFORMDL 但是，随着%CALLNAME:MASTER%的靠近，白莲的脸颊泛起异样的桃红。
+				PRINTFORMDW 像是上火了似的，不时地向%CALLNAME:MASTER%的股间投去炽热的视线……
 			ENDIF
 		ENDIF
 		RETURN 0
 	ENDIF
 	;其他
-	PRINTFORML 
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 ;==================================================
@@ -3297,10 +3314,10 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORMW 带着身体不舒服的白莲去了永远亭。
-		PRINTFORMW 接受永琳诊断后、白莲告诉了%CALLNAME:MASTER%这个事实。
+		PRINTFORMDW 带着身体不舒服的白莲去了永远亭。
+		PRINTFORMDW 接受永琳诊断后、白莲告诉了%CALLNAME:MASTER%这个事实。
 		PRINTFORMW 「……%CALLNAME:MASTER%。我好像有了」
-		PRINTFORMW 白莲笑得很開心。你将白莲抱住,共同分享这份快乐。
+		PRINTFORMDW 白莲笑得很开心。你将白莲抱住,共同分享这份快乐。
 		PRINTFORMW 「……%CALLNAME:MASTER%。谢谢。……我、现在很幸福、真的……」
 		RETURN 1
 	ENDIF
@@ -3329,7 +3346,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 ;==================================================
@@ -3352,13 +3369,13 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		PRINTFORMW 「啊……要出来了、好像是……」
-		PRINTFORMW 虽然疼痛难忍，白莲勉强露出笑容。
-		PRINTFORMW %CALLNAME:MASTER%靠近白莲，握住她的手鼓励她。
+		PRINTFORMDW 虽然疼痛难忍，白莲勉强露出笑容。
+		PRINTFORMDW %CALLNAME:MASTER%靠近白莲，握住她的手鼓励她。
 		PRINTFORMW 「啊…………嗯，我、我会努力的。啊……」
-		PRINTFORMW ………………
+		PRINTFORMDW ………………
 		PRINTFORMW 「呵呵……真是可爱的孩子啊……」
-		PRINTFORMW 与%CALLNAME:MASTER%相爱着，此刻正微笑着温柔地拥抱出生的生命。%CALLNAME:MASTER%的白莲
-		PRINTFORMW 那份笑容是只有母亲才能展现的珍贵。
+		PRINTFORMDW 与%CALLNAME:MASTER%相爱着，此刻正微笑着温柔地拥抱出生的生命。%CALLNAME:MASTER%的白莲
+		PRINTFORMDW 那份笑容是只有母亲才能展现的珍贵。
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3386,7 +3403,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORML  
+	PRINTFORMDL 
 ENDIF
 RETURN 1
 ;==================================================
@@ -3559,23 +3576,23 @@ IF LOCAL
 			ELSE
 				SELECTCASE RAND:3
 				CASE 0
-					PRINTFORMW 在帮助白莲宽衣解带的同时、她也在帮你脱去服饰。
-					PRINTFORMW 看到那一丝不挂的可人后,你不禁有些恍神。这时、白莲抱住了你温热的肉体。
-					PRINTFORMW 你当即回过神、也揽住白莲。一时间有些沉默、万般话语都通过温度、直接传达到了对方的心田。
+					PRINTFORMDW 在帮助白莲宽衣解带的同时、她也在帮你脱去服饰。
+					PRINTFORMDW 看到那一丝不挂的可人后,你不禁有些恍神。这时、白莲抱住了你温热的肉体。
+					PRINTFORMDW 你当即回过神、也揽住白莲。一时间有些沉默、万般话语都通过温度、直接传达到了对方的心田。
 				CASE 1
-					PRINTFORMW 「嗯……♥」
-					PRINTFORMW 现在的白莲不着丝缕、看着就像梦寐中的孩子一样、向着%CALLNAME:MASTER%微微张開双臂。
-					PRINTFORMW 「%CALLNAME:MASTER%…来吧…♥」
+					CALL HPH_PRINT,@"「嗯……HPH」","W"
+					PRINTFORMDW 现在的白莲不着丝缕、看着就像梦寐中的孩子一样、向着%CALLNAME:MASTER%微微张开双臂。
+					CALL HPH_PRINT,@"「%CALLNAME:MASTER%…来吧…HPH」","W"
 				CASEELSE
 					IF PREVCOM == 20
-						PRINTFORM 接吻に夢中になっている
+						PRINTFORM 沉醉于接吻
 					ELSEIF TALENT:恋慕 || PALAM:欲情 >= PALAMLV:5
-						PRINTFORM %CALLNAME:MASTER%に夢中になっている
+						PRINTFORM 钟情于%CALLNAME:MASTER%
 					ENDIF
-					PRINTFORMW 沉醉于接吻的白莲缓缓地将整洁的联衣裙撩起。
-					PRINTFORMW 「啊……♥」
-					PRINTFORMW 从撩拨情丝的双腿、到让人舍不得挪開眼神的腰线、然后仿佛要完成一般地捋到胸口
-					PRINTFORMW “啪”地一下、一对可爱的玉兔落入%CALLNAME:MASTER%的视线里、白莲害羞得直接闭上了眼睛。
+					PRINTFORMDW 的白莲缓缓地将整洁的联衣裙撩起。
+					CALL HPH_PRINT,@"「啊……HPH」","W"
+					PRINTFORMDW 从撩拨情丝的双腿、到让人舍不得挪开眼神的腰线、然后仿佛要完成一般地捋到胸口
+					PRINTFORMDW “啪”地一下、一对可爱的玉兔落入%CALLNAME:MASTER%的视线里、白莲害羞得直接闭上了眼睛。
 				ENDSELECT
 			ENDIF
 			RETURN 1
@@ -3772,23 +3789,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 0
-		IF TALENT:恋慕
-			PRINTFORML 「%CALLNAME:MASTER%……%CALLNAME:MASTER%的气味……
-			PRINTFORML 　くんくん……%CALLNAME:MASTER%的、男人的气味……」
-			PRINTFORMW 在闻着%CALLNAME:MASTER%内衣气味的同时，白莲放纵地随着自己的欲望自慰着。
-			IF ABL:LOCAL:自慰中毒 > 3 && (TALENT:LOCAL:思慕 || TALENT:LOCAL:恋慕 || TALENT:LOCAL:恋人 || TALENT:LOCAL:愛欲 || TALENT:LOCAL:炮友) 
-				PRINTFORML 「ぷぁ……っ！　%CALLNAME:MASTER%……%CALLNAME:MASTER%っ！！
-				PRINTFORML 　原谅讨厌的我……!
-				PRINTFORML 　啊，哈! !虽然很舒服，但是不够啊…………只是%CALLNAME:MASTER%的手指……
-				PRINTFORMW 　好想要小鸡鸡啊……啊，啊~！……啊……」
-			ENDIF
-		ELSE
-			PRINTFORMW 「嗯……哈」
-			PRINTFORMW 右手玩弄私密处，左手玩弄胸部，沉迷于自慰。
-			PRINTFORMW 
-			PRINTFORMW （我怎么会做这种事……）
-		ENDIF
-		RETURN 1
+	;这里原本有一段自慰的内容，已经移到自慰事件了（4.973确认）
 	ENDIF
 ENDIF
 RETURN 1
@@ -3796,7 +3797,7 @@ RETURN 1
 [SKIPSTART]
 ;-------------------------------------------------
 ;オナバレ遭遇時の地の文を默认のものから変更したい場合用。
-;その場合は上下のSKIPSTART~SKIPENDを外してください。
+;その場合は上下のSKIPSTART～SKIPENDを外してください。
 ;CFLAG等の角色変数を使用場合、角色番号の指定が必要になります。
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_ONABARE_1(ARG)
@@ -3805,9 +3806,9 @@ RETURN 1
 ;CALL M_KOJO_COLOR_K55
 
 IF ARG
-	PRINTFORML 玩弄A的场合
+	PRINTFORMDL 玩弄A的场合
 ELSE
-	PRINTFORML 玩弄V的场合
+	PRINTFORMDL 玩弄V的场合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -3816,7 +3817,7 @@ ENDIF
 [SKIPSTART]
 ;-------------------------------------------------
 ;オナバレでそのまま続けてもらう場合の地の文を默认のものから変更したい場合用。
-;その場合は上下のSKIPSTART~SKIPENDを外してください。
+;その場合は上下のSKIPSTART～SKIPENDを外してください。
 ;CFLAG等の角色変数を使用場合、角色番号の指定が必要になります。
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_ONABARE_2(ARG)
@@ -3825,9 +3826,9 @@ ENDIF
 ;CALL M_KOJO_COLOR_K55
 
 IF ARG
-	PRINTFORML 玩弄A的场合
+	PRINTFORMDL 玩弄A的场合
 ELSE
-	PRINTFORML 玩弄V的场合
+	PRINTFORMDL 玩弄V的场合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -3836,7 +3837,7 @@ ENDIF
 [SKIPSTART]
 ;-------------------------------------------------
 ;オナバレ無崩しックスの地の文を默认のものから変更したい場合用。
-;その場合は上下のSKIPSTART~SKIPENDを外してください。
+;その場合は上下のSKIPSTART～SKIPENDを外してください。
 ;CFLAG等の角色変数を使用場合、角色番号の指定が必要になります。
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_ONABARE_3(前戯１,本番はどっちか,回数,注入量)
@@ -3853,17 +3854,17 @@ ENDIF
 
 SELECTCASE 前戯１
 	CASE 1
-		PRINTFORML Ｃ戏弄
+		PRINTFORMDL Ｃ戏弄
 	CASE 2
-		PRINTFORML Ｂ戏弄
+		PRINTFORMDL Ｂ戏弄
 	CASE 3
-		PRINTFORML Ｍ戏弄
+		PRINTFORMDL Ｍ戏弄
 ENDSELECT
 
 IF 本番はどっちか
-	PRINTFORML 插入A
+	PRINTFORMDL 插入A
 ELSE
-	PRINTFORML 插入V
+	PRINTFORMDL 插入V
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -3877,7 +3878,7 @@ ENDIF
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_LOST_VIRGIN_STOP
 ;-------------------------------------------------
-PRINTFORML 
+PRINTFORMDL 
 RETURN 1
 
 ;-------------------------------------------------
@@ -3888,7 +3889,7 @@ RETURN 1
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_PERMISSION_1
 ;-------------------------------------------------
-PRINTFORML 
+PRINTFORMDL 
 ;RETURN -1
 RETURN 0
 ;RETURN 1
@@ -3903,7 +3904,7 @@ RETURN 0
 ;-------------------------------------------------
 @M_KOJO_EVENT_K55_PERMISSION_2
 ;-------------------------------------------------
-PRINTFORML 
+PRINTFORMDL 
 RETURN 0
 ;RETURN -1
 ;-------------------------------------------------
@@ -3916,31 +3917,31 @@ RETURN 0
 ;地の文を表示したい方は、下記のコメントアウトを削除して下さい
 ;苦痛刻印
 IF TFLAG:22 == 1
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:22 == 2
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:22 == 3
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ENDIF
 
 ;時姦刻印
 IF TFLAG:時姦刻印取得 == 1
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:時姦刻印取得 == 2
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:時姦刻印取得 == 3
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ENDIF
 
 ;快楽刻印
 IF TFLAG:23 == 1
 	PRINTFORML 「哈啊、哈啊、嗯…很舒服、的说…」
-	PRINTFORMW 白莲因被你抚摸而产生的快乐、身体在轻轻地晃动着……
+	PRINTFORMDW 白莲因被你抚摸而产生的快乐、身体在轻轻地晃动着……
 ELSEIF TFLAG:23 == 2
-	PRINTFORMW 「啊、那里、感觉很舒服…っ」
+	PRINTFORMW 「啊、那里、感觉很舒服…」
 ELSEIF TFLAG:23 == 3
 	PRINTFORML （啊啊、不行…知道了这种滋味的话、就…）
-	PRINTFORMW 白莲似乎很中意你的行为。
+	PRINTFORMDW 白莲似乎很中意你的行为。
 ENDIF
 
 ;不埒刻印
@@ -3953,24 +3954,24 @@ ELSEIF TFLAG:24 == 12
 	PRINTFORMW 「不行、不行的哦…」
 ;LV3
 ELSEIF TFLAG:24 == 13
-	PRINTFORMW 「啊、这种事情、一旦開始就根本………」
+	PRINTFORMW 「啊、这种事情、一旦开始就根本………」
 ;屈服、恭順による刻印
 ;LV1
 ELSEIF TFLAG:24 == 31
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ;LV2
 ELSEIF TFLAG:24 == 32
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ;LV3
 ELSEIF TFLAG:24 == 33
-	PRINTFORMW 「哈、这种事情一旦開始的话……」
+	PRINTFORMW 「哈、这种事情一旦开始的话……」
 ENDIF
 
 ;反発刻印
 IF TFLAG:21 == 1
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:21 == 2
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ELSEIF TFLAG:21 == 3
-	;PRINTFORMW 
+	;PRINTFORMDW 
 ENDIF
