@@ -57,15 +57,19 @@ CASE "便装：連衣裙"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("連衣裙", "肌襦袢"))
 CASE "便装：其他１"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他１", "帯"))
+CASE "便装：其他２"
+	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他２", "针"))
+CASE "便装：其他３"
+	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他３", "小槌"))
 
 CASE "固有内衣形容詞"
-	CALLF MAKE_STR(V_NAME, "大和小都合适的")
+	CALLF MAKE_STR(V_NAME, "变大变小都合身的")
 CASE "固有下半身内衣名"
-	CALLF MAKE_STR(V_NAME, "小人の胖次")
+	CALLF MAKE_STR(V_NAME, "小人胖次")
 CASE "固有上半身内衣"
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "固有上半身内衣名"
-	CALLF MAKE_STR(V_NAME, "小人の吊帯衫")
+	CALLF MAKE_STR(V_NAME, "小人吊带衫")
 CASE "固有内衣着用条件"
 	SIF !RAND:(1 + (2 * 勝負内衣判定([[針妙丸]])))
 		CALLF MAKE_INT(V_NAME, 1)
@@ -150,10 +154,41 @@ IF CFLAG:CHARA:差し替え適用
 		ENDIF
 	ELSE
 		;服
-		IF FLAG:立絵種類
+		IF FLAG:立ち絵種類
 			;顔絵
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF CHECK_CLO("bra_visible")
+					RESULTS = _内衣
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ENDIF
+			ENDIF
 		ELSE
-			;立絵
+			;立ち絵
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ != 0
+					RESULTS = _内衣
+				ELSEIF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ == 0
+					RESULTS = _ノーパン下着
+				{
+				ELSEIF (!EQUIP:CHARA:上半身上着１ && !EQUIP:CHARA:上半身上着２ && !EQUIP:CHARA:外衣 &&
+            			!EQUIP:CHARA:着物 && !EQUIP:CHARA:ワンピース &&
+						!EQUIP:CHARA:レオタード && !EQUIP:CHARA:ボディースーツ) &&
+						EQUIP:CHARA:下半身下着２ != 0
+				}
+					RESULTS = _ノーブラ下着
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ENDIF
+			ENDIF
 		ENDIF
 	ENDIF
 ELSE
@@ -274,6 +309,8 @@ IF CFLAG:CHARA:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
+		SIF (TALENT:CHARA:体型 == 0 || TALENT:MASTER:体型 == -5) && CFLAG:CHARA:差し替え適用 == 1
+			RESULTS = _大
 	ELSE
 		;立絵
 	ENDIF

@@ -1,5 +1,7 @@
 ﻿;挿入継続の処理
 @EQUIP_INCERT_V(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM 竿役
 
 竿役 = TEQUIP:ARG:50
@@ -43,8 +45,8 @@ ELSE
 	TCVAR:ARG:射精快感強度 = 750
 	DOWNBASE:竿役:体力 += 15
 	DOWNBASE:竿役:気力 += 20
-	;時間停止中
-	IF FLAG:70
+	;时间停止中
+	IF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
 		SOURCE:ARG:快Ｖ += 150
 		CALL 挿入継続Ｖ苦痛処理(ARG)
 
@@ -80,11 +82,11 @@ ENDIF
 ;-------------------------------------------------
 EXP:竿役:挿入経験 ++
 EXP:ARG:Ｖ経験 ++
-SIF !FLAG:70 && !CFLAG:ARG:恶作剧
+SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
 EXP:ARG:Ｖ性交経験 ++
 SIF TEQUIP:ARG:体位 == 6
 	EXP:ARG:Ｖ拡張経験 ++
-SIF FLAG:70 == 1
+SIF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
 	EXP:MASTER:時姦経験 += 1
 IF CFLAG:MASTER:恶作剧 == 2
 	EXP:MASTER:睡眠姦経験 += 1
@@ -94,6 +96,8 @@ RETURN 1
 
 
 @EQUIP_INCERT_A(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM 竿役
 
 竿役 = TEQUIP:ARG:51
@@ -138,8 +142,8 @@ ELSE
 	TCVAR:ARG:射精快感強度 = 750
 	DOWNBASE:竿役:体力 += 15
 	DOWNBASE:竿役:気力 += 20
-	;時間停止中
-	IF FLAG:70
+	;时间停止中
+	IF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
 		SOURCE:ARG:快Ａ += 200
 		CALL 挿入継続Ａ苦痛処理(ARG)
 
@@ -173,7 +177,7 @@ ENDIF
 ;-------------------------------------------------
 EXP:竿役:挿入経験 ++
 EXP:ARG:Ａ経験 ++
-SIF !FLAG:70 && !CFLAG:ARG:恶作剧
+SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
 	EXP:ARG:Ａ性交経験 ++
 SIF TEQUIP:ARG:体位 == 6
 	EXP:ARG:Ａ拡張経験 ++
@@ -181,6 +185,8 @@ RETURN 1
 
 
 @挿入継続Ｖ苦痛処理(ARG)
+#LOCALSIZE 2
+#LOCALSSIZE 1
 ;EXP:Ｖ経験をみる（処女はありえない）
 LOCAL = 200
 LOCAL:1 = 150
@@ -220,11 +226,13 @@ ENDIF
 
 SOURCE:ARG:苦痛 += LOCAL
 
-SIF !FLAG:70
+SIF (!FLAG:70 || CFLAG:ARG:344 == 1)
 	SOURCE:ARG:反感 += LOCAL:1
 
 
 @挿入継続Ａ苦痛処理(ARG)
+#LOCALSIZE 2
+#LOCALSSIZE 1
 LOCAL = 400
 LOCAL:1 = 250
 
@@ -270,35 +278,21 @@ ENDIF
 
 SOURCE:ARG:苦痛 += LOCAL
 
-SIF !FLAG:70 && !CFLAG:ARG:恶作剧
+SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
 	SOURCE:ARG:反感 += LOCAL:1
 
 
-@挿入不可(ARG)
-;-2 = ガバガバで気持ちよくない -1 = 刺激が弱い 1= 経験が必要 2= 経験と知識が必要 3= 小人飛機杯
+@插入不可(ARG)
+;-2 = 搅大缸了 -1 = 刺激太弱 1= 需要经验 2= 需要经验和知识 3= 小人飞机杯
 #FUNCTION
-#DIM 你の尺寸
-#DIM 尺寸差
-IF ARG == PLAYER
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF ARG == PLAYER
 	RETURNF 0
-ENDIF
-
-SELECTCASE TALENT:PLAYER:形状
-	CASE 0,3,4
-		你の尺寸 = 0
-	CASE 1
-		你の尺寸 = -1
-	CASE 2
-		你の尺寸 = -2
-	CASE 6
-		你の尺寸 = 1
-	CASE 5,10
-		你の尺寸 = 2
-ENDSELECT
-
-尺寸差 = (TALENT:PLAYER:体型 - TALENT:ARG:体型) * 2 + 你の尺寸
-
-SELECTCASE 尺寸差
+;如果是假鸡吧，不计算体型
+SIF !GETBIT(TALENT:PLAYER:2,1)
+	RETURNF 0
+SELECTCASE 尺寸差(ARG)
 	CASE IS > 8
 		RETURNF 3
 	CASE 5 TO 8
@@ -312,4 +306,36 @@ SELECTCASE 尺寸差
 	CASE IS < -6
 		RETURNF -2
 ENDSELECT
-	
+
+@尺寸差(受方)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM 攻方
+#DIM 受方
+#DIM 尺寸
+;没有检测到肉棒时弹出
+IF 受方 == PLAYER
+	攻方 = TARGET
+ELSE
+	攻方 = PLAYER
+ENDIF
+SELECTCASE TALENT:攻方:形状
+	CASE 0,3,4
+		尺寸 = 0
+	CASE 1
+		尺寸 = -1
+	CASE 2
+		尺寸 = -2
+	CASE 6
+		尺寸 = 1
+	CASE 5,10
+		尺寸 = 2
+ENDSELECT
+RETURNF (TALENT:攻方:体型 - TALENT:受方:体型) * 2 + 尺寸
+
+@挿入不可(ARG)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+RETURNF 插入不可(ARG)

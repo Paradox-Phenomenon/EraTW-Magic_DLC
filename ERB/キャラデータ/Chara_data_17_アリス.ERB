@@ -59,12 +59,16 @@ ENDSELECT
 SELECTCASE O_DATA
 CASE "稱呼"
 	CALLF MAKE_STR(V_NAME, "愛麗絲")
-CASE "今日の衣装"
+;CASE "今日の衣装"
+;	SIF (DAY:2 == 1 && DAY:3 == 1) || (DAY:2 == 4 && DAY:3 == 31)
+;		CALLF MAKE_STR(V_NAME, "年越し")
+;CASE "明日の衣装"
+;	SIF DAY:2 == 4 && (DAY:3 == 30 || DAY:3 == 31)
+;		CALLF MAKE_STR(V_NAME, "年越し")
+CASE "特殊衣装着用"
 	SIF (DAY:2 == 1 && DAY:3 == 1) || (DAY:2 == 4 && DAY:3 == 31)
-		CALLF MAKE_STR(V_NAME, "年越し")
-CASE "明日の衣装"
-	SIF DAY:2 == 4 && (DAY:3 == 30 || DAY:3 == 31)
-		CALLF MAKE_STR(V_NAME, "年越し")
+		CALLF MAKE_INT(V_NAME, 92)
+		
 CASE "今天的睡衣"
 	IF (DAY:2 == 1 && DAY:3 == 1) || (DAY:2 == 4 && DAY:3 == 31)
 		CALLF MAKE_STR(V_NAME, "睡衣（襦袢）套")
@@ -89,23 +93,23 @@ CASE "便装：襪子"
 CASE "便装：連衣裙"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("連衣裙", "連衣裙"))
 
-CASE "年越し：和服"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("和服", "和服"))
-CASE "年越し：帽子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "发箍"))
-CASE "年越し：靴"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("靴", "長靴"))
-CASE "年越し：襪子"
-	IF FLAG:2 > 0
-		CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "半透明連裤襪"))
-	ELSE
-		CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "長筒襪"))
-	ENDIF
+;CASE "年越し：和服"
+;	CALLF MAKE_INT(V_NAME, CLOTHES_ID("和服", "和服"))
+;CASE "年越し：帽子"
+;	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "发箍"))
+;CASE "年越し：靴"
+;	CALLF MAKE_INT(V_NAME, CLOTHES_ID("靴", "長靴"))
+;CASE "年越し：襪子"
+;	IF FLAG:2 > 0
+;		CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "半透明連裤襪"))
+;	ELSE
+;		CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "長筒襪"))
+;	ENDIF
 
 CASE "固有内衣形容詞"
-	CALLF MAKE_STR(V_NAME, "愛麗絲手制的")
+	CALLF MAKE_STR(V_NAME, "爱丽丝手制的")
 CASE "固有下半身内衣名"
-	CALLF MAKE_STR(V_NAME, "手织的蕾丝")
+	CALLF MAKE_STR(V_NAME, "手织蕾丝胖次")
 CASE "固有上半身内衣"
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "固有上半身内衣名"
@@ -149,7 +153,7 @@ DISH_NAME = 姜饼人
 RESULTS = 甜点
 CALL 材料設定("甜味料")
 DISH_TASTE = 洋食/曲奇/卵/甜/芸術的/芸術的/家庭的/松脆/
-DISH_COMMENT = 流行又可爱的人型曲奇。似乎下一秒就会開始活动。
+DISH_COMMENT = 流行又可爱的人型曲奇。似乎下一秒就会开始活动。
 RETURN 1
 
 ;IMAGE_I17_特殊服装(CHARA)-------------------------------------------------------------------
@@ -172,10 +176,76 @@ IF CFLAG:CHARA:差し替え適用
 		ENDIF
 	ELSE
 		;服
-		IF FLAG:立ち絵種類
+		IF FLAG:立絵種類
 			;顔絵
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 3)
+				IF CHECK_CLO("bra_visible")
+					IF CFLAG:CHARA:651 == 18
+						RESULTS = _固有下着
+					ELSE
+						RESULTS = _内衣
+					ENDIF
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ELSEIF (DAY:2 == 1 && DAY:3 == 1) || (DAY:2 == 4 && DAY:3 == 31)
+					IF CFLAG:CHARA:313
+						RESULTS = _襦袢
+					ELSE
+						RESULTS = _年越し
+					ENDIF
+				ELSEIF CFLAG:CHARA:初期位置 == CFLAG:MASTER:初期位置
+					SIF CFLAG:CHARA:313
+						RESULTS = _ベビードール
+				ENDIF
+			ENDIF
 		ELSE
 			;立ち絵
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 3)
+				IF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ != 0
+					IF CFLAG:CHARA:651 == 18
+						RESULTS = _固有下着
+					ELSE
+						RESULTS = _内衣
+					ENDIF
+				ELSEIF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ == 0
+					IF CFLAG:CHARA:651 == 18
+						RESULTS = _固有下着
+					ELSE
+						RESULTS = _ノーパン下着
+					ENDIF
+				{
+				ELSEIF (!EQUIP:CHARA:上半身内衣１ && !EQUIP:CHARA:上半身内衣２ && !EQUIP:CHARA:外搭 &&
+						!EQUIP:CHARA:和服 && !EQUIP:CHARA:連衣裙 &&
+						!EQUIP:CHARA:緊身内衣 && !EQUIP:CHARA:連体内衣) &&
+						EQUIP:CHARA:下半身内衣２ != 0
+				}
+					RESULTS = _ノーブラ下着
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ELSEIF (DAY:2 == 1 && DAY:3 == 1) || (DAY:2 == 4 && DAY:3 == 31)
+					IF CFLAG:CHARA:313
+						RESULTS = _襦袢
+					ELSE
+						RESULTS = _年越し
+					ENDIF
+				ELSEIF CFLAG:CHARA:初期位置 == CFLAG:MASTER:初期位置
+					IF CFLAG:CHARA:313
+						IF EQUIP:CHARA:下半身下着２ == 0
+							RESULTS = _ノーパンベビー
+						ELSE
+							RESULTS = _ベビードール
+						ENDIF
+					ENDIF
+				ENDIF
+			ENDIF
 		ENDIF
 	ENDIF
 ELSE
@@ -186,5 +256,11 @@ ELSE
 			RESULTS = _浴袍
 	ELSE
 		;服
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立ち絵
+		ENDIF
 	ENDIF
 ENDIF
+

@@ -1,4 +1,4 @@
-﻿;-------------------------------------------------
+;-------------------------------------------------
 ;eraTheWorld4.903用○○別人口上（把角色的名字放进去，如果还有口上版本名之类的也可自行改名）
 ;-------------------------------------------------
 ;他者による修正、加筆、改変については、同梱のライセンス条項に従ってください。
@@ -130,9 +130,12 @@ PRINTFORMDL XD
 PRINTFORMDL 这里是幽香南风天的UPDATE
 PRINTFORMDL
 PRINTFORMDL	[1] 作者的话
+PRINTFORMDL [2] 更改幽香欧派培养玩法设定
 ;PRINTFORMDL [2] 绿色的口上色太亮了/设定旁白口上色
 PRINTFORMDL	[3]作者检测代码用
-PRINTFORMDL
+PRINTFORMDL [4] 关闭/开启字符串画
+PRINTFORMDL [5]初见时给幽香更符合口上的角色设定（求求了,有更符合游玩的体验微调）
+PRINTFORMDL 
 PRINTFORMDL [0] 退出
 PRINTFORMW
 $INPUT_UPDATE
@@ -147,12 +150,22 @@ INPUT
 		PRINTFORML 「色色方面也下了功夫，希望大家能包容不同玩法吧」
 		PRINTFORML 「再次感谢狂气的小白兔老师在代码方面的鼎力支持，感谢泡茶群各位的帮助」
 		PRINTFORML 「把想法用代码复制出来真的很难」
-		IF EXP:0:77>=3
+		IF EXP:0:77>=30
 			PRINTFORMDL 【天人感应】：我已经到了看见老师大阪和人妻相生佑子的年纪了，我的幻想乡和幽香在哪里……
 		ENDIF
 		PRINTFORMW 
 		GOTO UPDATE
-	;ELSEIF RESULT==2
+	ELSEIF RESULT==2
+		PRINTFORMW
+		CALL ask_m("开启",1,"关闭",1,)
+			SELECTCASE RESULT
+				CASE 0
+					PRINTFORML 开启了
+					CFLAG:68:1105=3
+				CASE 1
+					PRINTFORML 关闭了
+					CFLAG:68:1105=1000
+			ENDSELECT
 	;	@K68_幽香南风天_REVISE_COLOR(ARG)
 	;	WHILE RESULT != 1 
 	;	LOCAL = LINECOUNT			;清除过多行数
@@ -181,6 +194,23 @@ INPUT
 		PRINTFORM 式中函数 yuka_OUTROOF_PRINT
 		PRINTFORML #FUNCTION上面
 		GOTO UPDATE
+	ELSEIF RESULT==4
+		IF CFLAG:68:1341==1
+			CFLAG:68:1341=2
+			PRINTFORML 已关闭字符串
+		ELSE
+			CFLAG:68:1341=1
+			PRINTFORML 已开启字符串
+		ENDIF
+	ELSEIF RESULT==5
+		IF CFLAG:68:1351==1
+			CFLAG:68:1341=2
+			PRINTFORML 已关闭初见角色更改
+		ELSE
+			CFLAG:68:1341=1
+			PRINTFORML 已开启初见角色更改
+			PRINTFORML 太感谢你了，好好享受幽香口上吧
+		ENDIF
 	ELSEIF RESULT==0
 	ENDIF
 RETURN 1
@@ -193,7 +223,7 @@ RETURN 1
 ;TALENT的变更也可以在此处修改（但是，在见面前查看角色信息还是会显示更改前的信息，所以仅作为一个见面可修改选项）
 ;经验的变化可能会导致差异，因此建议修改CSV并包含它（但是别人版不能用专门的CSV，乐）
 ;注、由于初见之前依然可以看到角色的经验信息，此时将不会触发这里的修正
-IF GETBIT(CFLAG:31,0)||GETBIT(CFLAG:30,1)
+IF GETBIT(CFLAG:31,0)||GETBIT(CFLAG:31,1)
 	;二周目初见
 	PRINTFORMDL 正蹲坐在路旁低头观察地上蚂蚁的你发现头顶太阳不见，转而是一片凉爽的阴凉盖住了你
 	PRINTFORMDL 『怎么回事,怎么突然阴天了？』
@@ -205,8 +235,8 @@ IF GETBIT(CFLAG:31,0)||GETBIT(CFLAG:30,1)
 	PRINTFORMW 「喂,你是什么人?」
 	PRINTFORMDL 或许是想到自己刚刚的话并不礼貌,少女蹲下和你齐平再次开口道
 	PRINTFORML 「咳咳…你好,我的名字是风见幽香，总感觉你很可靠很熟悉呢，我…想知道你的名字」
-	ABL:9+=50
-	ABL:10+=10
+	ABL:9+=1
+	ABL:10+=1
 	CFLAG:68:好感度+=200
 	CFLAG:68:信賴度+=100
 	CFLAG:68:1004+=5
@@ -224,7 +254,8 @@ ELSE
 		PRINTFORML 「%CALLNAME:MASTER%吗?」
 		PRINTFORML 「我的名字是风见幽香，这片花田的主人。只是随意闲逛和参观没关系，若你有丁点损坏这里的念头——」
 		PRINTFORMDL 说到这幽香话语一顿「你最好有能逃出这里的能力」
-		PRINTFORMDL 真真是令人不寒而栗阿
+		PRINTFORMDL 真真是令人不寒而栗阿 
+		CALL yuka_AA("碰面2")
 	ELSE
 		PRINTFORMDL 你注意到不远处有位拿着白色阳伞的小姐，单是看背影和伞未遮住的裙角和棕靴便知是位美人了
 		PRINTFORMDL 你主动上前打起招呼
@@ -236,22 +267,30 @@ ELSE
 		PRINTFORML 「看来你便是最近幻入的那个人了.听好了,我乃风见幽香,花田的主人.」
 		PRINTFORML 「希望%CALLNAME:MASTER%能是个懂时务的人不要招惹到我」
 		PRINTFORMDL 你感觉心头一颤,幽香虽是美丽可凶恶地不好靠近呢
-		PRINTFORMW 
+		CALL yuka_AA("碰面1")
 	ENDIF
 ENDIF
-abl:14=6
-abl:43=4
-abl:45=6
+IF CFLAG:68:1351==1
+	ABL:42=6
+	ABL:43=5
+	ABL:44=2
+	ABL:45=4
+	ABL:46=3
+	TALENT:68:0=1
+	TALENT:68:121=1
+ENDIF
 TALENT:68:105=1
-TALENT:68:48=5
 TALENT:68:16=1
-TALENT:68:47=5
 CFLAG:68:1000=0
 CFLAG:68:1001=0
 CFLAG:68:1002=0
 CFLAG:68:1003=0
 CFLAG:68:1004=0
 CFLAG:68:1103=2
+CFLAG:68:1105=3
+CFLAG:68:1115=2
+CFLAG:68:1341=1
+
 
 
 RETURN 1
@@ -444,7 +483,7 @@ IF LOCAL
 				CASE 1
 					PRINTFORMDL 幽香无助地抱住了你
 					PRINTFORML 「答应我不要再这样了好不好，如果你主动道歉我居然不知道该怎么办了」
-					IF EXP:0:77>=3
+					IF EXP:0:77>=30
 						PRINTFORMDL 【食髓知味】：幽香对你深深的爱和依恋与一直以来坚守的价值观冲突了……
 						PRINTFORMDL 如果你就此倔着脖子不低头，更在某天离开，在这面前幽香主动认错又算得了什么？
 					ENDIF
@@ -496,7 +535,7 @@ IF LOCAL
 				CASE 1
 					PRINTFORMDL 幽香无助地抱住了你
 					PRINTFORML 「答应我不要再这样了好不好，如果你主动道歉我居然不知道该怎么办了」
-					IF EXP:0:77>=3
+					IF EXP:0:77>=30
 						PRINTFORMDL 【食髓知味】：幽香对你深深的爱和依恋与一直以来坚守的价值观冲突了……
 						PRINTFORMDL 如果你就此倔着脖子不低头，更在某天离开，在这面前幽香主动认错又算得了什么？
 					ENDIF
@@ -547,7 +586,7 @@ IF LOCAL
 				CASE 1
 					PRINTFORMDL 幽香无助地抱住了你
 					PRINTFORML 「答应我不要再这样了好不好，如果你主动道歉我居然不知道该怎么办了」
-					IF EXP:0:77>=3
+					IF EXP:0:77>=30
 						PRINTFORMDL 【食髓知味】：幽香对你深深的爱和依恋与一直以来坚守的价值观冲突了……
 						PRINTFORMDL 如果你就此倔着脖子不低头，更在某天离开，在这面前幽香主动认错又算得了什么？
 					ENDIF
@@ -618,9 +657,13 @@ IF LOCAL
 				PRINTFORML 「哦，事情办完了吗」
 				PRINTFORML 「我们走吧」
 				PRINTFORMDL 幽香挽起你的手臂，毫不在意刚刚的插曲
+				CALL yuka_AA("同行1")
 			ELSE
 				CALL yuka_sw_event2
-				IF CFLAG:68:1001>=10
+				IF CFLAG:318==1 
+					PRINTFORMDL 幽香气鼓鼓地走过，现在还是不要招惹她为妙
+					CALL yuka_AA("碰面3")
+				ELSEIF CFLAG:68:1001>=10
 					PRINTFORML 「啊是%CALLNAME:MASTER%来了」
 					PRINTFORMDL 幽香热情地招待你入座休息
 				ELSEIF TIME:5!=0 && TIME:5!=1
@@ -634,12 +677,14 @@ IF LOCAL
 					PRINTFORML 「但凡有作恶之心必遭我惩戒不容宽恕」
 					PRINTFORML 「若是心恐有所过失，现在就速速离去」
 					PRINTFORMDL 一身冷冽的幽香突然出现在你的面前告诫你
+					CALL yuka_AA("碰面2")
 				ENDIF
 			ENDIF
 		ELSE
 			IF CHK_DATENOW(CFLAG:约会中)
 				PRINTFORML 「那我们继续吧」
 				PRINTFORMDL 幽香把你拥入阳伞的阴影内，挽着手继续了
+				CALL yuka_AA("同行1")
 			ELSE
 				IF CFLAG:68:1001>=10
 					PRINTFORML 「啊是%CALLNAME:MASTER%来了」
@@ -662,6 +707,8 @@ IF LOCAL
 		IF  CFLAG:68:300==438|| CFLAG:68:300==463|| CFLAG:68:300==365|| CFLAG:68:300==394|| CFLAG:68:300==366
 			IF CHK_DATENOW(CFLAG:约会中)
 				PRINTFORML 「原来%CALLNAME:MASTER%在花田等我啊，偏我又去找你错开了」
+				PRINTFORML 「还在傻愣着干嘛，快出发吧」
+				CALL yuka_AA("同行1")
 			ELSEIF CFLAG:68:1001>=10
 				PRINTFORML 「%CALLNAME:MASTER%来拜访我了啊，请进吧」
 				PRINTFORMDL 幽香向你微低裙摆施了一礼
@@ -669,6 +716,7 @@ IF LOCAL
 			ELSE
 				PRINTFORML 「不要弄出什么幺蛾子，没什么事就不要在别人家里闲逛」
 				PRINTFORMDL 幽香对你冷冷地说了一句就不管了，当然前提是你没有犯事
+				CALL yuka_AA("碰面2")
 			ENDIF
 		ELSE
 			IF CHK_DATENOW(CFLAG:约会中)
@@ -1408,7 +1456,7 @@ IF LOCAL
 			PRINTFORML 「%CALLNAME:MASTER%我接下来的话你认真听着」
 		ENDIF
 		PRINTFORML 「若只是单纯的爱欲我自不会打扰你们，只是%CALLNAME:MASTER%并非良人」
-		PRINTFORML 「我手中有他以往行苟且之事的把柄，未来不能预测但我可以肯定的告诉你现在的%CALLNAME:MASTER%就是个混蛋」
+		PRINTFORML 「我手中有他以往行苟且之事的把柄，未来不能预测但我可以肯定的告诉你现在的%CALLNAME:MASTER%就是个混蛋！」
 		PRINTFORML 「和这种家伙行鱼水之欢之事只会给自己招来麻烦」
 		PRINTFORML 「呼……我言尽于此，两位自便吧」
 		CALL yuka_sw_1001jian
@@ -1420,19 +1468,36 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG:1==2 
-		PRINTFORML 「为什么偷偷和%CALLNAME:ARG%在这里做啊！」
+		PRINTFORML 「%CALLNAME:MASTER%在吗？喂，不是约好时间了吗？」
+		PRINTFORML 「%CALLNAME:MASTER%你在这里吗…………啊！」
+		PRINTFORML 「%CALLNAME:MASTER%为什么和别人交缠在一起」
 		IF ARG==67
-			PRINTFORMDL
+			PRINTFORMDL 幽香在仔细辨认对方后更加愤怒
+			PRINTFORML 「怎么会是慧音你啊，%CALLNAME:MASTER%可恶啊」
+			PRINTFORML 幽香愤怒地走来在慧音暴露在外的屁股上狠拍一下
+			PRINTFORMDL 「呀！」
+			PRINTFORML 「你这个磨人的小妖精看我不扣爆你」
+			PRINTFORMDL 「唔啊……幽香你快帮我一起分担%CALLNAME:MASTER%的火力吧」
 		ELSEIF ARG==30
-			PRINTFORML 「偏偏是四季你这个家伙，看着吧」
+			PRINTFORML 「还偏偏是四季你这个家伙」
+			PRINTFORML 「啧啧，平日里威严庄重的阎魔大人居然是个抢人的色鬼！」
+			PRINTFORMDL 「才不是！」
+			PRINTFORMDL 幽香嘴里难得的对自己的夸赞分明是嘲弄
+			PRINTFORMDL 「明明%CALLNAME:MASTER%的意见才是关键」
+			PRINTFORML 「呵，那就让你输个彻底」
 		ELSEIF GROUPMATCH(ARG,27,114,115,116,117,118)
-			PRINTFORMDL 
+			PRINTFORMDL 「幽香……幽香姐姐，抱歉」
+			PRINTFORML 「不必和我道歉，你们也都是有自我意识的人了有喜欢的人很正常」
+			PRINTFORML 「问题是（咬牙切齿）%CALLNAME:MASTER%居然在梦幻馆里沾花惹草，大开后宫」
+			PRINTFORML 「看来有必要向你宣告谁才是梦幻馆的主人了」
 		ELSE
+			PRINTFORML 「不经意间%CALLNAME:MASTER%居然和别人拐走」
 			PRINTFORML 「气愤不甘也罢，我决不会就这样把%CALLNAME:MASTER%拱手让出」
 			PRINTFORML 「以我对你的了解加我一个也是可以的吧」
 		ENDIF
-		
-		PRINTFORMDL 
+		PRINTFORMW
+		PRINTFORMDL 脱去衣物累赘，此刻，幽香加入战场
+		CALL yuka_AA("色色3")
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1447,6 +1512,8 @@ IF LOCAL
 		PRINTFORMDL 在和你四目相对后的下一秒幽香便尴尬离开
 		PRINTFORML 「抱歉……抱歉……」
 		IF ARG==67
+			PRINTFORML 「啊……慧…」
+			PRINTFORMDL 在说出完整名字前幽香就止住了嘴，随后匆匆逃离
 			PRINTFORMDL （看见朋友情事现场什么的，好尴尬啊）
 		ELSEIF ARG==30
 			PRINTFORMDL （怎么偏偏是四季那家伙，最近还是避避她吧太尴尬了）
@@ -1483,11 +1550,18 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG:1==1
-		PRINTFORMDL
+		PRINTFORMDL 幽香迅速拾起衣物盖在胸前
+		PRINTFORMDL 即使是大妖怪的速度也无法掩盖两人情事的现场
 		IF ARG==67
+			PRINTFORML 「慧音？」
+			PRINTFORMDL 幽香心里略微舒坦，被好友看见算是不错的好运了
 		ELSEIF ARG==30
+			PRINTFORML 「四季？」
+			PRINTFORML 「被你抓到犯下色欲之罪的证据了呢」
 		ELSEIF GROUPMATCH(ARG,27,114,115,116,117,118)
+			PRINTFORML 「啊……我们是在摔跤玩游戏呢」
 		ELSE
+			PRINTFORML 幽香尴尬的躲在一旁穿衣
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1497,11 +1571,18 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG:1==2
-		PRINTFORMDL
+		PRINTFORMDL 幽香迅速拾起衣物盖在胸前
+		PRINTFORMDL 即使是大妖怪的速度也无法掩盖两人情事的现场
 		IF ARG==67
+			PRINTFORML 「慧音？」
+			PRINTFORMDL 幽香心里略微舒坦，被好友看见算是不错的好运了
 		ELSEIF ARG==30
+			PRINTFORML 「四季？」
+			PRINTFORML 「被你抓到犯下色欲之罪的证据了呢」
 		ELSEIF GROUPMATCH(ARG,27,114,115,116,117,118)
+			PRINTFORML 「啊……我们是在摔跤玩游戏呢」
 		ELSE
+			PRINTFORML 幽香尴尬的躲在一旁穿衣
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1511,11 +1592,18 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG:1==3
-		PRINTFORMDL
+		PRINTFORMDL 幽香迅速拾起衣物盖在胸前
+		PRINTFORMDL 即使是大妖怪的速度也无法掩盖两人情事的现场
 		IF ARG==67
+			PRINTFORML 「慧音？」
+			PRINTFORMDL 幽香心里略微舒坦，被好友看见算是不错的好运了
 		ELSEIF ARG==30
+			PRINTFORML 「四季？」
+			PRINTFORML 「被你抓到犯下色欲之罪的证据了呢」
 		ELSEIF GROUPMATCH(ARG,27,114,115,116,117,118)
+			PRINTFORML 「啊……我们是在摔跤玩游戏呢」
 		ELSE
+			PRINTFORML 幽香尴尬的躲在一旁穿衣
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1580,8 +1668,17 @@ IF LOCAL
 		LOCAL:1=1
 		;-------------------------------------------------
 		IF LOCAL:1&&!ARG:1
-			PRINTFORMDL 被幽香推倒了
-			PRINTFORMDL
+			IF CFLAG:68:1001==20 ||TALENT:炮友||TALENT:愛欲
+				PRINTFORMDL 幽香突然把手中累赘丢在一边，站起身来卸掉衣物
+				PRINTFORMDL 「幽香你怎么了？」
+				PRINTFORML 「哈？%CALLNAME:MASTER%你是笨蛋吗」
+				PRINTFORML 「我现在饿了啊！」
+				CALL yuka_AA("色色2")
+			ELSE
+				PRINTFORML 「呼……全身都燥热得不行了」
+				PRINTFORML 「抱歉了%CALLNAME:MASTER%,之后会补偿你的」
+				PRINTFORMDL 在幽香一声抱歉后被她推倒了
+			ENDIF
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -1591,7 +1688,18 @@ IF LOCAL
 		LOCAL:1=1
 		;-------------------------------------------------
 		IF LOCAL:1&&ARG:1==1
-			PRINTFORMDL
+			IF CFLAG:68:1001==20 ||TALENT:炮友||TALENT:愛欲
+				PRINTFORMDL 幽香突然把手中累赘丢在一边，站起身来卸掉衣物
+				PRINTFORMDL 「幽香你怎么了？」
+				PRINTFORML 「哈？%CALLNAME:MASTER%你是笨蛋吗」
+				PRINTFORML 「我现在饿了啊！」
+				CALL yuka_AA("色色2")
+			ELSE
+				PRINTFORML 「呼……全身都燥热得不行了」
+				PRINTFORML 「抱歉了%CALLNAME:MASTER%,之后会补偿你的」
+				PRINTFORMDL 幽香抱歉一声吼突然抱住了你
+				PRINTFORMDL 「唉，不要乱摸啊」
+			ENDIF
 			RETURN 1
 		ENDIF
 		PRINTFORMDL
@@ -1691,7 +1799,34 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==1
-		PRINTFORMDL
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「哎，是%CALLNAME:MASTER%啊，想和我一起洗？」
+			PRINTFORML 「不行不行，我今天可要一个人好好放松」
+			PRINTFORMDL 「那我怎么办？幽香你就过分地把我抛弃了吗？」
+			PRINTFORMDL 幽香纠结片刻后还是把你赶走了
+			PRINTFORML 「差点就被你迷惑了，不行不行」
+		ELSEIF TALENT:炮友||TALENT:愛欲&&CFLAG:68:1001>=10
+			PRINTFORMDL 「幽香，我能和你一起洗澡吗？」
+			PRINTFORML 「我看共浴是假，色色是真吧」
+			PRINTFORML 「等我喜欢再做色色的事情不好吗？」
+			PRINTFORMDL 「不是啦，是真的想和你一起沐浴，帮你洗洗头发也好啊」
+			PRINTFORML 「真的？」
+			PRINTFORMDL 「比港荣蛋糕还真」
+			PRINTFORMDL 幽香盯着你的眼睛看了一会
+			PRINTFORML 「真的也不行，我要一个人好好享受沐浴时光」
+		ELSE
+			PRINTFORML 「嗯？什么人敢随意闯进我的浴室？」
+			PRINTFORMDL 幽香在瞬间拉起浴巾遮住自己的雪白娇躯，激烈的弹幕将你打飞出去
+			PRINTFORMDL 连一句道歉或辩解的机会都没有，或者说对风见幽香来说你是否有意根本不重要
+			PRINTFORMDL 很好，便倒在我这魔炮之下吧
+			IF BASE:0:1>400
+				BASE:0:1-=400
+			ELSE
+				BASE:0:1=1
+			ENDIF
+			CALL yuka_sw_1001jian
+		ENDIF
+		PRINTFORMDW
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1700,11 +1835,49 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==2
-		PRINTFORMDL
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「是%CALLNAME:MASTER%啊，来的正好，我们一起洗澡吧」
+			PRINTFORML 「难以触及的后背就互相交给对方吧」
+			PRINTFORMDL 幽香毫无防备地继续洗着，甚至准备给你洗头
+		ELSEIF TALENT:炮友||TALENT:愛欲&&CFLAG:68:1001>=10
+			PRINTFORML 「是%CALLNAME:MASTER%啊，还不过来帮我清洁后背」
+			PRINTFORML 「要是做的满意的话，稍微和你玩玩也不是不可以哦」
+			PRINTFORMDL 幽香的话语如诱人的魔鬼勾引着你
+			PRINTFORMDL 一个男人，出于朋友角度帮忙清洗朋友的后背和头发，就是天王老子来了也不能说什么
+			CALL yuka_AA("色色1")
+		ELSE
+			PRINTFORMDL 和幽香突然的偶遇让你一时间不敢行动
+			PRINTFORMDL （怎么回事？我走错浴室了吗，不会要死了吧？）
+			PRINTFORML 「这里是公共浴室，要洗就洗愣在那作甚？」
+			PRINTFORMDL 「哦好好」
+			PRINTFORMDL 我如梦初醒行动起来
+			PRINTFORML 「可不要想着借机做什么坏事，不然……」
+		ENDIF
+		PRINTFORMDL 和幽香共处一浴室了
 		RETURN 1
 	ENDIF
 	;其他情况
-	PRINTFORMDL
+	PRINTFORMDL 难得的遇见幽香沐浴场景，要壮着胆子看一眼吗？
+		CALL ask_m("盯着看",CFLAG:68:1001>=10,"瞟一眼",1,"不看",1,)
+			SELECTCASE RESULT
+				CASE 0
+					PRINTFORML 「别盯着看……我，我会不好意思的……」
+					PRINTFORMDL 幽香掩耳盗铃式地扭过红透了的脸
+					CALL yuka_AA("浴室1")
+				CASE 1
+					IF CFLAG:68:1001<10
+						PRINTFORML 「嗯？哼…」
+						PRINTFORMDL 还好，只是瞄了一眼，幽香没有多做什么
+						PRINTFORMDL 如果失礼地盯着看的话……
+						PRINTFORMDL 在你脑中出现幽香警告的神情
+						PRINTFORML 「再看就把你眼珠子挖出来」
+					ELSE
+						PRINTFORMDL 幽香注意到了你的视线，但没有过多在意
+					ENDIF
+					CALL yuka_AA("浴室1")
+				CASE 2
+					PRINTFORMDL 嗯，区区花妖怎能乱我心智
+			ENDSELECT
 ENDIF
 RETURN 1
 
@@ -1728,7 +1901,10 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==2
-		PRINTFORMDL
+		PRINTFORML 「%CALLNAME:MASTER%为什么会在我的房间里？」
+		PRINTFORML 「无论你是想图谋不轨还是无意的失礼，这般触及底线的事情必须教训」
+		PRINTFORMDL 幽香生气地把你赶了出去
+		CALL yuka_sw_1001jian
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2292,6 +2468,18 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==1
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「抱歉%CALLNAME:MASTER%,最近可是危险日」
+			PRINTFORML 「虽然我很爱你,但现在生下孩子的话对你我可都不是好事」
+		ELSEIF TALENT:炮友||TALENT:愛欲
+			PRINTFORML 「拿出来吧…你肯定准备了备孕的东西了吧」
+			PRINTFORML 「要是连备用货都没有的话今天可不能全身心的做爱了」
+			PRINTFORML 「无论怎样这条底线可不能越过，不然可是大麻烦了」
+		ELSE
+			 PRINTFORML 「就算再过淫乱避孕也是必须的啊」
+			 PRINTFORML 「玩的再花也只是我们的事,如果牵扯到孩子可不行」
+			 PRINTFORML 「我可不想产下你的后代,再说了%CALLNAME:MASTER%你看着也不向乐意照顾孩子的人」
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2300,6 +2488,18 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==2
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「抱歉，虽然真的很爱%CALLNAME:MASTER%」
+			PRINTFORML 「我还没有做好成为一个新生命母亲的准备」
+		ELSEIF TALENT:炮友||TALENT:愛欲
+			PRINTFORML 「虽然和你无套做爱确实很不错可也要顾忌后果啊喂」
+			PRINTFORML 「人类的进步就在于扼制生物本能的克制，再怎么喜欢爱欲的快感也不能堕落成那样」
+			PRINTFORML 「做好避孕措施或者用其他地方吧」
+		ELSE
+			PRINTFORML 「你的蠢货里在想什么？」
+			PRINTFORML 「被下半身支配欲望冲昏头脑了吗妄图无套还是想和我诞下子嗣？」
+			PRINTFORML 「哪一个都是你这家伙自私自利的体现！」
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2308,6 +2508,15 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==3
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「不行不行，真的不可以」
+			PRINTFORML 「就算是%CALLNAME:MASTER%单独抚养负责我的内心也过意不去」
+		ELSE
+			PRINTFORML 「%CALLNAME:MASTER%是听不懂人话吗？」
+			PRINTFORML 「后果你也清楚，不行就是不行！」
+			CALL yuka_sw_1103jian
+		ENDIF
+		PRINTFORMDL 幽香强硬地拒绝了
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2316,6 +2525,9 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==4
+		PRINTFORML 「可以哦」
+		PRINTFORML 「今天可是安全日呢，就做个尽心吧」
+		CALL yuka_AA("色色3")
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2324,6 +2536,17 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==5
+		IF TALENT:恋人||TALENT:恋慕||CFLAG:68:1001==20
+			PRINTFORML 「可以哦」
+			PRINTFORML 「如果对象是%CALLNAME:MASTER%的话」
+			PRINTFORML 「即使生下孩子我也心甘情愿」
+			PRINTFORMDL 幽香笑着同意了
+		ELSE
+			PRINTFORML 「算了算了，还是来吧」
+			PRINTFORML 「事后我会做好避孕措施的，下不为例」
+			PRINTFORML 「万一了怎么办？呵，那你还央求我，还能怎么办，去永远亭一趟呗」
+		ENDIF
+		CALL yuka_AA("色色3")
 		RETURN 1
 	ENDIF
 ENDIF
@@ -2379,8 +2602,9 @@ IF LOCAL
 		PRINTFORML 「这些都不是问题，照顾花田从不是繁重的任务，搬家后我也能顾得上」
 		PRINTFORML 「梦月幻月她们也能自立，只要%CALLNAME:MASTER%点头…」
 		PRINTFORMDL 
-		PRINTFORMDL 『容我拒绝幽香，我』
+		PRINTFORMDL 『容我拒绝幽香，我……』
 		PRINTFORML 「听你这么一说确实没有必要，终究是我唐突了呢」
+		PRINTFORMDL 在你说出残酷拒绝前幽香懂事地主动躲开了
 		PRINTFORMDL 虽然接受了这个结果，可幽香脸上的不悦很是明显
 		TALENT:68:心情-=1
 		RETURN 1
@@ -2399,14 +2623,15 @@ IF LOCAL
 			PRINTFORML 「我不明白？你不是已经在梦幻馆了吗？」
 			PRINTFORMDL 幽香奇怪你这个『邻居』的意思
 		ELSE
-			PRINTFORML 「当然可以毕竟你已经是花田的接纳者了，搬到梦幻馆吧，我会清理出房间的」
+			PRINTFORML 「当然可以毕竟你已经是花田的接纳者了，来搬到梦幻馆吧，我会为你清理出房间的」
 		ENDIF
 		PRINTFORMW 
-		PRINTFORMDL 『我希望希望和幽香你一起同居,虽然比起邻居只是一点距离，可在我看来完全是不同的』
-		PRINTFORMDL 『我希望能成为幽香你倚靠的人，也想幽香你承继我内心的爱』
+		PRINTFORMDL 『我的意思是和幽香你一起同居,虽然比起邻居只是一点距离，可在我看来那完全是不同的』
+		PRINTFORMDL 『我希望能成为幽香你倚靠的人，也想幽香你承载我内心的爱』
 		PRINTFORMDL 『这就是所谓的建立属于彼此的家了吧』
 		PRINTFORMDL ……
-		PRINTFORMDL 沉默
+		PRINTFORMDW 沉默
+		CALL yuka_AA("姿态1")
 		PRINTFORMDL 『不行吗？看来是我自作多情了，抱歉让你见笑了』
 		PRINTFORMDL 突然幽香抱住了你
 		PRINTFORML 「可以，还记得我说的吗，花田永远是你的家」
@@ -2619,6 +2844,7 @@ IF LOCAL
 			PRINTFORMDL 幽香一把拉住准备离开的你
 			PRINTFORML 「%CALLNAME:MASTER%这呆子还是那么蠢笨，一定要我直说吗？」
 			PRINTFORML 「我想你了%CALLNAME:MASTER%，今晚夜色真美，留下来陪我赏月吧」
+			CALL yuka_AA("睡衣1")
 		ELSEIF TALENT:炮友||TALENT:愛欲
 			PRINTFORMDL 『哎呀，不知不觉和幽香你待到这么晚了』
 			PRINTFORMDL 你收拾起外衣，眼神是不是看向窗外对漆黑的夜色表示担忧
@@ -2626,6 +2852,7 @@ IF LOCAL
 			PRINTFORML 「不如今天姑且住在梦幻馆吧」
 			PRINTFORMDL 突然幽香抱住了你
 			PRINTFORML 「既然如此所幸留下来如何，我们便可以享受这个夜晚」
+			CALL yuka_AA("睡衣1")
 		ELSE
 			PRINTFORMDL 『哎呀，不知不觉和幽香你待到这么晚了』
 			PRINTFORMDL 你收拾起外衣，眼神是不是看向窗外对漆黑的夜色表示担忧
@@ -2646,6 +2873,7 @@ IF LOCAL
 		PRINTFORMDL 『好累啊，找个地方让我躺会吧幽香』
 		PRINTFORML 「当然，我准备一处极好的地方」
 		PRINTFORMDL 幽香笑着领你去了她的房间
+		CALL yuka_AA("睡衣2")
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2656,6 +2884,7 @@ IF LOCAL
 	IF LOCAL:1&&ARG==6
 		PRINTFORMDL 『今天就算了,过会有事情不会久留，就不打扰你了』
 		PRINTFORML 「好吧，就算不来房间坐坐那想喝点什么？」
+		CALL yuka_AA("睡衣2")
 		PRINTFORMW
 		RETURN 1
 	ENDIF
@@ -2666,6 +2895,7 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==7
+		CALL yuka_AA("睡衣1")
 		PRINTFORML 「那个……难得今天我们聊得这么起兴」
 		PRINTFORML 「不如我们继续探讨，秉烛夜谈，然后同床共枕」
 		PRINTFORMDL 幽香眨眨眼睛看着你
@@ -2805,7 +3035,14 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==3
-		PRINTFORMDL
+		PRINTFORML 「最近和%CALLNAME:MASTER%做的太过头了吧」
+		PRINTFORML 「做爱的频率和强度都太超前了，而且平日明面上的关系……」
+		PRINTFORMDL 幽香想起某天又一次和你幽会完，偶遇熟人询问自己是不是和你在谈恋爱
+		PRINTFORMDL 但自己心里清楚，那是爱和欲交织的混合品
+		PRINTFORML 「不能再碌碌而为了，我必须正视和%CALLNAME:MASTER%关系」
+		PRINTFORMDL 此刻花田暴君沉思起来
+		PRINTFORMDL 我对%CALLNAME:MASTER%已不再是简单的，最初的肉欲，不得不承认我已经喜欢上他了
+		PRINTFORML 「和比自己年纪小不少的男人纠缠吗，幽香你还真是过分呢」
 		;因为恋慕或爱欲加15的1001就会触发坦诚事件，这里把1001减到10作为中间的过渡，算是我自己的巧妙补丁吧
 		CFLAG:68:1001=11
 		RETURN 1
@@ -2816,7 +3053,19 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==4
-		PRINTFORMDL
+		PRINTFORMDL 深夜，幽香独自一人矗立在太阳花田里
+		PRINTFORMDL 夜晚的幻想乡凄冷孤寂，偌大的花田里只有风吹过向日葵的摩擦测测声
+		PRINTFORMDL 天空，冰冷的月亮挂在天边向幽香撒出骨子里刺痛的冰冷
+		PRINTFORMDL 为何？为何幽香要把自己丢在这种境地？
+		PRINTFORMDL 因为她爱上了一个人
+		PRINTFORML 「只有这种凄冷才能让我摆脱热闹欢快的迷惑」
+		PRINTFORML 「只有刺痛才能让我冷静地思考和%CALLNAME:MASTER%的一切」
+		PRINTFORMDL 然而幽香这无往不利的方法居然失效了
+		PRINTFORMDL 放空的大脑如卡住的齿轮无法动弹
+		PRINTFORMW 
+		CALL yuka_AA("吐露1")
+		PRINTFORML 「懂了，我喜欢%CALLNAME:MASTER%」
+		PRINTFORML 「而%CALLNAME:MASTER%也喜欢我，那便足够了」
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2825,7 +3074,15 @@ IF LOCAL
 	LOCAL:1=1
 	;-------------------------------------------------
 	IF LOCAL:1&&ARG==5
-		PRINTFORML 话说…已经和%CALLNAME:MASTER%
+		PRINTFORML 话说…已经和%CALLNAME:MASTER%做了多少次？
+		PRINTFORMDL 幽香在心里默默盘算着，出于不同的理由有时是%CALLNAME:MASTER%缠着自己，有时又是自己主动
+		PRINTFORMDL 两人间荒唐的爱合已经不知是多少次乃至习以为常，自己根本说不出详细数字正如你又怎能说出自己吃过的面包数？
+		PRINTFORML 「从什么开始的？我的私生活是何时被%CALLNAME:MASTER%闯入，还全身那种回忆…」
+		PRINTFORMDL 幽香红着脸夹着腿思考你
+		PRINTFORML 「%CALLNAME:MASTER%说话风趣又待人和善，保持现在的关系似乎也不错」
+		PRINTFORML 「既然决定了也不能钓着人家，就和%CALLNAME:MASTER%成为秘密伴侣吧」
+		CALL yuka_AA("睡衣1")
+		PRINTFORMW 【天人感应】：作者写了爱欲线，感兴趣的可以游玩体验下，和恋爱线不同的体验哦
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2855,6 +3112,7 @@ IF LOCAL
 		PRINTFORML 「%CALLNAME:MASTER%…真是可恶的家伙，把我玩弄成这样」
 		PRINTFORMDL 不久前还在念叨的人此刻却在暗骂，真是有趣
 		PRINTFORMDL 幽香骂着，手鬼使神差下又伸向了下面
+		CALL yuka_AA("睡衣1")
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2912,11 +3170,13 @@ IF LOCAL
 			PRINTFORMDL 幽香脑中浮现朝思夜想的人来，一手玩弄柔软硕大的乳房，另一手轻拢慢捻抹复挑
 			PRINTFORMDL 从最开始温柔地摩擦变得粗暴，喘息加重，口中的言语也逐渐变态起来
 			PRINTFORMDL 眼神迷离，幽香的脑中此刻只有模拟出的和你交阮的场景
+			CALL yuka_AA("色色1")
 		ELSEIF TALENT:炮友||TALENT:愛欲
 			PRINTFORML 「%CALLNAME:MASTER%…%CALLNAME:MASTER%……」
 			PRINTFORMDL 从最开始温柔地摩擦变得粗暴，喘息加重，口中的言语也逐渐变态起来
 			PRINTFORMDL 眼神迷离，幽香的脑中此刻只有模拟出的和你交阮的场景
 			PRINTFORML 「好想真的和%CALLNAME:MASTER%做啊」
+			CALL yuka_AA("色色1")
 		ELSE
 		ENDIF
 			PRINTFORML 「要一一♥」
@@ -2941,6 +3201,7 @@ IF LOCAL
 		PRINTFORMDL 于是那本应安静无声的寝室，突然响起一声轻哼，如平地炸起惊雷
 		PRINTFORML 「嗯哼……嗯哼……」
 		PRINTFORMDL 随着兴致高涨幽香逐渐控制不住，床垫晃动吵醒了你
+		CALL yuka_AA("睡衣3")
 		IF TALENT:恋人||TALENT:恋慕||TALENT:愛欲
 			CALL ASK_M("摸过去",1,"闭眼",1,"航班起飞",1,)
 			SELECTCASE RESULT
@@ -4167,7 +4428,7 @@ IF LOCAL
 			PRINTFORML 「唔姆……」
 			PRINTFORMDL 明明只是在吃饭却让人享心悦目
 			IF CFLAG:68:1001<10
-				PRINTFORMDL 幽香沉浸在食物之中
+				PRINTFORMDL 幽香沉浸在食物之中，无暇顾及你
 			ELSE
 				SELECTCASE RAND:2
 					CASE 0
@@ -4177,7 +4438,7 @@ IF LOCAL
 					CASE 1
 						PRINTFORMDL 『要喝饮料吗？』
 						PRINTFORML 「茶和水就好，味道过重的饮品只会破坏食材的本味」
-						PRINTFORML 「我不想破坏这次的体验」
+						PRINTFORML 「我不想破坏这次的用餐」
 				ENDSELECT
 			ENDIF
 		ELSE
@@ -4348,10 +4609,23 @@ IF LOCAL
 		;▼垂钓,（～在悠闲地钓鱼。）
 		IF !ARG:1
 			;行動中
-			PRINTFORMDL
+			PRINTFORMDL 幽香拿出鱼竿随意找了处地方坐下
+			PRINTFORMDL 最朴素的诱饵，最简单的手法，就这么开始垂钓了
+			SELECTCASE RAND:2
+				CASE 0
+					PRINTFORMDL 制式的钓具，标准的动作，幽香就那么立着偏又让人感觉她懒散
+					PRINTFORMDL 眼前的水域还是那般寂静
+					PRINTFORMDL 若非你曾在此垂钓过肯定会猜测里面没有鱼
+				CASE 1
+					PRINTFORMDL 哗啦哗啦，水域里传来些许动静
+					PRINTFORMDL 浮漂微弱的上下晃动，一直等待时机的幽香抓准时机立刻出手
+					PRINTFORMDL 双手紧握把手，双腿立定膝盖微屈，腰肩一同发力甩动吊杆在空中连带着鱼舞出一个美丽的半月
+					PRINTFORMDL 「哦哦，幽香好厉害」
+			ENDSELECT
 		ELSE
 			;结束时
-			PRINTFORMDL
+			PRINTFORMDL 幽香钓起最后一杆，结束了这次的垂钓之旅
+			PRINTFORML 「吼吼，看看有多少收获」
 		ENDIF
 	CASE 11
 		;▼実験,（～正在进行奇怪的实验。。）
@@ -4372,11 +4646,12 @@ IF LOCAL
 				PRINTFORMDL 拿出自制的瓜子嗑了起来
 				PRINTFORML 「吧唧吧唧」
 				PRINTFORMDL 『我们也要吃！』『对，吃瓜子！』
+				PRINTFORMDL 花田附近的妖精被瓜子香气吸引过来
 				PRINTFORMDL 分出一半的瓜子散给前来讨要的小家伙们
 			ELSE
 				PRINTFORMDL 幽香寻了处地方躺着
 				PRINTFORML 「偷得浮生半日闲啊……」
-				PRINTFORMDL 威风吹过，没有要担心的事情，没有要处理的事情，就这么躺着就好
+				PRINTFORMDL 微风吹过，没有要担心的事情，没有要处理的事情，就这么躺着就好
 				PRINTFORMDL 眼睛不自觉地要合上了
 			ENDIF
 		ELSE
@@ -5206,21 +5481,21 @@ IF LOCAL:1
 	CASE "かなり遠い"
 		RESULTS=%TEXTR("全然遠いよー/まだまだずっと遠いー")%
 	CASE "前"
-		RESULTS=%TEXTR("前にあるよ/そのまま、そのまま/そっちそっち")%
+		RESULTS=%TEXTR("前にあるよ/そのまま、そのまま/そっちそっち")%大步往前走吧
 	CASE "少し前"
-		RESULTS=%TEXTR("ちょっとだけ前！/すこーし前/あと一歩！")%
+		RESULTS=%TEXTR("ちょっとだけ前！/すこーし前/あと一歩！")%小夸一步
 	CASE "後ろ"
-		RESULTS=%TEXTR("後ろ向いてる！/逆、逆！/そっちじゃないよー")%
+		RESULTS=%TEXTR("後ろ向いてる！/逆、逆！/そっちじゃないよー")%后退亦是前进
 	CASE "少し後ろ"
 		RESULTS=%TEXTR("すぐ後ろだよ！/すこーし後ろ/一歩後ろ！")%
 	CASE "右"
-		RESULTS=%TEXTR("右だよ/右、右/もっと右")%
+		RESULTS=%TEXTR("右だよ/右、右/もっと右")%右边方向
 	CASE "少し右"
-		RESULTS=%TEXTR("ちょっとだけ右/まだ右かな")%
+		RESULTS=%TEXTR("ちょっとだけ右/まだ右かな")%一点钟方向
 	CASE "左"
-		RESULTS=%TEXTR("左だよ/左、左/もっと左")%
+		RESULTS=%TEXTR("左だよ/左、左/もっと左")%左边方向
 	CASE "少し左"
-		RESULTS=%TEXTR("ちょっとだけ左/まだ左かな")%
+		RESULTS=%TEXTR("ちょっとだけ左/まだ左かな")%十一点钟方向
 	CASE "結果"
 		;-------------------------------------------------
 		;结束后的一句话

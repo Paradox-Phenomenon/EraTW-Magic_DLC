@@ -17,9 +17,33 @@
 ;**************************************************************
 
 @STONELEVEL(difficulty)
-#DIM C_ID
+#DIM CID
 #DIM difficulty
-#DIMS ENEMY
+#DIM ENEMY,7,20
+ENEMY:0:0=129,5,7;久侘歌/桑尼/斯塔
+ENEMY:1:0=57,76,23;心/小町/妖夢
+ENEMY:2:0=1,121,55;霊夢/成美/白蓮
+ENEMY:3:0=51,59,106;荷取/小悪魔/菫子
+ENEMY:4:0=92,90,44;布都/青娥/爱莲
+ENEMY:5:0=132,124,56,30;袿姫/隠岐奈/神子/映姫
+ENEMY:6:0=129,5,7,57,76,23,1,121,55,51,59,106,92,90,44,132,124,56,30,113;上面的+赫卡
+IF !INRANGE(difficulty,0,8)
+	difficulty=LIMIT(difficulty,0,8)
+	PRINTFORMW 难度错误，现在修正为{difficulty}
+ENDIF
+SELECTCASE difficulty
+	CASE 0 TO 4
+		LOCAL=3
+	CASE 5
+		LOCAL=4
+	CASE 6
+		LOCAL=20
+	CASE 7,8
+		CID=127;瓔花
+ENDSELECT
+SIF INRANGE(difficulty,0,6)
+	CID=ENEMY:difficulty:(RAND:LOCAL)
+[SKIPSTART]
 #DIMS 相手候補, 9
 
 相手候補:0 = 久侘歌/桑尼/斯塔
@@ -28,23 +52,24 @@
 相手候補:3 = 荷取/小悪魔/菫子
 相手候補:4 = 布都/青娥/爱莲
 相手候補:5 = 袿姫/隠岐奈/神子/映姫
-相手候補:6 = 久侘歌/妖夢/成美/斯塔/心/小町/霊夢/白蓮/小悪魔/菫子/荷取/桑尼/心/映姫/爱莲/袿姫/隠岐奈/布都/青娥/神子/赫卡提亚
+相手候補:6 = 久侘歌/妖夢/成美/斯塔/心/小町/霊夢/白蓮/小悪魔/菫子/荷取/桑尼/心/映姫/爱莲/袿姫/隠岐奈/布都/青娥/神子/赫卡提亚;?两个心
 相手候補:7 = 瓔花
 相手候補:8 = 瓔花
 
 LOCALS = %TEXTR(@"%相手候補:difficulty%")%
-C_ID = NameToID(LOCALS)
-IF C_ID == -1
+CID = NameToID(LOCALS)
+IF CID == -1
 	THROW %LOCALS%不存在
 ENDIF
-CALL PRINT_FACE(C_ID)
+[SKIPEND]
+CALL PRINT_FACE(CID)
 IF difficulty == 8
 	;ラスボス特殊分岐
-	TRYCALLFORM StoneMessage_{C_ID}("lastbattle_b")
+	TRYCALLFORM StoneMessage_{CID}("lastbattle_b")
 ELSE
-	TRYCALLFORM StoneMessage_{C_ID}("beginning")
+	TRYCALLFORM StoneMessage_{CID}("beginning")
 ENDIF
-CALL STONEBATTLE(difficulty, C_ID)
+CALL STONEBATTLE(difficulty, CID)
 RETURN RESULT
 
 @STONELEVEL_8

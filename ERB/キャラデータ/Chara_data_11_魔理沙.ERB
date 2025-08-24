@@ -22,6 +22,8 @@ SELECTCASE ARG
 				RETURN -100
 			CASE P535爱莲宅・寝室, P537爱莲宅・風呂, P541朱鷺子的棲息処, P542莉格露的棲息処, P543露米娅的棲息処, P544成美の小屋, P545慧ノ子の棲み処
 				RETURN -100
+			CASE P310図書館
+				RETURN 10
 		ENDSELECT
 	;出現場所
 	CASE 7
@@ -83,7 +85,7 @@ CASE "便装：上身衣服１"
 	CALLF MAKE_INT(V_NAME, CLOTHES_ID("上身衣服１", "无袖上衣"))
 
 CASE "固有内衣形容詞"
-	CALLF MAKE_STR(V_NAME, "少女情调")
+	CALLF MAKE_STR(V_NAME, "少女情调的")
 CASE "固有下半身内衣名"
 	CALLF MAKE_STR(V_NAME, "荷叶边灯笼裤")
 CASE "固有上半身内衣"
@@ -142,6 +144,7 @@ CASE "感性：嫌い"
 	CALLF MAKE_STR(V_NAME, "繊細/" + "妖怪/" * 5)
 ENDSELECT
 
+
 ;-------------------------------------------------
 ;固有料理設定
 ;DISH_NAME          料理名
@@ -175,16 +178,28 @@ IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
 	IF CHECK_NUDE(CHARA)
 		;裸
-		IF FLAG:立ち絵種類
-			;顔絵
-			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+		IF FLAG:立絵種類
+			;颜绘
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF DAY:2 == 4
+					RESULTS = _冬服
+				ELSEIF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり
+				ENDIF
+			ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
 				IF DAY:2 == 4
 					RESULTS = _冬服
 				ENDIF
 			ENDIF
 		ELSE
 			;立ち絵
-			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF DAY:2 == 4
+					RESULTS = _冬服
+				ELSEIF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり
+				ENDIF
+			ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
 				IF DAY:2 == 4
 					RESULTS = _冬服
 				ENDIF
@@ -192,9 +207,27 @@ IF CFLAG:CHARA:差し替え適用
 		ENDIF
 	ELSE
 		;服
-		IF FLAG:立ち絵種類
+		IF FLAG:立絵種類
 			;顔絵
-			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF CHECK_CLO("bra_visible")
+					IF DAY:0 % 2 && DAY:2 != 4
+						RESULTS = _日替わり下着
+					ELSE
+						RESULTS = _内衣
+					ENDIF
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ELSEIF DAY:2 == 4
+					RESULTS = _冬服
+				ELSEIF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり
+				ENDIF
+			ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
 				IF CURRENT_CLOTHES_SET(CHARA) == 55
 					RESULTS = _バニー
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
@@ -206,12 +239,45 @@ IF CFLAG:CHARA:差し替え適用
 				ELSEIF EQUIP:CHARA:上半身下着１ == 13 && CHECK_CLO("bra_visible")
 					RESULTS = _寝間着
 				ENDIF
-			ELSE
-
 			ENDIF
 		ELSE
 			;立ち絵
-			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
+				IF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ != 0
+					IF DAY:0 % 2 && DAY:2 != 4
+						RESULTS = _日替わり下着
+					ELSE
+						RESULTS = _内衣
+					ENDIF
+				ELSEIF CHECK_CLO("bra_visible") && EQUIP:CHARA:下半身下着２ == 0
+					IF DAY:0 % 2 && DAY:2 != 4
+						RESULTS = _日替わりノーパン下着
+					ELSE
+						RESULTS = _ノーパン下着
+					ENDIF
+				{
+				ELSEIF (!EQUIP:CHARA:上半身内衣１ && !EQUIP:CHARA:上半身内衣２ && !EQUIP:CHARA:外搭 &&
+            			!EQUIP:CHARA:和服 && !EQUIP:CHARA:連衣裙 &&
+						!EQUIP:CHARA:緊身内衣 && !EQUIP:CHARA:連体内衣) &&
+						EQUIP:CHARA:下半身内衣２ != 0
+				}
+					IF DAY:0 % 2 && DAY:2 != 4
+						RESULTS = _日替わりノーブラ下着
+					ELSE
+						RESULTS = _ノーブラ下着
+					ENDIF
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
+					RESULTS = _バニー
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+					RESULTS = _変T
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+					RESULTS = _セーラー
+				ELSEIF DAY:2 == 4
+					RESULTS = _冬服
+				ELSEIF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり
+				ENDIF
+			ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
 				IF CURRENT_CLOTHES_SET(CHARA) == 55
 					RESULTS = _バニー
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
@@ -220,7 +286,7 @@ IF CFLAG:CHARA:差し替え適用
 					RESULTS = _セーラー
 				ELSEIF DAY:2 == 4
 					RESULTS = _冬服
-				ELSEIF EQUIP:CHARA:上半身下着１ == 13 && CHECK_CLO("bra_visible")
+				ELSEIF EQUIP:CHARA:上半身内衣１ == 13 && CHECK_CLO("bra_visible")
 					RESULTS = _寝間着
 				ENDIF
 			ELSE
@@ -231,9 +297,9 @@ IF CFLAG:CHARA:差し替え適用
 ELSE
 	;通常画像
 	IF CHECK_NUDE(CHARA)
-		;裸
 		SIF BATHROOM() && !CFLAG:诶嘿嘿
 			RESULTS = _浴袍
+
 	ELSE
 		;服
 		SIF DAY:0 % 2 && DAY:2 != 4
@@ -244,11 +310,11 @@ ENDIF
 ;IMAGE_I11_体形(CHARA)-----------------------------------------------------------------------
 ;キャラクター特有の体形表示条件
 ;エフェクトを共有する体形差分はこちら
-;服装を指定しても自動で表示されるので注意
-;使用時注意点:
-;	RESULTSに体形を格納すること
-;	書式は %体形%%服装% 適宜"_"等入れること
-;	"巨乳"は本編で実装済み %体形%巨乳%服装% で追記可能
+;服装を指定しても自动で表示されるので注意
+;使用时注意点:
+;	RESULTSに体形を格纳すること
+;	书式は %体形%%服装% 适宜"_"等入れること
+;	"巨乳"は本编で实装済み %体形%巨乳%服装% で追记可能
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_体形(CHARA)
 #DIM CHARA
@@ -256,41 +322,41 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_特殊表情(CHARA)--------------------------------------------------------------------
 ;キャラクター特有の表情表示条件
-;時間停止中でも維持する表情はこちら
-;使用時注意点:
-;	RESULTS:0に表情を格納
-;	RESULTS:1にマウスオーバー時の表情を格納すること
-;	"通常","笑顔","怒り","発情","睡眠"は本編で実装済み
+;时间停止中でも维持する表情はこちら
+;使用时注意点:
+;	RESULTS:0に表情を格纳
+;	RESULTS:1にマウスオーバー时の表情を格纳すること
+;	"通常","笑颜","愤怒","发情","睡眠"は本编で实装済み
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊表情(CHARA)
 #DIM CHARA
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
 			IF CFLAG:CHARA:睡眠 ;prevents overlapping status breaking the sprite
 				RESULTS:0 = 睡眠
 				RESULTS:1 = 睡眠
 			ELSEIF DAY:2 == 4
-			ELSEIF EQUIP:CHARA:上半身下着１ == 13 && CHECK_CLO("bra_visible")
+			ELSEIF EQUIP:CHARA:上半身内衣１ == 13 && CHECK_CLO("bra_visible")
 			ELSE
 				SELECTCASE SELECTCOM
 					CASE 0 TO 15
@@ -309,14 +375,14 @@ IF CFLAG:CHARA:差し替え適用
 
 		ENDIF
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
@@ -334,26 +400,26 @@ ENDIF
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_差分(CHARA)-----------------------------------------------------------------------
 ;キャラクター特有の差分表示条件
 ;裸やエフェクトを共有しない画像はこちら
-;使用時注意点:
-;	RESULTSに差分を格納すること
-;	書式は {CHARA}%差分% 適宜"_"等入れること
+;使用时注意点:
+;	RESULTSに差分を格纳すること
+;	书式は {CHARA}%差分% 适宜"_"等入れること
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_差分(CHARA)
 #DIM CHARA
@@ -361,28 +427,28 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 		SIF DAY:2 == 4
 			RESULTS = _冬服
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_特殊照れ(CHARA)--------------------------------------------------------------------
 ;キャラクター特有の照れエフェクト表示条件
-;使用時注意点:
-;	RESULTSに特殊照れを格納すること
-;	書式は %特殊照れ%照れ
-;	"裸"は本編で実装済み %特殊照れ%裸照れ で追記可能
+;使用时注意点:
+;	RESULTSに特殊照れを格纳すること
+;	书式は %特殊照れ%照れ
+;	"裸"は本编で实装済み %特殊照れ%裸照れ で追记可能
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊照れ(CHARA)
 #DIM CHARA
@@ -390,15 +456,37 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
-		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+	IF FLAG:立絵種類
+		;颜绘
+		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
 			IF CURRENT_CLOTHES_SET(CHARA) == 55
 				RESULTS = バニー
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
 				RESULTS = 変T
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
 				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				IF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり下着
+				ELSE
+					RESULTS = _内衣
+				ENDIF
+			ELSEIF CFLAG:CHARA:睡眠
+				RESULTS = 睡眠
+			ELSEIF DAY:2 == 4
+				RESULTS = 冬服
+			ELSEIF DAY:0 % 2 && DAY:2 != 4
+				RESULTS = _日替わり
+			ENDIF
+		ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
+			IF CURRENT_CLOTHES_SET(CHARA) == 55
+				RESULTS = バニー
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+				RESULTS = 変T
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				RESULTS = 内衣
 			ELSEIF DAY:2 == 4
 				RESULTS = 冬服
 			ENDIF
@@ -406,23 +494,23 @@ IF CFLAG:CHARA:差し替え適用
 
 		ENDIF
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_特殊吐息(CHARA)--------------------------------------------------------------------
 ;キャラクター特有の吐息エフェクト表示条件
-;使用時注意点:
-;	RESULTSに特殊吐息を格納すること
-;	書式は %特殊吐息%吐息
-;	"裸"は本編で実装済み %特殊吐息%裸吐息 で追記可能
+;使用时注意点:
+;	RESULTSに特殊吐息を格纳すること
+;	书式は %特殊吐息%吐息
+;	"裸"は本编で实装済み %特殊吐息%裸吐息 で追记可能
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊吐息(CHARA)
 #DIM CHARA
@@ -430,39 +518,59 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
-		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+	IF FLAG:立絵種類
+		;颜绘
+		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
 			IF CURRENT_CLOTHES_SET(CHARA) == 55
 				RESULTS = バニー
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
 				RESULTS = 変T
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
 				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				IF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり下着
+				ELSE
+					RESULTS = _内衣
+				ENDIF
+			ELSEIF CFLAG:CHARA:睡眠
+				RESULTS = 睡眠
+			ELSEIF DAY:2 == 4
+				RESULTS = 冬服
+			ELSEIF DAY:0 % 2 && DAY:2 != 4
+				RESULTS = _日替わり
+			ENDIF
+		ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
+			IF CURRENT_CLOTHES_SET(CHARA) == 55
+				RESULTS = バニー
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+				RESULTS = 変T
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				RESULTS = 内衣
 			ELSEIF DAY:2 == 4
 				RESULTS = 冬服
 			ENDIF
-		ELSE
-
 		ENDIF
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_特殊汗(CHARA)--------------------------------------------------------------------
 ;キャラクター特有の汗エフェクト表示条件
-;使用時注意点:
-;	RESULTSに特殊汗を格納すること
-;	書式は %特殊汗%汗
-;	"裸"は本編で実装済み %特殊汗%裸汗 で追記可能
+;使用时注意点:
+;	RESULTSに特殊汗を格纳すること
+;	书式は %特殊汗%汗
+;	"裸"は本编で实装済み %特殊汗%裸汗 で追记可能
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊汗(CHARA)
 #DIM CHARA
@@ -470,15 +578,41 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
-		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1, 2)
+	IF FLAG:立絵種類
+		;颜绘
+		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
 			IF CURRENT_CLOTHES_SET(CHARA) == 55
 				RESULTS = バニー
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
 				RESULTS = 変T
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
 				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				IF DAY:0 % 2 && DAY:2 != 4
+					RESULTS = _日替わり下着
+				ELSE
+					RESULTS = _内衣
+				ENDIF
+			ELSEIF CFLAG:CHARA:睡眠
+				RESULTS = 睡眠
+			ELSEIF DAY:2 == 4
+				IF CHECK_NUDE(CHARA)
+					RESULTS = 冬服裸
+				ELSE
+					RESULTS = 冬服
+				ENDIF
+			ELSEIF DAY:0 % 2 && DAY:2 != 4
+				RESULTS = _日替わり
+			ENDIF
+		ELSEIF GROUPMATCH(CFLAG:CHARA:差し替え適用, 2)
+			IF CURRENT_CLOTHES_SET(CHARA) == 55
+				RESULTS = バニー
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+				RESULTS = 変T
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+				RESULTS = セーラー
+			ELSEIF CHECK_CLO("bra_visible")
+				RESULTS = 内衣
 			ELSEIF DAY:2 == 4
 				IF CHECK_NUDE(CHARA)
 					RESULTS = 冬服裸
@@ -488,20 +622,20 @@ IF CFLAG:CHARA:差し替え適用
 			ENDIF
 		ENDIF
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
 ;IMAGE_I11_特殊エフェクトチェック(CHAR, エフェクト)--------------------------------------------
-;キャラクター特有のエフェクト判定  特殊エフェクトを直接指定したい場合に参照
-;引数 "エフェクト" に固有のエフェクトが含まれるかを判定する
+;キャラクター特有のエフェクト判定  特殊エフェクトを直接指定したい场合に参照
+;参数 "エフェクト" に固有のエフェクトが含まれるかを判定する
 ;例の通り、STRFINDを使用してください
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊エフェクトチェック(CHARA, エフェクト)
@@ -520,9 +654,9 @@ RETURN 0
 
 ;IMAGE_I11_特殊エフェクト(CHARA)--------------------------------------------------------------------
 ;キャラクター特有のエフェクト表示条件
-;使用時注意点:
-;	RESULTS配列に特殊エフェクトを格納
-;	RETURNで追加するエフェクト数を返却すること
+;使用时注意点:
+;	RESULTS配列に特殊エフェクトを格纳
+;	RETURNで追加するエフェクト数を返还すること
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I11_特殊エフェクト(CHARA)
 #DIM CHARA
@@ -531,17 +665,17 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
@@ -556,17 +690,17 @@ VARSET RESULTS
 
 IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ELSE
 	;通常画像
-	IF FLAG:立ち絵種類
-		;顔絵
+	IF FLAG:立絵種類
+		;颜绘
 	ELSE
-		;立ち絵
+		;立绘
 	ENDIF
 ENDIF
 
