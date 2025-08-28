@@ -11,6 +11,11 @@
 #DIM 胖次消費
 #DIM なだめ判定
 #DIM DYNAMIC CAN_BE_UNLOKED_ROOM_SAVE
+;addition custom code, handle custom COM values
+CALL Add_Custom_USERCOM(RESULT)
+IF RESULT == -1
+	RETURN 0
+ENDIF
 $LOOP_USERCOM
 ;生动记忆补丁
 SIF MEETCHECKDLC
@@ -104,15 +109,15 @@ ELSEIF RESULT >= 0 && RESULT < 800
 			IF TALENT:TARGET:妊娠
 				PRINTW 不能对孕妇做这种事！
 				RETURN 0
-;			ELSEIF !GETBIT(CFLAG:TARGET:既成事實, 4)
-;				CALL ＳＭ許可
+			;ELSEIF !GETBIT(CFLAG:TARGET:既成事實, 4)
+			;	CALL ＳＭ許可
 			ENDIF
 		CASE 60 TO 71
 			IF TALENT:TARGET:妊娠 && (CFLAG:TARGET:903 <= 30 || CFLAG:TARGET:903 >= 71)
 				PRINTFORMW 现在最好不要对%CALLNAME:TARGET%乱来比较好
 				RETURN 0
-;			ELSEIF !GETBIT(CFLAG:TARGET:既成事實, 3)
-;				CALL Ａ許可
+			;ELSEIF !GETBIT(CFLAG:TARGET:既成事實, 3)
+			;	CALL Ａ許可
 			ENDIF
 	ENDSELECT
 	SIF GLOBAL_COMABLE2(SELECTCOM)
@@ -128,7 +133,7 @@ ELSEIF RESULT >= 0 && RESULT < 800
 		TRYCALLFORM CAN_COM{SELECTCOM}(0)
 		RETURN 0
 	ENDIF
-;----------推倒补丁测试----------
+	;----------推倒补丁测试----------
 	LOCAL:1 = 时停能力者预处理()
 	LOCALS:1 = %CALLNAME:(RESULT:1)%
 	LOCALS:2 = %CALLNAME:(RESULT:2)%
@@ -144,7 +149,7 @@ ELSEIF RESULT >= 0 && RESULT < 800
 			RETURN 0
 		ENDIF
 	ENDIF
-;----------推倒补丁测试----------
+	;----------推倒补丁测试----------
 	;ダミーTRAIN
 	DOTRAIN 999
 ;履歴表示（未実装）
@@ -498,6 +503,8 @@ ELSEIF RESULT == 839
 	RETURN -1
 ELSEIF RESULT == 840
 	CFLAG:allowKojoCom = !CFLAG:allowKojoCom
+ELSEIF RESULT == 841
+	ADD_CUSTOM_COM_SWITCH = !ADD_CUSTOM_COM_SWITCH
 ELSEIF RESULT == 4000
 	CFLAG:自動喘息 ++
 	SIF CFLAG:自動喘息 > 2
@@ -789,11 +796,14 @@ ELSEIF RESULT == 3999
 		FLAG:XRay_show = (FLAG:XRay_show+1)%8
 	ENDIF
 ; --- end ---
+;debug指令，暂时不用
+[IF DEBUG]
 ELSEIF RESULT == 9999
 	FOR LOCAL,1,CHARANUM
 		PRINTFORMLC %CALLNAME:LOCAL% 現在位置：{CFLAG:LOCAL:現在位置}
 	NEXT
-; --- 魔改内容 - 存檔操作 ---
+[ENDIF]
+; --- 魔改内容 - 存档操作 ---
 ELSEIF RESULT == 10000
 	CALL Real_Time_Save(1001, 1)
 ELSEIF RESULT == 10001
