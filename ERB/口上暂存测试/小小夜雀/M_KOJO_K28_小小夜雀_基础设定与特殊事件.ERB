@@ -1,0 +1,973 @@
+;-------------------------------------------------
+; eraTheWorld 4.942用 米斯蒂娅口上
+;-------------------------------------------------
+;自己试着做一个口上，其他人可以进行修正，加笔，改变，捆绑。
+;还在制作中，如有问题，请见谅。
+;有不少都是参考别人的模版的。
+;修改与交流请在贴吧等论坛，不要用于商业用途（尽管估计也没这个实力）
+;祝大家玩的开心
+
+;### 口上存在判定 ###################################
+@M_KOJO_K28_2(ARG)
+;第一个数字为角色，第二个为同角色的口上顺序
+RESULTS = _小小夜雀
+;能够区分口上事件
+RESULTS:1 = 小小夜雀版
+RETURN 1
+
+;### 口上基本设定 ##################################
+@M_KOJO_小小夜雀_FLAGSETTING_K28
+;口上的基本标志设置应在此处完成
+;本口上使用到的TCVAR、CFLAG
+;CFLAG:1001 夜雀食堂事件组 帮助工作可触发
+
+;请使用以下注释内的标志，必要时取消注释
+;此处的变量名是日文原版的变量名，请参考CSV\CFLAG.CSV文件内的变量名进行修正
+
+;请将此处的 X 替换为角色编号
+
+;将眠姦口上有、時間停止口上有、なりきり（扮演模式）口上有这些CFLAG变量设置为 1 ，才能在眠姦、時間停止、扮演模式时显示口上
+;否则，以上情况中，你的角色将不会有任何反应
+;CFLAG:X:眠姦口上有 = 1
+;CFLAG:X:時間停止口上有 = 1
+;CFLAG:X:なりきり口上有 = 0
+
+;当 破瓜キャンセル口上有 设置为1时，在第一次插入时会触发@M_KOJO_EVENT_KX_LOST_VIRGIN_STOP并根据结果来决定是否成功
+;CFLAG:X:破瓜キャンセル口上有 = 0
+
+;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_EVENT_KX_PERMISSIONで押し倒しの成否を操作できます
+;如果设置为1，初次以及通常的推倒，可以用M_KOJO_EVENT_KX_PERMISSION控制是否成功推倒
+
+;CFLAG:X:口上内抱き寄せ判定_初回 = 0
+;CFLAG:X:口上内抱き寄せ判定_通常 = 0
+
+;设置为1时，将无法推倒（但是时醉睡奸不一定不能）
+;以下是一个例子，在无恋慕并且无炮友时禁止推倒
+
+;IF !TALENT:X:恋慕 && !TALENT:X:セフレ
+;	CFLAG:X:押し倒し禁止 = 1
+;ELSE
+;	CFLAG:X:押し倒し禁止 = 0
+;ENDIF
+
+;如果你把来訪不能设置为 1 ，角色不住在主地图时将不会来访
+;以下是一些用途示例，效果是让角色在见面之前不会来访
+
+;IF !CFLAG:X:面識
+;	CFLAG:X:来訪不能 = 1
+;ELSE
+;	CFLAG:X:来訪不能 = 0
+;ENDIF
+
+;注、如果您需要修改角色的初始设置，请在下方IF ENDIF期间添加
+;请不要修改FIRSTTIME("TALENT_CHANGE")，这个可以让修改仅修改一次
+;以下是一个例子，效果是初始设定为处女并修正处女丧失履历
+
+;IF FIRSTTIME("TALENT_CHANGE")
+;TALENT:X:0 = 0 
+;CSTR:X:処女喪失履歴 = 还没被任何人进入
+;ENDIF 
+
+;### 口上色判定 ###################################
+@M_KOJO_小小夜雀_COLOR_K28
+SETCOLOR 0xCC7EB1
+;SETCOLO是改变口上的颜色（尽管我也不知道那个对应的是哪个颜色）
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"UPDATE判定"
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@M_KOJO_小小夜雀_UPDATE_K28
+;判定是哪个口上使用的UPDATE
+;这个也等以后补
+RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"ENCOUNTER"事件（附加事件）
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+@M_KOJO_小小夜雀_ENCOUNTER_K28
+;初次见面
+PRINTL 
+IF CFLAG:28:職種 == 44 && CFLAG:28:現在位置 == CFLAG:28:職場
+;营业中
+    IF BASE:工作量 > 3000
+		;指的是下午，天还没黑，小碎骨还在进货
+        PRINTFORMDL 傍晚，竹林的小径早就没有了人的踪迹。
+		PRINTFORMDL 广袤的竹林间，只剩下鸟雀一声声凄凉的啼叫，
+		PRINTFORMDL 而这叫声，却反而让这里显得更加幽寂。
+		PRINTFORMDL 古人云：“鸟鸣山更幽”，大底就是这种意蕴吧。
+	    PRINTFORMDL 遥远的天边，一道残阳缓缓落下，将大地上的万物映的金黄。
+		PRINTFORMDL 竹林的影子也在这残阳的照耀下被拉的很长，很长。
+	ELSE
+		;这个是晚上，小碎骨已经开始工作了
+		PRINTFORMDL 夜已经深了，鸟雀也早已归巢，天地间一片寂静。
+		PRINTFORMDL 如果睡不着的人非要在这夜里找一个消遣的地方的话，竹林的小径无疑是一个很好的去处。
+		PRINTFORMDL 一轮明月挂在空中，无私的挥洒着它皎洁的月光。
+		PRINTFORMDL 月光穿过竹叶，在地上洒下了无数片碎片。
+		PRINTFORMDL “一鸟不鸣山更幽”，先人在写下这句诗是，是不是也处于这样一种环境下呢？
+		PRINTFORMDL 在这月光的照耀下，哪怕仅仅是在小径上散步都成了一种享受。
+	ENDIF
+	PRINTFORMDL 正是在这样一种环境下，%CALLNAME:MASTER%缓缓漫步于小径上，享受着白天难以体会的悠闲。
+	PRINTFORML 「♪~~」
+	PRINTFORMDL 突然，一阵若有若无的歌声传了过来。
+	PRINTFORMDL %CALLNAME:MASTER%顿下脚步，闭上眼睛，仔细搜寻着这来历不明的歌声。
+	PRINTFORMDL 随着视觉的暂时失去，听觉变得更为灵敏，耳边的歌声也随之变得清晰起来。
+	PRINTFORML 「♪~~，♪~~」
+	PRINTFORMDL 歌声意外的浮华，有种让人忍不住沉浸其中的力量，远超曾经听到过的任何乐曲。
+	PRINTFORMDL 赞叹之余，不禁想到，究竟是什么样的人才能演奏出这样的乐曲？
+	PRINTFORMDL 或许……演奏者并不是一个人？
+	PRINTFORMDW 似带着这样的思绪，%CALLNAME:MASTER%，%CALLNAME:MASTER%循着歌声，向小径深处走去
+	PRINTFORMDL
+	PRINTFORMDL 随着距离的靠近，歌声也越发嘹亮。
+	PRINTFORMDL 在这奇妙歌声的引导下，很快来到了之前从未到达过的深处。
+	PRINTFORMDL 这时，歌声突然停了下来，%CALLNAME:MASTER%这才注意的，一辆挂着几排红色灯笼的餐车出现在自己面前。
+	IF TIME:0 < (60 * 19)
+	    PRINTFORMDL 与此同时，餐车旁边堆着几排大大小小的箱子，里面放满了各式各样的食材。
+		PRINTFORMDL 光是粗略的一扫，%CALLNAME:MASTER%就看到了包括但不限于海带，豆腐，土豆等常见的食材。
+		PRINTFORMDL 当然最引人注目的还是一旁长相有些奇怪，似乎有点像鳗鱼的水产品。
+		PRINTFORMDW 正在%CALLNAME:MASTER%犹豫是否要立刻离开时，一道甜美的声音传了过来。
+		PRINTFORMDL
+		PRINTFORML 「那边那位先生，还没开始营业哦。」
+		PRINTFORMDL 一位粉色头发的娇小少女从一大堆箱子背后探出了头，露出了她精致的容颜。
+		PRINTFORMDL 少女穿着朴素，但并没有掩盖她的动人之处。
+		PRINTFORMDL 由于正在干活，少女只穿者深褐色的外衣，堪堪一握的腰上系着一条深蓝色的围裙。
+		PRINTFORMDL 头上则是简单的包了一条头巾，给人一种贤妻良母的感觉。
+		PRINTFORMDL 她的耳朵处并没有正常人一样的耳朵，取而代之的一对粉红色的小小羽翼。
+		PRINTFORMDL 这对异于常人的耳朵，以及背后引人注目的粉色翅膀，无一不昭示着她的身份————
+		PRINTFORMDL 并非是人类，而是一个妖怪！
+		PRINTFORMDL 同时她的体型也如同他的种族一般，轻盈，灵动。尽管并不是十分丰盈，但却极具美感。
+		PRINTFORMDW 可谓是“增一分则太肥，减一分则太瘦。”
+		PRINTFORMDL 
+		PRINTFORML 「咦？这位先生，我以前……似乎没有见过你。」
+		PRINTFORMDL 少女这才注意到眼前只是一个生面孔，好奇的打量起了%CALLNAME:MASTER%。
+		PRINTFORML 「你是刚来到幻想乡的吗？原来如此。」
+		PRINTFORMDL 少女拍着胸脯，似乎有些庆幸的样子。
+		PRINTFORML 「我还以为我把哪个熟客忘记了呢。好险好险，差点又要被说成是鸟脑袋了。」
+		PRINTFORML 「不过竟然是新来的，要不要来尝尝烤八目鳗？新客人的话，我可以给你的第一份免费」
+		PRINTFORML 「这样不就赚不到钱了？才不会呢，有很多熟客都是这样来的。」
+		PRINTFORML 「再说就算他们真的不再来了，能看到人们享受美食的开心表情，我也就已经很满足了。」
+		PRINTFORML 「什么叫有没有烤鸟啊？」
+		PRINTFORMDL 听到这句话，少女似乎变得气鼓鼓的。
+		PRINTFORML 「不要觉得挂着红灯笼就是会买烤鸟啊！这是一种偏见！」
+		PRINTFORML 「再说了，烤八目鳗很美味哦，而且八目鳗在以前可是一种非常珍贵的食材。」
+		PRINTFORML 「实在不行看看，你现在就尝尝，看看和烤鸟哪个好吃！」
+		PRINTFORMW 「啊！」
+		PRINTFORMDL 
+		PRINTFORMDL 少女惊呼一声，精致的小脸因为羞赧而变得通红。
+		PRINTFORML 「我都忘了，还没开始做呢，要不你先等一会儿？」
+		PRINTFORML 「我的名字？欸，我到现在都还没告诉你我的名字吗？」
+		PRINTFORMDL （果然是鸟脑袋呢）%CALLNAME:MASTER%暗自想到。
+		PRINTFORML 「我叫米斯蒂娅，米斯蒂娅·萝蕾拉，夜雀食堂的老板娘兼厨娘。」
+		PRINTFORML 「你叫%CALLNAME:MASTER%吗？这样我们就算认识了吧。」
+		PRINTFORML 「好嘞，%CALLNAME:MASTER%先生，你先坐一会，等会儿我就让你尝到正宗烤八目鳗的滋味。」
+		PRINTFORML 少女似乎已经充满了干劲。看着少女的样子，%CALLNAME:MASTER%也不禁受到了鼓舞。
+		PRINTFORML 「%CALLNAME:MASTER%也想来帮忙么？」
+		PRINTFORMDL 米斯蒂亚闭上眼睛，努力思考了一会儿，点了点头。
+		PRINTFORMW 「好吧，那你先起来帮我处理一下这些食材吧。」
+		PRINTFORMDL 
+		IF ABL:MASTER:44 < ABL:TARGET:44
+		    PRINTFORMDL 尽管很努力，%CALLNAME:MASTER%还是把一切弄得乱糟糟的
+		    PRINTFORMDL 看着面露难色的米斯蒂亚，%CALLNAME:MASTER%不禁有些愧疚，向少女道了个歉
+		    PRINTFORML 「不要放在心上，你的好意我心领了，接下来就看我的吧。」
+		    PRINTFORMDW 少女被%CALLNAME:MASTER%的反应吓了一跳，反过来宽慰%CALLNAME:MASTER%道。
+		ELSEIF ABL:MASTER:44 >= ABL:TARGET:44
+		    PRINTFORMDL 在%CALLNAME:MASTER%高超的厨艺下，食材很快被处理好了。
+		    PRINTFORML 「没想到你的厨艺这么好。」
+		    PRINTFORMDL 少女的眼睛似乎冒出了星星。
+		    PRINTFORML 「不不不，我没有过奖。」少女严肃的摇了摇头。
+		    PRINTFORML 「你的厨艺已经完全不比我差喽。」
+		    PRINTFORMW 「看来我也要露一手绝活了，接下来就看我的吧。」
+		ENDIF
+		PRINTFORMDL 
+		PRINTFORMDL 在米斯蒂娅精湛的厨艺下，香气四溢的烤八目鳗就很快就出锅了。
+		PRINTFORML 「嘿嘿，怎么样？好吃吧？」
+		PRINTFORML 「非常美味啊！」
+		PRINTFORMDL 面对%CALLNAME:MASTER%直接的表扬，米斯蒂娅反而有些不好意思的低下了头。
+		PRINTFORMDL 不过即便是如此，%CALLNAME:MASTER%还是能看到少女通红的耳根。
+		PRINTFORML 「你以后也要经常来哦。」
+		PRINTFORMDL 得到肯定的回复，少女抬起头，露出灿烂的笑容。
+		PRINTFORML 「以后，也请多多指教哦。」
+		PRINTFORMDW （真是个好女孩。未来，也会相处的很融洽吧。）
+	ELSEIF TIME:0 >= (60 * 19)
+	    PRINTFORMDL 与此同时，一阵浓郁的香气扑鼻而来，激发着%CALLNAME:MASTER%的食欲，肚子也正好在这个时候提出了抗议。
+		PRINTFORMDL %CALLNAME:MASTER%打量了一下四周，餐车前摆着七八张桌子，并不算少，但却是坐无虚席。
+		PRINTFORMDL 与小径上的寂静不同，这里的气氛十分火热：有喝酒的，有划拳的，有闷头干饭的，
+		PRINTFORMDL 甚至有两个人聊着聊着就吵了起来，互相拉扯着走到旁边的空地上，掏出符卡开始的对决，而旁边的人却一脸习以为常的样子。
+		PRINTFORMDL 一旁的%CALLNAME:MASTER%不禁扶额。
+		PRINTFORMDL 还真是……民风淳朴啊。
+		PRINTFORMDL 在拒绝了一旁的客人开盘的建议后，将视线从旁边的客人上移回来，%CALLNAME:MASTER%注意起了桌上的食物。
+		PRINTFORMDL 每张桌子上都摆满了食物和饮品，散发着诱人的香气。
+		PRINTFORMDL 其中最特殊的便是一种类似鳗鱼的水产品，几乎每张桌子上都有至少一份，即使有众多其他美食都难以掩它的异香。
+		PRINTFORMDW %CALLNAME:MASTER%咽了口口水。正好一位客人起身离开，%CALLNAME:MASTER%就顺势坐到了位子上。
+		PRINTFORMDL 
+		PRINTFORML 「这位客人，你想吃点什么？」
+		PRINTFORMDL 一道甜美的声音传来。%CALLNAME:MASTER%抬起头，看到餐车中一位娇小的少女一边用手背抹了一把额头上的汗，一边探出身子问道。
+		PRINTFORMDL 之前由于餐车前浓厚的蒸汽，%CALLNAME:MASTER%并没有看到少女。而此刻，少女的真容展现在%CALLNAME:MASTER%面前。
+		PRINTFORMDL 一头粉色的短发披散在肩上，一双棕色的眼睛正好奇的打量着%CALLNAME:MASTER%。
+		PRINTFORMDL 少女只穿着简单的衣着，但丝毫不减她的诱人。精致的小脸因为厨房的高温而变得红彤彤的，让人忍不住想咬上一口。
+		PRINTFORMDL 头发两侧露出的小小粉色羽翼，以及背后一摇一摇翅膀，都彰显着少女的身份————不是人类，而是妖怪。
+		PRINTFORMDL 但这些非人的特征并没有在少女身上显得不和谐，反而为她凭添了几分可爱。
+		PRINTFORMDL 少女的体型算不上丰满，但却十分匀称，如同鸟雀一般，轻盈，灵动，给人以活泼的美感。
+		PRINTFORMDW 而她身上的围裙和头巾，则说明了她正是这辆餐车的老板娘。
+		PRINTFORMDL 
+		PRINTFORML 「是生面孔诶。你还是第一次来吧？」
+		PRINTFORMDL 少女似乎有些苦恼的思索了一番，然后问到。
+		PRINTFORMDL 由于%CALLNAME:MASTER%的桌子正好就在餐车旁边，%CALLNAME:MASTER%可以很轻松的与少女交流。
+		PRINTFORMDL 看到%CALLNAME:MASTER%点了点头，少女露出几分得意的神色。
+		PRINTFORML 「谁说我是鸟脑袋了？我的记性这不是很好吗？」
+		PRINTFORML 「欸，什么叫鸟脑袋？是因为一直有人说不太聪明啦。」
+		PRINTFORML 「其他人这么说我也就算了，响子她居然也这么说我，我明明不笨的！」
+		PRINTFORML 「再说了，为什么要说我是鸟脑袋？鸟明明是一种很有灵性的动物好吧？」
+		PRINTFORML 「你听我说，之前有一次……」
+		PRINTFORMDL 像是打开了话匣子一样，少女越说越远，似乎连点餐的事情都忘了……
+		PRINTFORMDL （好像……确实不怎么聪明的样子。）
+		PRINTFORML 「而且谁说挂红灯笼就一定要卖烤鸟了？这是偏见！再说，烤八目鳗可比烤鸟好吃多了！」
+		PRINTFORML 「烤八目鳗……八目鳗……」
+		PRINTFORMW 「啊！」
+		PRINTFORMDL 
+		PRINTFORMDL 少女似乎才意识到自己刚才干了什么，努力的把头埋进胸里，尝试cos自己的远房亲戚。
+		PRINTFORMDL 不过很可惜，不够大。
+		PRINTFORMDL （我说的当然是和她的远方亲戚相比，体型不够大啦。）
+		PRINTFORMDL %CALLNAME:MASTER%看着连耳根都已经通红的少女，决定开口解围。
+		PRINTFORMDL 尽管%CALLNAME:MASTER%并不知道有哪些菜，不过从刚才的话听来。“烤八目鳗”似乎是一道招牌菜。
+		PRINTFORML 「烤八目鳗吗？好，好。」
+		PRINTFORMDL 听到点菜，少女似乎有些缓过来了。
+		PRINTFORML 「多少钱？你是我自己的新客户，第一份就算我买单啦。」
+		PRINTFORML 「什么菜免费，签子收钱？为什么你会有这种罪恶的想法啊！」
+		PRINTFORML 「只要看到大家享受美食时的笑容，我就已经很开心了。」
+		PRINTFORML 「如果你真的担心我的话，以后就多来光顾吧。」
+		PRINTFORMDL 得到了肯定的回复，少女露出了灿烂的笑容。
+		PRINTFORML 「好嘞，让你看看我的手艺。」
+		PRINTFORMW 「怎么说来着？我这里的东西可都是现烤现卖哦。」
+		PRINTFORMDL 
+		PRINTFORMDL %CALLNAME:MASTER%一边欣赏着少女努力工作时的认真模样，一边向少女搭话。
+		PRINTFORML 「我的名字？我叫米斯蒂娅·萝蕾拉，夜雀食堂的老板娘兼厨娘，叫我米斯蒂娅就可以啦。」
+		PRINTFORML 「你叫%CALLNAME:MASTER%是吗？我已经记下来喽。」
+		PRINTFORML 「我可是夜雀哦。夜雀，知道吗？你要是惹到我，我就让你晚上看不到一点东西。知道了吗？」
+		PRINTFORML 「歌声很好听？嘿嘿，也没有那么好啦。」
+		PRINTFORML 「很可爱？呜，怎么突然说这个？不是讨厌啦，只是……」
+		PRINTFORML 「对了，你是从幻想乡外面来的吧？能给我说说外面的事吗？」
+		PRINTFORML 「真好，有那么多乐队，还有各种其他的东西。」
+		PRINTFORMW 「有朝一日带我去外面？算了算了，我还是很喜欢现在的生活。」
+		PRINTFORMDL 
+		PRINTFORMDL 两人你一句我一句的说着，很快，新鲜出炉的烤八目鳗就被端上了%CALLNAME:MASTER%的餐桌。
+		PRINTFORMDL %CALLNAME:MASTER%一口咬下去，浓郁的香气立刻充满了%CALLNAME:MASTER%的口腔
+		PRINTFORMDL 鱼肉的鲜味不断刺激着%CALLNAME:MASTER%的味蕾，不出一会儿，原本的烤八目鳗就变成了一堆鱼刺。
+		PRINTFORML 「味道怎么样？」
+		PRINTFORML 「很美味？我就说吧。欸，又有客人来了。那，先失陪了。」
+		PRINTFORMDL 这时，另一个桌子也来了新的客人，米斯蒂娅连忙去处理新的点单。
+		PRINTFORMDL 看着少女远去的背影，%CALLNAME:MASTER%不禁露出一抹笑。
+		PRINTFORMDW （真是个好女孩。未来，也会相处的很融洽吧。）
+	ENDIF
+ELSE
+	PRINTFORMDL （没想到竟然还有这样一条小路。）
+	PRINTFORMDL 无论何时，森林里清新的空气总是令人感到愉悦的。
+	PRINTFORMDL 而不知何时会出现的小路，无疑为想进行这一悠闲旅途的人提供了一些便利。
+	PRINTFORMDL %CALLNAME:MASTER%现在就正处于这样一条小径上。
+	IF ABL:MASTER:42 < 3
+	    PRINTFORMDL 尽管由于穿过茂密的丛林，%CALLNAME:MASTER%身上的衣服有些破损，
+	    PRINTFORMDL 但这丝毫没有减少%CALLNAME:MASTER%高昂的兴致。
+	ELSEIF ABL:MASTER:42 >= 3
+	    PRINTFORMDL 尽管穿过了茂密的森林，%CALLNAME:MASTER%身上的衣服却依旧干净整洁，
+		PRINTFORMDL 放我刚才穿过的树杈和荆棘都完全没有产生任何干扰。
+	ENDIF
+	PRINTFORMDL 不过，无论如何，一条相对平缓的小径总是会对并非为了挑战自我的冒险者提供相当的便利。
+	PRINTFORMDL 漫步于小路上，欣赏着自然的风光，%CALLNAME:MASTER%也不禁感慨造物者的伟力。
+	PRINTFORML 「♪~~，♪~~」
+	PRINTFORMDW 这时，一阵悠扬的歌声突然从林间响起。
+	PRINTFORMDL 
+	PRINTFORMDL 这里就是人迹罕至的密林，又怎会突然传来少女的歌声？
+	PRINTFORMDL %CALLNAME:MASTER%立刻意识到了不对劲，但那歌声仿佛有一股神奇的魔力，勾引着%CALLNAME:MASTER%。
+	PRINTFORMDL 一步，两步……
+	PRINTFORMDL 很快，%CALLNAME:MASTER%来到了迷你的中心，停在了一棵十分茂密的大树下。
+	PRINTFORMDL 这里，似乎就是歌声的来源了。
+	PRINTFORMDW %CALLNAME:MASTER%抬起头，只见一位少女坐在树枝上，忘我的歌唱着。
+	PRINTFORMDL 
+	PRINTFORMDL 少女穿着一身紫红色的连衣裙，洁白的衣袖下，两只小手正撑在树枝上。
+	PRINTFORMDL 一双被红色过膝袜包裹的小腿悬荡在半空中，随着节拍轻轻的前后摇摆着。
+	PRINTFORMDL 两只粉红色的小小羽翼露出少女同样是粉红色的齐肩发外，轻轻晃动着。
+	PRINTFORMDL 身后，一对翅膀也有节奏的一起，一落。一起，一落。
+	PRINTFORMDL 妖怪少女的双眸已经轻轻的闭上，精致的小脸上露出享受的神情，婉转的歌声不断从她美妙的歌喉里传出。
+	PRINTFORMDL 此刻，她仿佛真的成为了山野中的精灵，就连沉默的森林也在用清风为她伴奏。
+	PRINTFORMDW %CALLNAME:MASTER%也沉浸于这美妙的交响乐中，不可自拔。
+	PRINTFORMDL 
+	PRINTFORMDL 一曲终了。
+	PRINTFORMDL %CALLNAME:MASTER%不禁鼓起了掌。不料这声音却惊扰到了歌唱中的鸟雀。
+	PRINTFORML 「哇喔！」
+	PRINTFORMDL 少女似乎并没有想到有人会来，一时间脑子一片空白。
+	PRINTFORMDL 她下意识的想要站起来，却忘了，自己现在所处的环境，并不是地上。
+	PRINTFORMDW 想要在树枝上站起来并不是一件简单的事情。很明显，以少女现在的这个状态，她并没有这个能力。
+	PRINTFORMDL 
+	PRINTFORML 「哇！」
+	PRINTFORMDL 少女惊呼一声，从树枝上落了下来。
+	PRINTFORMDW 而罪魁祸首%CALLNAME:MASTER%，立刻上前，想接住少女
+	PRINTFORMDL 
+	IF ABL:MASTER:42 < 3
+	    PRINTFORML 「欸，怎么不疼啊？」
+		PRINTFORMDL 少女歪了歪头，似乎并没有想明白，为什么自己摔下来了，却毫发无伤。
+		PRINTFORML 「咳咳咳」
+		PRINTFORMDL 少女身下，躺在地上的%CALLNAME:MASTER%挣扎了几下，想要证明自己的存在。
+		PRINTFORMDL 好消息是，%CALLNAME:MASTER%确实接到了少女。
+		PRINTFORMDW 坏消息是，方法似乎与预期都不太一样……
+		PRINTFORMDL 
+		PRINTFORMDL 几分钟后。
+		PRINTFORML 「抱歉，抱歉，你没受伤吧？」
+		PRINTFORMDL %CALLNAME:MASTER%摆了摆手，示意自己问题不大。
+		PRINTFORML 「那可不行，又是因为我受了什么伤的话……」
+		PRINTFORMDL 少女很认真的看着%CALLNAME:MASTER%。
+		PRINTFORMDL （唔，如果不让她检查的话，可能会更麻烦吧。）
+		PRINTFORML 「这里没受什么伤，这里也是……」
+		PRINTFORMDL 确认了%CALLNAME:MASTER%确实没有什么问题之后，少女松了一口气。
+		PRINTFORMW 「刚才多谢了。」
+		PRINTFORMDL 
+	ELSEIF ABL:MASTER:42 >= 3
+	    PRINTFORMDL 凭借着矫捷的身手，%CALLNAME:MASTER%稳稳的用公主抱的姿势接住了少女。
+		PRINTFORMDL 少女因为惊慌而紧闭双眼，身体微微有些颤抖。
+		PRINTFORML 「欸，怎么没事儿？」
+		PRINTFORMDL 少女悄悄将眼睛睁开一条缝，映入眼帘的是一个陌生人的脸。
+		PRINTFORMDL 她连忙又闭上双眼，嘴里还念念有词。
+		PRINTFORMW 「这是梦，这是梦。」
+		PRINTFORMDL 
+		PRINTFORML 「醒醒。」
+		PRINTFORML 「哇喔！」
+		PRINTFORMDL 少女一之前完全看不出来的敏捷姿态跳了出来。
+		PRINTFORMDL 要是刚才她能表现出这样一种身手，%CALLNAME:MASTER%丝毫怀疑她能平稳落地。
+		PRINTFORML 「那个……不管怎样，谢谢啦。」
+		PRINTFORMDL 少女似乎因为刚才的事有点尴尬。
+		PRINTFORML 「内个，你没什么事儿吧？」
+		PRINTFORML 「没事就好，要是因为我把你搞伤了，我晚上肯定会睡不着觉的。」
+		PRINTFORMW 「是你吓到我了？没有没有，是我自己大惊小怪了。」
+		PRINTFORMDL 
+		PRINTFORMDL 双方的气氛很快缓和了下来。
+
+
+	ENDIF
+	PRINTFORMDL 随后，少女露出好奇的神色。
+	PRINTFORML 「对了，你是怎么来到这里的？」
+	PRINTFORML 「散步时误入这里的么？」 
+	PRINTFORML 「看起来我们还是蛮有缘分的嘛。」 
+	PRINTFORMDL 少女露出灿烂的笑容。
+	PRINTFORMDL 不知道为什么，%CALLNAME:MASTER%感觉这位少女好像很傻乎乎的。
+	PRINTFORML 「我为什么会在这里？」 
+	PRINTFORML 「当然是为了采一些野味啦。不过到这里看见环境这么好，就忍不住唱了起来嘛。」 
+	PRINTFORML 「毕竟，即使是最好的歌手，也要每天练习嘛。」 
+	PRINTFORMDW %CALLNAME:MASTER%这才注意到，少女的胳膊上提着一个小篮子，里面装满了各种野味。
+	PRINTFORMDL 
+	PRINTFORML 「为什么要采这些野味？哼哼，看来我还没告诉你，我可是夜雀食堂的老板娘哦。」 
+	PRINTFORMDL 少女叉起腰，露出一副得意的样子。
+	PRINTFORML 「兽径的夜间食堂，知道吗？你来的话，第一单免费哦。」
+	PRINTFORML 「什么叫烤鸡呀？我这里怎么可能会卖这种东西？烤夜雀？更不可能了！」 
+	PRINTFORMDL  少女立刻变得气鼓鼓的。	
+	PRINTFORML 「我这里卖的是烤八目鳗，夜雀是我，老板是夜雀，不是卖夜雀的！」
+	PRINTFORML 「所以我这里卖的炒饭就叫夜雀炒饭？好像有点道理。」
+	PRINTFORMDL 少女眉头紧皱的思考着，似乎完全被绕进去了。
+	PRINTFORML 「不对，这完全是歪理吧！」
+	PRINTFORMDW （反应过来的似乎比想象中的快一点啊。）
+	PRINTFORMDL 
+	PRINTFORML 「什么叫明明是夜雀却不会飞呀？我飞的可好了好吧。看。」
+	PRINTFORMDL 说着，少女翅膀扇动着，双脚离地，绕着%CALLNAME:MASTER%飞了两圈，随后又回到地上。
+	PRINTFORML 「怎么样？我飞的很不错吧？」
+	PRINTFORML 「欸？刚才掉下来的时候为什么不飞？」
+	PRINTFORMDL 少女似乎完全没有想过这个，大脑一时宕机了一会儿。
+	PRINTFORML 「这个……那个……主要是在地上走的时间太多了，刚才一下忘记了，自己还会……」
+	PRINTFORMDL 少女越说脸越红，直到最后直接把头埋进胸口。
+	PRINTFORML 「不要再说了。我知道了。」
+	PRINTFORMDL %CALLNAME:MASTER%点了点头。
+	PRINTFORMDW 看来不是感觉，确实不怎么聪明。
+	PRINTFORMDL 
+	PRINTFORML 「好啦，这位……额。」
+	PRINTFORMDL 少女这才想起来，自己似乎不知道对方的名字。
+	PRINTFORMDL 不仅如此，自己似乎也没有告诉对方自己的名字。
+	PRINTFORML 「我叫米斯蒂娅，米斯蒂娅·萝蕾拉，叫我米斯蒂娅就可以啦。」
+	PRINTFORML 「你叫%CALLNAME:MASTER%吗？你好，%CALLNAME:MASTER%。」
+	PRINTFORML 「你好，米斯蒂娅。」
+	PRINTFORMDL 看着少女的样子，%CALLNAME:MASTER%不禁露出一抹笑。
+	PRINTFORMDW （真是个好女孩。未来，也会相处的很融洽吧。）
+ENDIF
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;"SP_EVENT"系列活动
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;==================================================
+;约会归来时献上初吻（合意给予）
+;==================================================
+@M_KOJO_小小夜雀_SPEVENT_K28_1(ARG,ARG:1)
+;口上主はTARGET
+;地文表示
+CALL SPEVENT_MESSAGE_1(ARG,ARG:1)
+;--------------------------------------------------
+;检查发生（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	PRINTFORMDL %CALLNAME:MASTER%和米斯蒂娅牵着手，漫步在回家的路上。
+	PRINTFORMDW 不知道是不是错觉，%CALLNAME:MASTER%感觉少女牵着的的手似乎比平时用力一些。
+	PRINTFORMDL 
+	PRINTFORML 「今天和你玩的很开心哦。」
+	PRINTFORML 「平常也很开心哦，只不过今天额外开心嘛。」
+	PRINTFORMW 「毕竟是和……咳咳，我什么都没说。」
+	PRINTFORMDL 
+	PRINTFORMDL 少女的小脸红扑扑的，十分惹人爱怜。
+	PRINTFORMDL %CALLNAME:MASTER%忍不住伸出手，在她的小脑袋上摸了摸。
+	PRINTFORMDL 少女的脸色变得更红，但并没有露出不满的神色，反而主动在%CALLNAME:MASTER%的手上蹭了蹭。
+	PRINTFORML 「嘿嘿，%CALLNAME:MASTER%的手，好温暖。」
+	PRINTFORMDL 少女傻笑着。
+	PRINTFORMDW 看着少女的样子，%CALLNAME:MASTER%忍不住加大了几分手上的力度。
+	PRINTFORMDL 
+	PRINTFORML 「真是的，这么用力干什么？头发都乱掉了。」
+	PRINTFORMDL 米斯蒂娅一边尝试用手指梳理头发。一边在嘴上抱怨道。
+	PRINTFORML 「先把嘴角压一压？有这么明显吗？」
+	PRINTFORMDL 少女用力的绷起小脸，想做出一副严肃的样子。
+	PRINTFORMDL 不过，这除了让她看起来更可爱了之外，没有任何作用。
+	PRINTFORMDL 
+	PRINTFORMDL 在快要到家的时候，不知为何，米斯蒂娅显得有些着急。
+	PRINTFORMDL 这是一个大树出现在了两人的视线中。
+	PRINTFORMDL 少女眼睛一亮，像是发现了什么宝藏一样跑到大树后面。
+	PRINTFORML 「快来！这里有一只会后空翻的蚂蚱！」
+	PRINTFORMDL （还真是稀奇啊，会后空翻的蚂蚱什么的。）
+	PRINTFORMDW %CALLNAME:MASTER%嘴角有些抽动。
+	PRINTFORMDL 
+	PRINTFORMDL %CALLNAME:MASTER%来到了大树后，只见少女一脸认真的盯着自己。
+	PRINTFORMDL 随即，%CALLNAME:MASTER%眼前一黑，就如同暂时被剥夺了视觉一样。
+	PRINTFORMDL 一阵柔软的触觉贴在了%CALLNAME:MASTER%的唇上，但又转瞬即逝。
+	PRINTFORMDW %CALLNAME:MASTER%的视觉又重新恢复，但少女已经不见了。
+	PRINTFORMDL 
+	PRINTFORMDL %CALLNAME:MASTER%摸了摸嘴，像是在回忆刚才的感觉。
+	PRINTFORMDL 随后，摇了摇头，转身离开。
+	PRINTFORMDW （还是这么害羞啊。）
+	PRINTFORMDL 
+	PRINTFORMDL %CALLNAME:MASTER%离开没多久，树叶处传来了一阵簌簌的声音
+	PRINTFORMDL 米斯蒂娅从树顶跳了下来，满脸通红，似乎还沉浸在刚才的体验中。
+	PRINTFORML （刚才，我真的做了？）
+	PRINTFORML （不行，还是好害羞。）
+	PRINTFORML （这就是接吻的感觉吗？嘿嘿，以后……）
+	PRINTFORMDW 这时，一双手放在了少女的肩膀上。
+	PRINTFORMDL 
+	PRINTFORML 「哇呜！」
+	PRINTFORMDL 米斯蒂娅被这个突然袭击吓了一跳，回头一看，%CALLNAME:MASTER%正带着笑看着她。
+	PRINTFORML 「你……你没走？」
+	PRINTFORML 「骗人？啊哈哈，这个……」
+	PRINTFORML 「补偿？你想要什么样的补偿？」
+	PRINTFORMW 「再来一次？这这这……」
+	PRINTFORMDL 
+	PRINTFORMDL %CALLNAME:MASTER%来到少女身前，双手放在她的脸颊上，感受着少女灼热的体温。
+	PRINTFORML 「嗯。」
+	PRINTFORMDL 少女用微若蚊鸣的声音应答到。
+	PRINTFORMDL 得到了少女的回应，%CALLNAME:MASTER%缓缓地让两张脸靠近。
+	PRINTFORMDL 少女闭上眼睛，呼吸急促，像是几分钟前主动接吻的不是她一样。
+	PRINTFORML 「唔。」
+	PRINTFORMDW 这个吻也没有持续太久。几秒后，唇分。
+	PRINTFORMDL 
+	PRINTFORMDL 在一同踏上归途的路上，米斯蒂娅悄悄用胳膊捅了%CALLNAME:MASTER%几下。
+	PRINTFORML 「刚才的事情，我很喜欢。」
+	PRINTFORML 「非要我说出来吗？就是……就是……」
+	PRINTFORMDL 少女看上去有些自暴自弃了。
+	PRINTFORML 「就是接吻啦。」
+	PRINTFORML 「所以……那个……以后，能不能经常……」
+	PRINTFORMW 「唔。」
+	;想要中止接吻时，请打开以下内容
+	;TCVAR:中止接吻 = 1
+ENDIF
+RETURN 1
+
+;==================================================
+;约会结束后告白（恋人给予）
+;==================================================
+@M_KOJO_小小夜雀_SPEVENT_K28_2(ARG,ARG:1)
+;口上主はTARGET
+;地文表示
+CALL SPEVENT_MESSAGE_2(ARG,ARG:1)
+;--------------------------------------------------
+;检查发生（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	;-------------------------------------------------
+	;小分岐
+	;-------------------------------------------------
+	;告白内容
+	;这个告白内容显示后会显示是否接受的选择部分
+	;检查发生（=0, 非表示、1, 表示）
+    LOCAL = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 0
+	    PRINTFORML 「%CALLNAME:MASTER%，我们已经认识蛮久了吧。」
+		PRINTFORMDL 在约会回来的途中，一反常态一直低着头走路的米斯蒂娅突然抬起头，看向%CALLNAME:MASTER%。
+		PRINTFORML 「已经这么久了吗？」
+		PRINTFORMDL 少女张开嘴，想说什么，但最后又低下头，闷声走路。
+		PRINTFORMDW 但一对在背后不停的拍打着的翅膀，暴露了少女内心深处的烦闷与纠结。
+		PRINTFORMDL 
+		PRINTFORML 「那个，%CALLNAME:MASTER%，你……玩的开心吗？」
+		PRINTFORML 「我？我当然很开心了。只是你……」
+		PRINTFORML 「你开心就好，你开心就好。」
+		PRINTFORMDL 说着，少女又垂下了头。
+		PRINTFORMDW 或许她自己都没有注意到，她牵着%CALLNAME:MASTER%的手越来越用力。
+		PRINTFORMDL 
+		PRINTFORMDL 少女突然停下了脚步。
+		PRINTFORML 「我有件事想要说。」
+		PRINTFORMDL 少女低着头，试图让%CALLNAME:MASTER%看不见她的表情。
+		PRINTFORMDL %CALLNAME:MASTER%看向少女，之前她浑身微微发抖，身体微微起伏，似乎在深呼吸。
+		PRINTFORMDW 尽管看不到少女的脸色，但少女的心情却早已暴露在%CALLNAME:MASTER%眼前。
+		PRINTFORMDL 
+		PRINTFORMDL 一秒，两秒……
+		PRINTFORMDL 少女下定了决心，一步迈到%CALLNAME:MASTER%身前。
+		PRINTFORMDL 少女的双手紧紧握住了%CALLNAME:MASTER%的手，将它们举至胸前。
+		PRINTFORMDL 一双棕色的眼睛盯着%CALLNAME:MASTER%，露出了与常日里不同的严肃。
+		PRINTFORMDW 四目相对，%CALLNAME:MASTER%甚至能听到少女越来越急促的心跳声。
+		PRINTFORMDL 
+		PRINTFORMDL 米斯蒂娅紧紧的抿着嘴唇，双眼再次闭上，仿佛在思考怎么开口。
+		PRINTFORMDL 但少女也能感觉到，自己好不容易积攒出来的勇气。也在随着时间，随着自己的犹豫，一丝一毫的消散着。
+		PRINTFORMDL 她很清楚的意识到，如果再不开口，之后可能再也无法鼓起勇气。
+		PRINTFORMDW 于是，她做出了自己的决定。
+		PRINTFORMDL 
+		PRINTFORML 「%CALLNAME:MASTER%，我……」
+		PRINTFORMDL 少女又深吸了一口气，睁开了眼睛，深情的望着%CALLNAME:MASTER%。
+		PRINTFORML 「我很开心。」
+		PRINTFORMW 「不，不只约会开心，只有你在我身边，不管是唱歌，吃饭，喝茶，打扫卫生，我都很开心。」
+		PRINTFORMW 「只要你在我身边，哪怕是简简单单散个步，简简单单说个话，我都很开心。」
+		PRINTFORMW 「只要你在我身边，哪怕只是坐在一起，我都很开心。」
+		PRINTFORMW 「只要你在我身边，我，就很开心。」
+		PRINTFORMDL 
+		PRINTFORML 「我也不记得我是哪一天喜欢上你的了。」
+		PRINTFORML 「也许是那一天，有人来摊上闹事，你帮我摆平了一切，还跟我说没关系。」
+		PRINTFORML 「也许是那一天，老板看我是妖怪就乱开价。是你帮我谈好了生意。」
+		PRINTFORML 「也许是那一天，我们一起去捕鱼，你非要说要下水去抓，最后弄得我们都一身湿漉漉的。」
+		PRINTFORML 「还有好多好多其他的事情。」
+		PRINTFORML 「也许我确实是鸟脑袋，实在分不清到底是哪一次让我喜欢上你了。」
+		PRINTFORMW 「但是，我们一起经历了这么多事情，谁又能分得清嘛！」
+		PRINTFORMDL 
+		PRINTFORML 「一开始，我还以为我们只是普通的朋友。」
+		PRINTFORML 「但渐渐的，我发现我已经离不开你了。」
+		PRINTFORML 「吃饭在想你，睡觉在想你。」
+		PRINTFORML 「离了你，我感觉我已经快生活不下去了。」
+		PRINTFORML 「但只要和你在一起，每一天我都非常快乐。」
+		PRINTFORML 「所以我想每天都能和你在一起。」
+		PRINTFORML 「一起吃饭，一起睡觉，」
+		PRINTFORML 「甚至……一起孕育新的生命。」
+		PRINTFORMDL 说到这里，小夜雀的脸变得有些红润，但她深深的吸了口气，依旧坚决的说道。
+		PRINTFORMW 「一刻都不要分开。」
+		PRINTFORMDL 
+		PRINTFORML 「一口气说了这么多，但我真正想说的是……」
+		PRINTFORML 「%CALLNAME:MASTER%，」
+		PRINTFORMW 「我喜欢你。」
+		PRINTFORMDL 
+		PRINTFORMW 「不。」
+		PRINTFORMDL 
+		PRINTFORMW 「我爱你。」
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;告白接受（恋人给予）
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 1
+		PRINTFORMDL 
+		PRINTFORMDL %CALLNAME:MASTER%并没有直接回答，而是将少女揽入怀中
+		PRINTFORMDL 看着少女干涩的红唇，%CALLNAME:MASTER%毫不犹豫的吻了上去。
+		PRINTFORML 「唔！」
+		PRINTFORMDL 面对爱人的突然袭击，少女毫无保留的回应着。
+		PRINTFORMDW 这一次，比往常的任何一次都要激烈。两人一直以来的爱意，都凝聚在这一个吻上。
+		PRINTFORMDL 
+		PRINTFORMDL 两人的嘴分开，拉出了一条闪亮的银丝。
+		PRINTFORML 「还要唔……」
+		PRINTFORMDW 少女还没说完，%CALLNAME:MASTER%又吻了上去。
+		PRINTFORMDL 
+		PRINTFORMDL 过了良久。
+		PRINTFORML 「坏、坏蛋」
+		PRINTFORMDL 少女无力的瘫软在%CALLNAME:MASTER%怀里，轻轻锤了锤%CALLNAME:MASTER%的胸口。
+		PRINTFORMDL 少女又满怀期待的看向%CALLNAME:MASTER%。
+		PRINTFORMDW 「所以，你是同意了吗？」
+		PRINTFORMDL 
+		PRINTFORMDL 「还要再来一次才能证明吗？」
+		PRINTFORML 「才不是呢。」
+		PRINTFORMDL 少女有些不好意思的挠了挠脸。
+		PRINTFORML 「我只是……想听你亲口说出来。」
+		PRINTFORMDL 「好。」
+		PRINTFORMDL %CALLNAME:MASTER%低下了头，用额头抵住了少女的额头。
+		PRINTFORMDW 「我爱你。」
+		PRINTFORMDL 
+		PRINTFORML 「嘿嘿，还真是不可思议呢。」
+		PRINTFORML 「我和%CALLNAME:MASTER%，就这样成了恋人。」
+		PRINTFORML 「对了。」
+		PRINTFORMDL 少女似乎反应过来什么。
+		PRINTFORMW 「我告白的时候，%CALLNAME:MASTER%好像一点都不惊讶呢。」
+		PRINTFORMDL 
+		PRINTFORML 「欸？早就看出来了？」
+		PRINTFORML 「那你刚才……」
+		PRINTFORML 「因为很可爱，就没有打断？」
+		PRINTFORML 「哼，不理你了！」
+		PRINTFORMDW 少女好像很生气的样子，扭过了头。
+		PRINTFORMDL 
+		PRINTFORMDL 不过，少女的这副模样并没有持续多久。
+		PRINTFORMDL 几秒后，她就忍不住睁开眼睛，观察%CALLNAME:MASTER%的表现。
+		PRINTFORMDL 又过了几秒，少女彻底忍不住了，扭扭捏捏的转回头。
+		PRINTFORML 「那个，刚才我只是说说，我才不会不理你呢。」
+		PRINTFORML 「还有，其实你能这么懂我，我还是蛮开心的。」
+		PRINTFORML 「所以，不要不理我好不好？」
+		PRINTFORMW 「欸？什么叫更可爱了？」
+		PRINTFORMDL 
+		PRINTFORMDL 少女呆呆的样子引得%CALLNAME:MASTER%忍不住狠狠揉了揉她的小脑袋。
+		PRINTFORMDW 少女似乎还是没有反应过来，但这并不妨碍她一脸满足的享受着%CALLNAME:MASTER%的抚摸。
+		PRINTFORMDL 
+		PRINTFORMW 「以后的日子，也请多多指教啦。」
+		PRINTFORMDL 
+		PRINTFORMW 「亲爱的。」
+		RETURN 1
+	ENDIF
+
+	;-------------------------------------------------
+	;告白失败
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 2
+		PRINTFORMDL 
+		PRINTFORMW 「果然……还是不行吗？」
+		PRINTFORMDL 
+		PRINTFORMDL 说完这句话后，少女就像耗尽所有力量一样，向一边倒去。
+		PRINTFORMDL %CALLNAME:MASTER%连忙上前，将她扶住。
+		PRINTFORML 「谢谢，我没事的。」
+		PRINTFORMDW 少女把手抽了回来，蹲坐在地上，一声不发。
+		PRINTFORMDL 
+		PRINTFORMDL %CALLNAME:MASTER%坐在她旁边，却听到了微微的抽泣声。
+		PRINTFORML 「你先走吧，我……想在这里坐一下。」
+		PRINTFORMDW %CALLNAME:MASTER%并没有离开，只是默默地坐在她身边。
+		PRINTFORMDL 
+		PRINTFORML 「走啊！你快走啊！」
+		PRINTFORMDL 少女的声音带上了哭腔。
+		PRINTFORML 「你为什么……还要留在这里？」
+		PRINTFORMDL %CALLNAME:MASTER%依旧没有回话。
+		PRINTFORMDL 
+		PRINTFORMDL 不知过了多久。
+		PRINTFORMDL 米斯蒂娅重新抬起头。
+		PRINTFORMDL 尽管脸上满是泪痕，但依旧坚定地看向%CALLNAME:MASTER%。
+		PRINTFORMW 「谢谢你没有骗我。」
+		PRINTFORMDL
+		PRINTFORMDL 少女抬起手，抹了一把眼泪，接着说。
+		PRINTFORML 「但我是不会放弃的。」
+		PRINTFORML 「总有一天，我会让你也喜欢上我的！」
+		PRINTFORMDL 「我等着那一天。」
+		PRINTFORML 「嗯。」
+		PRINTFORMW 「不管过多久……」
+		RETURN 1
+	ENDIF
+
+ENDIF
+RETURN 1
+
+;==================================================
+;约会归来
+;==================================================
+@M_KOJO_小小夜雀_SPEVENT_K28_3(ARG,ARG:1)
+;口上主はTARGET
+;地文表示
+CALL SPEVENT_MESSAGE_3(ARG,ARG:1)
+;--------------------------------------------------
+;检查发生（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	;-------------------------------------------------
+	;小分岐
+	;-------------------------------------------------
+	;通常归宅
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 0
+		PRINTFORMDL
+		RETURN 1
+		IF TALENT:恋人
+		    SELECTCASE RAND:3
+				CASE 0
+				PRINTFORML 「♪~~，♪~~」
+				PRINTFORMDL 在约会回来的路上，米斯蒂娅一直心情愉悦的哼着歌。
+				PRINTFORML 「这是什么歌？我不知道哦。要不，你来告诉我吧？」
+				PRINTFORMDL 看着少女笑眯眯的样子，%CALLNAME:MASTER%知道，少女十有八九了解这个的意思。
+				PRINTFORML 「欸？原来是一首情歌吗？」
+				PRINTFORMDL 看着少女装作吃惊的样子，%CALLNAME:MASTER%忍不住上去，敲敲她的头。
+				PRINTFORML 「好痛！」
+				PRINTFORMDL 少女抱头蹲防，眼泪汪汪的看向%CALLNAME:MASTER%。
+				PRINTFORML 「我们都已经是恋人了，还有什么好害羞的吗？」
+				PRINTFORMDL %CALLNAME:MASTER%一时语塞。
+				PRINTFORML 「嘿嘿，看来%CALLNAME:MASTER%先生还是很害羞的嘛。」
+				PRINTFORMDL 不知何时，少女又站起了来，笑嘻嘻的钻进来%CALLNAME:MASTER%的怀里。
+				PRINTFORMDL %CALLNAME:MASTER%看着与往日不同的少女，低下头，吻住了她的唇。
+				PRINTFORML 「唔！」
+				PRINTFORMDL ……
+				PRINTFORMDL 过了良久，%CALLNAME:MASTER%才放开已经满脸通红的少女。
+				PRINTFORML 「我听说，这样更有吸引力嘛。」
+				PRINTFORMDL 少女挠着脸，解释到。
+				PRINTFORML 「难道……你不喜欢？」
+				PRINTFORMDL 突然想到什么，少女有些紧张的望向%CALLNAME:MASTER%。
+				PRINTFORML 「很喜欢？太好了。欸？但是？」
+				PRINTFORML 「唔！」
+				PRINTFORML 「这里不行……」
+				PRINTFORMW 「至少……等回去。」
+			    CASE 1
+			    PRINTFORML 「哇，你看，那是什么！」
+				PRINTFORMDL 在回家的途中，米斯蒂娅突然叫了出来。
+				PRINTFORMDL %CALLNAME:MASTER%顺着他指的方向看去，发现是一片空地，上面长满了鲜花。
+				PRINTFORMDL 少女兴奋的拉着%CALLNAME:MASTER%的手跑到了空地旁。
+				PRINTFORMDL 这种小花其貌不扬，但却有一种沁人心脾的幽香。
+				PRINTFORML 「这种花不仅闻起来香，味道也很好哦。看！」
+				PRINTFORMDL 少女不由分说的将几片花瓣塞到%CALLNAME:MASTER%嘴里。
+				PRINTFORMDL 一阵清香充满了口腔，还有丝丝甜意占据着%CALLNAME:MASTER%的味蕾。
+				PRINTFORML 「这花叫什么？我也不知道。」
+				PRINTFORML 「不过，我经常拿它当食材就是了。怎么样？好吃吧！」
+				PRINTFORMDL ✧⁺(●˙▾˙●)⁺✧
+				PRINTFORMDL 少女一副求表扬的样子，%CALLNAME:MASTER%忍不住揉了揉她的脸。
+				PRINTFORML 「不要揉惹，要坏掉惹。」
+				PRINTFORMDL %CALLNAME:MASTER%这才松开了手。
+				PRINTFORML 「欸？做个花环？好啊好啊。」
+				PRINTFORMDL 少女正在揉着自己的脸，听到%CALLNAME:MASTER%的建议，立刻高兴的点起头。
+				PRINTFORMDL ……
+				PRINTFORML 「%CALLNAME:MASTER%看起来很适合这个花环吗。」
+				PRINTFORMDL 少女满意的打量着自己的成果，随后脸色微红，转了个圈。
+				PRINTFORML 「怎么样？」
+				PRINTFORML 「很好吗？嘿嘿，那我可就一直带着喽。」
+				PRINTFORMDL 身为厨娘的少女带着作为食材的花环，拉着%CALLNAME:MASTER%，有说有笑的走上了回家的路。
+				PRINTFORMDL 在快到家时，少女突然转身，吻上了%CALLNAME:MASTER%的唇。
+				PRINTFORMW 「想不想尝尝，我的味道？」
+			    CASE 2
+				PRINTFORMDL 约会回来时经过了一个街道，结果就被米斯蒂娅拉来逛街了。
+				PRINTFORML 「这个番茄看起来很新鲜吗。」
+				PRINTFORML 「正好调味料不多了。」
+				PRINTFORML 「唔，品相不错，可惜不太新鲜了。」
+				PRINTFORML 「怎么看出来的？哼哼，可不要小看一个厨娘对食材的判断力哦。」
+				PRINTFORMDL ……
+				PRINTFORMDL 在经历了一场名为逛街，实为采购的旅程后，少女带着提着大包小包的%CALLNAME:MASTER%停在了一家店门口。
+				PRINTFORML 「这家店的鱼丸很好吃哦。」
+				PRINTFORML 「和我做的相比？应该说各有所长吧。」
+				PRINTFORMDL 这么说的话，果然还是米斯蒂娅更胜一筹吧。
+				PRINTFORML 「欸，你两只手拿着东西吃不了？」
+				PRINTFORMDL 少女露出了一丝狡黠的笑容。
+				PRINTFORML 「那就让我来喂你吧。」
+				PRINTFORML 「张开嘴，啊——」
+				PRINTFORMDL 一阵柔软的触觉袭来，鱼丸的鲜味立刻充满了%CALLNAME:MASTER%的整个口腔。
+				PRINTFORML 「呼，怎么样啊？」
+				PRINTFORMDL 少女擦了擦嘴，脸色微红。
+				PRINTFORML 「吃的太快没尝到味道是什么样？」
+				PRINTFORML 「%CALLNAME:MASTER%还真是心急呀。」
+				PRINTFORML 「那就，再来一次好了。」
+				PRINTFORMDL 就这样，在米斯蒂娅的“帮助”下，%CALLNAME:MASTER%吃下了整份鱼丸。
+				PRINTFORML 「%CALLNAME:MASTER%还真是贪吃啊。」
+				PRINTFORMDL 少女突然凑得很近，呼出的热气润湿着%CALLNAME:MASTER%的耳朵。
+				PRINTFORML 「还想……再吃点其他的吗？」
+				PRINTFORMW 「什么都可以哦。」
+			ENDSELECT
+		ELSEIF TALENT:恋慕
+		    SELECTCASE RAND:3
+				CASE 0
+			    PRINTFORML 「时间过得可真快啊。」
+			    PRINTFORMDL 米斯蒂娅挽着%CALLNAME:MASTER%的胳膊。
+			    PRINTFORML 「再陪我一会儿好不好？」
+			    PRINTFORMDL 少女一边用小脑袋蹭了蹭%CALLNAME:MASTER%，一边楚楚可怜的看着%CALLNAME:MASTER%
+			    PRINTFORMDL 这……实在让人有点遭不住。
+			    PRINTFORML 「是谁教我这样的？哼哼，可没人教我哟。」
+			    PRINTFORML 「所以，好不好嘛？」
+			    PRINTFORMDL 少女用着撒娇的语气，身体也在不断的向%CALLNAME:MASTER%贴近。
+			    PRINTFORMDL 这让人完全无法拒绝。
+			    PRINTFORML 「所以，好不好嘛？」
+			    PRINTFORML 「太好了！」
+			    PRINTFORML 「那就陪我就在这里走一走吧。」
+			    PRINTFORMDL 少女的要求出乎意料的简单。
+				PRINTFORML 「干点其他的？」
+				PRINTFORML 「唔我还没想好要干什么。」
+				PRINTFORML 「不过只要你在我旁边，干什么都无所谓啦。」
+				PRINTFORML 「还是说，你不想陪着我？」
+				PRINTFORMDL 少女的神情变得有些落寞。
+			    PRINTFORMDL %CALLNAME:MASTER%没说什么，只是紧紧的握着少女的双手。
+				PRINTFORML 「欸!也不用这样啦。」
+				PRINTFORML 「不不不，我很开心就是了。」
+				PRINTFORML 「这样，就行了吗？」
+				PRINTFORMDL 少女紧紧依靠着%CALLNAME:MASTER%，几乎把整个身子都埋到了他的怀里。
+			    PRINTFORMDW 两人就这么相互依靠，一同着走向更远的地方。
+				CASE 1
+				PRINTFORML 「%CALLNAME:MASTER%，能停一下吗？」
+				PRINTFORMDL 约会归来的途中，米斯蒂娅突然开口提了一个要求。
+				PRINTFORML 「我有一首歌想让你听一下。」
+				PRINTFORML 「就是……之后演出的时候会唱的歌嘛，我想让你先听一下。」
+				PRINTFORMDL 话虽是这么说，但是少女一副手足难安的样子，让%CALLNAME:MASTER%不得不怀疑这件事的真实性。
+				PRINTFORML 「真的没什么！实在不行的话……就算了。」
+				PRINTFORMDL 少女看上去有些失望，却似乎又有些庆幸。
+				PRINTFORMDL 思考了一下，%CALLNAME:MASTER%点了点头。
+				PRINTFORML 「你想听吗？那好……」
+				PRINTFORMDL 少女深深的吸了几口气，又清了清嗓子，才展开她美妙的歌喉。
+				PRINTFORMDL 美妙的歌声充满了四周。歌声如怨如慕，与她在演唱会上演奏的音乐完全不同。
+				PRINTFORMDL %CALLNAME:MASTER%心中有了几分猜测，但却并没有揭穿少女的小心思。
+				PRINTFORMDL ……
+				PRINTFORML 「怎么样？」
+				PRINTFORMDL 少女有些迫不及待的问道。
+				PRINTFORML 「很好啊。」
+				PRINTFORMDL 少女似乎不是很满意这个答案，但也只是干笑了几声，就这么过去了。
+				PRINTFORML （唔，明明是好不容易鼓起勇气来准备的情歌。）
+				PRINTFORML （明明当时只要顺势说出来就可以了。）
+				PRINTFORML （下次，下次一定。）
+				PRINTFORMDL 「你在想什么呢？」
+				PRINTFORML 「我在想下次……没，没什么。」
+				PRINTFORMDL 少女被吓了一跳，这才回过神来。
+				PRINTFORML 「嗯嗯嗯……你说什么？」
+				PRINTFORMDL 不过看样子，少女好像还是有点心不在焉。
+				PRINTFORMDL %CALLNAME:MASTER%若有所思的点了点头。
+				PRINTFORMDW 各怀心思的两人就这么走向了回家的道路。
+				CASE 2
+				PRINTFORMDL 和米斯蒂娅约会归来的途中，两人依旧在回味着约会时的事。
+				PRINTFORMDL 从路上的风景到途中发生的事情，约会中每一件琐碎的小事都成了两人珍贵的回忆。
+				PRINTFORML 「对吧对吧，还有……」
+				PRINTFORML 「你说我做的便当你很喜欢？你能喜欢就太好了。」
+				PRINTFORMDL 对于少女的一片心意，%CALLNAME:MASTER%自然不吝赞美之词。
+				PRINTFORML 「其实也没那么夸张啦。」
+				PRINTFORMDL 面对%CALLNAME:MASTER%的夸奖，少女反而有些不太好意思了。
+				PRINTFORML 「如果你喜欢的话，我可以天天给你做。」
+				PRINTFORML 「不仅是晚上出摊的时候哦，平时也可以。」
+				PRINTFORMDL 看着少女微红的脸和游走的视线，%CALLNAME:MASTER%轻轻一笑，牵住了少女的手。
+				PRINTFORML 「这、这是夫妻间做的事吗？」
+				PRINTFORML 「夫妻……夫妻……」
+				PRINTFORMDL 少女顿时化身蒸汽姬，嘴里还反复念道着这两个字。
+				PRINTFORMDL 哭了好一会儿，少女才缓过神来，用轻若蚊鸣的声音说道。
+				PRINTFORML 「夫妻什么的，还是有些太早了吧。」
+				PRINTFORML 「不过我之前说的也算数我可以亲手为你做每一顿饭只要你想的话。」
+				PRINTFORMDL 稍微停顿了一下，少女有立刻补充到。
+				PRINTFORMDL 极快的语速让%CALLNAME:MASTER%差点没有听清楚她在说什么。
+			    PRINTFORMDL （这算是表白吗？）
+				PRINTFORMDL %CALLNAME:MASTER%又看向少女。
+				PRINTFORMDL 刚才的话对少女似乎也是一个极大的挑战，此刻，她的脸红得发烫。
+				PRINTFORMDL 显然，此刻继续刺激少女并不是一个好的主意。
+				PRINTFORMDL %CALLNAME:MASTER%没说什么，轻轻牵住少女的手。
+				PRINTFORMDW 随后，在少女的惊呼中，一同踏上了回家的道路。
+			ENDSELECT
+		ELSEIF TALENT:思慕
+		    SELECTCASE RAND:1
+				CASE 0
+				PRINTFORML 「今天玩的真尽兴。」
+			    PRINTFORMDL 说着，米斯蒂娅伸了个懒腰，展现出自己，额……并不算丰满的身材。
+				PRINTFORMDL 说着，少女突然凑到了%CALLNAME:MASTER%的面前。
+				PRINTFORML 「你的表情告诉我，你也很开心哦。」
+				PRINTFORMDL 少女收回了身子，笑嘻嘻的说。
+				PRINTFORML 「对了，你先等一下。」
+				PRINTFORMDL 少女拍动着翅膀，飞了起来。
+				PRINTFORMDL %CALLNAME:MASTER%看着她飞到了一棵树的树冠前，几乎将整个上半身都埋进了浓密的树叶中。
+				PRINTFORMDL 伴随着一阵簌簌声，少女的身子重新出现，只不过变得有些灰头土脸的。
+				PRINTFORMDL 而在她手中抱着一些奇特的果子，色泽鲜艳，有一种奇特的美感。
+				PRINTFORML 「尝尝，味道很不错的。」
+				PRINTFORMDL 看着少女可爱的样子，%CALLNAME:MASTER%忍不住揽住她的腰，用力的揉着少女的头。
+				PRINTFORML （太……太亲密了吧。）
+				PRINTFORMDL 少女下意识想把%CALLNAME:MASTER%推开。
+				PRINTFORMDL 但不知为何，少女并没有用力，反而有一种欲拒还迎的感觉。
+				PRINTFORMDL %CALLNAME:MASTER%这才反应过来，松开了手。
+				PRINTFORMDL 但%CALLNAME:MASTER%刚想道歉的时候，少女就把一个果子塞进了%CALLNAME:MASTER%的嘴里。
+				PRINTFORML 「那个……下次不允许再这样了。」
+				PRINTFORMDL 少女红着脸说道。
+				PRINTFORMDL 与其说是警告，更不如说是一种撒娇。
+				PRINTFORMDL 接着，少女又神差鬼使的补了一句。
+				PRINTFORML 「至少……先跟我说一下。」
+				PRINTFORMDL 说完这句话，少女就偏开了头，不敢与%CALLNAME:MASTER%对视。
+				PRINTFORML （我这是怎么了？）
+				PRINTFORMDL 少女无法理解心中悸动的感觉，只能将其归为一种特殊的友情。
+				PRINTFORMDW 或许，直到未来的某一天，他才能真正理解自己现在的心情吧。
+			ENDSELECT
+		ELSE
+		    SELECTCASE RAND:1
+				CASE 0
+			    PRINTFORML 「哎呀，玩的真开心啊！」
+				PRINTFORML 「我果然没有看错，你确实是个很有意思的人。」
+				PRINTFORML 「以后也会经常一起出来玩哦。」
+				PRINTFORMDL 米斯蒂娅一边轻盈的蹦蹦跳跳，一边轻声哼唱着歌曲。
+				PRINTFORMDL %CALLNAME:MASTER%点了点头，一边舔了口手里的冰淇淋，一边将另一只手手上的冰淇淋递给少女。
+				PRINTFORML 「谢啦。」
+				PRINTFORMDL 少女接了过来，低下头，轻轻咬了口。
+				PRINTFORML 「唔，好冰！」
+				PRINTFORMDL 少女一小脸哆嗦，浑身打了个颤。
+				PRINTFORML 「哇，对了，今天晚上来我这里尝尝怎么样？我准备了一道新菜。」
+				PRINTFORMDL 「乐意奉陪。」
+				PRINTFORML 「哼哼，那我可就要好好准备了。保证让你大吃一惊。」
+				PRINTFORMDW 就这样，两人有说有笑的回到了家。
+			ENDSELECT
+		ENDIF
+
+	ENDIF
+	;-------------------------------------------------
+	;反発刻印消去事件
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 0
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 1
+	    IF TALENT:恋人
+		    PRINTFORMDL 少女踮起脚尖，亲了亲%CALLNAME:MASTER%的额头。
+			PRINTFORML 「这次就原谅你了。」
+			PRINTFORML 「毕竟我们是恋人嘛。」
+			PRINTFORMDL 接着，少女微微板起脸，做出一副认真的样子。
+			PRINTFORMW 「不过，下次不允许了，知道了吗？」
+		ELSEIF TALENT:恋慕
+		    PRINTFORML 「好啦好啦，我不生气了。」
+			PRINTFORMDL 少女拉起%CALLNAME:MASTER%的手。
+			PRINTFORML 「不过下次，请不要做这种事了，好不好」
+			PRINTFORMDW %CALLNAME:MASTER%尴尬的笑了笑。
+		ELSEIF TALENT:思慕
+			PRINTFORML 「好啦」
+			PRINTFORMDL 少女叉着腰，一副很无奈的样子。
+			PRINTFORML 「都这么大的人了，怎么还这样？」
+			PRINTFORMDW 被鸟脑袋这么说……总感觉有些微妙。
+		ELSE
+			PRINTFORML 「行吧。」
+			PRINTFORMDL 少女重新坐到了%CALLNAME:MASTER%的身边。
+			PRINTFORMW 「下不为例。」
+		ENDIF	
+		PRINTFORMDL 
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;反発刻印2>1降级事件
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 0
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 2
+		IF TALENT:恋人
+		    PRINTFORML （尽管已经不是很生气了）
+			PRINTFORML （但太轻松就原谅的话他下次再犯怎么办？）
+			PRINTFORML （果然……）
+			PRINTFORMDW 少女还是一副很生气的样子，但脸色似乎缓和了很多。
+		ELSEIF TALENT:恋慕
+		    PRINTFORML 「我才没有原谅你。」
+			PRINTFORMDL 少女气鼓鼓的移开了头。
+			PRINTFORMDW %CALLNAME:MASTER%坐在她身边，少女想了想，还是没有移开。
+		ELSE
+			PRINTFORMDL 少女扭开头，似乎还是很生气的样子。
+			PRINTFORMDL 不过脸色也好看了不少。
+			PRINTFORMDW （果然，一次道歉还是不行么？）
+		ENDIF	
+		PRINTFORMDL
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;反発刻印3>2降级事件
+	;检查发生（=0, 非表示、1, 表示）
+	LOCAL:1 = 0
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 3
+		IF TALENT:恋人
+		    PRINTFORML 「我们是恋人。」
+			PRINTFORML 「我不希望你走上歧途。」
+			PRINTFORML 「不要这样了，好吗。」
+			PRINTFORMDL 少女对这悲戚的眼神看着%CALLNAME:MASTER%。
+			PRINTFORMDL %CALLNAME:MASTER%轻轻点了点头，少女的脸色才稍微缓和。
+			PRINTFORMDL 但%CALLNAME:MASTER%想握住少女的手时，却被少女轻轻抽开了手。
+		ELSEIF TALENT:恋慕
+		    PRINTFORMDL 过了许久，少女抬起头看向%CALLNAME:MASTER%。
+			PRINTFORML 「你知道错了，对吧？」
+			PRINTFORMDL 许久没有经历过的冷淡态度让%CALLNAME:MASTER%有些不知所措。
+			PRINTFORMDL 得到回答后，少女轻轻点了点头。
+			PRINTFORMDL 随后又扭开头，气似乎还没有消的样子。
+		ELSE
+			PRINTFORML 「你知道错了？」
+			PRINTFORML 「嗯。」
+			PRINTFORMDL 气完全没有消的样子……
+		ENDIF	
+		PRINTFORMDW
+		RETURN 1
+	ENDIF
+ENDIF
+RETURN 1
