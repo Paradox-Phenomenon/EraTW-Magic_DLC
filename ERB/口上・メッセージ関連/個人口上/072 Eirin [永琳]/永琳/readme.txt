@@ -1,4 +1,4 @@
-eraTheWorld 八意永琳口上 ver0.5
+﻿eraTheWorld 八意永琳口上 ver0.5
 作成開始 2021/11/29
 
 【使用テンプレ】

@@ -1,4 +1,4 @@
-;   【中国语版/Chinese Ver】
+﻿;   【中国语版/Chinese Ver】
 ;
 ;   ルーミアMoe版口上
 ;   作者：Moe茗
