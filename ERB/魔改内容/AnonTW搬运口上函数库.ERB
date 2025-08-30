@@ -8037,75 +8037,6 @@ RETURNF GROUPMATCH(ARG, 1, 2, 3, 10)
 
 ;===================================================
 
-@NUM_COUNT(ARG, ARGS = "num", ARG:1)
-#FUNCTIONS
-
-LOCALS =
-
-IF ARG < 0
-	LOCALS '= "minus "
-ENDIF
-ARG = ABS(ARG)
-SIF ARG >= 100000
-	RETURNF LOCALS + "a lot"
-
-IF ARG >= 1000
-	IF ARG/1000 < 20
-		LOCALS += nCountUnderTwenty:(ARG/1000) + " thousand"
-	ELSE
-		LOCALS += nCountTens:(ARG/10000) + ( (ARG/1000)%10 != 0 ? "-" + nCountUnderTwenty:((ARG/1000)%10) # "") + " thousand"
-	ENDIF
-ENDIF
-
-IF ARG >= 100 
-	;IF ARG >= 1000 && ARG % 1000 != 0
-	;	LOCALS += ", "
-	;ENDIF
-	IF ARG >= 1000 && ARG % 1000 != 0
-		IF ARG*10%10000 % 1000 == 0
-			LOCALS += " and "
-		ELSEIF ARG*10%10000 > 1000
-			LOCALS += ", "
-		ENDIF
-	ENDIF
-
-	ARG = ARG % 1000
-	IF ( !STRLENS(LOCALS) || ARG >= 100) 
-		LOCALS += nCountUnderTwenty:(ARG/100) + " hundred"
-	ENDIF
-	IF ARG % 100 != 0
-		LOCALS += " and "
-		ARG = ARG % 100
-	ELSEIF ARGS != "num"
-		LOCALS += "th"
-	ENDIF
-ENDIF
-
-IF (ARG % 100) < 20
-	IF (ARG%100 == 0)
-		IF !STRLENS(LOCALS)
-			RETURNF "zero"
-		ENDIF
-	ELSE
-		LOCALS += (ARGS == "num" ? nCountUnderTwenty:(ARG%100) # nCountPosUnderTwenty:(ARG%100) )
-	ENDIF
-ELSEIF ARG % 10 == 0 && ARGS != "num"
-	LOCALS += nCountPosTens:((ARG%100)/10)
-ELSE
-	LOCALS += nCountTens:((ARG%100)/10) + ( (ARG%10!=0) ? "-"+(ARGS == "num" ? nCountUnderTwenty:(ARG%10) # nCountPosUnderTwenty:(ARG%10) )# "")
-ENDIF
-
-SELECTCASE ARG:1
-	CASE 1
-		LOCALS '= CAPITALIZE(LOCALS)
-	CASE 2
-		LOCALS '= CAP_WORD(LOCALS)
-ENDSELECT
-		
-RETURNF LOCALS
-
-;===================================================
-
 @SPECIAL_FIRSTKISS(ARGS, ARG = -1)
 SIF ARG == -1
 	ARG = TARGET
@@ -9526,22 +9457,6 @@ SELECTCASE ARGS
 		RETURNF ARGS
 ENDSELECT
 RETURNF LOCALS
-
-;===================================================
-
-@IS_COM_SEX(ARGS)
-#FUNCTION
-IF GROUPMATCH(ARGS, "tflag", "tflagv", "tflaga")
-	SIF ARGS == "tflagv" || ARGS == "tflag"
-		RETURNF GROUPMATCH(TFLAG:3, 60, 61, 65, 67, 68, 71, 72, 73)
-	SIF ARGS == "tflaga" || ARGS == "tflag"
-		RETURNF GROUPMATCH(TFLAG:3, 62, 63, 66, 69, 70, 74, 75)
-ENDIF
-
-SIF ARGS == "v" || ARGS == ""
-	RETURNF IS_SELECTCOM("正常位/後背位/騎乗位/対面座位/背面座位/二穴挿し/挿入Ｇスポット責め/挿入子宮口責め") || GROUPMATCH(TCVAR:Counter行動, 80, 83, 85)
-SIF ARGS == "a" || ARGS == ""
-	RETURNF IS_SELECTCOM("正常位肛門/後背位肛門/騎乗位肛門/対面座位肛門/背面座位肛門/Ｓ状結腸責め/膣裏責め") || GROUPMATCH(TCVAR:Counter行動, 87)
 
 ;===================================================
 

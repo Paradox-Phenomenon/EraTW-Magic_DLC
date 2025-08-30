@@ -1,0 +1,1706 @@
+﻿[SKIPSTART]
+;==============================================
+;New update file, refactored
+;==============================================
+;Update Types:
+;full: Full update
+;init: Initialization, skips dialogue options and some resets. Use for New Game/NG+
+@UPDATE_MAIN(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+
+VARSET UPDATE_CHARA_NEW_DIALOGUE_RESET
+VARSET UPDATE_BEHAVIOR_SHOW_RESET_PAGE
+
+CALL UPDATE_MAIN_PRI(UPDATE_TYPE)
+CALL UPDATE_MAIN_CHARA_CSV_REALIGN(UPDATE_TYPE)
+CALL UPDATE_MAIN_CHARA_ADD(UPDATE_TYPE)
+
+CALL UPDATE_MAIN_MASTER(UPDATE_TYPE)
+CALL UPDATE_MAIN_CHARA(UPDATE_TYPE)
+CALL UPDATE_MAIN_CHILDREN_VARIFY(UPDATE_TYPE)
+
+CALL UPDATE_MAIN_CHARA_DIALOGUE_OPTIONS_ASK(UPDATE_TYPE)
+CALL UPDATE_MAIN_CHARA_DIALOGUE(UPDATE_TYPE)
+
+CALL UPDATE_MAIN_IMAGESETS
+
+CALL UPDATE_MAIN_LATER(UPDATE_TYPE)
+CALL UPDATE_MAIN_COMPLETE(UPDATE_TYPE)
+
+;==============================================
+;#1: Functions executed at the very beginning
+;==============================================
+@UPDATE_MAIN_PRI(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+CALL UPDATE_VERSIONBASED()
+CALL FIX_DIALOGUE_STATUS()
+
+;set the limit for maximum charisma held
+SIF !CM_LIMIT
+	CM_LIMIT = 100
+;removes dirt from the lakebottom of misty lake
+YOGORE:348 = 0
+
+;initialize some peasant stuff if it hasn't been set
+IF FLAG:地主 && !FLAG:農民難易度
+	CALL MODE_NOUMIN
+	CALL LOAN_NOUMIN
+ENDIF
+
+;set up the charisma market if it hasn't
+SIF !FLAG:カリスマ変動状況
+	CALL SET_CHARISMA("NEW")
+
+VARSET LOCAL
+
+SIF VAR_FERMENT == "" || VAR_FERMENT == "0"
+	VAR_FERMENT = ただの水
+
+IF GETBIT(FLAG_DAILY_EV23, 0) && !FLAG_DAILY_EV23_販売員
+	PRINTFORML 訪問販売員の外見は…
+	CALL ASK_YN("髪を後ろで二つにまとめている","ボーイッシュなショートヘア")
+	FLAG_DAILY_EV23_販売員 = RESULT + 1
+ENDIF
+
+;=== custom code =========
+;CALL Add_Handle_Duplicate_Deletion(1, 1)
+;=========================
+
+;==============================================
+;#2: Add characters
+;==============================================
+@UPDATE_MAIN_CHARA_CSV_REALIGN(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+
+;まずはモブを削除 Mob girl is deleted right away (she is then added back)
+DELCHARA CHARANUM - 1
+
+FOR C_ID,1,CHARANUM ;CSVに名前を参照してNOを書き直す Realign character IDs to their CSV definition, check using their character name
+	VARSET LOCAL
+	SIF NAME:C_ID == ""
+		CONTINUE
+	FOR LOCAL,1,キャラクタ数上限
+		SIF !EXISTCSV(LOCAL)
+			CONTINUE
+		IF NAME:C_ID == CSVNAME(LOCAL)
+			NO:C_ID = LOCAL
+			BREAK
+		ENDIF
+	NEXT
+NEXT
+
+@UPDATE_MAIN_CHARA_ADD(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+FOR C_ID,1,キャラクタ数上限 ;終わったら新キャラ追加
+	IF GETCHARA(C_ID) == -1 && EXISTCSV(C_ID)
+		;add new character, check if they have KOJO and set a variable if they do
+		CALL ADDCHARA_INIT(C_ID)
+		IF !TALENT:C_ID:行きずり
+			PRINTFORML %NAME:C_ID%がキャラリストに追加されました
+
+			CALL KOJO_COUNT_CHECK(C_ID)
+			CALL UPDATE_MAIN_UPDATE_ABL(C_ID)
+			CALL UPDATE_MAIN_UPDATE_SEX_EXP(C_ID)
+		ENDIF
+		RESULT = 0
+
+		;dress up
+		;衣装設定
+		;行動中に着る服を設定してお着替えする
+		IF !睡眠時間(C_ID)
+			CALL SELECT_CLOTHES(C_ID, "今日の衣装")
+			CALL SELECT_CLOTHES(C_ID, "今日のパジャマ")
+			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_普段着")
+			SETBIT CFLAG:C_ID:着替え実行, 0
+		ELSE
+			CALL SELECT_CLOTHES(C_ID, "明日の衣装")
+			CALL SELECT_CLOTHES(C_ID, "今日のパジャマ")
+			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_パジャマ")
+			CFLAG:C_ID:パジャマ = 1
+			SETBIT CFLAG:C_ID:着替え実行, 1
+		ENDIF
+		IF SPECIAL_OUTFIT(C_ID)
+			CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_衣装セット", SPECIAL_OUTFIT(C_ID))
+			[IF_DEBUG]
+			PRINTFORML %CALLNAME:C_ID%はいつもと違う服に着替えたようだ
+			[ENDIF]
+			TCVAR:C_ID:アナザー普段着 = 1
+		ENDIF
+		CALL 下着確認リセット(C_ID)
+		CALL CLOTHES_SETTING_TRAIN(C_ID)
+	ENDIF
+	;set random charanum as the mob
+	IF TALENT:C_ID:行きずり
+		RANDOM_CHARANUM = C_ID
+		BREAK
+	ENDIF
+NEXT
+
+;==============================================
+;#3: Character Changes
+;==============================================
+
+;=======================
+;#3.1: MASTER specific changes
+;=======================
+@UPDATE_MAIN_MASTER(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+
+;本来つかない筈の不機嫌がMASTERについてる場合の削除処理 remove mood from MASTER
+SIF CFLAG:MASTER:不機嫌 == 1
+	CFLAG:MASTER:不機嫌 = 0
+SIF CFLAG:MASTER:ブチギレ == 1
+	CFLAG:MASTER:ブチギレ = 0
+SIF TALENT:MASTER:機嫌 == -1
+	TALENT:MASTER:機嫌 = 0
+
+;set maxbase for player 酒気(Drunkness), without checking current value. Can this reduce it? code used to be further up
+;yes it can, there's an event where this can be fortified (DAIRY_EV7 アルハラ.ERB)
+SIF MAXBASE:MASTER:酒気 < 1500
+	MAXBASE:MASTER:酒気 = 1500
+
+;MASTERが女、ふたなり時 Master is female or futanari
+IF HAS_VAGINA(MASTER)
+
+;MASTERが男 MASTER is male
+ELSE
+	;set chest size to flat
+	TALENT:MASTER:バストサイズ = -2
+ENDIF
+
+;if MASTER has a penis but doesn't have a size for their tool defined, do so now
+SIF HAS_PENIS(MASTER) && !TALENT:MASTER:形状
+	CALL TINKO_DECIDE(MASTER)
+
+;set player penis size to how it was before when the state is adnormal due to magic mullet usage
+;小槌の代償が終了せずにずっと粗末な物になっている場合の修正
+;要注意大きくした後に二本にした場合、及び二本にした後に大きくした場合、粗末な物がデフォルトになる可能性があります
+;その場合、自分で元の形状を再設定しなければなりません
+SIF TALENT:MASTER:形状 != CFLAG:MASTER:変異前の形状 && CFLAG:MASTER:魔力回収 < 0
+	TALENT:MASTER:形状 = CFLAG:MASTER:変異前の形状
+SIF CFLAG:MASTER:魔力回収 > 0 && CFLAG:MASTER:小槌 == 0
+	CFLAG:MASTER:魔力回収 = 0
+
+;fix that resets master body-type to default
+IF TALENT:MASTER:体型 == -3
+	TALENT:MASTER:体型 = 0
+	PRINTFORML ---%CALLNAME:MASTER%の体型をリセットします---
+	PRINTL 
+ENDIF
+
+;set masters home to the initial position
+CFLAG:MASTER:神社在住 = CFLAG:MASTER:初期位置
+
+;=======================
+;#3.2: Character Reset Utilities
+;=======================
+;Update all ABL EXP according to CSV values
+@UPDATE_MAIN_UPDATE_ABL(C_ID, CHECK_CURRENT_ABL = 0, ACTION_NOTIFY = 0)
+#DIM C_ID
+#DIM ABL_ID
+#DIM MINIMUM_ABL
+#DIM CHECK_CURRENT_ABL
+#DIM ACTION_NOTIFY
+
+FOR ABL_ID,0,100
+	IF CHECK_CURRENT_ABL
+		MINIMUM_ABL = ABL:C_ID:ABL_ID
+	ELSE
+		MINIMUM_ABL = CSVABL(NO:C_ID, ABL_ID)
+	ENDIF
+	SIF MINIMUM_ABL == 0
+		CONTINUE
+	;戦闘能力, combat ability
+	IF ABLNAME:ABL_ID == "戦闘能力"
+		;戦闘能力修正
+		SIF ABL:C_ID:ABL_ID < MINIMUM_ABL && EXP:C_ID:戦闘経験 == CSVEXP(NO:C_ID, GETNUM(EXP, "戦闘経験"))
+			ABL:C_ID:ABL_ID = MINIMUM_ABL
+		CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "戦闘経験"), MINIMUM_ABL)
+		CONTINUE
+	ENDIF
+
+	;increase ABL when it is below the minimum
+	SIF ABL:C_ID:ABL_ID < MINIMUM_ABL
+		ABL:C_ID:ABL_ID = MINIMUM_ABL
+
+	SELECTCASE ABLNAME:ABL_ID
+		CASE "清掃技能"
+			CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "清掃経験"), MINIMUM_ABL)
+		CASE "話術技能"
+			CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "会話経験"), MINIMUM_ABL)
+		CASE "教養"
+			CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "学習経験"), MINIMUM_ABL)
+		CASE "料理技能"
+			CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "料理経験"), MINIMUM_ABL)
+		CASE "音楽技能"
+			SELECTCASE TALENT:C_ID:音楽知識
+			CASE 1
+				CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "演奏経験"), MINIMUM_ABL)
+			CASE 2
+				CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "歌唱経験"), MINIMUM_ABL)
+			CASE 3
+				CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "舞踏経験"), MINIMUM_ABL)
+			CASEELSE
+				CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "歌唱経験"), MINIMUM_ABL)
+			ENDSELECT
+	ENDSELECT
+	;技能系素質 Talent skills, logging, fishing, gathering and mixing
+	TALENT:C_ID:伐採Lv = MAX(TALENT:C_ID:伐採Lv, CSVTALENT(NO:C_ID, 46))
+	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "伐採経験"), TALENT:C_ID:伐採Lv)
+	TALENT:C_ID:釣りLv = MAX(TALENT:C_ID:釣りLv, CSVTALENT(NO:C_ID, 47))
+	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "釣り経験"), TALENT:C_ID:釣りLv)
+	TALENT:C_ID:採集Lv = MAX(TALENT:C_ID:採集Lv, CSVTALENT(NO:C_ID, 48))
+	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "採集経験"), TALENT:C_ID:採集Lv)
+	TALENT:C_ID:調合Lv = MAX(TALENT:C_ID:調合Lv, CSVTALENT(NO:C_ID, 49))
+	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "調合経験"), TALENT:C_ID:調合Lv)
+NEXT
+
+;CSV更新用
+;非エロ系ABL、40～49において
+;CSV準拠で能力が上昇した場合に最低限のEXPを取得し、表示する
+@SET_MINIMUM_EXP(C_ID, VAR_ID, MINIMUM_ABL, ACTION_NOTIFY)
+#DIM C_ID
+#DIM VAR_ID
+#DIM MINIMUM_ABL
+#DIM MINIMUM_EXP
+#DIM ACTION_NOTIFY
+#DIM DYNAMIC OLD_EXP_VALUE
+#DIM DYNAMIC NEW_EXP_VALUE
+SIF MINIMUM_ABL == 0
+	RETURN
+OLD_EXP_VALUE = EXP:C_ID:VAR_ID
+MINIMUM_EXP = EXPLV:(MINIMUM_ABL + (GROUPMATCH(VAR_ID, GETNUM(EXP, "演奏経験"), GETNUM(EXP, "歌唱経験"), GETNUM(EXP, "舞踏経験")) ? 3 # 2))
+SIF OLD_EXP_VALUE >= MINIMUM_EXP
+	RETURN
+NEW_EXP_VALUE = MINIMUM_EXP
+EXP:C_ID:VAR_ID = NEW_EXP_VALUE
+SIF ACTION_NOTIFY
+	PRINTFORML %CALLNAME:C_ID%の%EXPNAME:VAR_ID%が{EXP:C_ID:VAR_ID}に上がりました
+
+@UPDATE_MAIN_UPDATE_SEX_EXP(C_ID, ACTION_NOTIFY = 0)
+#DIM C_ID
+#DIM VAR_ID
+#DIM MINIMUM_ABL
+#DIM ACTION_NOTIFY
+#DIM DYNAMIC OLD_EXP_VALUE
+#DIM DYNAMIC NEW_EXP_VALUE
+
+FOR VAR_ID,0,111
+	IF EXP:C_ID:VAR_ID < CSVEXP (C_ID,VAR_ID)
+		OLD_EXP_VALUE = EXP:C_ID:VAR_ID
+		NEW_EXP_VALUE = (EXP:C_ID:VAR_ID + CSVEXP (C_ID,VAR_ID))
+		PRINTFORML %CALLNAME:C_ID%の%EXPNAME:(VAR_ID)%が{OLD_EXP_VALUE}から{NEW_EXP_VALUE}に上がりました
+		EXP:C_ID:VAR_ID = NEW_EXP_VALUE
+	ENDIF
+NEXT
+
+;=======================
+;#3.3: Character updates
+;=======================
+@UPDATE_MAIN_CHARA(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+#DIM MATERNITY_LEAVE_TRACKER
+#DIM CHILD_BEING_CARED
+#DIM CHILD_SEX_PROMPT
+
+;recount the amount of disabled characters
+FLAG:出禁人数 = 0
+
+FOR C_ID, 1, CHARANUM - 1
+	SIF CFLAG:C_ID:出禁
+		FLAG:出禁人数 ++
+
+	SIF EXISTCSV(NO:C_ID) < 1 ;failsafe
+		CONTINUE
+
+	IF !TALENT:C_ID:性別
+		LOCAL = CSVTALENT(NO:C_ID, GETNUM(TALENT, "性別"))
+		PRINTFORMDL %NAME:C_ID%の性別設定が以上です。リセットされます。
+		TALENT:C_ID:性別 = LOCAL
+	ENDIF
+
+	;if love unset other falling talents when not on the love route
+	IF TALENT:C_ID:恋慕 && !FLAG:陥落路線変化
+		TALENT:C_ID:思慕 = 0
+		TALENT:C_ID:セフレ = 0
+		TALENT:C_ID:愛欲 = 0
+	ENDIF
+
+	;if a character is parenting, set the child they are parenting
+	IF TALENT:C_ID:育児中
+		FOR LOCAL:1, 1, MAXCHILD + 1
+			SIF (CHILD_BIRTHDAY:C_ID:(LOCAL:1) > CHILD_BIRTHDAY:C_ID:(LOCAL:1 - 1)) || (LOCAL:1 - 1) == 0
+				CHILD_BEING_CARED = LOCAL:1
+		NEXT
+		TALENT:C_ID:育児中 = CHILD_BEING_CARED
+	ENDIF
+
+	;if not pregnant, stop being aware of pregnancy
+	SIF !TALENT:C_ID:妊娠
+		CFLAG:C_ID:妊娠自覚状態 = 0
+
+	;set never kissed
+	SIF EXP:C_ID:キス経験 == 0 && TALENT:C_ID:キス未経験 == 0 && CFLAG:C_ID:ファーストキス喪失対象 != 1
+			TALENT:C_ID:キス未経験 = 1
+
+	;set active request to none when active request progress isn't tracking anything
+	SIF !CFLAG:C_ID:依頼状況
+		CFLAG:C_ID:依頼内容 = 0
+
+	;EFFECTIVE_PATTERN_V seems to related to COMF317?
+	FOR LOCAL:1, 0, 3
+		SIF !EFFECTIVE_PATTERN_V:C_ID:(LOCAL:1)
+			EFFECTIVE_PATTERN_V:C_ID:(LOCAL:1) = 1 + RAND:3
+		SIF !EFFECTIVE_PATTERN_A:C_ID:(LOCAL:1)
+			EFFECTIVE_PATTERN_A:C_ID:(LOCAL:1) = 1 + RAND:3
+	NEXT
+
+	;種族系素質を更新 update race identifiers (e.g. Human) according to CSV values
+	FOR LOCAL:1, 190, 199
+		TALENT:C_ID:(LOCAL:1) = CSVTALENT(NO:C_ID, LOCAL:1)
+	NEXT
+
+	;水棲、氷精、種族(未使用？)、半白澤、動物耳も変動しないと思われるので更新 this was added to update some other race-ish talents
+	FOR LOCAL:1, 163, 167
+		TALENT:C_ID:(LOCAL:1) = CSVTALENT(NO:C_ID, LOCAL:1)
+	NEXT
+
+	;update pain sensitivity according to CSV; may be undesired
+	TALENT:C_ID:痛覚 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "痛覚"))
+	;update animal ears talent
+	TALENT:C_ID:動物耳 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "動物耳"))
+	;update recovery speed according to CSV; may be undesired
+	SIF TALENT:C_ID:回復速度 < CSVTALENT(NO:C_ID, GETNUM(TALENT, "回復速度")) && !TALENT:C_ID:妊娠 && CFLAG:C_ID:出産経過日 > 20
+		TALENT:C_ID:回復速度 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "回復速度"))
+
+	;check if the character should be a cleaner but isn't and fix it
+	SIF TALENT:C_ID:掃除係 == 0
+		TALENT:C_ID:掃除係 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "掃除係"))
+	;same for sense of sound
+	SIF TALENT:C_ID:音感 == 0
+		TALENT:C_ID:音感 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "音感"))
+	;and for the singing talent
+	SIF TALENT:C_ID:音楽知識 == 0
+		TALENT:C_ID:音楽知識 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "音楽知識"))
+	;tinko check has been moved here
+	SIF GETBIT(TALENT:C_ID:性別, 1) && !TALENT:C_ID:形状
+		CALL TINKO_DECIDE(C_ID)
+
+	;地位の読み込み set social standing for the character, but as of 07/28/2025, this variable is rarely used
+	SIF CFLAG:C_ID:310 != CSVCFLAG(C_ID, 310)
+		CFLAG:C_ID:310 = CSVCFLAG(C_ID, 310)
+	;活動時間を読み込み set character scheduel
+	FOR LOCAL:1, 352, 356
+		SIF CFLAG:C_ID:(LOCAL:1) != CSVCFLAG(C_ID, LOCAL:1)
+			CFLAG:C_ID:(LOCAL:1) = CSVCFLAG(C_ID, LOCAL:1)
+		CONTINUE
+	NEXT
+	;来訪確率補正を読み込み set visit rate adjustment value, supposedly
+	FOR LOCAL:1, 420, 432
+		CFLAG:C_ID:(LOCAL:1) = CSVCFLAG(NO:C_ID, LOCAL:1)
+	NEXT
+	;来訪位置を読み込み set location when visiting
+	FOR LOCAL:1, 450, 462
+		CFLAG:C_ID:(LOCAL:1) = CSVCFLAG(NO:C_ID, LOCAL:1)
+	NEXT
+
+	;update character relations/affinity for each other according to CSV setting
+	FOR LOCAL:1, 1, CHARANUM
+		RELATION:C_ID:(LOCAL:1) = CSVRELATION(NO:C_ID, LOCAL:1)
+	NEXT
+
+	;setting several flags according to CSV values
+	;大家フラグ
+	CFLAG:C_ID:大家候補 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "大家候補"))
+	CFLAG:C_ID:住み込み必要信頼度 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "住み込み必要信頼度"))
+	CFLAG:C_ID:家賃 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "家賃"))
+	CFLAG:C_ID:素材販売 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "素材販売"))
+	CFLAG:C_ID:固有コマンド = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "固有コマンド"))
+	CFLAG:C_ID:地位 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "地位"))
+	CFLAG:C_ID:初期位置 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "初期位置"))
+	;set the initial position to 神社在住 if 神社在住 is set
+	SIF FLAG:一時滞在 == C_ID
+		CFLAG:C_ID:初期位置 = CFLAG:C_ID:神社在住
+	CFLAG:C_ID:来訪時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "来訪時間"))
+	CFLAG:C_ID:帰宅時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "帰宅時間"))
+	CFLAG:C_ID:就寝時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "就寝時間"))
+	CFLAG:C_ID:起床時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "起床時間"))
+	CFLAG:C_ID:よく行く地域 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "よく行く地域"))
+	CFLAG:C_ID:自宅位置 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "自宅位置"))
+	CFLAG:C_ID:移動率補正 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "移動率補正"))
+	CFLAG:C_ID:移動節度 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "移動節度"))
+	CFLAG:C_ID:来訪抑制値 = CSVCFLAG(NO:C_ID, GETNUM(CFLAG, "来訪抑制値"))
+	CFLAG:C_ID:弾幕特能 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "弾幕特能"))
+
+	SIF !CFLAG:C_ID:弾幕特能
+		CALL 弾幕特殊能力設定(C_ID)
+
+	CFLAG:C_ID:口調 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "口調"))
+
+	;最大気力体力がCSV値より低い場合CSVに合わせる adjust maximum values for some stats if they are lower than base
+	IF !CFLAG:C_ID:回復速度ダウン
+		SIF MAXBASE:C_ID:0 < CSVBASE (NO:C_ID, 0)
+			MAXBASE:C_ID:0 = CSVBASE (NO:C_ID, 0)
+		SIF MAXBASE:C_ID:1 < CSVBASE (NO:C_ID, 1)
+			MAXBASE:C_ID:1 = CSVBASE (NO:C_ID, 1)
+	ENDIF
+	CFLAG:C_ID:産休タイプ = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "産休タイプ"))
+
+	;酒耐性
+	MAXBASE:C_ID:酒気 = CSVBASE(NO:C_ID, GETNUM(BASE, "酒気"))
+
+	CALL UPDATE_MAIN_UPDATE_ABL(C_ID, , 1)
+
+	;パンツ種類非存在時消去 remove panty types that don't exist from the collection
+	FOR LOCAL:1, 2, MAXPANTS
+		SIF CFLAG:C_ID:(LOCAL:1 + パンツ管理) && GET_STR(C_ID, "下半身下着_ずらし可能", LOCAL:1, "名前") == ""
+			CFLAG:C_ID:(LOCAL:1 + パンツ管理) = 0
+	NEXT
+	;子供の性別と生年月日 set child gender and date of birth if missing
+	IF EXP:C_ID:出産経験
+		FOR LOCAL:1, 1, MAXCHILD + 1
+			;生まれている子供の設定
+			IF CHILD_BIRTHDAY:C_ID:(LOCAL:1)
+				IF !CHILD_BIRTHDATE:C_ID:(LOCAL:1)
+					;生年月日設定
+					CHILD_BIRTHDATE:C_ID:(LOCAL:1) = DAY_TO_DATE(CHILD_BIRTHDAY:C_ID:(LOCAL:1))
+					;天気は遡れないので晴れってことで
+					CHILD_WEATHER:C_ID:(LOCAL:1) = たしか晴れ
+					;エレンの子供は例外
+					IF C_ID == [[エレン]]
+						CHILD_SEX:C_ID:(LOCAL:1) = 0
+					ELSE
+						;初回
+						IF !CHILD_SEX_PROMPT && !FLAG:子供の性別
+							CHILD_SEX_PROMPT = 1
+							PRINTL 子供の性別が未設定です。選択してください
+							CALL ASK_M("ランダム", 1, "女", 1, "男", 1)
+							SIF RESULT == 1 || RESULT == 2
+								FLAG:子供の性別 = RESULT
+						ENDIF
+						IF !FLAG:子供の性別
+							CHILD_SEX:C_ID:(LOCAL:1) = RAND:2 + 1
+						ELSE
+							CHILD_SEX:C_ID:(LOCAL:1) = FLAG:子供の性別
+						ENDIF
+						PRINTFORM %CHILDNAME:C_ID:(LOCAL:1), 16, LEFT%の性別を\@ CHILD_SEX:C_ID:(LOCAL:1) == 1 ? 女 # 男 \@に設定しました;  誕生日:
+						CALL PRINT_DATE(CHILD_BIRTHDAY:C_ID:(LOCAL:1))
+						PRINTFORML .
+					ENDIF
+				ENDIF
+				;初期愛情度の設定
+				IF !CHILD_LOVE:C_ID:(LOCAL:1)
+					;無自覚妊娠情報は失われているので陥落無しと判定
+					IF TALENT:C_ID:恋慕
+						CHILD_LOVE:C_ID:(LOCAL:1) = 300
+					ELSEIF TALENT:C_ID:思慕
+						CHILD_LOVE:C_ID:(LOCAL:1) = 200
+					ELSE
+						CHILD_LOVE:C_ID:(LOCAL:1) = 100
+					ENDIF
+				ENDIF
+				;自立先の設定
+				SIF !CHILD_AREA:C_ID:(LOCAL:1)
+					CALL 自立先選定(C_ID, LOCAL:1)
+			ENDIF
+		NEXT
+	ENDIF
+	;贈り物情報の修正 Present info checking
+	IF !GIFT_GOT:C_ID:1
+		CFLAG:C_ID:贈り物ストック = 0
+		IF CFLAG:C_ID:貰った贈り物
+			CFLAG:C_ID:貰った贈り物 -= (GET_GIFTDATA(CFLAG:C_ID:貰った贈り物, "回数") * 10000000000000000)
+			CFLAG:C_ID:貰った贈り物 += 1 * 10000000000000000
+			GIFT_GOT:C_ID:1 = CFLAG:C_ID:貰った贈り物
+		ENDIF
+	ENDIF
+
+	;custom code
+	;==========================================
+	;CALL UPDATE_MAIN_ENG_CHARA_NAMEARRAY(C_ID)
+	;CALL UPDATE_MAIN_ENG_CHARA_CUSTOM_TRAITS(C_ID)
+	;==========================================
+
+	;if a character has a penis but doesn't have a size for their tool defined, do so now
+	SIF HAS_PENIS(C_ID) && !TALENT:C_ID:形状
+		CALL TINKO_DECIDE(C_ID)
+
+	;fix maternity leave state
+	MATERNITY_LEAVE_TRACKER = 0
+	IF CFLAG:C_ID:妊娠経過日数 > 1 && !CFLAG:C_ID:産休中 && CSTR:C_ID:3 != ""
+
+		IF C_ID == [[勇儀]] ;yuugi
+			SIF CFLAG:C_ID:妊娠経過日数 >= 20 && !CFLAG:C_ID:無自覚妊娠
+				MATERNITY_LEAVE_TRACKER = 1
+		ENDIF
+		SELECTCASE CFLAG:C_ID:産休タイプ
+			;-1 means they continue working throughout pregnancy
+			CASE 0
+				IF !CFLAG:C_ID:無自覚妊娠 && CFLAG:C_ID:妊娠経過日数 >= 30
+					MATERNITY_LEAVE_TRACKER = 1
+				ELSEIF CFLAG:C_ID:妊娠経過日数 >= 60
+					MATERNITY_LEAVE_TRACKER = 1
+				ENDIF
+			CASE 1
+				IF !CFLAG:C_ID:無自覚妊娠 && CFLAG:C_ID:妊娠経過日数 >= 40
+					MATERNITY_LEAVE_TRACKER = 1
+				ELSEIF CFLAG:C_ID:妊娠経過日数 >= 60
+					MATERNITY_LEAVE_TRACKER = 1
+				ENDIF
+			CASE 2
+				IF !CFLAG:C_ID:無自覚妊娠 && CFLAG:C_ID:妊娠経過日数 >= 60
+					MATERNITY_LEAVE_TRACKER = 1
+				ELSEIF CFLAG:C_ID:妊娠経過日数 >= 70
+					MATERNITY_LEAVE_TRACKER = 1
+				ENDIF
+		ENDSELECT
+
+		IF MATERNITY_LEAVE_TRACKER
+			PRINTFORMDL %NAME:C_ID%の産休状態を修正します。
+			CFLAG:C_ID:産休中 = 1
+		ENDIF
+	ENDIF
+
+	;fix outfits
+	IF !INRANGE(CFLAG:C_ID:基本服装セット, 101, 100 + CHARANUM-1) && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, "名前") == ""
+		;PRINTFORMDL Resetting casual wear for %NAME:C_ID%.
+		IF C_ID == MASTER
+			CFLAG:C_ID:基本服装セット = IS_MALE(C_ID) ? 1 # 2
+		ELSE
+			CFLAG:C_ID:基本服装セット = 100 + C_ID
+		ENDIF
+	ENDIF
+	IF !GROUPMATCH(CFLAG:C_ID:パジャマ指定, 301, 302) && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:パジャマ指定, "名前") == ""
+		;PRINTFORMDL Resetting sleepwear for %NAME:C_ID%.
+		IF C_ID != MASTER
+			CFLAG:C_ID:パジャマ指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GET_STR(C_ID, "キャラデータ", NO:C_ID, "今日のパジャマ"))
+		ELSEIF FLAG:なりきり
+			CFLAG:C_ID:パジャマ指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GET_STR(C_ID, "キャラデータ", NO:(FLAG:なりきり), "今日のパジャマ"))
+		ENDIF
+		SIF !CFLAG:C_ID:パジャマ指定
+			CFLAG:C_ID:パジャマ指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", "パジャマ（襦袢）セット")
+	ENDIF
+	IF !INRANGE(CFLAG:C_ID:衣装一時変更, 101, 100 + CHARANUM-1) && CFLAG:C_ID:衣装一時変更 != 0 && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:衣装一時変更, "名前") == ""
+		;PRINTFORMDL Resetting temporary outfit for %NAME:C_ID%.
+		CFLAG:C_ID:衣装一時変更 = 0
+	ENDIF
+
+	;キャラデータのエラーチェック Error checking for characters
+	LOCAL:4 = 0
+	FOR LOCAL:1, 0, MAXHOME
+		FOR LOCAL:2, 1, 10
+			LOCAL:3 = LOCAL:1 * 100 + LOCAL:2 * 10
+			;addition custom code, for custom charadata movement
+			;RESULT:1 = 0
+			;CALL KOJO_CHECK(C_ID, "CHARADATA", "MOVE", 7, LOCAL:3)
+			;IF RESULT
+				;RESULT = RESULT:1
+			;ELSE
+			CALLFORM CHARAMOVE_DATA_{NO:C_ID}(7, LOCAL:3)
+			;ENDIF 
+			IF RESULT
+				LOCAL:4 = 1
+				BREAK
+			ENDIF
+		NEXT
+		SIF LOCAL:4
+			BREAK
+	NEXT
+	IF !LOCAL:4 && CFLAG:C_ID:出禁 != 2 ;skip randos
+		PRINTFORML ※%CALLNAME:C_ID%({C_ID})のCHARAMOVE_DATAに異常があります！
+		THROW
+	ENDIF
+NEXT
+
+;=======================
+;#3.4: Children Updates
+;=======================
+@UPDATE_MAIN_CHILDREN_VARIFY(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+[IF_DEBUG]
+PRINTFORML 子供の数・養育費・育児中の親の数を再集計します。
+[ENDIF]
+CFLAG:MASTER:子供人数 = 0
+CFLAG:MASTER:育児人数 = 0
+FOR C_ID, 1, CHARANUM
+	SIF TALENT:C_ID:行きずり
+		CONTINUE
+	CFLAG:MASTER:子供人数 += CFLAG:C_ID:子供人数
+	CFLAG:C_ID:育児人数 = 0
+	FOR LOCAL, 1, MAXCHILD+1
+		IF CHILD_SEX:C_ID:LOCAL && CHILDNAME:C_ID:LOCAL == ""
+			PRINTFORMDL %CALLNAME:C_ID%の\@ CHILD_SEX:C_ID:LOCAL == 1 ? 娘 # 息子 \@に名前がありません。命名してください。 (子供の数 {LOCAL})
+			$LOOP
+			INPUTS
+			SIF RESULTS == ""
+				GOTO LOOP
+			CHILDNAME:C_ID:LOCAL '= RESULTS
+		ENDIF
+		SIF CHILDNAME:C_ID:LOCAL != "" && !CHILD_INDEPENDENT:C_ID:LOCAL
+			CFLAG:C_ID:育児人数++
+	NEXT
+	CFLAG:MASTER:育児人数 += CFLAG:C_ID:育児人数
+NEXT
+[IF_DEBUG]
+PRINTFORML 子供の数: {CFLAG:MASTER:子供人数}人 養育費が必要な数: {CFLAG:MASTER:育児人数}人
+PRINTL
+[ENDIF]
+
+;Set birth event counts to the number of children for all characters if there's a mismatch, and initialize the pregnancy progress array.
+CALL UPDATE_SET_PREGNANCY_COUNTERS
+
+;==============================================
+;#4: Dialogue Updates
+;==============================================
+@UPDATE_MAIN_CHARA_DIALOGUE_OPTIONS_ASK(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+IF UPDATE_TYPE == "full"
+	PRINTL
+	CALL UPDATE_MAIN_DRAWLINE_SECTION("口上アップデートを開始")
+	PRINTFORML 口上カスタムオプションを表示しますか？
+	PRINTFORML 大半の口上にはセットアップ設定があります。少々時間はかかります。
+	PRINTFORML 後から個別に行うこともできます。キャラ設定タブ下部のステータス画面から設定してください。
+	CALL ASK_YN
+	UPDATE_KOJO_CUSTOMIZE = !RESULT
+ENDIF
+
+@UPDATE_MAIN_CHARA_DIALOGUE(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+LOCAL = TARGET
+;check KOJO for updates and run them if available
+FOR C_ID, 1, CHARANUM
+	SIF CFLAG:C_ID:出禁 ;skip disabled characters
+		CONTINUE
+	CALL UPDATE_DIALOGUE_INDIVIDUAL(C_ID, 1)
+	IF RESULT == 2
+		UPDATE_CHARA_NEW_DIALOGUE_RESET:C_ID = 1
+		UPDATE_BEHAVIOR_SHOW_RESET_PAGE = 1
+	ENDIF
+NEXT
+TARGET = LOCAL
+CALL UPDATE_MAIN_DRAWLINE_SECTION("口上アップデートを終了")
+PRINTL
+
+
+;==============================================
+;#5: Functions executed at the end of the update
+;==============================================
+@UPDATE_MAIN_LATER(UPDATE_TYPE = "full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+
+;varification for the banquet starting date variable, not used on English versions
+; SIF FLAG:開始日 < DAY
+; 	FLAG:開始日 = DAY + 1
+
+;prompt option to destroy traps
+IF MUSHI_TRAP
+	PRINTFORML 虫トラップを破棄しますか？
+	CALL ASK_YN
+	SIF !RESULT
+		MUSHI_TRAP = 0
+ENDIF
+
+;patch for Old Hell Hot Spring's "New Plan"
+IF !旧地獄温泉_ニュープラン_完成日 && FLAG:周回数
+	VARSET SENTO_CONSUMPTION, 0
+	VARSET SENTO_FLAG, 0
+	旧地獄温泉_ニュープラン_完成日 = 1
+	PRINTL 旧地獄温泉の『にゅーぷらん』を再オープンしました
+ENDIF
+
+;アイテム類の在庫管理 inventory varifications
+FOR LOCAL, 0, VARSIZE("ITEM")
+	CALL ITEMDATA(LOCAL, "SHOP:食料品店")
+	RESULT:1 = RESULT
+	CALL ITEMDATA(LOCAL, "SHOP:酒屋")
+	RESULT:2 = RESULT
+	CALL ITEMDATA(LOCAL, "SHOP:花屋")
+	RESULT:3 = RESULT
+	CALL ITEMDATA(LOCAL, "SHOP:八百屋")
+	RESULT:4 = RESULT
+	IF RESULT:1 && !INRANGE(ITEMSALES:LOCAL, 1, 30)
+		ITEMSALES:LOCAL = LIMIT(ITEMSALES:LOCAL, 10, 30)
+	ELSEIF RESULT:2 && !INRANGE(ITEMSALES:LOCAL, 1, 30)
+		ITEMSALES:LOCAL = LIMIT(ITEMSALES:LOCAL, 5, 30)
+	ELSEIF RESULT:3 && !INRANGE(ITEMSALES:LOCAL, 0, 3)
+		ITEMSALES:LOCAL = 3
+	ELSEIF RESULT:4 && !INRANGE(ITEMSALES:LOCAL, 0, 5)
+		ITEMSALES:LOCAL = RAND:5
+	ENDIF
+	;ついでに所持数制限,換金はしません remove excess items over inventory limit
+	IF ITEM:LOCAL > 所持数制限 && !GROUPMATCH(ITEMNAME:LOCAL, "お気に入りアイテム")
+		ITEM:LOCAL = 所持数制限
+		PRINTFORMW %ITEMNAME:LOCAL%が所持数制限を超えていたので制限値まで減らしました
+	ENDIF
+	;ついでのついでに存在外アイテムの削除
+	IF ITEMNAME:LOCAL == ""
+		ITEM:LOCAL = 0
+		ITEMSALES:LOCAL = 0
+	ENDIF
+NEXT
+
+;adjusts banquest holding position if banquet is enabled
+IF !FLAG:宴会開催フラグ
+ELSEIF !FLAG:32
+	;必要なのかわからんが念のため、です
+	;暫定処理でとりあえず博麗神社境内を指定、主催者がズレたりしても気にするな
+	FLAG:32 = 2
+	PRINTFORML 宴会の開催位置を修正します
+ELSEIF FLAG:32 == 230
+	;バグ報告でのFLAG:32の内容はおそらくこっち
+	FLAG:32 = 218
+	PRINTFORML 宴会の開催位置を修正します
+ENDIF
+CALL SET_ENKAI_LOCATIONDISPLAY
+
+;拠点マップの再設定
+IF CFLAG:MASTER:現在位置 != OMANEKIBEYA() && !FLAG:気絶中断
+	CALL MAP_DEFAULTRESIDENT(MAIN_MAP, 1)
+	PRINTFORML 拠点マップの設定を再設定しました
+ELSE
+	CALL COLORMESSAGE(@"※マップ設定をリセットできませんでした", C_YELLOW, 1)
+	IF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
+		PRINTFORML 原因：お泊り中
+	ELSEIF FLAG:気絶中断
+		PRINTFORML 原因：気絶
+	ENDIF
+	FORCEWAIT
+ENDIF
+
+;fix for the character that moved in with the New Shrine Dweller event at area 0
+;moved down to ensure it's triggered last
+IF FLAG:住み込みキャラ && SUMIKOMI_ROOM
+	CFLAG:(FLAG:住み込みキャラ):神社在住 = SUMIKOMI_ROOM
+	CFLAG:(FLAG:住み込みキャラ):初期位置 = SUMIKOMI_ROOM
+	CFLAG:(FLAG:住み込みキャラ):自宅位置 = SUMIKOMI_ROOM
+	CFLAG:(FLAG:住み込みキャラ):デート中 = MAIN_MAP
+ENDIF
+
+;=== custom code =========
+;CALL ALTNAME_INITIALIZE() ;custom code
+;CALL CHARACTER_DIALOG_STATUS
+;=========================
+
+@UPDATE_MAIN_COMPLETE(UPDATE_TYPE="full")
+#DIMS UPDATE_TYPE
+#DIM C_ID
+#DIM DYNAMIC LOOP_INDEX
+#DIM DYNAMIC C_PREV_DIALOGUE_COUNT
+#DIM DYNAMIC C_DIALOGUE_COUNT
+
+SAVESTR:本体バージョン = %eraTW_Version%
+;custom code
+;SAVESTR:ATW_SAVE_VER = %ATW_VERSION%
+
+UPDATE_KOJO_CUSTOMIZE = 0
+
+SELECTCASE UPDATE_TYPE
+	CASE "full"
+		PRINTL 已完全更新
+		FOR C_ID, 1, CHARANUM - 1
+			C_PREV_DIALOGUE_COUNT = 0
+			FOR LOOP_INDEX, 0, 5
+				SIF GETBIT(CFLAG:C_ID:前回の口上実装状況, LOOP_INDEX)
+					C_PREV_DIALOGUE_COUNT ++
+				IF GETBIT(CFLAG:C_ID:口上実装状況, LOOP_INDEX)
+					SETBIT CFLAG:C_ID:前回の口上実装状況, LOOP_INDEX
+				ELSE
+					CLEARBIT CFLAG:C_ID:前回の口上実装状況, LOOP_INDEX
+				ENDIF
+			NEXT
+			CALL KOJO_COUNT_CHECK(C_ID, 1)
+			C_DIALOGUE_COUNT = RESULT
+			IF C_DIALOGUE_COUNT != C_PREV_DIALOGUE_COUNT
+				CALL PRINT_FACE(C_ID, "通常", "服")
+				IF C_DIALOGUE_COUNT > C_PREV_DIALOGUE_COUNT
+					PRINTFORMDL %CALLNAME:C_ID%的剧本数追加了
+				ELSEIF C_DIALOGUE_COUNT < C_PREV_DIALOGUE_COUNT
+					PRINTFORMDL %CALLNAME:C_ID%的剧本数减少了
+				ENDIF
+			ENDIF
+		NEXT
+		FORCEWAIT
+		IF UPDATE_BEHAVIOR_SHOW_RESET_PAGE
+			PRINTFORML 以下是首次实装剧本的角色。
+			PRINTFORML 强烈建议在游玩前进行重置。
+			PRINTFORML 请选择要重置的角色。
+			DRAWLINE
+			LOCAL = LINECOUNT
+			$PRINT_RESETCHARA
+			CLEARLINE LINECOUNT - LOCAL
+			FOR LOOP_INDEX, 0, VARSIZE("UPDATE_CHARA_NEW_DIALOGUE_RESET")
+				SIF UPDATE_CHARA_NEW_DIALOGUE_RESET:LOOP_INDEX
+					PRINTFORMLC [{LOOP_INDEX}] %CALLNAME:LOOP_INDEX%
+			NEXT
+			PRINTFORML
+			DRAWLINE
+			PRINTFORML [999] 结束
+			INPUT
+			IF RESULT == 999
+			ELSEIF UPDATE_CHARA_NEW_DIALOGUE_RESET:RESULT
+				UPDATE_CHARA_NEW_DIALOGUE_RESET:RESULT = 0
+				CALL RESET_KOJO_CHARA(RESULT)
+				GOTO PRINT_RESETCHARA
+			ELSE
+				GOTO PRINT_RESETCHARA
+			ENDIF
+		ENDIF
+
+	CASE "init"
+		PRINTFORML
+		PRINTFORML 核心更新已完成。
+		PRINTFORML 部分角色可能需要从主菜单进行额外更新。
+		PRINTFORMW 您可以选择跳过，但可能会出现意料之外的行为。
+		FOR C_ID, 1, CHARANUM - 1
+			FOR LOOP_INDEX, 0, 5
+				SIF GETBIT(CFLAG:C_ID:口上実装状況, LOOP_INDEX)
+					SETBIT CFLAG:C_ID:前回の口上実装状況, LOOP_INDEX
+			NEXT
+		NEXT
+ENDSELECT
+
+@FIX_DIALOGUE_STATUS
+FOR LOCAL, 0, CHARANUM
+	;don't bother if the value is not tampered with
+	SIF !CFLAG:LOCAL:口上セレクタ
+		CONTINUE
+	;check if the main dialogue still works with it
+	TRYCCALLFORM M_KOJO_K{NO:LOCAL}_{CFLAG:LOCAL:口上セレクタ}
+		SIF !RESULT
+			CFLAG:LOCAL:口上セレクタ = 0
+	CATCH
+		CFLAG:LOCAL:口上セレクタ = 0
+	ENDCATCH
+NEXT
+[SKIPEND]
+
+;reset character for KOJO
+@RESET_KOJO_CHARA(ARG)
+CFLAG:ARG:好感度 = 0
+CFLAG:ARG:信賴度 = 0
+CFLAG:ARG:掌握把柄 = 0
+CFLAG:ARG:被掌握把柄 = 0
+CFLAG:ARG:既成事實 = 0
+CFLAG:ARG:允许无套 = 0
+CFLAG:ARG:面識 = 0
+CFLAG:ARG:指出缺点 = 0
+CFLAG:ARG:オナバレ = 0
+CFLAG:ARG:眠姦発覚 = 0
+CFLAG:ARG:睡眠姦 = 0
+CFLAG:ARG:烂酔奸 = 0
+CFLAG:ARG:バレンタイン = 0
+CFLAG:ARG:最後に会った日 = 0
+CFLAG:ARG:無自覚妊娠 = 0
+CFLAG:ARG:由于妊娠而追加尺寸 = 0
+CFLAG:ARG:清い交際 = 0
+CFLAG:ARG:出産経過日 = 0
+CFLAG:ARG:育児人数 = 0
+CFLAG:ARG:身に覚え_母 = 0
+CFLAG:ARG:身に覚え_父 = 0
+CFLAG:ARG:妊娠自覚状態 = 0
+CFLAG:ARG:不會喝酒 = 0
+CFLAG:ARG:强行内射 = 0
+CFLAG:ARG:妊娠 = 0
+CFLAG:ARG:妊娠経過日数 = 0
+CFLAG:ARG:兒童人数 = 0
+CFLAG:ARG:子宝補正 = 0
+CFLAG:ARG:産休中 = 0
+CFLAG:ARG:累計膣内精液 = 0
+CFLAG:ARG:累計肛門精液 = 0
+CFLAG:ARG:累計精飲 = 0
+CFLAG:ARG:累計精浴 = 0
+CFLAG:ARG:弾幕勝負勝利 = 0 ;reset danmaku win
+CFLAG:ARG:斗虫直接勝利 = 0 ;reset bug battle win
+CFLAG:ARG:料理勝負勝利 = 0 ;reset cooking competition win
+CFLAG:ARG:肛門開発許可 = 0 ;com custom code, reset anal permission
+CFLAG:ARG:体目当て = 0 ;reset mirada stone
+CFLAG:ARG:デート後イベントフラグ = 0 ;flag that determines if post date events can be triggered
+CFLAG:ARG:ヤラせちゃった = 0
+CFLAG:ARG:喜欢的体位 = 0
+MARK:ARG:時姦刻印 = 0
+MARK:ARG:反発刻印 = 0
+MARK:ARG:反発取得履歴 = 0
+MARK:ARG:苦痛刻印 = 0
+MARK:ARG:快楽刻印 = 0
+MARK:ARG:不埒刻印 = 0
+
+;CSTR:ARG:偷情败露 =
+;CSTR:ARG:浮气公认 =
+
+;経験
+EX:ARG:噴乳 = 0
+EX:ARG:射精 = 0
+EX:ARG:放尿 = 0
+EX:ARG:射精量 = 0
+EX:ARG:膣内精液 = 0
+EX:ARG:肛門内精液 = 0
+EX:ARG:子宮内精液 = 0
+
+;reset FIRSTTIME and ONCE
+CSTR:ARG:0 =
+CSTR:ARG:1 =
+;reset CEVENT
+CALLF CLEAR_CEVENT(ARG)
+
+
+;addition custom code, reset custom variable
+FOR LOCAL, 0, 10
+	TRYCALLFORM CUSTOM_RESET_VAR_{LOCAL}(ARG)
+NEXT
+
+IF IS_FUTA(ARG)
+	PRINTFORML 是否也将%CALLNAME:ARG%的扶他状态初始化，恢复其原本的性别？
+	CALL ASK_YN
+	SIF !RESULT
+		;TALENT:ARG:性別 = CSVTALENT(NO:ARG, GETNUM(TALENT, "性別"))
+		TALENT:ARG:性別 = CSVTALENT(NO:ARG, 2)
+ENDIF
+
+MASTERNAME:ARG =
+
+UWAKI_KNOWN:ARG:0 =
+UWAKI_ACCEPTED:ARG:0 =
+
+;陥落
+TALENT:ARG:把柄 = 0
+TALENT:ARG:恋慕 = 0
+TALENT:ARG:思慕 = 0
+TALENT:ARG:淫乱 = 0
+TALENT:ARG:愛欲 = 0
+TALENT:ARG:炮友 = 0
+TALENT:ARG:妊娠 = 0
+TALENT:ARG:育児中 = 0
+TALENT:ARG:母性 = 0
+TALENT:ARG:恋人 = 0
+TALENT:ARG:初潮 = 0
+TALENT:ARG:母乳体質 = 0
+SIF TALENT:MASTER:恋人 == ARG
+	TALENT:MASTER:恋人 = 0
+;淫乱系
+TALENT:ARG:受虐狂 = 0
+TALENT:ARG:自慰狂 = 0
+TALENT:ARG:淫壺 = 0
+TALENT:ARG:尻穴狂 = 0
+TALENT:ARG:淫乳 = 0
+TALENT:ARG:接吻魔 = 0
+TALENT:ARG:子宮口性感 = 0
+
+IF CFLAG:ARG:回復速度降低
+	MAXBASE:ARG:体力 += 500
+	MAXBASE:ARG:気力 += 500
+	TALENT:ARG:回復速度 = CFLAG:ARG:回復速度降低 - 2
+	CFLAG:ARG:回復速度降低 = 0
+ENDIF
+IF CFLAG:ARG:乳品质提升 == 1 && TALENT:ARG:胸圍 > -2
+	TALENT:ARG:胸圍 -= 1
+	CFLAG:ARG:乳品质提升 = 0
+ENDIF
+TALENT:ARG:痛覚 = CSVTALENT(NO:ARG,40)
+TALENT:ARG:処女 = CSVTALENT(NO:ARG,0)
+CFLAG:ARG:尻穴処女喪失記念日 = 0
+CFLAG:ARG:処女喪失記念日 = 0
+CSTR:ARG:尻穴処女喪失履歴 =
+CSTR:ARG:処女喪失履歴 =
+CSTR:ARG:初吻喪失履歴 =
+CFLAG:ARG:初吻喪失記念日 = 0
+CSTR:ARG:童貞喪失履歴 =
+CFLAG:ARG:童貞喪失記念日 = 0
+SIF !EXP:ARG:接吻経験
+	TALENT:ARG:無接吻経験 = 1
+
+FOR LOCAL,0,100
+	ABL:ARG:LOCAL = CSVABL(NO:ARG,LOCAL)
+NEXT
+FOR LOCAL,0,111
+	EXP:ARG:LOCAL = CSVEXP(NO:ARG,LOCAL)
+NEXT
+VARSET JUEL:ARG:0, 0
+VARSET CHILD_BIRTHDAY:ARG:0, 0
+VARSET CHILD_WEATHER:ARG:0, ""
+VARSET CHILD_SEX:ARG:0, 0
+VARSET CHILDNAME:ARG:0, ""
+
+;reset custom dialogue CFLAG:1000～1999 TCVAR:350～400
+VARSET CFLAG:ARG:0, 0, 1000, 2000
+VARSET TCVAR:ARG:0, 0, 350, 400
+;カスタム素質
+VARSET CUSTOM_TALENT:ARG:0, 0
+VARSET CUSTOM_TALENT_NAME:ARG:0, ""
+VARSET CUSTOM_TALENT_COLOR:ARG:0, 0
+VARSET CUSTOM_TALENT_TYPE:ARG:0, 0
+
+;validate and set exp
+;CALL CUSTOM_INIT(ARG)
+;CALL UPDATE_MAIN_UPDATE_ABL(ARG)
+;CALL UPDATE_MAIN_UPDATE_SEX_EXP(ARG)
+;TALENT:ARG:PREGNANCY_TYPE = PREGNANCY_CHARA_DEFAULT(ARG)
+
+;= custom code ======
+[SKIPSTART]
+TRYCALLFORM ADD_EXTENDED_TRAITS_SET_{NO:ARG}(ARG)
+CALL CustomTraits(ARG)
+
+VARSET CUSTOM_TALENT_HTML_DESC:ARG:0, ""
+VARSET CUSTOM_JOB_DESC:ARG:0, ""
+VARSET CUSTOM_CSTR:0, ""
+VARSET CUSTOM_PANTY_EXISTS:0, 0
+VARSET CUSTOM_PANTY_NAME:0, ""
+VARSET CUSTOM_PANTY_DESCRIPTION:0, ""
+VARSET CUSTOM_PANTY_DESCRIPTION_ORDER:0, 0
+VARSET CUSTOM_PANTY_OPTIONS:0, 0
+VARSET CUSTOM_PANTY_DAILY_JUDGMENT:0, 0
+VARSET CUSTOM_PANTY_MATCHING_BRA:0, 0
+VARSET CUSTOM_PANTY_COLLECTION_DISPLAY:0, 0
+VARSET CUSTOM_PANTY_COLLECTION_UNLOCK_TEXT:0, ""
+VARSET CUSTOM_BRA_EXISTS:0, 0
+VARSET CUSTOM_BRA_NAME:0, ""
+VARSET CUSTOM_BRA_DAILY_JUDGMENT:0, 0
+VARSET CUSTOM_BRA_FABRIC_THICKNESS:0, 0
+[SKIPEND]
+;====================
+
+PRINTFORMW %CALLNAME:ARG%重置了。
+
+[SKIPSTART]
+@UPDATE_MAIN_ENG_CHARA_NAMEARRAY(C_ID)
+#DIM C_ID
+;set name
+NAME:C_ID '= nameArray:C_ID:na_Name
+CALLNAME:C_ID '= nameArray:C_ID:na_Callname
+
+@UPDATE_MAIN_ENG_CHARA_CUSTOM_TRAITS(C_ID)
+#DIM C_ID
+;custom code, custom trait updates
+SIF !CFLAG:C_ID:HYPNO_TRAITS_UPDATED
+	CALLF CustomTraits_HypnoResistance(C_ID)
+
+@UPDATE_MAIN_DRAWLINE_SECTION(TEXT = "Undefined")
+#DIMS TEXT
+LOCALS '= @"-- □ %TEXT% □ "
+LOCAL = HTML_STRINGLEN(LOCALS)
+PRINTFORML %LOCALS%%"-"*(MAXWIDTH()-LOCAL)%
+
+;==============================================
+;Utility
+;==============================================
+@UPDATE_MAIN_IMAGESETS
+;Img_Detected detects how many characters have new alts and doubles as CharaNum's real size (how many slots actually hold values)
+#DIM C_ID
+#DIM Img_Detected
+#DIM Img_CharaNum, キャラクタ数上限
+
+VARSET Img_CharaNum
+VARSET Img_Detected
+
+;reset and recount for accurate count if new characters got added that have custom counters when updating from very old saves
+CVARSET Img_CustomFace
+CVARSET Img_CustomStand
+CALL ModImg_Set
+
+;差し替え画像の有無を確認
+FOR C_ID, 1, CHARANUM
+	SIF CFLAG:C_ID:出禁
+		CONTINUE
+	IF CFLAG:C_ID:別顔有 != CSVCFLAG(NO:C_ID, 562) + Img_CustomFace:C_ID:0 || CFLAG:C_ID:別立ち有 != CSVCFLAG(NO:C_ID, 563) + Img_CustomStand:C_ID:0 ;image tweak custom code
+		Img_CharaNum:Img_Detected = C_ID
+		Img_Detected ++
+	ENDIF
+NEXT
+IF Img_Detected
+	DRAWLINE
+	PRINTFORMW 新しい差し替え画像セットがこれらのキャラクターに対して検出されました：
+	PRINTL
+ELSE
+	RETURN
+ENDIF
+FOR LOCAL, 0, Img_Detected
+	CFLAG:(NO:(Img_CharaNum:LOCAL)):別顔有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 562) + Img_CustomFace:(Img_CharaNum:LOCAL):0
+	CFLAG:(NO:(Img_CharaNum:LOCAL)):別立ち有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 563) + Img_CustomStand:(Img_CharaNum:LOCAL):0
+
+	CALL SET_KOJO_COLOR(Img_CharaNum:LOCAL)
+	PRINTFORML %CALLNAME:(Img_CharaNum:LOCAL)%
+	RESETCOLOR
+	
+	SIF GROUPMATCH((Img_CharaNum:LOCAL), [[白蓮]], [[輝夜]], [[影狼]], [[映姫]], [[正邪]], [[日狭美]], [[わかさぎ姫]]) ;debloat custom code
+		TRYCALLFORM COMPOSE_SPRITE_{NO:(Img_CharaNum:LOCAL)} ;image custom code
+	CALL SET_IMAGE_WITH_HEADER(@"顔絵_服_通常_{NO:(Img_CharaNum:LOCAL)}", 0, 0, 100, 0, 1, "初期", "", "", 0, "[初期]",, 1)
+	FOR LOCAL:1, 1, CSVCFLAG(NO:(Img_CharaNum:LOCAL), 562) + Img_CustomFace:(NO:(Img_CharaNum:LOCAL)):0+1
+		LOCALS '= @"\@LOCAL:1 >= 2?別顔{LOCAL:1}#別顔\@_服_通常_{(Img_CharaNum:LOCAL)}"
+		LOCALS:1 '= @"[差分#{LOCAL:1}]"
+		IF SPRITECREATED(LOCALS)
+			CALL SET_IMAGE_WITH_HEADER(LOCALS, 0, 0, 100, 0, 0, "", "差し替え顔絵", "", 0,LOCALS:1)
+		ELSE
+			CALL SET_IMAGE_WITH_HEADER("ダミー", 0, 0, 100, 0, 0, "", "差し替え立ち絵", "", 0,LOCALS:1)
+		ENDIF
+	NEXT
+	CALL 画像一斉表示("左", 0, 1)
+
+	IF CFLAG:(NO:(Img_CharaNum:LOCAL)):別立ち有
+		PRINTL 
+		CALL SET_IMAGE_WITH_HEADER(@"立ち絵_服_通常_{NO:(Img_CharaNum:LOCAL)}", 0, 0, 100, 0, 0, "", "", "", 0,,,)
+		LOCAL:1 = 1
+		LOCAL:2 = 0
+		WHILE LOCAL:2 != CSVCFLAG(NO:(Img_CharaNum:LOCAL), 563) + Img_CustomStand:(Img_CharaNum:LOCAL):0
+			LOCALS '= @"\@LOCAL:1 >= 2?別立ち{LOCAL:1}#別立ち\@_服_通常_{NO:(Img_CharaNum:LOCAL)}"
+			IF SPRITECREATED(LOCALS)
+				CALL SET_IMAGE_WITH_HEADER(LOCALS, 0, 0, 100, 0, 0, "", "差し替え立ち絵", "", 0,)
+				LOCAL:2++
+			ELSE
+				CALL SET_IMAGE_WITH_HEADER("ダミー", 0, 0, 100, 0, 0, "", "差し替え立ち絵", "", 0,)
+			ENDIF
+			LOCAL:1++
+			SIF LOCAL:1 > 10 ; failsafe in case the images aren't configured correctly
+				BREAK
+		WEND
+		CALL 画像一斉表示("左", 0, 1)
+	ENDIF
+	PRINTL
+	WAIT
+NEXT
+SIF Img_Detected
+	PRINTFORML 画像をアップデートしました。
+CUSTOMDRAWLINE -
+CALL PRINTBUTTON_EX(@"[Next]",0, , , ,)
+$LOOP
+INPUT
+SELECTCASE RESULT
+	CASE 0
+		RETURN
+	CASEELSE
+		GOTO LOOP
+ENDSELECT
+
+@UPDATE_DIALOGUE_INDIVIDUAL(C_ID, ASK_DIALOGUE_COUNT = 0, ACTION_NOTIFIY = 0)
+#DIM C_ID
+#DIM ASK_DIALOGUE_COUNT
+#DIM ACTION_NOTIFIY
+#DIM DYNAMIC KOJO_COUNT_CHECK_RESULT
+#DIMS DYNAMIC PREFIX
+
+CALL KOJO_COUNT_CHECK(C_ID)
+KOJO_COUNT_CHECK_RESULT = RESULT
+
+CALL KOJO_MULTIPLE(C_ID, ASK_DIALOGUE_COUNT)
+
+IF RESULT
+	CALL KOJO_ACTIVE_INFO(C_ID)
+	PREFIX '= RESULTS
+	PRINTFORML %CALLNAME:C_ID%口上のアップデート中...
+	TRYCALLFORM M_KOJO%PREFIX%_UPDATE_K{NO:C_ID}
+	PRINTL 
+	SIF UPDATE_KOJO_CUSTOMIZE
+		CALL UPDATE_SHOW_SETTINGS(C_ID)
+ENDIF
+
+SIF ACTION_NOTIFIY
+	PRINTFORMW %CALLNAME:C_ID%の口上アップデート関数を実行しました。
+
+RETURN KOJO_COUNT_CHECK_RESULT
+[SKIPEND]
+
+;==============================================
+;KOJO Options
+;==============================================
+@KOJO_OPTION_EXIST(ARG)
+CALL KOJO_ACTIVE_INFO(ARG)
+SIF !RESULT
+	RETURN 0
+RETURN EXISTFUNCTION(@"KOJO%RESULTS%_OPTION_K{NO:ARG}")
+
+@KOJO_OPTION_PRINT(ARG)
+#DIM nLineCnt_Head
+#DIM PREV_TARGET
+VARSET KojoUpdateFlags
+
+nLineCnt_Head = LINECOUNT
+PRINTFORML
+RESULT = 0
+CALL KOJO_OPTION_EXIST(ARG)
+IF RESULT
+	CALL KOJO_ACTIVE_INFO(ARG)
+	TRYCALLFORM KOJO%RESULTS%_OPTION_K{NO:ARG}
+ENDIF
+
+CALL EQUATE_LINE, (nLineCnt_Head + 20)
+
+@KOJO_OPTION_RESULT(ARG, nInput)
+#DIM nInput
+nInput -= 7000 ;normalize
+SIF !INRANGE(nInput, 0, 50)
+	RETURN -1
+RESULT = 0
+CALL KOJO_OPTION_EXIST(ARG)
+SIF !RESULT || GETBIT(KojoUpdateFlags:nInput, 2)
+	RETURN -1
+
+IF GETBIT(KojoUpdateFlags:nInput, 0)
+	SIF GETBIT(KojoUpdateFlags:nInput, 1)
+		RETURN -1
+	PRINTFORML 警告：这是无法重来的选择！若想再次更改，需要重置角色或重开游戏。
+	PRINTFORML 是否继续？
+	CALL ASK_YN
+	SIF RESULT
+		RETURN
+ENDIF
+
+CALL KOJO_ACTIVE_INFO(ARG)
+TRYCCALLFORM KOJO%RESULTS%_OPTION_K{NO:ARG}_RESULT_{nInput}
+	SIF MESSKIP()
+		FORCEWAIT
+	RETURN RESULT
+CATCH
+	RETURN -1
+ENDCATCH
+RESETCOLOR
+
+;创建按钮
+;额外标记：onetime - 显示该选项是否只能使用一次，即使只是查看，也需要在后续参数中设置一个标记，
+;如果使用 FIRSTTIME() - 确保为其设置了【不】激活标志，不要让它因查看而被激活。
+;-
+;status - 显示设置的状态（仅限布尔值），之后以SPLIT形式指定状态（例如："status:禁用:启用"）；需要在后续参数中设置一个标记
+;cond - 仅当条件为真时才可访问，需要在后续参数中设置一个标记
+@KOJO_OPTION_ITEM(ARGS, ARG = 1, strExtra, nFlag)
+#DIMS strExtra
+#DIM nFlag
+
+PRINTBUTTON @"[{ARG,2}] %ARGS%", ARG + 7000
+SIF SPLIT_CHECK(strExtra, "status")
+	PRINTFORM : \@ !nFlag ? %SPLIT_SINGLE(strExtra, 1)% # %SPLIT_SINGLE(strExtra, 2)% \@
+IF SPLIT_CHECK(strExtra, "onetime")
+	SETBIT KojoUpdateFlags:ARG, 0 ;set up a flag to let the input know
+	PRINTFORML
+	IF nFlag
+		CALL COLORMESSAGE("一次性选项已使用。需要重置角色或重开游戏才能再次更改。",C_YELLOW,0)
+		SETBIT KojoUpdateFlags:ARG, 1 ;option used
+	ELSE
+		CALL COLORMESSAGE("注意！这是一次性选项!",C_RED,0,1)
+	ENDIF
+ENDIF
+IF SPLIT_CHECK(strExtra, "cond") && !nFlag
+	SETBIT KojoUpdateFlags:ARG, 2 ;disable option
+	CALL COLORMESSAGE("　（不可用）",C_GRAY)
+ENDIF
+PRINTFORML
+
+@UPDATE_SHOW_SETTINGS(ARG)
+VARSET KojoUpdateFlags
+CALL KOJO_OPTION_EXIST(ARG)
+IF RESULT
+	LOCALS '= RESULTS
+	gLineCount = LINECOUNT
+	REDRAW 0
+	DO
+		SIF LINECOUNT - gLineCount > 0
+			CLEARLINE LINECOUNT - gLineCount
+		
+		PRINTFORML %CALLNAME:ARG%的选项:
+		TRYCALLFORM KOJO%LOCALS%_OPTION_K{NO:ARG}
+		PRINTFORML
+		PRINTFORML [100] 结束
+		INPUT
+		SELECTCASE RESULT
+		CASE 100
+			BREAK
+		CASE 7000 TO 7050
+			CALL KOJO_OPTION_RESULT(ARG, RESULT)
+		ENDSELECT
+	LOOP 1
+ENDIF
+[SKIPSTART]
+@KOJO_RESET_AND_APPLY(C_ID, TARGET_DIALOGUE_INDEX_CHOSEN = 0)
+#DIM C_ID
+#DIM TARGET_DIALOGUE_INDEX_CHOSEN
+CALL RESET_KOJO_CHARA(C_ID)
+PRINTFORML 口上セレクタをアップデートします...
+CFLAG:C_ID:口上セレクタ = TARGET_DIALOGUE_INDEX_CHOSEN
+CALL KOJO_ACTIVE_INFO(C_ID)
+PRINTFORML %CALLNAME:C_ID% %RESULTS:1%口上のアップデートを行います
+;addition custom code, duplicated characters
+TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{NO:C_ID}
+PRINTL
+
+;-----------------------------------------------------------
+;同キャラ口上複数存在判定, Select from a list of dialogues if more than one is available
+;C_ID = キャラナンバー
+;ARG = 1:選択肢スキップ, RESULT = 口上実装数; 2:選択肢スキップ(同じ口上を選ぶ), ARG = 1 returns the amount of dialogue options, ARG = 2 keeps the same dialogue
+;現在同キャラ口上は最大で四つまで想定
+;-----------------------------------------------------------
+@KOJO_MULTIPLE(C_ID, ARG)
+#DIM C_ID
+#DIM DYNAMIC KOJO_COUNTER
+#DIM DYNAMIC 口上数
+#DIM DYNAMIC 口上実装数
+#DIMS DYNAMIC kojoNamesList, 4
+#DIM DYNAMIC kojoIdList, 4
+#DIM DYNAMIC vernier
+
+#DIMS DESCRIPTIONS, DESCRIPTIONS_SIZE
+
+VARSET RESULTS
+
+CALL KOJO_COUNT_CHECK(C_ID, 1)
+口上実装数 = RESULT
+
+SIF ARG == 1 ;choice skip, show dialogue count
+	RETURN 口上実装数
+SIF ARG == 2 ;choice skip, keep the same dialogue
+	RETURN 1
+
+;同キャラ口上複数確認
+FOR KOJO_COUNTER,0,5
+	RESULT = 0
+	;addition custom code, duplicated characters
+	IF KOJO_COUNTER
+		TRYCALLFORM M_KOJO_K{NO:C_ID}_{KOJO_COUNTER}
+	ELSE
+		TRYCALLFORM M_KOJO_K{NO:C_ID}
+	ENDIF
+	IF RESULT
+		;dialogue descriptions
+		DESCRIPTIONS:vernier = \@RESULTS:2 != ""? %RESULTS:2% # 記述がありません\@
+		SIF RESULTS:1 == ""
+			RESULTS:1 = 初期
+		kojoNamesList:vernier = %CALLNAME:C_ID%%RESULTS:1%口上
+		kojoIdList:vernier = KOJO_COUNTER
+		vernier ++
+	ENDIF
+NEXT
+
+IF 口上実装数 > 1
+	RESULTS:2 =
+	SIF Ask_SwitchDialogue
+		GOTO SKIPAHEAD
+	PRINTFORML %CALLNAME:C_ID%には複数の口上があります
+	PRINTFORML 選択しますか？
+	CALL ASK_YN("はい", "そのまま")
+	;口上選択
+	IF !RESULT
+		$SKIPAHEAD
+		PRINTFORML 使用する口上を選んでください (マウスオーバーで簡単な記述が見れます)
+		CALL ASK_CHOICES_TITLE(kojoNamesList, DESCRIPTIONS, vernier)
+		CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
+		RETURN 2
+	ELSE
+		PRINTFORML Left as is.
+		RETURN 1
+	ENDIF
+ENDIF
+;character has less than two dialogues to choose from
+RETURN 0
+
+;interactions with CFLAG:口上実装状況 (dialogue counter/logger)
+@KOJO_COUNT_CHECK(C_ID, GET_DIALOGUE_COUNT = 0)
+#DIM C_ID
+#DIM GET_DIALOGUE_COUNT
+#DIM DYNAMIC KOJO_COUNTER
+#DIM DYNAMIC 口上数
+#DIM DYNAMIC 口上実装数
+
+;known issue:
+;#1 the way we did it is just a number tracker and lacks the ability to verify dialogue operations by identity (names, for example)
+;#2 two variables here I feel are hard to convey the proper meaning of in English so they are staying Japanese, 口上数 is unlogged dialogue count, 口上実装数 is logged dialogue count
+
+FOR KOJO_COUNTER,0,5
+	RESULT = 0
+	;addition custom code, duplicated characters
+	IF KOJO_COUNTER
+		TRYCALLFORM M_KOJO_K{NO:C_ID}_{KOJO_COUNTER}
+	ELSE
+		TRYCALLFORM M_KOJO_K{NO:C_ID}
+	ENDIF
+	;loop through the dialogue functions of a character, gets an amount, and varifies unexisting ones
+	IF RESULT
+		IF !GETBIT(CFLAG:C_ID:口上実装状況,KOJO_COUNTER)
+			;found unlogged dialogue
+			口上数 ++
+			口上実装数 ++
+			;log the dialogue into CFLAG:口上実装状況
+			SETBIT CFLAG:C_ID:口上実装状況,KOJO_COUNTER
+		ELSEIF GETBIT(CFLAG:C_ID:口上実装状況,KOJO_COUNTER)
+			;dialogue has already been logged
+			口上実装数 ++
+		ENDIF
+	ELSE
+		;dialogue not found, clear the index from the log
+		CLEARBIT CFLAG:C_ID:口上実装状況, KOJO_COUNTER
+	ENDIF
+NEXT
+
+SIF GET_DIALOGUE_COUNT
+	RETURN 口上実装数
+
+
+IF 口上数 ;new dialogue logged during this session
+	IF 口上実装数 > 1 ;character previously has dialogue logged (meaning an alt has been added on top of a default dialogue)
+		RETURN 1
+	ELSE ;character previously did not have dialogue, requires reset
+		RETURN 2
+	ENDIF
+ELSE ;no new dialogue logged
+	SIF 口上実装数 ;has existing dialogues
+		RETURN 1
+	RETURN 0 ;no dialogue whatsoever
+ENDIF
+
+;failsafe conds
+SIF 口上実装数
+	RETURN 1
+RETURN 0
+
+;switch between all character dialogues in a single menu
+@NEWGAME_DIALOGUE_SELECT(ARG)
+#DIM C_ID
+#DIMS DESCRIPTIONS, DESCRIPTIONS_SIZE
+#DIMS strPrint
+REDRAW 0
+
+$INPUT_LOOP
+LINESTART = LINECOUNT
+PRINTFORML 一部のキャラには複数の口上があります:
+PRINTFORML  (マウスオーバーで簡単な記述が見れます)
+FOR C_ID,1,CHARANUM
+	IF CFLAG:C_ID:口上実装状況 > 1 && C_ID != FLAG:なりきり && NO:C_ID == C_ID
+		RESULTS:1 = 初期
+		CALL KOJO_ACTIVE_INFO(C_ID)
+		PRINTFORML [{C_ID, 3}] %CALLNAME:C_ID% - %RESULTS:1%
+	ENDIF
+NEXT
+PRINTFORML \n[{0, 3}] 次へ
+
+INPUT
+IF RESULT && CFLAG:RESULT:口上実装状況 > 1
+	VARSET LOCALS
+	C_ID = RESULT
+	FOR LOCAL,0,3
+		RESULT = 0
+		RESULTS:1 = 初期
+		RESULTS:2 =
+		IF !LOCAL
+			TRYCALLFORM M_KOJO_K{NO:C_ID}
+		ELSE
+			TRYCALLFORM M_KOJO_K{NO:C_ID}_{LOCAL}
+		ENDIF
+		IF RESULT
+			LOCALS:(LOCAL + 1) = %RESULTS:1%
+			DESCRIPTIONS:LOCAL = \@RESULTS:2 != ""? %RESULTS:2% # 記述がありません\@
+		ENDIF
+	NEXT
+	LOCALS:0 = %CALLNAME:C_ID%口上を変更しますか？
+	PRINTFORML %LOCALS:0%
+	FOR LOCAL, 0, 4
+		strPrint = <button value='{LOCAL}' title='%HTML_ESCAPE(DESCRIPTIONS:LOCAL)%'>[{LOCAL}] - %LOCALS:(LOCAL + 1)%</button>
+		SIF LOCAL == CFLAG:C_ID:口上セレクタ
+			strPrint = <font color = '#%TOSTR(C_AQUA, "X6")%'>%strPrint%</font>
+		HTML_PRINT strPrint
+		RESETCOLOR
+		SIF LOCALS:(LOCAL + 2) == ""
+			BREAK
+	NEXT
+	PRINTFORML
+	PRINTFORML [-1] キャンセル
+	$INPUT_LOOP2
+	INPUT
+	SELECTCASE RESULT
+		CASE 0 TO LOCAL - 1
+		CASE -1
+			CLEARLINE LINECOUNT - LINESTART
+			GOTO INPUT_LOOP
+		CASEELSE
+			CLEARLINE 1
+			GOTO INPUT_LOOP2
+	ENDSELECT
+	CALL KOJO_RESET_AND_APPLY(C_ID, RESULT)
+ELSEIF !RESULT
+	RETURN 1
+ENDIF
+CLEARLINE LINECOUNT - LINESTART
+GOTO INPUT_LOOP
+[SKIPEND]
+
+;used to add characters + translated profiles on ENG based variants of eraTW
+@ADDCHARA_INIT(C_ID, ARG:0)
+#DIM C_ID
+SIF !ARG
+	ADDCHARA C_ID ;add character
+;replace untranslated values:
+;set name
+;NAME:C_ID '= nameArray:C_ID:na_Name
+;set callname
+;CALLNAME:C_ID '= nameArray:C_ID:na_Callname
+;SIF CSVCSTR(NO:C_ID, 2) != "" ;workplace, printed at PRINT_STATE_PERSONAL
+	;CSTR:C_ID:職場 '= nameArray:C_ID:na_WorkPlace
+;SIF CSVCSTR(NO:C_ID, 3) != "" ;work info, printed at WORK_INFO
+	;CSTR:C_ID:仕事情報 '= nameArray:C_ID:na_WorkInfo
+;see explanation in _Name_Array.ERB
+;SIF CSVCSTR(C_ID, 10) != "" ;title/ability/race, printed at PRINT_種族抽出 and PRINT_STATE_PERSONAL
+;	CSTR:C_ID:10 '= nameArray:C_ID:na_Title
+
+;;-------------------------------------------------
+;;CSVを使わず弾幕特殊能力を個別に設定する関数
+;;新しくキャラクターを追加する際にCSVだと手間なので増設したものです
+;;▼memo
+;;0	【言笑自若】: 相手のダイス数Down
+;;	何があっても決して慌てず、落ち着いていることのたとえ。
+;;1	【温柔敦厚】: 相手のダイス面Down
+;;	優しく穏やかで、思いやりがあること。
+;;2	【勇気凛々】: %CALLNAME:OPPONENT%のダイス数Up
+;;	失敗や危険をかえりみず、勇敢に物事に立ち向かっていこうとするさま。
+;;3	【豪放磊落】: %CALLNAME:OPPONENT%のダイス面Up
+;;	心が広く大らかで、些細なことは気にしないこと。または、そのような様子。
+;;4	【怪力乱神】: %CALLNAME:OPPONENT%のダイス値が相手のダイス値より小さくても、その差が一定数以下な;ら、残機が減らない
+;;	人の知識では理解することが出来ない、怪しく奇怪な現象や物事のこと。
+;;5	【洽覧深識】: %CALLNAME:OPPONENT%の初期残機が4になる
+;;	体験して得た経験や知識が多くあり、様々なことを知っていること。
+;;6	【残忍酷薄】: 相手の被弾からの復帰時のボム数が-1される
+;;	人のことを気遣うこともなく、むごいこと。
+;;7	【乾坤一擲】: %CALLNAME:OPPONENT%が一定確率でボムを使うようになる
+;;	自身の運命を賭けて、運まかせの大博打をすること。
+;;8	【狷介孤高】: %CALLNAME:OPPONENT%のダイス修正値Up
+;;	意志を曲げずに、他人と協力しないこと。
+;;9	【幽愁暗恨】: 相手のダイス修正値Down
+;;	誰にも知られることのない深い恨みや憂いのこと。
+;;10  【百載無窮】: 全ての特殊能力をあわせ持つ。最強
+;;	いつまでも無くなることがないこと。
+;;-------------------------------------------------
+;@弾幕特殊能力設定(ARG)
+;#DIM CONST SKL言笑自若 = 0
+;#DIM CONST SKL温柔敦厚 = 1
+;#DIM CONST SKL勇気凛々 = 2
+;#DIM CONST SKL豪放磊落 = 3
+;#DIM CONST SKL怪力乱神 = 4
+;#DIM CONST SKL洽覧深識 = 5
+;#DIM CONST SKL残忍酷薄 = 6
+;#DIM CONST SKL乾坤一擲 = 7
+;#DIM CONST SKL狷介孤高 = 8
+;#DIM CONST SKL幽愁暗恨 = 9
+;#DIM CONST SKL百載無窮 = 10
+;
+;CFLAG:ARG:弾幕特能 = 0
+;
+;SELECTCASE ARG
+;CASE [[瓔花]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL温柔敦厚
+;CASE [[潤美]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL豪放磊落
+;CASE [[久侘歌]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;CASE [[八千慧]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;CASE [[磨弓]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;	SETBIT CFLAG:ARG:弾幕特能, SKL怪力乱神
+;CASE [[袿姫]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL温柔敦厚
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;CASE [[早鬼]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL怪力乱神
+;	SETBIT CFLAG:ARG:弾幕特能, SKL豪放磊落
+;	SETBIT CFLAG:ARG:弾幕特能, SKL乾坤一擲
+;CASE [[美宵]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL豪放磊落
+;CASE [[ミケ]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL狷介孤高
+;CASE [[たかね]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;CASE [[駒草]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL乾坤一擲
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;CASE [[魅須丸]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL温柔敦厚
+;CASE [[典]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;CASE [[龍]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;CASE [[千亦]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;CASE [[百々世]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL怪力乱神
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;	SETBIT CFLAG:ARG:弾幕特能, SKL幽愁暗恨
+;CASE [[尤魔]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL言笑自若
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;	SETBIT CFLAG:ARG:弾幕特能, SKL狷介孤高
+;CASE [[美天]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL温柔敦厚
+;	SETBIT CFLAG:ARG:弾幕特能, SKL怪力乱神
+;CASE [[慧ノ子]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL勇気凛々
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;CASE [[ちやり]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;	SETBIT CFLAG:ARG:弾幕特能, SKL幽愁暗恨
+;CASE [[日狭美]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL怪力乱神
+;	SETBIT CFLAG:ARG:弾幕特能, SKL豪放磊落
+;	SETBIT CFLAG:ARG:弾幕特能, SKL乾坤一擲
+;CASE [[残無]]
+;	SETBIT CFLAG:ARG:弾幕特能, SKL洽覧深識
+;	SETBIT CFLAG:ARG:弾幕特能, SKL残忍酷薄
+;	SETBIT CFLAG:ARG:弾幕特能, SKL狷介孤高
+;ENDSELECT
+;
+@CHARASORT_EX
+;#FUNCTION
+;reminder to update this list whenever new characters are added!!!
+;first lists games in numerical order (including characters who debuted in print works), then print works in release order, and finally PC-98 games in order
+VARSET RESULT, -1 ;set to -1 to include player character in the list
+{
+RESULT = MASTER,
+[[霊夢]], [[魔理沙]],
+[[ルーミア]], [[大妖精]], [[チルノ]], [[美鈴]], [[小悪魔]], [[パチュリー]], [[咲夜]], [[レミリア]], [[フラン]],
+[[レティ]], [[橙]], [[アリス]], [[リリーＷ]], [[リリーＢ]], [[リリカ]], [[メルラン]], [[ルナサ]], [[妖夢]], [[幽々子]], [[藍]], [[紫]],
+[[萃香]],
+[[リグル]], [[ミスティア]], [[慧音]], [[てゐ]], [[鈴仙]], [[永琳]], [[輝夜]], [[妹紅]],
+[[メディスン]], [[幽香]], [[文]], [[小町]], [[映姫]],
+[[静葉]], [[穣子]], [[雛]], [[にとり]], [[椛]], [[早苗]], [[神奈子]], [[諏訪子]],
+[[衣玖]], [[天子]],
+[[キスメ]], [[ヤマメ]], [[パルスィ]], [[勇儀]], [[さとり]], [[お燐]], [[お空]], [[こいし]],
+[[ナズーリン]], [[小傘]], [[一輪]], [[ムラサ]], [[星]], [[白蓮]], [[ぬえ]],
+[[はたて]],
+[[サニー]], [[ルナ]], [[スター]],
+[[響子]], [[芳香]], [[青娥]], [[屠自古]], [[布都]], [[神子]], [[マミゾウ]],
+[[こころ]],
+[[わかさぎ姫]], [[蛮奇]], [[影狼]], [[弁々]], [[八橋]], [[正邪]], [[針妙丸]], [[雷鼓]],
+[[華扇]], [[菫子]],
+[[清蘭]], [[鈴瑚]], [[ドレミー]], [[サグメ]], [[クラウンピース]], [[純狐]], [[ヘカーティア]],
+[[ラルバ]], [[ネムノ]], [[あうん]], [[成美]], [[舞]], [[里乃]], [[隠岐奈]],
+[[女苑]], [[紫苑]],
+[[瓔花]], [[潤美]], [[久侘歌]], [[八千慧]], [[磨弓]], [[袿姫]], [[早鬼]],
+[[ミケ]], [[たかね]], [[駒草]], [[魅須丸]], [[典]], [[龍]], [[千亦]], [[百々世]],
+[[尤魔]],
+[[美天]], [[慧ノ子]], [[ちやり]], [[日狭美]], [[残無]],
+
+[[蓮子]], [[メリー]],
+[[朱鷺子]],
+[[阿求]],
+[[豊姫]], [[依姫]], [[レイセン]],
+[[影華扇]],
+[[小鈴]],
+[[美宵]],
+[[瑞霊]],
+
+[[ユウゲンマガン]], [[エリス]], [[サリエル]], [[魅魔]], [[キクリ]], [[コンガラ]],
+[[里香]], [[明羅]],
+[[エレン]], [[小兎姫]], [[カナ]], [[理香子]], [[ちゆり]], [[夢美]], [[る～こと]],
+[[オレンジ]], [[くるみ]], [[エリー]], [[夢月]], [[幻月]],
+[[サラ]], [[ルイズ]], [[ユキ]], [[マイ]], [[夢子]], [[神綺]],
+[[先代]], [[麟]],
+[[モブ子]]
+}
