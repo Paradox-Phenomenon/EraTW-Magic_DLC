@@ -1,11 +1,12 @@
 ﻿;-------------------------------------------------
-;察看酒虫的情况
-;日常系指令、レベル1
+;酒虫の様子を見る
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 
 @COM450
 #DIM 醸造量
 #DIM 酒ID
+#DIM CAN_ADD_ITEMS
 VARSET LOCAL
 
 酒ID = ALC_ID()
@@ -13,16 +14,20 @@ VARSET LOCAL
 LOCALS '= @"替换成%VAR_WATER%了"
 LOCAL = 1
 IF VAR_WATER == ""
-	LOCALS '= "沒有帯著可以替換的水"
+	LOCALS '= "没有带着可以替换的水"
 	LOCAL = 0
 ENDIF
+
+CALL BREWING_GUIDE
 
 PRINTFORML %CALLNAME:MASTER%往放着酒虫的瓶子里窥去
 PRINTFORML 瓶里装满了%VAR_FERMENT%…
 DRAWLINE
+
+CAN_ADD_ITEMS = GET_STR(0, "酒データ", ALC_ID(VAR_FERMENT), "ADDITIONS") != ""
 {
 CALL ASK_M("什么也不做",1,@"%LOCALS%", LOCAL,"添加物品",1,
-"操纵時間造酒（消費TSP2400）",BASE:MASTER:8 >= 2400,"『绯红之王』！（消費TSP4000&绯红之王）", BASE:MASTER:8 >= 4000 && ITEM:绯红之王)
+"操纵时间造酒（消费TSP2400）",BASE:MASTER:8 >= 2400,"『绯红之王』！（消费TSP4000&绯红之王）", BASE:MASTER:8 >= 4000 && ITEM:绯红之王 && GET_STR(0, "酒データ", ALC_ID(VAR_FERMENT), "変化先") != "0")
 }
 SELECTCASE RESULT
 	CASE 0
@@ -30,39 +35,40 @@ SELECTCASE RESULT
 	CASE 1
 		PRINTFORML %CALLNAME:MASTER%取出%VAR_FERMENT%后放入了%VAR_WATER%
 		IF 醸造量 > 0
+			;bonus from brewer
+			SIF TALENT:MASTER:酒造家
+				醸造量++
 			CALL GET_ITEM(@"%VAR_FERMENT%", 醸造量, 2)
+			CALL BREWING_GUIDE_CONSUME(VAR_FERMENT)
 		ENDIF
 		;(酒造パッチ)酒粕入手
-		SIF VAR_FERMENT == "吟醸酒" || VAR_FERMENT == "熟成酒" || VAR_FERMENT == "古酒" || VAR_FERMENT == "貴醸酒" || VAR_FERMENT == "貴醸熟成酒" || VAR_FERMENT == "貴醸古酒"
+		SIF VAR_FERMENT == "吟酿酒" || VAR_FERMENT == "熟成酒" || VAR_FERMENT == "古酒" || VAR_FERMENT == "贵酿酒" || VAR_FERMENT == "贵酿熟成酒" || VAR_FERMENT == "贵酿古酒"
 			CALL GET_ITEM("酒粕", 1, 1)
 		VAR_FERMENT = %VAR_WATER%
 		VAR_WATER =
 		DAY:10 = 0
-		;入れ替え時にエサをやれる
-		IF ITEM:魚粕 || ITEM:肉骨粉
-			;PRINTFORML 酒虫にエサを与えようか…
+		;入れ替え时にエサをやれる
+		IF ITEM:鱼粕 || ITEM:肉骨粉
 			PRINTFORML 给酒虫喂食吧…
 			{
-			CALL ASK_M("喂魚粕", ITEM:魚粕,
+			CALL ASK_M("喂鱼粕", ITEM:鱼粕,
 			"喂肉骨粉", ITEM:肉骨粉,
 			"不喂食",1)
 			}
 			SELECTCASE RESULT
 				CASE 0
-					CALL LOST_ITEM("魚粕", 1, 1)
-					;PRINTFORML 酒虫は魚粕をついばんで少し活動的になったようだ…
-					PRINTFORML 酒虫吃完了魚粕而变得稍微活跃了一点…
+					CALL LOST_ITEM("鱼粕", 1, 1)
+					PRINTFORML 酒虫吃完了鱼粕而变得稍微活跃了一点…
 					DAY:10 += 1
 				CASE 1
 					CALL LOST_ITEM("肉骨粉", 1, 1)
-					;PRINTFORML 酒虫は肉骨粉をついばんで活動的になったようだ…
 					PRINTFORML 酒虫吃完了肉骨粉而变得活跃起来…
 					DAY:10 += 2
 				CASE 2
-					;PRINTFORML エサはやらないことにした
 					PRINTFORML 什么都不喂
 			ENDSELECT
 		ENDIF
+		CALL BREWING_GUIDE_MAKE_KNOWN(VAR_FERMENT)
 	CASE 2
 		CALL COM450_1
 	CASE 3
@@ -70,7 +76,7 @@ SELECTCASE RESULT
 			PRINTFORMW 对%VAR_FERMENT%没有意义
 			RETURN -1
 		ENDIF
-		PRINTFORML %CALLNAME:MASTER%使用時間停止能力强行加速了瓶中的時间
+		PRINTFORML %CALLNAME:MASTER%使用时间停止能力强行加速了瓶中的时间
 		BASE:MASTER:8 -= 2400
 		CALL 酒造
 	CASE 4
@@ -78,7 +84,7 @@ SELECTCASE RESULT
 			PRINTFORMW 对%VAR_FERMENT%没有意义
 			RETURN -1
 		ENDIF
-		PRINTFORML %CALLNAME:MASTER%消除了時間得到了『結果』
+		PRINTFORML %CALLNAME:MASTER%消除了时间得到了『结果』
 		BASE:MASTER:8 -= 4000
 		ITEM:绯红之王 --
 		DAY:10 += 9
@@ -90,129 +96,18 @@ RETURN 1
 
 
 @COM450_1
-IF LOCAL == 0
-	{
-	CALL ASK_M("马铃薯＊１０", ITEM:马铃薯 >= 10 && CAN_FERMENT(),
-	"蜂蜜＊１０", ITEM:蜂蜜 >= 10 && CAN_FERMENT(),
-	"木苺＊２０", ITEM:木苺 >= 20 && CAN_FERMENT(),
-	"山葡萄＊２０", ITEM:山葡萄 >= 20 && CAN_FERMENT(),
-	"发霉葡萄＊２０", ITEM:发霉葡萄 >= 20 && CAN_FERMENT(),
-	"下一个",1,
-	"放棄",1)
-	}
-	SELECTCASE RESULT
-		CASE 0
-			CALL LOST_ITEM("马铃薯", 10, 1)
-			VAR_FERMENT = 马铃薯泡水
-		CASE 1
-			CALL LOST_ITEM("蜂蜜", 10, 1)
-			VAR_FERMENT = 蜂蜜水
-		CASE 2
-			CALL LOST_ITEM("木苺", 20, 1)
-			VAR_FERMENT = 木苺水
-		CASE 3
-			CALL LOST_ITEM("山葡萄", 20, 1)
-			CALL GET_ITEM("果渣", 1, 1)
-			VAR_FERMENT = 葡萄汁
-		CASE 4
-			CALL LOST_ITEM("发霉葡萄", 20, 1)
-			CALL GET_ITEM("果渣", 1, 1)
-			VAR_FERMENT = 貴腐葡萄汁
-		CASE 5
-			LOCAL = 1
-			CLEARLINE 8
-			RESTART
-		CASE 6
-	ENDSELECT
-ENDIF
-IF LOCAL == 1
-	{
-	CALL ASK_M("濁酒＊５", ITEM:濁酒 >= 5 && VAR_FERMENT == "普通的水",
-	"甜味料＊１０", ITEM:甜味料 >= 10 && CAN_FERMENT(),
-	"陈酿前的朗姆", ITEM:陈酿前的朗姆 && CAN_FERMENT(),
-	"陈酿前的莓子酒", ITEM:陈酿前的莓子酒 && CAN_FERMENT(),
-	"蒸留酒", ITEM:蒸留酒 && VAR_FERMENT == "葡萄汁",
-	"陈酿前的白兰地", ITEM:陈酿前的白兰地 && CAN_FERMENT(),
-	"下一个",1,
-	"放棄",1)
-	}
-	SELECTCASE RESULT
-		CASE 0
-			;PRINTFORML %CALLNAME:MASTER%は瓶に濁酒を注ぎ込んだ
-			;PRINTFORML これで少し早くできるはずだ…
-			PRINTFORML %CALLNAME:MASTER%把浊酒倒进瓶子里
-			PRINTFORML 这样应该可以快一点…
-			DAY:10 += 3
-			CALL LOST_ITEM("濁酒", 5, 1)
-		CASE 1
-			CALL LOST_ITEM("甜味料", 10, 1)
-			VAR_FERMENT = 砂糖水
-		CASE 2
-			CALL LOST_ITEM("陈酿前的朗姆", 1, 1)
-			VAR_FERMENT = 陈酿前的朗姆
-		CASE 3
-			CALL LOST_ITEM("陈酿前的莓子酒", 1, 1)
-			VAR_FERMENT = 陈酿前的莓子酒
-		CASE 4
-			CALL LOST_ITEM("蒸留酒", 1, 1)
-			VAR_FERMENT = 葡萄汁(含酒精)
-		CASE 5
-			CALL LOST_ITEM("陈酿前的白兰地", 1, 1)
-			VAR_FERMENT = 陈酿前的白兰地
-		CASE 6
-			LOCAL = 2
-			CLEARLINE 9
-			RESTART
-		CASE 7
-	ENDSELECT
-ENDIF
+CALL BREWING_GUIDE_MIX_MENU
+RETURN RESULT
 
-;(酒造パッチ)吟醸酒・貴醸酒・三増酒を追加
-IF LOCAL == 2
-	{
-	CALL ASK_M("优质食材", ITEM:优质食材 && CAN_FERMENT(),
-	"草木灰", ITEM:草木灰 && VAR_FERMENT == "濁酒",
-	"米こうじ-(酒醪(米))", ITEM:米こうじ && VAR_FERMENT == "奇跡之水",
-	"米こうじ-(酒醪(再醸仕込))", ITEM:米こうじ && VAR_FERMENT == "吟醸酒",
-	"蒸留酒+甘味料", (ITEM:蒸留酒 && ITEM:甜味料) && VAR_FERMENT == "清酒",
-	"下一个",1,
-	"放棄",1)
-	}
-	SELECTCASE RESULT
-		CASE 0
-			CALL LOST_ITEM("优质食材", 1, 1)
-			VAR_FERMENT = 米こうじ
-		CASE 1
-			CALL LOST_ITEM("草木灰", 1, 1)
-			VAR_FERMENT = 灰持酒
-		CASE 2
-			CALL LOST_ITEM("米こうじ", 1, 1)
-			VAR_FERMENT = 酒醪(米)
-		CASE 3
-			CALL LOST_ITEM("米こうじ", 1, 1)
-			VAR_FERMENT = 酒醪(再醸仕込)
-		CASE 4
-			CALL LOST_ITEM("蒸留酒", 1, 1)
-			CALL LOST_ITEM("甜味料", 1, 1)
-			VAR_FERMENT = 三増酒
-		CASE 5
-			LOCAL = 0
-			CLEARLINE 5
-			RESTART
-		CASE 3
-	ENDSELECT
-ENDIF
-RETURN
-
-;察看酒虫的情况
+;酒虫の様子を見る
 @COM_ABLE450
 ;停止中は不可
 SIF FLAG:70 == 1
 	RETURN 0
-;移動実行判定
+;移动实行判定
 SIF !TFLAG:100
 	RETURN 0
-;一括管理
+;批量管理
 SIF GLOBAL_COMABLE(450)
 	RETURN RESULT
 ;廚房
@@ -226,7 +121,7 @@ RETURN 1
 #FUNCTION
 SIF DAY:10 >= 3
 	RETURNF 0
-SIF GROUPMATCH(VAR_FERMENT, "普通的水", "霧之湖的水", "地獄温泉的水", "奇跡之水")
+SIF GROUPMATCH(VAR_FERMENT, "普通的水", "雾之湖的水", "地狱温泉的水", "奇迹之水")
 	RETURNF 1
 RETURNF 0
 
