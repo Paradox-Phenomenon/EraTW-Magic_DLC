@@ -8,40 +8,73 @@ SIF GROUPMATCH(ARG, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 	RETURNF 1
 
 ;-----------------------------------------------------------
-;対象Mapの呼び名文字列を返す
+;以MapID调用字符串的函数，已搭载翻译库，强烈建议放弃用此进行字符串检验
+;为什么有了MAPID还要进行字符串比对呢？
+;GET_MAPNAME(GET_MAPID(CFLAG:MASTER:現在位置)) != "地底" ——>
+;GET_MAPID(CFLAG:MASTER:現在位置) != MAP地底 ;MAP地底 == 9
 ;ARG     MAPID
+;ARG:1     二字缩略表示，专为邀请回家[990]设计
 ;-----------------------------------------------------------
-@GET_MAPNAME(ARG)
+@GET_MAPNAME(ARG,ARG:1)
 #FUNCTIONS
 #DIMS PNAME
-SELECTCASE ARG
-	CASE 0
-		PNAME = 博麗神社
-	CASE 1
-		PNAME = 命蓮寺
-	CASE 2
-		PNAME = 人間之里
-	CASE 3
-		PNAME = 霧之湖～紅魔館
-	CASE 4
-		PNAME = 迷途竹林
-	CASE 5
-		PNAME = 魔法之森
-	CASE 6
-		PNAME = 三途之川～冥界
-	CASE 7
-		PNAME = 妖怪之山 (山麓)
-	CASE 8
-		PNAME = 妖怪之山 (山頂)
-	CASE 9
-		PNAME = 地底
-	CASE 10
-		PNAME = 夢之世界～月
-	CASEELSE
-		PNAME = 謎之領域
-ENDSELECT
-RETURNF PNAME
-
+IF ARG:1
+	SELECTCASE ARG
+		CASE 0
+			PNAME = 神社
+		CASE 1
+			PNAME = 寺庙
+		CASE 2
+			PNAME = 人里
+		CASE 3
+			PNAME = 洋馆
+		CASE 4
+			PNAME = 竹林
+		CASE 5
+			PNAME = 森林
+		CASE 6
+			PNAME = 冥界
+		CASE 7
+			PNAME = 山麓
+		CASE 8
+			PNAME = 山顶
+		CASE 9
+			PNAME = 地底
+		CASE 10
+			PNAME = 月界
+		CASEELSE
+			PNAME = 谜
+	ENDSELECT
+	RETURNF PNAME
+ELSE
+	SELECTCASE ARG
+		CASE 0
+			PNAME = 博麗神社
+		CASE 1
+			PNAME = 命蓮寺
+		CASE 2
+			PNAME = 人間之里
+		CASE 3
+			PNAME = 霧之湖～紅魔館
+		CASE 4
+			PNAME = 迷途竹林
+		CASE 5
+			PNAME = 魔法之森
+		CASE 6
+			PNAME = 三途之川～冥界
+		CASE 7
+			PNAME = 妖怪之山 (山麓)
+		CASE 8
+			PNAME = 妖怪之山 (山頂)
+		CASE 9
+			PNAME = 地底
+		CASE 10
+			PNAME = 夢之世界～月
+		CASEELSE
+			PNAME = 謎之領域
+	ENDSELECT
+	RETURNF MAP_GET(CSV_MAP,PNAME)
+ENDIF
 ;-----------------------------------------------------------
 ;拠点内の場所ARGへCHARAが移動できるかを返す関数
 ;鍵や危険地帯・幻影地帯など
@@ -176,7 +209,7 @@ RETURNF 0
 ;場所IDの名前文字列を返す関数
 ;ARG  場所ID
 ;-----------------------------------------------------------
-@NAME_FROM_PLACE(ARG)
+@NAME_FROM_PLACE(ARG, ARG:1) ;custom code, set ARG:1 to return original location name for backward
 #FUNCTIONS
 #DIM MAPID
 #DIMS PNAME
@@ -188,39 +221,42 @@ ELSEIF ARG == OMANEKIBEYA()
 	;待客室の名前処理
 	RETURNF OMANEKI_PLACE()
 ELSEIF ARG == ROAD_TO(MAPID)
-	PNAME = 去往%GET_MAPNAME(MAPID)%的途中
+	PNAME = 去%GET_MAPNAME(MAPID)%的途中
 ELSEIF MAPID == MAIN_MAP
 	;物件Map内の名前処理
+	;custom code, add ARG:1
 	SELECTCASE MAPID
 		CASE 0
-			PNAME = %MAP_PLACENAME_0(ARG)%
+			PNAME = %MAP_PLACENAME_0(ARG, ARG:1)%
 		CASE 1
-			PNAME = %MAP_PLACENAME_1(ARG)%
+			PNAME = %MAP_PLACENAME_1(ARG, ARG:1)%
 		CASE 2
-			PNAME = %MAP_PLACENAME_2(ARG)%
+			PNAME = %MAP_PLACENAME_2(ARG, ARG:1)%
 		CASE 3
-			PNAME = %MAP_PLACENAME_3(ARG)%
+			PNAME = %MAP_PLACENAME_3(ARG, ARG:1)%
 		CASE 4
-			PNAME = %MAP_PLACENAME_4(ARG)%
+			PNAME = %MAP_PLACENAME_4(ARG, ARG:1)%
 		CASE 5
-			PNAME = %MAP_PLACENAME_5(ARG)%
+			PNAME = %MAP_PLACENAME_5(ARG, ARG:1)%
 		CASE 6
-			PNAME = %MAP_PLACENAME_6(ARG)%
+			PNAME = %MAP_PLACENAME_6(ARG, ARG:1)%
 		CASE 7
-			PNAME = %MAP_PLACENAME_7(ARG)%
+			PNAME = %MAP_PLACENAME_7(ARG, ARG:1)%
 		CASE 8
-			PNAME = %MAP_PLACENAME_8(ARG)%
+			PNAME = %MAP_PLACENAME_8(ARG, ARG:1)%
 		CASE 9
-			PNAME = %MAP_PLACENAME_9(ARG)%
+			PNAME = %MAP_PLACENAME_9(ARG, ARG:1)%
 		CASE 10
-			PNAME = %MAP_PLACENAME_10(ARG)%
+			PNAME = %MAP_PLACENAME_10(ARG, ARG:1)%
 	ENDSELECT
 ELSEIF ARG < 2000
-	;おでかけMapの方
-	PNAME = %STR:(6000 + ARG / 10)%
+	;おでかけマップの方
+	;Custom code
+	PNAME = % ARG:1 ? STR:(6000 + ARG / 10) # STR_TR(6000 + (ARG / 10))%
 ELSE
-	;道中他、其他範囲
-	PNAME = %STR:(ARG)%
+	;道中他、その他範囲
+	;Custom code
+	PNAME = % ARG:1 ? STR:(ARG) # STR_TR(ARG)%
 ENDIF
 RETURNF PNAME
 
