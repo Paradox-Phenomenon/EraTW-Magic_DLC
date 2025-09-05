@@ -19,12 +19,12 @@ IF !ループ
 ENDIF
 DRAWLINE
 ;とりあえず無条件に全部表示にしたがTYPE指定も可能
-PRINTFORML 请选择要購买的道具 所持金:%金額表示(MONEY)%
+PRINTFORML 请选择要购买的道具 所持金:%金額表示(MONEY)%
 DRAWLINE
 CALL SHOW_SHOPPING("通信販売", TYPE)
 LCOUNT = RESULT
 DRAWLINE
-PRINTL [990] - 全部显示　[991] - 調教道具　[992] - 消耗品　[993] - 日用品　[994] - 食材　[995] - 酒　[996] - 素質
+PRINTL [990] - 全部显示　[991] - 调教道具　[992] - 消耗品　[993] - 日用品　[994] - 食材　[995] - 酒　[996] - 素質
 PRINT [999] - 返回
 INPUT
 
@@ -188,7 +188,7 @@ IF !RESULT
 	IF ITEMPRICE:ARG * (100 - 割引) / 100 <= MONEY
 		price = ITEMPRICE:ARG * (100 - 割引) / 100
 		MONEY -= price
-		PRINTFORMW 花费%金額表示(price)%購入了%ITEMNAME:ARG%
+		PRINTFORMW 花费%金額表示(price)%购入了%ITEMNAME:ARG%
 	ELSE
 		PRINTFORMW 金钱不足…
 		RETURN 2
@@ -198,7 +198,7 @@ RETURN RESULT
 
 ;--------------------------------------------------------------
 ;道具まとめ買い関数
-;任意の個数で購入できるものはこれ
+;任意の个数で購入できるものはこれ
 ;乌冬麺ちゃんからまとめ買いしたかったので独立関数化
 ;必ず先に@ITEMSTOCKで判定して購入可能な道具のみで呼び出すこと
 ;単体購入専用だろうがまとめ買い可能だろうが購入可不可の判定は必要なので先に共通で行って下さい
@@ -208,7 +208,7 @@ RETURN RESULT
 @ITEM_MATOMEGAI(ARG, 割引)
 #DIM 割引
 #DIM 値段
-PRINTFORM 要購買多少%ITEMNAME:ARG%？(在庫：{ITEMSALES:ARG}　所持数：{ITEM:ARG})
+PRINTFORM 要购买多少%ITEMNAME:ARG%？(在库：{ITEMSALES:ARG}　所持数：{ITEM:ARG})
 PRINTL 
 値段 = ITEMPRICE:ARG * (100 - 割引) / 100
 ;金欠、道具数の超過はあとで合わせる
@@ -223,7 +223,7 @@ SIF MIN(ITEMSALES:ARG, 所持数制限 - ITEM:ARG) >= 20
 SIF MIN(ITEMSALES:ARG, 所持数制限 - ITEM:ARG) >= 50
 	PRINTL [50] ５０　
 PRINTFORML [{MIN(ITEMSALES:ARG, 所持数制限 - ITEM:ARG), 2}] 全部
-PRINTL [ 0] 放棄
+PRINTL [ 0] 放弃
 INPUT
 IF INRANGE(RESULT, 1, ITEMSALES:ARG)
 	IF 値段 * RESULT > MONEY
@@ -236,7 +236,7 @@ IF INRANGE(RESULT, 1, ITEMSALES:ARG)
 	MONEY -= 値段 * RESULT
 	ITEMSALES:ARG -= RESULT
 	ITEM:ARG += RESULT
-	PRINTFORMW 花费了%金額表示(値段 * RESULT)%、購入了{RESULT}個%ITEMNAME:ARG%
+	PRINTFORMW 花费了%金額表示(値段 * RESULT)%、购入了{RESULT}个%ITEMNAME:ARG%
 	RETURN 値段
 ENDIF
 RETURN 0
@@ -244,22 +244,22 @@ RETURN 0
 ;----------------------------------------------------------------------
 ;道具をカートンで買う関数
 ;購入数が固定のものはこれ,
-;1個でも最終チェックを飛ばして買うのに使用
+;1个でも最終チェックを飛ばして買うのに使用
 ;ARG：購入対象道具
 ;カートン商品は所持数制限を超えた場合でも余剰分を省いて購入できる
 ;品物を購入すると値段を返す、なんやかんやで買ってないと0
 ;----------------------------------------------------------------------
-@ITEM_CARTON(ARG, 値段, 個数, 割引)
-#DIM 個数
+@ITEM_CARTON(ARG, 値段, 个数, 割引)
+#DIM 个数
 #DIM 値段
 #DIM 割引
-IF !個数
-	個数 = 1
-ELSEIF ITEM:ARG + 個数 > 所持数制限
-	個数 = 所持数制限 - ITEM:ARG
+IF !个数
+	个数 = 1
+ELSEIF ITEM:ARG + 个数 > 所持数制限
+	个数 = 所持数制限 - ITEM:ARG
 ENDIF
 SIF !値段
-	値段 = ITEMPRICE:ARG * 個数
+	値段 = ITEMPRICE:ARG * 个数
 値段 = 値段 * (100 - 割引) / 100
 
 IF 値段 > MONEY
@@ -270,9 +270,9 @@ ELSEIF ITEM:ARG >= 所持数制限
 	PRINTW 已经有很多了
 ELSE
 	MONEY -= 値段
-	ITEMSALES:ARG -= 個数
-	ITEM:ARG += 個数
-	PRINTFORMW %ITEMNAME:ARG%{個数}個、花费%金額表示(値段)%购入
+	ITEMSALES:ARG -= 个数
+	ITEM:ARG += 个数
+	PRINTFORMW 花费%金額表示(値段)%购入%ITEMNAME:ARG%{个数}个
 	RETURN 値段
 ENDIF
 RETURN 0
@@ -291,13 +291,13 @@ ITEMSALES:ARG = RESULT
 LOCALS = %金額表示(値段)%
 IF RESULT <= 0
 	SETCOLOR C_GRAY
-	LOCALS = 売り切れ
+	LOCALS = 售罄
 ENDIF
 SIF 値段 > MONEY
 	SETCOLOR C_GRAY
 IF ITEM:ARG >= 所持数制限
 	SETCOLOR C_GRAY
-	LOCALS = 持てない
+	LOCALS = 拿不下了
 ENDIF
 LOCALS = [{ARG, 3}] %ITEMNAME:ARG, 22, LEFT% %金額表示(値段)%
 
@@ -309,15 +309,15 @@ RESETCOLOR
 ;----------------------------------------------------------------------
 ;カートン商品等の特殊な道具陳列
 ;----------------------------------------------------------------------
-@EX_SHOPPING(ARG, 商品名, 説明文, 値段, 個数, 表示番号)
+@EX_SHOPPING(ARG, 商品名, 説明文, 値段, 个数, 表示番号)
 #DIMS 商品名
 #DIMS 説明文
 #DIM 割引
 #DIM 値段
-#DIM 個数
+#DIM 个数
 #DIM 表示番号
 SIF !値段
-	値段 = ITEMPRICE:ARG * 個数
+	値段 = ITEMPRICE:ARG * 个数
 SIF !表示番号
 	表示番号 = ARG
 LOCALS = [{表示番号, 3}] %商品名, 22, LEFT% %金額表示(値段)%

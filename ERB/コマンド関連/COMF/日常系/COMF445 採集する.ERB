@@ -15,21 +15,21 @@ IF FLAG:催眠強度 <= 50
 		CASE 太陽花田, 438
 			IF ABL:[[幽香]]:親密 < 5 && CFLAG:[[幽香]]:弾幕勝負勝利 == 0
 				DRAWLINE
-				PRINTFORML 感觉在这里擅自採集的话非常危険…
+				PRINTFORML 感觉在这里擅自采集的话非常危险…
 				RETURN -1
 			ENDIF
 		;天界、桃園
 		CASE 天界, 833
 			IF ABL:[[天子]]:親密 < 5 && CFLAG:[[天子]]:弾幕勝負勝利 == 0
 				DRAWLINE
-				PRINTFORML 感觉在这里擅自採集的话会陷入麻烦…
+				PRINTFORML 感觉在这里擅自采集的话会陷入麻烦…
 				RETURN -1
 			ENDIF
 		;虹龍洞
 		CASE 虹龍洞, 855
 			IF ABL:[[百百世]]:親密 < 5 && CFLAG:[[百百世]]:弾幕勝負勝利 == 0
 				DRAWLINE
-				PRINTFORML 感觉在这里擅自採集的话会陷入麻烦…
+				PRINTFORML 感觉在这里擅自采集的话会陷入麻烦…
 				RETURN -1
 			ENDIF
 	ENDSELECT
@@ -41,7 +41,7 @@ ENDIF
 LOCAL:4 = 0
 
 ;参加者判定
-IF FLAG:约会的对象 && !FLAG:70
+IF FLAG:约会的对象 && (!FLAG:70 || CFLAG:TARGET:344 == 1)
 	CHARA = FLAG:约会的对象
 ELSEIF TARGET && ABL:TARGET:親密 >= 5 && SHIRAHU(TARGET) && CFLAG:TARGET:行動 != 5
 	CHARA = TARGET
@@ -70,8 +70,8 @@ ELSE
 ENDIF
 採集位置 = GATHERING_SPOT(CFLAG:MASTER:現在位置)
 REPEAT 5
-	REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA%一起 #  \@採集中.%"." * COUNT%
-	TWAIT 150, 1
+	REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA%一起 #  \@采集中.%"." * COUNT%
+	TWAIT 40, 1
 REND
 ;デバッグ用
 ;PRINTFORML 採集位置{採集位置}
@@ -99,8 +99,8 @@ ELSE
 			SETCOLOR 0x00FF00
 			PRINTFORM 发现了%ITEMNAME:(採集物)%
 			RESETCOLOR
-			PRINTFORML (所持数：{ITEM:(採集物)})。要採集吗？
-			CALL ASK_YN("採集","再次探索")
+			PRINTFORML (所持数：{ITEM:(採集物)})。要采集吗？
+			CALL ASK_YN("采集","再次探索")
 			IF !RESULT
 				CLEARLINE 4
 			ELSE
@@ -109,7 +109,7 @@ ELSE
 				TFLAG:194 = 0
 				REPEAT 5
 					REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA%一起 #  \@採集中.%"." * COUNT%
-					TWAIT 150, 1
+					TWAIT 40, 1
 				REND
 			ENDIF
 		ENDIF
@@ -119,13 +119,11 @@ ELSE
 	SIF LOCAL:4 <= 3 && 採集物 == 0
 		GOTO TREASURSARCH
 
-	;道具入手処理 99個以上にならないようにする
+	;道具入手処理 99个以上にならないようにする
 	IF 採集物 != 0
 		LOCALS = %ITEMNAME:採集物%
 		CALL GET_ITEM(LOCALS, TFLAG:194 , 2)
 	ENDIF
-	;フラグ引き渡し
-	TFLAG:SELECTCOM的分岐 = 採集物
 ENDIF
 
 ;基本の経験
@@ -174,7 +172,7 @@ ELSE
 	IF 採集位置 == 68
 		DOWNBASE:MASTER:体力 = 320 - (ABL:MASTER:戦闘能力 * 10)
 		DOWNBASE:MASTER:気力 = 280
-		PRINTFORML 坑内は空気が薄く、ひどく疲惫…
+		PRINTFORML 矿坑内空气稀薄，令人感到非常疲惫…
 	ELSE
 		;体力減少は戦闘能力によって減少抑制
 		DOWNBASE:MASTER:体力 = 180 - (ABL:MASTER:戦闘能力 * 15)
@@ -284,6 +282,9 @@ IF CHARA > 0
 	ENDSELECT
 ENDIF
 
+;フラグ引き渡し
+TFLAG:SELECTCOM的分岐 = 採集物
+	
 RETURN 1
 
 ;-------------------------------------------------
@@ -656,7 +657,7 @@ RETURNF 0
 
 @SHOW_GATHERING_LIST
 #DIM PLACE
-PRINTFORML 採集場所一覧
+PRINTFORML 采集场所一览
 CALL COLORMESSAGE(@"中級素材　",C_YELLOW)
 CALL COLORMESSAGE(@"高級素材　",C_P_GREEN)
 CALL COLORMESSAGE(@"最高級素材",C_AQUA)
@@ -684,7 +685,7 @@ ENDIF
 @SHOW_GATHERING_LIST_SELECT(PLACE)
 #DIM PLACE
 DRAWLINE
-PRINTFORML 採集可能物一覧
+PRINTFORML 采集可能物一览
 CALL COLORMESSAGE(@"中級素材　",C_YELLOW)
 CALL COLORMESSAGE(@"高級素材　",C_P_GREEN)
 CALL COLORMESSAGE(@"最高級素材",C_AQUA)
@@ -769,60 +770,60 @@ NEXT
 SELECTCASE ARG
 CASE 1
 	IF MAIN_MAP == 0
-		LOCALS = 鎮守之森
+		LOCALS = 镇守之森
 	ELSE
-		LOCALS = 妖精的大樹
+		LOCALS = 妖精的大树
 	ENDIF
 CASE 2
 	LOCALS = 斜角的竹林
 CASE 3
-	LOCALS = 無名之丘
+	LOCALS = 无名之丘
 CASE 4
-	LOCALS = 太陽花田
+	LOCALS = 太阳花田
 CASE 5
 	LOCALS = 再思之道
 CASE 6
-	LOCALS = 古木的大樹
+	LOCALS = 古木的大树
 CASE 7
 	IF MAIN_MAP == 6
-		LOCALS = 八雲邸玄関
+		LOCALS = 八云邸玄关
 	ELSE
 		LOCALS = 迷途之家
 	ENDIF
 CASE 8
 	LOCALS = 彼岸
 CASE 9
-	LOCALS = 山道・通往沼澤之道
+	LOCALS = 山道・通往沼泽之道
 CASE 10
 	LOCALS = 山道・中腹
 CASE 11
-	LOCALS = 山麓樹海
+	LOCALS = 山麓树海
 CASE 12
 	IF MAIN_MAP == 8
-		LOCALS = 頂上
+		LOCALS = 顶上
 	ELSE
-		LOCALS = 絶景之丘
+		LOCALS = 绝景之丘
 	ENDIF
 CASE 13
 	IF MAIN_MAP == 8
-		LOCALS = 桃園
+		LOCALS = 桃园
 	ELSE
 		LOCALS = 天界
 	ENDIF
 CASE 14
-	LOCALS = 桃林～砂浜
+	LOCALS = 桃林～沙滩
 CASE 56
 	LOCALS = 广场
 CASE 31
 	IF MAIN_MAP == 3
-		LOCALS = 湖畔(紅魔館)
+		LOCALS = 湖畔(红魔馆)
 	ELSE
-		LOCALS = 霧之湖
+		LOCALS = 雾之湖
 	ENDIF
 CASE 32
 	LOCALS = 三途之川
 CASE 33
-	LOCALS = 玄武之澤
+	LOCALS = 玄武之泽
 CASE 34
 	LOCALS = 大蛤蟆之池
 CASE 35
@@ -833,36 +834,36 @@ CASE 35
 	ENDIF
 CASE 36
 	IF MAIN_MAP == 8
-		LOCALS = 湖畔（妖怪之山山頂）
+		LOCALS = 湖畔（妖怪之山山顶）
 	ELSE
 		LOCALS = 山之湖
 	ENDIF
 CASE 37
 	IF MAIN_MAP == 9
-		LOCALS = 川岸（地底）
+		LOCALS = 河岸（地底）
 	ELSE
-		LOCALS = 地獄的深道
+		LOCALS = 地狱的深道
 	ENDIF
 CASE 61
 	LOCALS = 墓地
 CASE 62
-	LOCALS = 無縁塚
+	LOCALS = 无缘冢
 CASE 63
 	LOCALS = 菌菇群生地
 CASE 64
-	LOCALS = 間欠泉地下中樞
+	LOCALS = 间歇泉地下中枢
 CASE 65
-	LOCALS = 灼熱地獄跡
+	LOCALS = 灼热地狱遗迹
 CASE 66
 	IF MAIN_MAP == 9
-		LOCALS = 縦穴底部
+		LOCALS = 竖井底部
 	ELSE
-		LOCALS = 幻想風穴
+		LOCALS = 幻想风穴
 	ENDIF
 CASE 67
-	LOCALS = 寧靜海
+	LOCALS = 静海
 CASE 68
-	LOCALS = 虹龍洞
+	LOCALS = 虹龙洞
 CASEELSE
 	LOCALS =
 ENDSELECT
@@ -887,7 +888,7 @@ RETURNF LOCALS
 Chosen = 0
 QTY = 0
 ;採集物の選出
-;随机で検索斯塔ト位置をずらしたり、検索の向きを変えたりする
+;随机で検索スタート位置をずらしたり、検索の向きを変えたりする
 SELECTCASE RAND:5
 	CASE 0
 		start = 600 + RAND:40
