@@ -134,7 +134,48 @@ SELECTCASE ARGS
 		; RESETCOLOR
 		; TARGET = LOCAL
 ;------------------------------------------------------------
-;イベント系KOJO出力処理
+;自定义指令系统新增的事件的KOJO输出处理
+;------------------------------------------------------------
+	CASE "CUSTOM_EVENT"
+		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+			RETURN -1
+		;设定TARGET
+		LOCAL = TARGET
+		TARGET = ARG:2
+		;文本设定
+		IF FLAG:口上文本設定 <= 0
+		ELSE
+			CALL KOJO_ACTIVE_INFO(TARGET)
+			KOJO_VALID = RESULT
+			KOJO_NAME '= RESULTS				
+			RESULT = 0
+			IF ARGS:1 != ""
+				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_MESSAGECHECK_K{NO:TARGET}__%ARGS:1%
+			ELSE
+				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_MESSAGECHECK_K{NO:TARGET}_{ARG:1}
+			ENDIF
+			SKIP_MESSAGE = GETBIT(RESULT, 0)
+			SKIP_KOJO = GETBIT(RESULT, 1)
+		ENDIF
+		SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+			TRYCALLFORM CUSTOM_EVENT_MESSAGE_{ARG:1}(ARG:3,ARG:4)
+		RESULT = 0
+		IF KOJO_VALID && !SKIP_KOJO
+			SIF FLAG:口上色
+				TRYCALLFORM M_KOJO%KOJO_NAME%_COLOR_K{NO:TARGET}
+			RESULT = 0
+			IF ARGS:1 != ""
+				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_K{NO:TARGET}_%ARGS:1%(ARGS:2,ARG:3,ARG:4)
+			ELSE
+				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENTT_K{NO:TARGET}_{ARG:1}(ARG:3,ARG:4)
+			ENDIF
+		ENDIF
+		KOJO_RESULT = RESULT
+		TARGET = LOCAL
+		RESETCOLOR
+		RETURN KOJO_RESULT
+;------------------------------------------------------------
+;イベント系KOJO出力处理
 ;------------------------------------------------------------
 	CASE "EVENT"
 		;TARGETに発言者設定（現在的TARGETはLOCALへ退避）
@@ -827,7 +868,7 @@ SELECTCASE ARGS
 				CFLAG:TARGET:来訪不能 = 0
 				TRYCCALLFORM M_KOJO%RESULTS%_FLAGSETTING_K{NO:TARGET}
 				CATCH
-					PRINTFORMW ※警告：(%CALLNAME:TARGET%\@ RESULTS:1 != "" ? _ # \@%RESULTS:1%口上)的基本标志未设定
+					PRINTFORMW ※警告：(%CALLNAME:TARGET%\@ RESULTS:1 != "" ? _ # \@%RESULTS:1%剧本)的基本标志未设定
 				ENDCATCH
 			ENDIF
 		ELSE

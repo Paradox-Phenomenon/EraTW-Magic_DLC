@@ -80,9 +80,9 @@ CASE "固有内衣着用条件"
 	SIF !RAND:(3 - (2 * 勝負内衣判定([[若鷺姫]])))
 		CALLF MAKE_INT(V_NAME, 1)
 CASE "固有内衣半透明(前)"
-	CALLF MAKE_INT(V_NAME, 0)
+	CALLF MAKE_INT(V_NAME, 1)
 CASE "固有内衣半透明(後)"
-	CALLF MAKE_INT(V_NAME, 0)
+	CALLF MAKE_INT(V_NAME, 1)
 CASE "固有内衣布料厚度"
 	CALLF MAKE_INT(V_NAME, 99)
 
@@ -157,7 +157,7 @@ ELSE
 		ENDIF
 	ELSE
 		;服
-		SIF CFLAG:CHARA:诶嘿嘿 && TALENT:CHARA:胸圍 > 0
+		SIF CFLAG:CHARA:诶嘿嘿 && TALENT:CHARA:胸圍 >= 0
 			RESULTS = _はだけ
 	ENDIF
 ENDIF
@@ -206,8 +206,30 @@ IF CFLAG:CHARA:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
+		IF GROUPMATCH(CFLAG:[[わかさぎ姫]]:差し替え適用, 1)
+			IF CFLAG:CHARA:睡眠 ;prevents overlapping status breaking the sprite
+				RESULTS:0 = 睡眠
+				RESULTS:1 = 睡眠
+			ELSE
+				SIF (PALAM:CHARA:反感 < 1000 && (TALENT:CHARA:機嫌 == -1 && RESULTS:0 == "憤怒"))
+					RESULTS:0 = 煩う
+				IF TCVAR:CHARA:媚薬 || TCVAR:CHARA:発情
+					FOR LOCAL, 0, 2
+						SIF GROUPMATCH(RESULTS:LOCAL, "憤怒", "笑顔")
+							RESULTS:LOCAL '= @"発情%RESULTS:LOCAL%"
+					NEXT
+					SIF (GET_TARGETNUM() > 1 || IS_FALLEN(CHARA)) && RESULTS:0 == "発情"
+						RESULTS:0 = 発情1
+				ELSEIF PALAM:CHARA:好意 - PALAM:CHARA:反感 > 2500 || IS_FALLEN(CHARA)
+					FOR LOCAL, 0, 2
+						SIF GROUPMATCH(RESULTS:LOCAL, "通常", "笑顔")
+							RESULTS:LOCAL '= @"%RESULTS:LOCAL%1"
+					NEXT
+				ENDIF
+			ENDIF
+		ENDIF
 	ELSE
-		;立絵
+		;立ち絵
 	ENDIF
 ELSE
 	;通常画像
@@ -226,12 +248,49 @@ ENDIF
 ;   RESULTS:1にマウスオーバー時の表情を格納すること
 ;   "自慰","愛撫","性交"は本編で実装済み
 ;-------------------------------------------------------------------------------------------
-@IMAGE_I93_特殊表情COM(CHARA, 指令)
+@IMAGE_I93_特殊表情COM(CHARA, コマンド)
 #DIM CHARA
-#DIM 指令
+#DIM コマンド
 
-IF TALENT:CHARA:胸圍 > 0 && FLAG:立絵種類
-	SELECTCASE 指令
+IF CFLAG:[[わかさぎ姫]]:差し替え適用
+	;差し替え画像
+	IF FLAG:立ち絵種類
+		;顔絵
+		IF GROUPMATCH(CFLAG:[[わかさぎ姫]]:差し替え適用, 1)
+			SIF GROUPMATCH(SELECTCOM, 414, 415) && TCVAR:CHARA:前回料理評価値 / 10 < 50
+				RESULTS:0 = 困る
+			IF GROUPMATCH(CFLAG:[[わかさぎ姫]]:差し替え適用, 1)
+				SIF RESULTS:0 == "性交"
+					RESULTS:0 '= @"性交%COND_STR(@"\@ RAND:2 > 0 ? 1 # 2 \@", RAND:3 > 0)%"
+				SIF RESULTS:0 == "愛撫"
+					RESULTS:0 '= @"愛撫%COND_STR("1", RAND:2 > 0)%"
+				IF TCVAR:CHARA:媚薬 || TCVAR:CHARA:発情
+					SIF GROUPMATCH(RESULTS:0, "愛撫", "愛撫1")
+						RESULTS:0 '= @"発情%RESULTS:0%"
+					IF STRFIND(RESULTS:0, "性交") > -1
+						SELECTCASE RAND:4
+							CASE 0
+								RESULTS:0 = 発情性交
+							CASE 1
+								RESULTS:0 = 発情性交1
+							CASE 2
+								RESULTS:0 = 性交
+							CASE 3
+								RESULTS:0 = 性交1
+						ENDSELECT
+					ENDIF
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		;立ち絵
+	ENDIF
+ELSE
+	;通常画像
+	IF FLAG:立ち絵種類
+		;顔絵
+		IF TALENT:CHARA:バストサイズ > 0
+			SELECTCASE コマンド
 		CASE 82
 			RESULTS:0 = 乳交
 		CASE 80
@@ -266,6 +325,10 @@ IF TALENT:CHARA:胸圍 > 0 && FLAG:立絵種類
 	ENDSELECT
 	SIF RAND:3 && CFLAG:CHARA:诶嘿嘿 && 絶頂判定(CHARA)
 		SWAP RESULTS:0, RESULTS:1
+		ENDIF
+	ELSE
+		;立ち絵
+	ENDIF
 ENDIF
 
 
@@ -459,3 +522,62 @@ ENDIF
 
 RETURN エフェクト数
 ;********************************************************************************************
+
+@IMAGE_EX_I93_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
+#DIM CHARA
+#DIMS 表示形式
+#DIMS 服装
+#DIMS 表情
+#DIMS 表情_マウスオーバー
+#DIMS 差分
+#DIMS 乳量
+
+SIF CFLAG:[[わかさぎ姫]]:差し替え適用 == 1
+	CALL COMPOSE_SPRITE_93
+
+@CHECK_IMAGE_NEEDS_UPDATE(CHARA)
+#FUNCTION
+#DIM CHARA
+#DIM LAST_STATUS_BLUSH_97
+#DIM LAST_STATUS_EXHALATION_97
+#DIM LAST_STATUS_BLUSH_93
+#DIM LAST_STATUS_EXHALATION_93
+#DIM LAST_STATUS_BLUSH_156
+#DIM LAST_STATUS_HEADDRESS_156
+#DIM LAST_STATUS_EXHALATION_156
+
+SELECTCASE CHARA
+	CASE [[日狭美]]
+		SIF !SPRITECREATED("別顔_服_通常_156")
+			RETURNF 1
+		IF GROUPMATCH(CFLAG:156:差し替え適用, 1)
+			IF CHECK_BLUSH(156) != LAST_STATUS_BLUSH_156 || CHECK_EXHALATION(156) != LAST_STATUS_EXHALATION_156 || CHECK_HEADDRESS_156() != LAST_STATUS_HEADDRESS_156
+				LAST_STATUS_BLUSH_156 = CHECK_BLUSH(156)
+				LAST_STATUS_HEADDRESS_156 = CHECK_HEADDRESS_156()
+				LAST_STATUS_EXHALATION_156 = CHECK_EXHALATION(156)
+				RETURNF 1
+			ENDIF
+		ENDIF
+	CASE [[正邪]]
+		SIF !SPRITECREATED("別顔2_服_通常_97")
+			RETURNF 1
+		IF GROUPMATCH(CFLAG:97:差し替え適用, 2)
+			IF (CHECK_BLUSH(97) != LAST_STATUS_BLUSH_97 || CHECK_EXHALATION(97) != LAST_STATUS_EXHALATION_97)
+				LAST_STATUS_BLUSH_97 = CHECK_BLUSH(97)
+				LAST_STATUS_EXHALATION_97 = CHECK_EXHALATION(97)
+				RETURNF 1
+			ENDIF
+		ENDIF
+	CASE [[わかさぎ姫]]
+		SIF !SPRITECREATED("別顔_服_通常_93")
+			RETURNF 1
+		IF GROUPMATCH(CFLAG:93:差し替え適用, 1)
+			IF (CHECK_BLUSH(93) != LAST_STATUS_BLUSH_93 || CHECK_EXHALATION(93) != LAST_STATUS_EXHALATION_93)
+				LAST_STATUS_BLUSH_93 = CHECK_BLUSH(93)
+				LAST_STATUS_EXHALATION_93 = CHECK_EXHALATION(93)
+				RETURNF 1
+			ENDIF
+		ENDIF
+ENDSELECT
+
+RETURNF 0

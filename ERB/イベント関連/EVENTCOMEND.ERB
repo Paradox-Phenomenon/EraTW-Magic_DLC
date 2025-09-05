@@ -21,14 +21,14 @@ CALL TURN_RESET
 SIF FLAG:宴会開催FLAG > 0
 	CALL ENKAI_SINKOU
 
-SIF TFLAG:102 < 2 && TARGET && SHIRAHU(TARGET) && !FLAG:70
+SIF TFLAG:102 < 2 && TARGET && SHIRAHU(TARGET) && (!FLAG:70 || CFLAG:TARGET:344 == 1)
 	CALL ボッシュート
 IF BASE:MASTER:酒気 >= MAXBASE:MASTER:酒気
 	;AT_HOMEみるだけでも良いかもしれない
 	IF !AT_HOME(MASTER) && GET_MAPID(CFLAG:MASTER:現在位置) != MAIN_MAP
 		CALL 约会終了タイムUP処理
 	ELSE
-		PRINTFORMW 持续痛饮直到极限的%CALLNAME:MASTER%、就这様突然倒下了…
+		PRINTFORMW 持续痛饮直到极限的%CALLNAME:MASTER%、就这样突然倒下了…
 	ENDIF
 	GOTO OYASUMI
 ENDIF
@@ -36,8 +36,8 @@ IF BASE:MASTER:体力 <= 500 && ITEM:リバースフェザー
 	FONTSTYLE 1
 	PRINTFORML 羽毛放出光辉　安静的燃烧殆尽了！
 	FONTREGULAR
-	CALL RECOVER_PERMIL(MASTER, 300, "体力", 0, "リバースフェザー所获得的回復")
-	CALL RECOVER_PERMIL(MASTER, 200, "気力", 0, "リバースフェザー所获得的回復")
+	CALL RECOVER_PERMIL(MASTER, 300, "体力", 0, "不死鸟之羽的恢复")
+	CALL RECOVER_PERMIL(MASTER, 200, "気力", 0, "不死鸟之羽的恢复")
 	ITEM:リバースフェザー --
 ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MASTER:体力 <= 0
 	PRINTL （体力濒临极限）
@@ -47,7 +47,7 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 	ELSE
 		;被逆推中なら分岐
 		IF TFLAG:102 == 3 && BASE:MASTER:体力 > 0 && !GETBIT(TCVAR:TARGET:随便,0)
-			CALL ASK_YN("随她去吧", "求放開")
+			CALL ASK_YN("随她去吧", "求放开")
 			IF !RESULT
 				TCVAR:TARGET:随便 = 1
 				BASE:MASTER:体力 -= 250
@@ -80,15 +80,15 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 	;外泊できる状態ならそのまま寝る（恋慕前提）
 	IF CFLAG:MASTER:現在位置 == OMANEKIBEYA() && !TCVAR:(CFLAG:MASTER:招待):连住禁止
 		IF CFLAG:(CFLAG:MASTER:招待):约会中 && TALENT:TARGET:恋慕
-			PRINTFORMW 今天%CALLNAME:(CFLAG:MASTER:招待)%提供了住宿的様子
+			PRINTFORMW 今日被%CALLNAME:(CFLAG:MASTER:招待)%留下过夜了…
 			FLAG:気絶中断 = 0
 		;発情無崩しお部屋上がり込みの場合
 		ELSE
-			PRINTFORML %CALLNAME:(CFLAG:MASTER:招待)%也差不多到了清醒过来的时候了吧、是时候离開了…
+			PRINTFORML %CALLNAME:(CFLAG:MASTER:招待)%也差不多到了清醒过来的时候了吧、是时候离开了…
 			IF TFLAG:102 >= 2
-				PRINTFORMW 挣脱開紧紧抱住的%CALLNAME:(CFLAG:MASTER:招待)%、回到了%GET_MAPNAME(MAIN_MAP)%…
+				PRINTFORMW 挣脱开紧紧抱住的%CALLNAME:(CFLAG:MASTER:招待)%、回到了%GET_MAPNAME(MAIN_MAP)%…
 			ELSE
-				PRINTFORMW 仿佛要避開%CALLNAME:(CFLAG:MASTER:招待)%火热的的视线一般、回到了%GET_MAPNAME(MAIN_MAP)%…
+				PRINTFORMW 仿佛要避开%CALLNAME:(CFLAG:MASTER:招待)%火热的的视线一般、回到了%GET_MAPNAME(MAIN_MAP)%…
 			ENDIF
 			;部屋的污垢を保存しておく
 			IF YOGORE:(OMANEKIBEYA()) > 0
@@ -108,17 +108,17 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 		PRINTFORMW 
 		CALL 泡風呂終了判定("你限界")
 		IF MAIN_MAP != 9
-			PRINTFORMW %CALLNAME:MASTER%用盡最後的力量、回到了%GET_MAPNAME(MAIN_MAP)%
+			PRINTFORMW %CALLNAME:MASTER%用尽最后的力量、回到了%GET_MAPNAME(MAIN_MAP)%
 			FLAG:気絶中断 = 100 + CFLAG:MASTER:現在位置 / 100
 			CFLAG:MASTER:現在位置 = ENTRANCE
 		ELSE
-			PRINTFORMW %CALLNAME:MASTER%搖搖晃晃地、回到了私室
+			PRINTFORMW %CALLNAME:MASTER%摇摇晃晃地、回到了私室
 			CFLAG:MASTER:現在位置 = CFLAG:MASTER:311
 			FLAG:気絶中断 = 0
 		ENDIF
 	ELSEIF TARGET > 0 && TALENT:TARGET:恋慕 && BASE:TARGET:体力 >= 500 && !CFLAG:TARGET:睡眠 && !CFLAG:MASTER:陪睡中 && ((CFLAG:TARGET:同行 && CHK_DATENOW(CFLAG:MASTER:约会中)) || !CHK_DATENOW(CFLAG:MASTER:约会中))
 		IF CHK_DATENOW(CFLAG:MASTER:约会中)
-			PRINTFORMW %CALLNAME:TARGET%支撐著%CALLNAME:MASTER%回到了%GET_MAPNAME(MAIN_MAP)%
+			PRINTFORMW %CALLNAME:TARGET%支撑着%CALLNAME:MASTER%回到了%GET_MAPNAME(MAIN_MAP)%
 		ENDIF
 		IF CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
 			PRINTFORMW %CALLNAME:TARGET%把%CALLNAME:MASTER%送回了私室…
@@ -136,12 +136,12 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 		CFLAG:MASTER:現在位置 = P10走廊
 		PRINTFORMW 不知什么时候%CALLNAME:MASTER%滚到了走廊上…
 	ELSEIF CHK_DATENOW(CFLAG:MASTER:约会中)
-		PRINTFORMW %CALLNAME:MASTER%用盡最後的力量、回到了%GET_MAPNAME(MAIN_MAP)%
+		PRINTFORMW %CALLNAME:MASTER%用尽最后的力量、回到了%GET_MAPNAME(MAIN_MAP)%
 		FLAG:気絶中断 = 100 + CFLAG:MASTER:現在位置 / 100
 		CFLAG:MASTER:現在位置 = ENTRANCE
 		PRINTFORMW 
 	ELSE
-		PRINTFORMW %CALLNAME:MASTER%搖搖晃晃地、回到了私室
+		PRINTFORMW %CALLNAME:MASTER%摇摇晃晃地、回到了私室
 		CFLAG:MASTER:現在位置 = CFLAG:MASTER:311
 		FLAG:気絶中断 = 0
 	ENDIF
@@ -163,12 +163,12 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 	BEGIN AFTERTRAIN
 ENDIF
 IF TARGET && TFLAG:接吻マーク == TARGET && TFLAG:绷帯 && !RAND:2
-	PRINTFORMW 察覺到%CALLNAME:MASTER%的脖子上被包住的東西的%CALLNAME:TARGET%、拉開了繃帯
+	PRINTFORMW 察觉到%CALLNAME:MASTER%把颈部的吻痕遮住，%CALLNAME:TARGET%生气地一把扯掉绷带
 	TFLAG:绷帯 = 0
 	BASE:憤怒 += 500
 ENDIF
 $SUKINISITE
-IF TARGET && CFLAG:心情不快 && !FLAG:70 && !TCVAR:强行 && !CFLAG:败犬
+IF TARGET && CFLAG:心情不快 && (!FLAG:70 || CFLAG:TARGET:344 == 1) && !TCVAR:强行 && !CFLAG:败犬
 	IF TALENT:TARGET:胆量 < 0
 		PRINTFORMW 把%CALLNAME:TARGET%弄哭了…
 		CALL KOJO_MESSAGE_SEND("EVENT",29,TARGET,2,0)
@@ -212,7 +212,7 @@ IF FLAG:70 == 1
 		NEXT
 		[SKIPEND]
 		IF CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-			PRINTFORMW %CALLNAME:MASTER%慌忙离開了现场
+			PRINTFORMW %CALLNAME:MASTER%慌忙离开了现场
 			TFLAG:運搬 = 0
 			CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
 			FOR LOCAL:10, 0, CHARANUM - 1
@@ -223,18 +223,18 @@ IF FLAG:70 == 1
 					PRINTFORMW 如潮水般涌来的快感令%CALLNAME:LOCAL%翻着白眼、吐着舌头瘫坐在地上不住娇喘
 					CFLAG:LOCAL:333 += 30
 				ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 40
-					PRINTFORMW 突然袭来的激烈絶頂令%CALLNAME:LOCAL%发出甜美的娇喘声、当场瘫坐在地
+					PRINTFORMW 突然袭来的激烈绝顶令%CALLNAME:LOCAL%发出甜美的娇喘声、当场瘫坐在地
 					CFLAG:LOCAL:333 += 20
 				ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 20
-					PRINTFORMW %CALLNAME:LOCAL%因为突如其来的謎之快感身体发软
+					PRINTFORMW %CALLNAME:LOCAL%因为突如其来的谜之快感身体发软
 					CFLAG:LOCAL:333 += 10
 				ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 0
-					PRINTFORMW %CALLNAME:LOCAL%因为謎之快感身体猛地僵硬起来
+					PRINTFORMW %CALLNAME:LOCAL%因为谜之快感身体猛地僵硬起来
 				ELSEIF CFLAG:LOCAL:291 == 1
-					PRINTFORMW 不知什么时候内裤被脱掉的%CALLNAME:LOCAL%一幅坐立不安的様子
+					PRINTFORMW 不知什么时候内裤被脱掉的%CALLNAME:LOCAL%一幅坐立不安的样子
 				ENDIF
 				SIF EX:LOCAL:処女喪失记号 == 1
-					PRINTFORMW %CALLNAME:LOCAL%因为股間的鈍痛而紧皱着眉头…
+					PRINTFORMW %CALLNAME:LOCAL%因为股间的钝痛而紧皱着眉头…
 			NEXT
 			IF !AT_HOME(MASTER)
 				PRINTFORML 往%GET_MAPNAME(MAIN_MAP)%全速疾奔而去…
@@ -274,18 +274,18 @@ IF FLAG:70 == 1
 						PRINTFORMW 如潮水般涌来的快感令%CALLNAME:LOCAL%翻着白眼、吐着舌头瘫坐在地上不住娇喘
 						CFLAG:LOCAL:333 += 30
 					ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 40
-						PRINTFORMW 突然袭来的激烈絶頂令%CALLNAME:LOCAL%发出甜美的娇喘声、当场瘫坐在地
+						PRINTFORMW 突然袭来的激烈绝顶令%CALLNAME:LOCAL%发出甜美的娇喘声、当场瘫坐在地
 						CFLAG:LOCAL:333 += 20
 					ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 20
-						PRINTFORMW %CALLNAME:LOCAL%因为突如其来的謎之快感身体发软
+						PRINTFORMW %CALLNAME:LOCAL%因为突如其来的谜之快感身体发软
 						CFLAG:LOCAL:333 += 10
 					ELSEIF EX:LOCAL:Ｃ絶頂 + EX:LOCAL:Ｖ絶頂 + EX:LOCAL:Ａ絶頂 + EX:LOCAL:Ｂ絶頂 + EX:LOCAL:Ｍ絶頂 > 0
-						PRINTFORMW %CALLNAME:LOCAL%因为謎之快感身体猛地僵硬起来
+						PRINTFORMW %CALLNAME:LOCAL%因为谜之快感身体猛地僵硬起来
 					ELSEIF CFLAG:LOCAL:291 == 1
-						PRINTFORMW 不知什么时候内裤被脱掉的%CALLNAME:LOCAL%一幅坐立不安的様子
+						PRINTFORMW 不知什么时候内裤被脱掉的%CALLNAME:LOCAL%一幅坐立不安的样子
 					ENDIF
 					SIF EX:LOCAL:処女喪失记号 == 1
-						PRINTFORMW %CALLNAME:LOCAL%因为股間的鈍痛而紧皱着眉头…
+						PRINTFORMW %CALLNAME:LOCAL%因为股间的钝痛而紧皱着眉头…
 				ENDIF
 				CALL ENDUFUFU(LOCAL)
 			NEXT
@@ -305,7 +305,7 @@ IF TARGET && BASE:体力 < 500 && !TCVAR:TARGET:休憩中 && CFLAG:睡眠 == 0 &
 	IF FLAG:70 == 1 && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 		IF !CFLAG:衰弱
 			PRINTFORML （%CALLNAME:TARGET%的体力濒临了极限）
-			PRINTFORMW %CALLNAME:MASTER%离開了这个地方、解除了時間停止
+			PRINTFORMW %CALLNAME:MASTER%离开了这个地方、解除了时间停止
 			CFLAG:衰弱 = 360
 			FLAG:70 = 0
 			FLAG:约会的对象 = 0
@@ -372,10 +372,10 @@ IF GET_EXISTMOB(MAIN_MAP)
 		ENDIF
 	NEXT
 ENDIF
-IF !FLAG:70 && TARGET
+IF (!FLAG:70 || CFLAG:TARGET:344 == 1) && TARGET
 	IF TALENT:TARGET:動物耳 && CFLAG:TARGET:900 == 7 && !TCVAR:TARGET:発情 && PALAM:TARGET:欲情 >= PALAMLV:5 && !TALENT:TARGET:妊娠
-		PRINTFORML %CALLNAME:TARGET%脸颊泛红、气息荒乱起来…
-		PRINTFORML 在危険日極度興奮起来的%CALLNAME:TARGET%好像[発情]了
+		PRINTFORML %CALLNAME:TARGET%脸颊泛红、气息慌乱起来…
+		PRINTFORML 在危险日极度兴奋起来的%CALLNAME:TARGET%好像[发情]了
 		TCVAR:TARGET:発情 = 1
 	ENDIF
 ENDIF
@@ -461,7 +461,7 @@ CALL 宴会参加人数再計算()
 ;天気が悪いと中止になる宴会もある
 
 IF TIME:5 >= 4 && FLAG:36 > 0 && GROUPMATCH(CFLAG:[[天子]]:宴会参加, 1, 2)
-	PRINTFORMW 以為會因為惡劣的天氣而終止的宴會、在天子的能力下天空放晴了
+	PRINTFORMW 以为会因为恶劣的天气而终止的宴会、在天子的能力下天空放晴了
 	TIME:5 = 0
 	;(天候パッチ)風速を0にする
 	WIND_VELOCITY = 0
@@ -470,23 +470,23 @@ IF TIME:5 >= 4 && FLAG:36 > 0 && GROUPMATCH(CFLAG:[[天子]]:宴会参加, 1, 2)
 ENDIF
 IF TIME:5 >= 4 && FLAG:36 > 0 && DAY >= FLAG:開始日 && TIME >= FLAG:33
 	PRINTL  
-	PRINTFORMW 很遗憾、\@ CFLAG:MASTER:現在位置 == TFLAG:宴会場 ? 由于天気不好的原因宴会中止了 # 很遗憾、由于坏天気的原因宴会似乎要中止了\@
+	PRINTFORMW 很遗憾、\@ CFLAG:MASTER:現在位置 == TFLAG:宴会場 ? 由于天気不好的原因宴会中止了 # 很遗憾、由于坏天气的原因宴会似乎要中止了\@
 	CALL ENKAI_STOP
 ;宴会の途中で降り始めた場合
 ELSEIF TFLAG:宴会状態 >= 98 && TIME:5 >= 4 && FLAG:36 > 0
 	PRINTL  
-	PRINTFORMW 很遗憾、\@ CFLAG:MASTER:現在位置 == TFLAG:宴会場 ? 由于天気不好的原因宴会中止了 # 很遗憾、由于坏天気的原因宴会似乎要中止了\@
+	PRINTFORMW 很遗憾、\@ CFLAG:MASTER:現在位置 == TFLAG:宴会場 ? 由于天气不好的原因宴会中止了 # 很遗憾、由于坏天气的原因宴会似乎要中止了\@
 	CALL ENKAI_STOP
 ;宴会開始
 ELSEIF 宴会開始日判定() && TIME >= FLAG:33
 	IF CFLAG:MASTER:現在位置 == TFLAG:宴会場
 		PRINTFORML 
 		IF FLAG:参加人数 < 2
-			PRINTW 在恬静的气氛中、宴会開始了…
+			PRINTW 在恬静的气氛中、宴会开始了…
 		ELSEIF FLAG:参加人数 >= 8
-			PRINTW 在热闹的气氛中、宴会開始了…
+			PRINTW 在热闹的气氛中、宴会开始了…
 		ELSE
-			PRINTW 在祥和的气氛中、宴会開始了…
+			PRINTW 在祥和的气氛中、宴会开始了…
 		ENDIF
 		PRINTFORML 
 		TFLAG:宴会状態 = 99
@@ -496,7 +496,7 @@ ELSEIF 宴会開始日判定() && TIME >= FLAG:33
 ELSEIF TFLAG:宴会状態 == 98 && DAY >= FLAG:開始日 && TIME >= FLAG:33
 	IF CFLAG:MASTER:現在位置 == TFLAG:宴会場
 		PRINTL  
-		PRINTW 宴会好像已经開始了的様子…
+		PRINTW 宴会好像已经开始了的样子…
 		PRINTL  
 		TFLAG:宴会状態 = 99
 	ENDIF

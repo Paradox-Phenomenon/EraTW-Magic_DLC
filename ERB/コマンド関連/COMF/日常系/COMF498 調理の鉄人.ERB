@@ -59,7 +59,7 @@ SELECTCASE DISH_TYPE_NUM
 		DISH_TYPE = 主食
 ENDSELECT
 IF DISH_TYPE == "軽食"
-	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/汁物/油炸食品/煮物/開胃/家庭料理")%
+	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/汁物/油炸食品/煮物/下酒菜/家庭料理")%
 ELSEIF DISH_TYPE == "主食"
 	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/麺類/鍋物/汁物/油炸食品/謎料理/家庭料理")%
 ENDIF
@@ -73,6 +73,8 @@ ENDIF
 PRINTFORML 「请大家用热烈的掌声欢迎！%THEME%的铁人，%対戦相手%！」
 SIF THEME == "家庭料理"
 	THEME = 家庭的
+SIF THEME == "下酒菜"
+	THEME = 开胃
 PRINTFORML 「而挑战者则是%CALLNAME:MASTER%！」
 PRINTFORML 「评审团由以下诸位组成」
 
@@ -111,18 +113,18 @@ TASTE_TREND_BAD =
 
 ;好きな味、嫌いな味の内気を付けるべきものを提示
 CALL JUDGE_RESEARCH(C_ID,"OUT")
-PRINTFORM 「本次料理铁人的关键...
+PRINTFORM 「本次料理铁人中…
 FOR LOCAL, 0, 6
 	IF LOCAL < 3
 		PRINTFORM [%RESULTS:LOCAL%]
 		TASTE_TREND_GOOD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 2
-			PRINTFORM 味道的运用将是关键！反之，
+			PRINTFORM 等口味的运用似乎会成为关键！相反，
 	ELSEIF LOCAL > 2 
 		PRINTFORM [%RESULTS:LOCAL%]
 		TASTE_TREND_BAD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 5
-			PRINTFORM 味道需要特别注意！」
+			PRINTFORM 等口味要谨慎！」
 	ENDIF
 NEXT
 PRINTFORMW 
@@ -139,7 +141,7 @@ CALL ENEMY_DISH_MENU(対戦相手, DISH_TYPE_NUM, THEME, ENEMY_LV, TASTE_TREND_G
 DISH_NAME_ENEMY = %RESULTS:0%
 DISH_TASTE_ENEMY = %RESULTS:1%
 
-CALL COLORMESSAGE(@"【%DISH_TYPE%】【%THEME%】(若偏离主题将失去资格)",C_YELLOW,1)
+CALL COLORMESSAGE(@"【%DISH_TYPE%】【%THEME%】(如果偏离主题则丧失资格)",C_YELLOW,1)
 DRAWLINE
 PREV_REDRAW = CURRENTREDRAW()
 REDRAW 0
@@ -155,7 +157,7 @@ CALL ENEMY_COOKING(DISH_NAME_ENEMY, DISH_TASTE_ENEMY, ENEMY_LV, 対戦相手)
 DISH_NAME_ENEMY = %RESULTS%
 
 PRINTFORML 双方都完成了料理！
-PRINTFORMW 那么请从%対戦相手%的%DISH_NAME_ENEMY%开始品鉴！
+PRINTFORMW 那么首先请品尝%対戦相手%的%DISH_NAME_ENEMY%！
 
 TOTAL_ENEMY = 0
 FOR LOCAL, 0 , 3
@@ -169,7 +171,7 @@ NEXT
 CALL COLORMESSAGE(@"总分：{TOTAL_ENEMY}分",C_YELLOW,1)
 DISH_BASEPOINT = BASEPOINT_TEMP
 
-PRINTFORMW 挑战者的%DISH_NAME%会获得怎样的评价呢！？
+PRINTFORMW 挑战者的%DISHNAME_TR()%会获得怎样的评价呢！？
 
 IF STRFIND(DISH_TASTE, THEME) == -1
 	PRINTFORML 糟糕！？
@@ -187,14 +189,14 @@ FOR LOCAL, 0 , 3
 		SETCOLOR C_GREEN
 		FONTBOLD
 		{
-		PRINTFORML %CALLNAME:C_ID%的背景中%TEXTR("红魔馆爆炸了
-		/妖怪之山喷发了/铃奈庵起火了
-		/辉针城坠落导致博丽神社倒塌了/动物灵和埴轮跳起了桑巴
-		/月亮弹跳着嵌进了赫卡提亚的脑袋
-		/守矢神社裂成两半发射了核热造神「非想天则」
-		/血池地狱变成钴蓝色并长出了椰子树
-		/浮现出巨大键山雏的脸庞
-		/发射了七色魔炮")%
+		PRINTFORML 在%CALLNAME:C_ID%身后的是%TEXTR("红魔馆爆炸了
+		/妖怪之山喷发了/铃奈庵被烧毁了
+		/辉针城坠落砸塌了博丽神社/动物灵和埴轮跳起了桑巴
+		/月亮弹起并嵌在了赫卡提亚的头上
+		/守矢神社一分为二发射核热造神非想天则升空
+		/血池地狱变成了钴蓝色，周围长出了椰子树
+		/巨大的键山雏脸庞浮现而出
+		/七色魔炮发射")%的背景
 		}
 		RESETCOLOR
 		FONTREGULAR
@@ -205,17 +207,17 @@ NEXT
 CALL COLORMESSAGE(@"总分：{TOTAL_PLAYER}分",C_YELLOW,2)
 IF TOTAL_PLAYER > TOTAL_ENEMY
 	WINNER = 勝利
-	PRINTFORMW 挑战者胜利了！
+	PRINTFORMW 挑战者获胜！
 ELSE
 	WINNER = 敗北
 	$PLAYER_LOSE
-	PRINTFORMW %対戦相手%胜利了！
+	PRINTFORMW %対戦相手%获胜！
 ENDIF
 CALL RESET_DISH
 
 IF WINNER == "勝利"
 	IF !CFLAG:TARGET:料理勝負勝利 && 対戦相手 == CALLNAME:TARGET
-		CALL COLORMESSAGE(@"【%CALLNAME:TARGET%初次胜利】",C_YELLOW,1)
+		CALL COLORMESSAGE(@"【对%CALLNAME:TARGET%首次取得料理对决胜利】",C_YELLOW,1)
 		CFLAG:TARGET:料理勝負勝利 = 1
 		SELECTCASE ABL:TARGET:料理技能
 			CASE 0
@@ -348,8 +350,8 @@ ENDSELECT
 #DIMS TASTE_STR              	;表示対象の味データ
 #DIMS TASTE_LIST_PO, 100		;好きな味リスト
 #DIMS TASTE_LIST_NE, 100		;嫌いな味リスト
-#DIM  TASTE_CNT_PO,  100	;好きな味リスト各要素の重複個数
-#DIM  TASTE_CNT_NE,  100	;嫌いな味リスト各要素の重複個数
+#DIM  TASTE_CNT_PO,  100	;好きな味リスト各要素の重複个数
+#DIM  TASTE_CNT_NE,  100	;嫌いな味リスト各要素の重複个数
 #DIM  TASTE_NUM_PO			;好きな味の種類の総数
 #DIM  TASTE_NUM_NE			;嫌いな味の種類の総数
 #DIMS RESULTS_TASTE,6		;最終的な好みの傾向(3位まで)
@@ -447,7 +449,7 @@ CALL DISHDATA(DISH_NUM, DISH_TYPE, 0)
 IF 対戦相手 == CALLNAME:TARGET
 	CALL DISH_TASTE_FROM_CHARA(TARGET)
 ENDIF
-RESULTS:0 = %DISH_NAME%
+RESULTS:0 = %DISHNAME_TR()%
 RESULTS:1 = %DISH_TASTE%
 RETURN 0
 

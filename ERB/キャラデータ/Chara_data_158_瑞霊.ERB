@@ -8,30 +8,19 @@ SELECTCASE ARG
 	;移動傾向（±～10=行きやすい/行きにくい, -100=行かない）
 	CASE 4
 		SELECTCASE ARG:2
-			;Why would she return to the place she broke out of?
-			CASE P901地霊殿前 TO P948縦穴底部
+			CASE P1鳥居 TO P11庭, P22参道
+				RETURN 3
+			CASE P27三妖精の家・広間 TO P35三妖精の家・地下室, P38夢幻遺跡・洗面所 TO P44ちゆり私室, P56あうんの棲家
 				RETURN -100
-			;Not gonna return to the scenes of her crimes (Myouren Temple, SDM, Eientei, Mokou's House, Hakugyokurou, areas Nitori and Hina frequent, Moriya Shrine)
-			CASE P101山門 TO P140地蔵小路, P301正門 TO P348霧之湖・湖底, P401永遠亭入口 TO P430地下室, P445妹紅的家, P621庭 TO P629西行妖, P703玄武之澤 TO P706厄神的家, P811境内 TO P826廊下
-				RETURN -100
-			;Not likely to confront Reimu directly, but might taunt her if she thinks she can get away with it
-			CASE P1鳥居 TO P56阿吽の棲家
-				RETURN -10
-			;Interested in seeing what other food the surface has
-			CASE P211酒屋, P212咖啡館, P216食料品店 TO P218小料理屋
-				RETURN 5
 		ENDSELECT
 	;出現場所
 	CASE 7
 		SELECTCASE ARG:2
-			;Restaurant district
-			CASE 呑屋小道
+			CASE 桜並木の鳥居, 神社境内, 神社本堂, 神社縁側
 				RETURN 1
-			;Possessing Marisa and stealing her magic items would help her get revenge
-			CASE 霧雨魔法店
+			CASE 彼岸
 				RETURN 1
-			;Might try to recruit other disgruntled spirits
-			CASE 畜生界, 霊長園
+			CASE 旧地獄街道
 				RETURN 1
 		ENDSELECT
 	;引力設定（CFLAG:LOCAL:引力点を設定する）
@@ -119,7 +108,7 @@ RETURN 1
 ;制作者		:画像修正パッチの人
 ;Licence	:ライセンスフリー(CC0)
 ;
-;キャラ特有の表情やエフェクト画像を個別に表示できるようにしたもの。
+;キャラ特有の表情やエフェクト画像を个別に表示できるようにしたもの。
 ;使用方法は ERB\ステータス表示関連\キャラ別画像表示 フォルダにある他キャラのファイルを参照してください。
 ;使用時は"XX"をキャラクター番号に全置換すること。
 ;********************************************************************************************
@@ -226,48 +215,20 @@ ELSE
 	;通常画像
 	IF FLAG:立絵種類
 		;顔絵
-		IF FLAG:時間停止
-			IF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿) && !CHECK_NUDE(CHARA)
-				RESULTS:1 = 発情通常
-			ELSEIF CHECK_NUDE(CHARA)
-				RESULTS:1 '= @"%RESULTS:0%TIMESTOP"
-				SIF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿)
-					RESULTS:1 = 発情通常TIMESTOP
-			ENDIF
-		ELSEIF CFLAG:CHARA:睡眠 ;prevents overlapping status breaking the sprite
+		IF CFLAG:CHARA:睡眠 ;prevents overlapping status breaking the sprite
 			RESULTS:0 = 睡眠
 			RESULTS:1 = 睡眠
-		;This check doesn't work, lame
-		;Had to copy the checks here
-		;ELSEIF RESULTS:0 == "愛撫" || RESULTS:0 == "性交"
-		ELSE
-			IF IN_HEAT(CHARA)
-				IF !CHECK_NUDE(CHARA) && !IS_SEXING(CHARA) && (CFLAG:CHARA:既成事実 && 合意_诶嘿嘿)
-					RESULTS:1 = 発情通常
-				ELSE
-					SELECTCASE SELECTCOM
-						CASE 0 TO 15
-							RESULTS:0 = 発情
-							RESULTS:1 '= @"発情愛撫{RAND:2}"
-						CASE 60 TO 79, 317 TO 323
-							RESULTS:0 = 発情
-							RESULTS:1 = 発情性交
-					ENDSELECT
-				ENDIF
-			ELSE
-				SELECTCASE SELECTCOM
-					CASE 0 TO 15
-						RESULTS:0 '= @"愛撫{RAND:3}"
-					CASE 60 TO 79, 317 TO 323
-						RESULTS:0 '= @"性交{RAND:3}"
-					CASE 313 TO 316
-						IF CFLAG:CHARA:うふふ
-							RESULTS:0 = 愛撫
-						ELSEIF MARK:CHARA:不埒刻印 == 3
-							RESULTS:1 = 愛撫
-						ENDIF
-				ENDSELECT
+		ELSEIF FLAG:時間停止
+			IF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_うふふ) && !CHECK_NUDE(CHARA)
+				RESULTS:0 = 発情通常
+			ELSEIF CHECK_NUDE(CHARA)
+				RESULTS:0 '= @"%RESULTS:0%TIMESTOP"
+				SIF IN_HEAT(CHARA) && (CFLAG:CHARA:既成事実 && 合意_うふふ)
+					RESULTS:0 = 発情通常TIMESTOP
 			ENDIF
+		ELSE
+			SIF IN_HEAT(CHARA) && (!CHECK_NUDE(CHARA) && !IS_SEXING(CHARA) && (CFLAG:CHARA:既成事実 && 合意_うふふ))
+				RESULTS:0 = 発情通常
 			IF NOWEX:TotalEX > 8 || NOWEX:時間停止TotalEX > 30 || MIN_ORGASM_STRENGTH(CHARA, 3)
 				;This function triggers thrice
 				;so CLIMAX_EXHAUST goes up by 3 every time this part is ran, what's even going on dude
@@ -279,7 +240,6 @@ ELSE
 					CLIMAX_EXHAUST = 0
 			ENDIF
 		ENDIF
-
 	ELSE
 		;立ち絵
 	ENDIF
@@ -308,6 +268,18 @@ ELSE
 	;通常画像
 	IF FLAG:立絵種類
 		;顔絵
+		IF IN_HEAT(CHARA)
+			SIF RESULTS:0 == "愛撫"
+				RESULTS:0 '= @"発情愛撫{RAND:2}"
+			SIF RESULTS:0 == "性交"
+				RESULTS:0 = 発情性交
+			RESULTS:1 = 発情
+		ELSE
+			SIF RESULTS:0 == "愛撫"
+				RESULTS:0 '= @"愛撫{RAND:3}"
+			SIF RESULTS:0 == "性交"
+				RESULTS:0 '= @"性交{RAND:3}"
+		ENDIF
 	ELSE
 		;立ち絵
 	ENDIF

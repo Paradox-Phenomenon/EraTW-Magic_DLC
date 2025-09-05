@@ -14,21 +14,13 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	; CALLF MAKE_STR(V_NAME, "誰か作ってくれないかなー！")
 	CALLF MAKE_STR(V_NAME, "有谁能帮我做一下吗！")
 CASE "依頼内容表示"
-	; CALLF MAKE_STR(V_NAME, @"注文された料理を作って届ける")
-	CALLF MAKE_STR(V_NAME, @"将点的菜肴送到")
+	CALLF MAKE_STR(V_NAME, @"接受点单并送达")
 CASE "依頼報酬表示"
-	;CALLF MAKE_STR(V_NAME, @"\\2000＋おまけ")
 	CALLF MAKE_STR(V_NAME, @"%金額表示(2000)%＋奖金")
 CASE "依頼実行指令名"
 	;何か問題があったら変えてください
-	;IF TALENT:MASTER:性別 == 2
-	;	CALLF MAKE_STR(V_NAME, "出前漢です")
-	;ELSE 
-	;	CALLF MAKE_STR(V_NAME, "UmanEatsです")
-	;ENDIF
 	IF TALENT:MASTER:性別 == 2
 		CALLF MAKE_STR(V_NAME, "您好，外卖到了")
 	ELSE 
@@ -73,6 +65,7 @@ ENDSELECT
 #DIM SAVECLR  ;色保存用
 #DIM CNT
 #DIM RANDOM
+#DIM DISHNUMBER
 #DIMS TYPE
 #DIMS NAMETEMP  ;TEMP系は変数待避用
 #DIMS TASTETEMP
@@ -93,86 +86,74 @@ CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 CHK_SLOT  = SEARCH_IRAI_SLOT(IRAI_ID)
 
 
-
+ ;Qol维修的代码
 ;**********依頼料理生成部**********
 IF REQUEST_DISHNAME:CHARA:0 == ""
 	;料理の定義関数が通常関数で@一般依頼18から呼べないので乱数シードを固定して同じ料理名を出す
 	;ユニーク料理の売り込み機能を捨てればERHとこの煩雑な実装を除去できる(受託後、期限内に連れ出し可能になると結果が変わってしまうため変数に入れる必要がある)
-	;DISH_NAMEなどを破壊するので待避。力業にしたって汚すぎる…
-	NAMETEMP = %DISH_NAME%
-	TASTETEMP = %DISH_TASTE%
-	TYPETEMP = %DISH_TYPE%
-	COMMENTTEMP = %DISH_COMMENT%
-	TIMETEMP = DISH_TIME
-	MAXLIMITTEMP = DISH_MAXLIMIT
+	;TEMP_DISH_NAMEなどを破壊するので待避。力業にしたって汚すぎる…
 
+	DUMPRAND
+	RANDOMIZE IRAI_SUB:CHK_SLOT
 	;100番台＝軽食、200番台＝主食、300番台＝デザート、400番台＝各キャラのユニーク料理
 	;親密だと自分のユニーク料理をしれっと売り込んでくることがある
-	IF ABL:TARGET:親密 >= ユニーク閾値 && COM_351_CONDITION(CHARA) && RAND:4 == 0
+	IF ABL:CHARA:親密 >= ユニーク閾値 && COM_351_CONDITION(CHARA) && RAND:4 == 0
 		;仲がいい、かつ連れだし可能なら25%の確率でユニーク料理確定
 		RANDOM = 400 + CHARA
 	ELSE
 		RANDOM = RAND:3 * 100 + 100
 	ENDIF
-
-	DUMPRAND
-	RANDOMIZE IRAI_SUB:CHK_SLOT
 	;注文される料理を抽選。ローター系はなしで
 	DO
 		IF RANDOM >= 400
 			;キャラのユニーク料理が抽選された
-			CALL DISHDATA(RANDOM , TYPE , 1)
+			DISHNUMBER = RANDOM
 		ELSE
 			;汎用の料理が抽選された
-			CALL DISHDATA(RAND(RANDOM , RANDOM + 101) , TYPE , 1)
+			DISHNUMBER = RAND(RANDOM, RANDOM + 100)
 		ENDIF
+		CALL TEMP_DISHDATA(DISHNUMBER)
 
 		;******キャラ別処理******
-		;嫌いLv10クラスの嫌い方でなければ強制削除はしないようにした(小兎姫の辛いLv8は除去していない)
-		;明確な理由はないので必要とあらばいじってほしい
-		;あくまで料理の基本要素として加わっているものだけ。プレイヤーがあとから足せるものは除去不能
+		IF DISHNUMBER > 400
+			;嫌いLv10クラスの嫌い方でなければ強制削除はしないようにした(小兎姫の辛いLv8は除去していない)
+			;明確な理由はないので必要とあらばいじってほしい
+			;あくまで料理の基本要素として加わっているものだけ。プレイヤーがあとから足せるものは除去不能
 
-		;くたかとミスティアは鳥肉と卵を除去する
-		IF GROUPMATCH(CHARA, [[米斯蒂亜]] , [[久侘歌]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "鳥肉/卵")
-				DISH_NAME = 
-		ENDIF
+			;くたかとミスティアは鳥肉と卵を除去する
+			IF GROUPMATCH(CHARA, [[米斯蒂亜]] , [[久侘歌]])
+				SIF STR_MULTI_COUNT(DISH_TASTE , "鳥肉/卵")
+					TEMP_DISH_NAME = 
+			ENDIF
 
-		;リグル、ラルバは虫肉を除去する
-		IF GROUPMATCH(CHARA, [[莉格露]] , [[拉尔瓦]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "虫肉")
-				DISH_NAME = 
-		ENDIF
+			;リグル、ラルバは虫肉を除去する
+			IF GROUPMATCH(CHARA, [[莉格露]] , [[拉尔瓦]])
+				SIF STR_MULTI_COUNT(DISH_TASTE , "虫肉")
+					TEMP_DISH_NAME = 
+			ENDIF
 
-		;諏訪子はカエルを除去する
-		IF GROUPMATCH(CHARA, [[諏訪子]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "青蛙")
-				DISH_NAME = 
-		ENDIF
+			;諏訪子はカエルを除去する
+			IF GROUPMATCH(CHARA, [[諏訪子]])
+				SIF STR_MULTI_COUNT(DISH_TASTE , "青蛙")
+					TEMP_DISH_NAME = 
+			ENDIF
 
-		;わかさぎ姫は魚orうまい魚を除去する
-		IF GROUPMATCH(CHARA, [[若鷺姫]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "魚/好吃的魚")
-				DISH_NAME = 
+			;わかさぎ姫は魚orうまい魚を除去する
+			IF GROUPMATCH(CHARA, [[若鷺姫]])
+				SIF STR_MULTI_COUNT(DISH_TASTE , "魚/好吃的魚")
+					TEMP_DISH_NAME = 
+			ENDIF
 		ENDIF
 		;************************
-	LOOP DISH_NAME == "" || STRCOUNT(DISH_NAME , "跳蛋") > 0
-
-	REQUEST_DISHNAME:CHARA:0 = %DISH_NAME%%SPLITTER%{RANDOM}
-
-	DISH_NAME = %NAMETEMP%
-	DISH_TASTE = %TASTETEMP%
-	DISH_TYPE = %TYPETEMP%
-	DISH_COMMENT = %COMMENTTEMP%
-	DISH_TIME = TIMETEMP
-	DISH_MAXLIMIT = MAXLIMITTEMP
+	LOOP TEMP_DISH_NAME == "" || STRCOUNT(TEMP_DISH_NAME , "跳蛋") > 0
+	REQUEST_DISHNAME:CHARA:0 = %TEMP_DISH_NAME%%SPLITTER%{DISHNUMBER}
 	INITRAND
 ENDIF
 ;**********************************
 
-SPLIT REQUEST_DISHNAME:CHARA:0 , SPLITTER , TEMPS
-DISH_REQUEST = %TEMPS:0%
-RANDOM = TOINT(TEMPS:1)
+SPLIT REQUEST_DISHNAME:CHARA:0, SPLITTER, TEMPS
+RESULTS = %TEMPS:0%
+RETURN TOINT(TEMPS:1)
 
 SELECTCASE SCENE
 CASE "依頼条件表示"
@@ -184,7 +165,7 @@ CASE "依頼条件表示"
 	;PRINTFORML 　　　　　：
 	;となっているのでスペースを揃えたほうが見栄えが良いです
 	; PRINTFORM 欲しい料理：%DISH_REQUEST%
-	PRINTFORM 想要的菜肴：%DISH_REQUEST%
+	PRINTFORM 想要的菜肴：%MAP_GET(TASTE_MAP,DISH_REQUEST)%
 	IF RANDOM >= 400
 		; PRINTFORML ……%CALLNAME:CHARA%の得意料理じゃないか？
 		PRINTFORML ……这是%CALLNAME:CHARA%的拿手菜来着？
@@ -198,9 +179,9 @@ CASE "依頼実行時"
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 	VARSET おまけ
 	; PRINTFORML 「ご注文の%DISH_NAME%になりまーす」
-	PRINTFORML 「这是您点的%DISH_NAME%」
-	; PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISH_NAME%>を届けた
-	PRINTFORMW %CALLNAME:MASTER%将%CALLNAME:CHARA%点的<%DISH_NAME%>交给了%CALLNAME:CHARA%
+	PRINTFORML 「这是您点的%DISHNAME_TR()%」
+	; PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISHNAME_TR()%>を届けた
+	PRINTFORMW %CALLNAME:MASTER%将%CALLNAME:CHARA%点的<%DISHNAME_TR()%>交给了%CALLNAME:CHARA%
 
 	;ローカル変数にグローバル変数をコピーしたのち消去する
 	DISH_DELIVER = %DISH_NAME%
@@ -290,7 +271,7 @@ CASE "依頼成功時"
 	CALL GET_MONEY_YEN(2000, 2)
 	IF おまけ
 		; PRINTFORML %CALLNAME:CHARA%はさらにボーナスをくれた！
-		PRINTFORML %CALLNAME:CHARA%支付了奖金！
+		PRINTFORML %CALLNAME:CHARA%追加了打赏！
 		CALL CHANGE_CFLAG(2, CHARA, 20)
 		CALL CHANGE_CFLAG(4, CHARA, 20)
 		CALL GET_MONEY_YEN(1000, 2)
