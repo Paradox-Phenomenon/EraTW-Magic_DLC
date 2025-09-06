@@ -50,16 +50,19 @@ GOTO INPUT_LOOP
 
 ;-------------------------------------------------
 ;選択肢を表示し入力結果を返す関数 条件を満たさない選択肢をグレー表示にして無効にすることが可能
-;引数にセリフと条件(0で無効、非0で有効)を指定。最大7个まで
+;引数にセリフと条件(0で無効、非0で有効)を指定。最大7個まで
 ;戻り値は選択した選択肢の番号
+;set any ARG to -1 to hide option entirely
 ;-------------------------------------------------
 @ASK_M(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8)
 #DIM CONST 選択肢上限 = 8
 #DIM PREV_REDRAW
 PREV_REDRAW = CURRENTREDRAW()
+LOCAL:2 = GETCOLOR()
 REDRAW 0
+RESETCOLOR
 FOR LOCAL:0, 0, (選択肢上限 + 1)
-	IF ARGS:(LOCAL:0) != ""
+	IF ARGS:(LOCAL:0) != "" && ARG:(LOCAL:0) >= 0
 		IF ARG:(LOCAL:0)
 			PRINTBUTTON @"{LOCAL:0, 2, RIGHT}[%ARGS:(LOCAL:0)%]", LOCAL:0
 		ELSE
@@ -72,16 +75,19 @@ FOR LOCAL:0, 0, (選択肢上限 + 1)
 NEXT
 $INPUT_LOOP
 INPUT
-IF RESULT < 0 || RESULT > 選択肢上限 || ARGS:RESULT == "" || !ARG:RESULT
+IF RESULT < 0 || RESULT > 選択肢上限 || ARGS:RESULT == "" || ARG:RESULT <= 0
 	CLEARLINE 1
 	GOTO INPUT_LOOP
 ENDIF
 REDRAW PREV_REDRAW
+SETCOLOR LOCAL:2
 RETURN RESULT
 ;-------------------------------------------------
 ;現金と筹码どちらでも払える選択肢のための関数
 ;-------------------------------------------------
 @PAY_YEN_OR_CM(ARG,ARG:1)
+LOCAL:2 = GETCOLOR()
+RESETCOLOR
 PRINTFORML [0] 放弃
 PRINTFORML [1] 支付%金額表示(ARG)%　　（现在的所持金：%金額表示(MONEY)%）
 PRINTFORML [2] 支付CM%三桁区切(ARG:1)%　（现在的所持筹码：CM%三桁区切(MONEY:2)%）
@@ -104,6 +110,7 @@ SELECTCASE RESULT
 	CASEELSE
 		GOTO INPUT_LOOP
 ENDSELECT
+SETCOLOR LOCAL:2
 RETURN RESULT
 ;-------------------------------------------------
 ;函数名:GET_REVISION
@@ -738,6 +745,10 @@ ENDIF
 ;-------------------------------------------------
 @VISIT(ARG)
 #FUNCTION
+;if they're on the main map before visit time (e.g. slept over), they don't go home
+SIF (BETWEENTIME(CFLAG:ARG:起床時間,CFLAG:ARG:来訪時間) || CFLAG:ARG:睡眠) && CFLAG:MASTER:初期位置 == CFLAG:ARG:現在位置 && CFLAG:ARG:拠点来訪
+	RETURNF 1
+
 RETURNF BETWEENTIME(CFLAG:ARG:来訪時間,CFLAG:ARG:帰宅時間)
 ;-------------------------------------------------
 ;関数名:睡眠時間
@@ -913,6 +924,9 @@ SELECTCASE ARG
 	CASE ADD_CUSTOM_COM
 		RETURNF Counter不发_ADD_CUSTOM(ADD_SELECTCUSTOMCOM)
 	CASE 697 TO 699
+		RETURNF 1
+	;押し倒す, 抜け出す
+	CASE 350, 850
 		RETURNF 1
 	CASEELSE
 		RETURNF 0
@@ -1130,6 +1144,8 @@ ENDSELECT
 @ASK_YN(ARGS:0 = "是", ARGS:1 = "否")
 #DIM PREV_REDRAW
 PREV_REDRAW = CURRENTREDRAW()
+LOCAL:1 = GETCOLOR()
+RESETCOLOR
 REDRAW 0
 PRINTBUTTON @" [%ARGS:0%]", 0
 PRINTL
@@ -1142,13 +1158,14 @@ IF RESULT != 0 && RESULT != 1
 	GOTO INPUT_LOOP
 ENDIF
 REDRAW PREV_REDRAW
+SETCOLOR LOCAL:1
 RETURN RESULT
 ;-------------------------------------------------
 ;特殊な機能を持つボタンを作成する関数
 ;ARGは入力される数字、ARG:1に1を設定すると灰色に、
 ;ARG:2に1を設定するとボタンが黄色、ARG:3に1を設定するとボタンが無効(灰色)
 ;-------------------------------------------------
-@PRINTBUTTON_EX(ARGS:0, ARG,ARG:1,ARG:2,ARG:3)
+@PRINTBUTTON_EX(ARGS:0, ARG,ARG:1,ARG:2,ARG:3, ARG:4)
 IF ARG:3
 	SETCOLOR C_L_GRAY
 	PRINTFORM %ARGS:0%
@@ -1157,7 +1174,14 @@ ELSE
 		SETCOLOR C_YELLOW
 	SIF ARG:1
 		SETCOLOR C_L_GRAY
-	PRINTBUTTON @"%ARGS:0%", ARG
+	IF ARG:4
+		LOCAL = STRLENS(ARGS)
+		PRINT □ 
+		PRINTBUTTON @"%ARGS:0%", ARG
+		PRINTFORML  □%"-"*((MAXWIDTH()-6)-LOCAL)%
+	ELSE
+		PRINTBUTTON @"%ARGS:0%", ARG
+	ENDIF
 ENDIF
 RESETCOLOR
 ;-------------------------------------------------
@@ -1184,8 +1208,6 @@ RESETCOLOR
 ;-------------------------------------------------
 @FISHER_YATES_SHAFFLE(ARG:0)
 ;シャッフル配列の初期化
-SIF ARG:0 < 1 || ARG:0 > 999
-   ARG:0 = 1 + RAND:998
 SIF !INRANGE(ARG:0 , 1 , 999)
 	THROW 引数({ARG:0})が異常です。1～999の範囲で指定してください。
 VARSET SHAFFLE_ARRAY , 0
@@ -1428,24 +1450,15 @@ CASE "清い交際"
 	RETURNF (CFLAG:C_ID:清い交際 >= 1)
 CASE "口上実装状況"
 	RETURNF (CFLAG:C_ID:口上実装状況 >= 1)
+CASE "種付可"
+	RETURNF TALENT:C_ID:性別 == 1 && CFLAG:C_ID:妊娠経過日数 == 0 && !INRANGE(CFLAG:C_ID:出産経過日, 1, 59)
 CASE "子持ち"
 	RETURNF (CFLAG:C_ID:兒童人数 >= 1)
 CASE "同室"
 	RETURNF (CFLAG:C_ID:現在位置 == CFLAG:MASTER:現在位置)
-CASE "種付可"
-	RETURNF TALENT:C_ID:性別 == 1 && CFLAG:C_ID:妊娠経過日数 == 0 && !INRANGE(CFLAG:C_ID:出産経過日, 1, 59)
 CASE "全裸"
-	{
-	SIF EQUIP:C_ID:飾品 || EQUIP:C_ID:帽子
-		 || EQUIP:C_ID:下半身内衣１ || EQUIP:C_ID:下半身内衣２
-		 || EQUIP:C_ID:上半身内衣１ || EQUIP:C_ID:上半身内衣２
-		 || EQUIP:C_ID:緊身内衣 || EQUIP:C_ID:連体内衣 || EQUIP:C_ID:連衣裙 || EQUIP:C_ID:和服
-		 || EQUIP:C_ID:裤子 || EQUIP:C_ID:下身衣服 || EQUIP:C_ID:裙子
-		 || EQUIP:C_ID:上身衣服１ || EQUIP:C_ID:上身衣服２ || EQUIP:C_ID:外搭
-		 || EQUIP:C_ID:其他１ || EQUIP:C_ID:其他２ || EQUIP:C_ID:其他３ || EQUIP:C_ID:腕部装束
-	}
-		RETURNF 0
-	RETURNF 1
+	;simplified, include all clothing parts, including socks/shoes
+	RETURNF SUMARRAY(EQUIP:C_ID:0, 1, 22) == 0
 CASE "女性"
 	RETURNF TALENT:C_ID:性別 == 1
 CASE "妊娠"
@@ -1862,8 +1875,15 @@ RESETCOLOR
 BASE_ID = FINDELEMENT(BASENAME, BASE_NAME)
 SIF BASE_ID < 0
 	THROW 存在しないBASE_NAME %BASE_NAME%
+IF GROUPMATCH(BASE_ID, 0, 1, 6, 8)
+	SIF GETPERCENT(BASE:C_ID:BASE_ID - (BASE_ID == 0 ? 500 # 0), MAXBASE:C_ID:BASE_ID) < 50
+		SETCOLOR C_YELLOW
+	SIF GETPERCENT(BASE:C_ID:BASE_ID - (BASE_ID == 0 ? 500 # 0), MAXBASE:C_ID:BASE_ID) < 25
+		SETCOLOR C_RED
+ENDIF
 SIF !STRCOUNT(OP, "「種類表記無し」")
 	PRINTFORM %BASE_NAME, 4%
+RESETCOLOR
 CALL PRINT_COLORBAR(BASE:C_ID:BASE_ID, MAXBASE:C_ID:BASE_ID, BAR_LENGTH, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET(COLOR_NAME), RESULT:1)
 IF !STRCOUNT(OP, "「数字表記無し」")
 	IF BUFF:C_ID:BASE_ID > 0
@@ -1896,12 +1916,21 @@ IF BASE_NAME == "精力" && TALENT:C_ID:濃厚精液
 	PRINTFORM %BASE_NAME_SHORT%
 	FONTREGULAR
 	RESETCOLOR
-ELSEIF BASE_NAME == "酒気" && BASE:C_ID:酒気 > MAXBASE:C_ID:酒気 * 2 / 3
-	SETCOLOR C_RED
+ELSEIF C_ID == MASTER && BASE_NAME == "酒気" && TFLAG:酔い止め
+	FONTBOLD
+	SETCOLOR C_D_RED
 	PRINTFORM %BASE_NAME_SHORT%
+	FONTREGULAR
 	RESETCOLOR
 ELSE
+	IF GROUPMATCH(BASE_ID, 0, 1, 6, 8)
+		SIF GETPERCENT(BASE:C_ID:BASE_ID - (BASE_ID == 0 ? 500 # 0), MAXBASE:C_ID:BASE_ID) < 50
+			SETCOLOR C_YELLOW
+		SIF GETPERCENT(BASE:C_ID:BASE_ID - (BASE_ID == 0 ? 500 # 0), MAXBASE:C_ID:BASE_ID) < 25
+			SETCOLOR C_RED
+	ENDIF
 	PRINTFORM %BASE_NAME_SHORT%
+	RESETCOLOR
 ENDIF
 CALL PRINT_COLORBAR(BASE:C_ID:BASE_ID, MAXBASE:C_ID:BASE_ID, BAR_LENGTH, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET(COLOR_NAME), RESULT:1)
 IF BUFF:C_ID:BASE_ID > 0
@@ -1960,7 +1989,8 @@ RETURN CHARA_LIST:(RAND:CHARA_CNT)
 @CAN_MEET(CHARA)
 #FUNCTION
 #DIM CHARA
-SIF !CHARA
+;if it's passerby but passerby hasn't been generated, it'll break. Just ignore the case completely
+SIF !CHARA || CHARA == RANDOM_CHARANUM || CHARA >= CHARANUM
 	RETURNF 0
 SIF !EXISTCSV(CHARA)
 	RETURNF 0
@@ -1982,8 +2012,11 @@ FOR LOCAL, MINROOM(), MAXROOM
 	IF CFLAG:ARG:現在位置 == P463幽香私室
 		CFLAG:ARG:現在位置 = P465大堂
 		BREAK
-	ENDIF
-	IF CAN_MOVE(CFLAG:ARG:現在位置, LOCAL) & 1
+	;bugfix: when the Tsukumo Sisters and Raiko kick you out of their room, move the player to Residential Area
+	ELSEIF GROUPMATCH(CFLAG:ARG:現在位置, P208雷鼓の部屋, P209八橋の部屋, P210弁々の部屋)
+		CFLAG:ARG:現在位置 = P214長屋前
+		BREAK
+	ELSEIF CAN_MOVE(CFLAG:ARG:現在位置, LOCAL) & 1
 		CFLAG:ARG:現在位置 = LOCAL
 		BREAK
 	ENDIF
@@ -2600,195 +2633,3 @@ SIF TALENT:ARG:恋慕
 SIF TALENT:ARG:愛欲
 	RETURNF 1
 RETURNF 0
-
-;@CHARASORT_EX
-;VARSET RESULT, -1
-;RESULT:0 = MASTER
-;RESULT:1 = [[霊夢]]
-;RESULT:2 = [[魔理沙]]
-;RESULT:3 = [[露米娅]]
-;RESULT:4 = [[大妖精]]
-;RESULT:5 = [[琪露諾]]
-;RESULT:6 = [[美鈴]]
-;RESULT:7 = [[小悪魔]]
-;RESULT:8 = [[帕秋莉]]
-;RESULT:9 = [[咲夜]]
-;RESULT:10 = [[蕾米莉亜]]
-;RESULT:11 = [[芙兰]]
-;RESULT:12 = [[蕾蒂]]
-;RESULT:13 = [[橙]]
-;RESULT:14 = [[愛麗絲]]
-;RESULT:15 = [[莉莉白]]
-;RESULT:16 = [[莉莉黑]]
-;RESULT:17 = [[莉莉卡]]
-;RESULT:18 = [[梅露蘭]]
-;RESULT:19 = [[露娜薩]]
-;RESULT:20 = [[妖夢]]
-;RESULT:21 = [[幽幽子]]
-;RESULT:22 = [[藍]]
-;RESULT:23 = [[紫]]
-;RESULT:24 = [[萃香]]
-;RESULT:25 = [[莉格露]]
-;RESULT:26 = [[米斯蒂亜]]
-;RESULT:27 = [[慧音]]
-;RESULT:28 = [[帝]]
-;RESULT:29 = [[鈴仙]]
-;RESULT:30 = [[永琳]]
-;RESULT:31 = [[輝夜]]
-;RESULT:32 = [[妹紅]]
-;RESULT:33 = [[文]]
-;RESULT:34 = [[梅蒂欣]]
-;RESULT:35 = [[幽香]]
-;RESULT:36 = [[小町]]
-;RESULT:37 = [[映姫]]
-;RESULT:38 = [[静葉]]
-;RESULT:39 = [[穣子]]
-;RESULT:40 = [[雛]]
-;RESULT:41 = [[荷取]]
-;RESULT:42 = [[椛]]
-;RESULT:43 = [[早苗]]
-;RESULT:44 = [[神奈子]]
-;RESULT:45 = [[諏訪子]]
-;RESULT:46 = [[桑尼]]
-;RESULT:47 = [[露娜]]
-;RESULT:48 = [[斯塔]]
-;RESULT:49 = [[阿求]]
-;RESULT:50 = [[蓮子]]
-;RESULT:51 = [[梅莉]]
-;RESULT:52 = [[衣玖]]
-;RESULT:53 = [[天子]]
-;RESULT:54 = [[豊姫]]
-;RESULT:55 = [[依姫]]
-;RESULT:56 = [[鈴仙二號]]
-;RESULT:57 = [[琪斯美]]
-;RESULT:58 = [[山女]]
-;RESULT:59 = [[帕露西]]
-;RESULT:60 = [[勇儀]]
-;RESULT:61 = [[覚]]
-;RESULT:62 = [[阿燐]]
-;RESULT:63 = [[阿空]]
-;RESULT:64 = [[恋]]
-;RESULT:65 = [[朱鷺子]]
-;RESULT:66 = [[納茲琳]]
-;RESULT:67 = [[小傘]]
-;RESULT:68 = [[一輪]]
-;RESULT:69 = [[村紗]]
-;RESULT:70 = [[星]]
-;RESULT:71 = [[白蓮]]
-;RESULT:72 = [[鵺]]
-;RESULT:73 = [[果]]
-;RESULT:74 = [[華扇]]
-;RESULT:75 = [[響子]]
-;RESULT:76 = [[芳香]]
-;RESULT:77 = [[青娥]]
-;RESULT:78 = [[屠自古]]
-;RESULT:79 = [[布都]]
-;RESULT:80 = [[神子]]
-;RESULT:81 = [[猯藏]]
-;RESULT:82 = [[小鈴]]
-;RESULT:83 = [[心]]
-;RESULT:84 = [[若鷺姫]]
-;RESULT:85 = [[蛮奇]]
-;RESULT:86 = [[影狼]]
-;RESULT:87 = [[弁弁]]
-;RESULT:88 = [[八橋]]
-;RESULT:89 = [[正邪]]
-;RESULT:90 = [[針妙丸]]
-;RESULT:91 = [[雷鼓]]
-;RESULT:92 = [[菫子]]
-;RESULT:93 = [[清蘭]]
-;RESULT:94 = [[鈴瑚]]
-;RESULT:95 = [[哆来咪]]
-;RESULT:96 = [[探女]]
-;RESULT:97 = [[皮絲]]
-;RESULT:98 = [[純狐]]
-;RESULT:99 = [[赫卡提亚]]
-;RESULT:100 = [[拉尔瓦]]
-;RESULT:101 = [[合歡乃]]
-;RESULT:102 = [[阿吽]]
-;RESULT:103 = [[成美]]
-;RESULT:104 = [[舞]]
-;RESULT:105 = [[里乃]]
-;RESULT:106 = [[隠岐奈]]
-;RESULT:107 = [[女苑]]
-;RESULT:108 = [[紫苑]]
-;RESULT:109 = [[瓔花]]
-;RESULT:110 = [[潤美]]
-;RESULT:111 = [[久侘歌]]
-;RESULT:112 = [[八千慧]]
-;RESULT:113 = [[磨弓]]
-;RESULT:114 = [[袿姫]]
-;RESULT:115 = [[早鬼]]
-;RESULT:116 = [[美宵]]
-;RESULT:117 = [[三花]]
-;RESULT:118 = [[高岭]]
-;RESULT:119 = [[駒草]]
-;RESULT:120 = [[魅須丸]]
-;RESULT:121 = [[典]]
-;RESULT:122 = [[龍]]
-;RESULT:123 = [[千亦]]
-;RESULT:124 = [[百百世]]
-;RESULT:125 = [[尤魔]]
-;RESULT:126 = [[影華扇]]
-;RESULT:127 = [[美天]]
-;RESULT:128 = [[慧之子]]
-;RESULT:129 = [[血枪]]
-;RESULT:130 = [[日狭美]]
-;RESULT:131 = [[残無]]
-;RESULT:132 = [[瑞霊]]
-;
-;RESULT:201 = [[幽幻魔眼]]
-;RESULT:202 = [[依莉斯]]
-;RESULT:203 = [[萨丽爱尔]]
-;RESULT:204 = [[菊理]]
-;RESULT:205 = [[矜羯罗]]
-;RESULT:206 = [[里香]]
-;RESULT:207 = [[明羅]]
-;RESULT:208 = [[魅魔]]
-;RESULT:209 = [[爱莲]]
-;RESULT:210 = [[小兎姫]]
-;RESULT:211 = [[卡娜]]
-;RESULT:212 = [[理香子]]
-;RESULT:213 = [[千百合]]
-;RESULT:214 = [[夢美]]
-;RESULT:215 = [[留琴]]
-;RESULT:216 = [[奥莲姬]]
-;RESULT:217 = [[胡桃]]
-;RESULT:218 = [[艾麗]]
-;RESULT:219 = [[夢月]]
-;RESULT:220 = [[幻月]]
-;RESULT:221 = [[萨拉]]
-;RESULT:222 = [[露易茲]]
-;RESULT:223 = [[雪]]
-;RESULT:224 = [[​舞​]]
-;RESULT:225 = [[夢子]]
-;RESULT:226 = [[神綺]]
-;
-;RESULT:301 = [[先代]]
-;RESULT:302 = [[麟]]
-;
-;RESULT:399 = [[路人子]]
-
-;prints a line in a plain color
-@D_LINE
-LOCAL = GETCOLOR()
-RESETCOLOR
-DRAWLINE
-SETCOLOR LOCAL
-
-;prints a single line of text in a character's color
-; @CHARA_TEXT(ARG, ARGS, MODE = "l")
-; #DIMS MODE
-; LOCAL = GETCOLOR()
-; RESETCOLOR
-; SIF FLAG:口上色
-;     CALL SET_KOJO_COLOR(ARG)
-; SELECTCASE MODE
-;     CASE "l", "L"
-;         PRINTFORML %ARGS%
-;     CASE "w", "W"
-;         PRINTFORMW %ARGS%
-;     CASEELSE
-;         PRINTFORM %ARGS%
-; ENDSELECT
-; SETCOLOR LOCAL
