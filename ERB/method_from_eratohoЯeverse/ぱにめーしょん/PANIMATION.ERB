@@ -137,6 +137,7 @@ SETCOLOR LOCAL:2
 ;備　考:式中関数
 ;@PRINT_COLORBAR関数のHTML_PRINT対応版
 ;新規作成@revkoishi(14/07/07)
+;4.972修复，适配原版制表
 ;-------------------------------------------------
 @HTML_COLORBAR(ARG:0, ARG:1, ARG:2, ARGS:0 = "*", ARGS:1 = ".", ARG:3 = -1, ARG:4 = -1)
 #FUNCTIONS
@@ -1104,11 +1105,6 @@ CLEARLINE 150
 REDRAW 3
 RETURN RESULT
 
-@RGBTOHEX, ARGS
-#FUNCTION
-SPLIT ARGS, "//", LOCALS
-LOCAL = (TOINT(LOCALS:0) << 16) + (TOINT(LOCALS:1) << 8) + TOINT(LOCALS:2)
-RETURNF LOCAL
 ;-------------------------------------------------
 ;全画面カットイン関数@FULLCUTIN
 ;	引数0：左端からのインデント
@@ -1196,47 +1192,3 @@ RETURN RESULT
 #DIMS DYNAMIC strSetting
 CALL FULLCUTIN(ARG, ARG:1, ARGS, ARGS:1, ARGS:2, ARGS:3, ARGS:4, ARGS:5, ARGS:6, ARGS:7, ARGS:8, ARGS:9, ARGS:10, ARGS:11, ARGS:12, ARGS:13, ARGS:14, ARGS:15, ARGS:16, ARGS:17, ARGS:18, ARGS:19, ARGS:20, ARGS:21, ARGS:22, ARGS:23, ARGS:24, ARGS:25, ARGS:26, ARGS:27, ARGS:28, ARGS:29, ARG:2, strSetting)
 RETURN RESULT
-;--------------------------------------------------
-; 背景色の変遷
-;--------------------------------
-;	nFirstBgColor	: 開始背景色
-;	nLastBgColor	: 変遷後背景色
-;	nWaitCount		: 待机回数
-;	nWaitTime		: 待机時間（単位はmsec）
-;	nChangeWaitTime	: 変遷ごとに待机時間が変化させる（変動値を設定。）
-;		※ 待机時間の範囲は 50～1000msec
-;	nExtraFlag		: 特殊なフラグ（ビット管理）
-;						&0x0001	: 改行あり
-;--------------------------------------------------
-@ANIMATION_BGCOLOR_TRANSITION( nFirstBgColor, nLastBgColor, nWaitCount, nWaitTime, nChangeWaitTime, nExtraFlag )
-	#DIM nFirstBgColor
-	#DIM nLastBgColor
-	#DIM nWaitCount
-	#DIM nWaitTime
-	#DIM nChangeWaitTime
-	#DIM nExtraFlag
-
-	#DIM colorFirst_RGB, 3
-	#DIM colorLast_RGB, 3
-	#DIM nLoop
-	
-	SIF GETBIT(GLOBAL, 52) ;cancel if bg color change is disabled
-		RETURN
-
-	colorFirst_RGB:0 = nFirstBgColor / 256 / 256
-	colorFirst_RGB:1 = nFirstBgColor / 256 % 256
-	colorFirst_RGB:2 = nFirstBgColor % 256
-	colorLast_RGB:0 = nLastBgColor / 256 / 256
-	colorLast_RGB:1 = nLastBgColor / 256 % 256
-	colorLast_RGB:2 = nLastBgColor % 256
-
-	FOR nLoop, 0, nWaitCount
-		LOCAL:1 = LIMIT( colorFirst_RGB:0 + (colorLast_RGB:0 - colorFirst_RGB:0) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-		LOCAL:2 = LIMIT( colorFirst_RGB:1 + (colorLast_RGB:1 - colorFirst_RGB:1) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-		LOCAL:3 = LIMIT( colorFirst_RGB:2 + (colorLast_RGB:2 - colorFirst_RGB:2) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-		SETBGCOLOR ((LOCAL:1 * 256 * 256) + (LOCAL:2 * 256) + (LOCAL:3))
-		LOCAL = LIMIT( nWaitTime + (nLoop * nChangeWaitTime), 50, 1000 )
-		TWAIT LOCAL, (nLoop == 0)
-		SIF nExtraFlag & 0x0001
-			PRINTL
-	NEXT

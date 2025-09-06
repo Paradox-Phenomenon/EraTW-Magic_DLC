@@ -16,7 +16,7 @@
 ;ARG:11 グラデーション変化の頻度　数値が大きいほど変化が緩やかになる
 ;ARGS:1 ゲージに使用する文字
 ;ARGS:2 ゲージの背景文字
-[SKIPSTART]
+
 @COLOR_BAR(ARG:1,ARG:2,ARG:3=20,ARG:4=160,ARG:5=160,ARG:6=160,ARG:7=-80,ARG:8,ARG:9,ARG:10,ARG:11=1,ARGS:1=UNICODE(0x2582),ARGS:2=UNICODE(0x2581))
 VARSET LOCAL
 LOCAL:1 = ARG:1 * ARG:3 / ARG:2
@@ -60,18 +60,20 @@ FOR LOCAL,0,ARG:3
 			SETCOLOR ARG:4,ARG:5,ARG:6
 			LOCAL:100 = 0
 		ENDIF
-		PRINTFORM %ARGS:1%
+		;4.972修复，适配原版制表
+		CALL MSG_CODE,ARGS:1
 	ELSE
 		IF !LOCAL:101
 			SETCOLOR LOCAL:4,LOCAL:5,LOCAL:6
 			LOCAL:101 = 1
 		ENDIF
-		PRINTFORM %ARGS:2%
+		;4.972修复，适配原版制表
+		CALL MSG_CODE,ARGS:2
 	ENDIF
 NEXT
 RESETCOLOR
 RETURN 1
-[SKIPEND]
+
 @BW_BAR(ARG:1,ARG:2,ARG:3=20,ARGS:1=UNICODE(0x2588),ARGS:2=UNICODE(0x2592))
 #FUNCTIONS
 LOCAL:1 = ARG:1 * ARG:3 / ARG:2
@@ -86,6 +88,16 @@ FOR LOCAL,0,ARG:3
 NEXT
 RETURNF LOCALS
 
+@PRINTLEVELBAR, ARG, ARG:1, ARG:2, ARG:3
+;PRINTFORM %@"Level {ABL:(ARG:0):レベル, 2}", ARG:1, LEFT%　  
+;CALLFORM COLORSENTENCE_BAR("EXP", ARG:0, JUEL:(ARG:0):経験値, 100, 20)
+ARG:4 = 109
+ARG:5 = 225
+ARG:6 = 255
+PRINTFORM Lv{ARG:2}
+CALL COLOR_BAR(ARG,ARG:1,20,ARG:4,ARG:5,ARG:6,-160,10,18,6,2,UNICODE(0x2585),UNICODE(0x2585))
+PRINTFORM Lv{ARG:3}
+
 ;-------------------------------------------------
 ;mostly tohoK functions, too lazy to rewrite as this already works fine
 ;-------------------------------------------------
@@ -98,13 +110,13 @@ LOCAL:2 = ARG & 0xFF
 
 LOCALS = %TOSTR(LOCAL)%//%TOSTR(LOCAL:1)%//%TOSTR(LOCAL:2)%
 RETURNF LOCALS
-[SKIPSTART]
+
 @RGBTOHEX, ARGS
 #FUNCTION
 SPLIT ARGS, "//", LOCALS
 LOCAL = (TOINT(LOCALS:0) << 16) + (TOINT(LOCALS:1) << 8) + TOINT(LOCALS:2)
 RETURNF LOCAL
-[SKIPEND]
+
 ;-------------------------------------------------
 ;RGBカラーから色相(0～359)を取得する関数
 ;-------------------------------------------------
@@ -577,6 +589,51 @@ ENDSELECT
 ;=============================================================================
 ;Originally by eraMeiQ
 ;=============================================================================
+;--------------------------------------------------
+; 背景色の変遷
+;--------------------------------
+;	nFirstBgColor	: 開始背景色
+;	nLastBgColor	: 変遷後背景色
+;	nWaitCount		: 待機回数
+;	nWaitTime		: 待機時間（単位はmsec）
+;	nChangeWaitTime	: 変遷ごとに待機時間が変化させる（変動値を設定。）
+;		※ 待機時間の範囲は 50～1000msec
+;	nExtraFlag		: 特殊なフラグ（ビット管理）
+;						&0x0001	: 改行あり
+;--------------------------------------------------
+@ANIMATION_BGCOLOR_TRANSITION( nFirstBgColor, nLastBgColor, nWaitCount, nWaitTime, nChangeWaitTime, nExtraFlag )
+#DIM nFirstBgColor
+#DIM nLastBgColor
+#DIM nWaitCount
+#DIM nWaitTime
+#DIM nChangeWaitTime
+#DIM nExtraFlag
+
+#DIM colorFirst_RGB, 3
+#DIM colorLast_RGB, 3
+#DIM nLoop
+
+SIF GETBIT(GLOBAL, 52) ;cancel if bg color change is disabled
+	RETURN
+
+colorFirst_RGB:0 = nFirstBgColor / 256 / 256
+colorFirst_RGB:1 = nFirstBgColor / 256 % 256
+colorFirst_RGB:2 = nFirstBgColor % 256
+colorLast_RGB:0 = nLastBgColor / 256 / 256
+colorLast_RGB:1 = nLastBgColor / 256 % 256
+colorLast_RGB:2 = nLastBgColor % 256
+
+FOR nLoop, 0, nWaitCount
+	LOCAL:1 = LIMIT( colorFirst_RGB:0 + (colorLast_RGB:0 - colorFirst_RGB:0) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+	LOCAL:2 = LIMIT( colorFirst_RGB:1 + (colorLast_RGB:1 - colorFirst_RGB:1) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+	LOCAL:3 = LIMIT( colorFirst_RGB:2 + (colorLast_RGB:2 - colorFirst_RGB:2) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+	SETBGCOLOR ((LOCAL:1 * 256 * 256) + (LOCAL:2 * 256) + (LOCAL:3))
+	LOCAL = LIMIT( nWaitTime + (nLoop * nChangeWaitTime), 50, 1000 )
+	TWAIT LOCAL, (nLoop == 0)
+	SIF nExtraFlag & 0x0001
+		PRINTL
+NEXT
+
 ;================================================================
 ; 数値を、ある一定の範囲で振動する値に変換する
 ;	nRange -----------------------------------------------------------------

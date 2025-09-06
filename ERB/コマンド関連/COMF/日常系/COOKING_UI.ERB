@@ -10,8 +10,8 @@
 #DIM 練習モード
 #DIM MENUCOUNT
 #DIM MAXMENU
-#DIMS CONST TENKABUTSU, 8 = "", "なし", "栄養強化剤", "莓子酒", "黑朗姆酒", "白兰地VS", "白兰地VSOP", "白兰地XO"
-#DIMS CONST SHIKOMI, 7 = "", "无", "媚药", "利尿剂", "催情药", "睡眠药","新鲜精液"
+#DIMS CONST TENKABUTSU, 8 = "", "无", "栄養強化剤", "莓子酒", "黑朗姆酒", "白兰地VS", "白兰地VSOP", "白兰地XO"
+#DIMS CONST SHIKOMI, 7 = "", "无", "媚薬", "利尿剤", "催情薬", "睡眠薬","新鲜精液"
 COOKING_LCOUNT = 0
 料理結果 = 0
 SELECTCASE DISH_TYPE_NUM
@@ -256,6 +256,9 @@ IF RESULT
 		RATE = REVIEW_DISH_FOR_MENU(DISH_ASSI,DISH_TASTE)
 		LOCALS '= @"({RATE})"+ DISHNAME_TR()
 		PRINTFORM [{DISH_NUM, 3}]%LOCALS,35, LEFT%
+	ELSE
+		LOCALS '= DISHNAME_TR()
+		PRINTFORM [{DISH_NUM, 3}]%LOCALS,35, LEFT%
 	ENDIF
 	RESETCOLOR
 	;改行したらRESULT = 2,表示したらRESULT = 1
@@ -443,7 +446,7 @@ CVARSET TCVAR, GETNUM(TCVAR, "盗み食い抑制")
 
 ;タカらない
 IF !CAN_TAKARI(ARG)
-	確率 = 0
+	確率 = -1 ;bug fix, could still activate if rand rolls 0 because 0 = 0
 ;来訪中なら100%
 ELSEIF AT_HOME(ARG) && !CFLAG:ARG:神社在住
 	確率 = 100
@@ -467,6 +470,8 @@ PRINTL
 ;-------------------------------------------------
 @CAN_TAKARI(ARG)
 #FUNCTION
+SIF FLAG:70 ;com custom code
+	RETURNF 0
 ;活動時間-1h外
 SIF !BETWEENTIME(CFLAG:ARG:来訪時間, CFLAG:ARG:帰宅時間 - 60)
 	RETURNF 0
@@ -476,6 +481,9 @@ SIF !AT_HOME(MASTER)
 ;お招き部屋
 SIF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 	RETURNF 0
+;addition custom code
+SIF (CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置 || CFLAG:MASTER:現在位置 == CFLAG:TARGET:初期位置) && FLAG:自室施錠
+	RETURNF 0
 ;MASTERと同じ場所
 SIF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置
 	RETURNF 0
@@ -484,6 +492,9 @@ SIF CFLAG:ARG:睡眠
 	RETURNF 0
 ;仕事中
 SIF CFLAG:ARG:行動 == 5
+	RETURNF 0
+;bug fix - if they're currently idling
+SIF Activity_Duration:ARG
 	RETURNF 0
 RETURNF 1
 
