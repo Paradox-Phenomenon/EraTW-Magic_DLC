@@ -299,10 +299,10 @@ VARSET 前回の胖次
 
 ;-----------------------------------------------------------
 ;同角色口上複数存在判定
-;ARG=角色ナンバー
+;ARG=强制重置标志时，不输出提示
 ;現在同角色口上は最大で四つまで想定
 ;-----------------------------------------------------------
-@KOJO_MULTIPLE(C_ID, SELECT_SWITCH)
+@KOJO_MULTIPLE(C_ID, SELECT_SWITCH, ARG)
 #DIM C_ID
 #DIM DYNAMIC 口上カウント
 #DIM DYNAMIC 口上数
@@ -375,12 +375,18 @@ ENDIF
 	;新規別人口上追加
 IF !STRLENS(SELECT_SWITCH)
 	IF 口上実装数 > 1
-		PRINTFORML 更新后%CALLNAME:C_ID%存在剧本编号·数量的变动
-		CALL COLORMESSAGE,@"(旧存档中游玩的剧本编号为{CFLAG:C_ID:口上セレクタ})\@!STRLENS(kojoNamesList:(CFLAG:C_ID:口上セレクタ)) ?该剧本编号已失效# \@",!STRLENS(kojoNamesList:(CFLAG:C_ID:口上セレクタ)) ? C_YELLOW # C_AQUA,1
-		PRINTFORML 若编号仍有效则可能是其他剧本有更新、若剧本编号已失效则可能是剧本出现编号变动
-		;CALL ASK_YN
-		;;口上選択
-		;IF !RESULT
+		IF ARG
+			LOCALS:0 = 以下是%CALLNAME:C_ID%的剧本列表
+			PRINTSL	LOCALS:0
+			FOR LOCAL, 0, 10
+				SIF !STRLENS(kojoNamesList:LOCAL)
+					CONTINUE
+				CALL kojoIdtitle_CHOICE(LOCAL, kojoNamesList:LOCAL,kojoIdtitle:LOCAL)
+			NEXT
+		ELSE
+			PRINTFORML 更新后%CALLNAME:C_ID%存在剧本编号·数量的变动
+			CALL COLORMESSAGE,@"(旧存档中游玩的剧本编号为{CFLAG:C_ID:口上セレクタ})\@!STRLENS(kojoNamesList:(CFLAG:C_ID:口上セレクタ)) ?该剧本编号已失效# \@",!STRLENS(kojoNamesList:(CFLAG:C_ID:口上セレクタ)) ? C_YELLOW # C_AQUA,1
+			PRINTFORML 若编号仍有效则可能是其他剧本有更新、若剧本编号已失效则可能是剧本出现编号变动
 			LOCALS:0 = 以下是更新后的剧本列表，请手动选择您目前游玩的剧本，以完成攻略进度的继承：
 			PRINTSL	LOCALS:0
 			FOR LOCAL, 0, 10
@@ -390,26 +396,19 @@ IF !STRLENS(SELECT_SWITCH)
 			NEXT
 			CALL COLORMESSAGE,"注：本选项不会进行角色变量·标志的重置，专为版本升级后继承进度准备，请勿在此切换至新剧本\n※若不重置标志就切换剧本可能导致剧本机制错误※",C_RED,1
 			PRINTL 如有切换剧本的需要，请使用主菜单界面的[重置&切换剧本]功能
-			$INPUT_LOOP
-			INPUT
-			IF !INRANGE(RESULT, 0, kojoIdcheck - 1)
-				;这种想看特殊剧情的人当然得给点特殊剧情照顾下
-				;CALL SIMATTYAUOJISAN()
-				CLEARLINE 1
-				GOTO INPUT_LOOP
-			ENDIF
-			CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
-			RETURN 2
-	;	ELSE
-	;		PRINTFORML 未进行变更
-	;		RETURN 1
-	;	ENDIF
+		ENDIF
+		$INPUT_LOOP
+		INPUT
+		IF !INRANGE(RESULT, 0, kojoIdcheck - 1)
+			CLEARLINE 1
+			GOTO INPUT_LOOP
+		ENDIF
+		CFLAG:C_ID:口上セレクタ = kojoIdList:RESULT
+		RETURN 2
 	ELSE
 		RETURN 2
 	ENDIF
 ENDIF
-; SIF 口上実装数
-; 	RETURN 1
 RETURN 0
 
 
