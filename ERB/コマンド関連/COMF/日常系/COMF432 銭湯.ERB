@@ -12,40 +12,9 @@
 #DIM 回復前気力２
 #DIM 回復後体力２
 #DIM 回復後気力２
-#DIM 高感度角色存在
-#DIM MASTER高感度
-#DIM 高感度同行对象
 #DIMS 台詞
 回復前体力１ = BASE:MASTER:体力
 回復前気力１ = BASE:MASTER:気力
-高感度角色存在 = 0 
-MASTER高感度 = 0 
-;---------------------
-;Moe：此处是有关“涤身之泉”这一功能的魔改
-;大概就是，检测到有合意的角色，感度过高，可以选择带她到人里的浴池
-;此处会开放一处叫做“涤身之泉”的特殊泉水，泡过之后可以重置所有部位感觉
-;不过中毒和性技的能力是已经刻进心里的，所以洗不掉呢，嗯，大概吧
-;自己也能泡
-;
-;全部人检测
-;检测当前有无角色有合意，此后再检测有无高感度
-;自机计入了，也能泡
-FOR LOCAL ,0 , CHARANUM 
-	IF GETBIT(CFLAG:LOCAL:1,1) || LOCAL == 0	;检测合意
-		FOR LOCAL:1 , 0 , 4 
-			IF ABL:LOCAL:(LOCAL:1) > 5 		;检测五大感觉
-				SIF LOCAL == 0 
-					MASTER高感度 = 1 
-				SIF CFLAG:LOCAL:320 && LOCAL != 0	;同行对象的检测 
-					高感度同行对象 = LOCAL 
-				高感度角色存在 = 1  
-				BREAK 
-			ENDIF 
-		NEXT 
-	ENDIF 
-NEXT
-;---------------------
-
 ;魔改入浴间隔时间
 ;IF DAY * 1440 + TIME - EX:MASTER:上次的入浴時间 < 360
 IF DAY * 1440 + TIME - EX:MASTER:上次的入浴時间 < 0
@@ -61,16 +30,10 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 2
 		RETURN -1
 	;番台ちゃん通常運行
 	ELSE
-		IF 高感度角色存在
-			PRINTL 
-			PRINTFORMDL %CALLNAME:PLAYER%便留意到了墙上的广告……
-			CALL COLORMESSAGE(@"上面写着：在为自己敏感的皮肤而烦恼吗？快来试试「涤身之泉」吧！",C_YELLOW,1,0) 
-			PRINTL 
-		ENDIF 
 		;お金足りなかったイベントを見ている
 		IF TFLAG:209 == 3
 			台詞 = 「……啊嘞、有何贵干？ 带钱来了吗 お代持ってきたとか？」
-		;放棄を選んだけどやっぱり入りたくなった
+		;放弃を選んだけどやっぱり入りたくなった
 		ELSEIF TFLAG:209 == 2
 			台詞 = 「……怎么、难道说改变主意了？」
 		;それ以外
@@ -81,135 +44,13 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 2
 		台詞 = %台詞%/「入浴只要花%金額表示(400)%就够了哦」
 		CALL SPTALK, 0, "通常", 14, @"%台詞%",1
 		DRAWLINE
-		SIF 高感度角色存在
-			PRINTFORML [3] 询问有关「涤身之泉」的事情
 		SIF MAIN_MAP == 2
 			PRINTFORML [2] 支付%金額表示(5000)%的租金包天
 		PRINTFORML [1] 花费%金額表示(400)%入浴
 		PRINTL [0] 放弃
 		$LOOP_hitozato
 		INPUT
-		IF RESULT == 3 
-			PRINTFORML 「啊！这个是一种药用汤池……」
-			PRINTFORMW 「不仅能防治多种皮肤病，还能减轻各种过敏症状！」
-			PRINTFORMW 「此外，对于……隐私部位过于敏感的症状，也相当有用！」
-			PRINTFORMW 「不过，因为需要现熬药材，而且药价昂贵，价格嘛……」
-			PRINTFORML 
-			CALL ASK_M(@"花费%金額表示(20000)%使用该泉水",(MONEY >= 20000) && ( 高感度角色存在 )  ,"放弃",1)
-			PRINTFORML 
-			IF RESULT == 0 
-				$LOOP_CHOOSE_TO_CLEAN_SPRING
-				PRINTFORML 决定让谁来泡「涤身之泉」呢？
-				CALL COLORMESSAGE(@"请注意，泡完后，将会使全身各个部位的「感觉等级」均变成0",C_YELLOW,2,1) 
-				PRINTL 
-				DRAWLINE 
-				PRINTL 
-				IF 高感度同行对象
-					SIF MASTER高感度
-						PRINTFORMLC [{0, 3}] %CALLNAME:0%
-					;输出所有同行角色中，拥有高感度的名字
-					FOR LOCAL ,1 ,CHARANUM
-						IF CFLAG:LOCAL:320  ;筛选同行
-							FOR LOCAL:1 , 0 , 5 	;判定能力
-								IF ABL:LOCAL:(LOCAL:1) > 5 
-									PRINTFORMLC [{LOCAL , 3}] %CALLNAME:LOCAL%
-									BREAK 
-								ENDIF 
-							NEXT 
-						ENDIF 
-					NEXT 
-				ELSE	;这个情况就只可能是自机需要了
-					PRINTFORMLC [{0}] %CALLNAME:0%
-				ENDIF 
-				PRINTL 
-				PRINTL 
-				DRAWLINE 
-				PRINTL 
-				PRINTL [-1] 还是不泡了
-				;
-				INPUT 
-				LOCAL:2 = RESULT 
-				IF LOCAL:2 == -1 
-					;煽り耐性無い番台ちゃんブチギレ
-					IF TFLAG:209 >= 2
-						台詞 = 「…………那个、我可没有你看上去那么闲、所以」/「……再这样子、我就生气咯？」
-						CALL SPTALK, 0, "憤怒", 14, @"%台詞%",1
-						TFLAG:209 = 4
-					ELSE
-						{
-						台詞 = 「不用了嘛……嗯，确实要好好考虑呢……」
-						}
-						CALL SPTALK, 0, "通常", 14, @"%台詞%",1
-						TFLAG:209 = 2 
-					ENDIF
-					RETURN -1
-				ELSEIF LOCAL:2 > -1 
-					CALL PAY_SENTO, 20000
-					台詞= 「……嗯，点清楚了，请进」
-					IF TARGET > 0 && CFLAG:TARGET:6 > 0 && !CFLAG:TARGET:睡眠 
-						IF LOCAL:2 == 0 
-							台詞 = %台詞%/「啊，同行的人也一起进来吧」
-						ELSE 
-							台詞 = %台詞%/「啊，你也一起进来吧」
-						ENDIF 
-						台詞 = %台詞%/「是赠送的通常浴池噢，等待的时候也请慢慢享受」
-					ENDIF 
-					CALL SPTALK, 0, "通常", 14, @"%台詞%",1
-					PRINTL 
-					IF LOCAL:2 == 0 
-						PRINTFORML %CALLNAME:PLAYER%跟着工作人员走进了里面的房间
-						PRINTFORMW 不一会儿，那位工作人员从门外接过了超大号的药篮子，一点点地放进了浴池……
-					ELSE 
-						PRINTFORML 你目送着%CALLNAME:(LOCAL:2)%跟着工作人员走进了里面的房间
-						PRINTFORMW 不一会儿，前台送来了一个超大号的药篮子，递了进去……
-					ENDIF 
-					PRINTW …
-					PRINTW ……
-					PRINTW …………
-					IF LOCAL:2 == 0 
-						PRINTFORMW %CALLNAME:PLAYER%在浓郁的药香中，渐渐地失去了知觉……
-					ELSE 
-						PRINTFORMW %CALLNAME:PLAYER%在浴场里一边泡着一边等着……
-					ENDIF 
-					PRINTW …………
-					PRINTW ……
-					PRINTW …
-					;泡浴池补正
-					CALL ODEKAKE_OFURO(LOCAL:2,1)
-					CALL ODEKAKE_OFURO(MASTER,1)
-					;清除部位感度
-					FOR LOCAL ,0 , 5  
-						JUEL:(LOCAL:2):LOCAL = 0 
-						ABL:(LOCAL:2):LOCAL = 0 
-						CALL COLORMESSAGE(@"%CALLNAME:(LOCAL:2)%的%ABLNAME:LOCAL%变为了0",C_YELLOW,1,0)
-					NEXT 
-					;涤身之泉は60分固定
-					TIME += 60
-					;大衆浴場总入浴次数はフラグごとオミット
-					;大衆浴場時限入湯回数+1
-					TFLAG:210 += 1
-					;大衆浴場FLAGを7に設定，在口上侧可以检测该值为7时的情况
-					TFLAG:209 = 7
-					RETURN 1 
-				ELSE 
-					GOTO LOOP_CHOOSE_TO_CLEAN_SPRING
-				ENDIF 
-			ELSE 
-				;煽り耐性無い番台ちゃんブチギレ
-				IF TFLAG:209 >= 2
-					台詞 = 「…………那个、我可没有你看上去那么闲、所以」/「……再这样子、我就生气咯？」
-					CALL SPTALK, 0, "憤怒", 14, @"%台詞%",1
-					TFLAG:209 = 4
-				ELSE
-					{
-					台詞 = 「不用了嘛……嗯，确实要好好考虑呢……」
-					}
-					CALL SPTALK, 0, "通常", 14, @"%台詞%",1
-					TFLAG:209 = 2 
-				ENDIF
-				RETURN -1
-			ENDIF 
-		ELSEIF RESULT == 2 && MAIN_MAP == 2
+		IF RESULT == 2 && MAIN_MAP == 2
 			IF MONEY < 5000
 				{
 				台詞 = 「……什么、想租下来？」
@@ -274,7 +115,7 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 2
 				PRINTW …
 				PRINTW ……
 				PRINTW …………
-				PRINTFORMW %CALLNAME:PLAYER%浸在了浴場里
+				PRINTFORMW %CALLNAME:PLAYER%浸在了浴场里
 				PRINTW …………
 				PRINTW ……
 				PRINTW …
@@ -354,9 +195,9 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 9
 		;お金足りなかったイベントを見ている
 		ELSEIF TFLAG:211 == 3
 			PRINTL 「这里不接待没钱的家伙。当然如果是会爽快付钱的贵宾一定热烈欢迎呀！」
-		;放棄を選んだけどやっぱり入りたくなった
+		;放弃を選んだけどやっぱり入りたくなった
 		ELSEIF TFLAG:211 == 2
-			PRINTL 「难得来到这里却不进去泡一泡温泉么、这様一辈子至少六成都白活了呀！」
+			PRINTL 「难得来到这里却不进去泡一泡温泉么、这样一辈子至少六成都白活了呀！」
 		ELSE
 			PRINTL 「欢迎光临ー喵呀！」
 		ENDIF
@@ -369,7 +210,7 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 9
 		PRINTFORML [1] 花费%金額表示(1000)%入浴
 		;にゅーぷらん選択肢
 		SIF CHECK_NEWPLAN()
-			PRINTFORML [2] 支付%金額表示(10000)%%\@ STRCOUNT(CSTR:0:0,"泡入浴") ? 租用風呂 # 尝試『New-Plan』 \@%
+			PRINTFORML [2] 支付%金額表示(10000)%%\@ STRCOUNT(CSTR:0:0,"泡入浴") ? 租用澡堂 # 尝试『New-Plan』 \@%
 		PRINTL [0] 放弃
 		$LOOP_titei
 		INPUT
@@ -388,7 +229,7 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 9
 				RETURN -1
 			CASE 1
 				IF MONEY < 1000
-					PRINTW  前台的妖怪努力地、清点金額并进行核对……
+					PRINTW  前台的妖怪努力地、清点金额并进行核对……
 					PRINTW 「…………」
 					PRINTW 「喵这家伙、太过分了呀ー！　明明钱不够喵还想蒙混过关吗！」
 					;番台ブチギレ
@@ -398,18 +239,18 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 9
 						TFLAG:211 = 4
 					ELSE
 						PRINTL 「喵这家伙、来到这地方、根本就没打算进来吧ー！」
-						PRINTL 「别拿我寻開心哦ー？！」
+						PRINTL 「别拿我寻开心哦ー？！」
 						TFLAG:211 = 3
 					ENDIF
 					RETURN -1
 				ELSE
 					CALL PAY_SENTO, 1000
-					PRINTW  前台的妖怪努力地、清点金額并进行核对……
+					PRINTW  前台的妖怪努力地、清点金额并进行核对……
 					PRINTL 「嗯正好、请慢慢享用吧喵ー！」
 					IF TARGET > 0 && CFLAG:TARGET:6 > 0 && !CFLAG:TARGET:睡眠 && TALENT:TARGET:性別 != 2
 						PRINTL （诶嘿嘿～、好漂亮的雌性涅、小哥还真有福气啊ー）
-						PRINTFORMW %CALLNAME:PLAYER%与%CALLNAME:TARGET%一起走向了脱衣所
-						PRINTFORMW %CALLNAME:TARGET%因为%CALLNAME:PLAYER%送来的視線而有点害羞的样子……
+						PRINTFORMW %CALLNAME:PLAYER%与%CALLNAME:TARGET%一起走向了更衣间
+						PRINTFORMW %CALLNAME:TARGET%因为%CALLNAME:PLAYER%送来的视线而有点害羞的样子……
 						回復前体力２ = BASE:TARGET:体力
 						回復前気力２ = BASE:TARGET:気力
 						CALL ODEKAKE_OFURO(TARGET,2)
@@ -450,7 +291,7 @@ ELSEIF PLACE_SENTO(CFLAG:MASTER:現在位置) == 9
 						VAR_WATER = 地狱温泉的水
 						PRINTFORML 打上来了%VAR_WATER%
 						IF MAIN_MAP != 9
-							PRINTL 因为提着水这様走很吃力就先回去了
+							PRINTL 因为提着水这样走很吃力就先回去了
 							CALL 从外面回家
 						ENDIF
 					ENDIF

@@ -159,7 +159,6 @@ SIF MONEY:2
 ;#;PRINTLC [610] - COUNTER限制
 ;#;PRINTLC [620] - 生成委托
 ;#;SETCOLOR 0xFFFCAA
-;#;PRINTFORML [777] - 主动调用函数
 ;#;PRINTFORML [778] - 主动调用函数（后端）
 ;#;RESETCOLOR
 
@@ -274,9 +273,6 @@ ELSEIF RESULT == 666
 	SIF DEBUGGER
 		CALL DEBUG_MODE
 
-;DEBUG调用函数
-ELSEIF RESULT == 777
-	CALL DEBUG_CALL_FUNCTION
 ;DEBUG调用函数
 ELSEIF RESULT == 778
 ;CALL 油咖喱(26)
@@ -646,129 +642,3 @@ ENDIF
 CALL RESET_DISH
 CLEARLINE (MAXLINE + 7)
 RESTART
-
-
-
-;Moe：没搓完，太麻烦了，等后人来搓
-;目前只支持单参数函数
-@DEBUG_CALL_FUNCTION(ARGS) 
-#LOCALSSIZE 3
-#DIM NUM_OF_BRACKETS , 2 
-#DIM ARG_TYPE,  20
-#DIM FUNCTION_ARG, 20 
-#DIMS FUNCTION_ARGS, 20 
-#DIM DYNAMIC _LINECOUNT
-;LOCALS:0是原结果
-;LOCALS:1是切出的函数名
-;LOCALS:2是切出的全部函数参数
-;LOCALS:3之后是函数的各个字符串参数
-;ARG_TYPE是每个参数的变量类型，1为数字，2为字符串
-;预期是想允许多参数，但是era的语法限制了发挥……
-_LINECOUNT = LINECOUNT
-WHILE 1
-	PRINTDL 这里可以主动调用游戏内存在的函数
-	PRINTDL 仅适用于功能开发和口上制作等用途
-	PRINTFORMDL 请在下面输入你想要调用的函数
-	PRINTL 
-	CALL COLORMESSAGE(@"请使用全角括号代替原来的半角括号，无需加@",0xFFFCAA,1)
-	CALL COLORMESSAGE(@"由于era语言限制，仅支持单参数函数调用",0xFFFCAA,1)
-	PRINTL 
-	INPUTS 
-	VARSET LOCAL
-	VARSET LOCALS 
-	VARSET ARG_TYPE
-	VARSET NUM_OF_BRACKETS
-	; 行頭行尾の空白文字削除
-	REPLACE RESULTS, "\(\^\\s\+\|\\s\+\$)", ""
-	;暂存结果
-	LOCALS:0 = %RESULTS%
-	SIF LOCALS:0 == "_BACK"
-		BREAK 
-	;查找调用函数有无括号
-	STRFINDU RESULTS , "（"
-	IF RESULT != -1 
-		;记录第一个括号的位置
-		NUM_OF_BRACKETS:0 = RESULT:0 
-		;记录第二个括号的位置
-		STRFINDU RESULTS , "）"
-		NUM_OF_BRACKETS:1 = RESULT:0 
-		;切出函数定义名
-		SUBSTRING LOCALS:0 , 0 , NUM_OF_BRACKETS:0
-		LOCALS:1 = %RESULTS%
-		;去除括号
-		;NUM_OF_BRACKETS:0 ++ 
-		;NUM_OF_BRACKETS:1 -- 
-		;切除函数传入参数
-		SUBSTRING LOCALS:0 , NUM_OF_BRACKETS:0 + 1 , NUM_OF_BRACKETS:1 - NUM_OF_BRACKETS:0 - 1
-		;去除残留括号
-		;REPLACE RESULTS , "）" , ""
-		LOCALS:2 = %RESULTS%
-		;检测多参数
-		VARSET RESULT
-		VARSET RESULTS
-		STRFINDU LOCALS:2 , ","
-		IF RESULT == -1 
-			;此时为单参数函数
-			;检测是否含有非数字字符
-			IF ISNUMERIC(LOCALS:2)
-				;不含非数字字符，直接转为数值变量
-				;计入数字参数组
-				FUNCTION_ARG:0 = TOINT(LOCALS:2) 
-				ARG_TYPE:0 = 1 
-			ELSE 
-				;含有非数字字符
-				;计入字符参数组
-				FUNCTION_ARGS:0 = LOCALS:2
-				ARG_TYPE:0 = 2  
-			ENDIF 
-		ELSEIF RESULT >= 0
-			SETCOLOR C_RED
-			PRINTFORMW 多参数函数无法调用
-			RESETCOLOR
-			CLEARLINE LINECOUNT - _LINECOUNT
-			RESTART
-		ENDIF
-		IF ARG_TYPE:0 == 1
-			TRYCCALLFORM %LOCALS:1%(FUNCTION_ARG:0)
-				SETCOLOR 0xFFFCAA
-				PRINTL 
-				PRINTW （函数已经被调用）
-				RESULT = 0
-			CATCH 
-				PRINTL 
-				PRINTFORMDW 您所输入的函数并不存在，或者输入格式有误
-				RESULT = 1
-				PRINTL 
-			ENDCATCH
-		ELSEIF ARG_TYPE:0 == 2
-			TRYCCALLFORM %LOCALS:1%(FUNCTION_ARGS:0)
-				SETCOLOR 0xFFFCAA
-				PRINTL 
-				PRINTW （函数已经被调用）
-				RESULT = 0
-			CATCH 
-				PRINTL 
-				PRINTFORMDW 您所输入的函数并不存在，或者输入格式有误
-				RESULT = 1
-				PRINTL 
-			ENDCATCH
-		ENDIF 
-	ELSE 
-		;无括号的情况
-		TRYCCALLFORM %LOCALS%
-			SETCOLOR 0xFFFCAA
-			PRINTL 
-			PRINTW （函数已经被调用）
-			RESULT = 0
-		CATCH 
-			PRINTL 
-			PRINTFORMDW 您所输入的函数并不存在
-			RESULT = 1
-			PRINTL 
-		ENDCATCH
-	ENDIF
-;复原字体与颜色
-RESETCOLOR
-SETFONT
-CLEARLINE LINECOUNT - _LINECOUNT
-WEND
