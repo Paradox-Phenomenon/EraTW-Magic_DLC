@@ -28,10 +28,12 @@ SIF equip:ARG:7 || equip:ARG:8       ;胸罩
     衣着度 += 5
 ;#;CFLAG:ARG:4444 = 衣着度
 ;计算淋雨量（只有在室外同行时才会触发）
-IF CFLAG:ARG:同行 && OUTROOF(CFLAG:ARG:300) && !地底
+IF OUTROOF(CFLAG:ARG:300) && !地底
     SELECTCASE TIME:5	
     CASE 4  ;雨
-        IF TEQUIP:ARG:共用雨伞
+        IF !CFLAG:ARG:同行
+            淋雨量 += 0
+        ELSEIF TEQUIP:ARG:共用雨伞
             淋雨量 += 0
         ELSEIF OPENPLACE(CFLAG:ARG:300) == 2
             淋雨量 += TIME_PROGRESS(TIME:1)
@@ -39,7 +41,9 @@ IF CFLAG:ARG:同行 && OUTROOF(CFLAG:ARG:300) && !地底
             淋雨量 += TIME_PROGRESS(TIME:1) * 7 / 10
         ENDIF
     CASE 5  ;大雨
-        IF TEQUIP:ARG:共用雨伞
+        IF !CFLAG:ARG:同行
+            淋雨量 += 0
+        ELSEIF TEQUIP:ARG:共用雨伞
             淋雨量 += 0
         ELSEIF OPENPLACE(CFLAG:ARG:300) == 2
             淋雨量 += TIME_PROGRESS(TIME:1) * 2
@@ -47,7 +51,9 @@ IF CFLAG:ARG:同行 && OUTROOF(CFLAG:ARG:300) && !地底
             淋雨量 += TIME_PROGRESS(TIME:1) * 7 / 5
         ENDIF            
     CASE 14 ;暴雨
-        IF TEQUIP:ARG:共用雨伞
+        IF !CFLAG:ARG:同行
+            淋雨量 += 0
+        ELSEIF TEQUIP:ARG:共用雨伞
             淋雨量 += 0
         ELSEIF OPENPLACE(CFLAG:ARG:300) == 2
             淋雨量 += TIME_PROGRESS(TIME:1) * 5
@@ -59,10 +65,12 @@ ENDIF
 ;#;CFLAG:ARG:4445 = 淋雨量
 ;计算湿身度:ARG
 湿身度:ARG += 淋雨量 * 100 / 衣着度
-SIF SELECTCOM == 429
+SIF SELECTCOM == 429 || (SELECTCOM == ADD_CUSTOM_COM && ADD_SELECTCUSTOMCOM == 4)
     湿身度:ARG = 0  ;换衣后湿身度:ARG自动清空
 SIF BATHROOM(CFLAG:ARG:現在位置)
     湿身度:ARG = 0  ;洗澡时湿身度:ARG自动清空
+SIF CFLAG:ARG:睡眠 && 湿身度:ARG > 2
+    湿身度:ARG = 2  ;睡觉时湿身度:ARG自动几乎清空（还是会残留点水渍的）
 IF OUTROOF(CFLAG:ARG:300) && !地底
     SELECTCASE TIME:5
     CASE 0,1    ;晴天/晴朗
