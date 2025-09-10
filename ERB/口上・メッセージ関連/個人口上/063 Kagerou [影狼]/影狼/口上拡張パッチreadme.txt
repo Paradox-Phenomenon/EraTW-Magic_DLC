@@ -11,7 +11,7 @@ eratohoTheWrold proto4.00用です
 ■追記・修正点
 ●TCVAR:183,中止接吻
 CSV,DATE_CMNに追記。元から约会帰りの初吻中止です
-口上貂プレにあった LOCAL:DATE_EVENT:99 及び LOCAL:99 を置換してます
+口上テンプレにあった LOCAL:DATE_EVENT:99 及び LOCAL:99 を置換してます
 
 ●SPEVENT_3,约会帰り
 DATE_CMNに追記。约会帰りにイベントが起きなかった場合の口上を追加しました
