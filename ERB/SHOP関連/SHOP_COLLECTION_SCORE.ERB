@@ -25,14 +25,17 @@ GOTO SCORE_INPUT
 ;
 ;RESULT:1 総数
 ;RESULT:2 所有数
+;QOL的修复
 ;-----------------------------------------------------------
 @DISPLAY_ALL_COLLECTION_SCORE(SHOW_EMPTY_SERIES_FLAG=1)
 #DIM SHOW_EMPTY_SERIES_FLAG	; 未入手のシリーズを表示する場合、1
 
-#DIM SCORE_NO			; 乐谱番号
+#DIM SCORE_NO			; 楽譜番号
 #DIM SERIES_NO			; シリーズ番号
-#DIM SERIES_SCORE_NO	; シリーズ内の乐谱番号
+#DIM SERIES_SCORE_NO	; シリーズ内の楽譜番号
 #DIMS sPrint_Text		; HTML_PRINTする文字列TEMP
+#DIMS SCORES_HTML, 50 ;keeps a list of html buttons to be printed later
+#DIM  SCORES_COUNT ;per album
 
 RESULT:1 = 0
 RESULT:2 = 0
@@ -54,17 +57,12 @@ FOR LOCAL, 0, 乐谱最大数
 			PRINTFORML
 			PRINTFORML 【{SERIES_NO + 1,2}:%GET_SERIES_NAME(SERIES_NO)%】({LOCAL:2}/{LOCAL:1})
 		ENDIF
+		SCORES_COUNT = 0
+		VARSET SCORES_HTML
+	ELSEIF SERIES_SCORE_NO == 乐谱最大数（シリーズ毎） - 1
+		CALL QOL_PRINT_SCORES(SCORES_HTML, SCORES_COUNT)
 	ENDIF
 
-	IF (STR:SCORE_NO != "")
-		; 乐谱表示
-		IF LOCAL:3
-			sPrint_Text = <p align='left'><nobr>
-			sPrint_Text += @"  <button value='{SCORE_NO}' title='入手条件：%GET_SCORE_INFO_MESSAGE(SCORE_NO)%'>"
-			sPrint_Text += @"{SERIES_SCORE_NO + 1,2}:%GET_SCORE_NAME(SCORE_NO, !HAVE_SCORE(SCORE_NO))%"
-			sPrint_Text += @"</button>"
-			sPrint_Text += @"<br>"
-			HTML_PRINT sPrint_Text
-		ENDIF
-	ENDIF
+	SIF LOCAL:3
+		CALL QOL_DISPLAY_SCORE_MAKE_HTML(SCORES_HTML, SCORES_COUNT, SCORE_NO, SCORE_NO, SERIES_SCORE_NO)
 NEXT

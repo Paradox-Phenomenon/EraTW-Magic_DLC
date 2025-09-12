@@ -13,12 +13,14 @@ FOR LOCAL, 0, CHARANUM
 			CFLAG:LOCAL:292 = 1
 		ENDIF
 	ENDIF
-	IF TCVAR:LOCAL:破瓜 == 2 && TALENT:LOCAL:処女 == 2
-		TALENT:LOCAL:処女 = 0
+	IF TCVAR:LOCAL:破瓜 == 2 
+		SIF TALENT:LOCAL:処女 == 2
+			TALENT:LOCAL:処女 = 0
 		EX:LOCAL:処女喪失记号 = 2
 	ENDIF
-	IF TCVAR:LOCAL:破瓜 == -1 && TALENT:LOCAL:処女 == -1
-		TALENT:LOCAL:処女 = 0
+	IF TCVAR:LOCAL:破瓜 == -1 
+		SIF TALENT:LOCAL:処女 == -1
+			TALENT:LOCAL:処女 = 0
 		;不应有记号，因为是自认为还存在的処女
 		;EX:LOCAL:処女喪失记号 = 1
 	ENDIF
@@ -67,7 +69,7 @@ IF SELECTCOM == 352 && TFLAG:193
 ENDIF
 
 ;吃飯
-SIF SELECTCOM == 414 || SELECTCOM == 415
+SIF TFLAG:192 != -3 && SELECTCOM == 414 || SELECTCOM == 415
 	CALL RESET_DISH
 
 ;约会道中の進行
@@ -191,19 +193,7 @@ NEXT
 
 TFLAG:110 = TCVAR:MASTER:亲热
 
-;FIRSTTIMEにSELECTCOMをぶっこむ
-CALLF FIRSTTIME(SELECTCOM)
-FOR LOCAL, 1, CHARANUM
-	SIF EXP_UP(15, LOCAL)
-		CALLF FIRSTTIME("精飲", 0, LOCAL)
-NEXT
-;射精部位
-FOR LOCAL:1, 0, 60
-	IF GETBIT(TFLAG:1, LOCAL:1)
-		LOCALS = "射精"{LOCAL:1}
-		CALLF FIRSTTIME(LOCALS, 0, TARGET)
-	ENDIF
-NEXT
+
 PREVPREVCOM = PREVCOM
 PREVCOM = SELECTCOM
 ;addition custom code, set custom prevcoms
@@ -400,7 +390,8 @@ SIF CFLAG:ARG:態度 < 2
 	RETURNF 1
 SIF CFLAG:ARG:既成事實 < 1
 	RETURNF 1
-SIF !(TALENT:ARG:恋慕 || TALENT:ARG:炮友)
+;addition custom code, if you have pushed someone down they should be okay with bathing with you
+SIF !(CFLAG:ARG:既成事実 & 合意_うふふ || TALENT:ARG:恋慕 || TALENT:ARG:セフレ)
 	RETURNF 1
 
 RETURNF 0
