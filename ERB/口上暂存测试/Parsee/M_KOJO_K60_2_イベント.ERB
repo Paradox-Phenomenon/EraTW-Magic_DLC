@@ -175,7 +175,7 @@ TCVAR:K60ENC_TCVAR_CHARACTER_DATING                            =    357
 ;******************************************************************************
 
 ;### 口上存在判定 ###################################
-@M_KOJO_K60_2(ARG)
+@M_KOJO_K60(ARG)
 ;別人口上判定ですX2を同キャラ口上の通し番号に置き換えてください（一つ目の別人口上なら1、二つ目の別人口上なら2
 ;複数の同キャラ口上が同時表示されないために必要です、必ずXXXを変更してください
 ;RESULTS = _XXX
@@ -222,13 +222,13 @@ CFLAG:TARGET:口上内抱き寄せ判定_通常 = 1
 ;If 1, you can use M_KOJO_EGG_EVENT_K60_PERMISSION to make it so taking a character's anal virginity always succeeds or always fails
 ; CFLAG:TARGET:口上用肛門処女喪失判定 = 1
 
-;Setting CFLAG:推倒禁止 to 1 will make it so a character will not push you down
-;For instance, the below code will ensure that a character will not push you down unless they have Yearning or Sex Friend:
-;IF !TALENT:TARGET:X:恋慕 && !TALENT:TARGET:X:セフレ
-;	CFLAG:X:推倒禁止 = 1
-;ELSE
-;	CFLAG:X:推倒禁止 = 0
-;ENDIF
+;帕露有反对背叛自己好友的拒绝推倒机制，但是却没有对应地禁止帕露主动推倒。这会导致帕露在剧本设定下仍会主动推倒求爱
+;这时玩家如果夺回主导，则会引发针对【350】推倒的反对背叛机制。这里将其修复以匹配剧本设定
+IF K60_YOU_ARE_CHEATING_ON_YOUR_LOVER_WITH_PARSEE()
+	CFLAG:60:推倒禁止 = 1
+ELSE
+	CFLAG:60:推倒禁止 = 0
+ENDIF
 
 IF ((TALENT:83:恋人 || TALENT:84:恋人 || TALENT:64:恋人) && CHECK_LOVER_NUM() < 2) || (!CFLAG:[[帕露西]]:K60EN_PARSEE_MELTDOWN && !(TALENT:TARGET:恋慕 || MARK:TARGET:快楽刻印 == 3 || IN_HEAT([[帕露西]])))
     CFLAG:[[帕露西]]:推倒禁止 = 1
@@ -447,10 +447,10 @@ PRINTL
 PRINTFORML 守护着通往冥界之桥的桥姬。%HE_SHE_CN(TARGET)%，水桥帕露西，便是嫉妒本身
 PRINTFORML %HE_SHE_CN(TARGET)%是一簇嫉妒之火，以操控他人心中的妒火为柴薪，以妒火为食，却也被妒火所灼烧着
 PRINTFORML
-PRINTFORML %HE_SHE_CN(TARGET)%会对遇到的每个比自己更有才能、更幸福、更优秀，或是某些方面超过HE_SHE_CN(帕露西)的人燃起妒火
+PRINTFORML %HE_SHE_CN(TARGET)%会对遇到的每个比自己更有才能、更幸福、更优秀，或是某些方面超过%HE_SHE_CN(TARGET)%的人燃起妒火
 CALL PRINT_STRL, @"在比%HE_SHE_CN(TARGET)%更平庸的情况下，如果他们在所有方面都不如%HE_SHE_CN(TARGET)%，%HE_SHE_CN(TARGET)%会因为他们没有对自己感到嫉妒——这件事，而去嫉妒他人的心灵",
 CALL PRINT_STRL, @"%HE_SHE_CN(TARGET)%嫉妒他们，因为%HE_SHE_CN(TARGET)%希望自己也能成为其他更好的人的模样。但，只要当他们开始嫉妒帕露西",
-PRINTFORML HE_SHE_CN(帕露西)就会得心应手的滋养起他人心中的妒火，然后将其作为自己的食料，直到这妒火把他人和HE_SHE_CN(帕露西)自己焚烧殆尽
+PRINTFORML %HE_SHE_CN(TARGET)%就会得心应手的滋养起他人心中的妒火，然后将其作为自己的食料，直到这妒火把他人和%HE_SHE_CN(TARGET)%自己焚烧殆尽
 PRINTFORML
 PRINTFORML ——以上，便是大多数人对帕露西的印象和传闻。但很久以前的帕露西，并非如此。%HE_SHE_CN(TARGET)%，帕露西，曾是一位守护旅者灵魂的守护灵，只要向%HE_SHE_CN(TARGET)%祈愿，只要走过%HE_SHE_CN(TARGET)%的桥上，%HE_SHE_CN(TARGET)%便会平等的保护所有旅人
 PRINTFORML 但那已经是在%HE_SHE_CN(TARGET)%被妒火所吞噬，所焚烧，所支配...化作桥姬之前，很久很久以前的事情了
@@ -624,7 +624,7 @@ IF !GROUPMATCH(FLAG:扮演, 36, 37, 38, 49, 64, 83, 84)
                         PRINTFORMW 「然后就是，那个，%K60_NAME_WITH_HONORIFICS([[勇儀]])%了...」
                         SIF CFLAG:[[帕露西]]:K60ENC_SETTING_YUUPARU_CRUSH == 1
                             PRINTFORMDW 她的难以察觉的变红了一些
-                        PRINTFORMW 「她是个很了不起的家伙。美丽、强大、豪爽，在任何地方都总是最闪亮的那颗星...但，你也知道的，她是鬼，是星熊勇儀，就和你在传说里面所闻的一样」
+                        PRINTFORMW 「她是个很了不起的家伙。美丽、强大、豪爽，在任何地方都总是最闪亮的那颗星...但，你也知道的，她是鬼，是星熊勇仪，就和你在传说里面所闻的一样」
                         PRINTFORMW 「没人知道她的酒量到底有多大，就连她自己也不知道——在这种前提下她还是会大大咧咧的拉你一起拼酒量，所以...你大概得随身带着解酒药了，酒精中毒加宿醉也不是没可能要了你的命」
                         PRINTFORMW 「更别提那些旧地狱到处都是的怨灵了，作为死物最厌恶的就是生者...」
                         PRINTFORMW 「现在，你大概能理解到了吧？旧地狱对你来说和纯粹地狱也没多少差别」
@@ -1031,7 +1031,7 @@ IF LOCAL
                         PRINTFORMW 「我很怕啊，我很怕你总有一天也会和人类一样，随风而去。彼岸与现世的距离太远太远了...那时我又会独自一人...我已经见过光明了，绝对忍受不了，没有你的黑暗...」
                     PRINTFORMDW 她咽了咽口水，下定了某种决心，用坚毅的眼神看着你
                     PRINTFORMW 「但，我不会再去恐惧了，如果不能表达出来，那这些都毫无意义」
-                    PRINTFORMW 「%K60_MASTER()%....我喜欢你，@BOLD@我  爱  你@」
+                    CALL PRINT_STRW,@"「%K60_MASTER()%....我喜欢你，@BOLD@我  爱  你@」"
                     PRINTFORMW 「这份感情，你能接收吗？」
                 ENDIF
             CASEELSE
@@ -1069,7 +1069,7 @@ IF LOCAL
         PRINTFORMDW 她叹了口气，微微低下了头
         PRINTFORMW 「放心好了，我不会因为看到你和其他女人在一起就随便发火的」
         PRINTFORMW 「我本可以那么做，但你知道为什么吗？因为，我  在  乎  你。所以我不会用那种方式去伤害你」
-        PRINTFORMW 「我会想尽任何方法去控制这嫉妒和诅咒。去不让它——不让我去伤害其他人。为了你，@ITALIC@只@为了你」
+        CALL PRINT_STRW,@"「我会想尽任何方法去控制这嫉妒和诅咒。去不让它——不让我去伤害其他人。为了你，@ITALIC@只@为了你」"
         PRINTFORMW 「...这么做对我自己倒是没什么好处，对吧？」
         PRINTFORMDW 她笑了，苦涩的，痛苦的笑了
         PRINTFORML
@@ -2490,7 +2490,7 @@ IF LOCAL
         ;Yuugi
         ELSEIF ARG == 64
             IF CFLAG:[[帕露西]]:K60ENC_SETTING_YUUPARU_CRUSH == 1
-                PRINTFORMDW 你与勇儀交换了一个眼神，咧嘴一笑，然后一起向帕露西做出了“快过来一起”的手势
+                PRINTFORMDW 你与勇仪交换了一个眼神，咧嘴一笑，然后一起向帕露西做出了“快过来一起”的手势
                 IF FIRSTTIME("ParseeYuugiThreesome")
                     PRINTFORMDW 帕露西的脸变得绯红，发出一声窒息般的声音，紧张的向你俩挪动
                     PRINTFORMW 「这...我...」
@@ -2513,7 +2513,7 @@ IF LOCAL
                     PRINTFORMW 「但我会留在这盯着你的...」
                 CASE 2, 3
                     PRINTFORMW 「把嘴张开，快点。我必须确认你没有偷走%K60_MASTER()%的\@ HAS_PENIS(TARGET) ?子种#体液\@」
-                    PRINTFORMW 「\@ HAS_PENIS(TARGET) ?那是@BOLD@只能@属于#那些@BOLD@只能@属于\@我的」
+                    CALL PRINT_STRW,@"「\@ HAS_PENIS(TARGET) ?那是@BOLD@只能@属于#那些@BOLD@只能@属于\@我的」"
                     PRINTFORMDW %HE_SHE_CN(TARGET)%什么时候这么关心这些玩意了？还是说%HE_SHE_CN(TARGET)%只是单纯的想独占，好让其他人得不到而已？
             ENDSELECT
         ;Futo
@@ -2730,7 +2730,7 @@ IF LOCAL
             SELECTCASE K60_ATTITUDE()
 			;Loving
                 CASE 0
-                    PRINTFORMW 「这就是你的能力？专门偷内裤的能力？还是说是%K60_NAME_WITH_HONORIFICS([[紫]])%干的？难道说你是在和守矢神社搞什么阴谋，通过收集其他人@BOLD@用过@的内裤收集信仰？你们信的是什么邪神啊？」
+                    CALL PRINT_STRW,@"「这就是你的能力？专门偷内裤的能力？还是说是%K60_NAME_WITH_HONORIFICS([[紫]])%干的？难道说你是在和守矢神社搞什么阴谋，通过收集其他人@BOLD@用过@的内裤收集信仰？你们信的是什么邪神啊？」"
 			;Nice, horny
                 CASE 1
                     PRINTFORMW 「信...难道是信仰的力量吗？你对其他人内裤的信仰？虔诚到能有了这种可以无限携带内裤的能力？天啊...」
@@ -2908,7 +2908,7 @@ IF LOCAL
                         PRINTFORMW 「我忍不住了，我认输了，你赢了」
                         PRINTFORMDW 帕露西生气的看着你，她厚重的喘息直直的吹在你的脸上
                         PRINTFORMW 「我之前和你说过，我很嫉妒你，嫉妒到每天晚上都会夜不能寐」
-                        PRINTFORMW 「但我没法骗自己，嗯，我渴望你，渴望@BOLD@得到@你」
+                        CALL PRINT_STRW,@"「但我没法骗自己，嗯，我渴望你，渴望@BOLD@得到@你」"
                         PRINTFORMDW 她紧紧握住你的手，然后靠在了她的胸前
 						CALL DQPRINT("咚咚咚咚咚咚咚咚咚")
 						PRINTFORMDW 咚咚咚咚咚咚咚咚咚
@@ -3111,7 +3111,7 @@ IF LOCAL
                             PRINTFORMDW 你缓缓地摇了摇头
                             PRINTFORML 「嗯哼？」
                             PRINTFORMDW 帕露西发出了轻轻的笑声
-                            PRINTFORMW 「那...就是你的\@ IS_MALE(MASTER) ?帅气#美貌\@惹的祸咯？」@BOLD@亲@
+                            CALL PRINT_STRW,@"「那...就是你的\@ IS_MALE(MASTER) ?帅气#美貌\@惹的祸咯？」@BOLD@亲@"
                             PRINTFORML 「嘛嘛，和药有没有关系那种事怎样都行啦...」
                             PRINTFORMDW 她慢慢地伏在你身上，缓缓地脱去你的%SHOW_TOP(MASTER,1)%
                             PRINTFORMW 「我现在，很想要你呢...满脑子都是你，什么别的念头都没了。都是你的错哦」
@@ -3318,7 +3318,7 @@ IF LOCAL
                     CASE 2
                         PRINTFORMW 「我们这些桥姬，大多数时候都是独自一人守在桥边呢」
                         PRINTFORMW 「这么长的时间里，理所当然的偶尔会想要...陪伴」
-                        PRINTFORMW 「希望你能明白我的意思。还不明白的话...@BOLD@一起@去个更私密点的地方，然后我慢慢解释给你吧？」
+                        CALL PRINT_STRW,@"「希望你能明白我的意思。还不明白的话...@BOLD@一起@去个更私密点的地方，然后我慢慢解释给你吧？」"
                 ENDSELECT
         ENDSELECT
         RETURN 1
@@ -3369,7 +3369,7 @@ IF LOCAL
     ENDIF
     ;Misc.
 	;その他
-    PRINTFORML  
+    PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -4644,7 +4644,7 @@ IF LOCAL
 	;-------------------------------------------------
     IF LOCAL:1 && ARG == 1
         PRINTFORMDW 帕露西眼睛猛地睁大了，一阵强烈的快感如电流般席卷了%HE_SHE_CN(TARGET)%
-        PRINTFORMW 「唔咦喔喔喔喔喔喔~HPH...刚刚那是怎...怎么...？！难道...!」
+        CALL HPH_PRINT,@"「唔咦喔喔喔喔喔喔~HPH...刚刚那是怎...怎么...？！难道...!」","W"
         IF CFLAG:没穿内裤 == 1
             PRINTFORMDW 帕露西愣了一下，感到%FSYN_CN("蜜汁")%顺着%HE_SHE_CN(TARGET)%的大腿流了下来...
             PRINTFORMDW 胖次，好像不见了啊...
@@ -5195,7 +5195,7 @@ IF LOCAL
         PRINTFORMW 「我不会再害怕了——有你在我就没什么可怕的。我果然还是希望送给你一个珍贵的宝物啊」
         PRINTFORMDW 帕露西笑了，那笑容中有着绝对的信任和释怀
         PRINTFORMW 「好了好了，既然哭鼻子的洋相也让你看到了...」
-        PRINTFORMW 「那也该和我一起创造小生命了吧~HPH」
+        CALL HPH_PRINT,@"「那也该和我一起创造小生命了吧~HPH」","W"
         RETURN 1
     ENDIF
 
@@ -5558,7 +5558,7 @@ IF LOCAL
         PRINTFORMDW 帕露西紧闭着双眼，祈求泪水不要冲出眼眶，但一滴泪还是顺着%HE_SHE_CN(TARGET)%的眼角落下，打湿了面庞
         PRINTFORMW 「说不定坦白后，我们的关系就...」
         PRINTFORMW 「说不定%HE_SHE_CN(MASTER)%会就此作罢，说不定就会离我越远越好...」
-        SIF K60ENC_SETTING_DOMINANCE == 1
+        SIF CFLAG:K60ENC_SETTING_DOMINANCE == 1
             CFLAG:[[帕露西]]:性格傾向 = 2
         CLEARBIT CFLAG:13, 1
         RETURN 1
@@ -5582,7 +5582,7 @@ IF LOCAL
         LOCALS '= @"「%K60_MASTER()%吗？」"
         CALL YUUGISPEAK, LOCALS
         IF CFLAG:64:面識
-            PRINTFORMDW 勇儀点了点头
+            PRINTFORMDW 勇仪点了点头
             LOCALS '= @"「当然啊，%HE_SHE_CN(MASTER)%咋了吗？突然问这个干啥？」"
             CALL YUUGISPEAK, LOCALS, "smile"    
         ELSE
@@ -5610,7 +5610,7 @@ IF LOCAL
         CALL PARSEESPEAK, LOCALS, "blush"
         LOCALS '= @"「我是...生了什么病吗？是不是去永远亭看看比较好啊？」"
         CALL PARSEESPEAK, LOCALS
-        PRINTFORMDW 勇儀突然咧嘴大笑，用力拍了拍帕露西的后背
+        PRINTFORMDW 勇仪突然咧嘴大笑，用力拍了拍帕露西的后背
         LOCALS '= @"「噶哈哈哈哈！没错啊没错！帕露，你确实得了病啊！得的就是...相思病！而且还病得不轻啊帕露！」"
         CALL YUUGISPEAK, LOCALS, "smile"
         LOCALS '= @"「哈？！什...什么？！」"
@@ -5618,7 +5618,7 @@ IF LOCAL
         PRINTFORMDW 帕露西震惊地瞪大双眼
         LOCALS '= @"「没错！」"
         CALL YUUGISPEAK, LOCALS, "smile"
-        PRINTFORMDW 勇儀喝着酒笑的更夸张了
+        PRINTFORMDW 勇仪喝着酒笑的更夸张了
         LOCALS '= @"「你啊，心里老是思念着那%PRINT_MALE_CN("小子:孩子", MASTER)%，狠狠爱上%HE_SHE_CN(MASTER)%啦！」"
         CALL YUUGISPEAK, LOCALS, "smile"
         LOCALS '= @"「让咱猜猜，是不是就算周围到处都是人，目光只会死死黏在%HE_SHE_CN(MASTER)%身上？」"
@@ -5641,7 +5641,7 @@ IF LOCAL
         ELSE
             LOCALS '= @"「傻啊！快去告白啊帕露！咱可觉得你俩挺般配啊！」"
             CALL YUUGISPEAK, LOCALS, "smile"
-            IF TALENT:MASTER:恋人 && VAR_OR_DEFAULT("MORELOVER")
+            IF TALENT:MASTER:恋人 && (TALENT:MASTER:左拥右抱 || VAR_OR_DEFAULT("MORELOVER"))
                 LOCALS '= @"「而且%HE_SHE_CN(MASTER)%超会照顾\@ IS_MALE(TARGET) ?男孩子#女孩子\@呢」"
                 CALL YUUGISPEAK, LOCALS, "smile"
                 IF TALENT:64:恋人
@@ -5650,7 +5650,7 @@ IF LOCAL
                     LOCALS '= @"「再说你要是不想和咱约会，那不是完全没必要强迫自己吗？」"
                     CALL YUUGISPEAK, LOCALS, "blush"
                     IF CFLAG:[[帕露西]]:K60ENC_SETTING_YUUPARU_CRUSH == 1
-                        PRINTFORMDW 帕露西的脸更红了。可以同时和勇儀、%K60_MASTER()%交往...？！
+                        PRINTFORMDW 帕露西的脸更红了。可以同时和勇仪、%K60_MASTER()%交往...？！
                         PRINTFORMDW 突然觉得房间似乎变得异常闷热，汗水顺着%HE_SHE_CN(TARGET)%的脸颊滑落
                         FONTITALIC
                         LOCALS '= @"冷静，帕露西，深呼吸"
@@ -5670,7 +5670,7 @@ IF LOCAL
         CALL PARSEESPEAK, LOCALS
         ;新增
         IF IS_FALLEN(64)
-            LOCALS '= @"更何况，勇儀已经喜欢上%HE_SHE_CN(MASTER)%了。我...我怎么可能去夺走勇儀爱着的人啊"
+            LOCALS '= @"更何况，勇仪已经喜欢上%HE_SHE_CN(MASTER)%了。我...我怎么可能去夺走勇仪爱着的人啊"
             CALL PARSEESPEAK, LOCALS
         ENDIF
         LOCALS '= @"...必须得做出决定了，快点赶走%HE_SHE_CN(MASTER)%。否则陷入这份感情太深就来不及了！"
@@ -5716,7 +5716,7 @@ IF LOCAL
         PRINTFORML
         PRINTFORMDW 变化还不止于此
         SIF ABL:[[帕露西]]:膣 >= 3
-            PRINTFORMDW %BREAKENG(@"她的%FSYN_CN("阴道")%已经习惯了接受你的\@HAS_PENIS(MASTER) ?%FSYN_CN("阴茎")%#玩具\@、你的手指、你的舌头、你的每一寸地方——只要你想，不管是@ITALIC@什么@她都愿意接受")%
+            PRINTFORMDW 她的%FSYN_CN("阴道")%已经习惯了接受你的\@HAS_PENIS(MASTER) ?%FSYN_CN("阴茎")%#玩具\@、你的手指、你的舌头、你的每一寸地方——只要你想，不管是『什么』她都愿意接受
         SIF ABL:[[帕露西]]:肛門 >= 3
             PRINTFORMDW %BREAKENG(@"后庭对她来说早已没有羞耻感可言，她早已知道如何用%FSYN_CN("肛门")%取悦你，就连里面也已变得无比契合你的形状")%
         SIF ABL:[[帕露西]]:胸 >= 3
@@ -5732,7 +5732,7 @@ IF LOCAL
             ELSE
                 PRINTFORMD ，品尝对方的滋味
             ENDIF
-            PRINTFORMDW 对她来说已经比嫉妒别人更能满足自己，特别是，与@ITALIC@你@一起的任何事
+            PRINTFORMDW 对她来说已经比嫉妒别人更能满足自己，特别是，任何与你一起的『做的事』
         ENDIF
         IF ABL:[[帕露西]]:指 >= 3
             PRINTFORMD 她的手早已熟知你身上的每一个敏感处。无论是温柔的爱抚，还是粗暴的揉捏，片刻就能让你浑身酥麻...
@@ -6012,7 +6012,7 @@ IF LOCAL
                             IF HAS_PENIS(TARGET)
                                 PRINTFORMD %HE_SHE_CN(TARGET)%一发又一发将腥臭的精液灌注到分身的嘴里
                                 SIF HAS_VAGINA(TARGET)
-                                    PRINTFORMD  %HE_SHE_CN(TARGET)%的大腿微微颤抖，%FSYN_CN("蜜汁")%浸湿了分身的面庞
+                                    PRINTFORMD %HE_SHE_CN(TARGET)%的大腿微微颤抖，%FSYN_CN("蜜汁")%浸湿了分身的面庞
                             ELSE
                                 PRINTFORMD %HE_SHE_CN(TARGET)%的大腿微微颤抖着，%FSYN_CN("蜜汁")%沿着分身的脸颊蜿蜒而下
                             ENDIF
