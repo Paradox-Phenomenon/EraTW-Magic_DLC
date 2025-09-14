@@ -985,6 +985,10 @@ NEXT
 ;MASTERはTARGET:1～のCFLAG:6の最低値
 TCVAR:MASTER:亲热 = TCVAR:(IN_ROOM_MEMBER("MIN", CFLAG:MASTER:現在位置, "TCVAR", 130)):亲热
 
+;if a character leaves in their greeting dialogue, make sure they're not set as TARGET any more
+;也许不需要，整个情事察觉已经打了好几个重置对象的补丁
+SIF !IS_HERE(TARGET)
+	TARGET = IN_ROOM_MEMBER(, CFLAG:MASTER:現在位置, "RAND")
 
 ;-------------------------------------------------
 ;ウフフ終了TEQUIP処理
@@ -1105,6 +1109,15 @@ IF FLAG:3 && 宴会開始日判定()
 	NEXT
 ENDIF
 
+;set workload on day switchover
+FOR LOCAL,1,CHARANUM
+	IF !CFLAG:LOCAL:出禁
+		CALL 仕事内容設定(LOCAL)
+		SIF TCVAR:LOCAL:325 && !BASE:LOCAL:13
+			;お仕事を定義
+			BASE:LOCAL:13 = MAXBASE:LOCAL:13
+	ENDIF
+NEXT
 
 ;日時と祝日の表示（改行無）
 @INFO_TIME_WATCH

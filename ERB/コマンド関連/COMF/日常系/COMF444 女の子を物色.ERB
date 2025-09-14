@@ -25,7 +25,6 @@ ELSE
 ENDIF
 PRINTFORML %CALLNAME:MASTER%物色着周围是否有可爱的女孩
 PRINTFORMW ……那个女孩怎么样？
-SETBIT TFLAG:一日一回, 9
 SELECTCASE CAN_NANPA(CFLAG:MASTER:現在位置)
 	CASE 1
 		YUKIZURI_RACE '= TEXTR("町娘/人妻")
@@ -139,6 +138,7 @@ ELSE
 ENDIF
 CFLAG:RANDOM_CHARANUM:延迟 = 30
 TARGET = RANDOM_CHARANUM
+SETBIT TFLAG:一日一回, 9
 RETURN 1
 
 
@@ -254,6 +254,15 @@ IF FIND_CHARADATA(TOSTR(LOCAL))
 	CALL 路人子画像リセット(RANDOM_CHARANUM)
 	DELCHARA RANDOM_CHARANUM
 	LOADCHARA TOSTR(LOCAL)
+	;when loading mobs from older saves, ensure that if new characters have been added in the interim we update the NO for the mob
+	;subsequently save the mob and reload it to ensure all the correct sprites are loaded
+	IF NO:RANDOM_CHARANUM != RANDOM_CHARANUM
+		NO:RANDOM_CHARANUM = RANDOM_CHARANUM
+		SAVECHARA TOSTR(LOCAL), CSTR:RANDOM_CHARANUM:路人子プロフィール１, RANDOM_CHARANUM
+		CALL 路人子画像リセット(RANDOM_CHARANUM)
+		DELCHARA RANDOM_CHARANUM
+		LOADCHARA TOSTR(LOCAL)
+    ENDIF
 	PRINTFORML \@ ARG ? 指名了 # 发现了 \@%CALLNAME:RANDOM_CHARANUM%
 	IF MOBGIRL_FP:LOCAL != ""
 		路人子一人称 = %MOBGIRL_FP:LOCAL%
@@ -261,7 +270,7 @@ IF FIND_CHARADATA(TOSTR(LOCAL))
 	ENDIF
 	IF CSTR:RANDOM_CHARANUM:路人子画像文字列_服_通常 == ""
 		PRINTFORML 未设定外表。请选择类型。
-		PRINTBUTTON "[町娘] ", "町娘"
+		PRINTBUTTON "[村姑] ", "町娘"
 		PRINTBUTTON "[人妻] ", "人妻"
 		PRINTBUTTON "[妖精] ", "妖精"
 		PRINTBUTTON "[女仆妖精] ", "女仆妖精"
