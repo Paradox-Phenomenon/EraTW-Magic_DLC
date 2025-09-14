@@ -119,30 +119,69 @@ RETURN 1
 @IMAGE_I50_特殊服装(CHARA)
 #DIM CHARA
 VARSET RESULTS
-IF CFLAG:CHARA:差し替え適用
+SELECTCASE CFLAG:CHARA:差し替え適用
+	CASE 2
+		;可选立绘
+		IF CHECK_NUDE(CHARA)
+			;裸
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立ち絵
+			ENDIF
+		ELSE
+			;服
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立ち絵
+			ENDIF
+		ENDIF
+	CASE 1
+		IF IS_BUNNY(CHARA)
+			RESULTS = _バニー
+		ENDIF
+	CASE 0
+		;初始立绘
+		IF CHECK_NUDE(CHARA)
+			;裸
+			SIF BATHROOM() && !CFLAG:诶嘿嘿
+				RESULTS = _浴袍
+		ELSE
+			;服
+		ENDIF		
+	CASEELSE
+		
+ENDSELECT 
+
+@IMAGE_EX_I50_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
+#DIM CHARA
+#DIMS 表示形式
+#DIMS 服装
+#DIMS 表情
+#DIMS 表情_マウスオーバー
+#DIMS 差分
+#DIMS 乳量
+
+IF CFLAG:[[フラン]]:差し替え適用 == 1
+	CALL COMPOSE_SPRITE_PRESET([[フラン]],"別顔_裸_/別顔_服_/別顔_服_バニー_/","通常/笑顔/憤怒/発情/トロ顔/イキ顔/通常２")
+	CALL COMPOSE_SPRITE_PRESET([[フラン]],"別立ち_裸_/別立ち_服_/別立ち_服_バニー_/別立ち_妊娠裸_/別立ち_妊娠服_/別立ち_妊娠服_バニー_/","通常/笑顔/憤怒/発情/トロ顔/イキ顔/通常２",,"別立ち")
+ENDIF
+
+@IMAGE_I50_体形(CHARA)
+#DIM CHARA
+VARSET RESULTS
+IF CFLAG:[[フラン]]:差し替え適用 == 1
 	;差し替え画像
-	IF CHECK_NUDE(CHARA)
-		;裸
-		IF FLAG:立絵種類
-			;顔絵
-		ELSE
-			;立ち絵
-		ENDIF
+	IF FLAG:立ち絵種類
+		;顔絵
 	ELSE
-		;服
-		IF FLAG:立絵種類
-			;顔絵
-		ELSE
-			;立ち絵
+		;立ち絵
+		IF TALENT:CHARA:妊娠 && CFLAG:CHARA:妊娠経過日数 >= 41 
+			IF CURRENT_CLOTHES_SET(CHARA) == 74
+			ELSE
+				RESULTS = 妊娠
+			ENDIF
 		ENDIF
-	ENDIF
-ELSE
-	;通常画像
-	IF CHECK_NUDE(CHARA)
-		;裸
-		SIF BATHROOM() && !CFLAG:诶嘿嘿
-			RESULTS = _浴袍
-	ELSE
-		;服
 	ENDIF
 ENDIF
