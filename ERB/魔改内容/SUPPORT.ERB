@@ -40,13 +40,13 @@ FOR LOCAL, 1, CHARANUM
 NEXT
 
 @UPDATE_AND_SELECTION_OF_KOJO_MODDING(WORK_MODE)
-#DIM DYNAMIC MAXPAGE_MODE_0
-#DIM DYNAMIC MAXPAGE_MODE_1
+#DIM DYNAMIC MAXPAGE_MODE,3
 #DIM DYNAMIC MAXPAGE
 #DIM DYNAMIC PAGE
 #DIM DYNAMIC MARK_KOJO_AVAILABLE, 人物数量上限
-#DIM DYNAMIC NUM_OF_CHARA_WITH_KOJO
+#DIM DYNAMIC NUM_OF_CHARA_WITH_KOJO,2
 #DIM DYNAMIC LIST_OF_CHARA_WITH_KOJO, 人物数量上限
+#DIM DYNAMIC LIST_OF_CHARA_WITH_KOJOS, 人物数量上限
 #DIM DYNAMIC LIST_OF_CHARA_ALTERED_BY_TOUHOU, 人物数量上限
 #DIM DYNAMIC C_ID
 #DIM DYNAMIC LINE_RECORD
@@ -54,12 +54,14 @@ NEXT
 #DIMS DYNAMIC HTML
 #DIMS DYNAMIC COLOR
 #DIM DYNAMIC REDRAW_RECORD
-#DIM OPERATE_MODE = 1
+#DIM OPERATE_MODE = 2
 #DIMS DYNAMIC WORK_MODE
 #DIM DYNAMIC NUM_OF_KOJO
 #DIM DYNAMIC CHARACTER_PER_PAGE
 CURRENTREDRAW
 REDRAW_RECORD = RESULT
+SIF WORK_MODE != "SELECTION"
+	OPERATE_MODE = 1
 REDRAW 0
 ;确认角色口上存在情况
 VARSET RESULT
@@ -77,8 +79,10 @@ FOR LOCAL, 0, CHARANUM
 	ENDIF
 	;有口上角色标记
 	IF RESULT
-		MARK_KOJO_AVAILABLE:LOCAL = RESULT
 		NUM_OF_CHARA_WITH_KOJO ++ 
+		MARK_KOJO_AVAILABLE:LOCAL++
+		SIF CFLAG:LOCAL:36>1
+			NUM_OF_CHARA_WITH_KOJO:1++
 	ENDIF
 NEXT
 IF WORK_MODE == "SELECTION"
@@ -87,9 +91,11 @@ ELSE
 	CHARACTER_PER_PAGE = 20
 ENDIF
 ;不过滤无口上角色时的最多页数
-MAXPAGE_MODE_0 = (CHARANUM - 1) / CHARACTER_PER_PAGE + 1
+MAXPAGE_MODE = (CHARANUM - 1) / CHARACTER_PER_PAGE + 1
 ;过滤无口上角色时的最多页数
-MAXPAGE_MODE_1 = (NUM_OF_CHARA_WITH_KOJO - 1) / CHARACTER_PER_PAGE + 1
+MAXPAGE_MODE:1 = (NUM_OF_CHARA_WITH_KOJO - 1) / CHARACTER_PER_PAGE + 1
+;过滤无/单口上角色时的最多页数
+MAXPAGE_MODE:2 = (NUM_OF_CHARA_WITH_KOJO:1 - 1) / CHARACTER_PER_PAGE + 1
 ;制作以原作顺序排列的人物列表
 VARSET RESULT
 IF FLAG:並び替え
@@ -114,25 +120,43 @@ FOR LOCAL, 0, CHARANUM
 	ENDIF
 	LOCAL:2 ++
 NEXT
+;多个剧本列表
+LOCAL:2 = 0
+FOR LOCAL, 0, CHARANUM	
+	SIF CFLAG:LOCAL:36<=1
+		CONTINUE
+	IF FLAG:並び替え
+		LIST_OF_CHARA_WITH_KOJOS:(FINDELEMENT(LIST_OF_CHARA_ALTERED_BY_TOUHOU, LOCAL, 1, CHARANUM)) = LOCAL
+	ELSE
+		LIST_OF_CHARA_WITH_KOJOS:(LOCAL:2) = LOCAL
+	ENDIF
+	LOCAL:2 ++
+NEXT
 
 IF FLAG:並び替え
 	FOR LOCAL, 0, NUM_OF_CHARA_WITH_KOJO
 		IF !LIST_OF_CHARA_WITH_KOJO:LOCAL
 			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJO, -1, 0, LOCAL
 			LOCAL --
-		ENDIF
+		ENDIF		
+	NEXT
+	FOR LOCAL, 0, NUM_OF_CHARA_WITH_KOJO:1
+		IF !LIST_OF_CHARA_WITH_KOJOS:LOCAL
+			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJOS, -1, 0, LOCAL
+			LOCAL --
+		ENDIF		
 	NEXT
 ENDIF
 
 LINE_RECORD = LINECOUNT
-
 WHILE 1
 	DRAWLINE
 	DRAWLINE
-	IF OPERATE_MODE == 1
-		MAXPAGE = MAXPAGE_MODE_1
-	ELSE
-		MAXPAGE = MAXPAGE_MODE_0
+	MAXPAGE = MAXPAGE_MODE:OPERATE_MODE
+	IF PAGE >= MAXPAGE
+		PAGE = MAXPAGE - 1
+	ELSEIF PAGE < 0 
+		PAGE = 0
 	ENDIF
 	IF WORK_MODE == "SELECTION"
 		RESETCOLOR
@@ -142,30 +166,40 @@ WHILE 1
 		HTML_PRINT @"<i><b><u>　　　　角色剧本ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
 		HTML_PRINT @"<i><font color = '#0x00FF00'>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(MAXPAGE))%＞</font></i>"
 	ENDIF
-	IF OPERATE_MODE == 1
+	IF OPERATE_MODE == 2
+		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有多个剧本角色'><font color='#0x90EE90'>　　过滤无/单剧本角色功能开启　　</font></nonbutton></i>"
+	ELSEIF OPERATE_MODE == 1
 		HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有剧本角色'><font color='#0x90EE90'>　　过滤无剧本角色功能开启　　</font></nonbutton></i>"
 	ELSE
 		HTML_PRINT @"<i><nonbutton title = '已显示全部角色，包括无剧本角色'><font color='#0x404040'>　　过滤无剧本角色功能关闭　　</font></nonbutton></i>"
 	ENDIF
-	IF PAGE >= MAXPAGE
-		PAGE = MAXPAGE - 1
-	ELSEIF PAGE < 0 
-		PAGE = 0
-	ENDIF
+	LOCAL:1=0
 	FOR LOCAL, PAGE * CHARACTER_PER_PAGE, (PAGE + 1) * CHARACTER_PER_PAGE
 		VARSET HTML
 		VARSET RESULT
 		VARSET RESULTS
 		VARSET C_ID
-		IF OPERATE_MODE == 1
-			SIF LOCAL > NUM_OF_CHARA_WITH_KOJO - 1
-				BREAK
-			SIF LIST_OF_CHARA_WITH_KOJO:LOCAL
-				C_ID = LIST_OF_CHARA_WITH_KOJO:LOCAL
+		IF OPERATE_MODE
+			IF OPERATE_MODE == 2
+				SIF LIST_OF_CHARA_WITH_KOJOS:LOCAL && CFLAG:(LIST_OF_CHARA_WITH_KOJOS:LOCAL):36>1
+					C_ID = LIST_OF_CHARA_WITH_KOJOS:LOCAL
+				IF !C_ID
+					CONTINUE
+				ELSEIF LOCAL >= NUM_OF_CHARA_WITH_KOJO:1
+					BREAK
+				ENDIF
+			ELSEIF OPERATE_MODE == 1
+				SIF LIST_OF_CHARA_WITH_KOJO:LOCAL
+					C_ID = LIST_OF_CHARA_WITH_KOJO:LOCAL
+				SIF LOCAL >= NUM_OF_CHARA_WITH_KOJO
+					BREAK
+			ENDIF
 		ELSE 
-			SIF LOCAL > CHARANUM - 1
+			SIF !LOCAL
+				CONTINUE
+			IF LOCAL >= CHARANUM-1
 				BREAK
-			IF FLAG:並び替え
+			ELSEIF FLAG:並び替え
 				C_ID = LIST_OF_CHARA_ALTERED_BY_TOUHOU:LOCAL
 			ELSE
 				C_ID = LOCAL
@@ -173,7 +207,7 @@ WHILE 1
 		ENDIF
 		IF WORK_MODE == "SELECTION"
 			RESETCOLOR
-			PRINTPLAINFORM [{LOCAL, 4, LEFT}] - %CALLNAME:C_ID, 25, LEFT%
+			PRINTPLAINFORM [{C_ID, 3, RIGHT}] - %CALLNAME:C_ID, 25, LEFT%
 			IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > -1
 				VARSET RESULT
 				VARSET RESULTS
@@ -234,7 +268,7 @@ WHILE 1
 			VARSET COLOR
 			TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
 			COLOR '= "0x" + hex_to_str(GETCOLOR())
-			HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{LOCAL, 4, LEFT}"
+			HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{C_ID, 3, RIGHT}"
 			HTML += @"]  -  %CALLNAME:C_ID, 16, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
 			IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > -1
 				HTML += @"----------------%CALLNAME:C_ID%%RESULTS:1%剧本</font></button>"
@@ -246,53 +280,33 @@ WHILE 1
 		ENDIF
 	NEXT
 	IF WORK_MODE == "SELECTION"
-		IF PAGE == 0
-			PRINTPLAINFORM %UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%
-			PRINTPLAINFORM %UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 1002
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 1003
-		ELSEIF PAGE == MAXPAGE - 1
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］", 1000
-			PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 1001
-			PRINTPLAINFORM %UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%
-			PRINTPLAINFORM %UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%
-		ELSEIF INRANGE(PAGE, 0, MAXPAGE - 2)
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%", 1000
-			PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 1001
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 1002
-			PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 1003
-		ENDIF
+		PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%", 1000
+		PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 1001
+		PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转指定页］%UNICODE(0x3000) * 2%", 1010
+		PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 1002
+		PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 1003
 	ELSE
-		IF PAGE == 0
-			{
-			HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜　］　　</nonbutton>
-			<nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
-			<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
-			<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
-			}
-		ELSEIF PAGE == MAXPAGE - 1
-			{
-			HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
-			<button value = '1001' title = '上一页'>　　［　＜　］　　</button>	
-			<nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
-			<nonbutton title = '跳转至尾页'>　　［　＞＞　］　　</nonbutton>"
-			}
-		ELSEIF INRANGE(PAGE, 0, MAXPAGE - 2)
-			{
-			HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
-			<button value = '1001' title = '上一页'>　　［　＜　］　　</button>
-			<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
-			<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
-			}
-		ENDIF
+		{
+		HTML_PRINT @"<button value = '1000' title = '跳转至首页'>　　［　＜＜　］　　</button>
+		<button value = '1001' title = '上一页'>　　［　＜　］　　</button>
+		<button value = '1010' title = '跳转至指定页'>　　［　□　］　　</button>
+		<button value = '1002' title = '下一页'>　　［　＞　］　　</button>
+		<button value = '1003' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+		}
 	ENDIF
-	IF OPERATE_MODE == 1
+	;"
+	IF OPERATE_MODE == 2 && WORK_MODE == "SELECTION"
+		HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有多个剧本角色'>　　［过滤功能：开启］　　</button>"
+	ELSEIF OPERATE_MODE == 1
 		HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有剧本角色'>　　［过滤功能：开启］　　</button>"
 	ELSE
 		HTML_PRINT @"<button value = '1004' title = '已显示全部角色，包括无剧本角色'>　　［过滤功能：关闭］　　</button>"
 	ENDIF
 	SIF !STRLENS(WORK_MODE)
 		HTML_PRINT @"<button value = '1005' title = '经典模式，一次性全过一遍'>　　［ＵＰＤＡＴＥ全体进行］　　</button>"
+	SIF WORK_MODE == "SELECTION"
+		HTML_PRINT @"<button value = '1008' title = '还原为全部选择初期剧本'>　　［全部初期］　　</button><button value = '1009' title = '输入角色编号与剧本编号完成设定'>　　［批量设置］　　</button>"
+	HTML_PRINT @"<button value = '1099'>　　［查找角色］　　</button>"
 	HTML_PRINT @"<button value = '1100'>　　［退出］　　</button>"
 	DRAWLINE
 	DRAWLINE
@@ -303,13 +317,15 @@ WHILE 1
 		CASE 1000
 			PAGE = 0
 		CASE 1001
-			PAGE -= 1
+			PAGE=(PAGE-1+MAXPAGE)%MAXPAGE
 		CASE 1002
-			PAGE += 1
+			PAGE=(PAGE+1)%MAXPAGE
 		CASE 1003
 			PAGE = MAXPAGE - 1
 		CASE 1004
-			OPERATE_MODE = !OPERATE_MODE
+			OPERATE_MODE+=1
+			SIF OPERATE_MODE>1+(WORK_MODE == "SELECTION")
+				OPERATE_MODE=0
 		CASE 1 TO 500
 			VARSET RESULTS
 			TARGET = CHOOSE_COMMAND
@@ -324,6 +340,42 @@ WHILE 1
 			PRINTL
 		CASE 1005
 			CALL UPDATE_OF_KOJO_ORIGIN
+		CASE 1008
+			SIF WORK_MODE != "SELECTION"
+				CONTINUE
+			CVARSET CFLAG,998,0
+			CFLAG:60:998=1;初期不存在
+		CASE 1009
+			SIF WORK_MODE != "SELECTION"
+				CONTINUE
+			;RESTART后清行用存行
+			CALL Reline(,1)
+			CALL MultiKojoSet
+		CASE 1010
+			PRINTFORMDL 请输入页码（范围1～{MAXPAGE}）
+			INPUT
+			RESULT-=1
+			IF !INRANGE(RESULT,0,MAXPAGE-1)
+				RESULT=LIMIT(RESULT,0,MAXPAGE-1)
+				PRINTFORMW 输入值超过范围，现在修正为{RESULT+1}
+			ENDIF
+			PAGE=RESULT
+		CASE 1099
+			PRINTDL 请输入与上表形式一致的角色称呼（例：阿燐而非火焰猫燐）
+			PRINTDL 魔界白魔法使 舞（マイ）编号105，后户绿童子 丁礼田 舞 编号122
+			LOCAL:1=0
+			INPUTS
+			FOR LOCAL,1,CHARANUM-1
+				SIF RESULTS!=CALLNAME:LOCAL
+					CONTINUE
+				LOCAL:1=LOCAL
+			NEXT
+			IF !LOCAL:1
+				PRINTL 未找到该角色，请检查输入是否有误
+				PRINTW 如未发现错误，请手动翻页查找，可能存在译名不一致
+			ELSE
+				PRINTFORMW %RESULTS%的编号为{LOCAL:1}
+			ENDIF
 		CASE 1100
 			CLEARLINE LINECOUNT - LINE_RECORD
 			BREAK
