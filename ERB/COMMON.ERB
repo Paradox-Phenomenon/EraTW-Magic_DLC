@@ -390,6 +390,10 @@ ENDIF
 @NameToID(ARGS)
 #FUNCTION
 LOCAL = FINDCHARA(CALLNAME, @"%ARGS%" , 1)
+IF 変動フラグ < 0
+	PRINTFORML 没有找到%ARGS%，将返回+++，请保存日志报错
+	RETURNF 0
+ENDIF
 RETURNF LOCAL
 
 ;-------------------------------------------------
@@ -488,6 +492,14 @@ SELECTCASE ARGS:1
 			ENDIF
 		NEXT
 		RETURNF LOCAL:2
+	CASE "RAND"
+		LOCALS =
+		FOR LOCAL, 1, CHARANUM
+			SIF CFLAG:LOCAL:現在位置 != ARG
+				CONTINUE
+			LOCALS += TOSTR(LOCAL) + ":"
+		NEXT
+		RETURNF TOINT(SPLIT_G(REPLACE(LOCALS, ":$", "")))
 ENDSELECT
 ;FileName_COMMON.ERB ------------------------------- Rev1.00
 ;TARGET再設定関数
@@ -612,6 +624,10 @@ SIF ARG != MASTER
 ;-------------------------------------------------
 @CHECKE_BASE(ARG, ARGS)
 #FUNCTION
+IF FINDELEMENT(BASENAME, ARGS) < 0
+	PRINTFORML 没有找到%ARGS%，请保存日志报错
+	RETURNF 0
+ENDIF
 SELECTCASE ARGS
 	CASE "体力", "気力"
 	;竿無ならスキップ
@@ -672,6 +688,10 @@ NEXT
 #DIM 変動フラグ
 #DIM 対象
 #DIM 変動数
+IF 変動フラグ < 0
+	PRINTFORMW 没有找到CFLAG:{変動フラグ}，请保存日志报错
+	RETURN
+ENDIF
 
 CFLAG:対象:変動フラグ = MAX(CFLAG:対象:変動フラグ + 変動数, 0)
 IF 変動数 > 0
@@ -695,7 +715,7 @@ SIF 变动数 == 0
 	RETURN
 
 VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME)
-IF VAR_ID == -1
+IF VAR_ID < 0
 	PRINTFORMW 没有找到%VAR_NAME%，请保存日志报错
 	RETURN
 ENDIF
@@ -800,7 +820,7 @@ IF !INRANGE(WAKEUPTIME - SLEEPTIME, 120, 840)
 	ELSE
 		[IF_DEBUG]
 			;チェックのためTHROWしておく,路人子は許可,一時的に守矢神簽対策,あとで修正,THROWはアレなのでデバッグ用に
-			;SIF ARG != [[路人子]] && CFLAG:ARG:起床時間 != CFLAG:ARG:就寝時間
+			;SIF ARG != [[モブ子]] && CFLAG:ARG:起床時間 % 1440 != CFLAG:ARG:就寝時間 % 1440
 				;THROW
 		[ENDIF]
 	ENDIF
@@ -970,6 +990,7 @@ TEQUIP:ARG:縄 = 0
 TEQUIP:ARG:拘束 = 0
 TCVAR:ARG:强行 = 0
 TCVAR:ARG:随便 = 0
+TCVAR:ARG:次回Counter = 0
 
 ;一応MASTERも初期化（しとかないと、終了後も○○装着中が表示される可能性があるので
 IF CFLAG:MASTER:诶嘿嘿
@@ -2448,8 +2469,9 @@ RETURNF MAXROOM % 100
 #DIM PRINT_TYPE;表示形式　0=通常　1=L　2=W
 
 ITEM_ID = GETNUM(ITEM, ITEM_NAME)
-IF ITEM_ID == -1
-	PRINTFORML %ITEM_NAME%不存在
+IF ITEM_ID < 0
+	PRINTFORMW %ITEM_NAME%不存在，请保存日志报错
+	RETURN
 ENDIF
 DEBUGPRINTFORML %ITEM_NAME%を取得、IDは{ITEM_ID}
 ;魔改物品上限
@@ -2468,7 +2490,10 @@ ENDIF
 #DIM PRINT_TYPE;表示形式　0=通常　1=L　2=W
 
 ITEM_ID = GETNUM(ITEM, ITEM_NAME)
-
+IF ITEM_ID < 0
+	PRINTFORMW %ITEM_NAME%不存在，请保存日志报错
+	RETURN
+ENDIF
 SIF ITEM:ITEM_ID <= 0
 	RETURN
 CALL COLORMESSAGE(@"失去了{ITEM_NUM}个%ITEMNAME_TR(ITEM_ID)%", C_YELLOW, PRINT_TYPE)
@@ -2542,6 +2567,10 @@ MONEY:2 = MAX(0, MONEY:2 - VALUE)
 #DIM Avalue
 
 A_ID = FINDELEMENT(ABLNAME, Aname)
+IF A_ID < 0
+	PRINTFORMW %Aname%不存在，请保存日志报错
+	RETURN
+ENDIF
 ABL:C_ID:A_ID += Avalue
 CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%NAME_TR(Aname)%\@ Avalue > 0 ?上升 # 下降 \@至了{ABL:C_ID:A_ID}",C_YELLOW,2)
 ;----------------------------------------------------------------------------------------------
