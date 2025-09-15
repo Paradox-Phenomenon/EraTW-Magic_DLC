@@ -1,0 +1,794 @@
+﻿@PREGNANCY_TYPE_OPTIONS
+#DIM DYNAMIC STARTLINECOUNT,2
+#DIM DYNAMIC MANUAL_CHARA_RESULT
+#DIM CONST COLOR_NORMAL = 0x6A7783 ; Gray
+#DIM CONST COLOR_LITTERS = 0x03B484 ; Green
+#DIM CONST COLOR_EGG_LAYERS = 0xD55E00 ; Orange
+#DIM CONST COLOR_CLUTCHERS = 0xF0E442 ; Yellow
+	;Pregnancy type settings menu, accessible through new game or modded options.
+STARTLINECOUNT:0 = LINECOUNT
+$TOP
+CLEARLINE LINECOUNT - STARTLINECOUNT:0
+PRINTFORMDL
+CALL D_LINE
+PRINTFORMDL
+PRINTFORMDL [0] 全員手動設定
+PRINTFORMDL
+PRINTFORMDL [1] 多産キャラへの子ども手当: \@ FLAG:CHILD_SUPPORT_RELIEF ? ON # OFF \@
+PRINTFORMDL [2] モブキャラ特殊妊娠: \@ FLAG:MOB_PREGNANCY_TYPES ? ON # OFF \@
+PRINTFORMDL
+PRINTFORMDL [3] 懐卵オプション: \@ FLAG:EGGNANCY ? ON # OFF \@
+PRINTFORMDL [4] 双子発生率: {FLAG:TWINS_CHANCE}\%
+PRINTFORMDL [5] 三つ子発生率: {FLAG:TRIPLETS_CHANCE}\%
+PRINTFORMDL
+PRINTFORMDL [6] 説明
+PRINTFORMDL
+PRINTFORMDL [7] デフォルト設定を復元
+PRINTFORMDL [8] 特殊妊娠無効化
+PRINTFORMDL
+PRINTFORMDL [9] 戻る
+INPUT
+SELECTCASE RESULT
+	CASE 0
+		STARTLINECOUNT:1 = LINECOUNT
+		$MANUALSETTING
+		CLEARLINE LINECOUNT - STARTLINECOUNT:1
+		PRINTFORMDL
+		SIF FLAG:並び替え
+			CALL CHARASORT_EX
+		FOR LOCAL:2, 1, EX_CHARANUM + 1
+			IF FLAG:並び替え
+				LOCAL:1 = RESULT:(LOCAL:2)
+				SIF LOCAL:1 < 0
+					CONTINUE
+			ELSE
+				LOCAL:1 = LOCAL:2
+				SIF LOCAL:1 >= CHARANUM
+					BREAK
+			ENDIF
+			SIF CFLAG:(LOCAL:1):出禁
+				CONTINUE
+			SIF !IS_FEMALE(LOCAL:1)
+				CONTINUE
+			SELECTCASE TALENT:(LOCAL:1):PREGNANCY_TYPE
+				CASE PREGNANCY_LITTERS
+					SETCOLOR COLOR_LITTERS
+				CASE PREGNANCY_EGGS
+					SETCOLOR COLOR_EGG_LAYERS
+				CASE PREGNANCY_CLUTCH
+					SETCOLOR COLOR_CLUTCHERS
+				CASEELSE
+					SETCOLOR COLOR_NORMAL
+			ENDSELECT
+			PRINTFORMLC [{LOCAL:1, 3}] %CALLNAME:(LOCAL:1)%
+			RESETCOLOR
+		NEXT
+		PRINTFORML 
+		DRAWLINE
+		PRINTFORMD 色の説明：
+		CALL COLORMESSAGE("通常   ", COLOR_NORMAL, 0)
+		CALL COLORMESSAGE("多胎   ", COLOR_LITTERS, 0)
+		CALL COLORMESSAGE("産卵（単） ", COLOR_EGG_LAYERS, 0)
+		CALL COLORMESSAGE("産卵（複）", COLOR_CLUTCHERS, 0)
+		PRINTL
+		PRINTL
+		PRINTBUTTON "[全員通常の妊娠]", 980
+		PRINT   
+		PRINTBUTTON "[全員多胎]", 981
+		PRINT   
+		PRINTBUTTON "[全員産卵（単）]", 982
+		PRINT   
+		PRINTBUTTON "[全員産卵（複）]", 983
+		PRINTL
+		PRINTBUTTON "[多胎なし]", 984
+		PRINT   
+		PRINTBUTTON "[産卵なし]", 985
+		PRINTL
+		PRINTBUTTON "[出産する際、必ず複数産む]", 986
+		PRINT   
+		PRINTBUTTON "[産卵する際、必ず単数産む]", 987
+		PRINT   
+		PRINTBUTTON "[産卵する際、必ず複数産む]", 988
+		PRINTL
+		PRINTBUTTON "[全員デフォルト]", 989
+		PRINTL
+		PRINTL
+		PRINTFORML [999] 戻る
+		INPUT
+		LOCAL:1 = RESULT
+		SIF LOCAL:1 == 999
+			GOTO TOP
+		IF INRANGE(LOCAL:1,1,CHARANUM)
+			MANUAL_CHARA_RESULT = LOCAL:1
+			LOCAL:1 = 1
+		ENDIF
+		SELECTCASE LOCAL:1
+			CASE 1
+				IF !IS_FEMALE(MANUAL_CHARA_RESULT)
+					PRINTFORMDW %CALLNAME:MANUAL_CHARA_RESULT%は女性ではありません
+					GOTO MANUALSETTING
+				ENDIF
+				CLEARLINE 1
+				PRINTL 
+				SELECTCASE TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE
+					CASE PREGNANCY_NORMAL
+						PRINTFORMDL %CALLNAME:MANUAL_CHARA_RESULT%は現在通常の妊娠をしています
+					CASE PREGNANCY_LITTERS
+						PRINTFORMDL %CALLNAME:MANUAL_CHARA_RESULT%は現在多産です
+					CASE PREGNANCY_EGGS
+						PRINTFORMDL %CALLNAME:MANUAL_CHARA_RESULT%は現在卵を産みます
+					CASE PREGNANCY_CLUTCH
+						PRINTFORMDL %CALLNAME:MANUAL_CHARA_RESULT%は現在卵をまとめて産みます
+				ENDSELECT
+				FOR LOCAL, 0, 4
+					SIF TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE == LOCAL
+						SETCOLOR 50,50,50
+					PRINTFORM [\@ TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE == LOCAL ? X # {LOCAL} \@] 
+					SELECTCASE LOCAL
+						CASE PREGNANCY_NORMAL
+							PRINTFORML 通常の妊娠
+						CASE PREGNANCY_LITTERS
+							PRINTFORML 多胎
+						CASE PREGNANCY_EGGS
+							PRINTFORML 産卵（単）
+						CASE PREGNANCY_CLUTCH
+							PRINTFORML 産卵（複）
+					ENDSELECT
+					RESETCOLOR
+				NEXT
+				PRINTFORMDL
+				PRINTFORMDL [4] 戻る
+				$LOOP2
+				INPUT
+				SELECTCASE RESULT
+					CASE 0
+						TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE = PREGNANCY_NORMAL
+						PRINTFORMDW %CALLNAME:MANUAL_CHARA_RESULT%は通常の出産をします。双子・三つ子が生まれることもあります。
+					CASE 1
+						TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE = PREGNANCY_LITTERS
+						PRINTFORMDW %CALLNAME:MANUAL_CHARA_RESULT%は一度の出産で複数の子を産みます。
+					CASE 2
+						TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE = PREGNANCY_EGGS
+						PRINTFORMDW %CALLNAME:MANUAL_CHARA_RESULT%は産卵します。
+					CASE 3
+						TALENT:MANUAL_CHARA_RESULT:PREGNANCY_TYPE = PREGNANCY_CLUTCH
+						PRINTFORMDW %CALLNAME:MANUAL_CHARA_RESULT%は複数個産卵します。
+					CASE 4
+					CASEELSE
+						GOTO LOOP2
+				ENDSELECT
+			CASE 980
+				CVARSET TALENT, GETNUM(TALENT, "PREGNANCY_TYPE"), PREGNANCY_NORMAL
+				PRINTFORMDW 特殊妊娠がすべて無効になりました
+			CASE 981
+				CVARSET TALENT, GETNUM(TALENT, "PREGNANCY_TYPE"), PREGNANCY_LITTERS
+				PRINTFORMDW 全員多生児を産むようになりました
+			CASE 982
+				CVARSET TALENT, GETNUM(TALENT, "PREGNANCY_TYPE"), PREGNANCY_EGGS
+				PRINTFORMDW 全員産卵するようになりました
+			CASE 983
+				CVARSET TALENT, GETNUM(TALENT, "PREGNANCY_TYPE"), PREGNANCY_CLUTCH
+				PRINTFORMDW 全員産卵するようになりました
+			CASE 984
+				FOR LOCAL,1,CHARANUM
+					SIF TALENT:LOCAL:PREGNANCY_TYPE == PREGNANCY_LITTERS
+						TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_NORMAL
+				NEXT
+				PRINTFORMDW 多生児が無効になりました
+			CASE 985
+				FOR LOCAL,1,CHARANUM
+					SIF GROUPMATCH(TALENT:LOCAL:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH)
+						TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_NORMAL
+				NEXT
+				PRINTFORMDW 産卵が無効になりました
+			CASE 986
+				FOR LOCAL,1,CHARANUM
+					SIF TALENT:LOCAL:PREGNANCY_TYPE == PREGNANCY_NORMAL
+						TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_LITTERS
+				NEXT
+				PRINTFORMDW 産卵しないキャラは全員多胎になりました
+			CASE 987
+				FOR LOCAL,1,CHARANUM
+					SIF TALENT:LOCAL:PREGNANCY_TYPE == PREGNANCY_CLUTCH
+						TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_EGGS
+				NEXT
+				PRINTFORMDW 産卵するキャラは1つだけ産むようになりました
+			CASE 988
+				FOR LOCAL,1,CHARANUM
+					SIF TALENT:LOCAL:PREGNANCY_TYPE == PREGNANCY_EGGS
+						TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_CLUTCH
+				NEXT
+				PRINTFORMDW 産卵するキャラは複数産むようになりました
+			CASE 989
+				FOR LOCAL,1,CHARANUM
+					TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_CHARA_DEFAULT(LOCAL)
+				NEXT
+				PRINTFORMDW 全員デフォルトにしました
+			CASEELSE
+		ENDSELECT
+		GOTO MANUALSETTING
+	CASE 1
+		IF FLAG:CHILD_SUPPORT_RELIEF
+			PRINTFORMDW 複数児出産するキャラには通常の養育費がかかります。
+		ELSE
+			PRINTFORMDW 複数児出産するキャラには子供の数ごとに養育費がかかります（ひとり頭1/3）。
+		ENDIF
+		FLAG:CHILD_SUPPORT_RELIEF = !FLAG:CHILD_SUPPORT_RELIEF
+	CASE 2
+		IF FLAG:MOB_PREGNANCY_TYPES
+			PRINTFORMDW 新規作成されたモブキャラは通常の妊娠をします。
+		ELSE
+			PRINTFORMDW 新規作成されたモブキャラは種族に応じた妊娠タイプになります。
+		ENDIF
+		FLAG:MOB_PREGNANCY_TYPES = !FLAG:MOB_PREGNANCY_TYPES
+	CASE 3
+		IF FLAG:EGGNANCY
+			PRINTFORMDW 卵生キャラは受精後に有精卵を産みます。
+		ELSE
+			PRINTFORMDW 卵生キャラは卵胎生になります。
+		ENDIF
+		FLAG:EGGNANCY = !FLAG:EGGNANCY
+	CASE 4
+		PRINTFORML 双子が生まれる確率を入力してください(0-100)。 現在 {FLAG:TWINS_CHANCE}\%.
+		CALL INPUT_RANGE(0, 100)
+		FLAG:TWINS_CHANCE = RESULT
+	CASE 5
+		PRINTFORML 三つ子が生まれる確率を入力してください(0-100)。 現在 {FLAG:TRIPLETS_CHANCE}\%.
+		CALL INPUT_RANGE(0, 100)
+		FLAG:TRIPLETS_CHANCE = RESULT
+	CASE 6
+		PRINTFORMDL
+		CALL D_LINE
+		PRINTFORMDL
+		PRINTFORMDL 妊娠タイプを設定できます。
+		PRINTFORMDL
+		PRINTFORMDL 通常 - 基本的に一児を出産します。。双子、三つ子が生まれることもあります。
+		PRINTFORMDL 多胎 - 一度に2～6子を出産します。
+		PRINTFORMDL 産卵（単） - 受精後すぐに産卵し、ふ化まで世話をします。この間にも受精することがあります。
+		PRINTFORMDL 産卵（複） - 一度に2～6個産卵します。
+		PRINTFORMDL
+		PRINTFORMDL 陥落後の産卵キャラはデート終了時に無精卵をくれることがあります。
+		PRINTFORMDL
+		PRINTFORMDL 子ども手当を有効にすると、多産キャラの養育費が、通常の¥1000から一人頭¥330になります。
+		PRINTFORMDL 平均値でいえばおおよそ同額になるでしょう。
+		PRINTFORMDL
+		PRINTFORMDL 懐卵オプションをオンにすると、卵生キャラはすぐには産卵せず体内に卵を保持し、外見的には妊娠と同じになります。
+		PRINTFORMDL 産卵はふ化直前に行います。無精卵をくれるイベントはちゃんと発生します。
+		WAIT
+	CASE 7
+		PRINTL
+		PRINTFORMDL 特殊妊娠設定をリセットしてデフォルトに戻しますか？まだ生まれていない子供が消えることはありません。
+		PRINTL
+		CALL ASK_YN
+		IF !RESULT
+			CALL PREGNANCY_TYPES_NEWGAME_SET
+			FLAG:CHILD_SUPPORT_RELIEF = 1
+			FLAG:MOB_PREGNANCY_TYPES = 1
+			FLAG:EGGNANCY = 0
+			FLAG:TWINS_CHANCE = 10
+			FLAG:TRIPLETS_CHANCE = 2
+		ENDIF
+	CASE 8
+		PRINTL
+		PRINTFORMDL 特殊妊娠をすべて無効化し、全員通常妊娠にしますか？まだ生まれていない子供が消えることはありません。
+		PRINTL
+		CALL ASK_YN
+		IF !RESULT
+			FOR LOCAL,1,CHARANUM
+				TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_NORMAL
+			NEXT
+			FLAG:MOB_PREGNANCY_TYPES = 0
+			FLAG:EGGNANCY = 0
+			FLAG:TWINS_CHANCE = 0
+			FLAG:TRIPLETS_CHANCE = 0
+		ENDIF
+	CASE 9
+		CALL PREGNANCY_CONVERT_TYPES
+		RETURN
+	CASEELSE
+		GOTO TOP
+ENDSELECT
+GOTO TOP
+
+@CONCEPTION_COUNT(Character,ConceptionCount)
+	;Determine how many children should be conceived from a single impregnation.
+#FUNCTION
+#DIM DYNAMIC Character
+#DIM DYNAMIC ConceptionCount
+SELECTCASE TALENT:Character:PREGNANCY_TYPE
+	CASE PREGNANCY_LITTERS
+			;Has Litters.
+		CFLAG:Character:妊娠経過日数 = 1
+			;Usually has 3-4, with a small chance to have up to 6 or down to 2.
+		ConceptionCount += RAND:2+3
+		IF !RAND:10
+			ConceptionCount += RAND:2+1
+		ELSEIF !RAND:10
+			ConceptionCount -= 1
+		ENDIF
+	CASE PREGNANCY_EGGS
+			;Egg Layer.
+		IF FLAG:EGGNANCY
+				;Eggnancies are treated as regular pregnancies to work with existing functions, might cause funkiness if the setting is changed midway.
+			CFLAG:Character:妊娠経過日数 = 1
+		ELSE
+			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,1)
+		ENDIF
+		ConceptionCount++
+	CASE PREGNANCY_CLUTCH
+			;Clutch Layer.
+		IF FLAG:EGGNANCY
+			CFLAG:Character:妊娠経過日数 = 1
+		ELSE
+			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,1)
+		ENDIF
+		ConceptionCount += RAND:2+3
+		IF !RAND:10
+			ConceptionCount += RAND:2+1
+		ELSEIF !RAND:10
+			ConceptionCount -= 1
+		ENDIF
+	CASEELSE
+			;Normal.
+		CFLAG:Character:妊娠経過日数 = 1
+		ConceptionCount++
+		IF RAND:100 < FLAG:TRIPLETS_CHANCE
+			ConceptionCount += 2
+		ELSEIF RAND:100 < FLAG:TWINS_CHANCE
+			ConceptionCount++
+		ENDIF
+ENDSELECT
+CFLAG:Character:WithChildCount += MIN(ConceptionCount,MAXCHILD)
+RETURNF ConceptionCount
+
+@NESTING_MESSAGE
+	;Display descriptions of fertilized eggs in the rooms of nesting girls.
+#DIM DYNAMIC Children
+#DIMS DYNAMIC eggs
+FOR LOCAL,1,CHARANUM
+		;Loop through all characters.
+	IF CFLAG:LOCAL:初期位置 == CFLAG:MASTER:現在位置 && TALENT:LOCAL:NESTING
+			;Find if the player is in their room and they're nesting.
+		IF IS_HERE(LOCAL) && SHIRAHU(LOCAL) && !CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:うふふ && !TCVAR:LOCAL:泥酔 && !CFLAG:LOCAL:イタズラ && !CFLAG:LOCAL:添い寝中
+				;If they're conscious and not having sex, drunk, being molested, or in bed with the player.
+			Children = CFLAG:LOCAL:WithChildCount
+			eggs '= PLNOUN("egg",Children)
+			PRINTFORM %CALLNAME:LOCAL%は
+			SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 卵の様子を見ている
+				CASE 1
+					PRINTDATAL
+						DATAFORM 卵の上に乗って温めている
+						DATAFORM 卵を温めている
+						DATAFORM 卵を大事に抱えている
+					ENDDATA
+			ENDSELECT
+		ELSEIF Children > 1
+			PRINTFORMDL %CALLNAME:LOCAL%の{Children}個の卵が育っている
+		ELSE
+			PRINTFORMDL %CALLNAME:LOCAL%の卵が育っている
+		ENDIF
+	ENDIF
+NEXT
+
+@CHILD_SUPPORT_COST()
+	;Loop through characters and calculate child support cost based on their pregnancy type.
+#FUNCTION
+#DIM DYNAMIC Cost
+FOR LOCAL,1,CHARANUM
+	IF GROUPMATCH(TALENT:LOCAL:PREGNANCY_TYPE,PREGNANCY_LITTERS,PREGNANCY_CLUTCH) && FLAG:CHILD_SUPPORT_RELIEF
+		Cost += CFLAG:LOCAL:育児人数 * 330 / (1 + (FLAG:甲斐性無 > 0))
+	ELSE
+		Cost += CFLAG:LOCAL:育児人数 * 1000 / (1 + (FLAG:甲斐性無 > 0))
+	ENDIF
+NEXT
+RETURNF Cost
+
+@EGG_GIFT_DATE_CHECK(CHARA)
+	;Like GIFT_DATE_CHECK, but for eggs. Only called if no regular gift is given.
+#FUNCTION
+#DIM CHARA
+#DIM 上限
+#DIM 発生率
+IF FESTIVAL() == ""
+	上限 = 80
+ELSE
+	上限 = 100
+ENDIF
+
+SIF TALENT:CHARA:行きずり
+	RETURNF 0
+SIF DAY == CFLAG:CHARA:LatestEggGiftDay
+		;No giving twice in one day.
+	RETURNF 0
+SIF MARK:CHARA:反発刻印 || TALENT:CHARA:機嫌 < 0 || CFLAG:CHARA:ブチギレ
+	RETURNF 0
+SIF BASE:CHARA:ムード < 1200
+	RETURNF 0
+
+	;Higher chance than regular gift.
+発生率 = (ABL:CHARA:親密 - 4) * 6
+発生率 += MIN(CFLAG:CHARA:好感度 / 10000, 10)
+;----------------------------------------------------------------
+SIF FESTIVAL() != ""
+	TIMES 発生率, 1.5
+SIF TALENT:CHARA:恋人
+	TIMES 発生率, 1.5
+SIF MIN(発生率, 上限) > RAND:100
+	RETURNF 1
+RETURNF 0
+
+@EGG_GIFT_DATE_EVENT(CHARA)
+	;Like GIFT_DATE_EVENT, but for eggs.
+	;デート帰りに卵をくれる
+#DIM CHARA
+#DIM EGG
+#DIM RELATIONSHIP
+#DIM CONST MAX_EGG = 6
+
+PRINTL 
+SELECTCASE CFLAG:CHARA:性格傾向
+CASE 1
+	LOCALS = そわそわした様子でポケットから何かを取り出し、おずおずと差し出した…
+CASE 2
+	LOCALS = あなたの顔を見てから、何かを思い出したように取り出し、ためらうことなく差し出した…
+CASE 3
+	LOCALS = いきなり何かを取り出してプレゼントだと言って手渡してきた…
+CASE 4
+	LOCALS = 箱を取り出し、渡したいものがあると丁寧にそれを差し出した…
+CASEELSE
+	LOCALS = 何かを取り出して、受け取って欲しいと言いながら差し出してきた…
+ENDSELECT
+PRINTFORM 帰り道、%CALLNAME:CHARA%は%LOCALS%
+CALL PRINT_BREAK
+PRINTW 
+
+	;Give as many eggs as have been built up since the last time, to a maximum of MAX_EGG.
+EGG = DAY-CFLAG:CHARA:LatestEggGiftDay
+SIF TALENT:CHARA:PREGNANCY_TYPE == PREGNANCY_CLUTCH
+		;Clutch layers give three times as many, but still have the same maximum.
+	TIMES EGG, 3
+EGG = MIN(EGG,MAX_EGG)
+CFLAG:CHARA:LatestEggGiftDay = DAY
+
+RELATIONSHIP = 3
+IF TALENT:CHARA:恋慕
+	RELATIONSHIP = 1
+ELSEIF TALENT:CHARA:愛欲
+	RELATIONSHIP = 2
+ENDIF
+CALL KOJO_MESSAGE_SEND("EVENT", 0, CHARA, RELATIONSHIP, EGG, "EGG_GIFT")
+ITEM:少女の卵 += EGG
+PRINTFORMW %CALLNAME:CHARA%から卵を\@ EGG > 1 ? {EGG}個 # \@貰った！
+
+@CUSTOM_RESET_VAR_1(ARG)
+	;Reset custom pregnancy variables when resetting characters.
+CFLAG:ARG:WithChildCount = 0
+CFLAG:ARG:BirthEventsCount = 0
+CFLAG:ARG:LatestChildCount = 0
+TALENT:ARG:NESTING = 0
+FOR LOCAL,0,MAXCHILD
+	PregnancyProgress:ARG:LOCAL = 0
+NEXT
+CVARSET TALENT, GETNUM(TALENT, "PREGNANCY_TYPE"), PREGNANCY_NORMAL
+
+@UPDATE_SET_PREGNANCY_COUNTERS
+	;Set the pregnancy progress array for all characters and the birth event count for all characters who have given birth, for older saves.
+FOR LOCAL,1,CHARANUM
+	PregnancyProgress:LOCAL:0 = MAX(CFLAG:LOCAL:妊娠経過日数,TALENT:LOCAL:NESTING)
+	IF (CFLAG:LOCAL:妊娠経過日数 || TALENT:LOCAL:NESTING) && !CFLAG:LOCAL:WithChildCount
+		FOR LOCAL:1,0,MAXCHILD
+			SIF PregnancyProgress:LOCAL:(LOCAL:1)
+				CFLAG:LOCAL:WithChildCount++
+		NEXT
+	ENDIF
+	SIF !CFLAG:LOCAL:BirthEventsCount && CFLAG:LOCAL:子供人数
+		CFLAG:LOCAL:BirthEventsCount = CFLAG:LOCAL:子供人数
+NEXT
+
+@ADD_PREGNANCY_PROGRESS(CharacterNumber,ConceptionCount)
+	;Set a progress tracker for a new pregnancy or egg, so that they can be born at different times if applicable.
+#DIM DYNAMIC CharacterNumber
+#DIM DYNAMIC ConceptionCount
+VARSET LOCAL
+FOR LOCAL,0,ConceptionCount
+	FOR LOCAL:1,0,MAXCHILD
+		IF PregnancyProgress:CharacterNumber:(LOCAL:1) == 0
+			PregnancyProgress:CharacterNumber:(LOCAL:1) = 1
+			BREAK
+		ENDIF
+	NEXT
+NEXT
+
+@PROGRESS_PREGNANCIES(CharacterNumber)
+	;Progress all pregnancy trackers in sync with the vanilla one.
+#DIM DYNAMIC CharacterNumber
+#DIM DYNAMIC ProgressNumber
+ProgressNumber = MAX(CFLAG:CharacterNumber:妊娠経過日数,TALENT:CharacterNumber:NESTING)
+ProgressNumber -= PregnancyProgress:CharacterNumber:0
+FOR LOCAL,0,MAXCHILD
+	IF PregnancyProgress:CharacterNumber:LOCAL == 0
+		BREAK
+	ELSE
+		PregnancyProgress:CharacterNumber:LOCAL += ProgressNumber
+	ENDIF
+NEXT
+
+@REMOVE_PREGNANCY_PROGRESS(CharacterNumber)
+	;Remove a pregnancy tracker for when the child is born.
+#DIM DYNAMIC CharacterNumber
+FOR LOCAL,0,MAXCHILD
+	IF PregnancyProgress:CharacterNumber:LOCAL == 0
+		BREAK
+	ELSE
+		SIF LOCAL > 0
+			PregnancyProgress:CharacterNumber:(LOCAL-1) = PregnancyProgress:CharacterNumber:LOCAL
+		PregnancyProgress:CharacterNumber:LOCAL = 0
+	ENDIF
+NEXT
+
+@COUNT_BIRTH_MATES(CharacterNumber)
+	;Count how many children will be born within a single birth event.
+#FUNCTION
+#DIM DYNAMIC CharacterNumber
+#DIM DYNAMIC ChildCount
+FOR LOCAL,0,MAXCHILD
+	IF PregnancyProgress:CharacterNumber:LOCAL == 0
+		BREAK
+	ELSE
+		IF PregnancyProgress:CharacterNumber:LOCAL == PregnancyProgress:CharacterNumber:0
+			ChildCount++
+		ELSE
+			BREAK
+		ENDIF
+	ENDIF
+NEXT
+RETURNF ChildCount
+
+@ADD_WITH_CHILD(CharacterNumber,Quantity=1)
+#DIM DYNAMIC CharacterNumber
+#DIM DYNAMIC Quantity
+	;Helper function to make a character pregnant with one or more additional children, to be used in dialogues.
+SIF !Quantity
+	RETURN
+IF GROUPMATCH(TALENT:CharacterNumber:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
+	CFLAG:CharacterNumber:妊娠経過日数 = MAX(CFLAG:CharacterNumber:妊娠経過日数,1)
+ELSE
+	TALENT:CharacterNumber:NESTING = MAX(TALENT:CharacterNumber:NESTING,1)
+ENDIF
+CFLAG:CharacterNumber:WithChildCount += Quantity
+CALL ADD_PREGNANCY_PROGRESS(CharacterNumber,Quantity)
+
+@PREGNANCY_CONVERT_TYPES
+FOR LOCAL, 1, CHARANUM
+	IF !PREGNANCY_NESTER(LOCAL) && TALENT:LOCAL:NESTING > 0
+		CFLAG:LOCAL:妊娠経過日数 = PregnancyProgress:LOCAL:0
+		TALENT:LOCAL:NESTING = 0
+	ELSEIF PREGNANCY_NESTER(LOCAL) && CFLAG:LOCAL:妊娠経過日数 > 0
+		TALENT:LOCAL:NESTING = PregnancyProgress:LOCAL:0
+		CFLAG:LOCAL:妊娠経過日数 = 0
+	ENDIF
+NEXT
+
+@PREGNANCY_TYPES_NEWGAME_SET()
+FOR LOCAL,1,CHARANUM
+	TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_CHARA_DEFAULT(LOCAL)
+NEXT
+
+; @LATEST_CHILD(Character,Child)
+; 	;Returns the number of a specific child from the character's latest (or current ongoing) birthing. 1 for the first child in the litter, and so on.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC Child
+; Child = MIN(Child,CFLAG:Character:LatestChildCount)
+; Child = (CFLAG:Character:子供人数-CFLAG:Character:LatestChildCount+Child) % MAXCHILD
+; SIF !(Child % MAXCHILD)
+; 	Child = MAXCHILD
+; RETURNF Child
+
+; @BABYMULTIAWARE(Character)
+; 	;Returns true if the character would normally be aware that she's carrying more than one child.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; SIF CFLAG:Character:LatestChildCount > 1 && TALENT:Character:PREGNANCY_TYPE && !(TALENT:Character:PREGNANCY_TYPE == PREGNANCY_EGGS && FLAG:EGGNANCY)
+; 	RETURNF 1
+; RETURNF 0
+
+; @BABYPLNOUN(Noun,Character)
+; 	;Calls PLNOUN() if the character would normally be aware that she's carrying more than one child.
+; #FUNCTIONS
+; #DIMS DYNAMIC Noun
+; #DIM DYNAMIC Character
+; IF BABYMULTIAWARE(Character)
+; 	SIF Noun == " a"
+; 		RETURNF 
+; 	RETURNF PLNOUN(Noun,CFLAG:Character:WithChildCount)
+; ENDIF
+; RETURNF Noun
+
+; @BABYPLVERB(Verb,Character)
+; 	;Calls PLVERB() if the character would normally be aware that she's carrying more than one child.
+; #FUNCTIONS
+; #DIMS DYNAMIC Verb
+; #DIM DYNAMIC Character
+; SIF BABYMULTIAWARE(Character)
+; 	RETURNF PLVERB(Verb,CFLAG:Character:WithChildCount)
+; RETURNF Verb
+
+; @BABYCONDSTR(String,Character,Reverse)
+; 	;Returns a string if the character would normally be aware that she's carrying more than one child, or would not be aware if Reverse is true.
+; #FUNCTIONS
+; #DIMS DYNAMIC String
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC Reverse
+; SIF Reverse
+; 	RETURNF COND_STR(String,!BABYMULTIAWARE(Character))
+; RETURNF COND_STR(String,BABYMULTIAWARE(Character))
+
+; @TOTAL_CONCEPTION_COUNT(Character,All)
+; 	;Returns the number of times the character has conceived.
+; 	;If the maximum number of children has been exceeded, the result may be incorrect.
+; 	;Set All to 1 if you want to include conceptions whose pregnancy event hasn't happened yet.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC LastNumber
+; #DIM DYNAMIC ConceptionCount
+; #DIM DYNAMIC All
+; SIF !CFLAG:Character:子供人数 && !CFLAG:Character:WithChildCount
+; 	RETURNF 0
+; LastNumber = -1
+; IF CFLAG:Character:子供人数
+; 	FOR LOCAL,1,CFLAG:Character:子供人数+1
+; 		IF CHILD_BIRTHDATE:Character:LOCAL > LastNumber
+; 			ConceptionCount++
+; 			LastNumber = CHILD_BIRTHDATE:Character:LOCAL
+; 		ENDIF
+; 	NEXT
+; ENDIF
+; LastNumber = 1000000
+; IF CFLAG:Character:WithChildCount
+; 	FOR LOCAL,0,CFLAG:Character:WithChildCount
+; 		IF VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}") < LastNumber && (All || GROUPMATCH(TALENT:Character:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) || VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}") > 19)
+; 			ConceptionCount++
+; 			LastNumber = VAR_OR_DEFAULT(@"PregnancyProgress:{Character}:{LOCAL}")
+; 		ENDIF
+; 	NEXT
+; ENDIF
+; RETURNF ConceptionCount
+
+; @CHILD_MULTIPLE_COUNT(Character,Child,SameMother=1)
+; 	;Returns the total number of children in the given child's birthing.
+; 	;If SameMother is 0, it will also count children of other characters born on the same day.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC Child
+; #DIM DYNAMIC SameMother
+; #DIM DYNAMIC ChildCount
+; SIF Child > CFLAG:Character:子供人数 || Child < 1
+; 	RETURNF 0
+; FOR LOCAL,1,CFLAG:Character:子供人数+1
+; 	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+; 		ChildCount++
+; NEXT
+; IF !SameMother
+; 	FOR LOCAL:1,1,CHARANUM
+; 		SIF LOCAL:1 == Character
+; 			CONTINUE
+; 		FOR LOCAL,1,CFLAG:(LOCAL:1):子供人数+1
+; 			SIF CHILD_BIRTHDATE:(LOCAL:1):LOCAL == CHILD_BIRTHDATE:Character:Child
+; 				ChildCount++
+; 		NEXT
+; 	NEXT
+; ENDIF
+; RETURNF ChildCount
+
+; @CHILD_MULTIPLE_FIRST(Character,Child)
+; 	;Returns the firstborn child in a single birthing.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC Child
+; FOR LOCAL,1,CFLAG:Character:子供人数+1
+; 	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+; 		RETURNF LOCAL
+; NEXT
+; RETURNF -1
+
+; @CHILD_MULTIPLE_LAST(Character,Child)
+; 	;Returns the lastborn child in a single birthing.
+; #FUNCTION
+; #DIM DYNAMIC Character
+; #DIM DYNAMIC Child
+; #DIM DYNAMIC LastChild
+; LastChild = -1
+; FOR LOCAL,1,CFLAG:Character:子供人数+1
+; 	IF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
+; 		LastChild = LOCAL
+; 		SIF LOCAL == CFLAG:Character:子供人数
+; 			RETURNF LastChild
+; 	ELSEIF LastChild > -1
+; 		RETURNF LastChild
+; 	ENDIF
+; NEXT
+; RETURNF -1
+
+; @PREGNANCY_EGGLAYER(ARG)
+; #FUNCTION
+; SIF !ARG
+; 	ARG = TARGET
+; RETURNF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH)
+
+; @PREGNANCY_NESTER(ARG)
+; #FUNCTION
+; SIF !ARG
+; 	ARG = TARGET
+; RETURNF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
+
+; @PREGNANCY_MULTIPLES(ARG)
+; #FUNCTION
+; SIF !ARG
+; 	ARG = TARGET
+; RETURNF TALENT:ARG:PREGNANCY_TYPE > 0
+
+@PREGNANCY_CHARA_DEFAULT(CHARA)
+#FUNCTION
+#DIM CHARA
+SELECTCASE CHARA
+	CASE [[橙]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[藍]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[リグル]]
+		RETURNF PREGNANCY_CLUTCH
+	CASE [[ミスティア]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[文]]
+		RETURNF PREGNANCY_EGGS
+;Suwako isn't a frog, so don't add her here.
+	CASE [[衣玖]]
+		RETURNF PREGNANCY_CLUTCH
+	CASE [[お燐]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[お空]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[ナズーリン]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[はたて]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[鈴仙]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[てゐ]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[影狼]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[椛]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[マミゾウ]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[ヤマメ]]
+		RETURNF PREGNANCY_CLUTCH
+	CASE [[星]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[響子]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[わかさぎ姫]]
+		RETURNF PREGNANCY_CLUTCH
+	CASE [[レイセン]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[朱鷺子]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[清蘭]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[鈴瑚]]
+		RETURNF PREGNANCY_LITTERS
+;Larva isn't a butterfly, so don't add her here.
+	CASE [[あうん]]
+		RETURNF PREGNANCY_LITTERS
+	CASE [[久侘歌]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[八千慧]]
+		RETURNF PREGNANCY_EGGS
+	CASE [[ちやり]]
+		RETURNF PREGNANCY_LITTERS
+ENDSELECT
+RETURNF PREGNANCY_NORMAL
