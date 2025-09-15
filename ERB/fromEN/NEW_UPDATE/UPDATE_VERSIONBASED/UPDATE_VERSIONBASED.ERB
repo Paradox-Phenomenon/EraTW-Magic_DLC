@@ -1,0 +1,165 @@
+﻿@UPDATE_VERSIONBASED()
+SIF !UPDATE_REQUIRED_COND()
+	RETURN
+
+SIF CHECK_UPDATE("4.975")
+	CALL eraTW_VERSION_UPDATE_4975
+
+SIF CHECK_UPDATE("4.974")
+	CALL eraTW_VERSION_UPDATE_4974
+
+SIF CHECK_UPDATE("4.972")
+	CALL eraTW_VERSION_UPDATE_OLD
+
+;===== custom code ==========
+;SIF GET_VERSION_VALUE(SAVESTR:本体バージョン) == 4891
+	;CALL ENG_VERSION_UPDATE_4891
+;SIF CHECK_UPDATE("4.764")
+	;CALL ENG_VERSION_UPDATE_PRE_4764
+;============================
+
+@eraTW_VERSION_UPDATE_4975
+#DIM C_ID
+PRINTFORML CSV定義のTALENT:ヒップサイズを全キャラクターに適用中
+FOR C_ID, 1, CHARANUM - 1
+	TALENT:C_ID:ヒップサイズ = CSVTALENT(NO:C_ID, GETNUM(TALENT, "ヒップサイズ"))
+NEXT
+PRINTFORML 終わった
+
+@eraTW_VERSION_UPDATE_4974
+#DIM C_ID
+#DIM LOOP_INDEX
+
+PRINTFORML 新変数のために口上カウンターを保存しています
+FOR C_ID, 1, CHARANUM - 1
+	FOR LOOP_INDEX, 0, 5
+		SIF GETBIT(CFLAG:C_ID:口上実装状況, LOOP_INDEX)
+			SETBIT CFLAG:C_ID:前回の口上実装状況, LOOP_INDEX
+	NEXT
+	DEBUGPRINTFORML C_ID: {C_ID}
+	DEBUGPRINTFORML CFLAG:C_ID:前回の口上実装状況: {CFLAG:C_ID:前回の口上実装状況}
+NEXT
+PRINTFORML 口上カウンターをCFLAG:前回の口上実装状況に保存しました
+[IF_DEBUG]
+PRINTFORMW See the debugger for output.
+[ENDIF]
+IF CUSTOM_TALENT_NAME:1:0 == "通常版"
+	VARSET CUSTOM_TALENT:1:0, 0
+	VARSET CUSTOM_TALENT_NAME:1:0, ""
+	VARSET CUSTOM_TALENT_COLOR:1:0, 0
+	VARSET CUSTOM_TALENT_TYPE:1:0, 0
+	PRINTFORML 新しいUIへの変更に伴い、機能デモ用に追加されていた霊夢の口上カスタム素質はリセットされました。
+ENDIF
+IF GROUPMATCH(CUSTOM_TALENT_NAME:23:0, "初期版", "別人改変版")
+	VARSET CUSTOM_TALENT:23:0, 0
+	VARSET CUSTOM_TALENT_NAME:23:0, ""
+	VARSET CUSTOM_TALENT_COLOR:23:0, 0
+	VARSET CUSTOM_TALENT_TYPE:23:0, 0
+	PRINTFORML 新しいUIへの変更に伴い、妖夢の口上カスタム素質はリセットされました。
+ENDIF
+
+;Pregnancy changes on 4.972 (4.974 for upstream)
+@EVENTLOAD
+#LATER
+IF GET_VERSION_VALUE(SAVESTR:本体バージョン) < 4974
+	FOR LOCAL, 0, CHARANUM
+		SELECTCASE TALENT:LOCAL:PREGNANCY_TYPE
+			CASE 4
+				TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_NORMAL
+				TALENT:LOCAL:HYPERFERTILE = 1
+			CASE 5
+				TALENT:LOCAL:PREGNANCY_TYPE = PREGNANCY_LITTERS
+				TALENT:LOCAL:HYPERFERTILE = 1
+		ENDSELECT
+	NEXT
+ENDIF
+
+CALL PREGNANCY_CONVERT_TYPES()
+
+@eraTW_VERSION_UPDATE_OLD
+#DIM C_ID
+;move tracking of aquantance from cflag 13 to 18
+IF FLAG:13 != 0
+	FOR C_ID, 1, 63
+		SIF GETBIT(FLAG:13, C_ID)
+			CFLAG:C_ID:面識 = 1
+	NEXT
+	FLAG:13 = 0
+ENDIF
+
+;fixes to items
+;折り畳み傘
+SIF ITEM:36 == 0 && ITEMSTOCK(36) == 2
+	ITEMSALES:36 ++
+;ローター
+SIF ITEM:0 < 0
+	ITEM:0 = 0
+SIF ITEM:0 == 0 && ITEMSTOCK(0) == 2
+	ITEM:0 = 1
+
+;reset FLAGS from range 300 to 500
+VARSET FLAG, 0, 300, 500
+
+;reset requests depending on user decision
+IF MATCH(IRAI_SLOT, 0) < 6
+	PRINTFORML 古いセーブデータを引き継いだ場合、依頼状況をリセットしないとエラー落ちする可能性が高いです。
+	PRINTFORML 依頼状況をリセットしますか？
+	CALL ASK_YN
+	SIF !RESULT
+		CALL IRAI_RESET
+ENDIF
+
+;moves collection if it uses old storage version
+;パンツをCFLAGに移行
+;SAVESTR:10に2文字以上あれば実行
+IF STRLENS(SAVESTR:10) > 1
+	FLAG:700 = 0
+	FOR LOCAL,1,CHARANUM
+		FOR LOCAL:1,0,MAXPANTS
+			LOCALS = /%CALLNAME:LOCAL%{LOCAL:1}/
+			CFLAG:LOCAL:(LOCAL:1 + パンツ管理) = STRCOUNT(SAVESTR:10,LOCALS)
+			SIF CFLAG:LOCAL:(LOCAL:1 + パンツ管理)
+				FLAG:700 ++
+		NEXT
+	NEXT
+	SAVESTR:10 =
+	PRINTL あなたの大切なパンツコレクションを移行しました
+ENDIF
+
+FOR C_ID, 1, CHARANUM - 1
+	;unsets talent 186 since that no longer exists
+	TALENT:C_ID:186 = 0
+
+	;CSTR:仕事情報をCSTR:3に移行する手続き moves the job description CSTR from :1 to :3 in attempt to fix double-usage of :1
+	IF CSTR:C_ID:3 == "" && CSVCSTR(C_ID, 3) != ""
+		CSTR:C_ID:3 = %CSVCSTR(C_ID, 3)%
+		CSTR:C_ID:1 = 
+	ENDIF
+
+	;function that attempts to fix the CSTRs for firsts.
+	CALL 履歴文字列変換(C_ID)
+NEXT
+
+;============================
+; Utility
+;============================
+@GET_VERSION_VALUE(バージョン文字列)
+#FUNCTION
+#DIMS バージョン文字列
+;strip all non-digits and return int
+RETURNF TOINT(REPLACE(バージョン文字列, "\\D", ""))
+
+;returns true if save file version is lower than VERSIONTOCHECK
+@CHECK_UPDATE(VERSIONTOCHECK)
+#FUNCTION
+#DIMS VERSIONTOCHECK
+#DIMS SAVEVERSION, 3
+#DIMS CHECKVERSION, 3
+SPLIT SAVESTR:本体バージョン, ".", SAVEVERSION
+SPLIT VERSIONTOCHECK, ".", CHECKVERSION
+
+FOR LOCAL, 0, 2
+	SIF TOINT(SAVEVERSION:LOCAL) < TOINT(CHECKVERSION:LOCAL)
+		RETURNF 1
+NEXT
+RETURNF 0

@@ -1,0 +1,240 @@
+﻿@patchNotes
+#DIM nLineCount
+#DIM nResult
+#DIM nEntryCount
+#DIM nPageCount
+#DIM nEntryIDs, 1000
+#DIM nPage
+#DIM nLoop
+#DIM nCurEntries
+#DIM nCurSubPage
+#DIM nCurLineCount
+#DIM CONST nEntriesPerPage = 20
+;need to reload patchNotesRead
+LOADGLOBAL
+
+FOR LOCAL, 0, 100
+	PRINTL
+NEXT
+
+nLineCount = LINECOUNT
+;create table
+CALL createAndPopulatePatchTable
+nEntryCount = PNIndex
+FOR LOCAL:0,0,nEntryCount
+    nEntryIDs:LOCAL = LOCAL
+NEXT
+;sort
+LOCAL:0 = 1
+WHILE LOCAL:0 < nEntryCount
+	SIF !(LOCAL:0)
+		LOCAL:0 ++
+	IF PNDate:((nEntryIDs:(LOCAL:0 - 1))) >= PNDate:(nEntryIDs:(LOCAL))
+		LOCAL:0 ++
+	ELSE
+		SWAP nEntryIDs:(LOCAL:0 - 1), nEntryIDs:(LOCAL:0)
+		LOCAL:0 --
+	ENDIF
+WEND
+
+;get page count
+nPageCount = nEntryCount/nEntriesPerPage
+SIF nEntryCount%nEntriesPerPage
+    nPageCount++
+
+nPage = 0
+nCurEntries = 0
+
+DO
+CLEARLINE LINECOUNT - nLineCount
+nCurEntries = 0
+CUSTOMDRAWLINE =
+PRINTFORML パッチノート
+CUSTOMDRAWLINE =
+FOR nLoop,nPage*nEntriesPerPage,MIN((nPage+1)*nEntriesPerPage,nEntryCount)
+    VARSET RESULTS
+    IF STRFIND(patchNotesRead, PNDefName:(nEntryIDs:nLoop)+"、") == -1
+        SETCOLOR C_AQUA
+        LOCALS '= @"[未読] "
+    ELSE
+        SETCOLOR C_GRAY
+        LOCALS '= ""
+    ENDIF
+
+    TRYCALLFORM PN_STR_%PNBranch:(nEntryIDs:nLoop)%
+    LOCALS += @"[%RESULTS:1%] "
+    LOCALS += PNLabel:(nEntryIDs:nLoop)
+    LOCALS += @" (%PN_RELATIVE_DATE(PNDate:(nEntryIDs:nLoop))%)"
+    PRINTBUTTON LOCALS, nEntryIDs:nLoop
+    RESETCOLOR
+    PRINTL
+    nCurEntries++
+NEXT
+;fill the rest of lines
+REPEAT nEntriesPerPage-nCurEntries
+    PRINTL
+REND
+CUSTOMDRAWLINE ━
+IF nPage > 0
+    PRINTBUTTON @"[前ページ]", -74
+ELSE
+    SETCOLOR C_GRAY
+    PRINTFORM [前ページ]
+    RESETCOLOR
+ENDIF
+PRINTS @"  Page {nPage+1}  "
+IF nPage >= nPageCount-1
+    SETCOLOR C_GRAY
+    PRINTFORM [次ページ]
+    RESETCOLOR
+ELSE
+    PRINTBUTTON @"[次ページ]", -75
+ENDIF
+PRINTL
+PRINTBUTTON @"[すべて既読にする]", -56
+PRINTL
+PRINTL
+PRINTBUTTON @"[終了]", -55
+PRINTL
+INPUT
+nResult = RESULT
+SELECTCASE nResult
+CASE -56
+    ;TODO add clearline
+    FOR LOCAL,0,nEntryCount
+        SIF STRFIND(patchNotesRead, PNDefName:LOCAL+"、") == -1
+            patchNotesRead += @"%PNDefName:LOCAL%、"
+    NEXT
+CASE -75
+    nPage = LIMIT(nPage+1,0,nPageCount)
+CASE -74
+    nPage = LIMIT(nPage-1,0,nPageCount)
+CASE -55
+    SAVEGLOBAL
+    RETURN
+CASE IS >= 0
+    CLEARLINE 1
+    nCurSubPage = 0
+    nCurLineCount = LINECOUNT
+    DO
+        CLEARLINE LINECOUNT-nCurLineCount
+        VARSET RESULTS
+        CUSTOMDRAWLINE =
+        PRINTFORMSL PNLabel:nResult
+        CUSTOMDRAWLINE =
+        TRYCALLFORM PN_STR_%PNBranch:nResult%
+        PRINTFORML ゲーム: %RESULTS%
+        ;get and format date
+        LOCAL = PNDate:nResult
+        LOCAL:1 = LOCAL/10000
+        LOCAL:2 = LOCAL-(LOCAL:1*10000)
+        LOCAL:3 = LOCAL:2/100
+        LOCAL:4 = LOCAL:2%100
+        PRINTFORM 日付: {LOCAL:1}.%TOSTR(LOCAL:3,"00")%.%TOSTR(LOCAL:4,"00")%
+        ;date difference
+        PRINTFORML (%PN_RELATIVE_DATE(LOCAL)%)
+        IF PN_Author(PNAuthor:nResult) != ""
+            HTML_PRINT @"作者: %PN_Author(PNAuthor:nResult)%"
+        ELSE
+            PRINTL
+        ENDIF
+        PRINTL
+        IF nCurSubPage
+            TRYCALLFORM PN_ENTRY_%PNDefName:nResult%_{nCurSubPage}
+        ELSE
+            TRYCALLFORM PN_ENTRY_%PNDefName:nResult%
+        ENDIF
+        PRINTL
+        IF STRCOUNT(PNSubPages:nResult,"、")
+            FOR LOCAL, 0, STRCOUNT(PNSubPages:nResult,"、")+1
+                LOCALS:1 '= SPLIT_SINGLE(PNSubPages:nResult, LOCAL, "、")
+
+                SIF LOCAL == nCurSubPage
+                    SETCOLOR C_AQUA
+                PRINTBUTTON @"%LOCALS:1%    ", LOCAL
+                RESETCOLOR
+            NEXT
+            PRINTL
+        ENDIF
+
+        CUSTOMDRAWLINE ━
+        PRINTBUTTON @"[戻る]", -55
+        INPUT
+        SELECTCASE RESULT
+        CASE 0 TO MAX(0,STRCOUNT(PNSubPages:nResult,"、"))
+            nCurSubPage = RESULT
+        CASE -55
+            SIF STRFIND(patchNotesRead, PNDefName:nResult+"、") == -1
+                patchNotesRead += @"%PNDefName:nResult%、"
+            BREAK
+        ENDSELECT
+    LOOP 1
+    CONTINUE
+ENDSELECT
+LOOP 1
+
+@createAndPopulatePatchTable
+#DIM DYNAMIC PNLoop,PNGameMax
+PNIndex = 0
+PNGameIndex = 0
+VARSET PNGameVariants
+VARSET PNDefName
+VARSET PNLabel
+VARSET PNBranch
+VARSET PNDate
+VARSET PNAuthor
+VARSET RESULTS
+
+;Adding entries
+FOR PNLoop, 0, PNGameMax
+    TRYCCALLFORM PN_GAME_VARIANT_{PNLoop}
+        ;this gets pointer functions and adds them to the patch note list if found, then increase index by 1.
+        FOR PNLoop:1, 0, PNMax/10
+            TRYCCALLFORM %PNGameVariants:PNLoop%_PATCH_NOTE_{PNLoop:1}
+                PNIndex++
+            CATCH
+            ENDCATCH
+        NEXT
+        PNGameIndex++
+    CATCH
+    ENDCATCH
+NEXT
+
+
+;Relative date strings.
+;Compared against the OS date.
+@PN_RELATIVE_DATE(ARG)
+#FUNCTIONS
+
+LOCAL:5 = (GETTIME()/1000000000)-ARG
+SELECTCASE LOCAL:5
+CASE IS < 0
+    ;failsafe for when a date is set in the future
+    RETURNF "未来"
+CASE 0
+    RETURNF "今日"
+CASE 1
+    RETURNF "昨日"
+CASE IS > 10000
+    RETURNF @"\@ LOCAL:5/10000 > 1 ? %TOKANJIS(LOCAL:5/10000)%年前 # 去年 \@"
+CASE IS >= 100
+    RETURNF @"\@ LOCAL:5/100 > 1 ? %TOKANJIS(LOCAL:5/100)%か月前 # 先月 \@"
+CASE IS > 7
+    IF LOCAL:5 > 70
+        LOCAL:5 = LOCAL:5 - 70
+    ENDIF
+    RETURNF @"\@ LOCAL:5/7 > 1 ? %TOKANJIS(LOCAL:5/7)%週間前 # 先週 \@"
+CASE IS < 7
+    RETURNF @"%TOKANJIS(LOCAL:5)%日前"
+ENDSELECT
+RETURNF @"Unknown date format for {ARG}."
+
+;Fun usernames
+;Colorize the usernames or something
+@PN_Author(ARGS)
+#FUNCTIONS
+SELECTCASE ARGS
+CASE "Anonymous"
+    RETURNF "<font color=\"#ff9999\">Anon</font>ymous"
+ENDSELECT
+RETURNF ARGS
