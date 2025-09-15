@@ -658,12 +658,11 @@ SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 	変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 
 MAXBASE:ARG:強化能力 += 変動値
-IF 変動値 < 0 && ABS(変動値) > BASE:ARG:強化能力
-	BASE:ARG:強化能力 = 1
-ELSE
 	BASE:ARG:強化能力 += 変動値
-ENDIF
 BUFF:ARG:強化能力 += 変動値
+;failsafe
+MAXBASE:ARG:強化能力 = MAX(0, MAXBASE:ARG:強化能力)
+BASE:ARG:強化能力 = MAX(0, BASE:ARG:強化能力)
 SIF メッセージ
 	CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
 ;-------------------------------------------------
@@ -695,9 +694,10 @@ ENDIF
 
 CFLAG:対象:変動フラグ = MAX(CFLAG:対象:変動フラグ + 変動数, 0)
 IF 変動数 > 0
-	CALL COLORMESSAGE(@"%CFLAGNAME:変動フラグ%＋{変動数}（%CALLNAME:対象%）",C_YELLOW,2,1)
-ELSE
-	CALL COLORMESSAGE(@"%CFLAGNAME:変動フラグ%－{-変動数}（%CALLNAME:対象%）",C_RED,2,1)
+	CALL COLORMESSAGE(@"%CFLAGNAME_TR(CFLAGNAME:変動フラグ)%＋{変動数}（%CALLNAME:対象%）",C_YELLOW,2,1)
+ELSEIF 変動数 < 0 ;don't show if zero
+	;Custom code, translate Favor/trust
+	CALL COLORMESSAGE(@"%CFLAGNAME_TR(CFLAGNAME:変動フラグ)%－{-変動数}（%CALLNAME:対象%）",C_RED,2,1)
 ENDIF
 
 ;-------------------------------------------------
@@ -714,7 +714,7 @@ ENDIF
 SIF 变动数 == 0
 	RETURN
 
-VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME)
+VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME,,,1) ;bug fix, strict
 IF VAR_ID < 0
 	PRINTFORMW 没有找到%VAR_NAME%，请保存日志报错
 	RETURN
@@ -820,7 +820,7 @@ IF !INRANGE(WAKEUPTIME - SLEEPTIME, 120, 840)
 	ELSE
 		[IF_DEBUG]
 			;チェックのためTHROWしておく,路人子は許可,一時的に守矢神簽対策,あとで修正,THROWはアレなのでデバッグ用に
-			;SIF ARG != [[モブ子]] && CFLAG:ARG:起床時間 % 1440 != CFLAG:ARG:就寝時間 % 1440
+			;SIF ARG != [[モブ子]] && CFLAG:ARG:起床時間 % 1440 != CFLAG:ARG:就寝時間 % 1440 && !CFLAG:ARG:出禁
 				;THROW
 		[ENDIF]
 	ENDIF
@@ -892,9 +892,9 @@ ENDIF
 ;関数名:WORKING
 ;概　要:その角色の仕事時間帯かどうかを返す関数
 ;-------------------------------------------------
-@WORKING(ARG)
+@WORKING(ARG, ARG:1) ;custom code
 #FUNCTION
-IF !SHIRAHU(ARG)
+IF !SHIRAHU(ARG) && !ARG:1 ;custom code
 	RETURNF 0
 ELSEIF !BETWEENTIME(TCVAR:ARG:工作開始,TCVAR:ARG:工作結束)
 	RETURNF 0
@@ -1264,6 +1264,7 @@ RETURNF 時刻表示(ARG)
 #DIM HOUR
 #DIM MINUTE
 #DIMS 時刻
+ARG = ABS(ARG) ;custom code
 HOUR   = ARG / 60
 MINUTE = ARG % 60
 SIF HOUR > 24
@@ -1656,6 +1657,21 @@ CASE "MARK"
 		RETURNF MARK:CHARA_A:VAR_ID < MARK:CHARA_B:VAR_ID
 	CASE "<="
 		RETURNF MARK:CHARA_A:VAR_ID <= MARK:CHARA_B:VAR_ID
+	CASEELSE
+		THROW 不明なTYPE　%TYPE%
+	ENDSELECT
+CASE "DIALOG" ;custom code
+	SELECTCASE TYPE
+	CASE "=="
+		RETURNF DIALOGSTATUS:CHARA_A:0 == DIALOGSTATUS:CHARA_B:0
+	CASE ">"
+		RETURNF DIALOGSTATUS:CHARA_A:0 > DIALOGSTATUS:CHARA_B:0
+	CASE ">="
+		RETURNF DIALOGSTATUS:CHARA_A:0 >= DIALOGSTATUS:CHARA_B:0
+	CASE "<"
+		RETURNF DIALOGSTATUS:CHARA_A:0 < DIALOGSTATUS:CHARA_B:0
+	CASE "<="
+		RETURNF DIALOGSTATUS:CHARA_A:0 <= DIALOGSTATUS:CHARA_B:0
 	CASEELSE
 		THROW 不明なTYPE　%TYPE%
 	ENDSELECT
@@ -2099,8 +2115,10 @@ SIF PLACE_ID == OMANEKIBEYA()
 IF GET_MAPID(PLACE_ID) == MAIN_MAP
 	RETURNF NAME_FROM_PLACE(PLACE_ID)
 ELSE
-	RETURNF STR:(6000 + GET_MAP_REPLACEMENT(PLACE_ID) / 10)
+	;Custom code
+	RETURNF STR_TR(6000 + GET_MAP_REPLACEMENT(PLACE_ID) / 10)
 ENDIF
+
 
 ;----------------------------------------------------------------------------------------------------
 ;配列抽選F関数
