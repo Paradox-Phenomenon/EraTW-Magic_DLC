@@ -13,6 +13,7 @@ CALL BITE_THE_DUST_NEW
 CALL BITE_THE_DUST_SWEEP
 ゲーム继承処理中 = 0
 CALL NEWGAME_VERUP
+CALL INIT_STARTINGLV
 RETURN 1
 
 
@@ -62,11 +63,11 @@ NEXT
 ;変数クリア
 ;-----------------------------------------------------------
 @BITE_THE_DUST_CLEAR
-VARSET JUEL
 VARSET MOBGIRL_PLACE, 99
 CALL BITE_THE_DUST_CLEAR_FLAG
 CALL BITE_THE_DUST_CLEAR_GLOBAL_VARIABLE
-;借书リセット
+CALL IRAI_RESET_PROCESS
+;貸本リセット
 VARSET ITEM, 0, 101, 110
 CFLAG:MASTER:招待 = 0
 CFLAG:MASTER:育児人数 = 0
@@ -89,7 +90,7 @@ PICKUPCHARA MASTER
 VARSET JUEL
 ;你リセット
 PRINTFORML 要重置%CALLNAME:MASTER%的经验・能力么？
-CALL COLORMESSAGE(@"在实绩取得的素质是无法取消的所以不推荐",C_YELLOW,1)
+CALL COLORMESSAGE(@"由于通过成就获得的特质等也会被取消，因此不推荐",C_YELLOW,1)
 CALL ASK_YN
 IF !RESULT
 	FOR LOCAL,0, 100
@@ -101,6 +102,10 @@ IF !RESULT
 	NEXT
 	PRINTFORMW 已经重置。
 ENDIF
+;reset flags for ng+
+FOR LOCAL, 0, 10
+	TRYCALLFORM NG_CUSTOM_RESET_VAR_{LOCAL}
+NEXT
 
 ;-----------------------------------------------------------
 ;FLAGリセット
@@ -172,11 +177,15 @@ FOR LOCAL, 1, 前回の角色人数
 		 TALENT:LOCAL:無接吻経験 = 1
 NEXT
 
+;CALL PREGNANCY_TYPES_NEWGAME_SET()
+CALL 旧生育系统预设
 ;上のループから引っ越し
-FOR LOCAL,1,前回の角色人数
-	CALL KOJO_MULTIPLE(LOCAL, "NO_SELECT")
+FOR LOCAL, 1, CHARANUM
+	CALL KOJO_COUNT_CHECK(LOCAL)
 NEXT
+gDialogueUpdateInit = 1
 CALL UPDATE_AND_SELECTION_OF_KOJO_MODDING("SELECTION")
+gDialogueUpdateInit = 0
 ;なりきっている角色の出禁をチェック
 IF 前回の扮演出禁
 	CFLAG:(FLAG:扮演):出禁 = 前回の扮演出禁
@@ -263,6 +272,14 @@ SIF LOCAL
 CALL SET_MAINHOME
 CALL NEWGAME_OPTION
 
+IF HAS_VAGINA(MASTER)
+	IF TALENT:MASTER:処女 == 1 && CSTR:MASTER:処女喪失履歴 != ""
+		CSTR:MASTER:処女喪失履歴 = 
+		CFLAG:MASTER:処女喪失記念日 = 0
+		CFLAG:MASTER:処女喪失対象 = 0
+	ENDIF
+ENDIF
+
 ;初期地点設定
 FOR LOCAL, 0, CHARANUM
 	;開始位置
@@ -296,13 +313,13 @@ VARSET 前回の胖次
 
 
 
-
+[SKIPSTART]
 ;-----------------------------------------------------------
 ;同角色口上複数存在判定
 ;ARG=强制重置标志时，不输出提示
 ;現在同角色口上は最大で四つまで想定
 ;-----------------------------------------------------------
-@KOJO_MULTIPLE(C_ID, SELECT_SWITCH, ARG)
+@KOJO_MULTIPLE(C_ID, SELECT_SWITCH)
 #DIM C_ID
 #DIM DYNAMIC 口上カウント
 #DIM DYNAMIC 口上数
@@ -410,7 +427,7 @@ IF !STRLENS(SELECT_SWITCH)
 	ENDIF
 ENDIF
 RETURN 0
-
+[SKIPEND]
 
 @kojoIdtitle_CHOICE(ARG, ARGS:0, ARGS:1)
 #DIMS html_kojo

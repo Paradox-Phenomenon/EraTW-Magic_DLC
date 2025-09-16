@@ -5,7 +5,6 @@ LOADGLOBAL
 FOR LOCAL, 0, 100
 	PRINTL
 NEXT
-PRINTFORML Update Menu 2: Super Hyper Ultra Ultimate Deluxe Perfect Amazing Shining God 流派東方不敗
 CUSTOMDRAWLINE -
 nLineCnt_Head = LINECOUNT
 REDRAW 0
@@ -31,15 +30,19 @@ LOOP 1
 [ENDIF]
 
 CALL COLORMESSAGE("//.Update", C_S_BLUE, 1, 1)
-CALL PRINTBUTTON_EX("□ セーブ更新", 501)
+SIF SAVESTR:本体バージョン != eraTW_Version
+	SETCOLOR C_RED
+CALL PRINTBUTTON_EX("□ 存档更新", 501)
+PRINT         
+CALL PRINTBUTTON_EX("□ 存档更新(不做剧本UPDATE)", 503)
 PRINTL
-SETCOLOR C_GRAY
-PRINTFORML （ゲームをセットアップし、セーブデータをアップデートし、口上のアップデート関数を実行します）
+SETCOLOR C_CREAM
+PRINTFORML （选择剧本，更新存档数据，并执行剧本更新函数）
 RESETCOLOR
-CALL PRINTBUTTON_OR_SPACE("□ セーブ更新：レガシー", 502, DEBUG_MODE)
+CALL PRINTBUTTON_OR_SPACE("□ 旧版UPDATE", 502, DEBUG_MODE)
 IF DEBUG_MODE
-	SETCOLOR C_GRAY
-	PRINTFORML （旧来のアップデート機能、通常のゲームプレイにおいては非推奨）
+	SETCOLOR C_CREAM
+	PRINTFORML （旧有的更新功能，在常规游戏玩法中不推荐）
 	RESETCOLOR
 ELSE
 	PRINTL
@@ -47,21 +50,21 @@ ENDIF
 PRINTL
 PRINTL
 
-CALL COLORMESSAGE("//.Settings", C_S_BLUE, 1, 1)
-CALL PRINTBUTTON_OR_SPACE("□ 妊娠設定", 601, !UPDATE_REQUIRED_COND())
+CALL COLORMESSAGE("//.Setting", C_S_BLUE, 1, 1)
+CALL PRINTBUTTON_OR_SPACE("□ 妊娠设定", 601, !UPDATE_REQUIRED_COND())
 PRINTL
 
 CALL COLORMESSAGE("//.Extra", C_S_BLUE, 1, 1)
 ;CALL PRINTBUTTON_OR_SPACE("□ Apply The Expanded Relations Patch", 504, !UPDATE_REQUIRED_COND())
-CALL PRINTBUTTON_OR_SPACE("□ (Debug) 口上色リスト・色カスタム", 507, DEBUG_MODE)
-CALL PRINTBUTTON_OR_SPACE("□ (Debug) 依頼生成", 602, DEBUG_MODE)
+CALL PRINTBUTTON_OR_SPACE("□ (Debug) 对白颜色列表·自定义", 507, DEBUG_MODE)
+CALL PRINTBUTTON_OR_SPACE("□ (Debug) 生成委托", 602, DEBUG_MODE)
 ;CALL PRINTBUTTON_OR_SPACE("□ (Debug) Test Translations", 603, DEBUG_MODE)
 
 @UPDATE_PAGE_1(P1_PAGE)
 #DIM DYNAMIC P1_PAGE
 #DIM CHARA
 #DIM CHARA_DIALOGUE_COUNT
-
+RETURN
 IF (CHARANUM % UpdateP1_CharaPerPage == 0)
 	UpdateMaxPages = (CHARANUM / UpdateP1_CharaPerPage)
 ELSE 
@@ -79,11 +82,11 @@ FOR CHARA, 1, CHARANUM - 1
 		CHARA_DIALOGUE_COUNT = RESULT
 		IF !RESULT
 			SETCOLOR C_GRAY
-			LOCALS '= @"%NAME:CHARA, 25, LEFT% (N/A, 口上無し)"
+			LOCALS '= @"%NAME:CHARA, 25, LEFT% (无剧本)"
 		ELSE
 			LOCALS '= @"%NAME:CHARA, 25, LEFT%"
 			SIF CHARA_DIALOGUE_COUNT > 1
-				LOCALS '= @"%LOCALS% (別口上有)"
+				LOCALS '= @"%LOCALS% (有候选剧本)"
 		ENDIF
 		SIF HL_CHARA == CHARA
 			SETCOLOR C_ORANGE
@@ -92,23 +95,24 @@ FOR CHARA, 1, CHARANUM - 1
 	ENDIF
 NEXT
 PRINTL
-PRINTBUTTON @"%"前ページ",15,LEFT%", 8102
-PRINTBUTTON @"%"次ページ",15,LEFT%", 8103
+PRINTBUTTON @"%"上一页",15,LEFT%", 8102
+PRINTBUTTON @"%"下一页",15,LEFT%", 8103
 PRINTL
 
 @UPDATE_PAGE_2(P2_PAGE)
 #DIM DYNAMIC P2_PAGE
 #DIM DYNAMIC P2_COUNT
 #DIM DYNAMIC P2_LOOP, 2
-#DIM DYNAMIC P2_LIST, キャラクタ数上限
+#DIM DYNAMIC P2_LIST, 人物数量上限
 #DIMS DYNAMIC P2_LISTS, 2
 #DIMS DYNAMIC P2_STR_BUILD,2
 #DIM DYNAMIC P2_KOJO_COUNT
 #DIM CHARA
+RETURN
 
-PRINTFORML 口上名をクリックすると変更できます。
-HTML_PRINT @"口上を変更すると、キャラクター情報が完全にリセットされます。 例外は<font color=\"#99ff99\">緑色</font>です。"
-HTML_PRINT @"現在の口上は<font color=\"#9999ff\">青</font>で表示されます。"
+PRINTFORML 点击剧本名即可切换，点击当前剧本来重置角色。
+HTML_PRINT @"更改剧本也伴随着一部分角色数据重置。无须重置的例外情况以<font color='orange'>橙色</font>显示。"
+HTML_PRINT @"当前剧本以<font color='lime'>绿色</font>显示"
 PRINTL
 ;Get characters who has more than one dialogue
 P2_COUNT = 1
@@ -182,9 +186,9 @@ FOR P2_LOOP, 0, P2_COUNT
 			ENDIF
 			IF RESULT
 				SIF RESULTS:1 == ""
-					RESULTS:1 = 初期
+					RESULTS:1 = 初始
 				P2_LISTS:0 '= RESULTS:1
-				P2_LISTS:1 '= @"\@RESULTS:2 != "" ? %RESULTS:2% # 記述がありません \@"
+				P2_LISTS:1 '= @"\@RESULTS:2 != "" ? %RESULTS:2% # 无简介 \@"
 
 				P2_STR_BUILD:1 '= @"<button value='{(10000*(P2_LOOP:1+1))+CHARA}' title='%HTML_ESCAPE(P2_LISTS:1)%'>%P2_LISTS:0%</button>   "
 				IF CFLAG:CHARA:口上セレクタ == P2_LOOP:1
@@ -201,8 +205,8 @@ FOR P2_LOOP, 0, P2_COUNT
 	ENDIF
 NEXT
 PRINTL
-PRINTBUTTON @"%"前ページ",15,LEFT%", 8102
-PRINTBUTTON @"%"次ページ",15,LEFT%", 8103
+PRINTBUTTON @"%"上一页",15,LEFT%", 8102
+PRINTBUTTON @"%"下一页",15,LEFT%", 8103
 PRINTL
 
 @UPDATE_STATE(C_ID,OP)
@@ -210,10 +214,11 @@ PRINTL
 #DIM     C_ID       ;登録番号
 #DIM	 D_ID
 #DIM DYNAMIC    PAGE       ;表示中のページ
+#DIM DYNAMIC	OPERATE_MODE	;表示中のページ
 #DIM	 ACTIVE_SUBPAGE = 1
 #DIM	 SUBPAGE_MEMO_1 = 1
 #DIM	 SUBPAGE_MEMO_2 = 1
-#DIMS CONST DISP_NAME = "ホーム", "個別調整", "口上切り替え"
+#DIMS CONST DISP_NAME = "主页", "个别UPDATE", "切换剧本&重置角色"
 #DIM CREDRAW
 #DIM FIRST_LINE
 #DIM INPUT_RESULT
@@ -236,45 +241,47 @@ CREDRAW = CURRENTREDRAW()
 REDRAW 0
 IF PAGE == 0
 	IF UPDATE_REQUIRED_COND()
-		CALL COLORMESSAGE(@"旧バージョンからセーブデータをアップデートします", C_RED, 1)
-		PRINTFORML アップデートで以下のものが追加される場合があります: 新バージョンに含まれる新キャラ・新素質・新フラグ
-		PRINTFORML アップデートを行うまで他のオプションにアクセスできません
+		CALL COLORMESSAGE(@"正在从旧版本更新存档数据", C_RED, 1)
+		PRINTFORML 更新可能会添加以下内容：新版本中包含的新角色、新特质、新标志
+		PRINTFORML 在执行更新之前无法访问其他选项
 	ELSE
-		CALL COLORMESSAGE(@"セーブデータは既に最新バージョンです", C_YELLOW, 1)
-		PRINTFORML 実行することで問題が解決することがありますが、リセットされうる要素もあります
+		CALL COLORMESSAGE(@"存档数据已是最新版本", C_YELLOW, 1)
+		PRINTFORML 执行存档更新通常能解决问题，不过某些变量或标志可能会被重置
 	ENDIF
 	PRINTL 
 	IF News_Amount
-		CALL PRINTBUTTON_EX(@"□ {News_Amount}件の未読パッチノート □",508, , , ,)
+		CALL PRINTBUTTON_EX(@"□ {News_Amount}条未读更新日志 □",508, , , ,)
 		PRINTL
 	ELSE
-		CALL PRINTBUTTON_EX(@"□ パッチノートを確認 □",508, , , ,)
+		CALL PRINTBUTTON_EX(@"□ 查看更新日志 □",508, , , ,)
 		PRINTL
 	ENDIF
-	PRINTFORML eraTWバージョン%eraTW_Version%へようこそ。
+	PRINTFORML 欢迎来到eraTW Ver.%eraTW_Version%
 	PRINTL 
 ELSEIF PAGE == 1
-	PRINTFORML 個別キャラのアップデートの実行・カスタマイズができます
-	PRINTFORML 一回クリックで選択、再度クリックでアップデート・カスタマイズが可能です
-	PRINTFORML 口上切り替えには原則的にリセットが伴います
-	PRINTL 
-	SIF UPDATE_KOJO_CUSTOMIZE
-		SETCOLOR C_ORANGE 
-	PRINTBUTTON "[口上カスタマイズ]", 701
-	PRINTFORML 
-	RESETCOLOR
-	SIF Ask_SwitchDialogue
-		SETCOLOR C_ORANGE 
-	PRINTBUTTON "[口上切り替え]", 702
-	PRINTFORML 
-	RESETCOLOR
-	SIF ResetToggle
-		SETCOLOR C_RED
-	PRINTBUTTON "[キャラクターリセット]", 703
-	PRINTFORML 
-	PRINTL
-	RESETCOLOR
-	CALL HIGHLIGHT_CHARA_DISPLAY(HL_CHARA)
+	CALL UPDATE_AND_SELECTION_OF_KOJO_MODDING_2(,ACTIVE_SUBPAGE - 1,OPERATE_MODE)
+	;SIF UPDATE_KOJO_CUSTOMIZE
+	;	SETCOLOR C_ORANGE 
+	;PRINTBUTTON "[单独UPDATE]", 701
+	;PRINTFORML 
+	;RESETCOLOR
+	;SIF Ask_SwitchDialogue
+	;	SETCOLOR C_ORANGE 
+	;PRINTBUTTON "[切换剧本]", 702
+	;PRINTFORML 
+	;RESETCOLOR
+	;SIF ResetToggle
+	;	SETCOLOR C_RED
+	;PRINTBUTTON "[重置角色]", 703
+	;PRINTFORML 
+	;PRINTL
+	;RESETCOLOR
+	;CALL HIGHLIGHT_CHARA_DISPLAY(HL_CHARA)
+ELSEIF PAGE == 2
+	PRINTFORML 点击剧本名即可切换，点击当前剧本来重置角色。
+	HTML_PRINT @"更改剧本也伴随着角色的部分数据重置。不重置的例外情况以<font color='orange'>橙色</font>显示。"
+	HTML_PRINT @"当前剧本以<font color='lime'>绿色</font>显示"
+	CALL UPDATE_AND_SELECTION_OF_KOJO_MODDING_2("SELECTION",ACTIVE_SUBPAGE - 1,OPERATE_MODE)
 ENDIF
 TRYCALLFORM UPDATE_PAGE_{PAGE}(ACTIVE_SUBPAGE)
 DRAWLINE
@@ -283,13 +290,15 @@ FOR LOCAL, 0, VARSIZE("DISP_NAME")
 		SETCOLOR 0x00FFFF
 	SIF UPDATE_MENU_PAGE_BANNED_COND(LOCAL)
 		SETCOLOR 0x6A7783
+	SIF DISP_NAME:LOCAL == "切换剧本&重置角色" && FINDELEMENT(剧本错误警告,1) > -1
+		SETCOLOR C_RED
 	PRINTBUTTON DISP_NAME:LOCAL, LOCAL + 8002
 	RESETCOLOR
 	PRINTFORM 　　
 NEXT
 PRINTFORML 
 PRINTL
-PRINTBUTTON " [戻る] ", 0
+PRINTBUTTON " [返回] ", 0
 RESETCOLOR
 DO
 	INPUT
@@ -305,6 +314,8 @@ DO
 		CALL UPDATE_MAIN("full")
 	CASE 502
 		CALL UPDATE
+	CASE 503
+		CALL UPDATE_MAIN_temp
 	;CASE 504
 		;PRINTFORML This option will set modified, expanded affinities for almost all characters.
 		;PRINTFORML It will override all current relations between characters, confirm to proceed.
@@ -315,7 +326,7 @@ DO
 			;NEXT
 			;PRINTFORMW Applied.
 		;ENDIF
-	[IF_DEBUG]
+	[IF DEBUG]
 	CASE 507
 		CALL CHANGE_PT_KOJO_COLOR
 	[ENDIF]
@@ -327,21 +338,25 @@ DO
 		CALL DEBUG_IRAI_HAPPEN
 	;CASE 603
 		;CALL DEBUG_TRANSLATION_MENU
-	CASE 701
-		ResetToggle = 0
-		Ask_SwitchDialogue = 0
-		UPDATE_KOJO_CUSTOMIZE = 1
-	CASE 702
-		ResetToggle = 0
-		Ask_SwitchDialogue = 1
-		UPDATE_KOJO_CUSTOMIZE = 0
-	CASE 703
-		ResetToggle = 1
-		Ask_SwitchDialogue = 0
-		UPDATE_KOJO_CUSTOMIZE = 0
+	;CASE 701
+	;	ResetToggle = 0
+	;	Ask_SwitchDialogue = 0
+	;	UPDATE_KOJO_CUSTOMIZE = 1
+	;CASE 702
+	;	ResetToggle = 0
+	;	Ask_SwitchDialogue = 1
+	;	UPDATE_KOJO_CUSTOMIZE = 0
+	;CASE 703
+	;	ResetToggle = 1
+	;	Ask_SwitchDialogue = 0
+	;	UPDATE_KOJO_CUSTOMIZE = 0
+	CASE 1004
+		OPERATE_MODE+=1
+		SIF OPERATE_MODE>2
+			OPERATE_MODE=0
 	CASE 8002 TO VARSIZE("DISP_NAME")+8002
 		IF UPDATE_MENU_PAGE_BANNED_COND(INPUT_RESULT-8002)
-			PRINTFORMW 現在開けません。
+			PRINTFORMW 现在不可用
 			GOTO REPRINT
 		ENDIF
 		SELECTCASE PAGE
@@ -355,29 +370,33 @@ DO
 		SELECTCASE PAGE
 			CASE 1
 				ACTIVE_SUBPAGE = SUBPAGE_MEMO_1
+				OPERATE_MODE = 1
 			CASE 2
 				ACTIVE_SUBPAGE = SUBPAGE_MEMO_2
+				OPERATE_MODE = 2
 		ENDSELECT
+	CASE 8101
+		ACTIVE_SUBPAGE = 1
 	CASE 8102
 		ACTIVE_SUBPAGE--
-		VARSET HL_CHARA
 		SIF ACTIVE_SUBPAGE <= 0
 			ACTIVE_SUBPAGE = UpdateMaxPages
 	CASE 8103
 		ACTIVE_SUBPAGE++
-		VARSET HL_CHARA
 		SIF ACTIVE_SUBPAGE > UpdateMaxPages
 			ACTIVE_SUBPAGE = 1
+	CASE 8104
+		ACTIVE_SUBPAGE = UpdateMaxPages
 	CASE 1 TO CHARANUM - 1
 		IF HL_CHARA == INPUT_RESULT
 			C_ID = INPUT_RESULT
 			IF Ask_SwitchDialogue
 				CALL SELECT_NEW_KOJO(C_ID)
 				SIF INPUT_RESULT == -1
-					PRINTFORMW %CALLNAME:C_ID%には他の口上がありません
+					PRINTFORMW %CALLNAME:C_ID%没有其他剧本
 			ELSEIF ResetToggle
-				PRINTFORML 本当に%CALLNAME:C_ID%をリセットしますか？
-				PRINTFORML 関係、イベント、能力、フラグなどがリセットされます
+				PRINTFORML 真的要重置%CALLNAME:C_ID%吗？
+				PRINTFORML 关系、事件、能力、标志等都将被重置
 				CALL ASK_YN
 				IF !RESULT
 					CALL RESET_KOJO_CHARA(C_ID)
@@ -398,10 +417,18 @@ DO
 
 		IF PAGE != 2
 			;don't do this when not in the dialogue selector
-			PRINTW 不正な入力です
+			PRINTW 输入错误
 			CONTINUE
 		ELSEIF CFLAG:C_ID:口上セレクタ == D_ID
-			PRINTW すでにこの口上を使用中です
+			PRINTL 已在使用此剧本
+			PRINTFORML 真的要重置%CALLNAME:C_ID%吗？
+			PRINTFORML 关系、事件、能力、标志等都将被重置
+			CALL ASK_YN
+			IF !RESULT
+				CALL RESET_KOJO_CHARA(C_ID)
+			ELSE
+				
+			ENDIF
 			CONTINUE
 		ENDIF
 
@@ -411,10 +438,10 @@ DO
 		ELSE
 			TRYCALLFORM M_KOJO_K{NO:C_ID}
 		ENDIF
-		CALL CHARACTER_GET_NEW_DIALOGUE(C_ID,D_ID,!GETBIT(RESULT:1,CFLAG:C_ID:口上セレクタ))
+		CALL CHARACTER_GET_NEW_DIALOGUE(C_ID,D_ID,!GETBIT(RESULT:1,CFLAG:C_ID:口上セレクタ) && !剧本错误警告:C_ID)
 	CASEELSE
 		$RETRY
-		PRINTW 不正な入力です
+		PRINTW 输入错误
 		CONTINUE
 	ENDSELECT
 	BREAK
@@ -427,7 +454,7 @@ GOTO REPRINT
 
 #DIM CURRENT_INDEX      ;the current element index for the line
 #DIM CURRENT_X_OFFSET   ;the current x offset for the line
-#DIM X_OFFSETS, キャラクタ数上限 ;stores the offset per element
+#DIM X_OFFSETS, 人物数量上限 ;stores the offset per element
 #DIM ELEMENT_WIDTH      ;the width of the current line+image
 #DIM IMAGE_WIDTH        ;the width of the image
 #DIM ELEMENT_HEIGHT       ;the height of the element
@@ -497,14 +524,32 @@ ENDIF
 
 @KOJO_RESET_CONFIRM
 IF !Reset_NeverAskAgain
-	PRINTFORM セーブデータに不具合を起こしかねない挙動を防ぐため、口上の変更には
-	CALL COLORMESSAGE("当該キャラの完全な初期化",C_YELLOW,0,0)
-	PRINTFORML が必要になります
-	PRINTFORML リセット不要が明記されている場合を除き、口上の変更にあたってはリセットが行われます
-	PRINTFORML 相性・イベント・能力・フラグなどが初期化されます
+	PRINTFORM 为防止可能导致存档数据出现问题的情况，切换剧本需要
+	CALL COLORMESSAGE("完全初始化该角色",C_YELLOW,0,0)
 	PRINTFORML 
-	PRINTFORML ご理解の上で決定してください。これ以上の再確認はありません
-	CALL PRINTBUTTON_EX("[リセットする]",0,)
+	PRINTFORML 除非明确注明无需重置，否则切换剧本时将进行重置
+	PRINTFORML 亲密度、事件、能力、标志等都将被初始化
+	PRINTFORML 
+	PRINTFORML 请在理解的基础上做出决定。此后将不再进行确认
+	CALL PRINTBUTTON_EX("[重置]",0,)
+	$YESIAMOVER18
+	INPUT
+	IF RESULT == 0
+		Reset_NeverAskAgain = 1
+	ELSE
+		GOTO YESIAMOVER18
+	ENDIF
+ENDIF
+
+@剧本错误确认
+IF !Reset_NeverAskAgain
+	PRINTFORML 无法找到旧存档中游玩的剧本
+	PRINTFORML 可能是手动进行了剧本的增删、或是剧本出现编号变动
+	PRINTFORML 如果只是剧本的编号变动，那么该角色的进度数据完全可以继承到变更编号后的同一剧本中
+	PRINTFORML 因此在此提供了跳过重置的机会，让玩家手动继承剧本进度
+	CALL COLORMESSAGE,"注意：因为同一角色的不同剧本对标志的使用不同，请勿在此切换至非先前游玩剧本\n如果当前版本没有先前游玩的剧本，请同意重置角色而不要继承进度\n※若不重置标志就切换剧本可能导致剧本甚至游戏运行错误※",0xff130b,1
+	PRINTFORML 请在理解本提示的基础上使用切换剧本&重置角色功能，此后将不再进行确认
+	CALL PRINTBUTTON_EX("[我已知情]",0,)
 	$YESIAMOVER18
 	INPUT
 	IF RESULT == 0
@@ -534,10 +579,10 @@ FOR kojoIndex,0,5
 		TRYCALLFORM M_KOJO_K{NO:C_ID}
 	ENDIF
 	IF RESULT
-		kojoDescriptions:kojoListPointer = \@RESULTS:2 != "" ? %RESULTS:2% # 記述がありません \@
+		kojoDescriptions:kojoListPointer = \@RESULTS:2 != "" ? %RESULTS:2% # 无简介 \@
 		SIF RESULTS:1 == ""
-			RESULTS:1 = 初期
-		kojoNameList:kojoListPointer = %CALLNAME:C_ID%%RESULTS:1%口上
+			RESULTS:1 = 初始
+		kojoNameList:kojoListPointer = %CALLNAME:C_ID%%RESULTS:1%剧本
 		kojoIndexList:kojoListPointer = kojoIndex
 		kojoListPointer ++
 		IF !GETBIT(CFLAG:C_ID:口上実装状況,kojoIndex)
@@ -551,19 +596,19 @@ NEXT
 SIF validKojoCount < 2
 	RETURN -1
 IF validKojoCount > 1
-	PRINTFORML 使用する口上を選んでください (マウスオーバーで簡単な説明が出ます)
+	PRINTFORML 请选择要使用的剧本 (鼠标悬停会显示简介)
 	CALL KOJO_ACTIVE_INFO(C_ID)
 	SIF RESULTS:1 == ""
 		RESULTS:1 = 初期
-	PRINTFORML %CALLNAME:C_ID%現在の口上: %RESULTS:1%口上
+	PRINTFORML %CALLNAME:C_ID%现在的版本: %RESULTS:1%剧本
 	CALL ASK_CHOICES_TITLE(kojoNameList, kojoDescriptions, kojoListPointer)
 	IF RESULT == -1 ;cancelled
-		PRINTFORMW %CALLNAME:C_ID%の口上を変更しません
+		PRINTFORMW 未变更%CALLNAME:C_ID%的剧本
 		RETURN -1
 	ENDIF
 	kojoSelectResult = kojoIndexList:RESULT
 	IF CFLAG:C_ID:口上セレクタ == kojoSelectResult ;the dialogue is already in use
-		PRINTFORMW %CALLNAME:C_ID%の口上を変更しません
+		PRINTFORMW 未变更%CALLNAME:C_ID%的剧本
 	ELSE
 		IF kojoSelectResult
 			TRYCALLFORM M_KOJO_K{NO:C_ID}_{kojoSelectResult}
@@ -589,26 +634,36 @@ CALL RESET_KOJO_CHARA(C_ID)
 #DIM D_ID
 #DIM RequireConfirm
 #DIM RequireReset
-SIF RequireReset
-	CALL KOJO_RESET_CONFIRM
-
-IF !RESULT || (!RequireConfirm || !RequireReset)
-	IF RequireReset
-		CALL KOJO_RESET_CONFIRM
-		CALL RESET_KOJO_CHARA(C_ID)
+IF RequireReset == 0
+	IF !剧本错误警告:C_ID
+		PRINTFORML 切换前后的剧本共用框架，因为无需重置进度
+	ELSE
+		CALL 剧本错误确认
 	ENDIF
-	PRINTFORML 口上を適用中...
-	CFLAG:C_ID:口上セレクタ = D_ID
-	CALL KOJO_ACTIVE_INFO(C_ID)
-	SIF RESULTS:1 == ""
-		RESULTS:1 = 初期
-	PRINTFORML %RESULTS:1%口上のアップデート関数を実行...
-	TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{NO:C_ID}
-	SIF UPDATE_KOJO_CUSTOMIZE
-		CALL UPDATE_SHOW_SETTINGS(C_ID)
-	PRINTL
-	PRINTFORMW %CALLNAME:C_ID%の現在の口上: %RESULTS:1%口上
+	PRINTFORML 将进行剧本切换，现在是否还需要重置角色进度？
+	CALL ASK_M("重置",1,"不重置",1,"撤销，我要返回",1)
+	IF !RESULT
+		RequireReset = 1
+	ELSEIF RESULT == 2
+		RETURN		
+	ENDIF
 ENDIF
+IF RequireReset
+	CALL RESET_KOJO_CHARA(C_ID,1)
+	CALL RESET_KOJO_CHARA_EXPABL(C_ID)
+ENDIF
+PRINTFORML 剧本切换中…
+CFLAG:C_ID:口上セレクタ = D_ID
+CALL KOJO_ACTIVE_INFO(C_ID)
+SIF RESULTS:1 == ""
+	RESULTS:1 = 初始
+PRINTFORML 执行%RESULTS:1%剧本的UPDATE函数...
+TRYCALLFORM M_KOJO%RESULTS%_UPDATE_K{NO:C_ID}
+SIF UPDATE_KOJO_CUSTOMIZE
+	CALL UPDATE_SHOW_SETTINGS(C_ID)
+剧本错误警告:C_ID = 0
+PRINTL
+PRINTFORMW %CALLNAME:C_ID%现在的版本: %RESULTS:1%剧本
 
 ;print a button or leave an empty space when condition isn't met
 @PRINTBUTTON_OR_SPACE(ARGS:0, ARG, CONDITION = 1)
@@ -644,3 +699,268 @@ SIF CHECK_UPDATE(eraTW_Version)
 	RETURNF 1
 
 RETURNF 0
+
+@UPDATE_AND_SELECTION_OF_KOJO_MODDING_2(WORK_MODE, PAGE, OPERATE_MODE = 2)
+#DIM DYNAMIC MAXPAGE_MODE,3
+#DIM DYNAMIC PAGE
+#DIM DYNAMIC MARK_KOJO_AVAILABLE, 人物数量上限
+#DIM DYNAMIC NUM_OF_CHARA_WITH_KOJO,2
+#DIM DYNAMIC LIST_OF_CHARA_WITH_KOJO, 人物数量上限
+#DIM DYNAMIC LIST_OF_CHARA_WITH_KOJOS, 人物数量上限
+#DIM DYNAMIC LIST_OF_CHARA_ALTERED_BY_TOUHOU, 人物数量上限
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC LINE_RECORD
+#DIM DYNAMIC CHOOSE_COMMAND
+#DIMS DYNAMIC HTML
+#DIMS DYNAMIC COLOR
+#DIM DYNAMIC OPERATE_MODE
+#DIMS DYNAMIC WORK_MODE
+#DIM DYNAMIC NUM_OF_KOJO
+#DIM DYNAMIC CHARACTER_PER_PAGE
+#DIM DYNAMIC KOJO_RESULT
+#DIM DYNAMIC P2_LOOP, 2
+#DIMS DYNAMIC P2_LISTS, 2
+#DIMS DYNAMIC P2_STR_BUILD
+REDRAW 0
+;确认角色口上存在情况
+VARSET RESULT
+VARSET KOJO_RESULT
+FOR LOCAL, 0, CHARANUM
+	CALL KOJO_COUNT_CHECK(LOCAL, 1)
+	;有口上角色标记
+	IF RESULT
+		NUM_OF_CHARA_WITH_KOJO ++ 
+		MARK_KOJO_AVAILABLE:LOCAL++
+		SIF RESULT > 1
+			NUM_OF_CHARA_WITH_KOJO:1++
+	ENDIF
+NEXT
+IF WORK_MODE == "SELECTION"
+	CHARACTER_PER_PAGE = 10
+ELSE
+	CHARACTER_PER_PAGE = 20
+ENDIF
+;不过滤无口上角色时的最多页数
+MAXPAGE_MODE = (CHARANUM - 1) / CHARACTER_PER_PAGE + 1
+;过滤无口上角色时的最多页数
+MAXPAGE_MODE:1 = (NUM_OF_CHARA_WITH_KOJO - 1) / CHARACTER_PER_PAGE + 1
+;过滤无/单口上角色时的最多页数
+MAXPAGE_MODE:2 = (NUM_OF_CHARA_WITH_KOJO:1 - 1) / CHARACTER_PER_PAGE + 1
+;制作以原作顺序排列的人物列表
+VARSET RESULT
+IF FLAG:並び替え
+	CALL CHARASORT_EX
+	LOCAL:1 = 0
+	FOR LOCAL, 0, EX_CHARANUM
+		SIF RESULT:LOCAL < 0 
+			CONTINUE
+		LIST_OF_CHARA_ALTERED_BY_TOUHOU:(LOCAL:1) = RESULT:LOCAL
+		LOCAL:1 ++
+	NEXT
+ENDIF
+;制作过滤无口上角色时的角色列表
+LOCAL:2 = 0
+FOR LOCAL, 0, CHARANUM
+	SIF !MARK_KOJO_AVAILABLE:LOCAL
+		CONTINUE
+	IF FLAG:並び替え
+		LIST_OF_CHARA_WITH_KOJO:(FINDELEMENT(LIST_OF_CHARA_ALTERED_BY_TOUHOU, LOCAL, 1, CHARANUM)) = LOCAL
+	ELSE
+		LIST_OF_CHARA_WITH_KOJO:(LOCAL:2) = LOCAL
+	ENDIF
+	LOCAL:2 ++
+NEXT
+;多个剧本列表
+LOCAL:2 = 0
+FOR LOCAL, 0, CHARANUM	
+	SIF CFLAG:LOCAL:36<=1
+		CONTINUE
+	IF FLAG:並び替え
+		LIST_OF_CHARA_WITH_KOJOS:(FINDELEMENT(LIST_OF_CHARA_ALTERED_BY_TOUHOU, LOCAL, 1, CHARANUM)) = LOCAL
+	ELSE
+		LIST_OF_CHARA_WITH_KOJOS:(LOCAL:2) = LOCAL
+	ENDIF
+	LOCAL:2 ++
+NEXT
+
+IF FLAG:並び替え
+	FOR LOCAL, 0, NUM_OF_CHARA_WITH_KOJO
+		IF !LIST_OF_CHARA_WITH_KOJO:LOCAL
+			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJO, -1, 0, LOCAL
+			LOCAL --
+		ENDIF		
+	NEXT
+	FOR LOCAL, 0, NUM_OF_CHARA_WITH_KOJO:1
+		IF !LIST_OF_CHARA_WITH_KOJOS:LOCAL
+			ARRAYSHIFT LIST_OF_CHARA_WITH_KOJOS, -1, 0, LOCAL
+			LOCAL --
+		ENDIF		
+	NEXT
+ENDIF
+
+LINE_RECORD = LINECOUNT
+DRAWLINE
+UpdateMaxPages = MAXPAGE_MODE:OPERATE_MODE
+IF PAGE >= UpdateMaxPages
+	PAGE = UpdateMaxPages - 1
+ELSEIF PAGE < 0 
+	PAGE = 0
+ENDIF
+IF WORK_MODE == "SELECTION"
+	RESETCOLOR
+	PRINTFORML %UNICODE(0x3000) * 4%角色剧本选择界面%UNICODE(0x3000) * 4%
+	PRINTFORML ＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(UpdateMaxPages))%＞
+ELSE
+	HTML_PRINT @"<i><b><u>　　　　角色剧本ＵＰＤＡＴＥ选择界面　　　　</u></b></i>"
+	HTML_PRINT @"<i><font color = '#0x00FF00'>＜　ＰＡＧＥ　．　%TOFULL(TOSTR(PAGE + 1))%　／　ＡＬＬ．ＰＡＧＥ．%TOFULL(TOSTR(UpdateMaxPages))%＞</font></i>"
+ENDIF
+IF OPERATE_MODE == 2
+	HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有多个剧本角色'><font color='#0x90EE90'>　　过滤无/单剧本角色功能开启　　</font></nonbutton></i>"
+ELSEIF OPERATE_MODE == 1
+	HTML_PRINT @"<i><nonbutton title = '当前显示角色均为有剧本角色'><font color='#0x90EE90'>　　过滤无剧本角色功能开启　　</font></nonbutton></i>"
+ELSE
+	HTML_PRINT @"<i><nonbutton title = '已显示全部角色，包括无剧本角色'><font color='#0x404040'>　　过滤无剧本角色功能关闭　　</font></nonbutton></i>"
+ENDIF
+LOCAL:1=0
+FOR LOCAL, PAGE * CHARACTER_PER_PAGE, (PAGE + 1) * CHARACTER_PER_PAGE
+	VARSET HTML
+	VARSET RESULT
+	VARSET RESULTS
+	VARSET C_ID
+	IF OPERATE_MODE
+		IF OPERATE_MODE == 2
+			SIF LIST_OF_CHARA_WITH_KOJOS:LOCAL && CFLAG:(LIST_OF_CHARA_WITH_KOJOS:LOCAL):36>1
+				C_ID = LIST_OF_CHARA_WITH_KOJOS:LOCAL
+			IF !C_ID
+				CONTINUE
+			ELSEIF LOCAL >= NUM_OF_CHARA_WITH_KOJO:1
+				BREAK
+			ENDIF
+		ELSEIF OPERATE_MODE == 1
+			SIF LIST_OF_CHARA_WITH_KOJO:LOCAL
+				C_ID = LIST_OF_CHARA_WITH_KOJO:LOCAL
+			SIF LOCAL >= NUM_OF_CHARA_WITH_KOJO
+				BREAK
+		ENDIF
+	ELSE 
+		SIF !LOCAL
+			CONTINUE
+		IF LOCAL >= CHARANUM-1
+			BREAK
+		ELSEIF FLAG:並び替え
+			C_ID = LIST_OF_CHARA_ALTERED_BY_TOUHOU:LOCAL
+		ELSE
+			C_ID = LOCAL
+		ENDIF
+	ENDIF
+	IF WORK_MODE == "SELECTION"
+		RESETCOLOR
+		PRINTPLAINFORM [{C_ID, 3, RIGHT}] - %CALLNAME:C_ID, 25, LEFT%
+		IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > -1
+			VARSET RESULT
+			VARSET RESULTS
+			IF CFLAG:C_ID:口上セレクタ
+				;check if the main dialogue still works with it
+				TRYCCALLFORM M_KOJO_K{NO:C_ID}_{CFLAG:C_ID:口上セレクタ}
+					KOJO_RESULT = RESULT
+					IF !KOJO_RESULT
+						剧本错误警告:C_ID = 1
+						CALL COLORMESSAGE(@"%UNICODE(0x3000) * 4%剧本错误！请点击重置",C_RED,0,1)
+					ENDIF
+				CATCH
+					剧本错误警告:C_ID = 1
+					CALL COLORMESSAGE(@"%UNICODE(0x3000) * 4%剧本错误！请点击重置",C_RED,0,1)
+				ENDCATCH
+			ELSE
+				TRYCCALLFORM M_KOJO_K{C_ID}
+					KOJO_RESULT = RESULT
+					IF !KOJO_RESULT
+						剧本错误警告:C_ID = 1
+						CALL COLORMESSAGE(@"%UNICODE(0x3000) * 4%剧本错误！请点击重置",C_RED,0,1)
+					ENDIF
+				CATCH
+					剧本错误警告:C_ID = 1
+					CALL COLORMESSAGE(@"%UNICODE(0x3000) * 4%剧本错误！请点击重置",C_RED,0,1)
+				ENDCATCH
+			ENDIF
+			SIF !STRLENS(RESULTS:1) && KOJO_RESULT
+				RESULTS:1 '= CFLAG:C_ID:口上セレクタ ? @"第%TOKANJI(CFLAG:C_ID:口上セレクタ)%" # "初始"
+			SIF !剧本错误警告:C_ID
+				PRINTFORM %UNICODE(0x3000) * 4%%RESULTS:1%剧本
+		ELSE
+			PRINTFORM %UNICODE(0x3000) * 4%无剧本
+		ENDIF
+		PRINTL
+		VARSET NUM_OF_KOJO
+		P2_STR_BUILD '= ""
+		FOR LOCAL:3, 0, 10
+			VARSET RESULT
+			VARSET RESULTS
+			IF LOCAL:3 > 0
+				TRYCALLFORM M_KOJO_K{C_ID}_{LOCAL:3}
+			ELSE
+				TRYCALLFORM M_KOJO_K{C_ID}
+			ENDIF
+			SIF RESULT == 1
+				NUM_OF_KOJO ++
+			
+			SIF !STRLENS(RESULTS:1) && RESULT == 1 ;&& CFLAG:C_ID:口上セレクタ == 0
+				RESULTS:1 '= LOCAL:3 ? @"第%TOKANJI(LOCAL:3)%" # "初始"
+			P2_LISTS:0 '= RESULTS:1
+			P2_LISTS:1 '= @"\@RESULTS:2 != "" ? %RESULTS:2% # 无简介 \@"
+			P2_STR_BUILD '= @"<button value='{(10000*(LOCAL:3+1))+C_ID}' title='%HTML_ESCAPE(P2_LISTS:1)%'>%UNICODE(0x3000) * 3%└ %P2_LISTS:0%剧本</button><br>"
+			IF RESULT == 1 && CFLAG:C_ID:口上セレクタ == LOCAL:3
+				P2_STR_BUILD '= @"<font color='lime'>%P2_STR_BUILD%</font>"
+			ELSEIF GETBIT(RESULT:1, CFLAG:C_ID:口上セレクタ)
+				P2_STR_BUILD '= @"<font color='orange'>%P2_STR_BUILD%</font>"
+			ENDIF
+			SIF RESULT
+				HTML_PRINT P2_STR_BUILD
+		NEXT
+		;SIF NUM_OF_KOJO == 1
+		;	CLEARLINE 1
+	ELSE
+		VARSET RESULT
+		IF CFLAG:C_ID:口上セレクタ
+			TRYCALLFORM M_KOJO_K{C_ID}_{CFLAG:C_ID:口上セレクタ}
+		ELSE
+			TRYCALLFORM M_KOJO_K{C_ID}
+		ENDIF
+		SIF !STRLENS(RESULTS:1) && RESULT == 1 && CFLAG:C_ID:口上セレクタ == 0
+			RESULTS:1 = 初始
+		RESETCOLOR
+		VARSET COLOR
+		TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{C_ID}
+		COLOR '= "0x" + hex_to_str(GETCOLOR())
+		HTML += @"<button value='{C_ID}'><font color='#%COLOR%'>[{C_ID, 3, RIGHT}"
+		HTML += @"]  -  %CALLNAME:C_ID, 16, LEFT%    %CSVCSTR(C_ID, 10), 100, LEFT%"
+		IF FINDELEMENT(LIST_OF_CHARA_WITH_KOJO, C_ID) > -1
+			HTML += @"----------------%CALLNAME:C_ID%%RESULTS:1%剧本</font></button>"
+		ELSE
+			HTML += @"----------------无剧本</font></button>"
+		ENDIF
+		HTML_PRINT HTML
+		RESETCOLOR
+	ENDIF
+NEXT
+IF WORK_MODE == "SELECTION"
+	PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转首页］%UNICODE(0x3000) * 2%", 8101
+	PRINTBUTTON	@"%UNICODE(0x3000) * 2%［上一页］%UNICODE(0x3000) * 2%", 8102
+	PRINTBUTTON @"%UNICODE(0x3000) * 2%［下一页］%UNICODE(0x3000) * 2%", 8103
+	PRINTBUTTON @"%UNICODE(0x3000) * 2%［跳转尾页］%UNICODE(0x3000) * 2%", 8104
+ELSE
+	{
+	HTML_PRINT @"<button value = '8101' title = '跳转至首页'>　　［　＜＜　］　　</button>
+	<button value = '8102' title = '上一页'>　　［　＜　］　　</button>
+	<button value = '8103' title = '下一页'>　　［　＞　］　　</button>
+	<button value = '8104' title = '跳转至尾页'>　　［　＞＞　］　　</button>"
+	}
+ENDIF
+
+IF OPERATE_MODE == 2
+	HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有多个剧本角色'>　　［过滤功能：开启］　　</button>"
+ELSEIF OPERATE_MODE == 1
+	HTML_PRINT @"<button value = '1004' title = '当前显示角色均为有剧本角色'>　　［过滤功能：开启］　　</button>"
+ELSE
+	HTML_PRINT @"<button value = '1004' title = '已显示全部角色，包括无剧本角色'>　　［过滤功能：关闭］　　</button>"
+ENDIF

@@ -13,17 +13,19 @@ FOR LOCAL, 1, CHARANUM
 		IF !RESULT
 			LOCAL:1 ++
 			LOCALS += CALLNAME:LOCAL + "、"
+			剧本错误警告:LOCAL = 1
 		ENDIF
 	CATCH
 		LOCAL:1 ++
 		LOCALS += CALLNAME:LOCAL + "、"
+		剧本错误警告:LOCAL = 1
 	ENDCATCH
 NEXT
 IF LOCAL:1
-	CALL COLORMESSAGE("警告！口上セレクタの値が不正です！",C_RED,2,1)
-	PRINTFORML キャラ数: {LOCAL:1}
-	PRINTFORML 影響を受けるキャラ: %LIST_IN_STRING(LOCALS)%
-	CALL COLORMESSAGE("[500] Update を実行しているか確認してください",C_RED,2,1)
+	CALL COLORMESSAGE("警告！CFLAG剧本选择的值无效！",C_RED,2,1)
+	PRINTFORML 角色数量: {LOCAL:1}
+	PRINTFORML 受影响的角色: %LIST_IN_STRING(LOCALS)%
+	CALL COLORMESSAGE("请在[500]UPDATE中确认并重选剧本\n由于剧本运作异常，重选时需解除无剧本角色过滤功能",C_RED,2,1)
 ENDIF
 
 ;fix unset dick size tweak and etc
@@ -33,7 +35,7 @@ FOR LOCAL, 0, CHARANUM
 	SIF !HAS_PENIS(LOCAL)
 		CONTINUE
 	IF TALENT:LOCAL:形状 <= 0 || MAXBASE:LOCAL:精力 <= 0 || MAXBASE:LOCAL:勃起 <= 0
-		CALL COLORMESSAGE(@"%CALLNAME:LOCAL%のちんぽ情報を修正中...",C_YELLOW,1,1)
+		CALL COLORMESSAGE(@"%CALLNAME:LOCAL%的鸡鸡信息修正中...",C_YELLOW,1,1)
 		SIF TALENT:LOCAL:形状 <= 0
 			TALENT:LOCAL:形状 = 3
 		SIF MAXBASE:LOCAL:勃起 <= 0
@@ -48,7 +50,7 @@ FOR LOCAL, 0, CHARANUM
 		ENDIF
 	ENDIF
 	IF LOCAL == MASTER && MAXBASE:LOCAL:精力 == 1000 ;give back bonus vig the game owes you if you're at base VIG
-		CALL Pc_Vig_Recover(MASTER)
+		;CALL Pc_Vig_Recover(MASTER)
 	ENDIF
 	;===== custom code =====
 	;IF TALENT:LOCAL:絶倫 && MAXBASE:LOCAL:勃起 == 1500 ;addition custom code
@@ -61,10 +63,11 @@ NEXT
 @EVENTLOAD
 #LATER
 IF !RANDOM_CHARANUM
-	CALL COLORMESSAGE("モブキャラに問題があります。UPDATEを実行して修正してください。", C_RED, 1)
+	CALL COLORMESSAGE("路人角色编号出错了，请执行一次UPDATE", C_RED, 1)
 	FORCEWAIT
 ENDIF
 
+[SKIPSTART]
 @EVENTLOAD
 IF !EXISTFUNCTION("Add_Duplicate_Character")
     FOR LOCAL, CHARANUM-1, 0, -1
@@ -78,3 +81,4 @@ IF !EXISTFUNCTION("Add_Duplicate_Character")
         ENDIF
     NEXT
 ENDIF
+[SKIPEND]
