@@ -1,10 +1,18 @@
 ﻿;-----------------------------------------------------------
-;角色カスタマイズ
+;キャラカスタマイズ
 ;-----------------------------------------------------------
 @CUSTOM_TERMINAL(ARG, HIKITSUGI)
 #DIM HIKITSUGI
+#DIM nLineCnt_Head
+
 CALL CUSTOM_INIT(ARG)
-CLEARLINE 1000
+
+nLineCnt_Head = LINECOUNT
+REDRAW 0
+DO
+SIF LINECOUNT - nLineCnt_Head > 0
+	CLEARLINE LINECOUNT - nLineCnt_Head
+		
 ;名前ボタン表示
 DRAWLINE
 CALL CUSTOM_NAME_BUTTON(ARG)
@@ -17,9 +25,9 @@ PRINTL
 CALL COLORMESSAGE(@"　[2000] 能力编辑",0x70C070,1)
 ;素質表示
 CALL PRINT_STATE_TALENT(ARG)
-SETCOLOR 0x70C070
-PRINTL 　[3000] 素质编辑
-RESETCOLOR
+PRINTL
+;CALL COLORMESSAGE(@"　移到素质名上查看提示哦",C_YELLOW,1) ;qol custom code
+CALL COLORMESSAGE(@"　[3000] 素质编辑",0x70C070,1)
 ;経験表示
 CALL PRINT_STATE_EXP(ARG)
 PRINTL
@@ -27,7 +35,6 @@ CALL COLORMESSAGE(@"　[4000] 经验编辑",0x70C070,1)
 IF HIKITSUGI
 	CALL COLORMESSAGE(@"　[5000] 继承设置的保存",0x70C070,1)
 ENDIF
-RESETCOLOR
 DRAWLINE
 PRINTL 　[9999] 设定完毕
 PRINTL
@@ -50,19 +57,22 @@ SELECTCASE RESULT
 	;TALENT
 	CASE 3000
 		CALL CUSTOM_MENU("TALENT", ARG)
+		CALL CUSTOM_INIT(ARG)
 	;EXP
 	CASE 4000
 		CALL CUSTOM_MENU("EXP", ARG)
+		CALL CUSTOM_INIT(ARG)
 	CASE 5000
 		IF HIKITSUGI
 			CALL SAVE_CUSTOM_TALENT(ARG, "恋人")
 		ENDIF
 ENDSELECT
-RESTART
+LOOP 1
 ;-----------------------------------------------------------
 ;排他処理
 ;-----------------------------------------------------------
 @CUSTOM_INIT(ARG)
+#DIM nTalentCheck = 90,91,164,165,166,189,191,192,193,194,195,196,197
 ;ARGが女、扶她時の排他
 IF TALENT:ARG:性別 & 1
 	ABL:ARG:断袖属性 = 0
@@ -99,6 +109,8 @@ IF TALENT:ARG:2 & 2
 	MAXBASE:ARG:精力 = 1000
 	BASE:ARG:精力 = 1000
 	MAXBASE:ARG:勃起 = 1500
+	SIF TALENT:ARG:絶倫
+		MAXBASE:ARG:勃起 *= 2
 	;実績BONUS分
 	SIF ARG == MASTER && GETBIT(FLAG:702,8)
 		MAXBASE:MASTER:精力 += 100
@@ -107,6 +119,7 @@ ELSE
 	MAXBASE:ARG:精力 = 0
 	BASE:ARG:精力 = 0
 	MAXBASE:ARG:勃起 = 0
+	TALENT:ARG:形状 = 0
 ENDIF
 ;処女ならV系経験無し
 IF TALENT:ARG:処女 == 1
@@ -118,18 +131,65 @@ IF TALENT:ARG:処女 == 1
 	CSTR:ARG:処女喪失履歴 = 
 	CFLAG:ARG:処女喪失記念日 = 0
 	CFLAG:ARG:処女喪失対象 = 0
+	EXP:ARG:膣射経験 = 0
+	CFLAG:ARG:累計膣内精液 = 0
 ;非処女はV経験１
 ELSEIF TALENT:ARG:2 & 1 && EXP:ARG:Ｖ経験 == 0
 	EXP:ARG:Ｖ経験 = 1
 ENDIF
 
 ;初吻
-IF !EXP:ARG:接吻経験
+IF !EXP:ARG:接吻経験 || TALENT:ARG:無接吻経験
 	TALENT:ARG:無接吻経験 = 1
+	EXP:ARG:キス経験 = 0
+	CSTR:ARG:ファーストキス喪失履歴 =
+	CFLAG:ARG:ファーストキス喪失記念日 = 0
+	CFLAG:ARG:ファーストキス喪失相手 = 0
+	CFLAG:ARG:ファーストキス喪失対象 = 0
 ELSE
 	TALENT:ARG:無接吻経験 = 0
 ENDIF
 
+IF IS_DOUTEI(ARG)
+	EXP:ARG:挿入経験 = 0
+	CSTR:ARG:童貞喪失履歴 =
+	CFLAG:ARG:童貞喪失記念日 = 0
+	CFLAG:ARG:童貞喪失相手 = 0
+ELSEIF HAS_PENIS(ARG) && EXP:ARG:挿入経験 == 0
+	EXP:ARG:挿入経験 = 1
+ENDIF
+
+IF !EXP:ARG:Ａ性交経験
+	CSTR:ARG:アナル処女喪失履歴 =
+	CFLAG:ARG:アナル処女喪失記念日 = 0
+	CFLAG:ARG:アナル処女喪失対象 = 0
+	CFLAG:ARG:アナル処女喪失相手 = 0
+ENDIF
+
+;set PC to human unless other racial traits were chosen
+IF ARG == 0
+	;female only races
+	SIF TALENT:ARG:氷精 == 2 && IS_MALE(ARG)
+		TALENT:ARG:氷精 = 0
+	SIF TALENT:ARG:追加種族 == 1 && IS_MALE(ARG)
+		TALENT:ARG:追加種族 = 0
+	SIF TALENT:ARG:追加種族 == 3 && IS_MALE(ARG)
+		TALENT:ARG:追加種族 = 0
+	SIF TALENT:ARG:人妻 && IS_MALE(ARG)
+		TALENT:ARG:人妻 = 0
+	;-----------------
+
+	LOCAL:9 = 0
+	FOR LOCAL, 0, VARSIZE("nTalentCheck")
+		SIF TALENT:ARG:(nTalentCheck:LOCAL)
+			LOCAL:9 = 1
+	NEXT
+	SIF !LOCAL:9 && !TALENT:ARG:人間 ;automatically attach human if no other races present
+		TALENT:ARG:人間 = 1
+ENDIF
+
+;;qol custom code
+;CALL Qol_Info_Reset(ARG)
 
 ;-----------------------------------------------------------
 ;名前変更ボタン
@@ -238,6 +298,8 @@ BASE:ARG:気力 = MAXBASE:ARG:気力
 ;メニュー呼び出し
 ;-----------------------------------------------------------
 @CUSTOM_MENU(ARGS, ARG)
+#DIM CURRENTLINE
+CURRENTLINE = LINECOUNT
 PRINTL
 PRINTL
 CALLFORM CUSTOM_%ARGS%_MENU(ARG)
@@ -250,6 +312,7 @@ INPUT
 SIF RESULT == 9999
 	RETURN
 CALLFORM CUSTOM_%ARGS%(RESULT, ARG)
+CLEARLINE LINECOUNT - CURRENTLINE
 RESTART
 
 ;-----------------------------------------------------------
@@ -260,6 +323,7 @@ LOCAL:1 = 0
 FOR LOCAL,0,50
 	SIF CUSTOM_選べない能力(LOCAL, ARG)
 		CONTINUE
+	;custom code
 	PRINTFORM %ABL_TR(LOCAL),12%:{ABL:ARG:LOCAL,5,LEFT} 
 	IF ABL:ARG:LOCAL != 0
 		PRINTBUTTON "[－]", LOCAL * 2
@@ -338,7 +402,7 @@ RETURNF 0
 ;-----------------------------------------------------------
 @CUSTOM_TALENT_MENU(ARG)
 VARSET LOCAL
-FOR LOCAL, 0, 157
+FOR LOCAL, 0, 200
 	IF CUSTOM_不能选的素質(LOCAL, ARG) == 1
 		CONTINUE
 	ELSEIF CUSTOM_不能选的素質(LOCAL, ARG) == 2
@@ -352,6 +416,9 @@ FOR LOCAL, 0, 157
 	;TALENT.CSVに登録されていない
 	CASE ""
 		CONTINUE
+	;exceptions for listing
+	CASE NAME_TR("氷精"), NAME_TR("人类"), NAME_TR("妖怪"), NAME_TR("神霊"), NAME_TR("幽霊"), NAME_TR("人形"), NAME_TR("人妻"), NAME_TR("音感"), NAME_TR("動物耳")
+		GOTO LIST
 	;オンオフ型の素質(TALENTNAMEと素質表示が一致)
 	CASE GET_TALENTNAME(LOCAL,1)
 		SIF TALENT:ARG:LOCAL
@@ -367,6 +434,7 @@ FOR LOCAL, 0, 157
 		LOCALS = [{LOCAL,3}]%TALENT_TR(LOCAL)%
 	;量的素質
 	CASEELSE
+		$LIST
 		LOCALS =  [{LOCAL,3}]%TALENT_TR(LOCAL)%
 		IF STRLENS(GET_TALENTNAME(LOCAL, TALENT:ARG:LOCAL))
 			LOCALS:1 = 【%GET_TALENTNAME(LOCAL, TALENT:ARG:LOCAL)%】
@@ -377,6 +445,8 @@ FOR LOCAL, 0, 157
 		ELSE
 			LOCALS:1 = 【－】
 		ENDIF
+		;LOCALS is used for string comparison earlier
+		LOCALS =  [{LOCAL,3}]%TALENT_TR(LOCAL)%
 		LOCALS += LOCALS:1
 	ENDSELECT
 	$SKIP
@@ -403,6 +473,106 @@ SIF TALENTNAME:inputed == ""
 SIF CUSTOM_不能选的素質(inputed, chara)
 	RETURN 0
 SELECTCASE TALENTNAME:inputed
+	;addition custom code, but this looks like it should be on JP as well
+	CASE "氷精" ;female only for yuki onna
+		IF !GETBIT(TALENT:CHARA:性別, 0)
+			TALENT:chara:inputed = !TALENT:chara:inputed
+		ELSE
+			IF TALENT:chara:inputed == 2
+				TALENT:chara:inputed = 0
+			ELSE
+				TALENT:chara:inputed ++
+			ENDIF
+		ENDIF
+	CASE "人类" ;button handling
+		IF TALENT:chara:inputed == 6
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "人妻" ;button handling
+		IF TALENT:chara:inputed == 2
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "幽霊" ;button handling
+		IF TALENT:chara:inputed == 4
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "妖怪" ;skip vampire, skip angel
+		IF TALENT:chara:inputed == 2
+			TALENT:chara:inputed = 4
+		ELSEIF TALENT:chara:inputed == 11
+			TALENT:chara:inputed = 0
+			;TALENT:chara:inputed = 90
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "神霊" ;skip enma
+		IF TALENT:chara:inputed == 2
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "人形" ;skip puppet maiden
+		IF TALENT:chara:inputed == 5
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "追加種族" ;female only for shrine maiden/maid, skip hourai
+		IF TALENT:chara:inputed == 0 && !GETBIT(TALENT:CHARA:性別, 0)
+			TALENT:chara:inputed = 2
+		ELSEIF TALENT:chara:inputed == 2 && !GETBIT(TALENT:CHARA:性別, 0)
+			TALENT:chara:inputed = 0
+		ELSEIF TALENT:chara:inputed == 3
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "人形" ;skip puppet maiden
+		IF TALENT:chara:inputed == 5
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	CASE "追加種族" ;female only for shrine maiden/maiden, skip hourai
+		IF TALENT:chara:inputed == 0 && !GETBIT(TALENT:CHARA:性別, 0)
+			TALENT:chara:inputed = 2
+		ELSEIF TALENT:chara:inputed == 2 && !GETBIT(TALENT:CHARA:性別, 0)
+			TALENT:chara:inputed = 0
+		ELSEIF TALENT:chara:inputed == 3
+			TALENT:chara:inputed = 0
+		ELSE
+			TALENT:chara:inputed ++
+		ENDIF
+	;----------------------------
+
+	;Bugfix, special handling of virginity
+	CASE "処女"
+		IF TALENT:chara:処女 == 1
+			TALENT:chara:処女 = 0
+		ELSE
+			TALENT:chara:処女++
+		ENDIF
+	;Bugfix, special handling of m sensitivity
+	CASE "Ｍ感度"
+		IF TALENT:chara:Ｍ感度 == 1
+			TALENT:chara:Ｍ感度 = -1
+		ELSE
+			TALENT:chara:Ｍ感度++
+		ENDIF
+	;Bugfix, special handling of animal ears
+	CASE "動物耳"
+		IF TALENT:chara:動物耳 == 4
+			TALENT:chara:動物耳 = 0
+		ELSE
+			TALENT:chara:動物耳++
+		ENDIF
+	
 	;先に例外処理
 	CASE "性別"
 		IF TALENT:chara:性別 == 3
@@ -410,13 +580,14 @@ SELECTCASE TALENTNAME:inputed
 		ELSE
 			TALENT:chara:性別 ++
 		ENDIF
+		CALL CUSTOM_INIT(chara)
 	CASE "性別嗜好"
 		IF TALENT:chara:inputed == 3
 			TALENT:chara:inputed = -1
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "性別嗜好"
+	CASE "体型"
 		;体型が「小人(-5)」と「巨人(3)」の場合を独立処理
 		IF TALENT:chara:inputed == -5
 			TALENT:chara:inputed = -2
@@ -447,6 +618,8 @@ SELECTCASE TALENTNAME:inputed
 				TALENT:chara:inputed ++
 			ELSE
 				TALENT:chara:inputed *= -1
+				SIF !STRLENS(GET_TALENTNAME(inputed, TALENT:chara:inputed))
+					TALENT:chara:inputed ++
 			ENDIF
 		ENDIF
 ENDSELECT
@@ -457,7 +630,22 @@ ENDSELECT
 #DIM CHARA
 ;RETURNF 2は表示はさせるもの
 SELECTCASE ARG
-	;劣情察知～,BONUS素質および特殊陥落,種族,孕ませ系
+	CASE 164,166,190,191,192,193,194,195,196,197 ;allow racial talents (some)
+		SIF !FLAG:周回数 ;ng+ only
+			RETURNF 2
+		RETURNF 0
+	CASE 198 ;female only
+		SIF !FLAG:周回数 ;ng+ only
+			RETURNF 2
+		SIF !GETBIT(TALENT:CHARA:性別, 0)
+			RETURNF 2
+		RETURNF 0
+
+	;skip logging, 46
+	CASE 46
+		RETURNF 1
+		
+	;劣情察知～,ボーナス素質および特殊陥落,種族,孕ませ系
 	CASE IS >=157
 		RETURNF 1
 	;你は選べない１
@@ -475,7 +663,7 @@ SELECTCASE ARG
 		SIF !GETBIT(TALENT:CHARA:性別, 0)
 			RETURNF 2
 	;女性器がないと選べない
-	CASE GETNUM(TALENT, "処女"), GETNUM(TALENT, "風騷"), GETNUM(TALENT, "Ｖ感度")
+	CASE GETNUM(TALENT, "処女"), GETNUM(TALENT, "風騷"), GETNUM(TALENT, "Ｖ感度"), GETNUM(TALENT, "胸圍")
 		SIF !GETBIT(TALENT:CHARA:性別, 0)
 			RETURNF 2
 	;男性器がないと選べない
