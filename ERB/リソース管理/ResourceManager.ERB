@@ -1,0 +1,286 @@
+﻿;debloat custom code
+;*******************************************************************************************************
+; リソースフォルダの画像データを管理し、必要な時だけ読み込み
+;*******************************************************************************************************
+@RM_タイトル画像用意
+    SIF !GCREATED(RM_TITLE)
+        GCREATEFROMFILE RM_TITLE, "title.webp"
+    FOR I, 0, 35
+        SPRITECREATE "TW_title"+TOSTR(I, "D3"), RM_TITLE, 0, I*16, 1041, 16
+    NEXT
+
+@SYSTEM_LOADEND
+    CLEARMEMORY
+    ; タイトル画像リリース
+    IF GCREATED(RM_TITLE)
+        GDISPOSE RM_TITLE
+        FOR I, 0, 35
+            SPRITEDISPOSE "TW_title"+TOSTR(I, "D3")
+        NEXT
+    ENDIF
+
+;custom, rewritten for performance
+@RM_リソース情報初期化
+    #DIMS ELEMENT_NAME
+    #DIMS RESOURCE_NAME
+    #DIMS RESOURCE_SRC
+    #DIMS RESOURCE_PARAM
+    #DIMS RESOURCE_A_WIDTH
+    #DIMS RESOURCE_A_HEIGHT
+    #DIMS RESOURCE_MAP_STR
+    #DIMS NODE
+    #DIM ANIM_COUNT
+    #DIMS ANIM_NODE
+    #DIMS ANIM_RESOURCE_NAME
+
+    VARSET RM_GID_BITS
+
+    SIF !MAP_EXIST(RM_SINFO_MAP)
+        MAP_CREATE RM_SINFO_MAP
+    MAP_CLEAR RM_SINFO_MAP
+    SIF !MAP_EXIST(RM_SANIM_MAP)
+        MAP_CREATE RM_SANIM_MAP
+    MAP_CLEAR RM_SANIM_MAP
+
+    LOCAL = ENUMFILES("resources", "*.xml", 1)
+    FOR I, 0, LOCAL
+        XML_DOCUMENT RM_XML_TEMP, LOADTEXT(RESULTS:I)
+        LOCAL:1 = XML_GET_BYNAME(RM_XML_TEMP, "/sprites/*")
+        FOR J, 0, LOCAL:1
+            XML_GET_BYNAME RM_XML_TEMP, @"/sprites/*[{J+1}]", NODE, 3
+            XML_GET NODE, "/*", ELEMENT_NAME, 4
+
+            IF ELEMENT_NAME == "i"
+                XML_GET NODE, "*/@name", RESOURCE_NAME
+                XML_GET NODE, "*/@src", RESOURCE_SRC
+                XML_GET NODE, "*/@param", RESOURCE_PARAM
+                [IF_DEBUG]
+                ;custom code, show problems with resources
+                IF MAP_HAS(RM_SINFO_MAP, RESOURCE_NAME)
+                    PRINTFORML Name '%RESOURCE_NAME%' is already in use.
+                ELSEIF STRFIND(RESOURCE_SRC, "|") >= 0
+                    PRINTFORML Resource '%RESOURCE_NAME%' cannot have '|' in its filename (%RESOURCE_SRC%).
+                ELSEIF !EXISTFILE("resources/" + RESOURCE_SRC)
+                    PRINTFORML File '%RESOURCE_SRC%' doesn't exist. 
+                ENDIF
+                [ENDIF]
+                RESOURCE_MAP_STR '= @"i|%RESOURCE_SRC%|%RESOURCE_PARAM%"
+                MAP_SET RM_SINFO_MAP, RESOURCE_NAME, RESOURCE_MAP_STR
+            ELSEIF ELEMENT_NAME == "a"
+                XML_GET NODE, "*/@name", RESOURCE_NAME
+                XML_GET NODE, "*/@width", RESOURCE_A_WIDTH
+                XML_GET NODE, "*/@height", RESOURCE_A_HEIGHT
+                ANIM_COUNT = XML_GET(NODE, "*/f")
+
+                [IF_DEBUG]
+                ;custom code, show problems with resources
+                IF MAP_HAS(RM_SINFO_MAP, RESOURCE_NAME)
+                    PRINTFORML Name '%RESOURCE_NAME%' is already in use.
+                ENDIF
+                [ENDIF]
+
+                RESOURCE_MAP_STR '= @"a|{ANIM_COUNT}|%RESOURCE_A_WIDTH%|%RESOURCE_A_HEIGHT%"
+                MAP_SET RM_SINFO_MAP, RESOURCE_NAME, RESOURCE_MAP_STR
+                FOR K, 0, ANIM_COUNT
+                    XML_GET NODE, @"*/f[{K+1}]", ANIM_NODE, 3
+                    XML_GET ANIM_NODE, "*/@src", RESOURCE_SRC
+                    XML_GET ANIM_NODE, "*/@param", RESOURCE_PARAM
+                    ANIM_RESOURCE_NAME '= @"%RESOURCE_NAME%_{K}"
+                    [IF_DEBUG]
+                    ;custom code, show problems with resources
+                    IF MAP_HAS(RM_SANIM_MAP, ANIM_RESOURCE_NAME)
+                        PRINTFORML Name '%ANIM_RESOURCE_NAME%' is already in use.
+                    ELSEIF STRFIND(RESOURCE_SRC, "|") >= 0
+                        PRINTFORML Resource '%RESOURCE_NAME%' cannot have '|' in its filename (%RESOURCE_SRC%).
+                    ELSEIF !EXISTFILE("resources/" + RESOURCE_SRC)
+                        PRINTFORML File '%RESOURCE_SRC%' doesn't exist. 
+                    ENDIF
+                    [ENDIF]
+                    RESOURCE_MAP_STR '= @"%RESOURCE_SRC%|%RESOURCE_PARAM%"
+
+                    MAP_SET RM_SANIM_MAP, ANIM_RESOURCE_NAME, RESOURCE_MAP_STR
+                NEXT
+            ENDIF
+        NEXT
+        XML_RELEASE RM_XML_TEMP
+    NEXT
+
+    VARSET RESULTS    
+
+    SIF !MAP_EXIST(RM_GMAP)
+        MAP_CREATE RM_GMAP
+    MAP_CLEAR RM_GMAP
+
+    SIF !MAP_EXIST(RM_SMAP)
+        MAP_CREATE RM_SMAP
+    MAP_CLEAR RM_SMAP
+
+;*******************************************************************************************************
+; リソースのWidthを返す
+;*******************************************************************************************************
+@RM_リソースの幅(リソース名)
+    #DIMS リソース名
+    #FUNCTION
+    SIF RM_リソースチェック_ロード(リソース名)
+        RETURNF SPRITEWIDTH(リソース名)
+    RETURNF 0
+
+;*******************************************************************************************************
+; リソースのHeightを返す
+;*******************************************************************************************************
+@RM_リソースの高さ(リソース名)
+    #DIMS リソース名
+    #FUNCTION
+    SIF RM_リソースチェック_ロード(リソース名)
+        RETURNF SPRITEHEIGHT(リソース名)
+    RETURNF 0
+;*******************************************************************************************************
+; リソースの定義があるかをチェック
+;*******************************************************************************************************
+@RM_リソースチェック(リソース名)
+    #DIMS リソース名
+    #FUNCTION
+    SIF SPRITECREATED(リソース名)
+        RETURNF 1
+    RETURNF MAP_HAS(RM_SINFO_MAP, リソース名)
+
+;*******************************************************************************************************
+; リソースの定義があるかをチェック
+; あるならロード
+;*******************************************************************************************************
+;custom, rewritten for performance
+@RM_リソースチェック_ロード(リソース名)
+    #FUNCTION
+    #DIMS リソース名
+    #DIMS PARAMS, 7
+    #DIM G_ID
+    #DIM WIDTH
+    #DIM HEIGHT
+    #DIM XPOS
+    #DIM YPOS
+    #DIM DELAY
+    #DIM TOTAL
+    #DIMS RESOURCE_DATA
+    #DIMS RESOURCE_PARTS, 4
+    #DIMS RESOURCE_SRC
+    #DIMS ANIM_RESOURCE_DATA
+    SIF SPRITECREATED(リソース名)
+        RETURNF 1
+
+    IF MAP_HAS(RM_SINFO_MAP, リソース名)
+        RESOURCE_DATA '= MAP_GET(RM_SINFO_MAP, リソース名)
+        SPLIT RESOURCE_DATA, "|", RESOURCE_PARTS
+
+        IF RESOURCE_PARTS:0=="i" ; 普通の画像
+            RESOURCE_SRC '= RESOURCE_PARTS:1
+            G_ID = RM_G_ID(RESOURCE_SRC) ;src
+            SIF !G_ID ; 画像ファイル読み込み失敗
+                RETURNF 0
+            SPLIT RESOURCE_PARTS:2, ",", PARAMS
+            TOTAL = RESULT
+            CALLF RM_PARSE_PARAMS(G_ID, TOTAL, PARAMS, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY)
+            SPRITECREATE リソース名, G_ID, X, Y, WIDTH, HEIGHT
+            SIF TOTAL>4 ; XPOSとYPOSあり
+                SPRITESETPOS リソース名, XPOS, YPOS
+        ELSEIF RESOURCE_PARTS:0=="a" ; アニメ
+            WIDTH = TOINT(RESOURCE_PARTS:2)
+            HEIGHT = TOINT(RESOURCE_PARTS:3)
+            SPRITEANIMECREATE リソース名, WIDTH, HEIGHT
+
+            TOTAL = TOINT(RESOURCE_PARTS:1)
+            FOR I, 0, TOTAL
+                IF MAP_HAS(RM_SANIM_MAP, @"%リソース名%_{I}")
+                    ANIM_RESOURCE_DATA '= MAP_GET(RM_SANIM_MAP, @"%リソース名%_{I}")
+                    SPLIT ANIM_RESOURCE_DATA, "|", RESOURCE_PARTS
+                    RESOURCE_SRC '=RESOURCE_PARTS:0
+                    G_ID = RM_G_ID(RESOURCE_SRC)
+                    SIF !G_ID ; 画像ファイル読み込み失敗
+                        RETURNF 0
+
+                    SPLIT RESOURCE_PARTS:1, ",", PARAMS
+                    CALLF RM_PARSE_PARAMS(G_ID, RESULT, PARAMS, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY)
+                    SPRITEANIMEADDFRAME リソース名, G_ID, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY
+                ENDIF
+            NEXT
+        ENDIF
+        MAP_SET RM_SMAP, リソース名, ""
+    ENDIF
+
+    RETURNF SPRITECREATED(リソース名)
+
+@RM_PARSE_PARAMS(G_ID, TOTAL, PARAMS, _X, _Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY)
+    #FUNCTION
+    #DIM G_ID
+    #DIM TOTAL
+    #DIMS REF PARAMS, 0
+    #DIM REF _X
+    #DIM REF _Y
+    #DIM REF WIDTH
+    #DIM REF HEIGHT
+    #DIM REF XPOS
+    #DIM REF YPOS
+    #DIM REF DELAY
+
+    _X = TOTAL>=1 ? TOINT(PARAMS:0) # 0
+    _Y = TOTAL>=2 ? TOINT(PARAMS:1) # 0
+    WIDTH = TOTAL>=3 ? TOINT(PARAMS:2) # GWIDTH(G_ID)
+    HEIGHT = TOTAL>=4 ? TOINT(PARAMS:3) # GHEIGHT(G_ID)
+    XPOS = TOTAL>=5 ? TOINT(PARAMS:4) # 0
+    YPOS = TOTAL>=6 ? TOINT(PARAMS:5) # 0
+    DELAY = TOTAL==7 ? TOINT(PARAMS:6) # 0
+
+@RM_G_ID(画像パス)
+    #FUNCTION
+    #DIMS REF 画像パス
+    #DIM G_ID
+    
+    SIF MAP_HAS(RM_GMAP, 画像パス)
+        RETURNF TOINT(MAP_GET(RM_GMAP, 画像パス))
+
+    G_ID = BitIndexOfFirst(RM_GID_BITS, 0)+RM_GID_BASE
+    SIF G_ID<RM_GID_BASE
+        THROW 画像が多すぎる
+
+    GCREATEFROMFILE G_ID, 画像パス
+    IF GCREATED(G_ID)
+        CALLF BitSet(RM_GID_BITS, G_ID-RM_GID_BASE)
+        MAP_SET RM_GMAP, 画像パス, TOSTR(G_ID)
+        RETURNF G_ID
+    ENDIF
+
+    RETURNF 0
+
+@RM_全部リリース
+    #DIM G_ID
+    #DIMS KEYS, 1000
+
+    MAP_GETKEYS RM_SMAP, KEYS, 1
+    LOCAL = RESULT
+    FOR I, 0, LOCAL
+        SPRITEDISPOSE KEYS:I
+    NEXT
+    MAP_CLEAR RM_SMAP
+
+    MAP_GETKEYS RM_GMAP, KEYS, 1
+    LOCAL = RESULT
+    FOR I, 0, LOCAL
+        G_ID = TOINT(MAP_GET(RM_GMAP, KEYS:I))
+        GDISPOSE G_ID
+        CALLF BitSet(RM_GID_BITS, G_ID-RM_GID_BASE, 0)
+    NEXT
+    MAP_CLEAR RM_GMAP
+    
+    VARSET KEYS
+
+;custom code commented out
+;RM_全部リリース doesn't serve any meaningful purpose for us, purging the image caches just gives the game more chances to stutter (whereabout sense, character roaster)
+;while the biggest bloats are untouched by it, e.g. EagloV's Kaguya alt 
+; SHOP画面に入る前に，すべての画像をリリース
+;@EVENTTURNEND
+    ;#LATER
+    ;TRAIN段階の画像メモリをリリース
+    ;CALL RM_全部リリース
+;@EVENTTRAIN
+    ;#PRI
+    ;SHOP段階の画像メモリをリリース
+    ;CALL RM_全部リリース

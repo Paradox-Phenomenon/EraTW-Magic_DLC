@@ -1,0 +1,64 @@
+﻿;debloat custom code
+@BitSet(array, idx, val = 1, length = 1)
+    #FUNCTION
+    #DIM REF array, 0
+    #DIM idx
+    #DIM val
+    #DIM size
+    #DIM udx
+    #DIM length
+    #DIM _i
+    #DIM _j
+    size = VARSIZE("array")*64
+    FOR _i, 0, length
+        SIF idx+_i>=size
+            BREAK
+        udx = (idx+_i)/64
+        _j = (idx+_i)%64+1
+        IF val
+            array:udx |= BIT:_j
+        ELSE
+            array:udx &= ~BIT:_j
+        ENDIF
+    NEXT
+@BitGet(array, idx)
+    #FUNCTION
+    #DIM REF array, 0
+    #DIM idx
+    #DIM size
+    #DIM udx
+    size = VARSIZE("array")*64
+    SIF idx>=size
+        RETURNF -1
+    udx = idx/64
+    idx = idx%64+1
+    RETURNF (array:udx & BIT:idx)!=0
+@BitToggle(array, idx)
+    #FUNCTION
+    #DIM REF array, 0
+    #DIM idx
+    #DIM size
+    #DIM udx
+    size = VARSIZE("array")*64
+    SIF idx>=size
+        RETURNF 0
+    udx = idx/64
+    idx = idx%64+1
+    array:udx ^= BIT:idx
+    RETURNF 1
+@BitIndexOfFirst(array, val = 0)
+    #FUNCTION
+    #DIM REF array,0
+    #DIM val
+    #DIM _i
+    #DIM _j
+    val = val!=0
+    _j = 0
+    WHILE _j<VARSIZE("array") && array:_j==(val==0 ? -1 # 0)
+        _j++
+    WEND
+    FOR _i,0,64
+        SIF BitGet(array, _j*64+_i)==val
+            RETURNF _j*64+_i
+    NEXT
+    RETURNF -1
