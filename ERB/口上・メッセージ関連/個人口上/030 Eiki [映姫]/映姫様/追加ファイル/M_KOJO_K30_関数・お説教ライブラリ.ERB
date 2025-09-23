@@ -32,6 +32,7 @@ ENDSELECT
 ;-------------------------------------------------
 @K30_FIND_LOVER()
 #FUNCTION
+RETURNF FIND_LOVER(30) ;custom code
 SIF TALENT:MASTER:恋人 == 0
 	RETURNF 0
 SIF TALENT:30:恋人
@@ -919,20 +920,24 @@ ENDIF
 ;-------------------------------------------------
 @K30_QUAKE(ARG = 2)
 #LOCALSIZE 3
-;表示オフだと返回
+;custom code, promoted to global function
+CALL QUAKE(ARG)
+RETURN RESULT
+
+;表示オフだと戻る
 ;SIF !ANIME_CONFIG("QUAKE")
 ;	RETURN RESULT
-REDRAW 0
-FOR LOCAL, 0, ARG
-	LOCAL:1 = RAND:4+1
-	FOR LOCAL:2, 0, LOCAL:1
-		PRINTL 
-	NEXT
-	TWAIT 100, 0
-	CLEARLINE LOCAL:1
-	TWAIT 100, 0
-NEXT
-REDRAW 3
+; REDRAW 0
+; FOR LOCAL, 0, ARG
+; 	LOCAL:1 = RAND:4+1
+; 	FOR LOCAL:2, 0, LOCAL:1
+; 		PRINTL 
+; 	NEXT
+; 	TWAIT 100, 0
+; 	CLEARLINE LOCAL:1
+; 	TWAIT 100, 0
+; NEXT
+; REDRAW 3
 RETURN RESULT
 ;引用ここまで
 ;==================================================
@@ -1081,7 +1086,12 @@ RETURN 1
 #DIMS MESSAGE_PRINT,50
 服装 =
 VARSET MESSAGE_PRINT
+LOCAL:9 = CFLAG:30:差し替え適用
+LOCAL:8 = GETCOLOR()
+SIF CFLAG:30:差し替え適用 != 1 ;set alt portrait for the duration of this function for correct display
+	CFLAG:30:差し替え適用 = 1
 IF 顔絵付きメッセージ == 1
+	TRYCALLFORM IMAGE_EX_I30_PREリソースチェック(30, "顔絵", "服", "自慰") ;custom code
 	色 = 0%TOSTR(CFLAG:1501, "X")% 
 	CALL GET_BASE_RESOURCE(30, "顔絵", 服装, 表情)
 	SIF FLAG:多尺寸
@@ -1372,7 +1382,9 @@ RETURN
 ;--------------------------------------------------
 @K30_SET_IMAGESIZE()
 #FUNCTION
-LOCAL = 默认角色画像横幅 > 180 ? 1000 # 700
+;LOCAL = 默认角色画像横幅 > 180 ? 1000 # 700
+;custom code
+LOCAL = 1000
 RETURNF MIN(LOCAL * 角色画像表示尺寸比 / 10000 * 100 , 1800)
 ;--------------------------------------------------
 ;映姫様のおしりをUPで表示する関数
@@ -1530,10 +1542,11 @@ SELECTCASE COM
 		ENDIF
 		;謎の影
 		IF SELECTCOM == 330
-		SET_RESOURCE:L_NUM = 30_SHADOW_LIFT
-		L_NUM ++
+			SET_RESOURCE:L_NUM = 30_SHADOW_LIFT
+			L_NUM ++
 		ENDIF
-	;舐肛
+		L_NUM ++
+	;アナル舐め
 	CASE 4
 		;映姫様の腕
 		IF SHIRAHU(30) && RAND:2 
