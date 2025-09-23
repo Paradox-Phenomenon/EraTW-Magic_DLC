@@ -23,9 +23,10 @@
 ;TCVAR:64:357 時間停止で胖次を剥ぎ取ったか
 ;
 ;CFLAG:64:1000 UPDATE時の呼び名変更に使用
-;CFLAG:64:1001 黄昏画像表示
+;CFLAG:64:1001 黄昏画像表示（旧）
 ;CFLAG:64:1002 弾幕勝負口上
 ;CFLAG:64:1003 约会中地底で遭遇した時に一度だけ案内
+;CFLAG:64:1004 黄昏画像表示
 ;CFLAG:64:1100 戦闘訓練でズルをした場合次回から反撃される
 ;
 ;******************************************************************************
@@ -87,30 +88,49 @@ SETCOLOR 0xFFDEB8
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
+#DIMS DIS_NAME,3
+DIS_NAME '=  "体操服","自动切换","和服"
 
 IF !CFLAG:64:1000
 	PRINTL 
 	PRINTFORML 要变更勇仪对你的称呼吗？
 	PRINTL 
-	CALL ASK_M("是的",1 , "不",1 , "不再变更",1 , "变更勇仪的立绘",1)
+	CALL ASK_M("是的",1 , "不",1 , "不再变更",1)
 	SELECTCASE RESULT
 		CASE 0
 			CALL NAME_SET_K64
-			RETURN 1
 		CASE 1
 			PRINTFORMW 想要变更的时候请再使用[UPDATE]
-			RETURN 1
 		CASE 2
 			PRINTFORMW 明白了
 			CFLAG:64:1000 = 1
-			RETURN 1
-		CASE 3
-			IF !CFLAG:64:1001
-				CFLAG:64:1001 = 1
-			ELSE
-				CFLAG:64:1001 = 0
-			ENDIF
-			PRINTFORMW 变更好了
+	ENDSELECT
+ENDIF
+SIF FIRSTTIME("4974立绘规格变更",,64)
+	CFLAG:64:1001 = 0
+IF !CFLAG:64:1001
+	PRINTFORML
+	PRINTFORML 在eraTW4.974中，为勇仪（以及其他角色）增加了跟随服装自动切换立绘的功能。勇仪会在工作（指喝酒）或约会时换上和服。
+	PRINTFORML 选择【自动切换】时，立绘会根据实际服装而变化。
+	PRINTFORML 选择【体操服】或【和服】时，即使勇仪实际穿着其他服装，立绘也只会显示所选的服装。
+	PRINTL
+	PRINTFORML 勇仪的立绘设置（现在是【%DIS_NAME:(CFLAG:64:1004 + 1)%】）：
+	PRINTFORML [-1] 体操服
+	PRINTFORML [ 0] 自动切换
+	PRINTFORML [ 1] 和服
+	PRINTFORML [ 2] 不再变更
+	$LOOP
+	INPUT
+	SELECTCASE RESULT
+		CASE -1, 0, 1
+			CFLAG:64:1004 = RESULT
+		PRINTFORML 勇仪的立绘设置是：%DIS_NAME:(CFLAG:64:1004 + 1)%\n想要变更的时候请再使用[UPDATE]
+		CASE 2
+			CFLAG:64:1001 = 1
+			PRINTFORML 明白了，往后将不再询问
+		CASEELSE
+			CLEARLINE 1
+			GOTO LOOP
 	ENDSELECT
 ENDIF
 RETURN 1
