@@ -117,6 +117,8 @@ RETURNF 1
 #DIM 知り合い = 76, 129, 49, 113, 80, 66, 26, 127, 157
 #DIM 総人数
 #DIM 抽選
+RETURNF FIND_AROUND(知り合い, ARG) ;custom code
+
 VARSET LOCAL
 抽選 = 0
 総人数 = GET_TARGETNUM() 
@@ -1095,7 +1097,7 @@ IF 顔絵付きメッセージ == 1
 	色 = 0%TOSTR(CFLAG:1501, "X")% 
 	CALL GET_BASE_RESOURCE(30, "顔絵", 服装, 表情)
 	SIF FLAG:多尺寸
-		默认角色画像横幅 = SPRITEHEIGHT(RESULTS)
+		默认角色画像横幅 = RM_リソースの高さ(RESULTS)
 	CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 0, 1, "100", CALLNAME:30)
 	CALL GET_EFFECT_RESOURCE(30)
 	エフェクト数 = RESULT
@@ -1113,13 +1115,18 @@ IF 顔絵付きメッセージ == 1
 	CALL 画像一斉表示(0, 0, 1, -1)
 	PRINTL
 ELSE
-	;顔絵メッセージOFF時は通常街道に表示させる
+	;custom code
+	SETCOLOR CFLAG:30:1501
+	;顔絵メッセージOFF時は通常通りに表示させる
 	SPLIT MESSAGE, "/", MESSAGE_PRINT
 	FOR LOCAL, 0, RESULT
 		SIF MESSAGE_PRINT:LOCAL != ""
 			PRINTFORML %MESSAGE_PRINT:LOCAL%
 	NEXT
 ENDIF
+;custom code
+CFLAG:30:差し替え適用 = LOCAL:9
+SETCOLOR LOCAL:8
 ;==================================================
 ;映姫様の口交をアニメーションさせる関数
 ;髪型とかめちゃくちゃなんであんまり映姫様に見えない
@@ -1833,7 +1840,8 @@ SIF !LOCAL
 ;色違いぱんつの生成
 ベースぱんつ = %RESULTS%
 RESULTS = %RESULTS%%色%
-SIF SPRITECREATED(RESULTS)
+;SIF RM_リソースチェック(RESULTS)
+SIF RM_リソースチェック(RESULTS) ;debloat custom code
 	RETURN
 G_ID = 0
 CALL 画像合成(G_ID, ベースぱんつ, 0, 0, 0, 0, 色)
@@ -1887,7 +1895,7 @@ IF TALENT:恋慕
 	RESOURC_NAME += @"効果{NUM}"
 ENDIF
 ;合成したスプライトをリソース登録して表示
-IF !SPRITECREATED(RESOURC_NAME)
+IF !RM_リソースチェック(RESOURC_NAME)
 	G_ID = 0
 	FOR COUNT, 0, 6 + (TALENT:恋慕 > 0)
 		CALL 画像合成(G_ID, SET_RESOURCE:COUNT)
@@ -1961,7 +1969,7 @@ ELSE
 	RESOURC_NAME += "効果5"
 	LAYER = 2
 ENDIF
-IF !SPRITECREATED(RESOURC_NAME)
+IF !RM_リソースチェック(RESOURC_NAME)
 	G_ID = 0
 	FOR COUNT, 0, L_NUM
 		CALL 画像合成(G_ID, SET_RESOURCE:COUNT)
@@ -2991,7 +2999,7 @@ COM_STR =
 ;--------------------------------------------------
 @K30_DENY_POLYAMORY(ARG)
 ;↓のコメントアウト外すと制御解除。エラーは出ないはずだけど@K30_C_NAME関連で变なことにはなる
-SIF !CFLAG:1801
+SIF !CFLAG:1801 || TALENT:30:妻 ;custom code, skip the check if married
 	RETURN 0
 SELECTCASE ARG
 	CASE 0

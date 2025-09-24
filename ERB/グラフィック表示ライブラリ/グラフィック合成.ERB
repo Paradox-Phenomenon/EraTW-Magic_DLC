@@ -26,12 +26,14 @@
 #DIMS カラーブレンド名		;カラーブレンドの名称
 #DIM カラーマトリクス, 5, 5	;カラーブレンドに使用するマトリクス
 VARSET カラーマトリクス
-SIF !SPRITECREATED(リソース名)
+;SIF !SPRITECREATED(リソース名) ;debloat custom code
+SIF !RM_リソースチェック_ロード(リソース名)
 	;リソースが存在しない場合0を返す
 	RETURN 0
 IF 横幅 == 0 || 縦幅 == 0
-	横幅 = SPRITEWIDTH(リソース名)
-	縦幅 = SPRITEHEIGHT(リソース名)
+	;debloat custom code
+	横幅 = RM_リソースの幅(リソース名)
+	縦幅 = RM_リソースの高さ(リソース名)
 ENDIF
 IF グラフィックID == 0
 	;前回呼び出されていれば続きから始める
@@ -47,11 +49,13 @@ IF グラフィックID == 0
 ENDIF
 IF カラーブレンド名 == ""
 	GDRAWSPRITE グラフィックID, リソース名, POS_X, POS_Y,  横幅, 縦幅
+	SIF IMG_DEBUG ;don't pollute the debug console unless enabled
 	DEBUGPRINTFORML 画像合成：%リソース名%:{グラフィックID},{POS_X},{POS_Y},{横幅},{縦幅}
 ELSE
 	;カラーブレンドが設定されている場合、適用して合成
 	CALL カラーブレンド取得(カラーマトリクス, カラーブレンド名)
 	GDRAWSPRITE グラフィックID, リソース名, POS_X, POS_Y,  横幅, 縦幅, カラーマトリクス:0:0
+	SIF IMG_DEBUG ;don't pollute the debug console unless enabled
 	DEBUGPRINTFORML 画像合成：%リソース名%:{グラフィックID},{POS_X},{POS_Y},{横幅},{縦幅},%カラーブレンド名%
 ENDIF
 SIF RESULT == 0
@@ -65,7 +69,8 @@ RETURN 1
 @リソース登録(リソース名, グラフィックID)
 #DIMS リソース名
 #DIM グラフィックID
-SIF SPRITECREATED(リソース名)
+;SIF SPRITECREATED(リソース名) ;debloat custom code
+SIF RM_リソースチェック(リソース名)
 	;すでにその名前のリソースが存在すると失敗する。
 	RETURN 0
 SIF !GCREATED(グラフィックID)
