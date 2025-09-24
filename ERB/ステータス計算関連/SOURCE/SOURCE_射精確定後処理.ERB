@@ -20,6 +20,8 @@ ELSEIF TEQUIP:ARG:挑逗モード && ARG != MASTER
 	RETURN 0
 ENDIF
 
+BASE:ARG:精力 = MAX(0, BASE:ARG:精力) ;bug fix custom code, failsafe
+
 ;射精(絶頂)回数
 射精回数 = MIN(BASE:ARG:射精 / MAXBASE:ARG:射精, (100 + BASE:ARG:精力) / 100)
 
@@ -192,7 +194,7 @@ IF !SENDER && TALENT:RECEIVER:路人 == 1
 	ENDSELECT
 ENDIF
 
-IF TEQUIP:SENDER:避孕套 && TEQUIP:TARGET:50 == PLAYER
+IF TEQUIP:SENDER:避孕套 ;&& TEQUIP:TARGET:50 == PLAYER
 	;ゴムを外す
 	TEQUIP:SENDER:避孕套 = 0
 	IF RECEIVER
@@ -204,32 +206,45 @@ IF TEQUIP:SENDER:避孕套 && TEQUIP:TARGET:50 == PLAYER
 		ENDSELECT
 	ENDIF
 	;接触のリセット
-	CALL 挿入解除(RECEIVER)
+	;CALL 挿入解除(RECEIVER) ;custom code, comment out because this part creates a ton of problems, it messes up the detection and proper dialogue calls are not executed
 	TFLAG:套套内 = NOWEX:SENDER:射精量
-	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && !SENDER
+	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 ;&& SENDER == MASTER ;com custom code
 		ITEM:避孕套 --
 		TEQUIP:SENDER:避孕套 = 1
-	ENDIF
-ELSEIF TEQUIP:SENDER:避孕套 && TALENT:TARGET:性別 == 3
-	;ゴムを外す
-	TEQUIP:TARGET:避孕套 = 0
-	IF RECEIVER
-		SELECTCASE TCVAR:SENDER:已射精部位FLAG
-			CASE 1
-				CFLAG:RECEIVER:积攒度 += ABL:RECEIVER:膣射中毒 * NOWEX:SENDER:射精 * 15
-			CASE 2
-				CFLAG:RECEIVER:积攒度 += ABL:RECEIVER:肛射中毒 * NOWEX:SENDER:射精 * 15
-		ENDSELECT
-	ENDIF
-	;接触のリセット
-	CALL 挿入解除(TARGET)
-	TFLAG:套套内 = NOWEX:TARGET:射精量
-	IF CFLAG:RECEIVER:自動ゴム && ITEM:避孕套 && !(!SENDER)
-		ITEM:避孕套 --
-		TEQUIP:TARGET:避孕套 = 1
+	ELSE ;custom code (above puts the condom automatically so sex continues, here we disengage)
+		;send a flag to cancel all insertions to emulate the function above, but after all the stuff is processed, wrap it up at source.erb
+		SEX_DISENGAGE = RECEIVER + 1
 	ENDIF
 ELSE
-;TCVAR:12 射精部位フラグ（1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手）
+	;TCVAR:12 射精部位フラグ（1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手）
+	SIF TEQUIP:SENDER:12 ;com custom code, set to onahole ejaculation if equipped
+		TCVAR:SENDER:射精した箇所フラグ = 10
+	
+[SKIPSTART]
+	;pullout promise patch 我觉得没必要用
+	;note - the original was broken as player doesn't receive 外に出すから and doesn't need to (and it checked pc for some reason), this part is processed first, then the SOURCE_射精確定前処理.ERB part, then the orgasm description
+				
+	;custom edit - modified from chance-based to player input
+	IF GROUPMATCH(TCVAR:SENDER:射精した箇所フラグ, 1, 50) && !TCVAR:RECEIVER:ピル && TCVAR:RECEIVER:外に出すから == 1 ;if on pill, just let it happen harmlessly
+		LOCAL = LIMIT(MULTIPLY(RAND(7000, 10001), 100 - LIMIT(ABL:技巧 + ABL:膣 - GETEXPLV(EXP:MASTER:GETNUM(EXP, "挿入経験"), 12) - ABL:PLAYER:技巧 - TALENT:PLAYER:自制心*3, 0, 10)*10) - (TALENT:PLAYER:絶倫 || EXP:PLAYER:Ｖ性交経験 <= 100)*3000, 1500, 10000)
+		REDRAW 1
+		PRINTFORML  [0] Pull out!
+		PRINTFORML  [1] Give up
+		TINPUT LOCAL, 100, 1, "Time Out!"
+		;nakadashi happens
+		IF RESULT
+			SIF RESULT == 1
+				PRINTFORML You submit to the overwhelming desire, forgetting about your promise...
+		ELSE
+			;pull out, set to outside
+			TCVAR:SENDER:射精した箇所フラグ = 8
+			nPulledOut = 1
+			SEX_DISENGAGE = RECEIVER + 1
+		ENDIF
+	ENDIF
+[SKIPEND]
+;--------------------------------
+
 SELECTCASE TCVAR:SENDER:已射精部位FLAG
 	;膣内
 	CASE 1
@@ -323,7 +338,7 @@ SELECTCASE TCVAR:SENDER:已射精部位FLAG
 			ENDIF
 			TFLAG:好感度管理 -= 好感度减少
 			CALL CHANGE_CFLAG(4,RECEIVER,信頼减少 * (-1))
-		ELSEIF TCVAR:RECEIVER:外に出すから
+		ELSEIF TCVAR:RECEIVER:外に出すから && !TCVAR:PLAYER:コンドーム && !TCVAR:ピル ;pullout promise patch + custom - do not apply if protection was used
 			强行反感 = 5000
 			强行恐怖 = NOWEX:RECEIVER:膣内精液
 			好感度减少 = NOWEX:SENDER:射精 * RAND:10 + NOWEX:SENDER:射精 * RAND:10
@@ -615,7 +630,7 @@ ELSE
 ENDIF
 
 ;同時絶頂の場合増加
-SIF !SENDER && SYNCED_ORGASM(RECEIVER)
+SIF SENDER == MASTER && SYNCED_ORGASM(RECEIVER)
 	TIMES REVISION,1.25
 
 SOURCE:RECEIVER:情愛 += REVISION * 2
@@ -630,7 +645,7 @@ TCVAR:RECEIVER:REVISED_FLAG = REVISION
 #DIMS 補正名
 #DIM REVISION
 
-LOCAL = FINDELEMENT(ABLNAME, 対応中毒)
+LOCAL = FINDELEMENT(ABLNAME, 対応中毒,,,1) ;potential bug fix
 
 REVISION = TCVAR:ARG:補正名
 SIF REVISION
