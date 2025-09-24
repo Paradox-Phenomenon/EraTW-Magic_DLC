@@ -150,6 +150,8 @@ IF CFLAG:CHARA:差し替え適用
 			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
 				IF CURRENT_CLOTHES_SET(CHARA) == 51
 					RESULTS = _メイド
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+					RESULTS = _ビキニ
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
 					RESULTS = _バニー
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
@@ -163,6 +165,8 @@ IF CFLAG:CHARA:差し替え適用
 			IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
 				IF CURRENT_CLOTHES_SET(CHARA) == 51
 					RESULTS = _メイド
+				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+					RESULTS = _ビキニ
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
 					RESULTS = _バニー
 				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
@@ -203,11 +207,29 @@ IF CFLAG:CHARA:差し替え適用
 	IF FLAG:立絵種類
 		;顔絵
 		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
-			IF CURRENT_CLOTHES_SET(CHARA) == 51
+			;コマンド差分の時はエフェクトを切る
+			IF SELECTCOM == 82
+				SIF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = エフェクトオフ
+			;こっから別衣装用
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 51
 				IF IMAGE_I91_裸判定(CHARA) == 0
 					RESULTS = メイド裸
 				ELSE
 					RESULTS = メイド
+				ENDIF
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+				IF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = ビキニ裸
+				ELSE
+				CALL GET_BASE_RESOURCE(CHARA)
+					IF RESULTS == "別顔_服_ビキニ_通常_91" || RESULTS:0 == "別顔_服_ビキニ_笑顔_91"
+						RESULTS = ビキニ通常
+					ELSEIF RESULTS == "別顔_服_ビキニ_怒り_91"
+						RESULTS = エフェクトオフ
+					ELSE
+						RESULTS = ビキニコマンド
+					ENDIF
 				ENDIF
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
 				IF IMAGE_I91_裸判定(CHARA) == 0
@@ -258,6 +280,12 @@ IF CFLAG:CHARA:差し替え適用
 				ELSE
 					RESULTS = メイド
 				ENDIF
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+				IF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = ビキニ裸
+				ELSE
+					RESULTS = ビキニ
+				ENDIF
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
 				IF IMAGE_I91_裸判定(CHARA) == 0
 					RESULTS = バニー裸
@@ -306,11 +334,22 @@ IF CFLAG:CHARA:差し替え適用
 	IF FLAG:立絵種類
 		;顔絵
 		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
-			IF CURRENT_CLOTHES_SET(CHARA) == 51
+			;コマンド差分の時はエフェクトを切る
+			IF SELECTCOM == 82
+				SIF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = エフェクトオフ
+			;こっから別衣装用
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 51
 				IF IMAGE_I91_裸判定(CHARA) == 0
 					RESULTS = メイド裸
 				ELSE
 					RESULTS = メイド
+				ENDIF
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+				IF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = ビキニ裸
+				ELSE
+					RESULTS = ビキニ
 				ENDIF
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55
 				IF IMAGE_I91_裸判定(CHARA) == 0
@@ -358,10 +397,33 @@ ENDIF
 
 IF CFLAG:CHARA:差し替え適用 == 1
 	IF FLAG:立絵種類
+		;コマンド
+		SELECTCASE コマンド
+			CASE 82
+				
+				IF NOWEX:MASTER:射精
+					IF (CFLAG:好感度 >= 3000 || TALENT:セフレ) && (CFLAG:TARGET:溜まってる度 > 500 || TCVAR:発情 || TCVAR:媚薬)
+						RESULTS:1 = 欲情パイズリ射精
+						RESULTS:0 = 欲情パイズリ射精
+					ELSE
+						RESULTS:1 = パイズリ射精
+						RESULTS:0 = パイズリ射精
+					ENDIF
+				ELSE
+					IF (CFLAG:好感度 >= 3000 || TALENT:セフレ) && (CFLAG:TARGET:溜まってる度 > 500 || TCVAR:発情 || TCVAR:媚薬)
+						RESULTS:1 = 欲情パイズリ
+						RESULTS:0 = 欲情パイズリ
+					ELSE
+						RESULTS:1 = パイズリ
+						RESULTS:0 = パイズリ
+					ENDIF
+				ENDIF
+		ENDSELECT
 		;顔絵
 		IF 絶頂判定(CHARA) > 0
 			{
 			IF CURRENT_CLOTHES_SET(CHARA) == 51
+			|| CURRENT_CLOTHES_SET(CHARA) == 52
 			|| CURRENT_CLOTHES_SET(CHARA) == 55
 			|| CURRENT_CLOTHES_SET(CHARA) == 62
 			|| CURRENT_CLOTHES_SET(CHARA) == 74
@@ -411,6 +473,8 @@ IF CFLAG:CHARA:差し替え適用
 	;差し替え画像
 	SIF STRFIND(エフェクト,"メイド絶頂") != -1
 		RETURN 1
+	SIF STRFIND(エフェクト,"ビキニ絶頂") != -1
+		RETURN 1
 	SIF STRFIND(エフェクト,"バニー絶頂") != -1
 		RETURN 1
 	SIF STRFIND(エフェクト,"変T絶頂") != -1
@@ -438,11 +502,24 @@ IF CFLAG:CHARA:差し替え適用
 	IF FLAG:立絵種類
 		;顔絵
 		IF GROUPMATCH(CFLAG:CHARA:差し替え適用, 1)
-			IF CURRENT_CLOTHES_SET(CHARA) == 51
+			;パイズリ時はエフェクトを抜く
+			IF SELECTCOM == 82
+				SIF IMAGE_I91_裸判定(CHARA) == 0
+					RESULTS = エフェクトオフ
+			;こっから別衣装用
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 51
 				IF 絶頂判定(CHARA) > 0
 					IF CHECK_CHARA(CHARA,"全裸") == 1
 					ELSE
 						RESULTS:エフェクト数 = メイド絶頂
+						エフェクト数 += 1
+					ENDIF
+				ENDIF
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 52
+				IF 絶頂判定(CHARA) > 0
+					IF CHECK_CHARA(CHARA,"全裸") == 1
+					ELSE
+						RESULTS:エフェクト数 = ビキニ絶頂
 						エフェクト数 += 1
 					ENDIF
 				ENDIF
