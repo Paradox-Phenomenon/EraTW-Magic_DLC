@@ -197,4 +197,203 @@ RESULTS:1 =
 RETURN 1
 ;}
 
+@SPECIAL_BASE_IMAGE_62
+SIF CFLAG:62:差し替え適用 == 1
+	RESULTS = EagloV
 
+@SPECIAL_EFFECT_IMAGE_62
+SIF CFLAG:62:差し替え適用 == 1
+	RESULTS = EagloV
+
+@EagloV_特殊表情_62
+
+IF NOWEX:62:Ｃ絶頂 || NOWEX:62:Ｂ絶頂 || NOWEX:62:Ｖ絶頂 || NOWEX:62:Ａ絶頂 || NOWEX:62:Ｍ絶頂
+	IF EX:62:TotalEX >= 5
+		RESULTS:0 = 快感急
+		RESULTS:1 = 快感急
+	ELSE
+		RESULTS:0 = 快感缓
+		RESULTS:1 = 快感急
+	ENDIF
+	RETURN 1
+ENDIF
+	
+IF CFLAG:62:睡眠
+	LOCAL = EX:62:無自覚Ｃ絶頂 + EX:62:無自覚Ｖ絶頂 + EX:62:無自覚Ａ絶頂 + EX:62:無自覚Ｂ絶頂 + EX:62:無自覚Ｍ絶頂
+	IF LOCAL >= 5
+		RESULTS:0 = 眯笑
+		RESULTS:1 = 眯笑
+	ELSE
+		RESULTS:0 = 睡眠
+		RESULTS:1 = 睡眠
+	ENDIF
+	RETURN 1
+ENDIF
+
+IF CFLAG:62:ブチギレ
+	RESULTS:0 = 怒{RAND:4+1}
+	RESULTS:1 = 怒{RAND:4+1}
+	RETURN 1
+ELSEIF BASE:62:憤怒 > 600 || TALENT:62:心情 < 0 || CFLAG:62:心情不快 == 1
+	RESULTS:0 = 不悦
+	RETURN 1
+ENDIF
+
+IF TALENT:62:恋人
+	IF BASE:62:情緒 >= 100
+		RESULTS:0 = 笑顔
+		RESULTS:1 = 眯笑
+	ELSE
+		RESULTS:0 = 通常
+	ENDIF
+ELSEIF TALENT:62:恋慕 || TALENT:62:愛欲
+	IF BASE:62:情緒 >= 300
+		RESULTS:0 = 笑顔
+		RESULTS:1 = 眯笑
+	ELSE
+		RESULTS:0 = 通常
+	ENDIF
+ELSEIF TALENT:62:思慕 || TALENT:62:炮友
+	IF BASE:62:情緒 >= 600
+		RESULTS:0 = 笑顔
+		RESULTS:1 = 眯笑
+	ELSE
+		RESULTS:0 = 通常
+	ENDIF
+ELSE
+	IF BASE:62:情緒 >= 1200
+		RESULTS:0 = 笑顔
+	ELSE
+		RESULTS:0 = 通常
+	ENDIF
+ENDIF
+
+IF RESULTS:0 == "通常"
+	IF MARK:62:反発刻印 <= 0
+		RESULTS:1 = 微開口
+	ENDIF
+ELSEIF RESULTS:0 == "笑顔"
+	IF PALAM:62:欲情 >= PALAMLV:10 || TCVAR:62:発情 || CFLAG:62:积攒度 >= 900
+		RESULTS:1 = 開口
+	ELSEIF MARK:62:反発刻印 <= 0 && (TFLAG:103==109 || TARGET==109)
+		RESULTS:1 = 貘笑
+	ENDIF
+ENDIF
+
+RETURN 1
+
+@EagloV_特殊效果_62
+#DIMS 气泡名 = "愉悦", "沉默", "羞涩", "疑惑", "不悦", "愤怒", "欲求", "睡眠"
+#DIM 气泡概率, 8
+#DIM DYNAMIC エフェクト数 = 0
+
+;表情
+IF PALAM:62:欲情 >= PALAMLV:10 || TCVAR:62:発情 || CFLAG:62:积攒度 >= 900
+	CALL EagloV_特殊表情_62
+	IF RESULTS:0 != "快感急" && RESULTS:0 != "快感缓" && RESULTS:0 != "眯笑" && RESULTS:0 != "睡眠" && RESULTS:1 != "快感急" && RESULTS:1 != "快感缓" && RESULTS:1 != "眯笑" && RESULTS:1 != "睡眠"
+		RESULTS:エフェクト数 = EagloV62_特效_眼中爱心
+		エフェクト数++
+	ENDIF
+ENDIF
+IF BASE:62:情緒 >= 800 || TCVAR:62:発情 || TCVAR:62:媚薬
+	RESULTS:エフェクト数 = EagloV62_特效_鼻红晕
+	エフェクト数++
+	RESULTS:エフェクト数 = EagloV62_特效_腮红
+	エフェクト数++
+ENDIF
+IF PALAM:62:優越 >= PALAMLV:3
+	RESULTS:エフェクト数 = EagloV62_特效_线状红晕
+	エフェクト数++
+ENDIF
+IF BASE:62:理性 <= 300 || TCVAR:62:発情 || TCVAR:62:媚薬
+	RESULTS:エフェクト数 = EagloV62_特效_眼泪
+	エフェクト数++
+ENDIF
+IF CHECK_EXHALATION(62)
+	RESULTS:エフェクト数 = EagloV62_特效_吐息
+	エフェクト数++
+ENDIF
+
+IF CFLAG:62:膣内射精 == 1 || CFLAG:62:肛門射精
+	LOCAL = NUDITYCHECK(62)
+	IF LOCAL > 3
+		RESULTS:エフェクト数 = EagloV62_特效_精渍外搭
+	ELSEIF LOCAL==3 && IMAGE_I62_別立ち判定_futa()
+		RESULTS:エフェクト数 = EagloV62_特效_精渍扶她内衣
+	ELSEIF LOCAL==3
+		RESULTS:エフェクト数 = EagloV62_特效_精渍内衣
+	ELSE
+		RESULTS:エフェクト数 = EagloV62_特效_精渍裸
+	ENDIF
+	エフェクト数++
+ENDIF
+
+; only show 断面图 effect and 气泡 effect when current target or last target is 62
+SIF !(TFLAG:103==62 || TARGET==62)
+	RETURN エフェクト数
+
+;断面图
+IF (SELECTCOM == 306 && TFLAG:103==62) || (NOWEX:MASTER:射精 && TEQUIP:62:Ｖ性交 == MASTER && RAND:3==0)
+	IF CFLAG:62:妊娠経過日数 >= 40 && IMAGE_I62_別立ち判定_腹精液() >= 800 && 充填率(62,3) >= 50
+			RESULTS:エフェクト数 = EagloV62_特效_断面图安定期储精罐
+			エフェクト数++
+	ELSEIF CFLAG:62:妊娠経過日数 >= 40
+			RESULTS:エフェクト数 = EagloV62_特效_断面图安定期
+			エフェクト数++
+	ELSEIF IMAGE_I62_別立ち判定_腹精液() >= 800 && 充填率(62,3) >= 50
+			RESULTS:エフェクト数 = EagloV62_特效_断面图储精罐
+			エフェクト数++
+	ENDIF
+ENDIF
+
+;气泡
+气泡概率:0 = MAX(0, GETPALAMLV(PALAM:62:好意,10) -5 + BASE:62:情緒/200)
+气泡概率:1 = 5 - MAX(0, GETPALAMLV(PALAM:62:好意,10) -5)
+气泡概率:2 = MAX(0, GETPALAMLV(PALAM:62:恥情,5))
+气泡概率:3 = MAX(0, GETPALAMLV(PALAM:62:不快,7))
+气泡概率:4 = MAX(0, GETPALAMLV(PALAM:62:抑鬱,5)+ GETPALAMLV(PALAM:62:反感,5))
+气泡概率:5 = BASE:62:憤怒/100
+气泡概率:6 = TCVAR:62:発情*5
+SIF (CFLAG:62:既成事實 & 合意_诶嘿嘿)
+	气泡概率:6 += MAX(0, CFLAG:62:积攒度/100 - 5)
+气泡概率:7 = 0
+
+IF CFLAG:62:ブチギレ
+	VARSET 气泡概率
+	气泡概率:1 = 1
+	气泡概率:5 = 8
+	气泡概率:4 = 2
+ENDIF
+
+IF TALENT:62:心情 < 0 || CFLAG:62:心情不快 == 1
+	气泡概率:3 += 2
+	气泡概率:4 += 4
+ENDIF
+
+SIF CFLAG:睡眠
+	气泡概率:7 += 5 + TCVAR:62:睡眠深度/500
+
+LOCAL:1 = 气泡概率:0 + 气泡概率:1 + 气泡概率:2 + 气泡概率:3 + 气泡概率:4 + 气泡概率:5 + 气泡概率:6 + 气泡概率:7 + 5
+SIF LOCAL:1 == 气泡概率:1 + 5
+	气泡概率:1 = 0
+IF LOCAL:1 > 0
+	LOCAL:1 = RAND:(LOCAL:1)
+	FOR LOCAL, 0, 8
+		LOCAL:1 -= 气泡概率:LOCAL
+		IF LOCAL:1 < 0
+			RESULTS:エフェクト数 = EagloV62_特效_气泡%气泡名:LOCAL%
+			エフェクト数++
+			BREAK
+		ENDIF
+	NEXT
+ENDIF
+
+RETURN エフェクト数
+
+@IMAGE_I62_別立ち判定_futa()
+#FUNCTION
+RETURNF (TALENT:62:性別==3 && NUDITYCHECK(62) <= 3)
+
+@IMAGE_I62_別立ち判定_腹精液()
+#FUNCTION
+RETURNF (EX:62:膣内精液 + EX:62:子宮内精液*2)
