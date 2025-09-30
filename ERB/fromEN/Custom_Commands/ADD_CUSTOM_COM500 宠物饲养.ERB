@@ -23,6 +23,7 @@ LOCAL = 1
 
 WHILE local!=0
 	IF FIRSTTIME("宠物系统",,0) ||petstart==0||petkind == 0
+		CALL 新手教程
 		CALL 领养
 		SELECTCASE RESULT
 			CASE 0
@@ -50,7 +51,6 @@ WHILE local!=0
 		PRINTFORMDL [5] 查看宠物健康
 		PRINTFORMDL [6] 取名字
 		PRINTFORMDL [7] 放生
-		PRINTFORMDL [8] 测试
 		PRINTFORMDL [0] 没事（退出）
 		$INPUT_MNUSE
 		INPUT
@@ -80,18 +80,33 @@ WHILE local!=0
 		ENDIF
 	ENDIF
 	;结束条件判定
-	IF 宠物健康值 == 0
-		PRINTFORMDL 因疾病痛苦缠身，%petname%向路过的灵梦求救
-		PRINTFORMDL %petname%被送到永远亭救治了
-		PRINTFORMDL %CALLNAME:MASTER%被判定为不会养宠物，被剥夺%petname%的主人身份了
-		petkind = 0
-		宠物健康值 = 10
-		petstart = 0
-	ENDIF
+	CALL 结束判定
+	
 WEND
 ;——————————————————————
 ; 主体函数&宠物信息
 ;______________________
+@新手教程
+	IF FIRSTTIME("新手教程")
+		PRINTFORMDL 要进行新手教程吗？（不看也行，我这磕碜系统挺简单的）
+		CALL ASK_M("进行",1,"直接开玩",1,)
+		SELECTCASE RESULT
+			CASE 0
+				PRINTFORMDL 领养一只喜欢的宠物（白泽球暂没内容），然后和它玩
+				PRINTFORMDL 喂食，玩耍等我只安排了内容差分，降低了养育难度不会因此养死宠物
+				PRINTFORMDL 唯一注意的是宠物健康值，但宠物数据你不点进界面就不会更新，所以忘记了也没事
+				PRINTFORMDL 和宠物互动，查看健康会花20min,其余10min，别和宠物玩的太开心忘了正事
+				PRINTFORMDL
+				PRINTFORMDL
+			CASE 1
+				PRINTFORMDL 祝你玩的开心
+				PRINTFORMDL 
+		ENDSELECT
+	ELSE
+	ENDIF
+	
+
+
 @领养
 	PRINTFORMDL 话说…一个人生活未免太枯燥了，要不养只宠物？
 	PRINTFORMDL 不少可爱的身影闯入你的脑海
@@ -111,6 +126,8 @@ WEND
 			petname = 阿吽
 			petkind = 1
 			petstart=1
+			宠物健康值 = 10
+			宠物好感度 = 0
 			RETURN 1
 		CASE 1
 			PRINTFORMDL 你专门前往旧地狱街道寻找宠物，一只心仪的黑猫被你收养
@@ -120,6 +137,8 @@ WEND
 			petname = 阿磷
 			petkind = 2
 			petstart=1
+			宠物健康值 = 10
+			宠物好感度 = 0
 			RETURN 1
 		CASE 2
 			
@@ -135,6 +154,8 @@ WEND
 			petname = 幽香fumo
 			petkind = 3
 			petstart=1
+			宠物健康值 = 10
+			宠物好感度 = 0
 			RETURN 1
 		CASE 3
 			IF firsttime("领养油")
@@ -151,22 +172,25 @@ WEND
 			Degree_of_kid4=12
 			Degree_of_petgrowth=2
 			petstart=1
+			宠物健康值 = 10
+			宠物好感度 = 0
 			RETURN 1
 		CASE 4
 			petname = 白泽球
 			petkind = 5
 			petstart=1
+			宠物健康值 = 10
+			宠物好感度 = 0
 			RETURN 1
 		CASE 5
 			PRINTFORMDL 忙着自己的事情呢，现在可没闲时候照顾宠物
 			RETURN 0
 			
 	ENDSELECT
+	PRINTFORMDL 
+	PRINTFORMDL 
 ;基础变量设定
-宠物健康值 = 10
-宠物好感度 = 0
 
-Degree_of_kid4=12
 
 @事件系
 
@@ -255,7 +279,7 @@ Degree_of_kid4=12
 					CALL ASK_M("偷看",1,"不偷看",1,)
 					SELECTCASE RESULT
 						CASE 0
-							CALL yukaguitu
+							CALL PRINT_IMAGE("yukaguitu",2000,"left")
 							PRINTFORMDL 感谢群友送来的鬼图，没有他们我造不出这个变态fumo控诱捕器
 							PRINTFORMDL 还有你，我的朋友，你才是真正的fumo变态
 						CASE 1
@@ -278,7 +302,7 @@ Degree_of_kid4=12
 					PRINTFORMDL 「咦？粑粑…麻麻……快和麻恰打招呼油」
 					PRINTFORMDL 『小贝比我是你的主人哦，以后你就是我的宠物油了，要好好听话哦』
 					PRINTFORMDL 「油库里洗叠一叠捏，擦擦脸」
-					CALL pet_4maqia
+					CALL PRINT_IMAGE("pet_4_maqia",2000,"left")
 					宠物好感度+=1
 					Degree_of_petgrowth+=1
 				ENDIF			
@@ -286,10 +310,18 @@ Degree_of_kid4=12
 			ENDIF
 		ELSE
 			;减健康值
-			IF RAND:2==1&&宠物健康值<=4
-				宠物健康值-=1
-			ELSEIF RAND:7==1
-				宠物健康值-=1
+			IF once("初次减健康")
+				IF RAND:2==1&&宠物健康值<=4
+					宠物健康值-=1
+				ELSEIF RAND:7==1
+					宠物健康值-=1
+				ENDIF
+			ELSEIF once("再次减健康")
+				IF RAND:2==1&&宠物健康值<=4
+					宠物健康值-=1
+				ELSEIF RAND:7==1
+					宠物健康值-=1
+				ENDIF
 			ENDIF
 		ENDIF
 		PRINTFORMDL 
@@ -311,7 +343,7 @@ RETURN 1
 		ELSE
 			PRINTFORMDL 「好美味的饭菜」
 			PRINTFORMDL 阿磷欢天喜地地吃掉了
-			CALL pet_2_lunch
+			CALL PRINT_IMAGE("pet_2_lunch",2000,"left")
 		ENDIF
 	ELSEIF petkind == 3
 		PRINTFORMDL 你单独从锅里盛出一份＜%EX_DISH_NAME%＞放到%petname%精致的碗里
@@ -1279,32 +1311,32 @@ ENDIF
 @图片
 
 IF petkind == 1
-	CALL pet_1
+	CALL PRINT_IMAGE("pet_1",2000,"left")
 ELSEIF petkind ==2
 	SELECTCASE RAND:4
 		CASE 0
-			CALL pet_2_colth
+			CALL PRINT_IMAGE("pet_2_colth",2000,"left")
 		CASE 1
-			CALL pet_2_hello
+			CALL PRINT_IMAGE("pet_2_hello",2000,"left")
 		CASE 2
-			CALL pet_2_fat
+			CALL PRINT_IMAGE("pet_2_fat",2000,"left")
 		CASE 3
-			CALL pet_2_omg
+			CALL PRINT_IMAGE("pet_2_omg",2000,"left")
 	ENDSELECT
 ELSEIF petkind ==3
-	CALL yukafumo
+	CALL PRINT_IMAGE("yukafumo",2000,"left")
 ELSEIF petkind ==4
 	IF petdos==2
-		CALL pet_4dos
+		CALL PRINT_IMAGE("pet_4_dos",2000,"left")
 	ELSEIF	Degree_of_petgrowth<5
-		CALL pet_4zhi
+		CALL PRINT_IMAGE("pet_4_zhi",2000,"left")
 	ELSEIF Degree_of_petgrowth<15
-		CALL pet_4maqia
+		CALL PRINT_IMAGE("pet_4_maqia",2000,"left")
 	ELSE
 		IF Degree_of_kid4>10
-			CALL pet_4malisha
+			CALL PRINT_IMAGE("pet_4_malisha",2000,"left")
 		ELSE 
-			CALL pet_4laji
+			CALL PRINT_IMAGE("pet_4_laji",2000,"left")
 		ENDIF
 	ENDIF
 ELSE
@@ -1347,6 +1379,16 @@ ELSEIF petkind ==4&&Degree_of_petgrowth>5
 	ENDIF
 ELSEIF petkind ==5
 ENDIF
+
+@结束判定
+	IF 宠物健康值 == 0
+		PRINTFORMDL 因疾病痛苦缠身，%petname%向路过的灵梦求救
+		PRINTFORMDL %petname%被送到永远亭救治了
+		PRINTFORMDL %CALLNAME:MASTER%被判定为不会养宠物，被剥夺%petname%的主人身份了
+		petkind = 0
+		宠物健康值 = 10
+		petstart = 0
+	ENDIF
 ;____________________
 ;事件
 ;--------------------
@@ -1424,44 +1466,44 @@ RETURN 1
 ;----------------
 ;图片调用
 ;---------------
-@pet_1
-	CALL PRINT_IMAGE("pet_1",2000,"left")
-
-@pet_2_hello
-	CALL PRINT_IMAGE("pet_2_hello",2000,"left")
-
-@pet_2_colth
-	CALL PRINT_IMAGE("pet_2_colth",2000,"left")
-
-@pet_2_fat
-	CALL PRINT_IMAGE("pet_2_fat",2000,"left")
-
-@pet_2_omg
-	CALL PRINT_IMAGE("pet_2_omg",2000,"left")
-
-@pet_2_lunch
-	CALL PRINT_IMAGE("pet_2_lunch",2000,"left")
-
-@yukafumo
-	CALL PRINT_IMAGE("yukafumo",2000,"left")
-
-@yukaguitu
-	CALL PRINT_IMAGE("yukaguitu",2000,"left")
-
-@pet_4zhi
-	CALL PRINT_IMAGE("pet_4zhi",2000,"left")
-
-@pet_4maqia
-	CALL PRINT_IMAGE("pet_4maqia",2000,"left")
-
-@pet_4malisha
-	CALL PRINT_IMAGE("pet_4malisha",2000,"left")
-
-@pet_4laji
-	CALL PRINT_IMAGE("pet_4laji",2000,"left")
-
-@pet_4dos
-	CALL PRINT_IMAGE("pet_4dos",2000,"left")
+;@pet_1
+;	CALL PRINT_IMAGE("pet_1",2000,"left")
+;
+;@pet_2_hello
+;	CALL PRINT_IMAGE("pet_2_hello",2000,"left")
+;
+;@pet_2_colth
+;	CALL PRINT_IMAGE("pet_2_colth",2000,"left")
+;
+;@pet_2_fat
+;	CALL PRINT_IMAGE("pet_2_fat",2000,"left")
+;
+;@pet_2_omg
+;	CALL PRINT_IMAGE("pet_2_omg",2000,"left")
+;
+;@pet_2_lunch
+;	CALL PRINT_IMAGE("pet_2_lunch",2000,"left")
+;
+;@yukafumo
+;	CALL PRINT_IMAGE("yukafumo",2000,"left")
+;
+;@yukaguitu
+;	CALL PRINT_IMAGE("yukaguitu",2000,"left")
+;
+;@pet_4_zhi
+;	CALL PRINT_IMAGE("pet_4_zhi",2000,"left")
+;
+;@pet_4_maqia
+;	CALL PRINT_IMAGE("pet_4_maqia",2000,"left")
+;
+;@pet_4_malisha
+;	CALL PRINT_IMAGE("pet_4_malisha",2000,"left")
+;
+;@pet_4_laji
+;	CALL PRINT_IMAGE("pet_4_laji",2000,"left")
+;
+;@pet_4_dos
+;	CALL PRINT_IMAGE("pet_4_dos",2000,"left")
 
 ;备忘录
 ;宠物抛弃用爱人手法，麻里莎成年后下降教养值

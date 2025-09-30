@@ -156,8 +156,11 @@ ENDIF
 
 ;ターン毎複数恋人管理
 CALL K30_DENY_POLYAMORY(0)
-SIF FIRSTTIME("魔改回退")
+IF FIRSTTIME("魔改回退")
+	;重置素质选项标志
+	SETBIT CFLAG:30:1803, 0
 	PRINTW 4.975映姬剧本得到了重修，屏蔽原剧本否定多恋人机制以及修改映姬妊娠检测时点等魔改均已回退并重构，请查看UPDATE选项
+ENDIF
 ;媚药で搾り取りモードなら溜まってる度減らさない
 SIF GETBIT(TCVAR:30:367, 3)
 	CFLAG:30:积攒度 = MIN(CFLAG:30:积攒度, 666)
@@ -279,7 +282,11 @@ IF GETBIT(CFLAG:30:1803, 0)
 	PRINTFORML
 	PRINTFORML 映姬大人现在是【\@ CFLAG:30:1801 == 1 ? 戒备森严的阎魔大人 # 普通的幻想乡少女 \@】
 	PRINTFORML 要更改映姬大人的戒备程度吗？
-	CALL ASK_M("更改",1 , "可以了，下次再询问我" ,1 ,"有什么不同" ,1 , "我确定了，以后也不再更改",1)
+	IF FIRSTTIME("多恋人帮助", 1)
+		CALL ASK_M("更改",1 , "可以了，下次再询问我" ,1 ,"有什么不同" ,1 , "我确定了，以后也不再更改",1 , "刚才我和映姬的恋人关系破碎了，我很急", GETBIT(CFLAG:1505, 1))
+	ELSE
+		CALL ASK_M("更改",1 , "可以了，下次再询问我" ,1 ,"有什么不同" ,1 , "我确定了，以后也不再更改",1)
+	ENDIF
 	SELECTCASE RESULT
 		CASE 0
 			CALL K30_SELECT_TYPE
@@ -294,17 +301,38 @@ IF GETBIT(CFLAG:30:1803, 0)
 			PRINTFORMDL 「戒备」是映姬大人有陷落素质之前，将破瓜和推倒都封印
 			PRINTFORMDL 会在攻略过程中更加贴合剧本台词，并使攻略过程更有代入感
 			PRINTFORMDL 「普通」则是保持导入剧本前的默认素质，可能导致与部分台词或描述产生矛盾，还请谅解
-			PRINTFORMDL 但是因为不进行素质的变更，所以即使选择了「认真」攻略难易度也不会有太大的变化
+			PRINTFORMDL 但是因为不进行素质的变更，所以即使选择了「戒备」攻略难易度也不会有太大的变化
 			SIF !GETBIT(CFLAG:30:1803, 0)
 				PRINTFORMDL 在UPDATE选择中会再次出现更改选项。随便选也没关系
 			DRAWLINE
-			PRINTFORMDL 「戒备」的映姬大人不会接受多人恋爱（多恋人制御开启），并在性爱中变得保守（金枪鱼开关开启）
-			PRINTFORMDL ※因为两种人设在亲热环节中区别很大，建议在获得[思慕]之前确定下来
+			PRINTFORMDL 「戒备」的映姬大人不会接受多人恋爱（多恋人制御开启），并在性爱中变得保守不说淫语（金枪鱼开关开启）
+			PRINTFORMDL ※因为两种人设在亲热环节中区别很大，作者建议在获得[思慕]之前、开发者建议在恋慕-初次诶嘿嘿之前确定下来
 			PRINTFORMDL ※如果觉得没有必要用两个存档来体验两种人设，也可以随时在此开关映姬的多恋人制御和金枪鱼系统
 			PRINTFORMDW 请在你喜欢的时候把映姬变成全心全意接受你的爱意的幻想乡少女吧
 			CLEARLINE LINECOUNT - TEMP
 			GOTO K30_GUARD_CHECK
+		CASE 4
+			IF FIRSTTIME("多恋人帮助", 1)
+				PRINTFORMDL 映姬剧本有多恋人制御机制，在蛇版4.974之前被屏蔽了
+				PRINTFORMDL 从4.975开始，映姬完成了重修，并回退了相关魔改
+				PRINTFORMDL 新的机制能够自由选择并随时切换映姬的两种人设，参见选项说明
+				PRINTFORMDW 开发中的婚姻系统会允许玩家以【与映姬结婚】的方式破局多恋人制御
+				PRINTFORMDL 而现在，你因为选择了映姬的【戒备】人设，又拥有多个恋人，因此触发了多恋人制御
+				PRINTFORMDL ※这同时说明，你选择的映姬陷入了恋情观上的迷惘，在性事上非常保守，你已经错过映姬剧本中的几乎所有淫语
+				PRINTFORMDL 你需要做的就是改成「普通」人设然后重新告白
+				PRINTFORMDL ※温馨提示，4.973已将默认告白无限制关闭并移至OPTION菜单-魔改补丁中
+				PRINTL 本提示只出现一次，请在知晓后继续游戏
+				CSTR:30:0 += "多恋人帮助/"
+				FORCEWAIT
+			ENDIF
+			CLEARLINE LINECOUNT - TEMP
+			GOTO K30_GUARD_CHECK
+		CASEELSE
+			CLEARLINE LINECOUNT - TEMP
+			GOTO K30_GUARD_CHECK
 	ENDSELECT
+	SIF !CFLAG:30:1801
+		CLEARBIT CFLAG:30:1505, 1
 ENDIF
 PRINTFORML 
 IF !GETBIT(CFLAG:30:1803, 6)
