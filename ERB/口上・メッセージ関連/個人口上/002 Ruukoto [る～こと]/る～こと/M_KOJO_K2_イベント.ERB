@@ -77,22 +77,57 @@ SETCOLOR 0xA0FF00
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
-;留琴が風騷、留琴と面識がある、真正風騷か否か選択済みのフラグが立っていない
-IF TALENT:2:風騷 && CFLAG:2:面識 && CFLAG:2:1002 == 0
-	PRINTFORML 这个留琴是虽然心灵淫靡，但身体纯洁的类型吗？
-	PRINTFORML 还是说，是身体经验丰富的真风骚吗？
-	PRINTFORML （选哪个都不会对素质和经验等生产实际影响。只是单纯的趣味要素而已）
+SIF !TALENT:2:ヤリマン
+	CFLAG:2:1001 = 0
+IF TALENT:2:風騷
+	PRINTFORML 这个淫荡的留琴，是内心淫荡但身体却依然纯洁的类型吗？
+	PRINTFORML 还是说，是身体也经验丰富的正统公交车呢？
+	PRINTFORML （无论选择哪一个都不会影响资质或经验等。只影响一些文本要素）
 	PRINTFORML 
 	
-	CALL ASK_YN("体はうぶなタイプ","ヤりまくりの真正風騷")
+	CALL ASK_YN("身体清纯内心风骚","身经百战的性处理人偶")
 	IF RESULT == 0
 		CFLAG:2:1001 = 0
-		PRINTFORMW 我确信不是真正的风骚。
+		PRINTFORMW 设定为并非身经百战
 	ELSEIF RESULT == 1
 		CFLAG:2:1001 = 1
-		PRINTFORMW 我确信是真正的风骚。
+		PRINTFORMW 设定为正统公交车
+	ENDIF
+	;選択済みフラグを立てる
+	CFLAG:2:1002 = 1
+ENDIF
+
+RETURN 1
+
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_K2
+CALL KOJO_OPTION_ITEM("真正的身经百战（需要[风骚]素质）", 1, "status:无效:有效", CFLAG:2:1001)
+
+;process the input portion
+@KOJO_OPTION_K2_RESULT_1
+;る～ことがヤリマン、る～ことと面識がある、真正ヤリマンか否か選択済みのフラグが立っていない
+IF TALENT:2:風騷
+	PRINTFORML 这个淫荡的留琴，是内心淫荡但身体却依然纯洁的类型吗？
+	PRINTFORML 还是说，是身体也经验丰富的正统公交车呢？
+	PRINTFORML （无论选择哪一个都不会影响资质或经验等。只影响一些文本要素）
+	PRINTFORML 
+	
+	CALL ASK_YN("身体清纯内心风骚","身经百战的性处理人偶")
+	IF RESULT == 0
+		CFLAG:2:1001 = 0
+		PRINTFORMW 设定为并非身经百战
+	ELSEIF RESULT == 1
+		CFLAG:2:1001 = 1
+		PRINTFORMW 设定为正统公交车
 	ENDIF
 	
+ELSE
+	PRINTFORMW 只有当留琴拥有[风骚]时才能选择。
 	;選択済みフラグを立てる
 	CFLAG:2:1002 = 1
 ENDIF
@@ -138,29 +173,29 @@ PRINTL
 
 ;風騷なら真正風騷か否か選択肢を出す
 IF TALENT:風騷
-	PRINTFORMDW 面对结束了寒暄的%CALLNAME:MASTER%，%CALLNAME:TARGET%用妖媚的眼神看着我。
-	PRINTFORMDW 当%CALLNAME:MASTER%不知所措时，%CALLNAME:TARGET%更加……
+	PRINTFORMDW 对结束了问候的%CALLNAME:MASTER%，%CALLNAME:TARGET%投来了媚眼。
+	PRINTFORMDW 当%CALLNAME:MASTER%不知所措时，%CALLNAME:TARGET%更是……
 	PRINTL
-	PRINTFORMDL （选择了「放松胸部来展示自己」的时候，虽然心里是风骚，但是身体却是纯粹的类型）
-	PRINTFORMDL （选择「拉着手把身体靠过来」的时候，身体的经验也会成为丰富的）
-	PRINTFORMDL （无论选择哪个，对素质和经验都没有影响。仅是趣味元素）
+	PRINTFORMDL （如果选择「松开衣领来诱惑」，会成为内心很风骚但身体却很清纯的类型）
+	PRINTFORMDL （如果选择「牵起手凑近身体」，会成为身体经验也丰富的正统公交车）
+	PRINTFORMDL （无论选择哪个，对素质和经验都没有影响。是仅影响文本的趣味选项）
 	PRINTL
 	LOCAL = GETCOLOR()
 	SETCOLOR GETDEFCOLOR()
-	CALL ASK_YN("胸元をゆるめてアピールしてきた","手をとって体を寄せてきた")
+	CALL ASK_YN("松开衣领来诱惑","牵起手凑近身体")
 	SETCOLOR LOCAL
 	IF RESULT == 0
 		CFLAG:2:1001 = 0
-		PRINTFORMDW 把胸膛敞開，向%CALLNAME:MASTER%引诱着。
-		PRINTFORMDW 难道是相当的\@ TALENT:MASTER:性別 == 2 ?渴求男性 #欲求不満 \@吗？这种样子也许会立刻让我有反应。
+		PRINTFORMDW 她似乎松开了胸口的衣服，向%CALLNAME:MASTER%示好。
+		PRINTFORMDW 难道是\@ TALENT:MASTER:性別 == 2 ?对男人饥渴 #欲求不满 \@吗？看这情况，说不定很快就能得手了。
 	ELSEIF RESULT == 1
 		CFLAG:2:1001 = 1
-		PRINTFORMDW 牵起%CALLNAME:MASTER%的手靠近身体。
-		IF GROUPMATCH(FLAG:扮演,1,4,8,9,11)
-			CALL K2_HPH_PRINT,@"「%CALLNAME:MASTER%さまはあいかわらずお美的ですねHPH」","W"
-			PRINTFORMW 「但是，我这份奖品几乎没有男人能抽到……您也是要忍耐下去吗？」
-			CALL K2_HPH_PRINT,@"「我是机器人，不会生病……所以实际上很有人气的，在那种方面HPH」","W"
-			CALL K2_HPH_PRINT,@"「%CALLNAME:MASTER%大人觉得怎么样？HPH」","W"
+		PRINTFORMDW 她牵起%CALLNAME:MASTER%的手，将身体凑了过来。
+		IF GROUPMATCH(FLAG:なりきり,1,4,8,9,11)
+			CALL K2_HPH_PRINT,@"「%CALLNAME:MASTER%大人依旧如此美丽呢HPH」","W"
+			PRINTFORMW 「不过，这附近几乎没有男人……您是不是憋得很厉害呢？」
+			CALL K2_HPH_PRINT,@"「我可是机器人，不会生病……其实在那方面，我可是很受欢迎的HPH」","W"
+			CALL K2_HPH_PRINT,@"「%CALLNAME:MASTER%大人也来试试吗？HPH」","W"
 		ELSE
 			PRINTFORMW 「其实，我是机器人。」
 			CALL K2_HPH_PRINT,@"「所以……\@ !EXP:出産経験 && !CFLAG:妊娠自覚状態 ?不会怀孕，也不会生病 #不会生病，身体很好 \@…… 很受欢迎哦HPH」","W"
@@ -313,7 +348,7 @@ IF LOCAL
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
-	IF LOCAL:1 && ARG == 1
+	IF LOCAL:1 && GROUPMATCH(ARG, 1, 6)
 		IF K2_CONSCIOUS_AND_TOLERANT()
 			PRINTFORMW 「啊，%CALLNAME:MASTER%大人。有什么事吗？」
 		ENDIF
