@@ -1,0 +1,1909 @@
+﻿[SKIPSTART]
+@EVENTEND
+#PRI
+IF CONCUBINAGE_LEGALIZED
+    FOR LOCAL, 1, CHARANUM
+        SIF CFLAG:LOCAL:WIFE_VISITATION && !CFLAG:LOCAL:神社在住
+            CFLAG:LOCAL:翌日来訪 = 1
+    NEXT
+ELSE
+    SIF CONCUBINAGE_PROGRESS < 0
+        RETURN
+    SIF FLAG:気絶中断
+        RETURN
+    SIF MARRIAGE_STATE < 2 || DAY < (WEDDING_DATE + 7)
+        RETURN
+
+    CALL CONCUBINAGE_CORE_LOOP
+ENDIF
+
+@CONCUBINAGE_CORE_LOOP
+IF CONCUBINAGE_PROGRESS == 0 ;initialize concubinage
+    PRINTFORMDL You've been thinking about your marriage lately, but is %CALLNAME:LEGAL_SPOUSE% really enough for you?
+    PRINTFORMDL Perhaps you could have more. Just a little harem, all for you.
+    PRINTFORMDL Surely you deserve that much, right?
+    
+    PRINTFORMDL Seriously consider the idea?
+    CALL ASK_YN
+    IF !RESULT
+        CONCUBINAGE_PROGRESS = 1
+        PRINTFORMDL The idea now fully taking form in your mind, you take a notepad and decide to make a to-do list. 
+        PRINTFORMDW First things first, you should discuss this with someone with significant influence in Gensokyo. 
+    ELSE
+        PRINTFORMDW Deciding that %CALLNAME:LEGAL_SPOUSE% is more than enough for you, you put such a silly idea out of your mind.
+        CONCUBINAGE_PROGRESS = -2 ;full rejection
+    ENDIF
+ELSEIF CONCUBINAGE_PROGRESS == 3
+    LOCAL = 0
+    SIF CONCUBINAGE_CONVINCED_AKYUU == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_VILLAGERS == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_EIKI == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_TENGU == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_KANAKO == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_BYAKUREN == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_MIKO == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_OKINA == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_KASEN == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_REMILIA == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_MAMIZOU == 2
+        LOCAL++
+    SIF CONCUBINAGE_CONVINCED_REIMU == 2
+        LOCAL++
+
+    ;trigger initial event
+    IF LOCAL >= 4 && !CONCUBINAGE_CONVINCED_REMILIA
+        CALL CONCUBINAGE_TALK_REMILIA
+    ENDIF
+    IF LOCAL >= 6 && !CONCUBINAGE_CONVINCED_MAMIZOU
+        CALL CONCUBINAGE_TALK_MAMIZOU
+    ENDIF
+
+    ;nightly progress once applicable
+    CALL CONCUBINAGE_OKINA_PROGRESS
+ENDIF
+RESETCOLOR
+
+@CONCUBINAGE_CAN_TAKE_AS_CONCUBINE(ARG)
+#FUNCTION
+;set requirements
+SIF !CONCUBINAGE_LEGALIZED
+    RETURNF 0
+SIF TALENT:ARG:妻
+    RETURNF 0
+SIF TALENT:ARG:妾
+    RETURNF 0
+SIF TALENT:ARG:恋慕 && (!TALENT:ARG:恋人 || TALENT:ARG:恋慕 < 2)
+    RETURNF 0
+SIF !TALENT:ARG:恋慕 && !TALENT:ARG:愛欲
+    RETURNF 0
+
+IF TALENT:ARG:恋慕
+    SIF RELATION:MASTER:ARG < REQUIRED_AFFINITY_CONCUBINE_LOVE
+        RETURNF 0
+    SIF CFLAG:ARG:好感度 < REQUIRED_FAVOR_CONCUBINE_LOVE
+        RETURNF 0
+    SIF CFLAG:ARG:信頼度 < REQUIRED_TRUST_CONCUBINE_LOVE
+        RETURNF 0
+    SIF ABL:ARG:親密 < REQUIRED_AFFECTION_CONCUBINE_LOVE
+        RETURNF 0
+    RETURNF 1
+ELSEIF TALENT:ARG:愛欲
+    SIF CFLAG:ARG:好感度 < REQUIRED_FAVOR_CONCUBINE_LUST
+        RETURNF 0
+    SIF CFLAG:ARG:信頼度 < REQUIRED_TRUST_CONCUBINE_LUST
+        RETURNF 0
+    SIF ABL:ARG:欲望 < REQUIRED_LUST_CONCUBINE_LUST
+        RETURNF 0
+    RETURNF 1
+ENDIF
+
+RETURNF 0
+
+@CONCUBINAGE_RELATION(RELATION_FROM, RELATION_TO)
+#FUNCTION
+#DIM RELATION_FROM
+#DIM RELATION_TO
+SIF !RELATION:RELATION_FROM:RELATION_TO
+    RETURNF 100
+RETURNF RELATION:RELATION_FROM:RELATION_TO
+
+;returns 0 if any character other than these are your lover
+@CONCUBINAGE_ONLY_THESE_LOVERS(ARG:0,ARG:1=0,ARG:2=0,ARG:3=0,ARG:4=0,ARG:5=0,ARG:6=0,ARG:7=0,ARG:8=0,ARG:9=0)
+#FUNCTION
+FOR LOCAL, 1, CHARANUM
+    SIF TALENT:LOCAL:恋人 && FINDELEMENT(ARG, LOCAL) == -1
+        RETURNF 0
+NEXT
+RETURNF 1
+
+@CONCUBINAGE_LOVERS_STRING(ARG:0,ARG:1=0,ARG:2=0,ARG:3=0,ARG:4=0,ARG:5=0,ARG:6=0,ARG:7=0,ARG:8=0,ARG:9=0)
+#FUNCTIONS
+#DIM LAST_INDEX
+LAST_INDEX = FINDELEMENT(ARG, 0)
+SIF LAST_INDEX == -1
+    LAST_INDEX = 10
+VARSET LOCALS
+FOR LOCAL, 0, LAST_INDEX
+    SIF TALENT:LOCAL:恋人
+        LOCALS += @"%CALLNAME:LOCAL%、"
+NEXT
+RETURNF LIST_IN_STRING(LOCALS)
+
+@CONCUBINAGE_YUKARI_CHECK
+#FUNCTION
+SIF ABL:MASTER:話術技能 < 5 || ABL:MASTER:教養 < 4 ;not well-spoken enough to convince her
+    RETURNF 0
+
+IF TALENT:妻 ;harsh, as she's already your wife, unless your other lovers are Ran and Chen, which is more acceptable
+    SIF CONCUBINAGE_ONLY_THESE_LOVERS([[紫]], [[藍]], [[橙]])
+        RETURNF ABL:親密 >= 20 && CFLAG:好感度 >= 10000 && CFLAG:信頼度 >= 3000
+    RETURNF ABL:親密 >= 25 && CFLAG:好感度 >= 50000 && CFLAG:信頼度 >= 10000
+ELSEIF TALENT:恋人 || TALENT:愛欲 ;easier since it appeals to her a little
+    RETURNF CFLAG:好感度 >= 5000 && CFLAG:信頼度 >= 2000
+ELSE ;normal check
+    RETURNF ABL:親密 >= 20 && CFLAG:好感度 >= 10000 && CFLAG:信頼度 >= 3000
+ENDIF
+
+@CONCUBINAGE_TALK_YUKARI
+CALL SET_KOJO_COLOR([[紫]])
+SELECTCASE CONCUBINAGE_PROGRESS
+    CASE 1
+        IF CONCUBINAGE_SUB_PROGRESS == 0
+            PRINTFORML 「You have such a serious look on your face today. What's on your mind?」
+            PRINTFORMDW You talk with Yukari about your recent concerns with your marriage, and how you feel a bit constrained by it.
+            PRINTFORMDW You end up asking her about Gensokyo's stance on polygamy, and if it's at all possible for you to take multiple partners.
+            IF NO:LEGAL_SPOUSE == [[紫]]
+                PRINTFORML 「It's quite brazen to say that directly to your wife's face.」
+                PRINTFORMW 「Well, it's not as if I'm really surprised by this side of yours at this point.」
+            ELSEIF TALENT:恋人
+                PRINTFORML 「Hm? So %CALLNAME:LEGAL_SPOUSE% isn't enough for you?」
+                CALL PRINT_DIALOGUE, @"I can understand wanting to spend more time with my wonderful self, but you really should be a little more considerate of your %PRINT_MALE("husband", LEGAL_SPOUSE)%, you know?", "w"
+            ELSE
+                PRINTFORML 「Hm? So %CALLNAME:LEGAL_SPOUSE% isn't enough for you?」
+                PRINTFORMW 「You're such a greedy %PRINT_MALE("man", MASTER)%.」
+            ENDIF
+
+            PRINTFORMDW Yukari goes quiet for a moment while she considers your suggestion.
+            IF CONCUBINAGE_YUKARI_CHECK()
+                PRINTFORML 
+                IF TALENT:妻
+                    IF CONCUBINAGE_ONLY_THESE_LOVERS([[紫]], [[藍]], [[橙]])
+                        PRINTFORML 「I do feel somewhat hurt that I'm not enough for you, but if it's just %CONCUBINAGE_LOVERS_STRING([[藍]], [[橙]])%, then perhaps it will be okay.」
+                        PRINTFORMW 「Very well, then, I'll allow it.」
+                    ELSE
+                        PRINTFORML 「I will probably come to regret this, but your incredible passion has always been a big part of while I like you so much.」
+                        PRINTFORMW 「I'll allow this little venture of yours.」
+                    ENDIF
+                    CONCUBINAGE_PROGRESS = 3 ;skip the wife stage
+                ELSE
+                    PRINTFORML 「This idea amuses me, so I'll help you out a little.」
+                    PRINTFORMW 「You'll have to make it happen yourself, however.」
+                    CONCUBINAGE_PROGRESS = 2
+                ENDIF
+                GOTO YUKARI_OK
+            ELSE
+                PRINTFORML 「...I'm sorry, but this isn't something I can support.」
+                PRINTFORML 「While I find your proposal amusing, it could upend the fragile balance in Gensokyo, and I don't believe you could keep things in check.」
+                PRINTFORMW 「So please put this silly idea out of your mind and enjoy your happy life with your %PRINT_MALE("husband", LEGAL_SPOUSE)%, instead.」
+                PRINTFORMDW It seems like your words weren't enough to convince Yukari. Perhaps you should try this again after working on your skills amd relationship with her.
+                CONCUBINAGE_SUB_PROGRESS = 1
+            ENDIF
+        ELSE
+            PRINTFORMDW You make another impassioned plea to Yukari about your desperate need to have more than one %PRINT_MALE("husband", LEGAL_SPOUSE)%.
+            IF CONCUBINAGE_YUKARI_CHECK()
+                IF TALENT:妻
+                    PRINTFORML 「...Fine.」
+                    IF CONCUBINAGE_ONLY_THESE_LOVERS([[紫]], [[藍]], [[橙]])
+                        PRINTFORMW 「I want %CONCUBINAGE_LOVERS_STRING([[藍]], [[橙]])% to be happy too, after all.」
+                    ELSE
+                        PRINTFORMW 「I know there's no stopping you whenever you get this passionate.」
+                    ENDIF
+                    CONCUBINAGE_PROGRESS = 3 ;skip the wife stage
+                ELSE
+                    PRINTFORML 「You appear to be truly passionate about this.」
+                    PRINTFORMW 「I'm sure this will be amusing to watch, so I'll allow you to pursue this.」
+                    CONCUBINAGE_PROGRESS = 2
+                ENDIF
+
+                $YUKARI_OK
+                CONCUBINAGE_SUB_PROGRESS = 0
+                PRINTL
+                CALL PRINT_DIALOGUE, @"Taking more than one %PRINT_MALE("man", LEGAL_SPOUSE)% as a legal %PRINT_MALE("husband", LEGAL_SPOUSE)% would be impossible, but it might be possible to arrange some form of concubinage, instead."
+                PRINTFORML 「They wouldn't be your "%PRINT_MALE("husbands_:wives", LEGAL_SPOUSE)%", but they would be formally acknowledge as being part of your household, more or less.」
+                PRINTFORML 「Of course, as Gensokyo has no history of it, you cannot simply jump right to establishing your little harem.」
+                PRINTFORMW 「You would need to get all the major groups in Gensokyo to agree to formally establish the practice of concubinage and permit you to take concubines.」
+                IF TALENT:妻
+                    PRINTFORML 「I've already given my permission, so I'll explain who else will need to be convinced for this to happen.」
+                    GOTO YUKARI_FACTIONS
+                ELSE
+                    PRINTFORML 「But before we get ahead of ourselves, there's one very important person who must agree with all this before we go any further.」
+                    PRINTFORML 「You'll have to convince your %PRINT_MALE("husband", LEGAL_SPOUSE)% to approve before talking to anyone else.」
+                    PRINTFORMW 「Even I'm not mean enough to interfere with someone else's marriage%COND_STR(@", not even for %CALLNAME:LEGAL_SPOUSE%", CONCUBINAGE_RELATION([[紫]], LEGAL_SPOUSE) < 100)%.」
+                ENDIF
+            ELSE
+                PRINTFORML 「My answer is still no.」
+                PRINTFORMW 「Sometimes you should just be happy with what you have.」
+            ENDIF
+        ENDIF
+    CASE 2
+        IF CONCUBINAGE_SUB_PROGRESS == 0
+            PRINTFORML 「You have yet to convince your %PRINT_MALE("husband", LEGAL_SPOUSE)%.」
+            PRINTFORMW 「Come back when that is finished.」
+        ELSE
+            PRINTFORML 「I see that you managed to convince %CALLNAME:LEGAL_SPOUSE% to allow you to take concubines.」
+            PRINTFORMW 「Then allow me to explain what else needs to be done.」
+            $YUKARI_FACTIONS
+            PRINTL
+            PRINTFORMW 「There are many people likely to cause problems if they're not included, so you'll need to convince all of them in turn.」
+            
+            PRINTFORML 「For starters, there is the human village to consider.」
+            PRINTFORML 「As there's no central leader, you will need to get the elders to give their blessing, as their word carries the most weight amongst the villagers.」
+            PRINTFORMW 「You should be able to get in touch with them through the Child of Miare.」
+
+            PRINTFORML 「Next, you will need to convince my fellow sages, that is, the mountain hermit and the hidden god.」
+            PRINTFORML 「They're quite capricious, so I won't be able to give you much advice in dealing with them.」
+            SIF GROUPMATCH(NO:LEGAL_SPOUSE, [[華扇]], [[隠岐奈]])
+                PRINTFORML 「But then again, you've already dealt with one of them. The other one shouldn't give you too much trouble, either.」
+            WAIT
+            
+            PRINTFORML 「You'll also have to convince the tengu.」
+            CALL PRINT_DIALOGUE, "As one of the few organized groups of youkai, they carry a lot of influence in Gensokyo, and they are always eager to stick their nose into other people's business."
+            PRINTFORML 「Fortunately for you, it shouldn't be hard to convince them as long as they can get something out of it.」
+            PRINTFORML 「Be aware, however, that they're very particular about respect, and if you don't act accordingly, they will take your behavior as an insult to them.」        
+            PRINTFORMW 「Try asking one of your tengu friends to see if any of them can help you get in contact with their leadership.」
+            
+            PRINTFORML 「The various religious groups also carry a lot of weight in Gensokyo, so you will need to talk to all of them, too.」
+            IF NO:LEGAL_SPOUSE == [[霊夢]]
+                PRINTFORML 「Reimu already agreeing is a good start, but you should still ask her if she's ready to deal with any youkai upset over this.」
+            ELSE
+                PRINTFORML 「Reimu is especially important, given her role in maintaining the balance.」
+            ENDIF
+            IF NO:LEGAL_SPOUSE == [[神奈子]]
+                PRINTFORML 「Though Kanako has already accepted it, you'll need to make sure the other god there agrees as well.」
+            ELSEIF NO:LEGAL_SPOUSE == [[諏訪子]]
+                PRINTFORML 「With one of the gods living on top of the mountain already approving, it shouldn't be too hard to convince the other one to allow it as well.」
+            ELSE
+                CALL PRINT_DIALOGUE, "The gods living on top of the mountain can be pretty cutthroat and demanding, but they're approachable and you should be able to negotiate a fair if you stand firmly while dealing with them."
+            ENDIF
+            IF NO:LEGAL_SPOUSE == [[神子]]
+                PRINTFORML 「With Miko already having given her permission, the taoists won't be an issue.」
+            ELSE
+                PRINTFORML 「Though reclusive, the taoist wields significant influence in the village.」
+                CALL PRINT_DIALOGUE, "Outside of her distaste towards youkai, she tends to be pretty easy to reason with, so if you make a convincing argument, you should be able to make her agree."
+            ENDIF
+            IF NO:LEGAL_SPOUSE == [[白蓮]]
+                PRINTFORML 「With the Buddhist monk already agreeing, her group shouldn't prove an issue.」
+            ELSE
+                PRINTFORML 「Convincing the Buddhist monk may prove to be a challenge.」
+                PRINTFORML 「She'll likely demand something just to make her own life easier, so you'll have to just bear it until she's satisfied.」
+            ENDIF
+            PRINTFORML 「Some other powerful people may end up approaching you on their own.」
+            PRINTFORML 「You should listen to them closely, as having more supporters in this will only be beneficial.」
+            PRINTFORML 「If you manage to convince all of these people to let you form your own harem, you shouldn't have much trouble with it afterwards.」
+            PRINTFORMW 「Good luck with your quest. You'll need it.」
+            PRINTFORMDW You thank \@ TALENT:[[紫]]:妻 ? your wife # Yukari \@ for her advice, and start thinking about which group would be best to approach first. 
+
+            SELECTCASE NO:LEGAL_SPOUSE
+                CASE [[華扇]]
+                    CONCUBINAGE_CONVINCED_KASEN = 2
+                CASE [[隠岐奈]]
+                    CONCUBINAGE_CONVINCED_OKINA = 2
+                CASE [[神子]]
+                    CONCUBINAGE_CONVINCED_MIKO = 2
+                CASE [[白蓮]]
+                    CONCUBINAGE_CONVINCED_BYAKUREN = 2
+                CASE [[レミリア]]
+                    CONCUBINAGE_CONVINCED_REMILIA = 2
+                CASE [[マミゾウ]]
+                    CONCUBINAGE_CONVINCED_MAMIZOU = 2
+            ENDSELECT
+
+            CONCUBINAGE_PROGRESS = 3
+        ENDIF
+    CASE 3
+        ;working on factions
+        {
+        IF CONCUBINAGE_CONVINCED_VILLAGERS == 2 && CONCUBINAGE_CONVINCED_EIKI == 2 && CONCUBINAGE_CONVINCED_TENGU == 2 
+            && CONCUBINAGE_CONVINCED_KANAKO == 2 && CONCUBINAGE_CONVINCED_BYAKUREN == 2 && CONCUBINAGE_CONVINCED_MIKO == 2
+            && CONCUBINAGE_CONVINCED_OKINA == 2 && CONCUBINAGE_CONVINCED_KASEN == 2 && CONCUBINAGE_CONVINCED_REMILIA == 2
+            && CONCUBINAGE_CONVINCED_MAMIZOU == 2 && CONCUBINAGE_CONVINCED_REIMU == 2 && CONCUBINAGE_CONVINCED_AKYUU == 2
+        }
+            PRINTFORML 「I'm sincerely impressed. I did not expect that you would actually manage to convince everyone to let you build a harem.」
+            PRINTFORML 「Go ahead, give yourself a pat on the back.」
+            PRINTFORMDW %BREAKENG("It was a long and gruelling quest, but now that you've convinced all the major players to accept concubinage, you are now able to ask people to become your concubine.")%
+            PRINTFORMW 「I look forward to see what you'll do next.」
+
+            CONCUBINAGE_LEGALIZED = 1
+        ELSEIF CONCUBINAGE_CONVINCED_EIKI == 1 || CONCUBINAGE_CONVINCED_REMILIA == 1 || CONCUBINAGE_CONVINCED_MAMIZOU == 1
+            PRINTFORML 「So someone unexpected has decided to involve herself in this.」
+            PRINTFORMW 「You cannot just ignore her. She could become quite the nuisance if you were to upset her.」
+        ELSE
+            PRINTFORMW 「You have yet to finish convincing everyone. Come back once you've made everyone agree.」
+        ENDIF
+ENDSELECT
+
+@CONCUBINAGE_TALK_AKYUU
+CALL SET_KOJO_COLOR([[阿求]])
+PRINTFORMDW You talk to Akyuu about what Yukari said, and how she told you to talk to the village elders about your plans to instate concubinage in Gensokyo.
+IF LEGAL_SPOUSE == TARGET
+    PRINTFORML 「Yes. I understand. Yukari is prudent to suggest this.」
+    PRINTFORMDL She pauses momentarily, and sad smile appears on your wife's lips as she continues talking.
+    PRINTFORML 「Truthfully, I'm still not really comfortable with this.」
+    CALL PRINT_DIALOGUE, @"I know I shouldn't be selfish, but when you proposed to me, even knowing that it would only be for a brief time, I was happier than I ever could've imagined."
+    PRINTFORMW 「But I know that wouldn't be fair to you. That you deserve happiness, too.」
+    PRINTFORML 「Alright, I'll call for the elders and talk to them for you.」
+    PRINTFORMW 「Please wait here for now.」
+    TIME += 120
+    PRINTFORMDW Two hours later...
+    PRINTFORML 「I've spoken at length about the situation with the elders.」
+    PRINTFORML 「They aren't too keen about the whole situation, but I've managed to convince them to give it a chance.」
+    PRINTFORML 「However, before they accept, they want you to prove that you're willing to act in the best interest of the village, first.」
+    CALL PRINT_DIALOGUE, @"We've come to a consensus that if you perform a great service for the village, it should go a long way to prevent the villagers from feeling envy and resentment towards you.", "w"
+    CALL PRINT_DIALOGUE, @"With the recent harvests being worse than expected, the village's food supplies have dwindled, and there's growing concern that they might run out completely."
+    PRINTFORMW 「You've some skill at gardening, do you not? If you can restore the stockpile, the elders said they will fully support you in your endeavor.」
+    PRINTFORML 「...However, even with that, I still can't shake the feeling that this is a bad idea.」
+    PRINTFORML 「I know it's rude to impose this on you after I've already said that I accept, but please speak to Eiki-sama about this.」
+    PRINTFORML 「If she is willing to approve of this, it will resolve all my doubts, as well.」
+    PRINTFORMW 「Good luck, my husband.」
+    CONCUBINAGE_CONVINCED_AKYUU = 2
+    CONCUBINAGE_CONVINCED_VILLAGERS = 1
+    CONCUBINAGE_VILLAGERS_FOOD_REMAINING = 1000
+ELSE
+    IF CFLAG:[[阿求]]:信頼度 > 400
+        PRINTFORMW 「...」
+        PRINTFORMDW Akyuu quietly listens as you explain the situation in detail.
+        PRINTFORML 「...I see that you're dead set on this.」
+        PRINTFORMW 「Very well, I will speak to the village elders on your behalf. Please wait here until we finish.」
+        TIME += 180
+        PRINTFORMDW Three hours later...
+        PRINTFORML 「I have discussed it at length with the village elders.」
+        CALL PRINT_DIALOGUE, "There is no strong support for your proposal, but some of the think that the villagers can be convinced if you perform a great service for the village."
+        PRINTFORML 「With the weak harvests in the past few years, the village's emergency supplies have been slowly but steady shrinking.」
+        PRINTFORMW 「If you could replenish them, that would go a long way towards presenting yourself as a magnanimous person that the village can rely on.」
+        PRINTFORML 「However, even with that, I can only worry about the consequences of allowing this.」
+        PRINTFORML 「I cannot give you my personal support without the assurance of someone I can truly trust.」
+        PRINTFORMW 「Please speak to Eiki-sama about your idea. If she's willing to support it, I will do so as well.」
+        CONCUBINAGE_CONVINCED_AKYUU = 2
+        CONCUBINAGE_CONVINCED_VILLAGERS = 1
+        CONCUBINAGE_VILLAGERS_FOOD_REMAINING = 1000
+    ELSEIF CONCUBINAGE_CONVINCED_AKYUU == 1
+        PRINTFORML 「As I said before, I just don't think I can trust you on this.」
+        PRINTFORML 「Please reconsider.」
+        PRINTFORMDW Akyuu still doesn't trust you enough to even consider your proposal.
+    ELSE
+        PRINTFORMW 「...」
+        PRINTFORML 「I'm sorry, but I don't think that I trust you enough to support you in this.」
+        CALL PRINT_DIALOGUE, "As the Child of Miare, I must always put the village's stability over everything, and I believe that your proposal would only cause chaos amongst the villagers."
+        PRINTFORML 「Please put this idea out of your head, %CALLNAME:MASTER%-san. Nothing good can come from pursuing this goal.」
+        PRINTFORMDW Akyuu looks to be strongly opposed to your proposal. You should gain more of her trust before trying again.
+        CONCUBINAGE_CONVINCED_AKYUU = 1
+    ENDIF
+ENDIF
+
+@CONCUBINAGE_VILLAGERS_DELIVERY
+#DIM DYNAMIC TOTAL_COUNT
+#DIM STARTLINE
+PRINTFORMDL What do you want to donate to the village stockpiles ({CONCUBINAGE_VILLAGERS_FOOD_REMAINING} remaining)?
+
+FOR LOCAL, 0, 1000
+	CALL ITEMDATA(LOCAL, "SHOP:八百屋")
+    IF RESULT || GROUPMATCH(LOCAL, GETNUM(ITEM, "獣肉"), GETNUM(ITEM, "鳥肉"))
+        SIF !ITEM:LOCAL
+            SETCOLOR C_GRAY
+            
+        PRINTFORML [{LOCAL}] %ITEMNAME_TR(LOCAL)% ({ITEM:LOCAL} on hand)
+        RESETCOLOR
+    ENDIF
+NEXT
+PRINTL
+PRINTFORMDL [-2] Donate everything you have
+PRINTFORMDL [-1] Cancel
+
+STARTLINE = LINECOUNT
+$CHOOSE
+CLEARLINE LINECOUNT - STARTLINE
+INPUT
+LOCAL = RESULT
+
+IF LOCAL == -2
+    FOR LOCAL, 0, 1000
+        CALL ITEMDATA(LOCAL, "SHOP:八百屋")
+        IF RESULT || GROUPMATCH(LOCAL, GETNUM(ITEM, "獣肉"), GETNUM(ITEM, "鳥肉"))
+            IF ITEM:LOCAL
+                TOTAL_COUNT += ITEM:LOCAL
+                CALL LOST_ITEM(ITEMNAME:LOCAL, ITEM:LOCAL, 1)
+            ENDIF
+        ENDIF
+    NEXT
+    IF !TOTAL_COUNT
+        PRINTFORMDW You don't have any food to give!
+        TIME += 5
+        RETURN
+    ELSE
+        CONCUBINAGE_VILLAGERS_FOOD_REMAINING -= TOTAL_COUNT
+        PRINTFORMDW Delivered {TOTAL_COUNT} foodstuffs to the villagers.
+    ENDIF
+ELSEIF LOCAL == -1
+    TIME += 5
+    RETURN
+ELSEIF INRANGE(LOCAL, 0, 1000)
+	CALL ITEMDATA(LOCAL, "SHOP:八百屋")
+    IF RESULT || GROUPMATCH(LOCAL, GETNUM(ITEM, "獣肉"), GETNUM(ITEM, "鳥肉"))
+        PRINTFORMDL How much do you wish to donate (max {ITEM:LOCAL})?
+        INPUT
+        IF RESULT <= 0
+            GOTO CHOOSE
+        ELSE
+            LOCAL:1 = MIN(RESULT, ITEM:LOCAL)
+            CALL LOST_ITEM(ITEMNAME:LOCAL, LOCAL:1, 2)
+            CONCUBINAGE_VILLAGERS_FOOD_REMAINING -= LOCAL:1
+        ENDIF
+    ELSE
+        GOTO CHOOSE
+    ENDIF
+ELSE
+    GOTO CHOOSE
+ENDIF
+IF CONCUBINAGE_VILLAGERS_FOOD_REMAINING <= 0
+    CONCUBINAGE_VILLAGERS_FOOD_REMAINING = 0
+    CONCUBINAGE_CONVINCED_VILLAGERS = 2
+    PRINTFORMDL Upon seeing that the storage is now completely filled with food once more, the villager shows you a smile.
+    PRINTFORMDL \@ RAND:2 ? He # She \@ thanks you profusely for all your efforts and tells you that the village will be forever grateful.
+    PRINTFORMDW This should settle matters with the village elders.
+    RETURN
+ELSEIF !TOTAL_COUNT
+    RESTART
+ENDIF
+
+TIME += 5
+
+@CONCUBINAGE_TALK_EIKI
+#DIM CONST REQUIRED_REQUESTS = 300
+CALL SET_KOJO_COLOR([[映姫]])
+IF CONCUBINAGE_CONVINCED_EIKI == 1
+    IF Add_Request_Completed_Requests >= REQUIRED_REQUESTS
+        PRINTFORML 「Welcome back, %MASTER_NAME([[映姫]])%.」
+        PRINTFORML 「There's no need to say anything. I already know why you're here.」
+        PRINTFORML 「I've heard all about it.」
+        PRINTFORML 「No matter where I go, yours is the name on everyone's lips. The %PRINT_MALE("man")% who's been nothing but helpful to everyone %HE_SHE(MASTER)% meets.」
+        PRINTFORML 「It appears that my fears were misplaced. It's clear to me now that you are of strong character and not just acting on a passing whim.」
+        PRINTFORML 「As the Yama responsible for Gensokyo, I have no objections in you pursuing your goal of concubinage.」
+        PRINTFORML 「Continue pursuing good deeds as you've done before, and I'm sure you'll be able to make all of them happy.」
+        PRINTFORMDW Eiki gives you a gentle smile as she tells you this, and you take her words to heart.
+        CONCUBINAGE_CONVINCED_EIKI = 2
+    ELSE
+        CALL CONCUBINAGE_EIKI_PROGRESS
+    ENDIF
+ELSE
+    PRINTFORMDL Eiki quietly stands there as she listens to your appeal.
+    PRINTFORML 「I see, so that's why the Child of Miare sent you to me.」
+    PRINTFORMW 「She was wise to do so. Such a drastic change could bring great problems to Gensokyo.」
+
+    IF LEGAL_SPOUSE == TARGET
+        PRINTFORML 「However, this matter has already been settled, has it not?」
+        PRINTFORML 「I've already given my suppport, after all.」
+        PRINTFORML 「I'll inform Akyuu-san about my decision. That should be enough to ease her worries.」
+        CONCUBINAGE_CONVINCED_EIKI = 2
+    ELSE
+        PRINTFORML 「And even besides that, the damage to your own soul could leave it beyond repair.」
+        PRINTFORML 「That's right, you are a little too lustful.」
+        IF TALENT:MASTER:追加種族 == 4
+            PRINTFORML 「You may be beyond my judgment, but even so, you cannot escape your own karma.」
+            PRINTFORML 「If you continue on this path, it may consume you completely, leaving you as little more than a slave to your own desires.」
+        ELSE
+            PRINTFORML 「Though I may not be able to see your actions within my mirror, you will still one stand before me for judgment.」
+            PRINTFORML 「Consumed with lust as you are, you would certainly fall to hell.」
+        ENDIF
+        PRINTFORMW 「No, I cannot support such a desire. Not without strong evidence that you would not let it consume you.」
+        IF Add_Request_Completed_Requests >= REQUIRED_REQUESTS
+            PRINTFORML 「But I suppose I've already seen enough enough of your good deeds.」
+            PRINTFORML 「You've freely helped many people with their problems, showing great kindness and consideration towards others.」
+            PRINTFORML 「As long as you continue to show such dedication, I foresee no problems with your plan.」
+            PRINTFORML 「I'll inform Akyuu-san about my judgment. That should be enough to ease her worries.」
+            CONCUBINAGE_CONVINCED_EIKI = 2
+        ELSE
+            PRINTFORML 「However, if you show that you are wise enough to handle such a responsibility, I may yet reconsider.」
+            PRINTFORML 「Seek out people and help them with whatever problems they may have. Pursue those good deeds and come to know what you're capable of.」
+            CALL CONCUBINAGE_EIKI_PROGRESS
+        ENDIF
+    ENDIF
+ENDIF
+
+@CONCUBINAGE_EIKI_PROGRESS
+PRINTFORML 「Now, let's see how well you've done thus far...」
+
+SELECTCASE Add_Request_Completed_Requests
+    CASE IS >= 200
+        PRINTFORML 「I see you've been working hard.」
+        PRINTFORMW 「Continue along this path and it won't be much longer until your soul becomes balanced.」
+    CASE IS >= 150
+        PRINTFORML 「You've come quite a long way.」
+        PRINTFORMW 「Do you understand the joy found in helping others now? Keep it up, %MASTER_NAME([[映姫]])%.」
+    CASE IS >= 100
+        PRINTFORML 「It's evident that you're getting into the hang of things.」
+        PRINTFORMW 「But now's no time to rest on your laurels. There's still much more to go.」
+    CASE IS >= 50
+        PRINTFORML 「It's a start, but you still have a long way to go.」
+        PRINTFORML 「I hear that the black-and-white is well informed about people in need.」
+        PRINTFORMW 「Consider asking her for her assistance.」
+    CASE 0
+        PRINTFORML 「Have you ever done anything for another person?」
+        PRINTFORMW 「If you continue like this, you would not even make it past the Sanzu.」
+ENDSELECT
+
+@CONCUBINAGE_TALK_TENGU
+#DIM CONST TENGU_PAYMENT = 3500000
+CALL SET_KOJO_COLOR([[文]])
+SELECTCASE CONCUBINAGE_CONVINCED_TENGU
+    CASE 0
+        PRINTFORMDW You talk to Aya about how you wish to meet with Tenma, lord of the Tengu.
+        PRINTFORML 「Lord Tenma himself?!」
+        PRINTFORMW 「Could this have anything to do with that little "project" you're working on?」
+        PRINTFORML 「Don't look so surprised. Did you forget who you're talking to? There's no news in Gensokyo that I'm not privy to.」
+        PRINTFORMDL Aya says so with a smug expression on her face.
+        PRINTFORMW 「Though it's not as if it's much of a secret at this point. Your actions have made quite a stir even around Youkai Mountain.」
+        PRINTFORML 「It's good you came to me. You could never do this without the support of the tengu, after all.」
+        PRINTFORML 「That said, this definitely isn't going to be easy.」
+        PRINTFORML 「Lord Tenma is hardly one to involve himself with humans, let alone someone unimportant like you are.」
+        PRINTFORMW 「It would take a lot of strings being pulled and palms needing to be greased, if you catch my meaning.」
+        PRINTFORML 「And there's the etiquette, too. You can't just waltz in and talk to him casually, there's a lot of traditions to be followed.」
+        PRINTFORMW 「I can help you, but it'll take a lot of work and money.」
+        PRINTFORML 「Before we start, I need about %金額表示(TENGU_PAYMENT)% to pay for everything we need.」
+        CONCUBINAGE_CONVINCED_TENGU = 1
+        GOTO MONEY_TRANSFER
+    CASE 1
+        IF CONCUBINAGE_TENGU_PAYMENT_DONE
+            IF !CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING
+                CONCUBINAGE_TENGU_DATE = DAY + RAND(7, 12)
+                CONCUBINAGE_TENGU_TIME = CLOCK_TO_TIME(RAND(18, 28) % 24, RAND(0, 6) * 10)
+
+                LOCAL = DAY_TO_DATE(CONCUBINAGE_TENGU_DATE)
+                LOCAL:1 = LOCAL / 1000
+                LOCAL:2 = LOCAL % 1000 / 100
+                LOCAL:3 = LOCAL % 1000 % 100
+                PRINTFORML 「I've already heard about it, naturally. You should be all ready now.」
+                PRINTFORMDL Aya smugly shows off her knowledge before you even get a chance to speak.
+                PRINTFORML 「I've even taken the liberty to set up an audience for you already.」
+                PRINTFORML 「Lord Tenma is willing to meet with you on the %ORDINAL(LOCAL:3)% of %GET_MONTH(LOCAL:2, 1)% at %時刻表示(CONCUBINAGE_TENGU_TIME)%.」
+                PRINTFORML 「Make absolutely sure that you're not late. He will not give you a second chance.」
+                PRINTFORMDW Aya stresses this strongly. You can even see a hint of fear in her eyes.
+                PRINTFORMW 「Oh, and make sure to give me an exclusive interview afterwards, okay?」
+            ELSE
+                CALL CONCUBINAGE_TENGU_ETIQUETTE
+            ENDIF
+        ELSE
+            PRINTFORML 「Did you bring the money?」
+            $MONEY_TRANSFER
+            PRINTFORMDL Hand over %金額表示(TENGU_PAYMENT)%?
+            CALL ASK_YN()
+            IF !RESULT
+                IF MONEY < TENGU_PAYMENT
+                    PRINTFORMDL You don't have that much money!
+                    GOTO CANNOT_PAY
+                ENDIF
+                CALL LOST_MONEY_YEN(TENGU_PAYMENT, 2)
+                PRINTFORMDL You give Aya the money. She rapidly starts counting it as soon as it's in her hands.
+                PRINTFORML 「That's all of it. Good job.」
+                PRINTFORMW 「I'll make sure this gets to all the right people.」
+                PRINTFORML 「We'll start your training from tomorrow onwards. Don't be late.」
+                PRINTFORMDW You should make sure to talk to Aya every day for your lessons in Tengu etiquette.
+                CONCUBINAGE_TENGU_LAST_TRAINING_DAY = DAY
+                CONCUBINAGE_TENGU_PAYMENT_DONE = 1
+                CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING = 2000
+            ELSE
+                $CANNOT_PAY
+                PRINTFORMW 「Alright, just bring it over once you have all of it. We can't do anything before then.」
+            ENDIF
+        ENDIF
+ENDSELECT
+
+@CONCUBINAGE_TENGU_ETIQUETTE
+#DIM LEARNING_SCORE
+IF CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING == 2000
+    PRINTFORMDL Aya brings you to a small building hidden deep inside the mountain.
+    PRINTFORMDL As you enter, you see a tengu seated in the room, bowing deeply before you.
+    PRINTFORMDL 「Welcome, milord. You must be %CALLNAME:MASTER%.」
+    PRINTFORML 「She'll be your teacher today. Make sure to listen closely, you need to remember all of this.」
+    PRINTFORMDW Aya leaves in a flash, leaving you alone with the teacher.
+ELSE
+    PRINTFORMDL Aya guides you back to the tengu instructor's dwelling.
+ENDIF
+SELECTCASE CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING
+    CASE IS >= 2000
+        PRINTFORMDL You spend the day being taught to perform the basic formal greetings used amongst the tengu.
+        PRINTFORMDL The instructor is incredibly strict, heavily scrutinizing both your form and manner of speech.
+        PRINTFORMDW By the time she finally allows you to leave, you're left completely exhausted.
+    CASE IS > 1500
+        PRINTFORMDL Today you're taught more basic etiquette.
+        PRINTFORMDW It's a struggle to remember all the many critical little details involved, but your instructor insists they're all fundamental knowledge.
+    CASE IS > 1000
+        PRINTFORMDL Today you're taught some of the history of the tengu, and how they progressed over the ages.
+        PRINTFORMDW You're certain that much of it is embellished if not completely fabricated, but the instructor treats it with the utmost sincerity.
+    CASE IS > 500
+        PRINTFORMDL Today's lessons cover a crash cource in the tengu language.
+        PRINTFORMDW You don't require a full understanding, but you do need to know the critical words and phrases and their expansive associated context.
+    CASE IS > 0
+        PRINTFORMDL Today's lessons are about the specific ceremonies you'll have to deal with when meeting with Tenma.
+        PRINTFORMDL This covers everything from the proper clothing, the right way to introduce yourself, and the rules for negotiation.
+        PRINTFORMDW Naturally, they greatly favor the Tengu over yourself, but you make sure to note down anything that could be used to your advantage.
+ENDSELECT
+
+TIME += 360
+
+LEARNING_SCORE += SQRT(EXP:MASTER:会話経験 + EXP:MASTER:学習経験) * 2 ;use exp instead of simple ability scores, as getting here already requires rank 5
+FOR LOCAL, 1, CHARANUM
+    SIF CHECK_CHARA(LOCAL, "天狗") ;children with tengu increase understanding of tengu customs
+        LEARNING_SCORE += 10 * CFLAG:LOCAL:子供人数
+NEXT
+
+LEARNING_SCORE = LIMIT(LEARNING_SCORE, 50, 500) ;cap the potential minimum and maximum
+CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING -= LEARNING_SCORE
+
+IF CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING <= 0
+    PRINTFORMDL As the session comes to a close, the instructor stands and bows before you.
+    PRINTFORMDL 「This will be the last time. You've learned everything I could teach you, milord.」
+    PRINTFORMDL Walking out, you feel strong sense of satisfaction coming over you.
+    PRINTFORMDW You should return to Aya and ask her what comes next.
+    CONCUBINAGE_TENGU_ETIQUETTE_LESSONS_REMAINING = 0
+ENDIF
+
+CONCUBINAGE_TENGU_LAST_TRAINING_DAY = DAY
+
+@CONCUBINAGE_TENGU_MEETING
+#DIM CONST TENGU_BRIBE = 3000000
+SELECTCASE (DAY * 1440 + TIME) - (CONCUBINAGE_TENGU_DATE * 1440 + CONCUBINAGE_TENGU_TIME)
+    CASE IS <= -30
+        PRINTFORMDW It's still too early for the meeting. You'd just bother them if you'd try to go in now.
+    CASE IS > 120
+        PRINTFORMDL Since you're horribly late, the guard kicks you out, telling you not to come back.
+        $FAILURE
+        PRINTFORMDL With Tenma taking your tardiness as a personal insult, you've lost all hope of ever convincing him.
+        PRINTFORMDW It looks like your journey towards concubinage has well and truly failed.
+        CONCUBINAGE_PROGRESS = -1
+    CASE IS > 15
+        PRINTFORMDL You're a tad late. The guard rants at length about how rude and inappropriate your behavior is.
+        PRINTFORMDL Then, he suddenly leans in close and whispers to you that perhaps this is all just a "mistake".
+        PRINTFORMDL Perhaps there was a little miscommunication, and the guard was in error.
+        PRINTFORMDL Of course, making such an error would be highly embarassing for the guard, and Lord Tenma would be very upset with him over it.
+        PRINTFORMDL But if you were willing to offer a bit of "compensation", it might soften the blow a little.
+        PRINTFORMDL Bribe the guard with %金額表示(TENGU_BRIBE)%?
+        CALL ASK_YN
+        IF !RESULT
+            IF MONEY < TENGU_BRIBE
+                PRINTFORMDL You don't have that kind of money!
+                GOTO FAILURE
+            ELSE
+                CALL LOST_MONEY_YEN(TENGU_BRIBE, 2)
+                PRINTFORMDW After you hand over the money, the guard lets you inside.
+                GOTO MEETING_START
+            ENDIF
+        ELSE
+            GOTO FAILURE
+        ENDIF
+    CASEELSE
+        $MEETING_START
+        PRINTFORMDL You are brought before Tenma, supreme ruler of the tengu.
+        PRINTFORMDL Bowing in the exact manner you were taught to show the required respect, you begin the long meeting.
+        PRINTFORMDL The discussion goes on forever in constant back-and-forth interspersed with highly specific social rituals used only by the tengu.
+        PRINTFORMDL After a long, long debate, you finally manage to convince the tengu leader.
+        PRINTFORMDL %BREAKENG("You had to make some minor concessions, but by the end, you've charmed him enough that he says that he'll formally grant his approval as long as you'll teach him some of your secrets.")%
+        PRINTFORMDL You politely thank the greatest of tengu for his time, to which he responds that the pleasure was all his.
+        PRINTFORMDL As you're led back outside by the guard, he off-handedly mentions that he hasn't seen Lord Tenma act so jovial in centuries.
+        PRINTFORMDW It seems like you made quite the impression on him.
+
+        CONCUBINAGE_CONVINCED_TENGU = 2
+        TIME += 420
+ENDSELECT
+
+@CONCUBINAGE_TALK_KANAKO
+CALL SET_KOJO_COLOR([[神奈子]])
+;kanako/suwako will demand funds for shrine maintenance
+SELECTCASE CONCUBINAGE_CONVINCED_KANAKO
+    CASE 0
+        CONCUBINAGE_MORIYA_BRIBE = 10000000
+        SIF TALENT:[[神奈子]]:妻 || CONCUBINAGE_ONLY_THESE_LOVERS([[早苗]], [[神奈子]], [[諏訪子]])
+            CONCUBINAGE_MORIYA_BRIBE /= 2
+        IF LEGAL_SPOUSE == TARGET
+            PRINTFORML 「Yukari told you to get the Moriya Shrine's support?」
+            PRINTFORML 「I've already given my permission, so that should be enough, right?」
+            IF !IS_HERE([[諏訪子]])
+                CFLAG:[[諏訪子]]:現在位置 = CFLAG:MASTER:現在位置
+                PRINTFORMDW Suwako suddenly barges in, apparently having overheard your conversation.
+            ENDIF
+            CALL CHARA_TEXT([[諏訪子]], @"「Did ya forget about the real owner of this shrine?」")
+            CALL CHARA_TEXT([[諏訪子]], @"「You may have given %HIM_HER(MASTER)% permission as %HIS_HER(MASTER)% wife, but that doesn't mean the Moriya shrine has given its permission, too.」", "w")
+            IF CONCUBINAGE_ONLY_THESE_LOVERS([[早苗]], [[神奈子]], [[諏訪子]])
+                PRINTFORMDL Suwako pouts, but you can tell from her body language that she's secretly excited by the prospect.
+            ENDIF
+            PRINTFORML 「Now is when you decide to get involved in the shrine's affairs?」
+            PRINTFORMW 「I'm the one who's putting in the actual work to keep us afloat while you're playing around who knows where.」
+            CALL CHARA_TEXT([[諏訪子]], @"「Yes, and ya did a real praiseworthy job until now.」")
+            
+            IF CONCUBINAGE_ONLY_THESE_LOVERS([[早苗]], [[神奈子]], [[諏訪子]])
+                CALL CHARA_TEXT([[諏訪子]], @"「But if %CALLNAME:MASTER% is gonna make ","")
+
+                IF TALENT:[[諏訪子]]:恋人 && TALENT:[[早苗]]:恋人
+                    CALL CHARA_TEXT([[諏訪子]], @"me and Sanae into his concubines, ","")
+                ELSEIF TALENT:[[諏訪子]]:恋人
+                    CALL CHARA_TEXT([[諏訪子]], @"me into his concubine, ","")
+                ELSE
+                    CALL CHARA_TEXT([[諏訪子]], @"Sanae into his concubine, ","")
+                ENDIF
+                CALL CHARA_TEXT([[諏訪子]], @"then I have to make sure he pays a fair price.」")
+                IF TALENT:[[諏訪子]]:恋人
+                    CALL CHARA_TEXT([[諏訪子]], @"「Otherwise people might start thinking I'm some kinda easy girl.」")
+                    PRINTFORMDW That's what worries her, and not the idea of a god becoming a concubine?
+                ELSE ;sanae
+                    CALL CHARA_TEXT([[諏訪子]], @"「I'm not handing over my Sanae to some ne'er-do-well that easily.」", "w")
+                ENDIF
+            ELSE
+                CALL CHARA_TEXT([[諏訪子]], @"「But I gotta make sure to get my money's worth out of this.」")
+                CALL CHARA_TEXT([[諏訪子]], @"「Never let a good opportunity go to waste and all that, ya know?」")
+            ENDIF
+            PRINTFORML 「Fine, fine. I see that you're awfully thick-headed about all this.」
+            PRINTFORMDW Kanako sighs, giving up on arguing with Suwako.
+            PRINTFORML 「I'll let you make your selfish demands. Just don't ask for anything unreasonable, alright?」
+            PRINTFORML 「Just bear with it, %CALLNAME:MASTER%, there's no reasoning with her when she gets like this.」
+            PRINTFORMDW Having said that, Kanako takes her leave.
+            CALL CHARA_TEXT([[諏訪子]], @"「So rude. I'm only thinking of the shrine here, ya know? I should be praised for my thoughtfulness instead.」", "w")
+            CALL CHARA_TEXT([[諏訪子]], @"「So lemme tell you what I need from ya.」")
+            CALL CHARA_TEXT([[諏訪子]], @"「In short, we need a lot of money.」")
+            CALL CHARA_TEXT([[諏訪子]], @"「We're able to collect a lot of faith here on the mountain now, but it takes a lot to keep things running, too.」")
+            CALL CHARA_TEXT([[諏訪子]], @"「Keeping the fusion reactor and the cableway running safely takes a lot of money, and we're barely able to keep up with maintenance right now.」")
+            CALL CHARA_TEXT([[諏訪子]], @"「If you can give us %金額表示(CONCUBINAGE_MORIYA_BRIBE)%, we should be able to replace the older, more worn-out parts with more reliable replacements that should make future maintenance easier.」")
+            CALL CHARA_TEXT([[諏訪子]], @"「Just bring the money over to Kanako when you've got it ready. She'll handle things from there.」", "w")
+        ELSE
+            ;kanako dialogue
+            PRINTFORML 「So you want to formally take concubines, and you came to us to ask for support?」
+            
+            CALL PRINT_DIALOGUE, "I don't think you really understand how complicated such a life is, but you do show wisdom in asking for a divine blessing, so perhaps you'll be able to make it work."
+            PRINTFORML 「Of course, to receive such a great blessing would also require equally great devotion on your part.」
+            PRINTFORML 「Fortunately, there's an easy way to express that devotion by making a simple monetary donation.」
+            CALL PRINT_DIALOGUE, @"Naturally, since you're making such a massive request, it has to be a pretty sizeable donation, but %金額表示(CONCUBINAGE_MORIYA_BRIBE)% should suffice for the blessing you asked for."
+            PRINTFORMW 「Just bring the money when you have it ready.」
+        ENDIF
+        CONCUBINAGE_CONVINCED_KANAKO = 1
+    CASE 1
+        IF MONEY >= CONCUBINAGE_MORIYA_BRIBE
+            PRINTFORML 「I see you managed to secure the amount we asked for.」
+            PRINTFORML 「Are you ready to hand it over now?」
+            CALL ASK_YN
+            IF !RESULT
+                PRINTFORML 「Yes, this seems to be everything.」
+                IF TALENT:[[神奈子]]:妻
+                    ;she's very open with her husband and drops the imposing mountain god image to speak honestly about her struggles
+                    PRINTFORML 「Truthfully, this helps out a lot.」
+                    PRINTFORML 「We've started a lot of large projects to gather faith, but it's much harder to get things done in Gensokyo than it is on the outside.」
+                    CALL PRINT_DIALOGUE, "In the outside world, as long as you secure the required permits, it's easy to find a reliable builder, but working with the kappa is always a challenge."
+                    PRINTFORML 「They'll play around, fight amongst each other, or completely ignore the blueprints, and they'll quit as soon as they get bored.」
+                    CALL PRINT_DIALOGUE, "And then there's the tengu, too. They constantly try to stick their noses into our business and throw in their own demands, or write articles that make it look like we're doing something bad."
+                    PRINTFORML 「None of the humans here really understand what we do, either, and the Hakurei shrine maiden...」
+                    PRINTFORMDW Kanako keeps going like this for a while, complaining about everything and everyone.
+                    PRINTFORML 「Whew, it feels good to get that off my chest.」
+                    PRINTFORMW 「I appreciate you listening to me complain like this. It really helps take a load off my shoulders.」
+                    PRINTFORML 「I just wish Suwako would act with a bit more tact when it comes to matters like this.」
+                    PRINTFORML 「Well, no matter. With this, everything is settled and we can give our full support as the Moriya Shrine.」
+                    PRINTFORMW 「We have a good amount of influence amongst both humans and youkai, so that should go a long way towards convincing Gensokyo to accept your wishes.」
+                ELSE
+                    PRINTFORML 「Good work. With this, the Moriya Shrine will give its blessings towards your efforts.」
+                    PRINTFORMW 「You should feel proud of yourself, not many %PRINT_MALE("men", MASTER)% would be able to achieve this.」
+                ENDIF
+                CALL LOST_MONEY_YEN(CONCUBINAGE_MORIYA_BRIBE, 2)
+                CONCUBINAGE_CONVINCED_KANAKO = 2
+            ELSE
+                PRINTFORML 「I understand. It's a lot of money, after all.」
+                PRINTFORMW 「Then I'll just wait patiently until you're ready.」
+            ENDIF
+        ELSE
+            PRINTFORML 「You don't have the money ready yet? That's alright, there's no rush.」
+            PRINTFORMW 「I understand that it's quite the daunting sum, but I'm sure you'll be able to manage it soon enough.」
+        ENDIF
+ENDSELECT
+
+@CONCUBINAGE_TALK_BYAKUREN
+CALL SET_KOJO_COLOR([[白蓮]])
+;turns the player into an unpaid intern
+SELECTCASE CONCUBINAGE_CONVINCED_BYAKUREN
+    CASE 1
+        IF CONCUBINAGE_BYAKUREN_LABOR_REMAINING <= 0
+            PRINTFORML 「I'm glad to see you here again.」
+            PRINTFORML 「Now, as for today's training...」
+            PRINTFORMDW Byakuren's eyes dart across the temple, looking for a new chore for you to perform.
+            PRINTFORML 「You can help by replenishing our lumber supplies.」
+            PRINTFORMW 「As you and Byakuren walk over to the lumber shed, she sees that it's already filled to the brim.」
+            PRINTFORML 「Ah, well, I'm sure Kyouko could use some help sweeping the grounds.」
+            PRINTFORMW 「Byakuren looks around the temple grounds, but it's evident that there's not a single speck of dust or dirt to be found.」
+            PRINTFORML 「...In that case, you should go assist Ichirin in the kitch...」
+            PRINTFORMDL Right before she can finish her sentence, you see Ichirin and Unzan pass by with the meals you had prepared before.
+            PRINTFORML 「Well, then, you should...」
+            PRINTFORMDL Moving near the former laundry pile, you see that the pile is completely gone now.
+            PRINTFORML 「Perhaps you could...」
+            PRINTFORML 「...Or maybe...」
+            PRINTFORML 「...I'm sure that...」
+            PRINTFORML 「...There's still...」
+            PRINTFORMDL But no matter how hard to tries to think of something, it's obvious that there's not a single task left undone.
+            PRINTFORMDW As it stands right now, the Myouren Temple is in perfect order for the first time in its existence.
+            PRINTFORMDL Eventually, Byakuren is forced to acknowledge that there's nothing left for you to do, looking a little deflated before recomposing herself.
+            PRINTFORML 「I understand.」
+            PRINTFORML 「Looking at you know, I hardly recognize you.」
+            PRINTFORML 「When you came to me, you were on the verge of drowning in your lust, but now you look like a new %PRINT_MALE("man", MASTER)%.」
+            PRINTFORML 「You've truly honed your mind and body over these past few weeks, and I am honored that I could play a small role in that growth.」
+            PRINTFORML 「I feel confident now that you won't fall to temptation and stray from the right path.」
+            PRINTFORML 「I'll inform Yukari about my decision. Good luck, %CALLNAME:MASTER%.」
+            CONCUBINAGE_CONVINCED_BYAKUREN = 2
+        ELSE
+            CALL CONCUBINAGE_BYAKUREN_ARBEIT
+        ENDIF
+    CASE 0
+        PRINTFORMDW You painstakingly plead your case before Byakuren, her gentle smile never leaving her face.
+        PRINTFORML 「I see, so that's what you wish for.」
+        PRINTFORML 「However, I cannot approve of such a thing.」
+        PRINTFORML 「If you insist on this path, you'll end up swallowed by your own desires and never be able to escape the cycle of Samsara.」
+        PRINTFORML 「But if you can prove to me that you can rise over your base desires, I will give my permission.」
+        PRINTFORMW 「Come to the temple in the mornings and we will begin your training.」
+        CONCUBINAGE_CONVINCED_BYAKUREN = 1
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING = 10000
+ENDSELECT
+
+@CONCUBINAGE_BYAKUREN_ARBEIT
+SELECTCASE RAND:7
+    CASE 0
+        PRINTFORMDL Today you're tasked to gather firewood in the forest.
+        IF TALENT:MASTER:採集Lv > 3
+            PRINTFORMDW With your skills, you have an easy time of it, and you bring back enough to last the temple months.
+        ELSE
+            PRINTFORMDW With your lackluster skills you barely get any, and the stockpile has barely grown when you return. 
+        ENDIF
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= TALENT:MASTER:採集Lv * 100
+    CASE 1
+        PRINTFORMDL Today's duty assigned to you is to wash everyone's clothes alongside Murasa.
+        PRINTFORMDW She's blatantly using your presence as an excuse to slack off, leaving all the work to you.
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= ABL:MASTER:清掃技能 * 100
+    CASE 2
+        PRINTFORMDL Today you're in the kitchen alongside Ichirin.
+        PRINTFORMDW With so many mouths to feed, the job keeps you busy all day.
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= ABL:MASTER:料理技能 * 100
+    CASE 3
+        PRINTFORMDL Today you're tasked to clean the temple grounds alongside Kyouko.
+        PRINTFORMDW While certainly enthusiastic, her sweeping's pretty sloppy, forcing you to clean up after her to ensure it's done correctly.
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= ABL:MASTER:清掃技能 * 100
+    CASE 4
+        PRINTFORMDL Today's job is to clean the temple's interior.
+        PRINTFORMDW Massive amounts of dust have gathered since it was last cleaned, making the task truly herculean in nature.
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= ABL:MASTER:清掃技能 * 100
+    CASE 5
+        PRINTFORMDL Today you're stuck moving objects across the temple grounds along with Unzan.
+        IF ABL:MASTER:戦闘能力 > 4 && TALENT:MASTER:力持ち
+            PRINTFORMDW The two of you work well together, and you get a lot of work done.
+        ELSE
+            PRINTFORMDW Fortunately, Unzan proves himself to be quite reliable, and you get quite a bit of work done.
+        ENDIF
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= ABL:MASTER:清掃技能 * 75 * (TALENT:MASTER:力持ち + 1)
+    CASE 6
+        PRINTFORMDL Today you're assigned to perform general maintenance around the temple.
+        PRINTFORMDW Many places have become damaged due to all the battles happening here, making this a neverending job.
+        CONCUBINAGE_BYAKUREN_LABOR_REMAINING -= TALENT:MASTER:伐採Lv * 100
+ENDSELECT
+SIF CONCUBINAGE_BYAKUREN_LABOR_REMAINING < 0
+    CONCUBINAGE_BYAKUREN_LABOR_REMAINING = 0
+TIME += 600
+CONCUBINAGE_BYAKUREN_LAST_WORK_DAY = DAY
+
+@CONCUBINAGE_TALK_MIKO
+;miko wants a bunch of rare drinks
+;5 Brandy XO (CASE 573 ;ブランデーXO)
+;20 Mead (CASE 561 ;ミード)
+;10 Akumochizake? (CASE 574 ;灰持酒)
+;5 Fortified Wine? (CASE 567 ;酒精強化ワイン)
+;10 Sweet Potato Shochu? (CASE 560 ;芋焼酎)
+;3 Dark Rum (566 ダークラム)
+;1 Kijoshi Koshu (585 貴醸古酒)
+CALL SET_KOJO_COLOR([[神子]])
+
+SELECTCASE CONCUBINAGE_CONVINCED_MIKO
+    CASE 0
+        PRINTFORMDL Right when you open your mouth to speak, Miko interrupts you.
+        PRINTFORML 「Such powerful desires. You sure are greedy, not being satisfied with just your %PRINT_MALE("husband", LEGAL_SPOUSE)%.」
+        PRINTFORMW 「Well, I don't really mind. I think you're asking for trouble in trying to do this here, but if this is what you want, I won't stop you.」
+
+        PRINTFORML 「Of course, since I'm one of the influential people in Gensokyo, I can't just give my permission that easily, can I?」
+        PRINTFORMDL Miko flashes a sly grin as she continues.
+        PRINTFORML 「Oh, don't worry, I'm not going to ask for anything unreasonable.」
+        PRINTFORML 「I've been planning a party for a while, and I was hoping to serve some rare Outside World drinks there.」
+        CALL PRINT_DIALOGUE, "You have some kind of way to get your hands on those, right? I'm willing to give my support for your endeavor if you can bring me the following drinks:"
+
+        VARSET LOCALS
+        FOR LOCAL, 0, VARSIZE("CONCUBINAGE_MIKO_DRINKS")
+            LOCALS += @"{CONCUBINAGE_MIKO_DRINK_QUANTITIES:LOCAL} %ITEMNAME_TR(CONCUBINAGE_MIKO_DRINKS:LOCAL)%、"
+        NEXT
+        PRINTFORML 「%LIST_IN_STRING(LOCALS)%.」
+
+        PRINTFORML 「Please bring everything once you have it all ready.」
+        PRINTFORMW 「Good luck. I look forward to the results.」
+        CONCUBINAGE_CONVINCED_MIKO = 1
+    CASE 1
+        LOCAL:1 = 1
+        FOR LOCAL, 0, VARSIZE("CONCUBINAGE_MIKO_DRINKS")
+            IF ITEM:(CONCUBINAGE_MIKO_DRINKS:LOCAL) < CONCUBINAGE_MIKO_DRINK_QUANTITIES:LOCAL
+                LOCAL:1 = 0
+                BREAK
+            ENDIF
+        NEXT
+
+        IF LOCAL:1
+            PRINTFORML 「I see you've managed to gather all the drinks that I asked for.」
+            PRINTFORML 「Are you ready to hand them all over?」
+            CALL ASK_YN
+            IF !RESULT
+                FOR LOCAL, 0, VARSIZE("CONCUBINAGE_MIKO_DRINKS")
+                    ITEM:(CONCUBINAGE_MIKO_DRINKS:LOCAL) -= CONCUBINAGE_MIKO_DRINK_QUANTITIES:LOCAL
+                NEXT
+                PRINTFORML 「Thank you.」
+                PRINTFORML 「With this I give you my full support in your efforts to bring concubinage to Gensokyo.」
+                PRINTFORMW 「Good luck with your harem. Just make sure to keep them all happy.」
+                CONCUBINAGE_CONVINCED_MIKO = 2
+            ELSE
+                PRINTFORMW 「I'll wait until you're ready to hand them over, then.」
+            ENDIF
+        ELSE
+            PRINTFORML 「You don't have all the drinks I asked for yet.」
+            PRINTFORMW 「There's no need to rush, but please bring it all at once when they're ready.」
+        ENDIF
+ENDSELECT
+
+@CONCUBINAGE_TALK_OKINA
+;put on a grand performance
+CALL SET_KOJO_COLOR([[隠岐奈]])
+
+SELECTCASE CONCUBINAGE_CONVINCED_OKINA
+    CASE 0
+        PRINTFORML 「You wanted to talk about something important?」
+        PRINTFORMW 「Alright, go ahead. I'm listening.」
+        PRINTFORMDL You explain your goals to Okina.
+        PRINTFORML 「How very human of you.」
+        PRINTFORML 「You know, whenever one of the youkai or gods here takes a partner, it's for life. Their partner's, at least.」
+        PRINTFORML 「The villagers have their occasional love affair, but for the most part they're content with what they have, too.」
+        PRINTFORMW 「You are the only exception.」
+        PRINTFORML 「Why? is it your lust, your greed, an obsessive compulsion, or just a way to avoid boredom?」
+        PRINTFORMW 「It doesn't really matter.」
+        PRINTFORML 「If you want my approval, show me your passion! Show me why you would deserve all those women!」
+        PRINTFORML 「Put on a grand performance worthy of me and we'll shall see if you are a great enough man to claim the world!」
+        PRINTFORML 「I'll leave the details up to you. Return to me when you think you're ready.」
+        PRINTFORMW 「Don't disappoint me now, %CALLNAME:MASTER%. I'm looking forward to it.」
+        PRINTFORMDL As expected, the task Okina would give you is quite demanding. Putting together a play seems like your best option.
+        IF ABL:MASTER:音楽技能 < 5
+            PRINTFORMDL For starters, you'll need a great deal of musical practice yourself.
+            PRINTFORMD Next, y
+        ELSE
+            PRINTFORMD Y
+        ENDIF
+        PRINTFORMDL ou'll need to find suitable performers.
+        PRINTFORMDL A performance like this will need suitable musicians and dancers. You should be able to find some amongst Gensokyo's inhabitants.
+        PRINTFORMDL You guess you'll mull about it a more later.
+        PRINTFORMDL There's also the matter of the work itself.
+        PRINTFORMDL The Sage would certainly not be satisfied with some existing work, so you'll have to spend time writing something original.
+        PRINTFORMDL After that, you'll need to rehearse it with everyone until all of them know their roles perfectly.
+        PRINTFORMDL And lastly, you'll need to prepare a proper stage to hold the play.
+        PRINTFORMDW You'd better prepare for many sleepless nights in the coming weeks to prepare for the performance of a lifetime...
+        CONCUBINAGE_CONVINCED_OKINA = 1
+    CASE 1
+        IF CONCUBINAGE_OKINA_PERFORMANCE_STATE < 6
+            PRINTFORMDW You're not nearly ready to give your grand performance yet.
+        ELSE
+            PRINTFORML 「Well then, %CALLNAME:MASTER%, show me what you can do.」
+            PRINTFORMDW Comfortably seated, Okina is eager to watch the performance.
+            PRINTFORMDL The band begins their performance, and the dancers take the stage as you lead them in what may well be the greatest play ever performed in Gensokyo.
+            PRINTFORMDL Every note played in perfect sync and every movement in total harmony, your girls show the results of all their and your hard work.
+            PRINTFORMDW As the play finally reaches its conclusion, you look over to Okina to gauge her response.
+            IF CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS == "Choujuu Gigaku" && CONCUBINAGE_OKINA_PERFORMANCE_DANCERS == "Dark Fairy Ballet"
+                PRINTFORMDL You see her weep openly, unable to contain her emotions.
+                PRINTFORMW 「Magnificent, truly magnificent.」
+                PRINTFORML 「The movements, the music, and the story all truly came together to form a performance unlike any other.」
+                PRINTFORML 「You've truly surpassed my expectations, %CALLNAME:MASTER%.」
+                PRINTFORML 「It's impossible for me to deny your passion. I'll support everything you wish to do.」
+            ELSE
+                PRINTFORMDL She eagerly applauds the performance, looking quite satisfied with the results.
+                PRINTFORMW 「Splendid. Most impressive.」
+                PRINTFORML 「I can see your passions through this work, %CALLNAME:MASTER%.」
+                PRINTFORMW 「I accept your proposal. I look forward to seeing what happens next.」
+            ENDIF
+            CONCUBINAGE_CONVINCED_OKINA = 2
+        ENDIF
+ENDSELECT
+
+@CONCUBINAGE_OKINA_PROGRESS
+IF CONCUBINAGE_CONVINCED_OKINA == 1 && ABL:MASTER:音楽技能 >= 5 && !FLAG:気絶中断
+    IF NEMUKE() > 960
+        PRINTFORMDW You're too tired to work on the play today, so no progress is made.
+    ELSE
+        IF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 0
+            PRINTFORMDL Before you turn in for the night, you put your mind to the task Okina put before you.
+            FORCEWAIT
+            PRINTFORMDL You consider your options for the musicians, and decide on the following potential choices:
+            PRINTL
+            PRINTFORMDL The Prismriver Quartet:
+            PRINTFORMDL 　Masters of their respective instruments, they have a great deal of experience, and should be well-suited towards a more western-style piece.
+            PRINTFORMDL 　Professionals as they are, their services might not come cheap, however.
+            PRINTL
+            PRINTFORMDL The Tsukumo Sisters:
+            PRINTFORMDL 　Quite experienced with their instruments, they would be well-suited for a traditional Japanese performance.
+            PRINTFORMDL 　It might take some convincing to get them to work on such a daunting venture, however.
+            PRINTL
+            PRINTFORMDL Choujuu Gigaku:
+            PRINTFORMDL 　An unorthodox option, who mostly treat music as a hobby.
+            PRINTFORMDL 　It shouldn't be too difficult to get them on board, but it might be a challenge for them to fit in.
+            PRINTL
+            PRINTFORMDL As for dancers, you can think of the following options:
+            PRINTL
+            PRINTFORMDL Hata no Kokoro:
+            PRINTFORMDL 　A master of Noh, it shouldn't be difficult to write a performance around her.
+            PRINTFORMDL 　The burden would be entirely on her, however, but since Okina seems to be fond of her, that might work in her favor.
+            PRINTL
+            PRINTFORMDL Mai and Satono:
+            PRINTFORMDL 　Experienced in dancing together, it shouldn't be hard to work with them.
+            PRINTFORMDL 　Since they're already Okina's minions, however, it might take some effort to convince them to work with you.
+            PRINTFORMDL 　Also, since Okina knows them so well, she might consider their dances to be a bit too predictable.
+            PRINTW
+            PRINTFORMDL Some of these might work better together than others, but you believe you should be able to make any of the pairings work.
+            PRINTFORMDW You'll just have to ask them and see if they're willing to join you.
+
+            IF TALENT:MASTER:FAIRY_FRIEND > 1
+                PRINTL
+                PRINTFORMDL Just before you head for bed, you take a look out of the window, and see Larva with a trio of fairies, dancing together in the moonlight.
+                PRINTFORMDL Their instinctively choreographed movements are quite enchanting to witness, and you keep watching them for quite some time.
+                PRINTFORMDW Perhaps you could convince them and the other fairies to work with you as well, though it might be quite difficult to coordinate them all together.
+            ENDIF
+            CONCUBINAGE_OKINA_PERFORMANCE_STATE = 1
+        ELSEIF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 1 && CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS != "" && CONCUBINAGE_OKINA_PERFORMANCE_DANCERS != ""
+            IF GROUPMATCH(CONCUBINAGE_OKINA_PERFORMANCE_DANCERS, "Fairy Ballet", "Dark Fairy Ballet")
+                SPLIT CONCUBINAGE_OKINA_PERFORMANCE_FAIRIES_RECRUITED, "、", LOCALS
+                LOCAL:1 = RESULT
+                FOR LOCAL, 1, CHARANUM
+                    IF CHECK_CHARA(LOCAL, "妖精") && FINDELEMENT(LOCALS, TOSTR(LOCAL), 0, LOCAL:1, 1) < 0
+                        PRINTFORMDL There are still more fairies to recruit for Okina's task.
+                        RETURN
+                    ENDIF
+                NEXT
+            ENDIF
+
+            PRINTFORMDL You now have everyone you need to continue the task Okina gave you.
+            PRINTFORMDL First of, you need to begin writing the actual play.
+            PRINTFORMDL Second, you'll need to create a stage to rehearse and perform on.
+            PRINTFORMDL About fifty pieces of lumber of any kind should be sufficient.
+            PRINTFORMDW Once that's out of the way, you'll be able to begin rehearsals.
+
+            CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED = 1000
+
+            SELECTCASE CONCUBINAGE_OKINA_PERFORMANCE_DANCERS
+                CASE "Kokoro"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 1000
+                CASE "Backdoor Dancers"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 2000
+                CASE "Fairy Ballet"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 4000
+                CASE "Dark Fairy Ballet"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 6000
+            ENDSELECT
+            
+            SELECTCASE CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS
+                CASE "Prismriver Quartet"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 1000
+                CASE "Choujuu Gigaku"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 4000
+                    SIF CONCUBINAGE_OKINA_PERFORMANCE_DANCERS == "Dark Fairy Ballet"
+                        CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 4000
+                CASE "Tsukumo Sisters"
+                    CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED += 2000
+            ENDSELECT
+
+            CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING = 1000
+            CONCUBINAGE_OKINA_PERFORMANCE_STATE = 2
+        ELSEIF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 2
+            PRINTFORMDL You \@ CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING == 1000 ? begin # continue \@ working on writing the play.
+
+            LOCAL = RAND(1, (ABL:MASTER:話術技能 * 3 + ABL:MASTER:音楽技能 * 2 + ABL:MASTER:教養) * 5)
+
+            SELECTCASE LOCAL
+                CASE IS >= 200
+                    PRINTFORMDW An incredible amount of progress is made.
+                CASE IS >= 150
+                    PRINTFORMDW A large amount of progress is made.
+                CASE IS >= 100
+                    PRINTFORMDW A significant amount of progress is made.
+                CASE IS >= 50
+                    PRINTFORMDW Some amount of progress is made.
+                CASEELSE
+                    PRINTFORMDW Not much progress is made.
+            ENDSELECT
+            CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING -= LOCAL
+
+            IF CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING <= 0
+                PRINTFORMDL As you yot the final line down, you look at your work and feel a sense of pride swelling up inside of you.
+                PRINTFORMDW This magnificent tale is sure to impress even Okina.
+                PRINTFORMDL With the first step out of the way, you start thinking about the stage.
+                PRINTFORMDW It'll take some time to set up, but with sufficient lumber, it shouldn't be too difficult.
+                CONCUBINAGE_OKINA_PERFORMANCE_STATE = 3
+            ENDIF
+        ELSEIF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 3
+            LOCAL = 0
+            FOR LOCAL, 1, 50
+                SIF GROUPMATCH(LOCAL, 12, 13) ;not bamboo or wood incense
+                LOCAL += LOG_SALES:LOCAL
+            NEXT
+            IF LOCAL < 50
+                PRINTFORMDL You don't have enough lumber to build the stage.
+                PRINTFORMDW You will need at least fifty pieces of any kind.
+            ELSE
+                LOCAL:1 = 50
+                FOR LOCAL, 1, 50
+                    IF LOG_SALES:LOCAL
+                        LOCAL:2 = MIN(LOG_SALES:LOCAL, LOCAL:1)
+                        LOCAL:1 -= LOCAL:2
+                        LOG_SALES:LOCAL -= LOCAL:2
+                    ENDIF
+                NEXT
+                PRINTFORMDL You carry all the required lumber to the location of the soon-to-be stage.
+                PRINTFORMDW From tomorrow onwards, you'll start actually building the thing.
+                CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING = 500
+                CONCUBINAGE_OKINA_PERFORMANCE_STATE = 4
+            ENDIF
+        ELSEIF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 4
+            PRINTFORMDL You \@ CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING == 500 ? begin # continue \@ working on building the stage.
+            
+            LOCAL = RAND(1, (TALENT:MASTER:伐採Lv * 3 + ABL:MASTER:戦闘能力 * 2 + ABL:MASTER:教養) * 2 * (TALENT:MASTER:力持ち + 1))
+
+            SELECTCASE LOCAL
+                CASE IS >= 200
+                    PRINTFORMDW An incredible amount of progress is made.
+                CASE IS >= 150
+                    PRINTFORMDW A large amount of progress is made.
+                CASE IS >= 100
+                    PRINTFORMDW A significant amount of progress is made.
+                CASE IS >= 50
+                    PRINTFORMDW Some amount of progress is made.
+                CASEELSE
+                    PRINTFORMDW Not much progress is made.
+            ENDSELECT
+            CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING -= LOCAL
+
+            IF CONCUBINAGE_OKINA_PERFORMANCE_PREPARATIONS_REMAINING <= 0
+                PRINTFORMDL With the final nail in place, you take a step back to gaze at your handiwork.
+                PRINTFORMDL A solidly-built stage stands before you, perfect for the play you envisioned.
+                PRINTFORMDW Starting tomorrow, reheasals will begin in earnest. Hopefully, getting everyone to work together won't be too difficult.
+                CONCUBINAGE_OKINA_PERFORMANCE_STATE = 5
+            ENDIF
+        ELSEIF CONCUBINAGE_OKINA_PERFORMANCE_STATE == 5
+            CALL ADD_CALCULATE_MUSIC_COLLECTION
+            LOCAL = RAND(1, (ABL:MASTER:音楽技能 * 3 + ABL:MASTER:話術技能 * 2 + ABL:MASTER:教養) * 4 + RESULT:2 / 2)
+            
+            PRINTFORMDL You bring everyone together and start rehearsing.
+            SELECTCASE LOCAL
+                CASE IS >= 250
+                    PRINTFORMDW An immense amount of progress is made.
+                CASE IS >= 200
+                    PRINTFORMDW An incredible amount of progress is made.
+                CASE IS >= 150
+                    PRINTFORMDW A large amount of progress is made.
+                CASE IS >= 100
+                    PRINTFORMDW A significant amount of progress is made.
+                CASE IS >= 50
+                    PRINTFORMDW Some amount of progress is made.
+                CASEELSE
+                    PRINTFORMDW Not much progress is made.
+            ENDSELECT
+            CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED -= LOCAL
+
+            IF CONCUBINAGE_OKINA_PERFORMANCE_REHEARSING_REQUIRED <= 0
+                PRINTFORMDL During this rehearsal, everything truly comes together.
+                PRINTFORMDL Everyone plays their role to perfection, moving gracefully and with great dignity, as if they've worked together for years.
+                PRINTFORMDW This is it. You are finally ready to give your grand performance and bring it all to an end.
+                CONCUBINAGE_OKINA_PERFORMANCE_STATE = 6
+            ENDIF
+        ENDIF
+    ENDIF
+ENDIF
+
+@CONCUBINAGE_OKINA_RECRUITMENT
+CALL SET_KOJO_COLOR(TARGET)
+IF NO:TARGET == [[ルナサ]] ;prismriver
+    PRINTFORML 「You want us to provide the music for a dance performance?」
+    PRINTFORML 「Sure, we can do that for you.」
+    PRINTFORML 「Our fee for such a venture amounts to %金額表示(1500000)%.」
+    PRINTFORMDL Pay the money?
+    CALL ASK_YN
+    IF !RESULT
+        IF MONEY >= 1500000
+            CALL LOST_MONEY_YEN(1500000, 2)
+            PRINTFORML 「Yes, that will be enough.」
+            PRINTFORMW 「We'll be ready for rehearsals when you need us.」
+            CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS = Prismriver Quartet
+            RETURN 1
+        ELSE
+            PRINTFORML 「That isn't nearly enough.」
+            PRINTFORMW 「We don't work for exposure.」
+        ENDIF
+    ELSE
+    ENDIF
+ELSEIF NO:TARGET == [[ミスティア]] ;punks
+    PRINTFORML 「A gig for us?」
+    IF MARK:[[ミスティア]]:反発刻印 < 3 && MARK:[[響子]]:反発刻印 < 3
+        PRINTFORMW 「That sounds awesome! We'll do it.」
+        CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS = Choujuu Gigaku
+        RETURN 1
+    ELSE
+        PRINTFORM 「Not a chance. 
+        IF MARK:[[ミスティア]]:反発刻印 == 3 && MARK:[[響子]]:反発刻印 == 3
+            PRINTFORM Neither of us can 
+        ELSEIF MARK:[[ミスティア]]:反発刻印 == 3
+            PRINTFORM I genuinely can't 
+        ELSEIF MARK:[[響子]]:反発刻印 == 3
+            PRINTFORM Kyouko can't 
+        ENDIF
+        PRINTFORMW stand you.」
+    ENDIF
+ELSEIF NO:TARGET == [[弁々]] || NO:TARGET == [[八橋]] ;tsukumo
+    PRINTFORMDL You ask %CALLNAME:TARGET% if they're willing to perform for you.
+    PRINTFORMW 「That's a little different from what we usually do, so...」
+    IF CFLAG:[[弁々]]:好感度 >= 3000 && CFLAG:[[八橋]]:好感度 >= 3000
+        PRINTFORML 「Well, since you're the one asking, we'll give it a shot.」
+        PRINTFORMW 「Just call us when rehearsal starts.」
+        CONCUBINAGE_OKINA_PERFORMANCE_MUSICIANS = Tsukumo Sisters
+        RETURN 1
+    ELSE
+        PRINTFORML 「Sorry, I will have to decline.」
+        PRINTFORMW 「I'm not willing to take this chance on you.」
+    ENDIF
+ELSEIF NO:TARGET == [[こころ]] ;kokoro
+    PRINTFORMDL You ask Kokoro if she's willing to perform for you.
+    IF CFLAG:[[こころ]]:好感度 >= 3000
+        PRINTFORMW 「Okay. This sounds fun.」
+        CONCUBINAGE_OKINA_PERFORMANCE_DANCERS = Kokoro
+        RETURN 1
+    ELSE
+        PRINTFORMW 「...Mamizou said not to trust strangers.」
+    ENDIF
+ELSEIF NO:TARGET == [[舞]] || NO:TARGET == [[里乃]] ;backdoor
+    PRINTFORMDL You ask the backdoor dancers if they're willing to perform for you.
+    IF CFLAG:[[舞]]:好感度 >= 4000 && CFLAG:[[里乃]]:好感度 >= 4000
+        PRINTFORML 「Well, if it's for Master's sake, I guess we can do it.」
+        PRINTFORMW 「Just tell us when you need us for rehearsals.」
+        CONCUBINAGE_OKINA_PERFORMANCE_DANCERS = Backdoor Dancers
+        RETURN 1
+    ELSE
+        PRINTFORML 「No way. We're far too busy with our work to get involved with that.」
+        PRINTFORMW 「Master would get pretty upset if she caught us wasting time like this.」
+    ENDIF
+ELSEIF NO:TARGET == [[ラルバ]] ;larva
+    PRINTFORML 「You wanna do a big dance with us fairies?」
+    PRINTFORML 「Sure, that sounds super fun!」
+    PRINTFORMW 「You should invite all the others, too. I bet they'd all enjoy it.」
+    CONCUBINAGE_OKINA_PERFORMANCE_DANCERS = Fairy Ballet
+    CONCUBINAGE_OKINA_PERFORMANCE_FAIRIES_RECRUITED = {[[ラルバ]]}、
+    RETURN 1
+ELSEIF CHECK_CHARA(TARGET, "妖精") ;fairy
+    PRINTFORMDL You invite %CALLNAME:TARGET% to join the dance.
+    IF MARK:TARGET:反発刻印
+        PRINTFORMDW But %HE_SHE(TARGET)% rejects your proposal with a pout, seemingly still quite upset with you.
+    ELSE
+        PRINTFORMDW %HE_SHE(TARGET, 1)% eagerly accepts, obviously looking forward to it.
+        CONCUBINAGE_OKINA_PERFORMANCE_FAIRIES_RECRUITED += @"{TARGET}、"
+        RETURN 1
+    ENDIF
+ELSEIF NO:TARGET == [[ルーミア]] ;hungry fairy
+    PRINTFORMDL You invite Rumia to join the dance. She's basically a fairy, right?
+
+    LOCAL = 0
+    IF ITEM:獣肉
+        LOCAL = GETNUM(ITEM, "獣肉")
+    ELSEIF ITEM:鳥肉
+        LOCAL = GETNUM(ITEM, "鳥肉")
+    ELSEIF ITEM:得体の知れない肉
+        LOCAL = GETNUM(ITEM, "得体の知れない肉")
+    ENDIF
+
+    IF MARK:TARGET:反発刻印 || !LOCAL
+        PRINTFORMDW But she refuses immediately.
+    ELSE
+        PRINTFORMDL You see her stare hungrily at your pockets.
+        PRINTFORMDL Give her some food?
+        CALL ASK_YN
+        IF !RESULT
+            CALL LOST_ITEM(ITEMNAME:LOCAL, 1, 2)
+            PRINTFORMDW She chomps down on the food and decides to accept your proposal.
+            CONCUBINAGE_OKINA_PERFORMANCE_FAIRIES_RECRUITED  += @"{[[ルーミア]]}、"
+            CONCUBINAGE_OKINA_PERFORMANCE_DANCERS = Dark Fairy Ballet
+            RETURN 1
+        ELSE
+            PRINTFORMDW She turns away, losing interest in you.
+        ENDIF
+        RETURN 1
+    ENDIF
+ENDIF
+RETURN 0
+
+@STR_PUSH_BACK(ARRAY, ARGS)
+#DIMS REF ARRAY
+LOCAL = FINDELEMENT(ARRAY, "",,,1)
+SIF LOCAL < 0
+    THROW Index exceeds the size of the array.
+ARRAY:LOCAL '= ARGS
+RETURN LOCAL
+
+@CONCUBINAGE_TALK_KASEN
+#DIMS DYNAMIC LECTURE_OPTIONS, 60
+#DIM OPTIONCOUNT
+CALL SET_KOJO_COLOR([[華扇]])
+
+;can't use printdata, and this is a bit easier to maintain than a large selectcase
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Did you ever think about...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "If you actually applied yourself...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "The consequences of this...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "With just a bit of...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "In the first place...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Just for starters...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Not even the...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "You should just...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Not even to mention...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "With just a bit more...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Keep in mind...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Just think about the...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Really, just...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "The last time that...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Considering that...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Common sense would say...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "For goodness' sake...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "If you'd just...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Every time...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "With just a little more...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Remember that...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "I would say...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "You really need to...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Actually...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "It would be far better to...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Just stop and think about...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Even if you would, you'd...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "It's just irresponsible...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "You need to...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "At least...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Your selfishness will...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "You should realize that...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "How would you even...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Isn't that just...")
+CALL STR_PUSH_BACK(LECTURE_OPTIONS, @"Just because you're a %PRINT_MALE("guy", MASTER)%...")
+REPEAT 3 ;these are allowed multiple times
+    CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Nag nag...")
+    CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Blah blah...")
+    CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Lecture lecture...")
+    CALL STR_PUSH_BACK(LECTURE_OPTIONS, "Wag wag...")
+REND
+OPTIONCOUNT = RESULT + 1
+
+;so this is what youve been so busy with lately?
+PRINTFORMDL You explain the situation to Kasen.
+FORCEWAIT
+PRINTFORMDW Kasen sighs deeply before she launches into a tirade.
+
+REPEAT 80
+    DO
+        LOCAL = RAND:OPTIONCOUNT
+        LOCALS '= LECTURE_OPTIONS:LOCAL
+    LOOP LOCALS == LOCALS:1
+
+    SELECTCASE COUNT
+        CASE IS >= 35
+            LOCAL:2 = 1
+        CASE IS >= 30
+            LOCAL:2 = 2
+        CASE IS >= 20
+            LOCAL:2 = 5
+        CASE IS >= 10
+            LOCAL:2 = 10
+        CASE IS >= 5
+            LOCAL:2 = 20
+        CASEELSE
+            LOCAL:2 = 50
+    ENDSELECT
+
+    CALL KEYTYPING(LOCALS, "d:l", LOCAL:2)
+    LOCALS:1 '= LOCALS
+    IF MESSKIP() || GETKEYTRIGGERED(0x01) ;no skipping here
+        PRINTFORML 「Hey! Are you even listening to me?」
+        PRINTFORML 「Pay attention!」
+		FORCEWAIT
+    ENDIF
+REND
+
+PRINTFORMDW One last, drawn out sign later, it seems the lecture has finally come to an end.
+PRINTFORML 「Well, I guess I can't really stop you from doing this.」
+PRINTFORML 「Just think about it carefully, okay?」
+PRINTFORMDW It was a terrible ordeal, but it seems like you've gotten Kasen's permission. More or less.
+
+CONCUBINAGE_CONVINCED_KASEN = 2
+TIME += 175
+
+@CONCUBINAGE_TALK_REMILIA
+CALL SET_KOJO_COLOR([[レミリア]])
+SELECTCASE CONCUBINAGE_CONVINCED_REMILIA
+    CASE 1
+        IF STONE_COMBI_TROPHY:31 && STONE_BITE_A_DUST >= FLAG:周回数 && TALENT:MASTER:積み石ランカー == 6
+            PRINTFORML 「Congratulations, %CALLNAME:MASTER%! I've heard all about your victory.」
+            PRINTFORML 「You should be proud of yourself, you know. Not many %PRINT_MALE("men", MASTER)% could hope to achieve what you did.」
+            PRINTFORMW 「With that, I see no reason to oppose your plans any further. Have as much fun as you'd like.」
+            CONCUBINAGE_CONVINCED_REMILIA = 2
+        ELSE
+            PRINTFORML 「You still haven't managed to become champion of the stone-stacking competition.」
+            PRINTFORMW 「Don't forget you need to win both the solo and the couples divisions.」
+        ENDIF
+    CASE 0
+        PRINTFORMDL As you're about to turn in for the day, someone suddenly barges into your room.
+        PRINTFORML 「Just what do you think you're doing, forgetting all about me?!」
+        PRINTFORMW 「Running around, talking to all these people, while ignoring me? Who do you even think you are?!」
+        PRINTFORMDL Unable to make sense of what she's saying, you try to calm the clearly agitated Remilia down.
+        PRINTFORMDW Once she finally relaxes a little, you ask her just what the hell she's talking about.
+
+        PRINTFORML 「It's you and your whole "concubinage" plan! How dare you try something like that without even talking to me.」
+        PRINTFORMDL Well, it's not as if she's a leader figure here in Gensokyo...
+        PRINTFORMW 「Hey, just what is that supposed to mean?」
+        PRINTFORML 「Do you really think you can pull something like this off without the support of the aristocracy? There's rules to be followed, do you understand?」
+        PRINTFORML 「If you don't consider your position properly, you'll only make people angry.」
+        PRINTFORML 「Fortunately for you, I am a kind woman at heart, and I'm willing to forgive your faux pas and help you navigate this situation.」
+        PRINTFORMW 「No need to thank me, it's only natural for a lady like myself to be gracious towards others like this.」
+
+        PRINTFORMDL She talks big, but you get the feeling that she really just wants to feel involved.
+        PRINTFORMDW Well, it's true that she has quite a bit of influence. She could cause trouble if she got upset; perhaps you should just indulge her whims.
+
+        PRINTFORMDL You thank her for her "kindness", and ask her what she suggests you should do.
+        PRINTFORML 「For a man to possess multiple women, he needs to prove himself worthy of them.」
+        PRINTFORML 「Only great rulers and champions are deserving of such a position.」
+        PRINTFORML 「Given that you're not a landed noble and lack a domain, that means you should prove yourself a great sportsman, instead.」
+        PRINTFORMW 「I've heard about a stone stacking competition over at the riverbank. You should go there and prove your skill against the other competitors.」
+
+        IF TALENT:MASTER:積み石ランカー == 6
+            PRINTFORMDW You inform Remilia that you already won that contest and earned the title of Stacking King.
+            IF STONE_COMBI_TROPHY:31 && STONE_BITE_A_DUST >= FLAG:周回数
+                PRINTFORML 「Uuuuhh, yes, yes. Of course you did.」
+                PRINTFORMW 「I-i just wanted to remind you of your great achievement.」
+                PRINTFORMDL Does that mean everything is settled?
+                PRINTFORML 「Yes, of course. Let it be known that Remilia Scarlet, Lady of the Scarlet Devil Mansion formally acknowledges you as a true champion!」
+                PRINTFORMW 「You should be proud of yourself, %CALLNAME:MASTER%. I look forward to seeing what you'll achieve next.」
+                CONCUBINAGE_CONVINCED_REMILIA = 2
+                RETURN
+            ELSE ;not completed in this world
+                PRINTFORML 「What are you saying?! When I went there earlier they specifically told me that nobody's ever done that before.」
+                PRINTFORML 「Take this seriously, okay?」
+                PRINTFORMDW You suppose that with the world being reset, all evidence of your achievement has been erased, as well. You'll just have to do it again.
+            ENDIF
+        ELSEIF TALENT:MASTER:積み石ランカー == 5
+            PRINTFORMDW You inform Remilia that you already won that contest before.
+            PRINTFORML 「You only won one of the two competitions. You can't think that was all of it, right?」
+            CALL PRINT_DIALOGUE, @"In case you didn't know, there's a contest for couples, too. You should take your %PRINT_MALE("husband", LEGAL_SPOUSE)% and go there together. I'm sure it'll be lots of fun."
+        ELSEIF TALENT:MASTER:積み石ランカー
+                PRINTFORML 「I've heard you've made a bit of a name for yourself there already.」
+        ENDIF
+        PRINTFORML 「Come back once you've been crowned the undisputed champion of the competition.」
+        PRINTFORML 「Only then will I recognize your right to have a harem.」
+        PRINTFORMDW It appears that your quest has only grown more difficult.
+        CONCUBINAGE_CONVINCED_REMILIA = 1
+ENDSELECT
+
+@CONCUBINAGE_TALK_MAMIZOU
+#DIM CONST EXPERIENCE_CHECK = 500
+CALL SET_KOJO_COLOR([[マミゾウ]])
+SELECTCASE CONCUBINAGE_CONVINCED_MAMIZOU
+    CASE 1
+        IF CONCUBINAGE_MAMIZOU_VIRGIN_CHECK
+            IF CONCUBINAGE_CONSUMMATION_CHECK()
+                PRINTFORML 「Ya can't fool my nose, %MASTER_NAME([[マミゾウ]])%. You still haven't seen any action.」
+                PRINTFORMW 「Don't come back until ya can at least satisfy your %PRINT_MALE("husband", LEGAL_SPOUSE)%.」
+            ELSE
+                PRINTFORML 「Alright, so ya finally got it done, eh?」
+                PRINTFORML 「I'm sure your %PRINT_MALE("husband", LEGAL_SPOUSE)%'d been anxious about that for a while now.」
+                PRINTFORML 「Alright, then. I can take ya to the girls any time ya want. They're all pretty enthusiastic about it.」
+                PRINTFORMW 「Dunno if you're really ready for it, but ya will just have to find that out for yourself.」
+                CONCUBINAGE_MAMIZOU_VIRGIN_CHECK = 0
+            ENDIF
+        ELSE
+            IF CONCUBINAGE_MAMIZOU_EXPERIENCE >= EXPERIENCE_CHECK
+                PRINTFORML 「I've heard all about it from my girls. Sounds like they're all really happy with ya.」
+                PRINTFORML 「Well, with that, I no longer have any objections. Far as I think, ya can deal with as many girls as ya need.」
+                PRINTFORMW 「Just don't forget about my girls, alright? I'm sure they'd like to play with you again sometime.」
+                CONCUBINAGE_CONVINCED_MAMIZOU = 2
+            ELSE
+                CALL CONCUBINAGE_MAMIZOU_TANUKI_HERD
+            ENDIF
+        ENDIF
+    CASE 0
+        PRINTFORMDL Right as you're about to go to sleep, someone casually walks into your room.
+        PRINTFORML 「Evenin' %MASTER_NAME([[マミゾウ]])%.」
+        PRINTFORMDW As you're about to ask Mamizou why she's here, she motions for you to just listen as she keeps talking.
+        PRINTFORML 「So what's all this I hear about ya wantin' yourself a proper harem?」
+        PRINTFORML 「Ain't your %PRINT_MALE("husband", LEGAL_SPOUSE)% enough for ya, any more?」
+        PRINTFORML 「Well, far be it for me to tell ya what you can or cannot do, but are ya sure you're prepared for it all?」
+        PRINTFORMW 「Do ya really think ya got what it takes to keep so many girls happy?」
+        PRINTFORML 「With so many hearts runnin' wild, there's gonna be a lot of trouble that could pop up.」
+        PRINTFORML 「Some of 'em are gonna fight over the hierarchy, and others might sabotage things if they feel a little slighted.」
+        ;slightly spiteful towards ran
+        PRINTFORML 「And that's not even talkin' about your %COND_STR("\"", LEGAL_SPOUSE == [[藍]])%darling%COND_STR("\"", LEGAL_SPOUSE == [[藍]])% %PRINT_MALE("husband", LEGAL_SPOUSE)% feelin' neglected, perhaps.」
+        PRINTFORML 「I've seen far greater men than you destroy themselves because they bit off a little more than they could chew.」
+        PRINTFORMW 「Take it from someone who's seen a lot of things in her long life, you're better off just living a happy life with your %PRINT_MALE("husband", LEGAL_SPOUSE)%.」
+        PRINTFORMDW Mamizou pauses for a moment, gauging your reaction.
+        PRINTFORML 「Ah, but if I thought that would dissuade you, ya obviously wouldn't have gotten that far already.」
+        PRINTFORML 「Ya know, why don't I make sure that you know what you're in for, at least?」
+        PRINTFORML 「Much as I enjoy a bit of drama, I'd rather not have my new home destroy itself because some %PRINT_MALE("guy", MASTER)% couldn't contain %HIMSELF_HERSELF(MASTER)%.」
+        PRINTFORML 「I'll tell my girls to play along with ya, and pretend to be your little harem.」
+        PRINTFORMW 「They can be a bit of a handful, but they'll be just the hands-on experience you really need.」
+
+        LOCAL = CONCUBINAGE_CONSUMMATION_CHECK()
+        IF LOCAL
+            PRINTFORML 「*sniff* *sniff*」
+            PRINTFORML 「Waitaminute? That smell... Yer still a virgin?!」
+            SELECTCASE CONCUBINAGE_CONSUMMATION_CHECK()
+                CASE 1
+                    CALL PRINT_STRL, @"「What's a greenhorn like you doing even @ITALIC@thinking@ about other women when you haven't even done it with your %PRINT_MALE("hubby:missus", LEGAL_SPOUSE)%?!」"
+                    PRINTFORML 「Go on, scoot. Go make sure ya can make yer %PRINT_MALE("husband", LEGAL_SPOUSE)% feel good first before ya even bother coming back.」
+                CASE 2
+                    CALL PRINT_STRL, @"「What're ya even doing @ITALIC@thinking@ about other women when you haven't even done it with your %PRINT_MALE("husband", LEGAL_SPOUSE)%?!」"
+                    PRINTFORML 「Go on, scoot. At least give yourself properly to your %PRINT_MALE("husband", LEGAL_SPOUSE)% first before ya even bother coming back.」
+                CASE 3
+                    CALL PRINT_STRL, @"「Have ya even @ITALIC@touched@ your %PRINT_MALE("husband", LEGAL_SPOUSE)% since ya got hitched?!」"
+                    PRINTFORML 「Go on, scoot. Go make sure ya can make yer %PRINT_MALE("husband", LEGAL_SPOUSE)% feel good first before ya even bother coming back.」
+            ENDSELECT
+            CONCUBINAGE_MAMIZOU_VIRGIN_CHECK = 1
+        ELSE
+            PRINTFORML 「I'll be ready to take ya to the girls any time ya want. They'll always be ready for ya.」
+            PRINTFORML 「And don't even think about skipping out. I think you'd find that your reputation would take a nosedive quickly.」
+            PRINTFORMDW It seems like she won't give you much of a choice. You'll just have to go along with her.
+        ENDIF
+        CONCUBINAGE_CONVINCED_MAMIZOU = 1
+ENDSELECT
+
+@CONCUBINAGE_MAMIZOU_TANUKI_HERD
+IF !CONCUBINAGE_MAMIZOU_EXPERIENCE
+    PRINTFORMDL Mamizou brings you to a building hidden in the middle of the forest that you haven't seen before.
+    PRINTFORMW 「Alright girls, are ya ready?」
+    PRINTFORMDL A cacophony of noise awaits you as the tanuki chief opens the door.
+    PRINTFORMDW Before you even realize what's happening, you're dragged inside by numerous small hands, thrown to the floor, and stripped of all your clothes.
+    PRINTFORML 「Fufu, you girls have fun now. Try not to be too rough with 'em, now.」
+    PRINTFORMDL As Mamizou leaves, the tanuki pin you down and use your body purely for their own pleasure.
+    PRINTFORMDW Riding you, making you lick them, and using your fingers to pleasure them, each part of you reduced to a tool for their exclusive use.
+
+    SELECTCASE EXP:MASTER:手淫経験 + EXP:MASTER:挿入経験 + EXP:MASTER:道具使用経験 + EXP:MASTER:口淫経験
+        CASE IS >= 20000
+            PRINTFORMDL Refusing to just let them toy with you, you attempt to seize the initiative and turn the tables.
+            PRINTFORMDL Bringing all your skills to bear, you force the girls on top of you to cum so hard that they collapse.
+            PRINTFORMDL Quickly turning your attention to the other girls, you systematically target all their weak spots.
+            PRINTFORMDL Steadily making your way to the herd, they are unable to keep up with your affections, a pile of bodies left behind you.
+            PRINTFORMDL Eventually, the only one left standing is yourself, and you quietly take your leave, leaving the girls lying on the floor in a haze of pleasure.
+            CONCUBINAGE_MAMIZOU_EXPERIENCE = 100
+        CASE IS >= 10000
+            PRINTFORMDL You attempt to turn things around, but don't find much success.
+            PRINTFORMDL While you're not completely at their mercy, there's just too many of them. 
+            PRINTFORMDL In the end, you're left completely exhausted and collapse onto the floor. 
+            PRINTFORMDL When you awake, you discover that the tanuki were thankfully kind enough to wash you and dress you back up again.
+            CONCUBINAGE_MAMIZOU_EXPERIENCE = 50
+        CASEELSE
+            PRINTFORMDL Despite all your efforts, there's just nothing you can do to stop the horde.
+            PRINTFORMDL They toy with you until they're all satisfied, leaving you an exhausted wreck lying on the floor.
+            PRINTFORMDL When you awake, you discover that the tanuki were thankfully kind enough to wash you and dress you back up again.
+    ENDSELECT
+    
+    PRINTFORMDW You survived the day, but it looks like there'll be many more trials in the coming days...
+ELSE
+    PRINTFORMDW You return to the tanuki hideout.
+    SELECTCASE RAND:3
+        CASE 0
+            PRINTFORMDL All the tanuki are fighting for your attention.
+            PRINTFORMDL While some want to gamble with you, others want you to comb their hair, and others still just want you to hang around and relax.
+            PRINTFORMDW You have your hands full trying to find acceptable compromises and keep them all satisfied.
+        CASE 1
+            PRINTFORMDL The tanuki are all stumbling over each other to have sex with you.
+            PRINTFORMDL Carefully thinking about the situation, you decide to first deal with the ones that are growing the most agitated.
+            PRINTFORMDW It's a struggle to keep track of all their individual personalities, but you manage to make it through without starting any fights.
+        CASE 2
+            PRINTFORMDL Some fights are popping up amongst the tanuki over you.
+            PRINTFORMDL Any semblance of a hierarchy falls apart as they all seek to establish dominance.
+            PRINTFORMDL You spend the entire day putting out fires and trying to reassert each of them of their importance.
+    ENDSELECT
+
+    CONCUBINAGE_MAMIZOU_EXPERIENCE += MIN(SQRT(EXP:MASTER:手淫経験 + EXP:MASTER:挿入経験 + EXP:MASTER:道具使用経験 + EXP:MASTER:口淫経験), 100)
+ENDIF
+
+CONCUBINAGE_MAMIZOU_LAST_TRAINING_DAY = DAY
+TIME += 300
+
+;returns a positive value if the player has not yet consummated their marriage
+;1 = player is male virgin
+;2 = player is female and partner is male virgin
+;3 = lesbian bed death
+@CONCUBINAGE_CONSUMMATION_CHECK
+#FUNCTION
+SIF IS_DOUTEI(MASTER)
+    RETURNF 1
+SIF IS_FEMALE(MASTER) && IS_DOUTEI(LEGAL_SPOUSE)
+    RETURNF 2
+SIF IS_FEMALE(MASTER) && IS_FEMALE(LEGAL_SPOUSE) && !(CFLAG:LEGAL_SPOUSE:既成事実 & 合意_うふふ)
+    RETURNF 3
+RETURNF 0
+
+@CONCUBINAGE_TALK_REIMU
+CALL SET_KOJO_COLOR([[霊夢]])
+SELECTCASE CONCUBINAGE_CONVINCED_REIMU
+    CASE 0
+        IF TALENT:[[霊夢]]:妻
+            PRINTFORMDL You talk to Reimu about your wish for concubinage again, and what Yukari told you about handling the youkai.
+            PRINTFORML 「Oh, they're not going to be a problem.」
+            CALL PRINT_DIALOGUE, "After all, this is me we're talking about. If any youkai are going to start a fight with me or my husband, I'll just need to beat them up until they know their place.", "w"
+            CALL PRINT_DIALOGUE, "...But I guess that I can't always be around to protect you, and there's definitely a bunch of youkai that would be stupid enough to attack the Hakurei shrine maiden..."
+            PRINTFORML 「Okay, then I'll just have to make sure you'll be able to handle any trouble coming your way.」
+            PRINTFORMW 「I'll make sure to train you up so well that neither angry women nor jealous men will ever want to mess with you.」
+            IF ABL:MASTER:戦闘能力 < 5
+                PRINTFORML 「But before we get into the advanced training, we really need to work on your basic danmaku skills.」
+                PRINTFORMW 「I'll help you with that, too, of course, but the special training will have to wait until you're a bit stronger.」
+            ELSE
+                PRINTFORMW 「Just come to we when you're ready to start your training.」
+                CONCUBINAGE_REIMU_TRAINING_REMAINING = 5
+            ENDIF
+        ELSE
+            PRINTFORMDL You talk to Reimu about your wish to allow concubinage in Gensokyo.
+            PRINTFORMW 「Do you have any idea about the kind of trouble this would cause?!」
+            PRINTFORML 「With all the youkai who have their eye on you, it would start the worst incident seen in decades!」
+            PRINTFORML 「These wouldn't be fair matches like you're used to. They'd swarm you all at once, driven by their jealousy and anger.」
+            PRINTFORML 「And that's not even talking about all the guys who believe you're stealing "their" women.」
+            PRINTFORML 「I'd have my hands full constantly just to keep them from coming to blows with you or each other.」
+            PRINTFORML 「But you're dead set on this, aren't you?」
+            PRINTFORMW 「Well...」
+            $REIMU_OK
+            IF ABL:MASTER:戦闘能力 < 5
+                PRINTFORML 「My answer is%COND_STR(" still", CONCUBINAGE_CONVINCED_REIMU)% no. I will not approve of it.」
+                PRINTFORMW 「You're just not nearly strong enough for me to even consider it.」
+            ELSE
+                PRINTFORMDL Reimu sighs as she looks at you.
+                PRINTFORML 「Okay, fine. If you're really serious about this, you'll need to be able to protect yourself.」
+                PRINTFORML 「I'll make sure you'll know how to handle yourself.」
+                PRINTFORMW 「Just come to me when you're ready to start your training.」
+                CONCUBINAGE_REIMU_TRAINING_REMAINING = 5
+            ENDIF
+        ENDIF
+        CONCUBINAGE_CONVINCED_REIMU = 1
+    CASE 1
+        IF !CONCUBINAGE_REIMU_TRAINING_REMAINING ;training not started yet, continue convincing Reimu
+            PRINTFORMDL You bring up the idea of concubinage to Reimu once more.
+            PRINTFORML 「This nonsense again?」
+            PRINTFORMW 「Didn't I tell you what a terrible idea it is?」
+            GOTO REIMU_OK
+        ELSE ;training
+            ;first lesson, always be prepared for an attack
+            SELECTCASE CONCUBINAGE_REIMU_TRAINING_REMAINING
+                CASE 5
+                    PRINTFORMDL As you walk up to Reimu, you're suddenly attacked with a barrage of danmaku.
+                    PRINTFORMDL You barely manage to avoid it, and ask Reimu what the hell she thinks she's doing.
+                    PRINTFORML 『Lesson 1: Always Be Prepared』
+                    PRINTFORML 「An attack can come at any time, and a really angry youkai will not play by the rules.」
+                    PRINTFORMW 「Now let's see you handle this!」
+                    PRINTFORMDL Reimu sends out another barrage, aimed directly at you.
+
+                    IF RAND:MAX(CFLAG:MASTER:今日の運勢,1) < 300
+                        PRINTFORMDL Unable to spot an escape route, the danmaku hits you right in the face, knocking you flat on your back.
+                        PRINTFORMW 「Maybe I overdid it a little... C'mon, let's get you back up on your feet.」
+                        PRINTFORMDL Reimu reaches out her hand. As you reach out to grab it, you're suddenly assaulted by another barrage.
+                        PRINTFORMDL There's little power behind it, but it still stings quite a bit.
+                        PRINTFORML 「You really cannot ever let your guard down, %CALLNAME:MASTER%.」
+                        PRINTFORML 「Alright, that's enough for today. We'll try this again next time, until caution becomes second nature for you.」
+                        PRINTFORMDW It seems that you still have a lot to learn...
+                    ELSE
+                        PRINTFORMDL Reacting quickly, you manage to reach the one opening in the pattern, avoiding Reimu's attack.
+                        PRINTFORMW 「Not bad. You're learning quickly. Alright, that's enough for the day, why don't we drink some tea-」
+                        PRINTFORMDL You see Reimu's arm twitch, and realize she's launching another attack.
+                        PRINTFORMDW Before she can finish, you rush up to Reimu and clock her in the face.
+                        PRINTFORML 「Owwww, that hurts. Well, at least now I can be sure that you won't let any youkai catch you by surprise.」
+                        PRINTFORML 「Good work. We'll start the next lesson next time.」
+                        PRINTFORML 「Now if you excuse me, I need to put some ice on this before it starts swelling.」
+                        PRINTFORML 「Owwwwwwww.」
+                        PRINTFORMDW Reimu walks off, and you feel content about your progress today.
+                        CONCUBINAGE_REIMU_TRAINING_REMAINING--
+                    ENDIF
+                CASE 4
+                    PRINTFORML 「Alright, let's get started.」
+                    PRINTFORML 『Lesson 2: Be Patient』
+                    PRINTFORMDL Reimu sends out an endless barrage, leaving few openings for you to counterattack.
+                    PRINTFORMDL What do you do?
+                    CALL ASK_YN("Attack", "Avoid")
+                    IF !RESULT
+                        PRINTFORMDW Spotting an opening, you move to attack, and end up being hit from behind by Reimu's homing attacks.
+                        PRINTFORML 「You really shouldn't be so reckless, %CALLNAME:MASTER%.」
+                        PRINTFORML 「The most important part in a fight is to protect yourself before anything else.」
+                        PRINTFORML 「Ah well, let's try again another day.」
+                        PRINTFORMDW Reimu walks off, leaving you to nurse your wounds.
+                        RETURN
+                    ENDIF
+                    PRINTFORMDL You continue to avoid Reimu's attacks, barely grazing some of them.
+                    PRINTFORMDL There's a slight opening in her assault, what do you do?
+                    CALL ASK_YN("Attack", "Avoid")
+                    IF !RESULT
+                        PRINTFORMDW You start shooting at Reimu, but she easily dodges your attacks and knocks you to the floors with her counterattack.
+                        PRINTFORML 「You're overeager. Not every opportunity is safe, you know?」
+                        PRINTFORML 「Consider this another important lesson learned. We'll try again another day.」
+                        PRINTFORMDW Reimu walks off, leaving you to nurse your wounds.
+                        RETURN
+                    ENDIF
+                    PRINTFORMDL Still avoiding Reimu's relentless assault, you eventually manage to find shelter behind a small structure.
+                    PRINTFORMDL Unable to hit you directly and unwilling to destroy your cover, Reimu's assault calms down.
+                    PRINTFORMDL What do you do?
+                    CALL ASK_YN("Take advantage of the opening", "Hide like a coward")
+                    IF !RESULT
+                        PRINTFORMDW You pop up from behind your cover and launch a large-scale attack directly at Reimu.
+                        PRINTFORMDL Unfortunately, while it pushes Reimu to her limits, she manages to dodge all of it, and you end up crushed by her counterattack.
+                        PRINTFORML 「A good attempt, but it wasn't quite enough.」
+                        PRINTFORML 「You're going to have to work harder than that.」
+                        PRINTFORMDW Reimu walks off, leaving you to nurse your wounds.
+                        RETURN
+                    ENDIF
+                    PRINTFORMDL You stay hidden as much as possible, moving from hiding spot to hiding spot to stay out of Reimu's sight as much as possible.
+                    PRINTFORMDL Eventually you reach a large building. You should be able to circle around it and attack Reimu from a blind spot.
+                    CALL ASK_YN("Perform a sneak attack", "Escape")
+                    IF !RESULT
+                        PRINTFORMDL You circle around the building, careful not to alert Reimu to your position.
+                        PRINTFORMDL When you reach the other side, you see Reimu with her back turned towards you, and you unleash the most devastating barrage you can.
+                        PRINTFORMDW ...
+                        PRINTFORMDW ...
+                        PRINTFORMDW ...
+                        ;Musou Tensei
+                        PRINTFORMDL Somehow, Reimu managed to avoid all your attacks effortlessly, her body moving gracefully without even seeing the attacks.
+                        PRINTFORMDL Is is the true power of the Hakurei?
+                        PRINTFORMW 「Nice try, but it ends here.」
+                        PRINTFORMDL As Reimu unleashes her attack, you don't even bother trying to avoid it. It was truly impossible to face her from the very beginning.
+                        PRINTFORML 「You really need to study more, %CALLNAME:MASTER%.」
+                        PRINTFORML 「You'll never be able to defeat me if you don't at least study the Thirty-Six Stratagems.」
+                        PRINTFORMDW Reimu walks off, leaving you to nurse your wounds.
+                        RETURN
+                    ENDIF
+                    PRINTFORMDW Screw it, you're getting out of here. You can think of some strategy to confront her later.
+                    PRINTFORMDL When you next see Reimu, she congratulates you for passing the trial, and that she'll make preparations for the next lessons.
+                    PRINTFORMDW It seems like the intent was for you to learn that not all fights should be fought.
+                    CONCUBINAGE_REIMU_TRAINING_REMAINING--
+                CASE 3
+                    PRINTFORML 「For the next lesson, I secured the aid of some assistants.」
+                    PRINTFORMDL Before Reimu lie the Three Fairies of Light, their arms bound with rope.
+                    PRINTFORML 「Angry youkai may decide to not attack you directly, but to instead assault your %PRINT_MALE("husband", LEGAL_SPOUSE)% and children.」
+                    IF !GROUPMATCH(LEGAL_SPOUSE, [[小鈴]], [[阿求]]) && ABL:LEGAL_SPOUSE:戦闘能力 >= 3
+                        PRINTFORML 「Well, your %PRINT_MALE("husband", LEGAL_SPOUSE)% should be able to defend herself, but your children are really vulnerable.」
+                    ENDIF
+                    PRINTFORMW 「So today, you'll need to fight me while keeping these three safe.」
+                    CALL CHARA_TEXT([[サニー]], "「Heeeeeey, we didn't agree to be target practice.」")
+                    CALL CHARA_TEXT([[ルナ]], "「We have rights, we don't deserve this.」")
+                    PRINTFORML 「Remember the mess you made at the shrine recently? Consider this your way of paying me back.」
+                    CALL CHARA_TEXT([[ルナ]], "「But that was all Star's fault, it had nothing to do with me and Sunny.」")
+                    PRINTFORML 「The three of you can sort that out amongst yourselves later. Right now you're going to help me.」
+                    CALL CHARA_TEXT([[スター]], "「Oh my, miss Reimu sure is generous today to let us repay her in this way.」")
+                    PRINTFORMDW Although she says this, you see Star quickly crawl behind Luna.
+                    PRINTFORML 「Let's not waste any time here. Catch!」
+                    PRINTFORMDL Reimu throws the three fairies towards you, and you scramble to catch them before they hit the ground.
+                    PRINTFORML 「I hope you're ready, because I'm not going to hold back.」
+                    PRINTFORML 『Lesson 3: Women and Children First』
+                    PRINTFORMDL Reimu starts shooting various danmaku at you.
+                    PRINTFORMDW Although her patterns have larger gaps than usual, it's still very challenging to avoid while carrying the three fairies.
+                    IF TALENT:MASTER:伐採Lv > RAND:8
+                        PRINTFORMDL You manage to avoid Reimu's attacks until she declares your success.
+                        PRINTFORML 「Not bad. If you keep this in mind, you should be able deal with any unwelcome surprises aiming at your family.」
+                        PRINTFORMW 「Now, I should probably untie these three...」
+                        CONCUBINAGE_REIMU_TRAINING_REMAINING--
+                    ELSE
+                        PRINTFORMDL Unfortunately, you're not used to this, and %SPLIT_G("Sunny:Luna:Star")% takes a barrage to the face.
+                        PRINTFORML 「Well, that was only to be expected. You should make sure to practice more with lifting heavy objects.」
+                        PRINTFORML 「That should make it easier to deal with situations like this in the future.」
+                        PRINTFORMW 「Come back tomorrow, we'll give this another shot.」
+                    ENDIF
+                    
+                CASE 2
+                    PRINTFORML 「Next up is this.」
+                    PRINTFORML 『Lesson 4: Respect Your Elders』
+                    PRINTFORMW 「See if you can avoid this.」
+                    PRINTFORMDW Reimu throws out a highly complex Spell Card, and you cannot see any openings in it.
+                    IF ABL:MASTER:教養 + CFLAG:[[永琳]]:弾幕勝負勝利 + CFLAG:[[純狐]]:弾幕勝負勝利 > RAND:10
+                        PRINTFORMDL Wait, isn't this just one of Eirin's Spell Cards mixed up with one of Junko's?
+                        SIF ABL:MASTER:教養 > 3
+                            PRINTFORMDL You're pretty sure you saw these in a book before.
+                        PRINTFORMDW Now that you know the patterns, avoiding it is not too difficult, and you time out the card easily.
+                        PRINTFORML 「Good work, you reacted to that pretty well.」
+                        PRINTFORML 「Always remember that truly angry youkai may not play fair, and you need to be prepared for any eventuality.」
+                        PRINTFORML 「They're likely to just steal powerful Spell Cards from someone else, instead of coming up with one of their own.」
+                        PRINTFORMW 「Make sure to always learn about as many as you can.」
+                        CONCUBINAGE_REIMU_TRAINING_REMAINING--
+                    ELSE
+                        PRINTFORMDL Unable to escape, you end up taking heavy damage from the attack.
+                        PRINTFORML 「That might've been a little too much for you.」
+                        PRINTFORML 「Remember that Danmaku isn't just about fighting, it's also about knowing your opponent.」
+                        PRINTFORML 「Studying is just as important.」
+                        PRINTFORML 「...Well, to anyone except for me, at least.」
+                        PRINTFORML 「Come back tomorrow and we'll try again」
+                        PRINTFORMDW Reimu walks off, leaving you to nurse your wounds.
+                    ENDIF
+                CASE 1
+                    PRINTFORML 「Here's your final lesson. If you can get through this, I'm willing to give my support for your dumb harem proposal.」
+                    PRINTFORML 「I asked some of my friends to help this time.」
+                    PRINTFORMW 『Lesson 5: All's Fair In Love And War』
+                    CALL CHARA_TEXT([[早苗]], "「I'm not used to fighting as a group, but I'll do my best.」")
+                    CALL CHARA_TEXT([[魔理沙]], @"「I feel a bit bad about ganging up on a %PRINT_MALE("guy", MASTER)%, but if Reimu thinks it's necessary, I won't hold back.」")
+                    CALL CHARA_TEXT([[妖夢]], "「It's fine, this is all part of training, after all.」")
+                    CALL CHARA_TEXT([[咲夜]], "「This'll be a good opportunity to keep my skills sharp.」")
+                    PRINTFORMDL Wait, all five of them at the same time?
+                    CALL CHARA_TEXT([[魔理沙]], @"「Wasn't this what you wanted? A whole bunch of girls chasing after you?」")
+                    PRINTFORMW 「Let's get started. If you can't deal with this, you'd never make it in a real fight.」
+                    PRINTFORMDL The five of them start throwing danmaku at you, sometimes switching out, sometimes working in tandem.
+                    PRINTFORMDW The brutal assault is unrelenting, and eventually...
+                    IF ABL:MASTER:戦闘能力 + 弾幕勝負勝利カウント() > 35
+                        PRINTFORMDW All the girls lie defeated on the ground.
+                        CALL CHARA_TEXT([[魔理沙]], @"「Ow ow ow. I give, I give.」")
+                        PRINTFORML 「That's enough. The victory is yours.」
+                        CALL CHARA_TEXT([[咲夜]], @"「It's quite impressive how well you handled all of that.」")
+                        CALL CHARA_TEXT([[妖夢]], @"「You're amazing, %CALLNAME:MASTER%. I wouldn't mind training with you more often.」")
+                        CALL CHARA_TEXT([[早苗]], "「That hurt more than I expected. I think I'm going straight to bed when I get home.」")
+                        PRINTFORML 「Anyway, with that, I officially give my support for your concubinage plan.」
+                        PRINTFORMW 「Just don't come crying to my about any of the drama it'll cause.」
+                    
+                        CONCUBINAGE_REIMU_TRAINING_REMAINING--
+                        CONCUBINAGE_CONVINCED_REIMU = 2
+                    ELSE
+                        PRINTFORMDW You lie defeated on the ground.
+                        CALL CHARA_TEXT([[魔理沙]], @"「Was that all you had to offer?」")
+                        CALL CHARA_TEXT([[早苗]], @"「Did we overdo it?」")
+                        PRINTFORML 「Nah, don't worry about it, %HE_SHE(MASTER)% just wasn't strong enough.」
+                        CALL CHARA_TEXT([[妖夢]], @"「You're not focused enough, %CALLNAME:MASTER%. You were running around like a headless chicken.」")
+                        CALL CHARA_TEXT([[咲夜]], "「If that's all, I'll take my leave here. There's work to be done at the mansion.」")
+                        PRINTFORMW 「Thanks for all your help. But I think I'll need to call on you another time.」
+                        PRINTFORML 「As for you, %CALLNAME:MASTER%...」
+                        PRINTFORML 「You really need to practice more.」
+                        PRINTFORML 「Spend some time working on the basics, fight some new people...」
+                        PRINTFORML 「You have to make sure that you can handle everything they can throw at you.」
+                        CALL CHARA_TEXT([[魔理沙]], @"「Danmaku is a never-ending challenge, after all.」", "w")
+                    ENDIF
+            ENDSELECT
+            CONCUBINAGE_REIMU_LAST_TRAINING_DAY = DAY
+            TIME += 120
+        ENDIF
+ENDSELECT
+[SKIPEND]
+@CONCUBINAGE_FALL_STATE(ARG, EXPECTED_WIDTH)
+#DIM EXPECTED_WIDTH
+SIF !CONCUBINAGE_LEGALIZED
+    RETURN
+SIF TALENT:ARG:妻
+    RETURN
+SIF (TALENT:ARG:恋慕 < 2 || !TALENT:ARG:恋人) && !TALENT:ARG:愛欲
+    RETURN 0
+
+PRINTFORMDL %"-"*(EXPECTED_WIDTH)%
+CALL COLORMESSAGE(@"□侧室达成条件",C_AQUA,1)
+PRINTFORML
+IF TALENT:ARG:妾
+	PRINT 　
+	CALL COLORMESSAGE(@"-　已达成",C_YELLOW,1)
+ELSE
+    IF TALENT:ARG:恋慕
+        PRINT 　
+        CALL COND_COLORMESSAGE(CFLAG:ARG:好感度 >= REQUIRED_FAVOR_CONCUBINE_LOVE,@"好感度{REQUIRED_TRUST_CONCUBINE_LOVE}以上 (现在：{CFLAG:ARG:好感度})")
+        PRINT 　
+        CALL COND_COLORMESSAGE(CFLAG:ARG:信頼度 >= REQUIRED_TRUST_CONCUBINE_LOVE,@"信赖度{REQUIRED_TRUST_CONCUBINE_LOVE}以上 (现在：{CFLAG:ARG:信頼度})")
+        PRINT 　
+        CALL COND_COLORMESSAGE(ABL:ARG:親密 >= REQUIRED_AFFECTION_CONCUBINE_LOVE,@"亲密{REQUIRED_AFFECTION_CONCUBINE_LOVE}以上 (现在：{ABL:ARG:親密})")
+        PRINT 　
+        CALL COND_COLORMESSAGE(RELATION:MASTER:ARG >= REQUIRED_AFFINITY_CONCUBINE_LOVE,@"关系{REQUIRED_AFFINITY_CONCUBINE_LOVE}以上 (现在：{RELATION:MASTER:ARG})")
+    ELSEIF TALENT:ARG:愛欲
+        PRINT 　
+        CALL COND_COLORMESSAGE(CFLAG:ARG:好感度 >= REQUIRED_FAVOR_CONCUBINE_LUST,@"好感度{REQUIRED_TRUST_CONCUBINE_LUST}以上 (现在：{CFLAG:ARG:好感度})")
+        PRINT 　
+        CALL COND_COLORMESSAGE(CFLAG:ARG:信頼度 >= REQUIRED_TRUST_CONCUBINE_LUST,@"信赖度{REQUIRED_TRUST_CONCUBINE_LUST}以上 (现在：{CFLAG:ARG:信頼度})")
+        PRINT 　
+        CALL COND_COLORMESSAGE(ABL:ARG:欲望 >= REQUIRED_LUST_CONCUBINE_LUST,@"欲望{REQUIRED_LUST_CONCUBINE_LUST}以上 (现在：{ABL:ARG:欲望})")
+    ENDIF
+ENDIF
