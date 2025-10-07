@@ -184,17 +184,35 @@ SETCOLOR 0x888E7E
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K39
+;@M_KOJO_UPDATE_K39
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
-IF FIRSTTIME("U39-1",0,39) && CFLAG:39:面識
-	PRINTFORMDL 这是为称呼改变了的情况提供的补救措施。
-	PRINTFORMDL 对于称呼未改变的各位，给您添麻烦了，非常抱歉。
-	MASTERNAME:39 = 
-	CALL NAME_SET_K39
-ENDIF
-RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_EXIST_K39
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_OPTION_K39
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:39%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:39%", MASTERNAME:39 != "")%", 1)
+
+;process the input portion
+@KOJO_OPTION_K39_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL M_KOJO_COLOR_K39
+MASTERNAME:39 = 
+LOCAL = TARGET
+TARGET = 39
+CALL NAME_SET_K39
+TARGET = LOCAL
+WAIT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -371,104 +389,100 @@ RETURN 1
 ;-------------------------------------------------
 
 @NAME_SET_K39
-PRINTDL 请输入称呼(直接输入、或按下回车使用默认称呼)
-IF NAME:MASTER != "你"
-	LOCALS = %NAME:MASTER%
-ELSE
-	LOCALS = %CALLNAME:MASTER%
-ENDIF
-PRINTBUTTON @"[就叫%LOCALS%吧]", @"%LOCALS%"
-PRINTDL 
-;名前を入力するループ
-$INPUT_LOOP_ONAMAE
-INPUTS
-; 行頭行尾の空白文字削除
-LOCALS = %RESULTS%
-REPLACE LOCALS, "\(\^\\s\+\|\\s\+\$)", ""
-;10文字以上は受け付けない
-IF STRLENS(LOCALS) > 10
-	CLEARLINE 1
-	REUSELASTLINE 「…不管怎么说都太长了喂，还是说个简单点的吧？」
-	GOTO INPUT_LOOP_ONAMAE
-;空白は受け付けない
-ELSEIF RESULTS == ""
-	PRINTDL 请输入称呼
-	GOTO INPUT_LOOP_ONAMAE
-ELSE
-	; 同姓同名
-	IF FLAG:扮演 != 39 && STRCOUNT(LOCALS, "纳兹琳")
-		CLEARLINE 1
-		REUSELASTLINE 「…拿名字来開玩笑，我可是会生气的哦」
-		GOTO INPUT_LOOP_ONAMAE
-	; 白蓮が主人ではなく、白蓮というフレーズが含まれている。もしくは
-	; 星が主人ではなく、寅丸もしくは星というフレーズが含まれている
-	ELSEIF (FLAG:扮演 != 55 && STRCOUNT(LOCALS, "聖\*\\s\*白蓮")) || (FLAG:扮演 != 87 && STRCOUNT(LOCALS, "\(寅丸\)\*\\s\*星\$"))
-		CLEARLINE 1
-		REUSELASTLINE 「…别開玩笑了」
-		GOTO INPUT_LOOP_ONAMAE
-	; 命蓮寺勢はじき
-	; うんそうだね多多良勝五郎とか教える人もいるかもしれないもんね
-	ELSEIF (FLAG:扮演 != 40 && STRCOUNT(LOCALS, "\(多多良\)\*\\s\*小傘")) || (FLAG:扮演 != 85 && STRCOUNT(LOCALS, "\(雲居\)\*\\s\*一輪")) || (FLAG:扮演 != 86 && STRCOUNT(LOCALS, "\(\(村紗\)*\\s\*水蜜\|村紗\)"))
-		CLEARLINE 1
-		REUSELASTLINE 「…和我们家的人容易混淆啊。要不换个？」
-		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FLAG:扮演 != 69 && STRCOUNT(LOCALS, "\(二ツ岩\)\*\\s\*猯藏")
-		CLEARLINE 1
-		REUSELASTLINE 「…拜托，那家伙可是有尾巴诶」
-		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF (FLAG:扮演 != 41 && STRCOUNT(LOCALS, "\(封獣\)\*\\s\*鵺"))
-		CLEARLINE 1
-		REUSELASTLINE 「…啊，鵺」（对着上方挥了下手）「找到你的二重身了」
-		GOTO INPUT_LOOP_ONAMAE
-	; 道教勢力はじき
-	ELSEIF (FLAG:扮演 != 89 && STRCOUNT(LOCALS, "\(宮古\)\*\\s\*芳香")) || (FLAG:扮演 != 90 && STRCOUNT(LOCALS, "\^霍\*\\s\*青娥")) || (FLAG:扮演 != 91 && STRCOUNT(LOCALS, "\(蘇我\)\*\\s\*屠自古")) || (FLAG:扮演 != 92 && STRCOUNT(LOCALS, "\(物部\)\*\\s\*布都")) || (FLAG:扮演 != 56 && STRCOUNT(LOCALS, "\(\(豊聡耳\)\*\\s\*神子\|聖徳太子\)"))
-		CLEARLINE 1
-		REUSELASTLINE 
-		GOTO INPUT_LOOP_ONAMAE
-	; 博麗霊夢というフレーズが含まれてる。もしくは
-	; 東風谷早苗というフレーズが含まれている
-	ELSEIF STRCOUNT(LOCALS, "\(博麗\)\*\\s\*霊夢") || STRCOUNT(LOCALS, "\(東風谷\)\*\\s\*早苗")
-		PRINTFORML 「哦，那个脱离常识的巫女的亲人吗？倒是可以……」
-	; 霧雨魔理沙というフレーズが含まれてる。
-	ELSEIF STRCOUNT(LOCALS, "\(霧雨\)\*\\s\*魔理沙")
-		PRINTFORML 「唔……和那个奇怪的魔法使有微妙的缘分啊。好吧」
-	; 直接入力ならいけると思ったか？弾くぜ！
-	ELSEIF FIRSTTIME("U39-1") && ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
-		CLEARLINE 1
-		REUSELASTLINE 「你是笨蛋吗」
-		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FIRSTTIME("U39-1") && ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
-		CLEARLINE 1
-		REUSELASTLINE 「你是笨蛋吗」
-		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FIRSTTIME("U39-1") && (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
-		CLEARLINE 1
-		REUSELASTLINE 「你是笨蛋吗」
-		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF  FIRSTTIME("U39-1") && (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
-		CLEARLINE 1
-		REUSELASTLINE 「你是笨蛋吗」
-		GOTO INPUT_LOOP_ONAMAE
+gLineCount = LINECOUNT
+DO
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	PRINTDL 请输入称呼(直接输入或点击按钮)
+	IF NAME:MASTER != "你"
+		LOCALS = %NAME:MASTER%
 	ELSE
-		PRINTFORML 「%RESULTS%…吗」
+		LOCALS = %CALLNAME:MASTER%
 	ENDIF
-	PRINTDL [0] 是
-	PRINTDL [1] 否
-	;入力した名前を確定するループ
-	$INPUT_LOOP_KAKUTEI_1
-	INPUT
-	IF RESULT == 0
-		;你の名前を%MASTERNAME:39%に格納
-		MASTERNAME:39 = %RESULTS%
-		PRINTFORMDL 
-	ELSEIF RESULT == 1
+	PRINTBUTTON @"[就叫%LOCALS%吧]", @"%LOCALS%"
+	PRINTDL 
+	INPUTS
+	; 行頭行尾の空白文字削除
+	LOCALS = %RESULTS%
+	REPLACE LOCALS, "\(\^\\s\+\|\\s\+\$)", ""
+	;10文字以上は受け付けない
+	IF STRLENS(LOCALS) > 10
+		CLEARLINE 1
+		REUSELASTLINE 「…不管怎么说都太长了喂，还是说个简单点的吧？」
+		CONTINUE
+	;空白は受け付けない
+	ELSEIF RESULTS == ""
 		PRINTDL 请输入称呼
-		GOTO INPUT_LOOP_ONAMAE
+		CONTINUE
 	ELSE
-		PRINTDL 请输入称呼
-		GOTO INPUT_LOOP_ONAMAE
+		; 同姓同名
+		IF FLAG:扮演 != 39 && STRCOUNT(LOCALS, "纳兹琳")
+			CLEARLINE 1
+			REUSELASTLINE 「…拿名字来開玩笑，我可是会生气的哦」
+			CONTINUE
+		; 白蓮が主人ではなく、白蓮というフレーズが含まれている。もしくは
+		; 星が主人ではなく、寅丸もしくは星というフレーズが含まれている
+		ELSEIF (FLAG:扮演 != 55 && STRCOUNT(LOCALS, "聖\*\\s\*白蓮")) || (FLAG:扮演 != 87 && STRCOUNT(LOCALS, "\(寅丸\)\*\\s\*星\$"))
+			CLEARLINE 1
+			REUSELASTLINE 「…别開玩笑了」
+			CONTINUE
+		; 命蓮寺勢はじき
+		; うんそうだね多多良勝五郎とか教える人もいるかもしれないもんね
+		ELSEIF (FLAG:扮演 != 40 && STRCOUNT(LOCALS, "\(多多良\)\*\\s\*小傘")) || (FLAG:扮演 != 85 && STRCOUNT(LOCALS, "\(雲居\)\*\\s\*一輪")) || (FLAG:扮演 != 86 && STRCOUNT(LOCALS, "\(\(村紗\)*\\s\*水蜜\|村紗\)"))
+			CLEARLINE 1
+			REUSELASTLINE 「…和我们家的人容易混淆啊。要不换个？」
+			CONTINUE
+		ELSEIF FLAG:扮演 != 69 && STRCOUNT(LOCALS, "\(二ツ岩\)\*\\s\*猯藏")
+			CLEARLINE 1
+			REUSELASTLINE 「…拜托，那家伙可是有尾巴诶」
+			CONTINUE
+		ELSEIF (FLAG:扮演 != 41 && STRCOUNT(LOCALS, "\(封獣\)\*\\s\*鵺"))
+			CLEARLINE 1
+			REUSELASTLINE 「…啊，鵺」（对着上方挥了下手）「找到你的二重身了」
+			CONTINUE
+		; 道教勢力はじき
+		ELSEIF (FLAG:扮演 != 89 && STRCOUNT(LOCALS, "\(宮古\)\*\\s\*芳香")) || (FLAG:扮演 != 90 && STRCOUNT(LOCALS, "\^霍\*\\s\*青娥")) || (FLAG:扮演 != 91 && STRCOUNT(LOCALS, "\(蘇我\)\*\\s\*屠自古")) || (FLAG:扮演 != 92 && STRCOUNT(LOCALS, "\(物部\)\*\\s\*布都")) || (FLAG:扮演 != 56 && STRCOUNT(LOCALS, "\(\(豊聡耳\)\*\\s\*神子\|聖徳太子\)"))
+			CLEARLINE 1
+			REUSELASTLINE 
+			CONTINUE
+		; 博麗霊夢というフレーズが含まれてる。もしくは
+		; 東風谷早苗というフレーズが含まれている
+		ELSEIF STRCOUNT(LOCALS, "\(博麗\)\*\\s\*霊夢") || STRCOUNT(LOCALS, "\(東風谷\)\*\\s\*早苗")
+			PRINTFORML 「哦，那个脱离常识的巫女的亲人吗？倒是可以……」
+		; 霧雨魔理沙というフレーズが含まれてる。
+		ELSEIF STRCOUNT(LOCALS, "\(霧雨\)\*\\s\*魔理沙")
+			PRINTFORML 「唔……和那个奇怪的魔法使有微妙的缘分啊。好吧」
+		; 直接入力ならいけると思ったか？弾くぜ！
+		ELSEIF ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
+			CLEARLINE 1
+			REUSELASTLINE 「你是笨蛋吗」
+			CONTINUE
+		ELSEIF ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
+			CLEARLINE 1
+			REUSELASTLINE 「你是笨蛋吗」
+			CONTINUE
+		ELSEIF (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
+			CLEARLINE 1
+			REUSELASTLINE 「你是笨蛋吗」
+			CONTINUE
+		ELSEIF (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
+			CLEARLINE 1
+			REUSELASTLINE 「你是笨蛋吗」
+			CONTINUE
+		ELSE
+			PRINTFORML 「%RESULTS%…吗」
+		ENDIF
+		CALL ASK_YN
+		IF RESULT == 0
+			;あなたの名前を%MASTERNAME:39%に格納
+			MASTERNAME:39 = %RESULTS%
+			PRINTFORML 
+			BREAK
+		ELSEIF RESULT == 1
+			CONTINUE
+		ENDIF
 	ENDIF
-ENDIF
+LOOP 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"SP_EVENT"系イベント　CFLAG:1202

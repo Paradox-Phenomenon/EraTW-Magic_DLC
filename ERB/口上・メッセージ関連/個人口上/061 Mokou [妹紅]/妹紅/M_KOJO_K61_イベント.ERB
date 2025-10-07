@@ -77,7 +77,9 @@ IF CFLAG:61:睡眠 && !CFLAG:61:衰弱
 ELSEIF CHARANUM >= 127 && TCVAR:62:弾幕勝負結果 == 1 && !CFLAG:61:1614 && CFLAG:61:現在位置 != CFLAG:62:現在位置
 	SETBIT CFLAG:61:1614,0
 ENDIF
-
+IF FIRSTTIME("称呼初始化")
+	MASTERNAME:61 = %CALLNAME:MASTER%
+ENDIF
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K61
 SETCOLOR 0xFF1493
@@ -97,7 +99,71 @@ IF 陥落状態() >= 4
 ELSE
 	CFLAG:61:時間停止バレ = 0
 ENDIF
+SIF MASTERNAME:61 == ""
+	MASTERNAME:61 = %CALLNAME:MASTER%
 RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K61
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K61
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 61
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"改变成为恋人后%CALLNAME:61%对%CALLNAME:MASTER%的爱称%COND_STR(@" 现在是：%MASTERNAME:61%", MASTERNAME:61 != "")%", 1, "cond", 陥落状態() >= 4)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K61_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL K61_CONFESSION_NAMESET_PROCESS
+WAIT
+
+@K61_CONFESSION_NAMESET_PROCESS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+{
+CALL CHOICE,"「那么、该用什么称呼呢？」",
+	"『亲爱的』",
+	"『主人』",
+	"『吾主』",
+	"『老公』",
+	GETBIT(TALENT:MASTER:性別,1)?"『哥哥』"#"『姐姐』",
+	"『还是保持原样吧』"
+}
+SELECTCASE RESULT
+	CASE 0
+		MASTERNAME:61 = 亲爱的
+		PRINTFORML 「%MASTERNAME:61%吗……、这不是好像夫妻一样了吗」
+	CASE 1
+		MASTERNAME:61 = 主人
+		PRINTFORML 「%MASTERNAME:61%？　你喜欢女仆Play吗？」
+	CASE 2
+		MASTERNAME:61 = 吾主
+		PRINTFORML 「%MASTERNAME:61%？　好奇怪的称呼、不过这样也行」
+	CASE 3
+		MASTERNAME:61 = 老公
+		PRINTFORML 「%MASTERNAME:61%吗……、没想到我还能有可以说出这个称谓的对象呢」
+	CASE 4
+		IF GETBIT(TALENT:MASTER:性別,1)
+			MASTERNAME:61 = 哥哥
+		ELSE
+			MASTERNAME:61 = 姐姐
+		ENDIF
+		PRINTFORML 「%MASTERNAME:61%？　想被这样叫、你是妹控吗？」
+	CASE 5
+		MASTERNAME:61 = %CALLNAME:MASTER%
+		PRINTFORML 「%MASTERNAME:61%吗、刚才不是想要特别的称谓吗？」
+		PRINTFORML 「……说、说的也是、特别过头的话也太羞耻了」
+ENDSELECT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -256,49 +322,9 @@ IF LOCAL
 		PRINTFORML 「我能求你一件事吗」
 		PRINTFORML 「用这个力量来玩弄我是没关系的、对其他女人出手时我也不会说破」
 		PRINTFORMW 「但是、在不使用能力的时候、希望你能好好的爱我」
-		PRINTFORML 「诶？　既然成为了恋人、想要点特別的称呼方法？」
+		PRINTFORML 「诶？　既然成为了恋人、想要点特别的称呼方法？」
 		PRINTFORML 「嗯……、有、有点不好意思呢、不过%CALLNAME:MASTER%想要的话……」
-		PRINTFORMW 「那么、该用什么称呼呢？」
-		PRINTL
-		PRINTL [0] 『亲爱的』
-		PRINTL [1] 『主人』
-		PRINTL [2] 『吾主』
-		PRINTL [3] 『老公』
-		IF GETBIT(TALENT:MASTER:性別,1)
-			PRINTFORML [4] 『哥哥』
-		ELSE
-			PRINTFORML [4] 『姐姐』
-		ENDIF
-		PRINTL [5] 『还是保持原样吧』
-		$INPUT_NAMELOOP
-		INPUT
-		SELECTCASE RESULT
-			CASE 0
-				MASTERNAME:61 = 亲爱的
-				PRINTFORML 「%MASTERNAME:61%吗……、这不是好像夫妻一样了吗」
-			CASE 1
-				MASTERNAME:61 = 主人
-				PRINTFORML 「%MASTERNAME:61%？　你喜欢女仆Play吗？」
-			CASE 2
-				MASTERNAME:61 = 吾主
-				PRINTFORML 「%MASTERNAME:61%？　好奇怪的称呼、不过这样也行」
-			CASE 3
-				MASTERNAME:61 = 老公
-				PRINTFORML 「%MASTERNAME:61%吗……、没想到我还能有可以说出这个称谓的对象呢」
-			CASE 4
-				IF GETBIT(TALENT:MASTER:性別,1)
-					MASTERNAME:61 = 哥哥
-				ELSE
-					MASTERNAME:61 = 姐姐
-				ENDIF
-				PRINTFORML 「%MASTERNAME:61%？　想被这样叫、你是妹控吗？」
-			CASE 5
-				MASTERNAME:61 = %CALLNAME:MASTER%
-				PRINTFORML 「%MASTERNAME:61%吗、刚才不是想要特別的称谓吗？」
-				PRINTFORML 「……说、说的也是、特別过头的话也太羞恥了」
-			CASEELSE
-				GOTO INPUT_NAMELOOP
-		ENDSELECT
+		CALL K61_CONFESSION_NAMESET_PROCESS
 		PRINTFORML 「那么、再正式说一次、以后请多多关照」
 		PRINTFORMW 
 		CFLAG:345 = 1

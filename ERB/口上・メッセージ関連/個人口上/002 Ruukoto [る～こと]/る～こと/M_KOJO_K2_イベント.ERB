@@ -8,7 +8,7 @@
 ;
 ;CFLAG:2:1001	真正風騷判定用。心だけでなく体もやりまくりの真正風騷なら１。初対面かUPDATEのとき選択する。
 ;CFLAG:2:1002	CFLAG:1001を選択済みかどうかのフラグ
-;
+;CFLAG:2:1999	动态立绘判定用
 ;******************************************************************************
 ;******************************************************************************
 ;FIRSTTIME()によってCSTR:2:0に追加した独自の文字列
@@ -72,33 +72,10 @@ SETCOLOR 0xA0FF00
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K2
+;@M_KOJO_UPDATE_K2
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-
-SIF !TALENT:2:ヤリマン
-	CFLAG:2:1001 = 0
-IF TALENT:2:風騷
-	PRINTFORML 这个淫荡的留琴，是内心淫荡但身体却依然纯洁的类型吗？
-	PRINTFORML 还是说，是身体也经验丰富的正统公交车呢？
-	PRINTFORML （无论选择哪一个都不会影响资质或经验等。只影响一些文本要素）
-	PRINTFORML 
-	
-	CALL ASK_YN("身体清纯内心风骚","身经百战的性处理人偶")
-	IF RESULT == 0
-		CFLAG:2:1001 = 0
-		PRINTFORMW 设定为并非身经百战
-	ELSEIF RESULT == 1
-		CFLAG:2:1001 = 1
-		PRINTFORMW 设定为正统公交车
-	ENDIF
-	;選択済みフラグを立てる
-	CFLAG:2:1002 = 1
-ENDIF
-
-RETURN 1
-
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;Custom dialogue settings, custom code
@@ -109,33 +86,61 @@ RETURN 1
 #LOCALSSIZE 1
 ;note: options start from 1!
 @KOJO_OPTION_K2
-CALL KOJO_OPTION_ITEM("真正的身经百战（需要[风骚]素质）", 1, "status:无效:有效", CFLAG:2:1001)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM("真正的身经百战（需要[风骚]素质）", 1, "status:无效:有效", CFLAG:2:1001,"cond",TALENT:2:風騷)
+CALL KOJO_OPTION_ITEM("切换动态立绘 现在是", 2, "status:关闭:开启", CFLAG:2:1999)
 
 ;process the input portion
 @KOJO_OPTION_K2_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;る～ことがヤリマン、る～ことと面識がある、真正ヤリマンか否か選択済みのフラグが立っていない
-IF TALENT:2:風騷
-	PRINTFORML 这个淫荡的留琴，是内心淫荡但身体却依然纯洁的类型吗？
-	PRINTFORML 还是说，是身体也经验丰富的正统公交车呢？
-	PRINTFORML （无论选择哪一个都不会影响资质或经验等。只影响一些文本要素）
-	PRINTFORML 
-	
-	CALL ASK_YN("身体清纯内心风骚","身经百战的性处理人偶")
-	IF RESULT == 0
-		CFLAG:2:1001 = 0
-		PRINTFORMW 设定为并非身经百战
-	ELSEIF RESULT == 1
-		CFLAG:2:1001 = 1
-		PRINTFORMW 设定为正统公交车
-	ENDIF
-	
-ELSE
-	PRINTFORMW 只有当留琴拥有[风骚]时才能选择。
-	;選択済みフラグを立てる
-	CFLAG:2:1002 = 1
+PRINTFORML 这个淫荡的留琴，是内心淫荡但身体却依然纯洁的类型吗？
+PRINTFORML 还是说，是身体也经验丰富的正统公交车呢？
+PRINTFORML （无论选择哪一个都不会影响资质或经验等。只影响一些文本要素）
+PRINTFORML 
+
+CALL ASK_YN("身体清纯内心风骚","身经百战的性处理人偶")
+IF RESULT == 0
+	CFLAG:2:1001 = 0
+	PRINTFORMW 设定为并非身经百战
+ELSEIF RESULT == 1
+	CFLAG:2:1001 = 1
+	PRINTFORMW 设定为正统公交车
 ENDIF
 
-RETURN 1
+@KOJO_OPTION_K2_RESULT_2
+#LOCALSIZE 2
+#LOCALSSIZE 1
+SETANIMETIMER 40
+LOCAL:1 = LINECOUNT
+PRINTFORML 4.974增加了留琴l13绘及其动态立绘，可能对于一些设备负担太重，在此自行选择开关
+PRINTFORML 
+CALL 留琴动画样例
+DRAWLINE
+DO
+	LOCAL = LINECOUNT
+	CALL PRINTBUTTON_EX,@"现在是[\@ CFLAG:2:1999 ? 开启 # 关闭 \@]",0,0,CFLAG:2:1999
+	PRINTL
+	PRINTL 返回 [9]
+	INPUT
+	SELECTCASE RESULT
+		CASE 0
+			CFLAG:2:1999 = !CFLAG:2:1999
+		CASE 9
+			BREAK
+	ENDSELECT
+	CLEARLINE LINECOUNT - LOCAL
+LOOP 1
+SETANIMETIMER 32627
+CLEARLINE LINECOUNT - LOCAL:1
+
+@留琴动画样例
+CALL 画像セット,"別立ち2_服_笑顔动_2"
+CALL 画像セット,"別立ち2_服_笑顔_2"
+CALL 画像一斉表示("左", 0, 1)
+
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）

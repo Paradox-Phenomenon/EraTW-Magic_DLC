@@ -15,7 +15,7 @@
 ;本口上にて使用しているCFLAG・TCVAR等
 ;CFLAG:6:1001　兒童でない場合でも一部口上を表示させるフラグです。
 ;CFLAG:6:1002　日記用フラグです。日記記入時の你の居場所を保管したりします。
-;
+;CFLAG:6:1003　剧本推荐设定的变更
 ;******************************************************************************
 
 ;### 口上存在判定 ###################################
@@ -70,36 +70,71 @@ SETCOLOR C_CREAM
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K6
+;@M_KOJO_UPDATE_K6
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-IF TALENT:MASTER:年齢 > -1 || !TALENT:MASTER:幼児／幼児退行
-;你が兒童でない場合に表示
-	SETCOLOR C_CREAM
-	PRINTFORML 露娜切露德口上有一部分只有当你是个孩子的情况下才会显示。（素质里的[幼児／幼児退行]）
-	PRINTFORML 因为你并不是儿童，所以请自行选择下面的选项。
-	$LOOP
-	PRINTFORML 
-	PRINTFORML 
-	PRINTFORML 
-	PRINTFORML [0] 同意并继续使用。（口上部分显示）
-	PRINTFORML [1] 催眠露娜、在她眼中你是个正太。（口上全部显示）
-	INPUT
-	SELECTCASE RESULT
-		CASE 0
-			;PRINTFORMW 我が刀法がお前が如き妖物に通ずるか興味。
-			PRINTFORMW 只显示了设定上不会引起矛盾的口上。
-		CASE 1
-			CFLAG:6:1001 = 1
-			;PRINTFORMW 你は肥後の出成为了。
-			PRINTFORMW 虽然你并不是个小孩子、但是口上依旧全部显示了（要记得代入正太哦）。
-		CASEELSE	
-			GOTO LOOP
-	ENDSELECT
-	RESETCOLOR
-ENDIF
-RETURN 1
+
+@KOJO_OPTION_EXIST_K6
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K6
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"孩童你先生的对应内容%COND_STR(@"：有效", CFLAG:6:1001 == 1)%", 1, "cond", TALENT:MASTER:年齢 > -1 || !TALENT:MASTER:幼児／幼児退行)
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定%COND_STR(@"：已采纳", CFLAG:6:1003 == 1)%", 2, "onetime", CFLAG:6:1003,"cond", ABL:6:料理技能 < 3 || ABL:6:奉仕精神 < 3 || ABL:6:教養 < 1)
+
+;当你不是孩子时显示
+@KOJO_OPTION_K6_RESULT_1
+SETCOLOR C_CREAM
+PRINTFORML 露娜切露德的初始剧本中有只有当【你】是个孩子才会出现的互动差分
+PRINTFORML 因为你不是孩子，请从下方选择应对方式
+CALL ASK_YN("知晓并就这么继续（部分差分不显示）", @"催眠露娜让你看起来像正太（显示完整内容）")
+SELECTCASE RESULT
+	CASE 0
+		;PRINTFORMW 我が刀法がお前が如き妖物に通ずるか興味。
+		PRINTFORMW 现在只显示不会产生矛盾的对话
+		CFLAG:6:1001 = 0
+	CASE 1
+		CFLAG:6:1001 = 1
+		;PRINTFORMW あなたは肥後の出になりました。
+		PRINTFORMW 你虽然不是孩子，但现在会显示所有对话（要记得代入正太哦）
+ENDSELECT
+RESETCOLOR
+
+@KOJO_OPTION_K6_RESULT_2
+PRINTFORML
+PRINTFORML 要根据推荐，将露娜切尔德设定为符合该剧本的人设吗？
+LOCAL = LINECOUNT
+$LOOPSTART
+CLEARLINE LINECOUNT - LOCAL
+CALL ASK_M("好的", 1, "不行", 1, "查看变动的能力值", 1, "保留",1)
+SELECTCASE RESULT
+	CASE 0
+		ABL:6:料理技能 = 3
+		ABL:6:奉仕精神 = 3
+		ABL:6:教養 = 1
+		EXP:6:料理経験 = 200
+		EXP:6:学習経験 = 5
+		PRINTFORML 料理技能变成C了。
+		PRINTFORML 侍奉精神变成D了。
+		PRINTFORMW 教养变成D了。
+		CFLAG:6:1003 = 1
+	CASE 1
+		PRINTFORMW 露娜的能力不进行变更了。
+		CFLAG:6:1003 = 1
+	CASE 2
+		PRINTFORML
+		PRINTFORML  料理技能： E → 料理技能： C
+		PRINTFORML  侍奉精神： G → 侍奉精神： D
+		PRINTFORMW      教养： E →     教养： D
+		GOTO LOOPSTART
+	CASE 3
+		PRINTFORMW 暂时保留，露娜的能力没有进行变更。
+		CFLAG:6:1003 = 0
+ENDSELECT
+	
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -109,7 +144,7 @@ RETURN 1
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 #DIM LCOUNT
-
+CALL KOJO_OPTION_K6_RESULT_1
 IF TALENT:MASTER:年齢 == -1 || TALENT:MASTER:幼児／幼児退行 || CFLAG:6:1001 == 1
 	IF CFLAG:MASTER:初期位置  == 35
 		SETCOLOR C_CREAM
@@ -308,49 +343,8 @@ IF TALENT:MASTER:年齢 == -1 || TALENT:MASTER:幼児／幼児退行 || CFLAG:6:
 		PRINTFORML 露娜切尔德转过身去往回走不知道去哪里了。
 		PRINTFORMW 如果再见面就好了哪…之类的、%CALLNAME:MASTER%这么想着目送着她离去
 	ENDIF
-	PRINTFORML
-	PRINTFORML 要将露娜切尔德变换为适合口上的能力吗？
-	PRINTFORML （一部分能力変動)
-
-	$LOOP
-
-	PRINTFORML 
-	PRINTFORML 
-	PRINTFORML [0] 好的
-	PRINTFORML [1] 不行
-	PRINTFORML [2] 看看会变动的能力值
-
-	INPUT
-	SELECTCASE RESULT
-		CASE 0
-			ABL:6:料理技能 = 3
-			ABL:6:奉仕精神 = 3
-			ABL:6:教養 = 1
-			EXP:6:料理経験 = 200
-			EXP:6:学習経験 = 5
-			PRINTFORML 料理技能变成C了。
-			PRINTFORML 奉仕精神变成D了。
-			PRINTFORMW 教養变成D了。
-		CASE 1
-			PRINTFORMW 露娜的能力没有进行变更。
-		CASE 2
-			PRINTFORML
-			PRINTFORML  料理技能： E → 料理技能： C
-			PRINTFORML  奉仕精神： G → 奉仕精神： D
-			PRINTFORMW      教養： E →     教養： D
-			GOTO LOOP
-		CASEELSE
-			IF LCOUNT >5
-				PRINTFORMW 都说了没有进行设定了啊！
-			GOTO LOOP
-			ELSE
-				PRINTFORMW 没有进行设定。
-				LCOUNT ++	
-			GOTO LOOP
-			ENDIF
-	ENDSELECT
+CALL KOJO_OPTION_K6_RESULT_2
 ENDIF
-
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

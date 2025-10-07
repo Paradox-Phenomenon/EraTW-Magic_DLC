@@ -30,87 +30,82 @@ CFLAG:眠姦口上有 = 1
 @M_KOJO_MOMO_UPDATE_K10
 SIF MOMO_LOOPS_MARK_OF_SUIKA != FLAG:周回数
 	MOMO_UPDATE_MARK_OF_SUIKA = 0
-IF !CFLAG:面識
-	IF !MOMO_UPDATE_MARK_OF_SUIKA
-		PRINTFORMDL 为了适配部分内容，活了不知道多久的四大鬼王之一的伊吹萃香将仍然是处女
-		SETCOLOR C_RED
-		PRINTFORML 注意：
-		PRINTFORML 在您和萃香初次见面之前，您都可以对本update的选项进行修改
-		PRINTFORML 一旦您与萃香初见，本周目内您将无法再次对您的选择进行修改
-		PRINTFORMW
-		RESETCOLOR
-		WHILE 1
-			CALL CHOICE("现在将萃香设定为处女，请问可以吗？", "没问题", "不要")
-			SELECTCASE RESULT
-				CASE 0
-					CALL CHOICE("确定要进行修改吗？", "是", "否")
-					SELECTCASE RESULT
-						CASE 0
-							TALENT:処女 = 1
-							ABL:Ｃ感覚 = 0
-							ABL:露出癖 = 0
-							EXP:Ｖ経験 = 0
-							EXP:絶頂経験 = 0
-							EXP:苦痛快楽経験 = 0
-							MOMO_UPDATE_MARK_OF_SUIKA = 1
-							MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
-							PRINTFORMDW 那么请爱护好这位情感上仍然青涩的鬼王吧
-							BREAK
-						CASEELSE
-							CONTINUE
-					ENDSELECT
-				CASEELSE
-					CALL CHOICE("确定不进行修改吗？", "是", "否")
-					SELECTCASE RESULT
-						CASE 0
-							TALENT:処女 = 0
-							ABL:Ｃ感覚 = 1
-							ABL:露出癖 = 1
-							EXP:Ｖ経験 = 15
-							EXP:絶頂経験 = 10
-							EXP:苦痛快楽経験 = 20
-							MOMO_UPDATE_MARK_OF_SUIKA = 2
-							MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
-							PRINTFORMDW 那么萃香还是有一定的经验的，毕竟活了那么久了对吧
-							BREAK
-						CASEELSE
-							CONTINUE
-					ENDSELECT
-			ENDSELECT
-		WEND
-	ELSE
-		PRINTFORMD 您已经进行过对本口上的update，目前您的选择是
-		SELECTCASE MOMO_UPDATE_MARK_OF_SUIKA
-			CASE 1
-				PRINTFORML 活了不知道多久的四大鬼王之一的伊吹萃香将仍然是处女
-			CASE 2
-				PRINTFORML 萃香还是有一定的经验的
-		ENDSELECT
-		CALL CHOICE("需要进行重新选定吗？", "是", "否")
-		SELECTCASE RESULT
-			CASE 0
-				MOMO_UPDATE_MARK_OF_SUIKA = 0
-				TALENT:処女 = 0
-				ABL:Ｃ感覚 = 1
-				ABL:露出癖 = 1
-				EXP:Ｖ経験 = 15
-				EXP:絶頂経験 = 10
-				EXP:苦痛快楽経験 = 20
-				PRINTFORMW 现在可以进行重新选择了
-				RESTART
-			CASEELSE
-				PRINTFORMW 那么就保持现在这样
-		ENDSELECT
-	ENDIF
-ELSE
-	SETCOLOR C_RED
-	PRINTFORMW 您已经与萃香见过面了，不能进行对萃香基本信息的设定
-	RESETCOLOR
-ENDIF
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
 RETURN 1
+	
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_MOMO_OPTION_EXIST_K10
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_MOMO_OPTION_K10
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 10
+CALL KOJO_OPTION_ITEM("剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,10), "status:未采纳:采纳", MOMO_UPDATE_MARK_OF_SUIKA == 2)
+TARGET = LOCAL
+
+;process the input portion
+@KOJO_MOMO_OPTION_K10_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 为了适配部分内容，活了不知道多久的四大鬼王之一的伊吹萃香将仍然是处女
+;SETCOLOR C_RED
+;PRINTFORML 注意：
+;PRINTFORML 在您和萃香初次见面之前，您都可以对本update的选项进行修改
+;PRINTFORML 一旦您与萃香初见，本周目内您将无法再次对您的选择进行修改
+;PRINTFORMW
+;RESETCOLOR
+gLineCount = LINECOUNT
+WHILE 1
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	CALL CHOICE("现在将萃香设定为处女，请问可以吗？", "没问题", "不要")
+	SELECTCASE RESULT
+		CASE 0
+			CALL CHOICE("确定要进行修改吗？", "是", "否")
+			SELECTCASE RESULT
+				CASE 0
+					TALENT:処女 = 1
+					CSTR:処女喪失履歴 = 还没被任何人进入
+					ABL:Ｃ感覚 = 0
+					ABL:露出癖 = 0
+					EXP:Ｖ経験 = 0
+					EXP:絶頂経験 = 0
+					EXP:苦痛快楽経験 = 0
+					MOMO_UPDATE_MARK_OF_SUIKA = 1
+					MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
+					PRINTFORMDW 那么请爱护好这位情感上仍然青涩的鬼王吧
+					BREAK
+				CASEELSE
+					CONTINUE
+			ENDSELECT
+		CASEELSE
+			CALL CHOICE("确定不进行修改吗？", "是", "否")
+			SELECTCASE RESULT
+				CASE 0
+					TALENT:処女 = 0
+					ABL:Ｃ感覚 = 1
+					ABL:露出癖 = 1
+					EXP:Ｖ経験 = 15
+					EXP:絶頂経験 = 10
+					EXP:苦痛快楽経験 = 20
+					MOMO_UPDATE_MARK_OF_SUIKA = 2
+					MOMO_LOOPS_MARK_OF_SUIKA = FLAG:周回数
+					PRINTFORMDW 那么萃香还是有一定的经验的，毕竟活了那么久了对吧
+					BREAK
+				CASEELSE
+					CONTINUE
+			ENDSELECT
+	ENDSELECT
+WEND
+CALLF FIRSTTIME("开局设定",,10)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）

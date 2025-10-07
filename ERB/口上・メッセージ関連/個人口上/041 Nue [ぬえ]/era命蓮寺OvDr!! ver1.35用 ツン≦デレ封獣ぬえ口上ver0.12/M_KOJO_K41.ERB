@@ -116,14 +116,69 @@ SETCOLOR 0x8C6589
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
 
-IF FIRSTTIME("U41-1",0,41) && CFLAG:41:面識
-	PRINTFORMDL 这是为称呼改变了的情况提供的补救措施。
-	PRINTFORMDL 对于称呼未改变的各位，给您添麻烦了，非常抱歉。
-	MASTERNAME:41 = 
-	CALL NAME_SET_K41
-ENDIF
+;apply skills, nue is very old and she's at least as strong as mamizou
+;SIF ABL:41:料理技能 < 1
+;	ABL:41:料理技能 = 1
+SIF ABL:41:教養 < 2
+	ABL:41:教養 = 2
+;foraging
+SIF TALENT:41:48 < 1
+	TALENT:41:48 = 1
+;actually I'm just gonna adjust her strength at the danmaku file the more serious she gets
+;SIF ABL:41:戦闘能力 < 4
+;	ABL:41:戦闘能力 = 4
+
+;custom code, set exp for abilities
+SIF EXP:41:学習経験 < 180
+	EXP:41:学習経験 = 180
+	
+SIF EXP:41:会話経験 < 100
+	EXP:41:会話経験 = 100
+	
+SIF EXP:41:戦闘経験 < 450
+	EXP:41:戦闘経験 = 450
+	
+SIF EXP:41:清掃経験 < 10
+	EXP:41:清掃経験 = 10
+	
+SIF EXP:41:料理経験 < 3
+	EXP:41:料理経験 = 3
+	
+SIF EXP:41:釣り経験 < 25
+	EXP:41:釣り経験 = 25
+	
+SIF EXP:41:採集経験 < 30
+	EXP:41:採集経験 = 30
+	
+SIF EXP:41:調合経験 < 100
+	EXP:41:調合経験 = 100
+
 RETURN 1
 
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K41
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K41
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:41%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:41%", MASTERNAME:41 != "")%", 1)
+
+;process the input portion
+@KOJO_OPTION_K41_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL M_KOJO_COLOR_K41
+MASTERNAME:41 = 
+LOCAL = TARGET
+TARGET = 41
+CALL NAME_SET_K41
+TARGET = LOCAL
+WAIT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -9852,7 +9907,7 @@ ENDIF
 ;-------------------------------------------
 @NAME_SET_K41
 ;/見事な響子口上の丸パクだと感心するがどこもおかしくはない
-PRINTDL 请输入名称(尽管是直接输入,但是也请选一下選択项)
+PRINTDL 请输入称呼(直接输入或点击按钮)
 IF NAME:MASTER != "你"
 	LOCALS = %NAME:MASTER%
 ELSE
@@ -9861,7 +9916,10 @@ ENDIF
 PRINTBUTTON @"[名字就叫(%LOCALS%)]", @"%LOCALS%"
 PRINTDL 　
 ;名前を入力するループ
+gLineCount = LINECOUNT
 $INPUT_LOOP_ONAMAE
+SIF LINECOUNT - gLineCount > 0
+	CLEARLINE LINECOUNT - gLineCount
 INPUTS
 ; 行頭行尾の空白文字削除
 LOCALS = %RESULTS%
@@ -9885,13 +9943,13 @@ ELSE
 	; 星が主人ではなく、寅丸もしくは星というフレーズが含まれている
 	ELSEIF (FLAG:扮演 != 55 && STRCOUNT(LOCALS, "聖\*\\s\*白蓮")) || (FLAG:扮演 != 87 && STRCOUNT(LOCALS, "\(寅丸\)\*\\s\*星\$"))
 		CLEARLINE 1
-		REUSELASTLINE 「好吧好吧、那样就行」
+		REUSELASTLINE 「好好好，那种笑话就免了」
 		GOTO INPUT_LOOP_ONAMAE
 	; 命蓮寺勢はじき
 	; うんそうだね多多良勝五郎とか教える人もいるかもしれないもんね
 	ELSEIF (FLAG:扮演 != 39 && LOCALS == "纳兹琳") || (FLAG:扮演 != 40 && STRCOUNT(LOCALS, "\(多多良\)\*\\s\*小傘")) || (FLAG:扮演 != 85 && STRCOUNT(LOCALS, "\(雲居\)\*\\s\*一輪")) || (FLAG:扮演 != 86 && STRCOUNT(LOCALS, "\(\(村紗\)*\\s\*水蜜\|村紗\)"))
 		CLEARLINE 1
-		REUSELASTLINE 「叫这个名字的人,已经有了的样子呢。愛称的话怎么样？」
+		REUSELASTLINE 「叫这个名字的还有其他人呢。没有爱称什么的吗？」
 		GOTO INPUT_LOOP_ONAMAE
 	ELSEIF FLAG:扮演 != 69 && STRCOUNT(LOCALS, "\(二ツ岩\)\*\\s\*猯藏")
 		CLEARLINE 1
@@ -9910,19 +9968,19 @@ ELSE
 	ELSEIF STRCOUNT(LOCALS, "\(霧雨\)\*\\s\*魔理沙")
 		PRINTFORML 「那个魔法使的亲戚？为什么进佛门？」
 	; 直接入力ならいけると思ったか？弾くぜ！
-	ELSEIF FIRSTTIME("U41-1") && ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
+	ELSEIF ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
 		CLEARLINE 1
 		REUSELASTLINE 「有好好的在听人说话么？」
 		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FIRSTTIME("U41-1") && ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
+	ELSEIF ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
 		CLEARLINE 1
 		REUSELASTLINE 「有好好的在听人说话么？」
 		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FIRSTTIME("U41-1") && (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
+	ELSEIF (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
 		CLEARLINE 1
 		REUSELASTLINE 「有好好的在听人说话么？」
 		GOTO INPUT_LOOP_ONAMAE
-	ELSEIF FIRSTTIME("U41-1") && (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
+	ELSEIF (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
 		CLEARLINE 1
 		REUSELASTLINE 「有好好的在听人说话么？」
 		GOTO INPUT_LOOP_ONAMAE

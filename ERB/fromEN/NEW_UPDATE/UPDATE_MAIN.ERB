@@ -314,7 +314,7 @@ FOR VAR_ID,0,111
 	IF EXP:C_ID:VAR_ID < CSVEXP (C_ID,VAR_ID)
 		OLD_EXP_VALUE = EXP:C_ID:VAR_ID
 		NEW_EXP_VALUE = (EXP:C_ID:VAR_ID + CSVEXP (C_ID,VAR_ID))
-		PRINTFORML %CALLNAME:C_ID%の%EXPNAME:(VAR_ID)%が{OLD_EXP_VALUE}から{NEW_EXP_VALUE}に上がりました
+		PRINTFORML %CALLNAME:C_ID%的%EXP_TR(VAR_ID)%从{OLD_EXP_VALUE}上升至{NEW_EXP_VALUE}
 		EXP:C_ID:VAR_ID = NEW_EXP_VALUE
 	ENDIF
 NEXT
@@ -684,8 +684,8 @@ IF UPDATE_TYPE == "full"
 	PRINTL
 	CALL UPDATE_MAIN_DRAWLINE_SECTION("剧本更新开始")
 	PRINTFORML 是否同时进行剧本的自定义设置？（比方说剧本会提供多种可选人设，包括身材、性经历、性格等等）
-	PRINTFORML 大部分剧本都有自定义的选项，全部执行会花费一些时间。
-	PRINTFORML 下方的个别设定可以随时进行单个角色的UPDATE；能力表示里可以随时进行剧本设置
+	PRINTFORML 大部分剧本都有自定义的选项，全部执行会花费一些时间
+	PRINTFORML 大部分开局设定都会在初次见到角色时触发，而能力表示界面可以随时进行剧本设置，跳过也不用担心
 	;PRINTFORML 虽然作者肯定希望通过开局自定义让你了解剧本人设，而且不初始化就接触角色很可能出现意想不到的的问题，但
 	;PRINTFORML （1）你可能不会接触到所有角色；（2）大部分角色都会初见时触发UPDATE；（3）下方的个别设定可以随时进行单个角色的UPDATE；（4）下方的个别设定可以重置角色进度。
 	;PRINTFORML 所以，如果你是新玩家，请放松心态开始你在幻想乡的旅程吧，不必害怕跳过全体UPDATE会错过什么。等体会到剧本自定义选项对游玩体验的影响后再回头选择也不迟。
@@ -1345,28 +1345,94 @@ RESETCOLOR
 ;-
 ;status - 显示设置的状态（仅限布尔值），之后以SPLIT形式指定状态（例如："status:禁用:启用"）；需要在后续参数中设置一个标记
 ;cond - 仅当条件为真时才可访问，需要在后续参数中设置一个标记
-@KOJO_OPTION_ITEM(ARGS, ARG = 1, strExtra, nFlag)
-#DIMS strExtra
-#DIM nFlag
+@KOJO_OPTION_ITEM(ARGS, ARG = 1, strExtra:0, nFlag:0, strExtra:1, nFlag:1, strExtra:2, nFlag:2)
+#DIMS strExtra, 3
+#DIM nFlag, 3
+#DIMS BUTTON_TEXT
+#DIMS DYNAMIC BUTTON_COLOR
+#DIMS DYNAMIC HIT_TEXT
+#DIMS DYNAMIC STATUS_TEXT
+#DIMS DYNAMIC STATUS_COLOR
+#DIMS DYNAMIC COND_STR
+#DIMS DYNAMIC COND_COLOR
+#DIM DYNAMIC ONETIME_STATE = -1 ;-1 = not used, 0 = not set, 1 = set
+#DIMS DYNAMIC ONETIME_WARNING
+#DIMS DYNAMIC ONETIME_STATEMENT
+#DIM DYNAMIC CONDITION_STATE  = -1 ;-1 = not used, 0 = invalid, 1 = valid
+#DIMS DYNAMIC HTML
 
-PRINTBUTTON @"[{ARG,2}] %ARGS%", ARG + 7000
-SIF SPLIT_CHECK(strExtra, "status")
-	PRINTFORM : \@ !nFlag ? %SPLIT_SINGLE(strExtra, 1)% # %SPLIT_SINGLE(strExtra, 2)% \@
-IF SPLIT_CHECK(strExtra, "onetime")
+IF STRCOUNT(ARGS, ":")
+	HIT_TEXT = %SPLIT_SINGLE(ARGS, 1)%
+	SIF STRCOUNT(ARGS, ":") == 2
+		BUTTON_COLOR = %SPLIT_SINGLE(ARGS, 2)%
+	ARGS = %SPLIT_SINGLE(ARGS, 0)%
+ENDIF
+BUTTON_COLOR '= HTMLCCHK(BUTTON_COLOR) ? BUTTON_COLOR # HTMLCOLOR(GETCOLOR())
+
+LOCAL = FINDELEMENT(strExtra, "status")
+IF LOCAL >= 0
+	STATUS_TEXT = \@ !nFlag:LOCAL ? %SPLIT_SINGLE(strExtra:LOCAL, 1)% # %SPLIT_SINGLE(strExtra:LOCAL, 2)% \@
+	SIF STRCOUNT(strExtra:LOCAL, ":") == 3
+		STATUS_COLOR = %SPLIT_SINGLE(strExtra:LOCAL, 3)%
+	STATUS_COLOR '= HTMLCCHK(STATUS_COLOR) ? STATUS_COLOR # ""
+ENDIF
+
+LOCAL = FINDELEMENT(strExtra, "onetime")
+IF LOCAL >= 0
+	IF STRCOUNT(strExtra:LOCAL, ":")
+		ONETIME_WARNING = %SPLIT_SINGLE(strExtra:LOCAL, 1)%
+		SIF STRCOUNT(strExtra:LOCAL, ":") == 2
+			ONETIME_STATEMENT = %SPLIT_SINGLE(strExtra:LOCAL, 2)%
+	ENDIF
 	SETBIT KojoUpdateFlags:ARG, 0 ;set up a flag to let the input know
-	PRINTFORML
-	IF nFlag
-		CALL COLORMESSAGE("一次性选项已使用。需要重置角色或重开游戏才能再次更改。",C_YELLOW,0)
+	ONETIME_STATE = nFlag:LOCAL
+	SIF ONETIME_STATE
 		SETBIT KojoUpdateFlags:ARG, 1 ;option used
+ENDIF
+ONETIME_WARNING '= STRLENS(ONETIME_WARNING) ? ONETIME_WARNING # "注意！这是一次性选项！通常意味着这是剧本需要玩家确定下来的开局选项"
+ONETIME_STATEMENT '= STRLENS(ONETIME_STATEMENT) ? ONETIME_STATEMENT # "一次性选项已使用。需要重置角色或重开游戏才能再次更改"
+
+LOCAL = FINDELEMENT(strExtra, "cond")
+IF LOCAL >= 0
+	SIF STRCOUNT(strExtra:LOCAL, ":")
+		COND_STR = %SPLIT_SINGLE(strExtra:LOCAL, 1)%
+	SIF STRCOUNT(strExtra:LOCAL, ":") == 2
+		COND_COLOR = %SPLIT_SINGLE(strExtra:LOCAL, 2)%
+	CONDITION_STATE = nFlag:LOCAL
+	SIF !CONDITION_STATE
+		SETBIT KojoUpdateFlags:ARG, 2 ;disable option
+ENDIF
+COND_STR '= STRLENS(COND_STR) ? COND_STR # "不可用"
+COND_COLOR '= HTMLCCHK(COND_COLOR) ? COND_COLOR # "#0x404040"
+
+BUTTON_TEXT = [{ARG,2}] %ARGS%
+
+;HTMLAUTOBUTTON(按钮文字, 按钮值, 提示文字, 文字颜色, 高亮颜色, 按钮有效标志, 按钮无效的文字, 按钮无效的提示, 无效时文字颜色)
+HTML '= HTMLAUTOBUTTONS(BUTTON_TEXT, TOSTR(ARG + 7000), HIT_TEXT, BUTTON_COLOR, , CONDITION_STATE != 0 && ONETIME_STATE != 1, , , "#0x646464")
+
+IF STATUS_TEXT != ""
+	IF STATUS_COLOR != ""
+		HTML += @"<font color='%STATUS_COLOR%'>：" + STATUS_TEXT + "</font>"
 	ELSE
-		CALL COLORMESSAGE("注意！这是一次性选项!",C_RED,0,1)
+		HTML += @"<font color='" + (CONDITION_STATE != 0 && ONETIME_STATE != 1 ? BUTTON_COLOR # "#0x646464") + "'>：" + STATUS_TEXT + "</font>"
 	ENDIF
 ENDIF
-IF SPLIT_CHECK(strExtra, "cond") && !nFlag
-	SETBIT KojoUpdateFlags:ARG, 2 ;disable option
-	CALL COLORMESSAGE("　（不可用）",C_GRAY)
+IF CONDITION_STATE == 0 && ONETIME_STATE != 1
+	IF COND_COLOR != ""
+		HTML += @"<font color='%COND_COLOR%'>　(%COND_STR%)</font>"
+	ELSE
+		HTML += @"　(%COND_STR%)"
+	ENDIF
 ENDIF
-PRINTFORML
+
+IF ONETIME_STATE != -1
+	IF ONETIME_STATE
+		HTML += @"<font color='yellow'>　" + ONETIME_STATEMENT + "</font>"
+	ELSEIF CONDITION_STATE != 0
+		HTML += @"<font color='red'>　" + ONETIME_WARNING + "</font>"
+	ENDIF
+ENDIF
+HTML_PRINT HTML
 
 @UPDATE_SHOW_SETTINGS(ARG)
 VARSET KojoUpdateFlags
@@ -1379,7 +1445,7 @@ IF RESULT
 		SIF LINECOUNT - gLineCount > 0
 			CLEARLINE LINECOUNT - gLineCount
 		
-		PRINTFORML %CALLNAME:ARG%的设定:
+		PRINTFORML %CALLNAME:ARG%的选项:
 		TRYCALLFORM KOJO%LOCALS%_OPTION_K{NO:ARG}
 		PRINTFORML
 		PRINTFORML [100] 结束

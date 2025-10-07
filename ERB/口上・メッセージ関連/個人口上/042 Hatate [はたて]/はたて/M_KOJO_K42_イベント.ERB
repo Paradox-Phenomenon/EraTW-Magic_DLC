@@ -113,6 +113,8 @@ ENDIF
 ;ENDIF
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K42
+#LOCALSIZE 1
+#LOCALSSIZE 1
 
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
@@ -120,53 +122,24 @@ SETCOLOR 0xA260BF
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K42
+;@M_KOJO_UPDATE_K42
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
-;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-IF CFLAG:42:1001 == 0 && TALENT:42:態度 >= 0 && !TALENT:42:大胃王
-	PRINTFORMDL 要允许本剧本进行素质的变更吗？
-	PRINTFORMDL 许可的话、会获得【坦率】【大胃王】素质
-	PRINTFORML
-	CALL ASK_YN("允许","不允许")
-	SELECTCASE RESULT
-	;許可する
-	CASE 0
-		CFLAG:42:1001 = 1
-		;変更内容はここに記述
-		TALENT:42:態度 = -1
-		TALENT:42:大胃王 = 1
-		PRINTFORMDW 素质改变了
-	;許可しない
-	CASEELSE
-		CFLAG:42:1001 = -1
-		PRINTFORMDW 没有进行变更
-	ENDSELECT
-ENDIF
+;RETURN 1
 
-;鵺口上からお借りしました
-IF CFLAG:42:面識 == 1 && MASTERNAME:42 == ""
-	PRINTFORMDL 这是在已经认识的状态下实装剧本的补救措施
-	PRINTFORMDL 称呼设定事件是设定在初见面时完成的，有违和感请见谅
-	CALL NAME_SET_K42
-ENDIF
-
-;映姫口上を引用させていただきました。ありがとうございます
-PRINTDL 果剧本专用画像显示选项
-PRINTDL 
-CALL ASK_M("显示ON", 1, "只开启抚摸肚子动画", 1, "只开启抚摸屁股动画", 1, "全部OFF", 1)
-CFLAG:42:1501 = RESULT
-
-RETURN 1
 @KOJO_OPTION_EXIST_K42
 #LOCALSIZE 1
 #LOCALSSIZE 1
 @KOJO_OPTION_K42
-CALL KOJO_OPTION_ITEM("剧本推荐素质", 1, "cond", TALENT:42:態度 >= 0 && !TALENT:42:大胃王)
-CALL KOJO_OPTION_ITEM(@"变更果称呼你的方式%COND_STR(@"（现在: %MASTERNAME:42%）", MASTERNAME:42 != "")%", 2)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 42
+CALL KOJO_OPTION_ITEM("剧本推荐的开局设定", 1, "cond", TALENT:42:態度 >= 0 && !TALENT:42:大胃王)
+CALL KOJO_OPTION_ITEM(@"变更果对%CALLNAME:MASTER%的称呼方式%COND_STR(@"（现在：%MASTERNAME:42%）", MASTERNAME:42 != "")%", 2)
 SELECTCASE CFLAG:42:1501
 	CASE 0
-		LOCALS = 显示ON
+		LOCALS = 全部ON
 	CASE 1
 		LOCALS = 只开启抚摸肚子动画
 	CASE 2
@@ -174,13 +147,15 @@ SELECTCASE CFLAG:42:1501
 	CASE 3
 		LOCALS = 全部OFF
 ENDSELECT
-CALL KOJO_OPTION_ITEM(@"果剧本专用画像显示选项: %LOCALS%", 3)
+CALL KOJO_OPTION_ITEM(@"果剧本专用画像显示：%LOCALS%", 3)
+TARGET = LOCAL
 
 ;process the input portion
 @KOJO_OPTION_K42_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORMDL 要允许本剧本进行素质的变更吗？
 PRINTFORMDL 许可的话、会获得【坦率】【大胃王】素质
-PRINTFORML
 CALL ASK_YN("允许","不允许")
 SELECTCASE RESULT
 ;許可する
@@ -195,10 +170,14 @@ CASEELSE
 ENDSELECT
 
 @KOJO_OPTION_K42_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
 CALL NAME_SET_K42
 
 ;映姫口上を引用させていただきました。ありがとうございます
 @KOJO_OPTION_K42_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTDL 果剧本专用画像显示选项
 PRINTDL 
 CALL ASK_M("显示ON", 1, "只开启抚摸肚子动画", 1, "只开启抚摸屁股动画", 1, "全部OFF", 1)
@@ -2288,19 +2267,19 @@ IF LOCAL
 		ENDIF
 		
 		;保健室的女教师套
-		IF CFLAG:42:衣装一時変更 == 50 || CFLAG:42:基本服装セット == 50
+		IF CURRENT_CLOTHES_SET(42) == 50
 			PRINTFORML 「穿着白衣服的话总觉得头脑也变好了呢♪」
 			PRINTFORML 「怎么了吗、%MASTERNAME:42%君？　哪里受伤了吗ー？」
 			PRINTFORML 「让老师来看看你不舒服的地方呢♥」
 			PRINTDW 
 		;女僕装
-		ELSEIF CFLAG:42:衣装一時変更 == 51 || CFLAG:42:基本服装セット == 51
+		ELSEIF CURRENT_CLOTHES_SET(42) == 51
 			PRINTFORML 「欸嘿嘿ー、很可爱ー对吧ー♪」
 			PRINTFORML 「%MASTERNAME:42%…不对呢、主人大人、有需要的地方请尽管吩咐吧♪」
 			PRINTFORML 「H的恶作剧不行的哦♥」
 			PRINTDW 
 		;比基尼套
-		ELSEIF CFLAG:42:衣装一時変更 == 52 || CFLAG:42:基本服装セット == 52
+		ELSEIF CURRENT_CLOTHES_SET(42) == 52
 			IF DAY:2 == 4
 				PRINTFORML 「好冷！　真的好冷啊！　不可以换衣服吗！？」
 				PRINTFORMDL 果的牙齿咔嗒咔嗒地不断颤动着
@@ -2312,7 +2291,7 @@ IF LOCAL
 				PRINTDW 
 			ENDIF
 		;微型比基尼套
-		ELSEIF CFLAG:42:衣装一時変更 == 53 || CFLAG:42:基本服装セット == 53
+		ELSEIF CURRENT_CLOTHES_SET(42) == 53
 			IF DAY:2 == 4
 				PRINTFORML 「好冷！　真的好冷啊！　这是什么惩罚吗！？」
 				PRINTFORMDL 果的牙齿咔嗒咔嗒地不断颤动着
@@ -2323,7 +2302,7 @@ IF LOCAL
 				PRINTDW 
 			ENDIF
 		;兜裆布汉女套
-		ELSEIF CFLAG:42:衣装一時変更 == 54 || CFLAG:42:基本服装セット == 54
+		ELSEIF CURRENT_CLOTHES_SET(42) == 54
 			IF DAY:2 == 4
 				PRINTFORML 「好冷！　真的好冷啊！　这是什么惩罚吗！？」
 				PRINTFORMDL 果的牙齿咔嗒咔嗒地不断颤动着
@@ -2334,17 +2313,17 @@ IF LOCAL
 				PRINTDW 
 			ENDIF
 		;兔女郎套
-		ELSEIF CFLAG:42:衣装一時変更 == 55 || CFLAG:42:基本服装セット == 55
+		ELSEIF CURRENT_CLOTHES_SET(42) == 55
 			PRINTFORML 「哇噢、总觉得很性感的氛围？　超羞耻的呀」
 			PRINTFORML 「但是为什么会带有兔耳朵在呢？　很可爱所以ー就不计较了」
 			PRINTDW 
 		;白衣天使套
-		ELSEIF CFLAG:42:衣装一時変更 == 56 || CFLAG:42:基本服装セット == 56
+		ELSEIF CURRENT_CLOTHES_SET(42) == 56
 			PRINTFORML 「%MASTERNAME:42%ー桑、到了诊察的时间哟ー♥」
 			PRINTFORML 「这个、因为裙子的长度很短、感觉%MASTERNAME:42%其他的部位要变得有精神了ー…♥」
 			PRINTDW 
 		;圣诞套
-		ELSEIF CFLAG:42:衣装一時変更 == 57 || CFLAG:42:基本服装セット == 57
+		ELSEIF CURRENT_CLOTHES_SET(42) == 57
 			IF DAY:2 == 4
 				PRINTFORML 「圣诞ー快乐！　是圣诞老人哟ー♪」
 				PRINTFORML 「%MASTERNAME:42%有当个好孩子嘛？　那么、就把果果的吻来当作礼物送给你吧♥」
@@ -2356,23 +2335,23 @@ IF LOCAL
 				PRINTDW 
 			ENDIF
 		;网球服套
-		ELSEIF CFLAG:42:衣装一時変更 == 58 || CFLAG:42:基本服装セット == 58
+		ELSEIF CURRENT_CLOTHES_SET(42) == 58
 			PRINTFORML 「似乎是外面的世界展示球技的时候穿的衣服呢…」
 			PRINTFORML 「但是外套藏不住肚脐、而且裙子完全遮不住大腿… 是穿着这种衣服打球的吗？」
 			PRINTDW 
 		;忍者套
-		ELSEIF CFLAG:42:衣装一時変更 == 59 || CFLAG:42:基本服装セット == 59
+		ELSEIF CURRENT_CLOTHES_SET(42) == 59
 			PRINTFORML 「忍忍♪　果变成了忍者噢♪」
 			PRINTFORMW 「忍法！　分身之术！　能够分清哪个是真正的我吗ー？」
 			PRINTFORML 「哈啊、哈啊……像这样子全力得动着、实在是会疲惫的啊…」
 			PRINTDW 
 		;赤裸的白衬衫セット
-		ELSEIF CFLAG:42:衣装一時変更 == 60 || CFLAG:42:基本服装セット == 60
+		ELSEIF CURRENT_CLOTHES_SET(42) == 60
 			PRINTFORML 「这个、十分的羞耻啊…」
 			PRINTFORML 「因为、要是动起来的话、会被看光的嘛…\/\/\/」
 			PRINTDW 
 		;婚紗套
-		ELSEIF CFLAG:42:衣装一時変更 == 61 || CFLAG:42:基本服装セット == 61
+		ELSEIF CURRENT_CLOTHES_SET(42) == 61
 			IF CFLAG:K42C_結婚 >= 1
 				PRINTFORML 「欸嘿嘿、能够再次穿上这套衣服真幸福呀…♥」
 				PRINTFORML 「我永远爱你哟、亲爱的…♥」
@@ -2384,17 +2363,17 @@ IF LOCAL
 			ENDIF
 			PRINTDW 
 		;超棒的Ｔ恤衬衫套
-		ELSEIF CFLAG:42:衣装一時変更 == 62 || CFLAG:42:基本服装セット == 62
+		ELSEIF CURRENT_CLOTHES_SET(42) == 62
 			PRINTFORML 「等下！　是%MASTERNAME:42%叫我穿这个的吧！」
 			PRINTFORML 「不要说什么怪T男！　我又不是男孩子！」
 			PRINTDW 
 		;哥特萝莉套
-		ELSEIF CFLAG:42:衣装一時変更 == 63 || CFLAG:42:基本服装セット == 63
+		ELSEIF CURRENT_CLOTHES_SET(42) == 63
 			PRINTFORML 「我觉得这件衣服超可爱超喜欢ー♪　怎样？　适合我吗ー？」
 			PRINTFORMDL 服装十分的合适但是不停变换的表情实在是导致服装和化妆不相配…
 			PRINTDW 
 		;鴨舌帽文套
-		ELSEIF CFLAG:42:衣装一時変更 == 70 || CFLAG:42:基本服装セット == 70
+		ELSEIF CURRENT_CLOTHES_SET(42) == 70
 			PRINTFORML 「您好、这边是清正廉明的射命丸」
 			PRINTFORML 「呐ー呐ー、刚才的像吗ー？　我觉得我扮演的很像呢」
 			IF TALENT:29:恋人
@@ -2402,23 +2381,23 @@ IF LOCAL
 			ELSE
 			ENDIF
 			PRINTDW 
-		;卖药套
-		ELSEIF CFLAG:42:衣装一時変更 == 71 || CFLAG:42:基本服装セット == 71
+		;卖药套 
+		ELSEIF CURRENT_CLOTHES_SET(42) == 71
 			PRINTFORML 「唉ー、卖药了ー、需要买药吗ー」
 			PRINTFORML 「这种衣服、到底是从那里买来的啊…我、可不打算去永远亭工作噢？」
 			PRINTDW 
 		;猯藏和装
-		ELSEIF CFLAG:42:衣装一時変更 == 72 || CFLAG:42:基本服装セット == 72
+		ELSEIF CURRENT_CLOTHES_SET(42) == 72
 			PRINTFORML 「这个、不是狸猫的老大去人里时穿的伪装的衣服嘛」
 			PRINTFORML 「怎样？　发型我也改变了下、稍微有点熟女的感觉了吧？」
 			PRINTDW 
 		;生足美鈴套
-		ELSEIF CFLAG:42:衣装一時変更 == 73 || CFLAG:42:基本服装セット == 73
+		ELSEIF CURRENT_CLOTHES_SET(42) == 73
 			PRINTFORML 「是能够轻松运动的衣服呢ー。啊打ー！」
 			PRINTFORMDL 果反复着踢腿的时候、隐约的窥视到了她穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:下半身内衣２, TARGET)%%SHOW_BOTTOM(TARGET)%…
 			PRINTDW 
 		;早苗水手服套
-		ELSEIF CFLAG:42:衣装一時変更 == 74 || CFLAG:42:基本服装セット == 74
+		ELSEIF CURRENT_CLOTHES_SET(42) == 74
 			PRINTFORML 「在外面的世界学校里会穿着这样的衣服、早苗桑是这么告诉我的哟」
 			PRINTFORML 「%MASTERNAME:42%前辈、我对你、喜欢的说…♥　开玩笑的呢ー♥」
 			PRINTDW 

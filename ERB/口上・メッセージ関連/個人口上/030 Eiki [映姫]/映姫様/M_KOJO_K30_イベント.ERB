@@ -160,7 +160,7 @@ CALL K30_DENY_POLYAMORY(0)
 IF FIRSTTIME("魔改回退")
 	;重置素质选项标志
 	SETBIT CFLAG:30:1803, 0
-	PRINTW 4.975映姬剧本得到了重修，屏蔽原剧本否定多恋人机制以及修改映姬妊娠检测时点等魔改均已回退并重构，请查看UPDATE选项
+	PRINTW 4.975映姬剧本得到了重修，屏蔽原剧本否定多恋人机制以及修改映姬妊娠检测时点等魔改均已回退并重构，请查看剧本设置
 ENDIF
 ;媚药で搾り取りモードなら溜まってる度減らさない
 SIF GETBIT(TCVAR:30:367, 3)
@@ -223,12 +223,13 @@ SETCOLOR 0x337D5C
 SIF CFLAG:30:1501
 	SETCOLOR CFLAG:30:1501
 RETURN RESULT
+;原来的ASK系函数会清除文本颜色，于是作者在选项之后用该函数恢复颜色。但是他又发现，CALL函数会导致ASK函数的返回值被口上色函数覆盖，导致选项失败；所以他选择了用一个不常规的方式将前一个CALL的返回值传递下去
+;按理来说，映姬作者应该汇报这个BUG让本体修复而不是这么修改；不过，在4.973翻修映姬剧本时，这个错误终于被发现并修复了，而原版也在4.975得到了来自Anon的修复。
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K30
 #DIM TEMP
-#DIM R_TEMP
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
 ;UPDATE判定でCFLAG等の角色变数を使用场合、角色番号の指定が必要になります
@@ -237,18 +238,7 @@ SETBIT CFLAG:30:1803, 4
 SIF TALENT:30:恋人 && !CFLAG:30:1505
 	SETBIT CFLAG:30:1505, 0
 IF CFLAG:30:面識 && MASTERNAME:30 == ""
-	CFLAG:30:1501 = 0x337D5C
-	PRINTFORML
-	PRINTFORML 更新之后，可以更改映姬大人对您的称呼了
-	PRINTFORML 是否要变更「%CALLNAME:MASTER%\@ TALENT:30:恋人 ? # 桑 \@」的称呼？
-	CALL ASK_YN
-	IF !RESULT
-		CALL K30_SET_C_NAME(0)
-		RESETCOLOR
-	ELSE
-		MASTERNAME:30 = %CALLNAME:MASTER%
-		PRINTFORMW 「%CALLNAME:MASTER%\@ TALENT:30:恋人 ? # 桑 \@」已设置
-	ENDIF
+	MASTERNAME:30 = %CALLNAME:MASTER%
 ENDIF
 SIF CFLAG:30:允许无套 == 2
 	SETBIT CFLAG:30:1502, 0
@@ -276,78 +266,122 @@ IF CFLAG:30:面識 && GETBIT(CFLAG:30:1803, 3) == 0
 	PRINTFORML 
 	SETBIT CFLAG:30:1803, 3
 ENDIF
-$K30_GUARD_CHECK
-TEMP = LINECOUNT
-IF GETBIT(CFLAG:30:1803, 0)
-	RESETCOLOR
-	PRINTFORML
-	PRINTFORML 映姬大人现在是【\@ CFLAG:30:1801 == 1 ? 戒备森严的阎魔大人 # 普通的幻想乡少女 \@】
-	PRINTFORML 要更改映姬大人的戒备程度吗？
-	IF FIRSTTIME("多恋人帮助", 1)
-		CALL ASK_M("更改",1 , "可以了，下次再询问我" ,1 ,"有什么不同" ,1 , "我确定了，以后也不再更改",1 , "刚才我和映姬的恋人关系破碎了，我很急", GETBIT(CFLAG:1505, 1))
-	ELSE
-		CALL ASK_M("更改",1 , "可以了，下次再询问我" ,1 ,"有什么不同" ,1 , "我确定了，以后也不再更改",1)
-	ENDIF
-	SELECTCASE RESULT
-		CASE 0
-			CALL K30_SELECT_TYPE
-			CLEARLINE LINECOUNT - TEMP
-			GOTO K30_GUARD_CHECK
-		CASE 1
-			PRINTFORMW 再次选择UPDATE时会再次出现这一选项
-		CASE 3
-			CLEARBIT CFLAG:30:1803, 0
-			PRINTFORMW 好的，这一选项将不再出现
-		CASE 2
-			PRINTFORMDL 「戒备」是映姬大人有陷落素质之前，将破瓜和推倒都封印
-			PRINTFORMDL 会在攻略过程中更加贴合剧本台词，并使攻略过程更有代入感
-			PRINTFORMDL 「普通」则是保持导入剧本前的默认素质，可能导致与部分台词或描述产生矛盾，还请谅解
-			PRINTFORMDL 但是因为不进行素质的变更，所以即使选择了「戒备」攻略难易度也不会有太大的变化
-			SIF !GETBIT(CFLAG:30:1803, 0)
-				PRINTFORMDL 在UPDATE选择中会再次出现更改选项。随便选也没关系
-			DRAWLINE
-			PRINTFORMDL 「戒备」的映姬大人不会接受多人恋爱（多恋人制御开启），并在性爱中变得保守不说淫语（金枪鱼开关开启）
-			PRINTFORMDL ※因为两种人设在亲热环节中区别很大，作者建议在获得[思慕]之前、开发者建议在恋慕-初次诶嘿嘿之前确定下来
-			PRINTFORMDL ※如果觉得没有必要用两个存档来体验两种人设，也可以随时在此开关映姬的多恋人制御和金枪鱼系统
-			PRINTFORMDW 请在你喜欢的时候把映姬变成全心全意接受你的爱意的幻想乡少女吧
-			CLEARLINE LINECOUNT - TEMP
-			GOTO K30_GUARD_CHECK
-		CASE 4
-			IF FIRSTTIME("多恋人帮助", 1)
-				PRINTFORMDL 映姬剧本有多恋人制御机制，在蛇版4.974之前被屏蔽了
-				PRINTFORMDL 从4.975开始，映姬完成了重修，并回退了相关魔改
-				PRINTFORMDL 新的机制能够自由选择并随时切换映姬的两种人设，参见选项说明
-				PRINTFORMDW 开发中的婚姻系统会允许玩家以【与映姬结婚】的方式破局多恋人制御
-				PRINTFORMDL 而现在，你因为选择了映姬的【戒备】人设，又拥有多个恋人，因此触发了多恋人制御
-				PRINTFORMDL ※这同时说明，你选择的映姬陷入了恋情观上的迷惘，在性事上非常保守，你已经错过映姬剧本中的几乎所有淫语
-				PRINTFORMDL 你需要做的就是改成「普通」人设然后重新告白
-				PRINTFORMDL ※温馨提示，4.973已将默认告白无限制关闭并移至OPTION菜单-魔改补丁中
-				PRINTL 本提示只出现一次，请在知晓后继续游戏
-				CSTR:30:0 += "多恋人帮助/"
-				FORCEWAIT
-			ENDIF
-			CLEARLINE LINECOUNT - TEMP
-			GOTO K30_GUARD_CHECK
-		CASEELSE
-			CLEARLINE LINECOUNT - TEMP
-			GOTO K30_GUARD_CHECK
-	ENDSELECT
-	SIF !CFLAG:30:1801
-		CLEARBIT CFLAG:30:1505, 1
-ENDIF
 PRINTFORML 
 IF !GETBIT(CFLAG:30:1803, 6)
 	SETBIT CFLAG:30:1803, 6
 	IF !CFLAG:30:差し替え適用 && RM_リソースチェック("30_bodyparts_00")
 		PRINTFORML 将映姬大人的立绘切换为作者制作的初始立绘优化版
 		PRINTFORML （※原注）如果发生错误造成不便，请从[显示设置]中将[差分]设为OFF
-		PRINTFORML ※由于立绘可以随意切换，只要记住差分1是作者优化过的立绘就好
+		PRINTFORMW ※由于立绘可以随意切换，只要记住差分1是作者优化过的立绘就好
 		CFLAG:30:差し替え適用 = 1
 	ENDIF
 ENDIF
+
+IF !GETBIT(CFLAG:30:1803, 7)
+	SETBIT CFLAG:30:1803, 7
+	TALENT:30:痛覚 = -1
+	PRINTFORML 
+	CALL COLORMESSAGE, "根据剧本设定赋予映姬[不怕痛]素质", C_YELLOW, 1, 0
+ENDIF
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K30
+#LOCALSIZE 5
+#LOCALSSIZE 1
+VARSET LOCAL
+LOCAL:3 = TARGET
+TARGET = 30
+
+CALL KOJO_OPTION_ITEM("更改映姬大人的戒备程度", 1, "status:普通:森严", CFLAG:30:1801)
+CALL KOJO_OPTION_ITEM(@"剧本自制图像显示　口交动画：\@ GETBIT(CFLAG:30:1500, 0) ? On # Off\@　臀部图像：\@ GETBIT(CFLAG:30:1500, 1) ? On # Off \@　眨眼动画：※已禁用", 2)
+
+CALL M_KOJO_COLOR_K30
+CALL KOJO_OPTION_ITEM("变更台词颜色", 3)
+CALL KOJO_OPTION_ITEM(@"改变成为恋人后%CALLNAME:30%对%CALLNAME:MASTER%的爱称%COND_STR(@" 现在是：%CSTR:30:80%", CSTR:30:80 != "")%", 4, "cond", TALENT:30:7)
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:30%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:30%", MASTERNAME:30 != "")%", 5)
+CALL KOJO_OPTION_WALKTHROUGH(6)
+CALL KOJO_OPTION_WALKTHROUGH(7)
+RESETCOLOR
+
+LOCAL = RESULT
+RESULT = 0
+TRYCALL M_KOJO_K30_4
+LOCAL:1 = RESULT
+RESULT = LOCAL
+SIF LOCAL:1
+	CALL KOJO_OPTION_ITEM("切换翻译版本", 8)
+TARGET = LOCAL:3
+
+@KOJO_OPTION_K30_RESULT_1(ARG = 0)
+#DIM TEMP
+TEMP = LINECOUNT
+$K30_GUARD_CHECK
+CLEARLINE LINECOUNT - TEMP
+RESETCOLOR
+SIF !ARG
+	PRINTFORML 更改映姬大人的戒备程度
+PRINTFORML 
+PRINTFORML 您想象中的映姬大人是…？（现在是【\@ CFLAG:30:1801 == 1 ? 戒备森严的阎魔大人 # 普通的幻想乡少女 \@】）
+LOCAL = 0
+IF FIRSTTIME("多恋人帮助", 1, 30) && GETBIT(CFLAG:30:1505, 1)
+	LOCAL = 1
+ELSE
+	LOCAL = -1
+ENDIF
+CALL ASK_M("普通的幻想乡少女",1 , "戒备森严的阎魔大人" ,1 ,"有什么不同" ,1 , "刚才我和映姬的恋人关系破碎了，我很急", LOCAL,"确定并返回" ,1)
+SELECTCASE RESULT
+	CASE 0, 1
+		CFLAG:30:1801 = RESULT
+		GOTO K30_GUARD_CHECK
+	CASE 2
+		PRINTFORMDL 「森严」是指，映姬大人有陷落素质之前，将破瓜和推倒都封印
+		PRINTFORMDL 会在攻略过程中更加贴合剧本台词，并使攻略过程更有代入感
+		PRINTFORMDL 「普通」则是保持导入剧本前的默认素质，可能导致与部分台词或描述产生矛盾，还请谅解
+		PRINTFORMDL 但是因为不进行素质的变更，所以即使选择了「戒备」攻略难易度也不会有太大的变化
+		CALL PRINTLINE, "维护人注"
+		PRINTFORMDL 「森严」的映姬大人不会接受多人恋爱（多恋人制御开启），并在性爱中变得保守不说淫语（金枪鱼开关开启）
+		PRINTFORMDL 因为两种人设在亲热环节中区别很大，作者建议在获得[思慕]之前、维护人建议在[恋慕]之后、[初次诶嘿嘿]之前确定下来
+		PRINTFORMDL 如果觉得没有必要用两个存档来体验两种人设，也可以随时在此打开或关闭映姬的多恋人制御机制和金枪鱼开关
+		PRINTFORMDW 请在你喜欢的时候把映姬变成全心全意接受你的爱意的幻想乡少女吧
+		GOTO K30_GUARD_CHECK
+	CASE 3
+		IF FIRSTTIME("多恋人帮助", 1, 30)
+			PRINTFORMDL 映姬剧本有多恋人制御机制，在蛇版4.974之前被屏蔽了
+			PRINTFORMDL 从4.975开始，映姬完成了重修，并回退了相关魔改
+			PRINTFORMDL 新的机制能够自由选择并随时切换映姬的两种人设，参见选项说明
+			PRINTFORMDW 开发中的婚姻系统会允许玩家以【与映姬结婚】的方式破局多恋人制御
+			PRINTFORMDL 而现在，你因为选择了映姬的「戒备森严」人设，又拥有多个恋人，因此触发了多恋人制御
+			PRINTFORMDL ※这同时说明，你选择的映姬陷入了恋情观上的迷惘，在性事上非常保守，你已经错过映姬剧本中的几乎所有淫语
+			PRINTFORMDL 你需要做的就是改成「普通」人设然后重新告白
+			PRINTFORMDL ※温馨提示，4.973已将【告白无限制】这一魔改默认禁用并移至OPTION菜单-魔改补丁中
+			PRINTL 本提示只出现一次，请在知晓后继续游戏
+			CSTR:30:0 += "多恋人帮助/"
+			FORCEWAIT
+		ENDIF
+		GOTO K30_GUARD_CHECK
+	CASE 4
+	CASEELSE
+		GOTO K30_GUARD_CHECK
+ENDSELECT
+;新增，清除覆水难收
+SIF !CFLAG:30:1801
+	CLEARBIT CFLAG:30:1505, 1
+
+@KOJO_OPTION_K30_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM R_TEMP
+#DIM TEMP
 R_TEMP = CURRENTREDRAW()
 REDRAW 0
-PRINTL 映姬大人剧本专用图片显示选项
+PRINTL 映姬初始剧本特殊图像显示选项
 PRINTL 
 DO
 	TEMP = LINECOUNT
@@ -356,7 +390,7 @@ DO
 	CALL PRINTBUTTON_EX, @"[1] - 臀部图像　%\@ GETBIT(CFLAG:30:1500, 1) ? 有 # 没有 \@%　※包含少许挑人的表现", 1, 0, GETBIT(CFLAG:30:1500, 1)
 	PRINTL
 	CALL PRINTBUTTON_EX, @"[2] - 眨眼动画　%\@ GETBIT(CFLAG:30:1500, 2) ? 有 # 没有 \@%　※实验要素-运算负担高（※非常卡已禁用，不要选）", 2, 0, GETBIT(CFLAG:30:1500, 2)
-	PRINTFORML \n
+	PRINTFORML
 	PRINTL [9] - 确定
 	INPUT
 	SELECTCASE RESULT
@@ -369,61 +403,221 @@ DO
 	CLEARLINE LINECOUNT - TEMP
 LOOP 1
 
-IF !GETBIT(CFLAG:30:1803, 7)
-	SETBIT CFLAG:30:1803, 7
-	TALENT:30:痛覚 = -1
-	PRINTFORML 
-	CALL COLORMESSAGE, "根据剧本设定赋予映姬[不怕痛]素质", C_YELLOW, 1, 0
-ENDIF
+@KOJO_OPTION_K30_RESULT_3
+#LOCALSIZE 5
+#LOCALSSIZE 1
 
-IF !GETBIT(CFLAG:30:1803, 8)
-	SETBIT CFLAG:30:1803, 8
-	CFLAG:30:1501 = 0x337D5C
-	PRINTFORML 
-	CALL M_KOJO_COLOR_K30
-	LOCAL = 0x337D5C, 0x52C487, 0x7FD8A7, GETDEFCOLOR(), 0xFF93FB
-	SIF !CFLAG:30:面識
-		PRINTFORML 「那边的，那边的阁下…很突然，非常抱歉。吾名四季映姬·夜摩仙那度」
-	PRINTFORML 「近来听闻了我的说教变得很长，又晦涩难懂」
-	PRINTFORML 「说教变长是因为听众平时的行为不端，不过…」
-	PRINTFORML 「但闻而不知其意应该是我的过失吧」
-	PRINTFORML 「……阁下觉得用什么样的讲话方式更易于教诲大家呢？」
-	PRINTFORMDL ※无须在意描述，这只是挑选映姬台词的颜色
-	PRINTL [0] - 用低沉平静的声调
-	SETCOLOR LOCAL:1
-	PRINTL [1] - 不用刻意地普通声调
-	SETCOLOR LOCAL:2
-	PRINTL [2] - 稍微高一些的声调
-	RESETCOLOR
-	PRINTL [3] - 没个性的声调
-	SETCOLOR LOCAL:4
-	PRINTL [4] - 请用色色的声音，拜托了！
-	RESETCOLOR
-	DO
+SETBIT CFLAG:30:1803, 8
+PRINTFORML 变更台词颜色
+PRINTFORML 
+CALL M_KOJO_COLOR_K30
+LOCAL = 0x337D5C, 0x52C487, 0x7FD8A7, GETDEFCOLOR(), 0xFF93FB
+SIF !CFLAG:30:面識
+	PRINTFORML 「那边的，那边的阁下…很突然，非常抱歉。吾名四季映姬·夜摩仙那度」
+PRINTFORML 「近来听闻了我的说教变得很长，又晦涩难懂」
+PRINTFORML 「说教变长是因为听众平时的行为不端，不过…」
+PRINTFORML 「但闻而不知其意应该是我的过失吧」
+PRINTFORML 「……阁下觉得用什么样的讲话方式更易于教诲大家呢？」
+PRINTFORMDL 
+PRINTL [0] - 用低沉平静的声调
+SETCOLOR LOCAL:1
+PRINTL [1] - 不用刻意地普通声调
+SETCOLOR LOCAL:2
+PRINTL [2] - 稍微高一些的声调
+RESETCOLOR
+PRINTL [3] - 没个性的声调
+SETCOLOR LOCAL:4
+PRINTL [4] - 请用色色的声音，拜托了！
+RESETCOLOR
+DO
 	INPUT
 	SIF INRANGE(RESULT, 0, 4)
 		BREAK
 	CLEARLINE 1
-	LOOP 1
-	CFLAG:30:1501 = LOCAL:RESULT
-	CALL M_KOJO_COLOR_K30
-	SELECTCASE RESULT
-		CASE 0, 1
-			PRINTFORML 「我知道了。感谢您的合作」
-		CASE 2
-			PRINTFORML 「这个…有点不习惯呢」
-			PRINTFORML 「不过我会努力试试看。感谢您的合作」
-		CASE 3
-			PRINTFORML 「我的声音…有那么难听懂吗…？」
-			PRINTFORML 「呃，总之感谢您的指正」
-		CASE 4
-			PRINTFORML 「诶…？　用这种声音…吗？」
-			PRINTFORML 「………真的？」
-	ENDSELECT
-	RESETCOLOR
-	PRINTFORML
-	PRINTFORMW ※您可以随时从商店菜单中更改映姬的台词颜色
+LOOP 1
+CFLAG:30:1501 = LOCAL:RESULT
+CALL M_KOJO_COLOR_K30
+SELECTCASE RESULT
+	CASE 0, 1
+		PRINTFORML 「我知道了。感谢您的合作」
+	CASE 2
+		PRINTFORML 「这个…有点不习惯呢」
+		PRINTFORML 「不过我会努力试试看。感谢您的合作」
+	CASE 3
+		PRINTFORML 「我的声音…有那么难听懂吗…？」
+		PRINTFORML 「呃，总之感谢您的指正」
+	CASE 4
+		PRINTFORML 「诶…？　用这种声音…吗？」
+		PRINTFORML 「………真的？」
+ENDSELECT
+RESETCOLOR
+WAIT
+
+@KOJO_OPTION_K30_RESULT_4
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL K30_SET_C_NAME(3)
+
+@KOJO_OPTION_K30_RESULT_5
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL K30_SET_C_NAME(2)
+
+@KOJO_OPTION_K30_RESULT_6
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 一天夜里，想到\@CFLAG:1606 ?早安侍奉的事 # 那天的早安侍奉\@，+++突然有话想对怀里的映姬说……？
+CALL ASK_M("『希望最近普通地叫醒我就好』",GETBIT(CFLAG:1606, 0), "『最近想要映姬更多更多地侍奉』",GETBIT(CFLAG:1606, 1),"『那样的服务，可以经常、哦不、偶尔再为我做吗』", !CFLAG:1606, "『再次感受到了自己有多幸福』",1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORML 「啊、哎呀…？　那个叫醒『服务』…要暂停吗？」
+		PRINTFORML 「是吗……如果%K30_C_NAME(MASTER)%这么说的话…」
+		PRINTFORMW 「那也没办法了呢…」
+		PRINTFORML 
+		CALL COLORMESSAGE(@"早安口交事件变更为默认的随机概率发生",C_AQUA,2,1)
+		CLEARBIT CFLAG:1606, 0
+	CASE 1
+		PRINTFORML 「果然，还是那种叫醒『服务』…比较好呢」
+		PRINTFORML 「嗯，交给我吧」
+		PRINTFORMW 「我会让您清爽地、舒服地…迎接新的一天哦♥」
+		PRINTFORML 
+		CALL COLORMESSAGE(@"早安口交的发生频率变更为两天一次",C_AQUA,2,1)
+		SETBIT CFLAG:1606, 0
+	CASE 2
+		PRINTFORMW 「……您喜欢上‘那种’早上好了吗…？」
+		PRINTFORML 「嗯，我知道了…我很乐意哟♥」
+		PRINTFORMW 「为了让你我也都能享受，我会努力的…♥」
+		PRINTFORML 「……啊，但是，工作日不行哦」
+		PRINTFORMW 「必须保持节制」
+		PRINTFORML
+		CALL COLORMESSAGE(@"映姬两天一次的换班日，她会用早安口交的方式叫你起床",C_AQUA,2,1)
+		;Bit0＆Bit1を同時にON
+		CFLAG:1606 = 3
+	CASE 3
+		CALL HPH_PRINT,@"突然说什么呢BPB…不过…我的心情也是一样的呢HPHmua～HPH早些休息吧，%K30_C_NAME(MASTER)%" ,"W"
+ENDSELECT
+
+
+@KOJO_OPTION_K30_RESULT_7
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 约会时，突然想到上次戴着振动棒约会的事，有话想对映姬说……？
+CALL ASK_M("『那样的约会，下一次来做吧』",GETBIT(CFLAG:1609, 2),"『那样的约会，还有再来一次的机会吗』",GETBIT(CFLAG:1609, 2), "『一想到那种事被人发现…』",!GETBIT(CFLAG:1609, 2),"『没什么特别的』",1)
+SELECTCASE RESULT
+	CASE 0,1
+		PRINTFORML 「啊…难道说，可以再拜托您…吗？」
+		PRINTFORMW 「…谢谢您」
+		PRINTFORMW 「那么，下次有机会再…♥」
+		PRINTFORML
+		IF !RESULT
+			CALL COLORMESSAGE(@"约好了下次约会映姬会戴上肛门振动棒",C_YELLOW,2,1)
+			SIF !CFLAG:1608
+				SETBIT CFLAG:1609, 0
+		ELSE	
+			CALL COLORMESSAGE(@"约会时，映姬\@ TALENT:尻穴狂い ? # 有概率 \@会戴上肛门振动棒",C_AQUA,2,1)
+		ENDIF
+		INVERTBIT CFLAG:1609, 2
+	CASE 2
+		PRINTFORML 「果然，那个…不太好吗？」
+		PRINTFORMW 「……是啊，万一被其他人发现…那可就糟了…」
+		PRINTFORMW 「对不起，今后我会自重的…」
+		PRINTFORML
+		CALL COLORMESSAGE(@"肛门振动棒约会事件已禁用",C_AQUA,2,1)
+		INVERTBIT CFLAG:1609, 2
+	CASE 3
+		PRINTFORMDW 把杂念赶出脑海，牵着映姬的手继续约会……
+ENDSELECT
+
+@KOJO_OPTION_K30_RESULT_8
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:30:口上セレクタ = 4
+PRINTFORML 「变为接力翻译版了」
+
+;早安服务的设定
+@KOJO_OPTION_K30_WALKTHROUGH_6(ARG)
+#DIMS DYNAMIC COND_STR
+#DIM DYNAMIC CONDITION_STATE
+COND_STR = cond
+CONDITION_STATE = 0
+LOCALS = 早安侍奉的设定
+LOCAL = 0
+IF CFLAG:MASTER:初期位置 == CFLAG:30:初期位置 && STRCOUNT(CSTR:30:0, "朝から") && ABL:精液中毒 > 4
+	CONDITION_STATE = 1
+ELSEIF STRCOUNT(CSTR:30:0, "朝から")
+	LOCALS += "（同居时发生）"
+	CONDITION_STATE = 1
+ELSEIF CFLAG:MASTER:初期位置 == CFLAG:30:初期位置
+	LOCALS += ":（发生过早安服务事件后可用）"
+ELSE
+	COND_STR += ":未满足解锁条件"
+	LOCALS = %"？" * (STRLENS(LOCALS) / 2)%:
+	;未满足
+	LOCAL = 1
 ENDIF
+SIF !LOCAL
+	GOTO 满足解锁
+;未满足解锁条件
+SIF TALENT:恋慕 && CFLAG:MASTER:初期位置 != CFLAG:30:初期位置
+	LOCALS += "#需要与映姬同居<br>"
+SIF TALENT:恋慕 && ABL:精液中毒 < 4
+	LOCALS += "#让映姬多多记住你的味道<br>"
+SIF !TALENT:恋慕
+	LOCALS += "#需要达到恋慕<br>"
+SIF !TALENT:恋慕 && !TALENT:思慕 || CFLAG:1805
+	RETURN
+$满足解锁
+CALL KOJO_OPTION_ITEM(LOCALS, ARG, COND_STR, CONDITION_STATE)
+
+;约会小玩具设定
+@KOJO_OPTION_K30_WALKTHROUGH_7(ARG)
+#DIMS DYNAMIC COND_STR
+#DIM DYNAMIC CONDITION_STATE
+COND_STR = cond
+CONDITION_STATE = 0
+LOCALS = 约会小玩具设定
+LOCAL = 0
+IF GETBIT(CFLAG:1609, 3)
+	CONDITION_STATE = 1
+ELSEIF GETBIT(CFLAG:30:1910, 7) && !(ABL:露出癖 < 6)
+	LOCALS += ":发生过特殊约会事件后可用"
+	CONDITION_STATE = 1
+ELSEIF GETBIT(CFLAG:30:1910, 7) || !(ABL:露出癖 < 6)
+	LOCALS += ":继续解放映姬大人的身体和心灵吧"
+ELSE
+	COND_STR += ":未满足解锁条件"
+	LOCALS = %"？" * (STRLENS(LOCALS) / 2)%:
+	;未满足
+	LOCAL = 1
+ENDIF
+SIF !LOCAL
+	GOTO 满足解锁
+;未满足解锁条件
+SIF TALENT:恋慕 && ABL:露出癖 < 6
+	LOCALS += "#继续解放映姬大人的心灵吧<br>"
+SIF TALENT:恋慕 && !GETBIT(CFLAG:30:1910, 7)
+	LOCALS += "#继续开发映姬大人的身体吧<br>"
+SIF !TALENT:恋慕
+	LOCALS += "#需要达到恋慕<br>"
+SIF !TALENT:恋慕 && !TALENT:思慕
+	RETURN
+$满足解锁
+CALL KOJO_OPTION_ITEM(LOCALS, ARG, COND_STR, CONDITION_STATE)
+
+@KOJO_备份_OPTION_EXIST_K30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_备份_OPTION_K30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM("切换翻译版本", 1)
+
+@KOJO_备份_OPTION_K30_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:30:口上セレクタ = 0
+PRINTFORML 「变为新译版了」
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -431,7 +625,7 @@ ENDIF
 @M_KOJO_ENCOUNTER_K30
 ;初対面、挨拶のタイミング
 ;TALENTの变更はここでどうぞ
-CALL K30_SELECT_TYPE
+CALL KOJO_OPTION_K30_RESULT_1,1
 SIF K30_CHECK_HEN_T()
 	CALLF FIRSTTIME("変Ｔお披露目")
 ;BIT 0と3を同时にON
@@ -590,36 +784,6 @@ ELSE
 ENDIF
 RESETCOLOR
 RETURN 1
-@K30_SELECT_TYPE
-DO
-LOCAL = LINECOUNT
-PRINTFORML 
-PRINTFORMDL 您想象中的映姬大人是…
-PRINTL [0]和其他幻想乡少女一样
-PRINTL [1]映姬大人是认真的
-PRINTL [2]有什么不同？
-INPUT
-SELECTCASE RESULT
-	CASE 0, 1
-		CFLAG:30:1801 = RESULT
-		PRINTFORMW 映姬大人现在是\@ CFLAG:30:1801 == 1 ? 戒备森严的阎魔大人 # 普通的幻想乡少女 \@
-		CLEARLINE LINECOUNT - LOCAL
-		RETURN 1
-	CASE 2
-		PRINTFORMDL 「认真」是映姬大人有陷落素质之前,将破瓜和推倒都封印
-		PRINTFORMDL 会在攻略过程中更加贴合剧本台词，并使攻略过程更有代入感
-		PRINTFORMDL 「一样」则是保持导入剧本前的默认素质，可能导致与部分台词或描述产生矛盾，还请谅解
-		PRINTFORMDL 但是因为不进行素质的变更，所以即使选择了「认真」攻略难易度也不会有太大的变化
-		SIF !GETBIT(CFLAG:30:1803, 0)
-			PRINTFORMDL 在UPDATE选择中会再次出现更改选项。随便选也没关系
-		DRAWLINE
-		PRINTFORMDL 认真的映姬大人不会接受多人恋爱（多恋人制御开启），并在性爱中变得保守（金枪鱼开关开启）
-		PRINTFORMDL ※因为两种人设在亲热环节中区别很大，建议在获得[思慕]之前确定下来
-		PRINTFORMDL ※如果觉得没有必要用两个存档来体验两种人设，也可以随时在此开关映姬的多恋人制御和金枪鱼系统
-		PRINTFORMDW 请在你喜欢的时候把映姬变成全心全意接受你的爱意的幻想乡少女吧
-		CLEARLINE LINECOUNT - LOCAL
-ENDSELECT
-LOOP 1
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"SP_EVENT"系イベント
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

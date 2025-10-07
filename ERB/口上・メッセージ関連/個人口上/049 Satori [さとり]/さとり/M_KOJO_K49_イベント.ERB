@@ -70,6 +70,7 @@ ENDIF
 RESULTS:1 = 日版
 RESULTS = _ORTHODOX
 RESULTS:2 = 日版初期<br>含有特殊选项（详情查阅Update）<br>内容量适中（有效输出行：7567行）
+SETBIT RESULT:1,0
 ;本简介由画蛇添足制作组补充，若原作者想自行补充请联系我们
 ;CFLAG等を使う场合、キャラ番号が必要になります
 ;ここでRESULTSを设定すると他の同キャラ口上を突っ込まれても正常动作する。
@@ -87,8 +88,9 @@ SIF FLAG:扮演
 IF !FLAG:扮演 || !(FLAG:出禁人数 == 0 && (FLAG:扮演 == 36 || FLAG:扮演 == 37 || FLAG:扮演 == 38))
 	;时止めでお燐おくうこいしに手を出されると怒るよ
 	FOR LOCAL,36,39
-		IF EXP:LOCAL:60 || EXP:LOCAL:61 || EXP:LOCAL:62 || EXP:LOCAL:63
+		IF EXP:LOCAL:60 || EXP:LOCAL:61 || EXP:LOCAL:62 || EXP:LOCAL:63 || EXP:LOCAL:64 || EXP:LOCAL:65
 			SETBIT CFLAG:49:1490,0
+			;取消了对家人出手导致撒娇模式中止的惩罚
 			;CLEARBIT CFLAG:49:1490,6
 		ENDIF
 	NEXT
@@ -176,36 +178,22 @@ ENDIF
 SIF FLAG:口上色
 	CALLFORM M_KOJO_ORTHODOX_COLOR_K49
 
-IF FIRSTTIME("UP01",0,49) && !GETBIT (CFLAG:49:1490,0)
-	PRINTL 此问题只会问一次
-	PRINTL 要启动角色崩坏撒娇小五模式吗？
-	PRINTL 顺便一提、如果选了这选项就无法重选了、请注意
-	PRINTL （虽然完全不明白有什么区别啊（笑））
-	CALL ASK_YN
-	IF !RESULT
-		PRINTL 在特定条件下、角色崩坏撒娇小五模式将会发动
-		PRINTL 如果无视这个条件、撒娇小五模式将会强制终止
-		SETBIT CFLAG:49:1490,6
-	ENDIF
-	PRINTW
-ENDIF
-PRINTL 
 IF FIRSTTIME("UP02",0,49)
-	PRINTL 和觉成为恋人的场合、会发生素质变动
 	IF TALENT:49:恋人
+		PRINTL 检测到已和觉成为恋人状态与标志不匹配，进行素质变动
 		IF CFLAG:49:清い交際 && GETBIT (CFLAG:49:1490,6)
-			PRINTL 撒娇小五模式启动时、会进一步素质变动
-			PRINTL 注意、撒娇小五模式结束时、下面两个素质会恢复之前的性别
+			PRINTL 检测到撒娇小五模式启动、进行额外的素质变动
+			;PRINTL 注意、撒娇小五模式结束时、下面两个素质会恢复之前的性别
 			PRINTL 
-			PRINTL 觉、获得[坦率]
+			PRINTL 觉获得[坦率]
 			TALENT:49:態度 = -1
-			PRINTL 觉、失去[施虐狂]
+			PRINTL 觉失去[施虐狂]
 			TALENT:49:施虐狂 = 0
 		ENDIF
 		PRINTL 
-		PRINTL 觉、失去[自尊心高]
+		PRINTL 觉失去[自尊心高]
 		TALENT:49:自尊心 = 0
-		PRINT 觉、
+		PRINT 觉
 		IF TALENT:MASTER:性別 == 2
 			TALENT:49:性別嗜好 = 0
 			PRINTL 失去[讨厌男人]
@@ -218,6 +206,45 @@ IF FIRSTTIME("UP02",0,49)
 ENDIF
 RESETCOLOR
 RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_ORTHODOX_OPTION_EXIST_K49
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_ORTHODOX_OPTION_K49
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"撒娇小五机制", 1, "onetime", !FIRSTTIME("UP01",1,49), "status:关闭:开启", GETBIT (CFLAG:49:1490,6))
+;process the input portion
+@KOJO_ORTHODOX_OPTION_K49_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL K49_AMASATORI
+
+@K49_AMASATORI
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTL 要启动额外的角色崩坏撒娇小五机制吗？
+PRINTL 顺便一提、如果选了这选项就无法重选了、请注意
+PRINTL （虽然完全不明白有什么区别啊（笑））
+CALL PRINTLINE, "维护人注"
+PRINTL 该机制设计了高于恋慕的特殊恋人分枝，觉会在纯洁交往成为恋人后获得撒娇小五状态
+PRINTL 时停玩弄觉，会无法进入该分支、甚至会失去已获得的撒娇小五状态且无法再次获得
+PRINTL 撒娇小五状态下，素质和文本都会变化
+CALL ASK_YN
+IF !RESULT
+	SETBIT CFLAG:49:1490,6
+	PRINTL 已启用
+ELSE
+	CLEARBIT CFLAG:49:1490,6
+	PRINTL 不启用
+ENDIF
+PRINTFORMDW
+CALLF FIRSTTIME("UP01",0,49)
+
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ构文）
@@ -227,17 +254,8 @@ RETURN 1
 ;TALENTの变更はここでどうぞ。
 PRINTL 
 IF FIRSTTIME("UP01",0,49)
-	PRINTFORMDL 『这个问题只会问一次』
-	PRINTFORMDL 『要启动角色崩坏撒娇小五模式吗？』
-	PRINTFORMDL 『注意、这个选项无法取消和重新选择』
-	CALL ASK_YN
-	IF !RESULT
-		PRINTFORMDL 『在特定条件下、角色崩坏撒娇小五模式将会发动』
-		PRINTFORMDL 『另外请注意、有不可以用时停对家人出手的条件限制』
-		PRINTFORMDL 『如果无视这个条件、撒娇小五模式将会强制终止』
-		PRINTFORMDL （因为对小五的家人出手了的话在有时候影响可是很深远的呢…）
-		SETBIT CFLAG:49:1490,6
-	ENDIF
+	PRINTFORMDL ※这个问题只会问一次※
+	CALL K49_AMASATORI()
 ENDIF
 [SKIPSTART]
 IF FLAG:扮演

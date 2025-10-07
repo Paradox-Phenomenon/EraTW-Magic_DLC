@@ -123,57 +123,64 @@ SETCOLOR 0xF3C13A
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
+SIF RM_リソースチェック("55_A1") && FIRSTTIME("扩展立绘")
+	PRINTDW 剧本推荐的扩展立绘包是#1
 
-IF !CFLAG:55:1300
-	PRINTFORMDL 根据剧本需要进行素质的变更吗？
-	PRINTFORMDL 会失去【保守的】【难以越过的底线】【贞操重视】【爆乳】【Ａ敏感】、获得【坚强】【献身的】【谜之魅力】【巨乳】【人气】。
-	CALL ASK_M("依作者的设定吧，但是爆乳我绝不妥协",1,"变更",1,"不变更",1,"保留（下次UPDATE时再决定）",1)
-	SELECTCASE RESULT
-		CASE 0, 1
-			PRINTFORMDW 进行变更
-			CFLAG:55:1300 = 1
-			
-			TALENT:55:性的兴趣 = 0
-			TALENT:55:難以越過的底線 = 0
-			TALENT:55:貞操 = 0
-			TALENT:55:Ａ感度 = 0
-			IF RESULT
-				TALENT:55:胸圍 = 1
-			ELSE
-				PRINTFORMDW …爆乳依旧
-			ENDIF
-			TALENT:55:胆量 = 1
-			TALENT:55:献身的 = 1
-			TALENT:55:謎之魅力 = 1
-			TALENT:55:人気 = 1			
-			SIF EXP:55:Ａ経験
-				EXP:55:Ａ経験 = 0
-		CASE 2
-			PRINTFORMDW 不变更
-			CFLAG:55:1300 = 1
-		CASE 3
-			PRINTFORMDW 暂时保留
-	ENDSELECT
-ENDIF
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K55
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K55
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 55
+CALL SET_KOJO_COLOR
 
-SIF !RM_リソースチェック("55_A1")
-	RETURN 1
-PRINTDL 白莲独立立绘扩展显示选项
-PRINTDL ※这是过时选项 现在立绘可以在游戏内自由切换
-PRINTDL [0] - 开启 　　　※动作会变慢
-PRINTDL [1] - OFF
-$LOOP_SELECT
-INPUT
-IF !INRANGE(RESULT, 0, 1)
-	CLEARLINE 1
-	GOTO LOOP_SELECT
-ENDIF
-CFLAG:55:1600 = RESULT
-IF !CFLAG:55:1600
-	CFLAG:55:差し替え適用 = 1
-	FLAG:立絵種類 = 0
-ENDIF
-RETURN 1
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,55), "status:未采纳:采纳", CFLAG:55:1300)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K55_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+
+PRINTFORMDL 根据剧本推荐进行素质的变更吗？
+PRINTFORMDL 会失去【保守的】【难以越过的底线】【贞操重视】【爆乳】【Ａ敏感】\n获得【坚强】【献身的】【谜之魅力】【巨乳】【人气】
+CALL ASK_M("依作者的设定吧，但是爆乳我绝不妥协",1,"变更",1,"不变更",1,"暂不变更，下次再决定",1)
+SELECTCASE RESULT
+	CASE 0, 1
+		PRINTFORMDW 进行变更
+		CFLAG:55:1300 = 1		
+		TALENT:55:性的兴趣 = 0
+		TALENT:55:難以越過的底線 = 0
+		TALENT:55:貞操 = 0
+		TALENT:55:Ａ感度 = 0
+		IF RESULT
+			TALENT:55:胸圍 = 1
+		ELSE
+			SIF TALENT:55:胸圍 != 2
+				TALENT:55:胸圍 = 2
+			PRINTFORMDW …爆乳依旧
+		ENDIF
+		TALENT:55:胆量 = 1
+		TALENT:55:献身的 = 1
+		TALENT:55:謎之魅力 = 1
+		TALENT:55:人気 = 1
+		SIF EXP:55:Ａ経験
+			EXP:55:Ａ経験 = 0
+	CASE 2
+		PRINTFORMDW 不变更
+		CFLAG:55:1300 = 0
+	CASE 3
+		PRINTFORMDW 暂时保留
+		RETURN
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,55)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）

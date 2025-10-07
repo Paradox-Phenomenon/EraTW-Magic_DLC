@@ -71,11 +71,48 @@ SETCOLOR 255,230,250
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K5
+;@M_KOJO_UPDATE_K5
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-RETURN 1
+;RETURN 1
+
+@KOJO_OPTION_EXIST_K5
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K5
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"变更为无知萝莉", 1, "onetime", CFLAG:[[サニー]]:1999, "cond", !TALENT:[[サニー]]:無知)
+CALL KOJO_OPTION_ITEM(@"变更为巨乳萝莉", 2, "onetime", CFLAG:[[サニー]]:1998, "cond", TALENT:[[サニー]]:バストサイズ <= 0)
+
+@KOJO_OPTION_K5_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 剧本部分内容是根据【无知】的桑尼描写的。无知可以消去，但不能重新取得
+PRINTFORML 是否要采用剧本推荐的[无知]设定呢？
+CALL ASK_YN
+IF !RESULT
+	TALENT:[[サニー]]:無知 = 1
+	PRINTFORMW 桑尼米尔克现在是会相信小宝宝从「卷心菜田」长出来、被「送子鹤」送来的可爱小姑娘
+ELSE
+	PRINTFORMW 桑尼米尔克到了会对H很好奇的年龄了
+ENDIF
+CFLAG:[[サニー]]:1999 = 1
+
+@KOJO_OPTION_K5_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 桑尼应该是[%GET_TALENTNAME(105, 1)%]吗?
+CALL ASK_YN
+IF !RESULT
+	TALENT:[[サニー]]:バストサイズ = 1
+	PRINTFORMW 巨乳萝莉超棒
+ELSE
+	PRINTFORMW 萝莉果然不需要大奶啊
+ENDIF
+CFLAG:[[サニー]]:1998 = 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -216,107 +253,8 @@ ELSE
 	RESETCOLOR
 ENDIF
 ;ここから下の非表示選択妓はお玩耍でつけたので実装にはくれぐれも注意してください。
-
-
-PRINTFORML
-PRINTFORML
-PRINTFORML
-PRINTFORML
-PRINTFORML
-PRINTFORMW 这个口上会根据桑尼有没有无知而产生一部分变化。
-PRINTFORMW 桑尼会有无知属性吗？
-$LOOP
-PRINTFORML 
-PRINTFORML 
-PRINTFORML 
-PRINTFORML 
-PRINTFORML [0] 是的
-PRINTFORML [1] 不行
-SIF TALENT:5:105 != 1
-	PRINTFORML [2] 巨乳萝莉超棒
-;SIF TALENT:5:2 != 3
-	;PRINTFORML [3] 但是总觉得哪里还不足。没错…是欧金金。
-SIF TALENT:5:105 == 1
-	PRINTFORML [4] 果然不需要巨乳萝莉啊。
-;SIF TALENT:5:母乳体質 != 1
-	;PRINTFORML [5] 有母乳场景的女孩子是站主导地位的！绝对！
-;SIF TALENT:5:母乳体質 == 1
-	;PRINTFORML [6] 果然母乳是不需要的。
-;SIF TALENT:5:性別 == 3
-	;PRINTFORML [7] 果然欧金金是不需要的。
-INPUT
-SELECTCASE RESULT
-	CASE 0
-		TALENT:5:無知 = 1
-		PRINTFORML 
-		PRINTFORML 
-		PRINTFORMW 桑尼米尔克变成了会相信「卷心菜田」和「送子鹤」的可爱的女孩子了。（指相信小孩子是从卷心菜田里长出来然后被白鹤送来的）
-	CASE 1
-		TALENT:5:無知 = 0
-			PRINTFORML 
-			PRINTFORML 
-			PRINTFORMW 桑尼米尔克到了会对H很感兴趣的年龄了。
-	CASE 2
-		TALENT:5:105 = 1
-		PRINTFORML 
-		PRINTFORML 
-		PRINTFORMW 桑尼米尔克变成了和名字（sunny milk）十分相称的巨乳了。
-		GOTO LOOP
-		
-	CASE 3
-		;TALENT:5:性別 = 3
-		;TALENT:5:形状 = 3
-		;MAXBASE:5:5 = 1500
-		;MAXBASE:5:精力 = 1000
-		PRINTFORML 
-		PRINTFORML 
-		;PRINTFORML 桑尼米尔克现在可以产出肉棒牛奶了。
-		;PRINTFORMW 「唉……怎么回事？」
-		GOTO LOOP
-	
-	CASE 4
-		TALENT:5:105 = -1
-		PRINTFORML 
-		PRINTFORML 
-		PRINTFORMW 桑尼米尔克恢复为贫乳了。
-		;PRINTFORMW 「没有欧派的女孩子就和切掉了丁丁的男人是同样的啊」
-		GOTO LOOP
-	
-	CASE 5
-		;TALENT:5:母乳体質 = 1
-		PRINTFORML 
-		PRINTFORML 
-		;PRINTFORMW 桑尼米尔克可以出产胸部牛奶了。
-		;PRINTFORMW 「哼哼哼…你这不是很懂嘛」
-		GOTO LOOP
-	
-	CASE 6
-		;TALENT:5:母乳体質 = 0
-		PRINTFORML 
-		PRINTFORML 
-		;PRINTFORMW 桑尼米尔克不能产出胸部牛奶了。
-		;PRINTFORMW 「这个桑尼米尔克的母乳…母乳出不来啊！」
-		GOTO LOOP
-	
-	CASE 7
-		;TALENT:5:性別 = 1
-		PRINTFORML 
-		PRINTFORML 
-		;PRINTFORML 桑尼米尔克不能出产肉棒牛奶了。
-		;PRINTFORML 「金金它…………？」
-		;PRINTFORMW 「拿……拿下来了……哟」
-		GOTO LOOP
-
-	CASEELSE
-		IF LCOUNT >5
-			PRINTFORMW 都说了没有进行设定了喂！
-		ELSE
-			PRINTFORMW 尚未进行设定。
-			LCOUNT ++	
-		ENDIF
-		GOTO LOOP
-ENDSELECT
-RETURN 1
+CALL KOJO_OPTION_K5_RESULT_1
+CALL KOJO_OPTION_K5_RESULT_2
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"SP_EVENT"系イベント
@@ -445,7 +383,7 @@ IF LOCAL
 		ELSEIF FIRSTTIME(1003)
 			PRINTFORML 约会后回家的路上。%CALLNAME:MASTER%和桑尼牵着手走在了回家的路上。
 			PRINTFORML 不知道是不是约会很无聊的原因、还是说是困了、桑尼沉默着一言不发。
-			PRINTFORML 如果是困了的话就来背着你吧、即使这么说了桑尼也只是摇着头一副；】不情愿的样子。
+			PRINTFORML 如果是困了的话就来背着你吧、即使这么说了桑尼也只是摇着头一副不情愿的样子。
 			PRINTFORML 在这尴尬的气氛中、%CALLNAME:MASTER%想着该说些什么比较好、时间就这样流逝了…。
 			PRINTFORML 
 			PRINTFORMW 「………」

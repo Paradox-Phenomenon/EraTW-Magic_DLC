@@ -218,32 +218,9 @@ IF CFLAG:44:1951 < 2
 			CFLAG:44:1012 = 7
 	ENDIF
 ENDIF
-IF CFLAG:44:1951 < 3
-	CFLAG:44:1951 = 3
-	CFLAG:44:1891 = 1
-	PRINTFORML 新增选项「健全模式」已追加
-	PRINTFORMW 是否进行说明？
-	CALL ASK_YN("是的","不")
-	IF !RESULT
-		PRINTFORML 「健全模式」的一部性骚扰指令一次也没使用
-		PRINTFORML 并且被逆推的情况一次也没有发生过的话,伦的欲求不满和欲望将被大幅度抑制
-		PRINTFORML 推荐给那些想要和艾伦健全地加深关系的玩家
-		PRINTFORMW 需要注意的是,一旦决定后游戏中将不可切换
-		;PRINTFORML 「兒童の性別」はオプションの「兒童の描写」をオンにしているときに表示される育児口上で登場する
-		;PRINTFORML 艾伦との兒童の性別を指定するためのものです
-		;PRINTFORMW 可以通过和艾伦一起祈祷来改变孩子的性别
-		ENDIF
-	PRINTFORML 是否使用选项？
-	CALL ASK_YN("是的","不")
-	IF !RESULT
-		CALL M_KOJO_MESSAGE_EVENT_K44_OPTION
-	ELSE
-		PRINTFORMW 那么不使用此选项
-	ENDIF
-ENDIF
 ;出産経験、兒童の誕生日で判定します
 IF EXP:44:出産経験
-	FOR LOCAL, 1, 11
+	FOR LOCAL, 1, MAXCHILD + 1
 		;UPDATE時にCHILD_SEXをリセットしています
 		IF CHILD_BIRTHDAY:44:LOCAL && !CHILD_SEX:44:LOCAL
 			;ここで設定しなおします
@@ -263,50 +240,49 @@ IF EXP:44:出産経験
 ENDIF
 RETURN 1
 
-;口上オプションの設定
-@M_KOJO_MESSAGE_EVENT_K44_OPTION
-;CFLAG:1901 = 1
-$OPTION
-PRINTFORML 想使用哪个选项？
-IF SELECTCOM != 421
-	CALL PRINTBUTTON_EX("{健全模式}",0,!CFLAG:1891)
-	SIF !CFLAG:44:1891
-	PRINT [已选择]
-	PRINTL 
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K44
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K44
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"健全模式：\@ CFLAG:44:1891 ? 关闭 # 开启 \@", 1, "onetime", CFLAG:44:1951 >= 3)
+
+;process the input portion
+@KOJO_OPTION_K44_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:44:1951 = 3
+PRINTFORML 「健全模式」是指从未用过某些性骚扰指令，
+PRINTFORML 且从未发生过被推倒的情况时，艾莲的欲求不满度和欲望会大幅抑制。
+PRINTFORML 顾名思义，推荐给想和艾莲健全地增进感情的人。
+PRINTFORMW 注意事项是，在游戏中无法切换开启或关闭。
+IF FIRSTTIME("健全模式说明",,44) 
+	SETCOLOR C_AQUA
+	CALL PRINTLINE, "维护人注"
+	PRINTFORML 这个机制的实现方式是不做任何限制，单纯期待玩家不要进行任何撩拨艾伦欲望的行动
+	PRINTFORML 【游戏中无法切换开启或关闭】该机制实际的含义是：但是一旦你进行了不健全指令，该模式就将自动失效；该机制也没有任何文本差分
+	PRINTFORML 【欲求不满度和欲望会大幅抑制】的唯一做法就是在艾伦高潮时将欲望和欲求不满度改回一个阈值，令人忍俊不禁
+	PRINTFORMW 因此，该系统维护健全的能力有限，限制游戏体验的能力更是没有，纯图一乐
+	RESETCOLOR
 ENDIF
-;CALL PRINTBUTTON_EX("{兒童の性別}",1,1)
-;IF CFLAG:44:1901 == 1
-;	PRINT [女の子]
-;ELSEIF CFLAG:44:1901 == 2
-;	PRINT [男の子]
-;ENDIF
-;PRINTL 
-;CALL PRINTBUTTON_EX("やり直し",2,)
-PRINTL 
-PRINTL 
-PRINTBUTTON "[确定]", 999
-INPUT
-IF RESULT == 999
-	PRINTFORMW 设定完成了
-	RETURN 1
-ELSEIF RESULT == 0
-	IF SELECTCOM != 421 && CFLAG:44:1891 == 1
-		CFLAG:44:1891 = 0
-	ELSEIF CFLAG:44:1891 == 0
-		CFLAG:44:1891 = 1
-	ENDIF
-ELSEIF RESULT == 1
-	IF CFLAG:44:1901 == 1
-		CFLAG:44:1901 = 2
-	ELSEIF CFLAG:44:1901 == 2
-		CFLAG:44:1901 = 1
-	ENDIF
-;ELSEIF RESULT == 2
-;	SIF SELECTCOM != 421
-;	CFLAG:44:1891 = 1
-;	CFLAG:44:1901 = 0
+PRINTFORML 要开启该模式吗？
+CALL ASK_YN()
+IF !RESULT
+	;custom code
+	;CALL M_KOJO_MESSAGE_EVENT_K44_OPTION
+	PRINTFORMW 健全模式启动
+	CFLAG:44:1891 = 0
+ELSE
+	PRINTFORMW 健全模式关闭
+	;custom code
+	CFLAG:44:1891 = 1
 ENDIF
-GOTO OPTION
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -317,30 +293,6 @@ GOTO OPTION
 RESETCOLOR
 ;遭遇した回数を＋１する
 TCVAR:351 += 1
-;オプション
-CFLAG:1891 = 1
-PRINTFORML 是否进行口上选项的设定？
-CALL ASK_M("是的",1,"不",1,"选项的说明",1)
-IF RESULT == 0
-	CALL M_KOJO_MESSAGE_EVENT_K44_OPTION
-ELSEIF RESULT == 1
-	PRINTFORMW 那么不使用此选项
-ELSEIF RESULT == 2
-	PRINTFORML 「健全模式」的一部性骚扰指令一次也没使用
-	PRINTFORML 并且被逆推的情况一次也没有发生过的话,艾伦的欲求不满和欲望将被大幅度抑制
-	PRINTFORML 推荐给那些想要和艾伦健全地加深关系的玩家
-	PRINTFORMW 需要注意的是,一旦决定后游戏中将不可切换
-	;PRINTFORML 「兒童の性別」はオプションの「兒童の描写」をオンにしているときに表示される育児口上で登場する
-	;PRINTFORML 艾伦との兒童の性別を指定するためのものです
-	;PRINTFORMW 可以通过和艾伦一起祈祷来改变孩子的性别
-	PRINTFORML 是否使用选项？
-	CALL ASK_YN("是的","不")
-	IF !RESULT
-		CALL M_KOJO_MESSAGE_EVENT_K44_OPTION
-	ELSE
-		PRINTFORMW 那么不使用此选项
-	ENDIF
-ENDIF
 ;艾伦が大家の場合
 IF 拠点_家主 == 44
 	PRINTFORML 主人公是幻想乡的人类？

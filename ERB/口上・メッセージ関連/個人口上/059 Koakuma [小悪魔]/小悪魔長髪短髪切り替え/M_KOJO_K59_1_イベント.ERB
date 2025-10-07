@@ -82,18 +82,37 @@ SIF !TALENT:59:恋慕
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_長短髪_UPDATE_K59
+;@M_KOJO_長短髪_UPDATE_K59
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-IF !CFLAG:1002
-	PRINTFORML 小恶魔的头发是……
-	CALL ASK_M("长发及腰", 1, "清爽的短发" , 1, "到肩部多一点的中发", 1)
-	CFLAG:[[小悪魔]]:1001 = RESULT
-	PRINTFORMW 变成%K59_HAIR()%了。
-	CFLAG:[[小悪魔]]:1002 = 1
-ENDIF
-RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_長短髪_OPTION_EXIST_K59
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_長短髪_OPTION_K59
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 59
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"改变头发长度 现在是：%K59_HAIR()%", 1)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_長短髪_OPTION_K59_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 小恶魔的头发是……
+CALL ASK_M("长发及腰", 1, "清爽的短发" , 1, "到肩部多一点的中发", 1)
+CFLAG:[[小悪魔]]:1001 = RESULT
+PRINTFORMW 变成%K59_HAIR()%了。
+CFLAG:[[小悪魔]]:1002 = 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -112,12 +131,16 @@ PRINTFORML 「哦呀?」
 PRINTFORMW 一位红发的女性、靠近了%CALLNAME:MASTER%
 ;その内、この辺に恋慕特典で思慕・恋慕・恋人時の分岐を入れてみたい
 PRINTFORML 
-PRINTFORML 那位红发女性的头发的长度并没有什么特别之处…
-CALL ASK_M("不、仔细一看，简直可以说是很有个性的长发", 1, "虽然是短发、但总会很在意", 1, "虽然是长发、但总会很在意", 1)
-CFLAG:[[小悪魔]]:1001 = RESULT
-CFLAG:[[小悪魔]]:1002 = 1
-PRINTFORMW 客观来看，那个%K59_HAIR()%并没有什么特别之处，这是毫无疑问的。但是，所有看到它的人都会感到在意的氛围。
-PRINTFORMW 「哎呀哎呀？有什么事情让你在意了吗……啊，不好意思，仔细想想，是我主动靠近你了呢」
+IF !CFLAG:1002
+	PRINTFORML 那位红发女性的头发乍看之下似乎没什么特别…
+	CALL ASK_M("不、仔细一看，足以称得上是很有个性的长发", 1, "只不过是短发、却不可思议地让人很在意", 1, "只不过是短发、却不可思议地让人很在意", 1)
+	CLEARLINE 1
+	CFLAG:[[小悪魔]]:1001 = RESULT
+	CFLAG:[[小悪魔]]:1002 = 1
+ELSE
+	PRINTFORMW 从客观来看，那%K59_HAIR()%毫无疑问并非有什么特别，然而却有着一种让所有见到它的人都会去在意的吸引力。
+ENDIF
+PRINTFORMW 「哎呀呀？你对我是有什么在意的地方吗……等等，抱歉，仔细一想是我主动走过来的呢。」
 IF CFLAG:MASTER:初期位置  == 304
 	;紅魔館在住。という意味
 	PRINTFORMW 「你是…啊啊、难道是最近来到红魔馆的那位吗。已经知道名字了、所以不用自我介绍也可以」

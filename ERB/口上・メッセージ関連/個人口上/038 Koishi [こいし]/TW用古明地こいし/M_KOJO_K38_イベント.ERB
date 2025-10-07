@@ -83,34 +83,40 @@ SETCOLOR 0x81F79F
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K38
+;@M_KOJO_UPDATE_K38
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
 
-IF !CFLAG:38:1001
-	;セリフじゃないからイタリックにする
-	FONTITALIC
-	PRINTFORML 你好～现在，请你将你下意识的想法告诉我
-	PRINTFORML 你想要……改变古明地恋的胸围吗？
-	PRINTFORML
-	FONTREGULAR
-	CALL ASK_M("更改(可以在UPDATE时再次变更)",1,"暂且保留",1,"不再更改",1)
-	FONTITALIC
-	IF RESULT == 0
-		PRINTFORML
-		PRINTFORML OKOK、那么，你认为古明地恋的胸应该有多大？
-		CALL K38_ChangeBustSize
-	ELSEIF RESULT == 1
-		PRINTFORMW 明白了～！古明地恋的胸部尺寸暂且不做变更—！欢迎下次光临
-	ELSEIF RESULT == 2
-		PRINTFORMW 我知道了。今后，这个选择项就不会再出现了～
-		CFLAG:38:1001 = 1
-	ENDIF
-ENDIF
-FONTREGULAR
-RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_EXIST_K38
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_OPTION_K38
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 38
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM("改变乳量", 1, "once", FIRSTTIME("开局设定",1,38))
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_OPTION_K38_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;セリフじゃないからイタリックにする
+FONTITALIC
+PRINTFORML 你好～现在，请你将你下意识的想法告诉我
+PRINTFORML 古明地恋……的胸是大是小！
+CALL K38_ChangeBustSize
+CALLF FIRSTTIME("开局设定",0,38)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -123,7 +129,7 @@ FONTITALIC
 PRINTFORML
 PRINTFORML 你好～现在，请你将你下意识的想法告诉我
 PRINTFORML 你想要……改变古明地恋的胸围吗？
-PRINTFORML （UPDATE时也能变更胸围大小）
+PRINTFORML （选项里也能再次变更）
 PRINTFORML
 	CALL K38_ChangeBustSize
 	PRINTFORMW
