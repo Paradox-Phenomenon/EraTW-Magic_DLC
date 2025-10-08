@@ -1,0 +1,63 @@
+﻿;补丁与内容优化的基础或附属函数
+;-------------------------------------------------
+;函数名:KOJO_OPTION_WALKTHROUGH
+;概　要:剧本选项系统的新接口，用于转接KOJO_OPTION_ITEM函数的封装
+;引　用：HTMLCOLOR
+;KOJO_OPTION_K{ARG:1}_WALKTHROUGH_{ARG}(ARG)内部将选择性地调用KOJO_OPTION_ITEM("选项名",ARG)：
+;1：按钮显示并可用；2：按钮显示并不可用（以上是ITEM的二则状态）；3：按钮名称隐藏并提示；4：按钮隐藏
+;备  注：此功能顺利运作最好事先进行TARGET的重定位
+;-------------------------------------------------
+@KOJO_OPTION_WALKTHROUGH(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+ARG:1 = ARG:1 ? ARG:1 # TARGET
+ARG:1 = ARG:1 == -1 ? MASTER # ARG:1
+TRYCALLFORM KOJO_OPTION_K{ARG:1}_WALKTHROUGH_{ARG}(ARG)
+
+@RELINE(ARG,ARG:1)
+;ARG，存行栏位，0~9；1，存行开关
+#LOCALSIZE 10
+;自机喜好，4；OPTIONDLC，5、6
+;无ARG:1与存行，记录；否则清行
+IF !LOCAL:ARG || ARG:1
+	LOCAL:ARG=LINECOUNT
+ELSE
+	CLEARLINE LINECOUNT-LOCAL:ARG
+ENDIF
+
+;-------------------------------------------------
+;函数名:HTMLCCHK
+;概　要:检查HTMLCOLOR的合法性
+;引　用：HTMLCOLOR
+;RETURNF "#" + TOSTR((ARG:0 < 0 ? GETCOLOR() # ARG:0) & 0xFFFFFF, "X6")
+;用HTMLCOLOR绝对合法，但是如果不使用的话就可能有错
+;-------------------------------------------------
+@HTMLCCHK(ARGS)
+#FUNCTION
+SIF STRCOUNT(ARGS, @"^0x[0-9a-fA-F]{6}$") == 1
+	RETURNF 1
+SIF COLOR_FROMNAME(ARGS) >= 0
+	RETURNF 1
+
+;qol,优化并调整过的TSP升级
+@TSP_GRADE_MODIFICATION
+#FUNCTION
+SELECTCASE MAXBASE:MASTER:TSP
+	CASE 0 TO 199
+		RETURNF 1
+	CASE 200 TO 399
+		RETURNF 2
+	CASE 400 TO 799
+		RETURNF 3
+	CASE 800 TO 1599
+		RETURNF 4
+	CASE 1600 TO 3199
+		RETURNF 5
+	CASE 3200 TO 6665
+		RETURNF 6
+	CASE IS >= 6666
+		RETURNF 7
+	CASEELSE
+		THROW ⚠️WARNING⚠️ ILLEGAL TSP VALUE
+ENDSELECT
+RETURNF 0

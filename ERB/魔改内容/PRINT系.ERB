@@ -1,5 +1,102 @@
-﻿;=====================================================================
+﻿;-------------------------------------------------
+;函数名:MSG_CODE
+;概　要:使用微软哥特字体的符号
+;主要是为了控制符号显示
+;-------------------------------------------------
+@MSG_CODE(ARGS)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCALS = %GETFONT()%
+SETFONT "MS Gothic"
+PRINTS ARGS
+SETFONT LOCALS
+
+;-------------------------------------------------
+;函数名:IMG_TALK
+;概　要:简单图文混排
+;引　用：SPTALK,CID,表情="",默认=0,MESSAGE,整形=0
+;K63_PRINT_FACE与SPTALK的功能融合版，为了简单图片与对话混排，默认整形
+;-------------------------------------------------
+@IMG_TALK(基本画像, MESSAGE, 整形=1, CID, PATTERN)
+#DIMS RESOURCENAME
+#DIMS 基本画像
+#DIMS MESSAGE
+#DIMS MESSAGE_PRINT,50
+#DIMS FONTCOLOR
+#DIM TEMP_COLOR
+#DIM CID
+#DIM 整形
+#DIM PATTERN
+
+TEMP_COLOR = GETCOLOR()
+
+;口上色取得判定:通常角色
+IF CID
+	CALL SET_KOJO_COLOR(CID)
+	IF GETCOLOR() == 12632256 || !FLAG:口上色
+		FONTCOLOR = 0xD5DEDF
+	ELSE
+		FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
+	ENDIF
+ENDIF
+VARSET MESSAGE_PRINT
+IF 顔絵付きメッセージ == 1
+	;向后兼容@K63_PRINT_IMG
+	RESOURCENAME = K{CID}_%基本画像%_{PATTERN}
+	SIF !SPRITECREATED(RESOURCENAME)
+		RESOURCENAME =  K{CID}_%基本画像%
+	SIF !SPRITECREATED(RESOURCENAME)
+		RESOURCENAME =  %基本画像%
+	IF !SPRITECREATED(RESOURCENAME) 
+		PRINTFORMDL 资源「%RESOURCENAME%」未设置
+		GOTO 图形错误
+	ELSE
+		CALL 画像セット(RESOURCENAME, 0, 0, 角色画像表示尺寸比, 0)
+	ENDIF
+
+	;オプション指定で行送りを揃える
+	SIF 整形
+		MESSAGE = %SPTALK整形(MESSAGE)%
+
+	SPLIT MESSAGE,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		SIF LOCAL != 0
+			CALL ダミーセット(0, 0, 角色画像表示尺寸比, LOCAL)
+		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%MESSAGE_PRINT:LOCAL%</font>"
+	NEXT
+	CALL 画像一斉表示(0, 0, 1, -1)
+	PRINTL
+ELSE
+	$图形错误
+	;顔絵メッセージOFF時は通常街道に表示させる
+	SIF CID
+		PRINTFORML －%CALLNAME:CID%－
+	SPLIT MESSAGE,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		SIF MESSAGE_PRINT:LOCAL != ""
+			PRINTFORML %MESSAGE_PRINT:LOCAL%
+	NEXT
+ENDIF
+SETCOLOR TEMP_COLOR
+
+;-------------------------------------------------
+;函数名:PRINT_ANIME
+;概　要:插入动图，展示后将其删除
+;主要是确保动图被删掉，不然会爆炸
+;-------------------------------------------------
+@PRINT_ANIME(ARGS)
+LOCAL = CURRENTREDRAW()
+REDRAW 0
+SETANIMETIMER 40
+CALL PRINT_IMAGE,ARGS,1000
+WAIT
+CLEARLINE 10
+REDRAW LOCAL
+SETANIMETIMER 32627
+
+;=====================================================================
 ;打印多行带引号指定角色口上色文本，用空格做换行符
+;引  用：PRINT_DIALOGUE, ARGS, ARGS:1
 ;例1：灵梦
 ;CALL SET_KOJO_COLOR(1)
 ;PRINTFORML 「乐园的可爱巫女%CALLNAME:1%每天都为你抽签」
