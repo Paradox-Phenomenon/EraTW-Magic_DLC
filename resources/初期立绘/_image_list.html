@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image List</title>
+    <style>
+        /* 现有的 CSS 样式，保持不变 */
+        :root {
+            font-size: 20px;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            background-color: #f5f5dc;
+            transition: background-color 0.3s ease;
+        }
+
+        body.night-mode {
+            background-color: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        ul {
+            display: grid;
+            place-items: center;
+            gap: 0rem; /* 去除 ul 的 gap，实现无间隔 */
+        }
+
+        li {
+            list-style: none;
+            min-height: auto;
+            width: 100%;
+            display: block; /* 确保 li 占据整行 */
+            margin: 0;
+            padding: 0;
+        }
+
+        body.night-mode li { /* 夜间模式下 li 的样式，目前为空 */ }
+
+        img {
+            max-width: 100%;
+            display: block; /* 移除图片下方间隙 */
+            border-radius: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #toolBar {
+            font-size: 0.7rem;
+            height: auto;
+            line-height: 2em;
+            display: flex;
+            /* 修改 justify-content 为 center，使内容居中 */
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem 0.5rem; /* 增加一些顶部和底部的 padding，让工具栏显得更舒展 */
+            flex-wrap: wrap;
+            gap: 1rem; /* 增加一些 gap，让工具栏元素之间更宽松 */
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 40rem;
+            background-color: #f0f0e0;
+            border-radius: 0.5rem;
+        }
+
+        body.night-mode #toolBar {
+            background-color: #222; /* 或者其他适合夜间模式的颜色 */
+            color: #eee; /* 同时更改文字颜色，以便在深色背景下可见 */
+        }
+
+        #toolBar > div:first-child {
+            flex-grow: 0; /* 修改 flex-grow 为 0，避免滑块占据过多空间 */
+            min-width: 24rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; /* 稍微增加滑块和百分比文字之间的间距 */
+        }
+
+        #toolBar > div:last-child {
+            display: flex;
+            gap: 0.5rem; /* 稍微增加按钮之间的间距 */
+            align-items: center;
+        }
+
+        #toolBar input[type="range"] {
+            width: 50%;
+            min-width: 5rem;
+            vertical-align: middle;
+        }
+
+        #vpPercent {
+            display: inline-block;
+            padding: 0.2em 0.5em;
+            border-radius: 1em;
+            background-color: #e0e0c8; /* 米白色稍深 */
+            color: #333;
+            font-size: 0.7rem;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            font-family: sans-serif; /* 无衬线字体 */
+            font-weight: bold; /* 粗体 */
+        }
+
+        body.night-mode #vpPercent {
+            background-color: #4a4a4a; /* 灰黑色稍深 */
+            color: #eee;
+        }
+
+
+        #nightModeIcon {
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #nightModeIcon {
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        body.night-mode #nightModeIcon {
+            color: #eee;
+        }
+
+        /*  双页模式 CSS 样式 (保留) */
+        body.double-page-mode ul {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /*  两列布局  */
+            grid-gap: 0rem; /*  移除图片间距 */
+        }
+
+        body.double-page-mode li {
+            width: 100%; /*  确保 li 占据网格单元的宽度  */
+        }
+
+        /*  新的空白页模式 CSS 样式  */
+        body.blank-page-mode ul {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /*  两列布局 */
+            grid-gap: 0rem; /*  移除图片间距 */
+        }
+
+
+        body.blank-page-mode ul > li:first-child {
+            grid-column: 1 / span 2; /*  让第一张 li 占据两列的宽度 */
+            margin-left: 50%; /* 将第一张图的 li 整体向右移动 50% 的宽度 */
+            box-sizing: border-box; /* 确保 padding 和 border 不会增加元素总宽度 */
+            padding-left: 0%; /*  抵消 margin-left 的影响，让图片内容从左侧开始 */
+        }
+
+        body.blank-page-mode ul > li:first-child > img {
+            width: 100%; /*  确保图片宽度不超过容器宽度 */
+            max-width: 100%; /*  防止图片超出父元素 */
+            margin-left: -50%; /*  将图片内容向左拉回 50%，实现左侧空白页效果 */
+            display: block; /* 移除图片下方间隙 */
+        }
+
+
+        #bookPageIcon {
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        body.night-mode #bookPageIcon {
+            color: #eee;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="toolBar">
+        <div>
+            <input type="range" value="100" min="0" max="100" onchange="setVp(this.value)" oninput="showVp(this.value)" />
+            <span id="vpPercent">100%</span>
+        </div>
+        <div>
+            <span id="nightModeIcon">💡</span>
+            <span id="bookPageIcon">📖</span>  <!--  添加书页模式切换按钮，初始图标为单页模式  -->
+        </div>
+    </div>
+    <ul id="list" style="width: 100%">
+        <li><img src="1.webp" alt="1.webp"></li>
+<li><img src="1_2.webp" alt="1_2.webp"></li>
+<li><img src="1_巨.webp" alt="1_巨.webp"></li>
+<li><img src="1_顔.webp" alt="1_顔.webp"></li>
+<li><img src="1_顔_2.webp" alt="1_顔_2.webp"></li>
+<li><img src="2.webp" alt="2.webp"></li>
+<li><img src="2_顔.webp" alt="2_顔.webp"></li>
+<li><img src="3.webp" alt="3.webp"></li>
+<li><img src="3_顔.webp" alt="3_顔.webp"></li>
+<li><img src="4.webp" alt="4.webp"></li>
+<li><img src="4_顔.webp" alt="4_顔.webp"></li>
+<li><img src="5.webp" alt="5.webp"></li>
+<li><img src="5_巨.webp" alt="5_巨.webp"></li>
+<li><img src="5_顔.webp" alt="5_顔.webp"></li>
+<li><img src="6.webp" alt="6.webp"></li>
+<li><img src="6_巨.webp" alt="6_巨.webp"></li>
+<li><img src="6_顔.webp" alt="6_顔.webp"></li>
+<li><img src="7.webp" alt="7.webp"></li>
+<li><img src="7_顔.webp" alt="7_顔.webp"></li>
+<li><img src="8.webp" alt="8.webp"></li>
+<li><img src="8_巨.webp" alt="8_巨.webp"></li>
+<li><img src="8_顔.webp" alt="8_顔.webp"></li>
+<li><img src="9.webp" alt="9.webp"></li>
+<li><img src="9_巨.webp" alt="9_巨.webp"></li>
+<li><img src="9_立ち巨.webp" alt="9_立ち巨.webp"></li>
+<li><img src="9_顔.webp" alt="9_顔.webp"></li>
+<li><img src="10.webp" alt="10.webp"></li>
+<li><img src="10_並.webp" alt="10_並.webp"></li>
+<li><img src="10_顔.webp" alt="10_顔.webp"></li>
+<li><img src="11.webp" alt="11.webp"></li>
+<li><img src="11_並.webp" alt="11_並.webp"></li>
+<li><img src="11_顔.webp" alt="11_顔.webp"></li>
+<li><img src="11_顔_2.webp" alt="11_顔_2.webp"></li>
+<li><img src="12.webp" alt="12.webp"></li>
+<li><img src="12_巨.webp" alt="12_巨.webp"></li>
+<li><img src="12_顔.webp" alt="12_顔.webp"></li>
+<li><img src="13.webp" alt="13.webp"></li>
+<li><img src="13_巨.webp" alt="13_巨.webp"></li>
+<li><img src="13_爆.webp" alt="13_爆.webp"></li>
+<li><img src="13_顔.webp" alt="13_顔.webp"></li>
+<li><img src="14.webp" alt="14.webp"></li>
+<li><img src="14_巨.webp" alt="14_巨.webp"></li>
+<li><img src="14_爆.webp" alt="14_爆.webp"></li>
+<li><img src="14_顔.webp" alt="14_顔.webp"></li>
+<li><img src="15.webp" alt="15.webp"></li>
+<li><img src="15_1.webp" alt="15_1.webp"></li>
+<li><img src="15_巨.webp" alt="15_巨.webp"></li>
+<li><img src="15_顔.webp" alt="15_顔.webp"></li>
+<li><img src="15_顔_1.webp" alt="15_顔_1.webp"></li>
+<li><img src="16.webp" alt="16.webp"></li>
+<li><img src="16_1.webp" alt="16_1.webp"></li>
+<li><img src="16_巨.webp" alt="16_巨.webp"></li>
+<li><img src="16_立ち_バニー.webp" alt="16_立ち_バニー.webp"></li>
+<li><img src="16_顔.webp" alt="16_顔.webp"></li>
+<li><img src="16_顔_1.webp" alt="16_顔_1.webp"></li>
+<li><img src="17.webp" alt="17.webp"></li>
+<li><img src="17_2.webp" alt="17_2.webp"></li>
+<li><img src="17_巨.webp" alt="17_巨.webp"></li>
+<li><img src="17_顔.webp" alt="17_顔.webp"></li>
+<li><img src="18.webp" alt="18.webp"></li>
+<li><img src="18_巨.webp" alt="18_巨.webp"></li>
+<li><img src="18_顔.webp" alt="18_顔.webp"></li>
+<li><img src="19.webp" alt="19.webp"></li>
+<li><img src="19_巨.webp" alt="19_巨.webp"></li>
+<li><img src="19_顔.webp" alt="19_顔.webp"></li>
+<li><img src="20.webp" alt="20.webp"></li>
+<li><img src="20_顔.webp" alt="20_顔.webp"></li>
+<li><img src="21.webp" alt="21.webp"></li>
+<li><img src="21_並.webp" alt="21_並.webp"></li>
+<li><img src="21_巨.webp" alt="21_巨.webp"></li>
+<li><img src="21_顔.webp" alt="21_顔.webp"></li>
+<li><img src="22.webp" alt="22.webp"></li>
+<li><img src="22_顔.webp" alt="22_顔.webp"></li>
+<li><img src="23.webp" alt="23.webp"></li>
+<li><img src="23_巨.webp" alt="23_巨.webp"></li>
+<li><img src="23_顔.webp" alt="23_顔.webp"></li>
+<li><img src="24.webp" alt="24.webp"></li>
+<li><img src="24_爆.webp" alt="24_爆.webp"></li>
+<li><img src="24_顔.webp" alt="24_顔.webp"></li>
+<li><img src="25.webp" alt="25.webp"></li>
+<li><img src="25_爆.webp" alt="25_爆.webp"></li>
+<li><img src="25_顔.webp" alt="25_顔.webp"></li>
+<li><img src="26.webp" alt="26.webp"></li>
+<li><img src="26_幼.webp" alt="26_幼.webp"></li>
+<li><img src="26_顔.webp" alt="26_顔.webp"></li>
+<li><img src="27.webp" alt="27.webp"></li>
+<li><img src="27_巨.webp" alt="27_巨.webp"></li>
+<li><img src="27_顔.webp" alt="27_顔.webp"></li>
+<li><img src="28.webp" alt="28.webp"></li>
+<li><img src="28_顔.webp" alt="28_顔.webp"></li>
+<li><img src="29.webp" alt="29.webp"></li>
+<li><img src="29_1.webp" alt="29_1.webp"></li>
+<li><img src="29_巨.webp" alt="29_巨.webp"></li>
+<li><img src="29_立ち_バニー.webp" alt="29_立ち_バニー.webp"></li>
+<li><img src="29_顔.webp" alt="29_顔.webp"></li>
+<li><img src="29_顔_1.webp" alt="29_顔_1.webp"></li>
+<li><img src="30.webp" alt="30.webp"></li>
+<li><img src="30_顔.webp" alt="30_顔.webp"></li>
+<li><img src="31.webp" alt="31.webp"></li>
+<li><img src="31_巨.webp" alt="31_巨.webp"></li>
+<li><img src="31_立ち_バニー.webp" alt="31_立ち_バニー.webp"></li>
+<li><img src="31_立ち巨.webp" alt="31_立ち巨.webp"></li>
+<li><img src="31_顔.webp" alt="31_顔.webp"></li>
+<li><img src="32.webp" alt="32.webp"></li>
+<li><img src="32_巨.webp" alt="32_巨.webp"></li>
+<li><img src="32_爆.webp" alt="32_爆.webp"></li>
+<li><img src="32_立ち_バニー.webp" alt="32_立ち_バニー.webp"></li>
+<li><img src="32_立ち巨.webp" alt="32_立ち巨.webp"></li>
+<li><img src="32_立ち爆.webp" alt="32_立ち爆.webp"></li>
+<li><img src="32_貧.webp" alt="32_貧.webp"></li>
+<li><img src="32_顔.webp" alt="32_顔.webp"></li>
+<li><img src="33.webp" alt="33.webp"></li>
+<li><img src="33_巨.webp" alt="33_巨.webp"></li>
+<li><img src="33_立ち_バニー.webp" alt="33_立ち_バニー.webp"></li>
+<li><img src="33_顔.webp" alt="33_顔.webp"></li>
+<li><img src="34.webp" alt="34.webp"></li>
+<li><img src="34_巨.webp" alt="34_巨.webp"></li>
+<li><img src="34_立ち_バニー.webp" alt="34_立ち_バニー.webp"></li>
+<li><img src="34_顔.webp" alt="34_顔.webp"></li>
+<li><img src="34_顔_1.webp" alt="34_顔_1.webp"></li>
+<li><img src="35.webp" alt="35.webp"></li>
+<li><img src="35_立ち_バニー.webp" alt="35_立ち_バニー.webp"></li>
+<li><img src="35_顔.webp" alt="35_顔.webp"></li>
+<li><img src="36.webp" alt="36.webp"></li>
+<li><img src="36_巨.webp" alt="36_巨.webp"></li>
+<li><img src="36_爆.webp" alt="36_爆.webp"></li>
+<li><img src="36_顔.webp" alt="36_顔.webp"></li>
+<li><img src="37.webp" alt="37.webp"></li>
+<li><img src="37_顔.webp" alt="37_顔.webp"></li>
+<li><img src="38.webp" alt="38.webp"></li>
+<li><img src="38_巨.webp" alt="38_巨.webp"></li>
+<li><img src="38_顔.webp" alt="38_顔.webp"></li>
+<li><img src="39.webp" alt="39.webp"></li>
+<li><img src="39_爆.webp" alt="39_爆.webp"></li>
+<li><img src="39_顔.webp" alt="39_顔.webp"></li>
+<li><img src="40.webp" alt="40.webp"></li>
+<li><img src="40_顔.webp" alt="40_顔.webp"></li>
+<li><img src="41.webp" alt="41.webp"></li>
+<li><img src="41_巨.webp" alt="41_巨.webp"></li>
+<li><img src="41_巨_1.webp" alt="41_巨_1.webp"></li>
+<li><img src="41_立ち巨.webp" alt="41_立ち巨.webp"></li>
+<li><img src="41_立ち巨_1.webp" alt="41_立ち巨_1.webp"></li>
+<li><img src="41_顔.webp" alt="41_顔.webp"></li>
+<li><img src="41_顔_1.webp" alt="41_顔_1.webp"></li>
+<li><img src="42.webp" alt="42.webp"></li>
+<li><img src="42_巨.webp" alt="42_巨.webp"></li>
+<li><img src="42_爆.webp" alt="42_爆.webp"></li>
+<li><img src="42_立ち_バニー300.webp" alt="42_立ち_バニー300.webp"></li>
+<li><img src="42_立ち_バニー.webp" alt="42_立ち_バニー.webp"></li>
+<li><img src="42_立ち巨.webp" alt="42_立ち巨.webp"></li>
+<li><img src="42_立ち爆.webp" alt="42_立ち爆.webp"></li>
+<li><img src="42_顔.webp" alt="42_顔.webp"></li>
+<li><img src="42_顔_バニー.webp" alt="42_顔_バニー.webp"></li>
+<li><img src="43.webp" alt="43.webp"></li>
+<li><img src="43_巨.webp" alt="43_巨.webp"></li>
+<li><img src="43_爆.webp" alt="43_爆.webp"></li>
+<li><img src="43_立ち_バニー.webp" alt="43_立ち_バニー.webp"></li>
+<li><img src="43_顔.webp" alt="43_顔.webp"></li>
+<li><img src="44.webp" alt="44.webp"></li>
+<li><img src="44_顔.webp" alt="44_顔.webp"></li>
+<li><img src="45.webp" alt="45.webp"></li>
+<li><img src="45_顔.webp" alt="45_顔.webp"></li>
+<li><img src="46.webp" alt="46.webp"></li>
+<li><img src="46_顔.webp" alt="46_顔.webp"></li>
+<li><img src="47.webp" alt="47.webp"></li>
+<li><img src="47_顔.webp" alt="47_顔.webp"></li>
+<li><img src="48.webp" alt="48.webp"></li>
+<li><img src="48_顔.webp" alt="48_顔.webp"></li>
+<li><img src="49.webp" alt="49.webp"></li>
+<li><img src="49_顔.webp" alt="49_顔.webp"></li>
+<li><img src="50.webp" alt="50.webp"></li>
+<li><img src="50_巨.webp" alt="50_巨.webp"></li>
+<li><img src="50_立ち巨.webp" alt="50_立ち巨.webp"></li>
+<li><img src="50_顔.webp" alt="50_顔.webp"></li>
+<li><img src="51.webp" alt="51.webp"></li>
+<li><img src="51_TT.webp" alt="51_TT.webp"></li>
+<li><img src="51_TT巨.webp" alt="51_TT巨.webp"></li>
+<li><img src="51_作業着.webp" alt="51_作業着.webp"></li>
+<li><img src="51_巨.webp" alt="51_巨.webp"></li>
+<li><img src="51_爆.webp" alt="51_爆.webp"></li>
+<li><img src="51_立ち_バニー.webp" alt="51_立ち_バニー.webp"></li>
+<li><img src="51_立ち巨.webp" alt="51_立ち巨.webp"></li>
+<li><img src="51_立ち巨爆.webp" alt="51_立ち巨爆.webp"></li>
+<li><img src="51_顔.webp" alt="51_顔.webp"></li>
+<li><img src="51_顔_作業着.webp" alt="51_顔_作業着.webp"></li>
+<li><img src="52.webp" alt="52.webp"></li>
+<li><img src="52_Med_Face.webp" alt="52_Med_Face.webp"></li>
+<li><img src="52_Med_Stand.webp" alt="52_Med_Stand.webp"></li>
+<li><img src="52_爆.webp" alt="52_爆.webp"></li>
+<li><img src="52_顔.webp" alt="52_顔.webp"></li>
+<li><img src="53.webp" alt="53.webp"></li>
+<li><img src="53_爆.webp" alt="53_爆.webp"></li>
+<li><img src="53_顔.webp" alt="53_顔.webp"></li>
+<li><img src="54.webp" alt="54.webp"></li>
+<li><img src="54_巨.webp" alt="54_巨.webp"></li>
+<li><img src="54_爆.webp" alt="54_爆.webp"></li>
+<li><img src="54_貧.webp" alt="54_貧.webp"></li>
+<li><img src="54_顔.webp" alt="54_顔.webp"></li>
+<li><img src="55.webp" alt="55.webp"></li>
+<li><img src="55_スーツ.webp" alt="55_スーツ.webp"></li>
+<li><img src="55_爆.webp" alt="55_爆.webp"></li>
+<li><img src="55_顔.webp" alt="55_顔.webp"></li>
+<li><img src="55_顔_2.webp" alt="55_顔_2.webp"></li>
+<li><img src="55_顔_スーツ.webp" alt="55_顔_スーツ.webp"></li>
+<li><img src="56.webp" alt="56.webp"></li>
+<li><img src="56_顔.webp" alt="56_顔.webp"></li>
+<li><img src="57.webp" alt="57.webp"></li>
+<li><img src="57_巨.webp" alt="57_巨.webp"></li>
+<li><img src="57_顔.webp" alt="57_顔.webp"></li>
+<li><img src="58.webp" alt="58.webp"></li>
+<li><img src="58_立ち_バニー.webp" alt="58_立ち_バニー.webp"></li>
+<li><img src="58_顔.webp" alt="58_顔.webp"></li>
+<li><img src="59.webp" alt="59.webp"></li>
+<li><img src="59_爆.webp" alt="59_爆.webp"></li>
+<li><img src="59_顔.webp" alt="59_顔.webp"></li>
+<li><img src="60.webp" alt="60.webp"></li>
+<li><img src="60_顔.webp" alt="60_顔.webp"></li>
+<li><img src="61.webp" alt="61.webp"></li>
+<li><img src="61_爆.webp" alt="61_爆.webp"></li>
+<li><img src="61_顔.webp" alt="61_顔.webp"></li>
+<li><img src="62.webp" alt="62.webp"></li>
+<li><img src="62_巨.webp" alt="62_巨.webp"></li>
+<li><img src="62_顔.webp" alt="62_顔.webp"></li>
+<li><img src="63.webp" alt="63.webp"></li>
+<li><img src="63_巨.webp" alt="63_巨.webp"></li>
+<li><img src="63_顔.webp" alt="63_顔.webp"></li>
+<li><img src="64.webp" alt="64.webp"></li>
+<li><img src="64_巨.webp" alt="64_巨.webp"></li>
+<li><img src="64_爆.webp" alt="64_爆.webp"></li>
+<li><img src="64_立ち巨.webp" alt="64_立ち巨.webp"></li>
+<li><img src="64_立ち爆.webp" alt="64_立ち爆.webp"></li>
+<li><img src="64_顔.webp" alt="64_顔.webp"></li>
+<li><img src="64_顔_黄昏.webp" alt="64_顔_黄昏.webp"></li>
+<li><img src="65.webp" alt="65.webp"></li>
+<li><img src="65_巨.webp" alt="65_巨.webp"></li>
+<li><img src="65_爆.webp" alt="65_爆.webp"></li>
+<li><img src="65_立ち_バニー.webp" alt="65_立ち_バニー.webp"></li>
+<li><img src="65_顔.webp" alt="65_顔.webp"></li>
+<li><img src="66.webp" alt="66.webp"></li>
+<li><img src="66_爆.webp" alt="66_爆.webp"></li>
+<li><img src="66_顔.webp" alt="66_顔.webp"></li>
+<li><img src="67.webp" alt="67.webp"></li>
+<li><img src="67_2.webp" alt="67_2.webp"></li>
+<li><img src="67_顔.webp" alt="67_顔.webp"></li>
+<li><img src="67_顔_2.webp" alt="67_顔_2.webp"></li>
+<li><img src="68.webp" alt="68.webp"></li>
+<li><img src="68_爆.webp" alt="68_爆.webp"></li>
+<li><img src="68_顔.webp" alt="68_顔.webp"></li>
+<li><img src="69.webp" alt="69.webp"></li>
+<li><img src="69_1.webp" alt="69_1.webp"></li>
+<li><img src="69_爆.webp" alt="69_爆.webp"></li>
+<li><img src="69_顔.webp" alt="69_顔.webp"></li>
+<li><img src="69_顔_1.webp" alt="69_顔_1.webp"></li>
+<li><img src="70.webp" alt="70.webp"></li>
+<li><img src="70_作業.webp" alt="70_作業.webp"></li>
+<li><img src="70_巨.webp" alt="70_巨.webp"></li>
+<li><img src="70_爆.webp" alt="70_爆.webp"></li>
+<li><img src="70_顔.webp" alt="70_顔.webp"></li>
+<li><img src="71.webp" alt="71.webp"></li>
+<li><img src="71_顔.webp" alt="71_顔.webp"></li>
+<li><img src="71_顔大.webp" alt="71_顔大.webp"></li>
+<li><img src="72.webp" alt="72.webp"></li>
+<li><img src="72_顔.webp" alt="72_顔.webp"></li>
+<li><img src="73.webp" alt="73.webp"></li>
+<li><img src="73_巨.webp" alt="73_巨.webp"></li>
+<li><img src="73_顔.webp" alt="73_顔.webp"></li>
+<li><img src="74.webp" alt="74.webp"></li>
+<li><img src="74_爆.webp" alt="74_爆.webp"></li>
+<li><img src="74_顔.webp" alt="74_顔.webp"></li>
+<li><img src="75.webp" alt="75.webp"></li>
+<li><img src="75_顔.webp" alt="75_顔.webp"></li>
+<li><img src="76.webp" alt="76.webp"></li>
+<li><img src="76_妊娠.webp" alt="76_妊娠.webp"></li>
+<li><img src="76_顔.webp" alt="76_顔.webp"></li>
+<li><img src="76_顔_はだけ服.webp" alt="76_顔_はだけ服.webp"></li>
+<li><img src="77.webp" alt="77.webp"></li>
+<li><img src="77_秋服.webp" alt="77_秋服.webp"></li>
+<li><img src="77_立ち_バニー.webp" alt="77_立ち_バニー.webp"></li>
+<li><img src="77_顔.webp" alt="77_顔.webp"></li>
+<li><img src="77_顔_秋服.webp" alt="77_顔_秋服.webp"></li>
+<li><img src="78.webp" alt="78.webp"></li>
+<li><img src="78_秋服.webp" alt="78_秋服.webp"></li>
+<li><img src="78_立ち_バニー.webp" alt="78_立ち_バニー.webp"></li>
+<li><img src="78_顔.webp" alt="78_顔.webp"></li>
+<li><img src="78_顔_秋服.webp" alt="78_顔_秋服.webp"></li>
+<li><img src="79.webp" alt="79.webp"></li>
+<li><img src="79_爆.webp" alt="79_爆.webp"></li>
+<li><img src="79_立ち_バニー.webp" alt="79_立ち_バニー.webp"></li>
+<li><img src="79_顔.webp" alt="79_顔.webp"></li>
+<li><img src="80.webp" alt="80.webp"></li>
+<li><img src="80_顔.webp" alt="80_顔.webp"></li>
+<li><img src="81.webp" alt="81.webp"></li>
+<li><img src="81_顔.webp" alt="81_顔.webp"></li>
+<li><img src="82.webp" alt="82.webp"></li>
+<li><img src="82_顔.webp" alt="82_顔.webp"></li>
+<li><img src="83.webp" alt="83.webp"></li>
+<li><img src="83_巨.webp" alt="83_巨.webp"></li>
+<li><img src="83_顔.webp" alt="83_顔.webp"></li>
+<li><img src="84.webp" alt="84.webp"></li>
+<li><img src="84_巨.webp" alt="84_巨.webp"></li>
+<li><img src="84_顔.webp" alt="84_顔.webp"></li>
+<li><img src="85.webp" alt="85.webp"></li>
+<li><img src="85_顔.webp" alt="85_顔.webp"></li>
+<li><img src="86.webp" alt="86.webp"></li>
+<li><img src="86_顔.webp" alt="86_顔.webp"></li>
+<li><img src="87.webp" alt="87.webp"></li>
+<li><img src="87_顔.webp" alt="87_顔.webp"></li>
+<li><img src="88.webp" alt="88.webp"></li>
+<li><img src="88_顔.webp" alt="88_顔.webp"></li>
+<li><img src="89.webp" alt="89.webp"></li>
+<li><img src="89_顔.webp" alt="89_顔.webp"></li>
+<li><img src="90.webp" alt="90.webp"></li>
+<li><img src="90_爆.webp" alt="90_爆.webp"></li>
+<li><img src="90_顔.webp" alt="90_顔.webp"></li>
+<li><img src="91.webp" alt="91.webp"></li>
+<li><img src="91_巨.webp" alt="91_巨.webp"></li>
+<li><img src="91_顔.webp" alt="91_顔.webp"></li>
+<li><img src="92.webp" alt="92.webp"></li>
+<li><img src="92_顔.webp" alt="92_顔.webp"></li>
+<li><img src="93.webp" alt="93.webp"></li>
+<li><img src="93_巨.webp" alt="93_巨.webp"></li>
+<li><img src="93_行為中.webp" alt="93_行為中.webp"></li>
+<li><img src="93_顔.webp" alt="93_顔.webp"></li>
+<li><img src="94.webp" alt="94.webp"></li>
+<li><img src="94_顔.webp" alt="94_顔.webp"></li>
+<li><img src="95.webp" alt="95.webp"></li>
+<li><img src="95_顔.webp" alt="95_顔.webp"></li>
+<li><img src="96.webp" alt="96.webp"></li>
+<li><img src="96_顔.webp" alt="96_顔.webp"></li>
+<li><img src="97.webp" alt="97.webp"></li>
+<li><img src="97_立ち_バニー.webp" alt="97_立ち_バニー.webp"></li>
+<li><img src="97_顔.webp" alt="97_顔.webp"></li>
+<li><img src="98.webp" alt="98.webp"></li>
+<li><img src="98_立ち_逆バニー.webp" alt="98_立ち_逆バニー.webp"></li>
+<li><img src="98_顔.webp" alt="98_顔.webp"></li>
+<li><img src="98_顔_バニー.webp" alt="98_顔_バニー.webp"></li>
+<li><img src="99.webp" alt="99.webp"></li>
+<li><img src="99_立ち_バニー.webp" alt="99_立ち_バニー.webp"></li>
+<li><img src="99_顔.webp" alt="99_顔.webp"></li>
+<li><img src="99_顔_バニー.webp" alt="99_顔_バニー.webp"></li>
+<li><img src="100.webp" alt="100.webp"></li>
+<li><img src="100_巨.webp" alt="100_巨.webp"></li>
+<li><img src="100_立ち_バニー.webp" alt="100_立ち_バニー.webp"></li>
+<li><img src="100_顔.webp" alt="100_顔.webp"></li>
+<li><img src="100_顔_バニー.webp" alt="100_顔_バニー.webp"></li>
+<li><img src="101.webp" alt="101.webp"></li>
+<li><img src="101_顔.webp" alt="101_顔.webp"></li>
+<li><img src="102.webp" alt="102.webp"></li>
+<li><img src="102_顔.webp" alt="102_顔.webp"></li>
+<li><img src="103.webp" alt="103.webp"></li>
+<li><img src="103_顔.webp" alt="103_顔.webp"></li>
+<li><img src="104.webp" alt="104.webp"></li>
+<li><img src="104_顔.webp" alt="104_顔.webp"></li>
+<li><img src="105.webp" alt="105.webp"></li>
+<li><img src="105_顔.webp" alt="105_顔.webp"></li>
+<li><img src="106.webp" alt="106.webp"></li>
+<li><img src="106_巨.webp" alt="106_巨.webp"></li>
+<li><img src="106_顔.webp" alt="106_顔.webp"></li>
+<li><img src="107.webp" alt="107.webp"></li>
+<li><img src="107_立ち_バニー.webp" alt="107_立ち_バニー.webp"></li>
+<li><img src="107_顔.webp" alt="107_顔.webp"></li>
+<li><img src="107_顔_バニー.webp" alt="107_顔_バニー.webp"></li>
+<li><img src="108.webp" alt="108.webp"></li>
+<li><img src="108_立ち_バニー.webp" alt="108_立ち_バニー.webp"></li>
+<li><img src="108_顔.webp" alt="108_顔.webp"></li>
+<li><img src="108_顔_バニー.webp" alt="108_顔_バニー.webp"></li>
+<li><img src="109.webp" alt="109.webp"></li>
+<li><img src="109_巨.webp" alt="109_巨.webp"></li>
+<li><img src="109_立ち_バニー.webp" alt="109_立ち_バニー.webp"></li>
+<li><img src="109_顔.webp" alt="109_顔.webp"></li>
+<li><img src="109_顔_バニー.webp" alt="109_顔_バニー.webp"></li>
+<li><img src="110.webp" alt="110.webp"></li>
+<li><img src="110_立ち_バニー.webp" alt="110_立ち_バニー.webp"></li>
+<li><img src="110_顔.webp" alt="110_顔.webp"></li>
+<li><img src="110_顔_バニー.webp" alt="110_顔_バニー.webp"></li>
+<li><img src="111.webp" alt="111.webp"></li>
+<li><img src="111_立ち_バニー.webp" alt="111_立ち_バニー.webp"></li>
+<li><img src="111_顔.webp" alt="111_顔.webp"></li>
+<li><img src="111_顔_バニー.webp" alt="111_顔_バニー.webp"></li>
+<li><img src="112.webp" alt="112.webp"></li>
+<li><img src="112_立ち_バニー.webp" alt="112_立ち_バニー.webp"></li>
+<li><img src="112_顔.webp" alt="112_顔.webp"></li>
+<li><img src="112_顔_バニー.webp" alt="112_顔_バニー.webp"></li>
+<li><img src="113.webp" alt="113.webp"></li>
+<li><img src="113_1.webp" alt="113_1.webp"></li>
+<li><img src="113_2.webp" alt="113_2.webp"></li>
+<li><img src="113_立ち_バニー.webp" alt="113_立ち_バニー.webp"></li>
+<li><img src="113_顔.webp" alt="113_顔.webp"></li>
+<li><img src="113_顔_1.webp" alt="113_顔_1.webp"></li>
+<li><img src="113_顔_2.webp" alt="113_顔_2.webp"></li>
+<li><img src="113_顔_バニー.webp" alt="113_顔_バニー.webp"></li>
+<li><img src="114.webp" alt="114.webp"></li>
+<li><img src="114_顔.webp" alt="114_顔.webp"></li>
+<li><img src="115.webp" alt="115.webp"></li>
+<li><img src="115_顔.webp" alt="115_顔.webp"></li>
+<li><img src="116.webp" alt="116.webp"></li>
+<li><img src="116_顔.webp" alt="116_顔.webp"></li>
+<li><img src="117.webp" alt="117.webp"></li>
+<li><img src="117_顔.webp" alt="117_顔.webp"></li>
+<li><img src="118.webp" alt="118.webp"></li>
+<li><img src="118_顔.webp" alt="118_顔.webp"></li>
+<li><img src="119.webp" alt="119.webp"></li>
+<li><img src="119_巨.webp" alt="119_巨.webp"></li>
+<li><img src="119_顔.webp" alt="119_顔.webp"></li>
+<li><img src="120.webp" alt="120.webp"></li>
+<li><img src="120_巨.webp" alt="120_巨.webp"></li>
+<li><img src="120_顔.webp" alt="120_顔.webp"></li>
+<li><img src="121.webp" alt="121.webp"></li>
+<li><img src="121_顔.webp" alt="121_顔.webp"></li>
+<li><img src="122.webp" alt="122.webp"></li>
+<li><img src="122_顔.webp" alt="122_顔.webp"></li>
+<li><img src="123.webp" alt="123.webp"></li>
+<li><img src="123_顔.webp" alt="123_顔.webp"></li>
+<li><img src="124.webp" alt="124.webp"></li>
+<li><img src="124_顔.webp" alt="124_顔.webp"></li>
+<li><img src="125.webp" alt="125.webp"></li>
+<li><img src="125_顔.webp" alt="125_顔.webp"></li>
+<li><img src="126.webp" alt="126.webp"></li>
+<li><img src="126_巨.webp" alt="126_巨.webp"></li>
+<li><img src="126_顔.webp" alt="126_顔.webp"></li>
+<li><img src="127.webp" alt="127.webp"></li>
+<li><img src="127_巨.webp" alt="127_巨.webp"></li>
+<li><img src="127_立ち巨.webp" alt="127_立ち巨.webp"></li>
+<li><img src="127_顔.webp" alt="127_顔.webp"></li>
+<li><img src="128.webp" alt="128.webp"></li>
+<li><img src="128_巨.webp" alt="128_巨.webp"></li>
+<li><img src="128_爆.webp" alt="128_爆.webp"></li>
+<li><img src="128_顔.webp" alt="128_顔.webp"></li>
+<li><img src="129.webp" alt="129.webp"></li>
+<li><img src="129_顔.webp" alt="129_顔.webp"></li>
+<li><img src="130.webp" alt="130.webp"></li>
+<li><img src="130_顔.webp" alt="130_顔.webp"></li>
+<li><img src="131.webp" alt="131.webp"></li>
+<li><img src="131_顔.webp" alt="131_顔.webp"></li>
+<li><img src="132.webp" alt="132.webp"></li>
+<li><img src="132_顔.webp" alt="132_顔.webp"></li>
+<li><img src="133.webp" alt="133.webp"></li>
+<li><img src="133_顔.webp" alt="133_顔.webp"></li>
+<li><img src="134.webp" alt="134.webp"></li>
+<li><img src="134_顔.webp" alt="134_顔.webp"></li>
+<li><img src="135.webp" alt="135.webp"></li>
+<li><img src="135_顔.webp" alt="135_顔.webp"></li>
+<li><img src="136.webp" alt="136.webp"></li>
+<li><img src="136_顔.webp" alt="136_顔.webp"></li>
+<li><img src="137.webp" alt="137.webp"></li>
+<li><img src="137_顔.webp" alt="137_顔.webp"></li>
+<li><img src="138.webp" alt="138.webp"></li>
+<li><img src="138_顔.webp" alt="138_顔.webp"></li>
+<li><img src="139.webp" alt="139.webp"></li>
+<li><img src="139_巨.webp" alt="139_巨.webp"></li>
+<li><img src="139_立ち_バニー.webp" alt="139_立ち_バニー.webp"></li>
+<li><img src="139_立ち_巨.webp" alt="139_立ち_巨.webp"></li>
+<li><img src="139_顔.webp" alt="139_顔.webp"></li>
+<li><img src="140.webp" alt="140.webp"></li>
+<li><img src="140_顔.webp" alt="140_顔.webp"></li>
+<li><img src="141.webp" alt="141.webp"></li>
+<li><img src="141_顔.webp" alt="141_顔.webp"></li>
+<li><img src="142.webp" alt="142.webp"></li>
+<li><img src="142_巨.webp" alt="142_巨.webp"></li>
+<li><img src="142_顔.webp" alt="142_顔.webp"></li>
+<li><img src="143.webp" alt="143.webp"></li>
+<li><img src="143_顔.webp" alt="143_顔.webp"></li>
+<li><img src="144.webp" alt="144.webp"></li>
+<li><img src="144_顔.webp" alt="144_顔.webp"></li>
+<li><img src="153.webp" alt="153.webp"></li>
+<li><img src="153_顔.webp" alt="153_顔.webp"></li>
+<li><img src="154.webp" alt="154.webp"></li>
+<li><img src="154_顔.webp" alt="154_顔.webp"></li>
+<li><img src="155.webp" alt="155.webp"></li>
+<li><img src="155_顔.webp" alt="155_顔.webp"></li>
+<li><img src="156.webp" alt="156.webp"></li>
+<li><img src="156_巨.webp" alt="156_巨.webp"></li>
+<li><img src="156_爆.webp" alt="156_爆.webp"></li>
+<li><img src="156_立ち_バニー.webp" alt="156_立ち_バニー.webp"></li>
+<li><img src="156_立ち巨.webp" alt="156_立ち巨.webp"></li>
+<li><img src="156_立ち爆.webp" alt="156_立ち爆.webp"></li>
+<li><img src="156_顔.webp" alt="156_顔.webp"></li>
+<li><img src="156_顔_バニー.webp" alt="156_顔_バニー.webp"></li>
+<li><img src="157.webp" alt="157.webp"></li>
+<li><img src="157_顔.webp" alt="157_顔.webp"></li>
+<li><img src="158.webp" alt="158.webp"></li>
+<li><img src="158_バニー.webp" alt="158_バニー.webp"></li>
+<li><img src="158_顔.webp" alt="158_顔.webp"></li>
+<li><img src="158_顔_バニー.webp" alt="158_顔_バニー.webp"></li>
+<li><img src="ダミー.webp" alt="ダミー.webp"></li>
+
+    </ul>
+    <script>
+        const imgs = document.querySelectorAll("[data-src]");
+        let observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((item) => {
+                    if (item.isIntersecting) {
+                        item.target.src = item.target.dataset.src;
+                        observer.unobserve(item.target);
+                    }
+                });
+            },
+            {
+                rootMargin: "0px",
+                threshold: 0.1,
+            }
+        );
+        imgs.forEach((item) => observer.observe(item));
+
+        const setVp = (val) => {
+            document.querySelector("#list").style.width = `${val}%`;
+        };
+        const showVp = (val) => {
+            document.querySelector("#vpPercent").innerText = `${val}%`;
+        };
+
+        // 夜间模式切换功能 (保留)
+        const nightModeIcon = document.getElementById('nightModeIcon');
+        nightModeIcon.addEventListener('click', () => {
+            document.body.classList.toggle('night-mode');
+            if (document.body.classList.contains('night-mode')) {
+                nightModeIcon.textContent = '🌙';
+            } else {
+                nightModeIcon.textContent = '💡';
+            }
+        });
+
+        //  书页模式切换功能
+        const bookPageIcon = document.getElementById('bookPageIcon');
+        const list = document.getElementById('list'); // 获取 ul 元素
+        let bookPageMode = 0; // 0: 单页, 1: 双页, 2: 空白页双页
+        let originalListItems = Array.from(list.children); //  保存原始的 li 顺序
+
+        bookPageIcon.addEventListener('click', () => {
+            bookPageMode = (bookPageMode + 1) % 3; // 循环切换模式
+            updateBookPageMode();
+        });
+
+        function updateBookPageMode() {
+            document.body.classList.remove('double-page-mode', 'blank-page-mode'); // 移除之前的模式 class
+
+            if (bookPageMode === 0) {
+                bookPageIcon.textContent = '📖'; // 单页模式图标
+                resetListOrder(); // **先恢复原始顺序**
+            } else if (bookPageMode === 1) {
+                bookPageIcon.textContent = '📚'; // 双页模式图标
+                document.body.classList.add('double-page-mode');
+                resetListOrder(); // **先恢复原始顺序**
+                reverseListOrderForDoublePage();
+            } else if (bookPageMode === 2) {
+                bookPageIcon.textContent = '📃'; // 空白页双页模式图标
+                document.body.classList.add('blank-page-mode');
+                resetListOrder(); // **先恢复原始顺序**
+                reverseListOrderFromSecondItem();
+            }
+        }
+
+
+        function reverseListOrderForDoublePage() {
+            const list = document.getElementById('list');
+            const items = Array.from(list.children);
+            const images = items;
+            const reversedItems = [];
+
+            for (let i = 0; i < images.length; i += 2) {
+                if (images[i + 1]) {
+                    reversedItems.push(images[i + 1]);
+                }
+                reversedItems.push(images[i]);
+            }
+
+            list.innerHTML = '';
+            reversedItems.forEach(item => list.appendChild(item));
+        }
+
+        function reverseListOrderFromSecondItem() {
+            const list = document.getElementById('list');
+            const items = Array.from(list.children);
+
+            if (items.length <= 1) return;
+
+            const firstItem = items[0];
+            const remainingItems = items.slice(1);
+            const reversedItems = [];
+
+            for (let i = 0; i < remainingItems.length; i += 2) {
+                const item1 = remainingItems[i];
+                const item2 = remainingItems[i + 1];
+
+                if (item2) {
+                    reversedItems.push(item2); // 先添加偶数索引的 (左侧)
+                    reversedItems.push(item1); // 再添加奇数索引的 (右侧)
+                } else {
+                    reversedItems.push(item1); // 如果只有 item1，直接添加
+                }
+            }
+
+            list.innerHTML = '';
+            list.appendChild(firstItem); //  先添加第一个 li 元素
+            reversedItems.forEach(item => list.appendChild(item)); //  然后添加重排序后的剩余列表项
+        }
+
+
+        function resetListOrder() {
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            originalListItems.forEach(item => list.appendChild(item.cloneNode(true)));
+            originalListItems = Array.from(list.children); // 更新 originalListItems
+        }
+
+
+        //  初始化时保存原始列表项 (确保在事件监听器之前)
+        originalListItems = Array.from(list.children);
+    </script>
+</body>
+</html>
+
