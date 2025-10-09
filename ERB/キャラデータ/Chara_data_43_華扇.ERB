@@ -28,6 +28,9 @@ SELECTCASE ARG
 				RETURN 1
 			CASE 九天瀑布, 絶景之丘, 山之湖, 守矢神社境内
 				RETURN 1
+			;addition custom code, Kourindou
+			CASE 香霖堂
+				RETURN 1
 		ENDSELECT
 	;引力設定
 	CASE 8
@@ -93,6 +96,10 @@ CASE "固有内衣半透明(後)"
 CASE "固有内衣布料厚度"
 	CALLF MAKE_INT(V_NAME, 2)
 
+;;addition custom code
+;CASE "固有下着SHIFTABLE"
+;	CALLF MAKE_INT(V_NAME, 1)
+
 ;料理関連
 CASE "料理：喜欢的味道"
 	CALLF MAKE_STR(V_NAME, "肉料理/米/中華/油炸食品/開胃/丰盛/濃厚/上品/新鲜/豪快/软糯的/仙術/地底風/地獄風/甜/甜/咸/咸/")
@@ -142,7 +149,30 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF CHECK_NUDE(CHARA)
+		;裸
+		IF FLAG:立絵種類
+			;顔絵
+			SIF CURRENT_CLOTHES_SET(CHARA) == 101
+				RESULTS = _Miko
+		ELSE
+			;立絵
+		ENDIF
+	ELSE
+		;服
+		IF FLAG:立絵種類
+			;顔絵
+			SIF CURRENT_CLOTHES_SET(CHARA) == 101
+				RESULTS = _Miko
+		ELSE
+			;立絵 只有巫女服
+			;SIF CURRENT_CLOTHES_SET(CHARA) == 101
+			;	RESULTS = _Miko
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF CHECK_NUDE(CHARA)
 		;裸
@@ -173,7 +203,7 @@ ELSE
 		IF CURRENT_CLOTHES_SET(CHARA) == 55
 			IF FLAG:立絵種類
 				;顔絵
-				RESULTS = _バニー
+				;RESULTS = _バニー
 			ELSE
 				;立絵
 				RESULTS = _バニー
@@ -223,7 +253,22 @@ ENDIF
 @IMAGE_I43_特殊表情(CHARA)
 #DIM CHARA
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		IF CURRENT_CLOTHES_SET(CHARA) == 101 && !CHECK_NUDE(CHARA)
+		;霊夢巫女set
+			IF SELECTCOM == 364
+				RESULTS = BEANED
+			ELSEIF GROUPMATCH(SELECTCOM, 415, 610, 615, 617) || (SELECTCOM == 414 && INRANGE(TFLAG:192, -1, 1)) || (Activity_Duration:CHARA && (Activity_Type:CHARA == 2 || Activity_Type:CHARA == 3))
+				RESULTS = MGMG
+			ENDIF
+		ENDIF
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -234,14 +279,6 @@ ELSE
 	;通常画像
 	IF FLAG:立絵種類
 		;顔絵
-		IF (CFLAG:CHARA:衣装一時変更 == 101 || (CFLAG:CHARA:基本服装セット == 101 && CFLAG:CHARA:衣装一時変更==0)) && !CHECK_NUDE(CHARA)
-		;灵梦巫女set
-			IF SELECTCOM == 364
-				RESULTS = BEANED
-			ELSEIF GROUPMATCH(SELECTCOM, 415, 610, 615, 617) || (SELECTCOM == 414 && INRANGE(TFLAG:192, -1, 1)) || (Activity_Duration:CHARA && (Activity_Type:CHARA == 2 || Activity_Type:CHARA == 3))
-				RESULTS = MGMG
-			ENDIF
-		ENDIF
 	ELSE
 		;立絵
 	ENDIF
@@ -284,9 +321,20 @@ ENDIF
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I43_差分(CHARA)
 #DIM CHARA
-VARSET RESULTS
+;VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		IF RESULTS:2 == "オナニー" && CURRENT_CLOTHES_SET(CHARA) == 101 ;image tweak custom code, miko clothing set
+			RESULTS = _Miko
+			RETURN
+		ENDIF
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -301,10 +349,11 @@ ELSE
 		;立絵
 	ENDIF
 ENDIF
+VARSET RESULTS
 
 ;灵梦巫女set
-SIF CFLAG:CHARA:衣装一時変更 == 101 || (CFLAG:CHARA:基本服装セット == 101 && CFLAG:CHARA:衣装一時変更==0)
-	RESULTS = _Miko
+;SIF CURRENT_CLOTHES_SET(CHARA) == 101
+;	RESULTS = _Miko
 
 ;IMAGE_I43_特殊照れ(CHARA)--------------------------------------------------------------------
 ;角色特有の照れエフェクト表示条件
@@ -317,7 +366,16 @@ SIF CFLAG:CHARA:衣装一時変更 == 101 || (CFLAG:CHARA:基本服装セット 
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		SIF CURRENT_CLOTHES_SET(CHARA) == 101
+			RESULTS = Miko_
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -344,7 +402,16 @@ ENDIF
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		SIF CURRENT_CLOTHES_SET(CHARA) == 101
+			RESULTS = Miko_
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -371,7 +438,16 @@ ENDIF
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		SIF CURRENT_CLOTHES_SET(CHARA) == 101
+			RESULTS = Miko_
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -417,7 +493,18 @@ RETURN 0
 #DIM DYNAMIC エフェクト数 = 0
 VARSET RESULTS
 
-IF CFLAG:43:差し替え適用
+IF CFLAG:43:差し替え適用 == 3
+	;替换用画像
+	IF FLAG:立絵種類
+		;顔絵
+		IF TALENT:CHARA:母乳体質 && NOWEX:CHARA:噴乳 && CHECK_NUDE(CHARA) && CURRENT_CLOTHES_SET(CHARA) == 101
+			RESULTS:エフェクト数 = Miko_母乳
+			エフェクト数 += 1
+		ENDIF
+	ELSE
+		;立絵
+	ENDIF
+ELSEIF CFLAG:43:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -429,7 +516,7 @@ ELSE
 	IF FLAG:立絵種類
 		;顔絵
 		IF TALENT:CHARA:母乳体質 && NOWEX:CHARA:噴乳 && CHECK_NUDE(CHARA)
-			IF FLAG:巨乳差分表示 && TALENT:CHARA:胸圍>=2 && !(CFLAG:CHARA:衣装一時変更 == 101 || (CFLAG:CHARA:基本服装セット == 101 && CFLAG:CHARA:衣装一時変更==0))
+			IF FLAG:巨乳差分表示 && TALENT:CHARA:胸圍>=2
 				RESULTS:エフェクト数 = 爆乳母乳
 			ELSE
 				RESULTS:エフェクト数 = 母乳
