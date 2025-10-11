@@ -84,56 +84,84 @@ SETCOLOR 0xFFDEB8
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K64
+;@M_KOJO_UPDATE_K64
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K64
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K64
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS DIS_NAME,3
 DIS_NAME '=  "体操服","自动切换","和服"
+CALL KOJO_OPTION_ITEM("重设勇仪的性经验", 1, "cond", !TALENT:64:処女, "onetime", !FIRSTTIME("YuugiVirginSet", 1, 64)) ;custom code, adjusted
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:64%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:64%", MASTERNAME:64 != "")%", 2)
+CALL KOJO_OPTION_ITEM(@"旧版的立绘设置：现在勇仪的穿搭是【%DIS_NAME:(CFLAG:64:1004 + 1)%】", 3)
 
-IF !CFLAG:64:1000
-	PRINTL 
-	PRINTFORML 要变更勇仪对你的称呼吗？
-	PRINTL 
-	CALL ASK_M("是的",1 , "不",1 , "不再变更",1)
-	SELECTCASE RESULT
-		CASE 0
-			CALL NAME_SET_K64
-		CASE 1
-			PRINTFORMW 想要变更的时候请再使用[UPDATE]
-		CASE 2
-			PRINTFORMW 明白了
-			CFLAG:64:1000 = 1
-	ENDSELECT
+;process the input portion
+@KOJO_OPTION_K64_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 剧本支持将勇仪设定为纯洁的处女 
+PRINTFORML 你心目中的勇仪是？
+CALL ASK_YN("对性可能表现得很自信，但她依旧纯洁！", "她对房事可不陌生！ (默认)")
+IF !RESULT
+	TALENT:64:処女 = 1
+	CSTR:64:46 = 还没被任何人进入
+	ABL:64:膣 = 0
+	ABL:64:腰 = 0
+	EXP:64:Ｖ経験 = 0
+	EXP:64:精液経験 = 0
+	EXP:64:Ｖ性交経験 = 0
+	EXP:64:絶頂経験 += 10
+	EXP:64:自慰経験 += 10
 ENDIF
-SIF FIRSTTIME("4974立绘规格变更",,64)
-	CFLAG:64:1001 = 0
-IF !CFLAG:64:1001
-	PRINTFORML
-	PRINTFORML 在eraTW4.974中，为勇仪（以及其他角色）增加了跟随服装自动切换立绘的功能。勇仪会在工作（指喝酒）或约会时换上和服。
-	PRINTFORML 选择【自动切换】时，立绘会根据实际服装而变化。
-	PRINTFORML 选择【体操服】或【和服】时，即使勇仪实际穿着其他服装，立绘也只会显示所选的服装。
-	PRINTL
-	PRINTFORML 勇仪的立绘设置（现在是【%DIS_NAME:(CFLAG:64:1004 + 1)%】）：
-	PRINTFORML [-1] 体操服
-	PRINTFORML [ 0] 自动切换
-	PRINTFORML [ 1] 和服
-	PRINTFORML [ 2] 不再变更
-	$LOOP
-	INPUT
-	SELECTCASE RESULT
-		CASE -1, 0, 1
-			CFLAG:64:1004 = RESULT
-		PRINTFORML 勇仪的立绘设置是：%DIS_NAME:(CFLAG:64:1004 + 1)%\n想要变更的时候请再使用[UPDATE]
-		CASE 2
-			CFLAG:64:1001 = 1
-			PRINTFORML 明白了，往后将不再询问
-		CASEELSE
-			CLEARLINE 1
-			GOTO LOOP
-	ENDSELECT
-ENDIF
-RETURN 1
+CALLF FIRSTTIME("YuugiVirginSet", 0, 64)
+
+@KOJO_OPTION_K64_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTL 
+PRINTFORML 要变更勇仪对你的称呼吗？
+PRINTL 
+CALL ASK_M("是的",1 , "不",1)
+SELECTCASE RESULT
+	CASE 0
+		CALL NAME_SET_K64
+	CASE 1
+ENDSELECT
+
+@KOJO_OPTION_K64_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTL 勇仪的立绘设置
+PRINTFORML 
+PRINTFORML [-1] 体操服
+PRINTFORML [0] 自动切换
+PRINTFORML [1] 和服
+PRINTFORML [2] 说明一下
+$LOOP
+INPUT
+SELECTCASE RESULT
+	CASE -1, 0, 1
+		CFLAG:64:1004 = RESULT
+	CASE 2
+		PRINTFORML 在eraTW4.974中，为勇仪（以及其他角色）增加了跟随服装自动切换立绘的功能。勇仪会在工作（指喝酒）或约会时换上和服。
+		PRINTFORML 选择【自动切换】时，立绘会根据实际服装而变化。
+		PRINTFORMW 选择【体操服】或【和服】时，即使勇仪实际穿着其他服装，立绘也只会显示所选的服装。
+		CLEARLINE 4
+		GOTO LOOP
+	CASEELSE
+		CLEARLINE 1
+		GOTO LOOP
+ENDSELECT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -157,7 +185,7 @@ RETURN 1
 	PRINTFORMDW 鬼这个种族胜负心很强
 	PRINTFORMDW 这个名为星熊勇儀的鬼、看起来也是这样
 	PRINTFORMW 「怎么样？当然是会接受的吧？」
-	PRINTFORMDW %CALLNAME:MASTER%は……
+	PRINTFORMDW %CALLNAME:MASTER%……
 	CALL ASK_M("接受", 1, "拒绝", 1,)
 	SELECTCASE RESULT
 		CASE 0

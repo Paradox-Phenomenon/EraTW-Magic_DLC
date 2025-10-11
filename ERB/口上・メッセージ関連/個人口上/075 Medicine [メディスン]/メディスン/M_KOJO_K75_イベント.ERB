@@ -68,80 +68,100 @@ ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K75
-
+;藤紫	
+SETCOLOR 0x875F9A
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K75
+;@M_KOJO_UPDATE_K75
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
-IF !CFLAG:75:1111
-	PRINTFORML 想要让梅蒂欣的身体跟随口上変更吗？
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K75
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K75
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 75
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,75), "status:未采纳:采纳", CFLAG:75:1111)
+CALL KOJO_OPTION_ITEM(@"撤销人形少女设定:这是应急措施，虽然不推荐就是了", 2, "cond", TALENT:75:人形 == 99)
+CALL KOJO_OPTION_ITEM(@"改变梅蒂欣对于性器和精液的爱称　男性器：%CSTR:75:80%　精液：%CSTR:75:81%　女性器：%CSTR:75:82%", 3)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K75_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL SET_KOJO_COLOR(75)
+PRINTFORML 要根据推荐，将%CALLNAME:75%设定为符合该剧本的人设吗？
+PRINTL 
+PRINTFORML ※※※※※※※※※※※※※※※※注  意※※※※※※※※※※※※※※※※※
+PRINTFORML ※　%"如果采纳剧本设定的话、直到专属事件链完成为止", 64, LEFT%　※
+PRINTFORML ※　%"梅蒂欣将失去性器变成真正的人偶", 64, LEFT%　※
+PRINTFORML ※　%"无法进行性交也无法通过爱抚私处来获得快感", 64, LEFT%　※
+PRINTFORML ※　%"如果不采纳的话，虽说能够和梅蒂欣进行性交", 64, LEFT%　※
+PRINTFORML ※　%"但是会和剧本文本产生极大的差异", 64, LEFT%　※
+PRINTFORML ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+PRINTFORML
+CALL ASK_M("采纳", 1, "暂且保留", 1, "不采纳",1)
+IF RESULT == 0
+	PRINTFORML
+	PRINTFORML 梅蒂欣的身体根据剧本设定发生了变化……
 	PRINTL 
-	PRINTFORML ※※※※※※※※※※※※※注　意※※※※※※※※※※※※※※※
-	PRINTFORML ※如果适用的话、直到事件达成为止　　　　　　　　　　　　　　※
-	PRINTFORML ※梅蒂欣将无法通过阴道和肛门进行性交　　　　　　　　　　　　※
-	PRINTFORML ※而且、无法通过爱抚来获得快感　　　　　　　　　　　　　　　※
-	PRINTFORML ※如果改变的话、虽说能够和梅蒂欣进行性交、　　　　　　　　　※
-	PRINTFORML ※但是会和本口上产生极大的差异　　　　　　　　　　　　　　　※
-	PRINTFORML ※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
-	PRINTFORML
-	PRINTFORML [0] 変更 (UPDATE的时候可以再次进行改变)
-	PRINTFORML [1] 暂且保留
-	PRINTFORML [2] 不再进行変更
-	$INPUT_LOOP_K75_BC
-	INPUT
-	IF RESULT == 0
-		PRINTFORML
-		PRINTFORML 梅蒂欣的身体会跟随口上而产生变化
-		PRINTL 
-		PRINTFORML 梅蒂欣失去了阴道…
-		PRINTFORML 梅蒂欣失去了肛门…
-		PRINTFORML 梅蒂欣失去了阴蒂…
-		TALENT:75:人形 = 99
-		PRINTW 
-	ELSEIF RESULT == 1
-		PRINTFORMW 不进行梅蒂欣的身体变化
-	ELSEIF RESULT == 2
-		PRINTFORMW 之后、不会再次表示这个选项
-		CFLAG:75:1111 = 1
-	ELSE
-		GOTO INPUT_LOOP_K75_BC
-	ENDIF
+	PRINTFORML 梅蒂欣失去了阴道…
+	PRINTFORML 梅蒂欣失去了肛门…
+	PRINTFORML 梅蒂欣失去了阴蒂…
+	TALENT:75:人形 = 99
+	CFLAG:75:1111 = 1
+	PRINTW
+	CALLF FIRSTTIME("开局设定",0,75)
+ELSEIF RESULT == 1
+	PRINTFORMW 暂时不改变梅蒂欣的设定
+	CFLAG:75:1111 = 0
+ELSEIF RESULT == 1
+	PRINTFORMW 不采纳剧本设定和专属事件链
+	CFLAG:75:1111 = 0
+	CALLF FIRSTTIME("开局设定",0,75)
 ENDIF
-
-IF !CFLAG:75:1112 && (CFLAG:75:1003 == 0 || CFLAG:75:1004 == 0 || CFLAG:75:1005 == 0)
-	PRINTFORML 改变梅蒂欣对于性器和精液的名称
-	PRINTFORML 要进行变更吗？
-	PRINTFORML
-	PRINTFORML [0] 変更 (UPDATE的时候可以再次进行改变)
-	PRINTFORML [1] 暂且保留
-	PRINTFORML [2] 不再进行変更
-	$INPUT_LOOP_K75_TN
-	INPUT
-	IF RESULT == 0
-		PRINTFORML
-		CALL PENIS_NAME_SET_K75
-		CALL SAMEN_NAME_SET_K75
-		CALL OMANKO_NAME_SET_K75
-		PRINTFORML
-	ELSEIF RESULT == 1
-		PRINTFORMW 暂时不进行名称变更。
-	ELSEIF RESULT == 2
-		PRINTFORMW 之后、不会再次表示这个选项。
-		CFLAG:75:1112 = 1
-	ELSE
-		GOTO INPUT_LOOP_K75_TN
+RESETCOLOR
+@KOJO_OPTION_K75_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+	CALL ASK_M("确定撤销设定，我不想继续事件链了", 1, "点错了，我要返回", 1)
+	IF !RESULT
+		TALENT:75:人形 = 1
+		CFLAG:75:1111 = 0
 	ENDIF
+@KOJO_OPTION_K75_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 75
+CALL SET_KOJO_COLOR
+PRINTFORML 改变梅蒂欣对于性器和精液的爱称
+PRINTFORML
+CALL ASK_YN
+IF RESULT == 0
+	PRINTFORML
+	CALL PENIS_NAME_SET_K75
+	CALL SAMEN_NAME_SET_K75
+	CALL OMANKO_NAME_SET_K75
+	PRINTFORML
 ENDIF
-
-RETURN 1
-
+TARGET = LOCAL
+RESETCOLOR
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -149,6 +169,9 @@ RETURN 1
 ;初対面、挨拶のタイミング
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
+;custom code, allow you to modify medicine at first meeting without update
+SIF FIRSTTIME("开局设定",0,75)
+	CALL KOJO_OPTION_K75_RESULT_1
 ;竹林拠点
 IF MAIN_MAP == 4
 	;無明之丘

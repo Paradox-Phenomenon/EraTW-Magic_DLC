@@ -99,32 +99,11 @@ SETCOLOR 0Xab903d
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K62
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
-IF CFLAG:62:1100 == 0
-	PRINTFORML
-	PRINTFORML 作为輝夜大人一直到恋慕之前都无法变成恋人的补偿、在获得恋人的时候会进行素質的変更。
-	PRINTFORML （具体的来说就是会失去[傲慢][討厭男人]、获得[坦率][献身的]）
-	PRINTFORML 允许素質的変更吗？（在成为恋人的場合进行変更）
-	CALL ASK_M("允许",1 , "不允许" ,1)
-	SELECTCASE RESULT
-		CASE 0
-			PRINTFORMW 非常感谢。会随着素質変化的同时、同时获得恋人的身份。
-			CFLAG:62:1100 = 1
-			IF TALENT:62:恋人 || (TALENT:62:迷信 && TALENT:MASTER:追加種族 == 4)
-					TALENT:62:献身的 = 1
-					TALENT:62:性別嗜好 = 0
-					TALENT:62:応答 = 0
-					TALENT:62:態度 = -1
-			ENDIF
-			RETURN 1
-		CASE 1
-			PRINTFORMW 那么、不进行変更。
-				CFLAG:62:1100 = 2
-			RETURN 1
-	ENDSELECT
-ENDIF
 IF CFLAG:62:1100 == 1
 	IF TALENT:62:恋人 || (TALENT:62:迷信 && TALENT:MASTER:追加種族 == 4)
 	;恋人輝夜は真面目系想定。何かの原因で素質変更が抜けてるのを処理。
@@ -135,6 +114,57 @@ IF CFLAG:62:1100 == 1
 		TALENT:62:態度 = -1
 	ENDIF
 ENDIF
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K62
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K62
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"根据攻略进度改变性格的机制", 1, "onetime", CFLAG:62:1100, "status:OFF:ON", CFLAG:62:1100 == 1)
+
+;process the input portion
+@KOJO_OPTION_K62_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML
+PRINTFORML 作为辉夜大人恋慕之前都无法成为恋人的补偿、变成恋人时性格会软化
+PRINTFORML （具体的来说就是会失去[傲慢][讨厌男人]、获得[坦率][献身的]）
+PRINTFORML 允许该机制的启用吗？
+CALL ASK_M("允许",1 , "不允许" ,1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORMW 非常感谢。成为恋人时辉夜的性格会发生变化。
+		CFLAG:62:1100 = 1
+		IF TALENT:62:恋人 || (TALENT:62:迷信 && TALENT:MASTER:追加種族 == 4)
+			TALENT:62:献身的 = 1
+			TALENT:62:性別嗜好 = 0
+			TALENT:62:応答 = 0
+			TALENT:62:態度 = -1
+		ENDIF
+		RETURN 1
+	CASE 1
+		PRINTFORMW 那么辉夜的性格将不会改变
+			CFLAG:62:1100 = 2
+		RETURN 1
+ENDSELECT
+
+@KOJO_OPTION_K62_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTL 
+PRINTFORML 要变更勇仪对你的称呼吗？
+PRINTL 
+CALL ASK_M("是的",1 , "不",1)
+SELECTCASE RESULT
+	CASE 0
+		CALL NAME_SET_K64
+	CASE 1
+ENDSELECT
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -257,6 +287,7 @@ ENDIF
 		ENDSELECT
 			PRINTL
 	ENDIF
+CALL KOJO_OPTION_K62_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -405,23 +436,23 @@ IF LOCAL && !FLAG:70 && TALENT:恋慕
 				PRINTFORML
 				PRINTFORML
 				PRINTFORML 辉夜变成恋人的情况下素质会进行变更。
-				PRINTFORML （具体的来说就是会失去[傲慢][討厭男人]、获得[坦率][献身的]）
+				PRINTFORML （具体的来说就是会失去[傲慢][讨厌男人]、获得[坦率][献身的]）
 				PRINTFORML 允许素质变更吗？
 				CALL ASK_M("允许",1 , "不允许" ,1)
 				SELECTCASE RESULT
 					CASE 0
-					PRINTFORMW 辉夜失去了[傲慢][討厭男人]、获得了[坦率][献身的]。
+					PRINTFORMW 辉夜失去了[傲慢][讨厌男人]、获得了[坦率][献身的]。
 					TALENT:62:献身的 = 1
 					TALENT:62:性別嗜好 = 0
 					TALENT:62:応答 = 0
 					TALENT:62:態度 = -1
 						CFLAG:62:1100 = 1
 					CASE 1
-						PRINTFORMW 那么、不进行変更。
+						PRINTFORMW 那么辉夜的性格将不会改变
 						CFLAG:62:1100 = 2
 				ENDSELECT
 			ELSEIF CFLAG:62:1100 == 1
-				PRINTFORMW 辉夜失去了[傲慢][討厭男人]、获得了[坦率][献身的]。
+				PRINTFORMW 辉夜失去了[傲慢][讨厌男人]、获得了[坦率][献身的]。
 				TALENT:62:献身的 = 1
 				TALENT:62:性別嗜好 = 0
 				TALENT:62:応答 = 0

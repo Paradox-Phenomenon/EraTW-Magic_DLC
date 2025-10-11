@@ -27,6 +27,7 @@
 ;
 ;CFLAG:1001 UPDATE判定時の胸圍変更選択肢の有無
 ;CFLAG:1002 MASTERNAME:65の設定
+;CFLAG:1003 口上色設定
 ;CFLAG:1100 椛からの告白回数
 ;CFLAG:1800 弾幕勝負イベント進行用フラグ
 ;
@@ -83,75 +84,87 @@ RETURN 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K65
+#LOCALSIZE 1
+#LOCALSSIZE 1
 
 ;ここでSETCOLORすることで口上に色を付けられます
-SETCOLOR 0xFFDDEE
+;SETCOLOR 0xFFDDEE
 ;英語翻訳版から輸入
 SETCOLOR 0xF5F5F5
-
+SIF CFLAG:65:1003
+	SETCOLOR CFLAG:65:1003
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K65
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
-
-IF !CFLAG:65:1001
-	PRINTFORMDL 现在可以変更椛的胸部尺寸。
-	PRINTFORMDL 要変更吗？
-	PRINTFORMDL
-	PRINTFORMDL [0] 要 (UPDATE時还可以再変更)
-	PRINTFORMDL [1] 保留
-	PRINTFORMDL [2] 不変更
-	$INPUT_LOOP_K65_BS
-	INPUT
-	IF RESULT == 0
-		PRINTFORMDL
-		PRINTFORMDL [0] 小柄貧乳、这样就很好　(TW默认)
-		PRINTFORMDL [1] 普通比较好
-		PRINTFORMDL [2] 萝莉巨乳、超棒的好吗
-		$INPUT_LOOP_K65_ENCOUNTER
-		INPUT 
-		IF RESULT == 0
-			PRINTFORMDW 椛现在是[貧乳]了。
-			TALENT:65:105 = -1
-		ELSEIF RESULT == 1
-			PRINTFORMDW 椛现在既不是[貧乳]也不是[巨乳]了。
-			TALENT:65:105 = 0
-		ELSEIF RESULT == 2
-			PRINTFORMDW 椛现在是[巨乳]了。
-			TALENT:65:105 = 1
-		ELSE
-			GOTO INPUT_LOOP_K65_ENCOUNTER
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMDW 保留了椛的胸部尺寸変更。
-	ELSEIF RESULT == 2
-		PRINTFORMDW 今後、不会再出现这个選択肢了。
-		CFLAG:65:1001 = 1
-	ELSE
-		GOTO INPUT_LOOP_K65_BS
-	ENDIF
-ENDIF
-
 ;ITEM:大角虫养成外骨骼実装にともなう
 ;既プレイヤーさん用の処理
+SIF !CFLAG:65:1003
+	CFLAG:65:1003 = 0xF5F5F5
 IF ITEM:大角虫养成外骨骼 < 1 && CFLAG:65:1800 > 2
 	PRINTFORMDL 
-	PRINTFORMDW 拙作TW椛口上游玩、万分感谢。
+	PRINTFORMDW 非常感谢您游玩我的拙作TW椛剧本。
 	PRINTFORMDL 
-	PRINTFORMDL era The World4.750版本之上的约会随着『大角虫养成外骨骼』道具变化、
-	PRINTFORMDW 请允许我将与椛的一部分弹幕胜负时的事件给更改回原来的状态。
+	PRINTFORMDL 伴随着era The World 4.750更新中《大触特训装置》的道具化，
+	PRINTFORMDW 我将回退一部分与椛进行弹幕对决时的事件标志。
 	PRINTFORMDL
-	PRINTFORMDL 在这种状态下,与椛再次进行弹幕胜负的话,
-	PRINTFORMDW 『大角虫养成外骨骼』应该会发生获取事件。
+	PRINTFORMDL 若您能再次与椛进行弹幕对决，
+	PRINTFORMDW 应该会触发《大触特训装置》的获取事件。
 	PRINTFORMDL 
 	PRINTFORMW 「今后也请多多关照、%CALLNAME:MASTER%桑！！」
 	CFLAG:65:1800 = 2
 ENDIF
 RETURN 1
 
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_EXIST_K65
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_OPTION_K65
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 65
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"改变椛的胸围  现在是：%GET_TALENTNAME(105, TALENT:65:105)%", 1)
+CALL KOJO_OPTION_ITEM(@"改变椛的代表色  范例：「今后也请多多关照、%CALLNAME:MASTER%桑！！」", 2)
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_OPTION_K65_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 现在可以改变椛的胸围
+PRINTFORMDL 要改变吗？
+PRINTFORMDL
+CALL ASK_YN("要(可以在选项中再次改变)","暂时不了")
+IF !RESULT
+	PRINTFORML
+	CALL ASK_M("小小身材尖尖角（TW默认）", 1, "普通的纤细身材就好", 1, "萝莉巨乳超棒的", 1)
+	TALENT:65:105 = RESULT - 1
+	PRINTFORMDW 椛现在是[%GET_TALENTNAME(105, TALENT:65:105)%]了
+	CFLAG:65:1001 = 1
+ENDIF
+@KOJO_OPTION_K65_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL ASK_M("白烟色（默认）", 1, "淡樱色", 1)
+SELECTCASE RESULT
+	CASE 0
+		CFLAG:65:1003 = 0xF5F5F5
+	CASEELSE
+		CFLAG:65:1003 = 0xFFDDEE
+ENDSELECT
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -160,31 +173,9 @@ RETURN 1
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 
-PRINTFORMDL
-PRINTFORMDL 现在可以変更椛的胸部尺寸。
-PRINTFORML （顺便一提、UPDATE時还可以再変更胸部尺寸）
-PRINTFORMDL
-PRINTFORMDL [0] 小柄貧乳、这样就很好　(TW默认)
-PRINTFORMDL [1] 普通比较好
-PRINTFORMDL [2] 萝莉巨乳、超棒的好吗
-PRINTFORMDL [3] 不做变更就去吧
-$INPUT_LOOP_K65_ENCOUNTER
-INPUT 
-IF RESULT == 0
-	TALENT:65:105 = -1
-PRINTFORMDW 椛现在是[貧乳]了。
-ELSEIF RESULT == 1
-	TALENT:65:105 = 0
-	PRINTFORMDW 椛现在既不是[貧乳]也不是[巨乳]了。
-ELSEIF RESULT == 2
-	TALENT:65:105 = 1
-	PRINTFORMDW 椛现在是[巨乳]了。
-ELSEIF RESULT == 3
-	PRINTFORMDW 维持现状。
-ELSE
-	GOTO INPUT_LOOP_K65_ENCOUNTER
-ENDIF
-
+SIF !CFLAG:65:1001
+	CALL KOJO_OPTION_K65_RESULT_1
+	
 ;仕事中
 IF CFLAG:行動 == 5
 	PRINTFORMDL %CALLNAME:MASTER%在山路上散步时、有个身材矮小的少女站在路边。

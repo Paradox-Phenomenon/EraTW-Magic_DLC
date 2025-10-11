@@ -104,12 +104,77 @@ ENDIF
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K67
-
-SIF FLAG:口上色
-	CALLFORM M_KOJO_COLOR_K67
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
+;custom code, added customization
+;skill set to make more sense with the dialogue
+SIF ABL:67:料理技能 < 3 ;custom code, set cooking skill - cooks often for herself
+	ABL:67:料理技能 = 3
+	
+SIF EXP:67:料理経験 < 300
+	EXP:67:料理経験 = 300
+	
+SIF ABL:67:清掃技能 < 3 ;custom code, set cleaning skill - cleans classrooms all the time
+	ABL:67:清掃技能 = 3
+	
+SIF EXP:67:清掃経験 < 300
+	EXP:67:清掃経験 = 300
+	
+RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_EXIST_K67
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_OPTION_K67
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 67
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"剧本推荐的乳量设定", 1, "cond", TALENT:67:バストサイズ < 1)
+CALL KOJO_OPTION_ITEM(@"重设%CALLNAME:67%的性经验", 2, "cond", !TALENT:67:処女, "onetime", !FIRSTTIME("KeineVirginSet", 1, 67)) ;custom code, adjusted
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_OPTION_K67_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 剧本支持将%CALLNAME:67%设定为纯洁的处女 
+PRINTFORML 你心目中的%CALLNAME:67%是？
+CALL ASK_YN("虽然有着娇艳欲滴的成熟肉体，但摘下果实的人一定是我！", "经验丰富的女教师！请指导我！！（默认）")
+IF !RESULT
+	TALENT:67:処女 = 1
+	CSTR:67:46 = 还没被任何人进入
+	ABL:67:膣 = 0
+	EXP:67:Ｖ経験 = 0
+	EXP:67:精液経験 = 0
+	EXP:67:Ｖ性交経験 = 0
+	PRINTFORMDW 慧音老师是纯洁的！熟能生巧，所以好好指导她吧！
+ELSE
+	CALL CHARA_TEXT,67,@"接受慧音先生的私-人-指-导吧@HPH@HPH@要对孩子们保密哦@HPH@","STRW"
+ENDIF
+CALLF FIRSTTIME("KeineVirginSet", 0, 67)
+
+;process the input portion
+@KOJO_OPTION_K67_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 将慧音的胸围增加到【巨乳】吗？
+PRINTFORMDL 这样更符合剧本设定
+CALL ASK_YN
+IF !RESULT
+	TALENT:67:バストサイズ = 1
+	PRINTFORMDW 巨乳很重要！
+ELSE
+	PRINTFORMDW 呜呜呜，好吧！（下次能不能同意啊求求了）
+ENDIF
+
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

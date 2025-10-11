@@ -27,7 +27,7 @@
 RESULTS=_幽香南风天
 
 ;为了明确您的口上与初期口上的不同之处，此处将会在开局选择口上时显示并作为口上名称的一部分，请务必更改XXX
-RESULTS:1 = 南风天
+RESULTS:1 = 南风天版
 RESULTS:2 = 『千万不要招惹花田暴君！』<br>当你想起这句警告时已是在梦幻馆的门口，可眼前的风见幽香眼底分明尽是温柔<br>「什么嘛，你这家伙也是孤身一人的话要不要加入我的梦幻馆？」<br>推荐你先生，纯爱，非焊车,爱欲恋人双线
 ;简介
 
@@ -81,8 +81,8 @@ ENDIF
 ;以下是一个例子，效果是初始设定为处女并修正处女丧失履历
 
 IF FIRSTTIME("TALENT_CHANGE")
-TALENT:68:0 = 1
-CSTR:68:処女喪失履歴 = 还没被任何人进入
+	TALENT:68:0 = 1
+	CSTR:68:処女喪失履歴 = 还没被任何人进入
 ENDIF
 ;
 ;###口上色判定###################################
@@ -116,92 +116,108 @@ ENDSELECT
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_幽香南风天_UPDATE_K68
+;@M_KOJO_幽香南风天_UPDATE_K68
 ;口上独自的UPDATE用
 ;当您专门为ENCOUNTER准备了自己的分支标志时，请使用它（原文如此）
 ;在UPDATE判断中使用字符变量（如CFLAG）时，不会有自动填充，需要自己指定角色编号
 ;
-;目前可作为口上自定义设置用，可以控制一些功能是否开启
-PRINTFORMW
-$UPDATE
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_幽香南风天_OPTION_EXIST_K68
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_幽香南风天_OPTION_K68
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 68
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,68), "status:未采纳:采纳", CFLAG:68:1351)
+CALL KOJO_OPTION_ITEM(@"幽香欧派培养玩法设定",2,"status:开启:关闭",CFLAG:68:1105 == 1000 || CFLAG:68:1105 == 0)
+CALL KOJO_OPTION_ITEM("字符画配图", 3, "status:不显示:显示", CFLAG:68:1341)
+CALL KOJO_OPTION_ITEM(@"作者的话",4)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_幽香南风天_OPTION_K68_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML
+PRINTFORML 要根据推荐，将幽香设定为符合该剧本的人设吗？
+PRINTFORML ( ´•̥̥̥ω•̥̥̥` )求求惹，有更符合游玩体验的微调
+PRINTFORML
+CALL ASK_M("好的", 1, "不行", 1)
+IF !RESULT
+	ABL:42=6
+	ABL:43=5
+	ABL:44=2
+	ABL:45=4
+	ABL:46=3
+	TALENT:68:121=1
+	PRINTFORML 素质已调整
+	PRINTFORMW 太感谢你了，好好享受与幽香的生活吧
+	CFLAG:68:1351 = 1
+ELSE
+	PRINTFORMW 素质未调整
+	CFLAG:68:1351 = 0
+ENDIF
+CALLF FIRSTTIME("开局设定",0,68)
+
+@KOJO_幽香南风天_OPTION_K68_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF CFLAG:68:1105 == 1000 || CFLAG:68:1105 == 0
+	CFLAG:68:1105 = 3
+ELSE
+	CFLAG:68:1105 = 1000
+ENDIF
+
+@KOJO_幽香南风天_OPTION_K68_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:68:1341 = !CFLAG:68:1341
+
+@KOJO_幽香南风天_OPTION_K68_RESULT_4
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL 幽香南风天_UPDATE_K68
+@幽香南风天_UPDATE_K68
 PRINTFORMDL XD
 PRINTFORMDL 这里是幽香南风天的UPDATE
 PRINTFORMDL
-PRINTFORMDL	[1] 作者的话
-PRINTFORMDL [2] 更改幽香欧派培养玩法设定
-;PRINTFORMDL [2] 绿色的口上色太亮了/设定旁白口上色
-;PRINTFORMDL	[3]作者检测代码用
-PRINTFORMDL [3] 关闭/开启字符串画
-PRINTFORMDL [4]初见时给幽香更符合口上的角色设定（求求了,有更符合游玩的体验微调）
-PRINTFORMDL 
-PRINTFORMDL [0] 退出
-PRINTFORMW
-$INPUT_UPDATE
-INPUT
-	IF RESULT==1
-		PRINTFORML 「你好啊,这里是作者南风天的话」
-		PRINTFORML 「传说里恐怖的花田暴君实际是为了保护身边朋友装做严酷,实际少女内心温柔地设定如何？」
-		PRINTFORML 「这个灵感出自某个“不同性格的幽香”的帖子,加之其他想写的角色都有好的口上了于是便决定写幽香了」
-		PRINTFORML 「如果你喜欢游玩恋爱线请多宽容幽香的刻薄」
-		PRINTFORML 「想游玩爱欲线的请享受被幽香占有和保护的感觉吧」
-		PRINTFORML 「为了丰富推进过程，还补充了一条进度条」
-		PRINTFORML 「色色方面也下了功夫，希望大家能包容不同玩法吧」
-		PRINTFORML 「再次感谢狂气的小白兔老师在代码方面的鼎力支持，感谢泡茶群各位的帮助」
-		PRINTFORML 「把想法用代码复制出来真的很难」
-		IF EXP:0:77>=30
-			PRINTFORMDL 【天人感应】：我已经到了看见老师大阪和人妻相生佑子的年纪了，我的幻想乡和幽香在哪里……
-		ENDIF
-		PRINTFORMW 
-		GOTO UPDATE
-	ELSEIF RESULT==2
-		PRINTFORMW
-		CALL ask_m("开启",1,"关闭",1,)
-			SELECTCASE RESULT
-				CASE 0
-					PRINTFORML 开启了
-					CFLAG:68:1105=3
-				CASE 1
-					PRINTFORML 关闭了
-					CFLAG:68:1105=1000
-			ENDSELECT
-		GOTO UPDATE
-	;	@K68_幽香南风天_REVISE_COLOR(ARG)
-	;	WHILE RESULT != 1 
-	;	LOCAL = LINECOUNT			;清除过多行数
-	;	PRINTL 这里是有关本口上的颜色设定
-	;	PRINTL 请在下面选择你需要设置的项目
-	;	PRINTL 
-	;	CALL ASK_M(@"切换口上色状态  目前状态：%K68_幽香南风天_REVISE_COLOR_NAME()%",1,"退出设置",1)
-	;	IF RESULT == 0 					;切换状态的部分
-	;		CFLAG:68:1300 ++ 
-	;		SIF CFLAG:68:1300 == 3
-	;			CFLAG:68:1300 = 0 
-	;	ELSE 
-	;	ENDIF 
-	;	CLEARLINE LINECOUNT - LOCAL 
-	;	WEND 
-	ELSEIF RESULT==3
-		IF CFLAG:68:1341==1
-			CFLAG:68:1341=2
-			PRINTFORML 已关闭字符串
-		ELSE
-			CFLAG:68:1341=1
-			PRINTFORML 已开启字符串
-		ENDIF
-			GOTO UPDATE
-	ELSEIF RESULT==4
-		IF CFLAG:68:1351==1
-			CFLAG:68:1341=2
-			PRINTFORML 已关闭初见角色更改
-		ELSE
-			CFLAG:68:1341=1
-			PRINTFORML 已开启初见角色更改
-			PRINTFORML 太感谢你了，好好享受幽香口上吧
-		ENDIF
-			GOTO UPDATE
-	ELSEIF RESULT==0
-	ENDIF
-RETURN 1
+PRINTFORML 「你好啊,这里是作者南风天的话」
+PRINTFORML 「传说里恐怖的花田暴君实际是为了保护身边朋友装做严酷,实际少女内心温柔地设定如何？」
+PRINTFORML 「这个灵感出自某个“不同性格的幽香”的帖子,加之其他想写的角色都有好的口上了于是便决定写幽香了」
+PRINTFORML 「如果你喜欢游玩恋爱线请多宽容幽香的刻薄」
+PRINTFORML 「想游玩爱欲线的请享受被幽香占有和保护的感觉吧」
+PRINTFORML 「为了丰富推进过程，还补充了一条进度条」
+PRINTFORML 「色色方面也下了功夫，希望大家能包容不同玩法吧」
+PRINTFORML 「再次感谢狂气的小白兔老师在代码方面的鼎力支持，感谢泡茶群各位的帮助」
+PRINTFORML 「把想法用代码复制出来真的很难」
+IF EXP:0:77>=30
+	PRINTFORMDL 【天人感应】：我已经到了看见老师大阪和人妻相生佑子的年纪了，我的幻想乡和幽香在哪里……
+ENDIF
+PRINTFORMW 
+;	@K68_幽香南风天_REVISE_COLOR(ARG)
+;	WHILE RESULT != 1 
+;	LOCAL = LINECOUNT			;清除过多行数
+;	PRINTL 这里是有关本口上的颜色设定
+;	PRINTL 请在下面选择你需要设置的项目
+;	PRINTL 
+;	CALL ASK_M(@"切换口上色状态  目前状态：%K68_幽香南风天_REVISE_COLOR_NAME()%",1,"退出设置",1)
+;	IF RESULT == 0 					;切换状态的部分
+;		CFLAG:68:1300 ++ 
+;		SIF CFLAG:68:1300 == 3
+;			CFLAG:68:1300 = 0 
+;	ELSE 
+;	ENDIF 
+;	CLEARLINE LINECOUNT - LOCAL 
+;	WEND 
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系事件（额外语法）
@@ -258,14 +274,8 @@ ELSE
 		CALL yuka_AA("碰面1")
 	ENDIF
 ENDIF
-IF CFLAG:68:1351==1
-	ABL:42=6
-	ABL:43=5
-	ABL:44=2
-	ABL:45=4
-	ABL:46=3
-	TALENT:68:0=1
-	TALENT:68:121=1
+IF FIRSTTIME("开局设定",0,68)
+	CALL KOJO_幽香南风天_OPTION_K68_RESULT_1
 ENDIF
 TALENT:68:105=1
 TALENT:68:16=1
@@ -1871,7 +1881,7 @@ IF LOCAL
 	ENDIF
 	;其他情况
 	PRINTFORMDL 难得的遇见幽香沐浴场景，要壮着胆子看一眼吗？
-		CALL ask_m("盯着看",CFLAG:68:1001>=10,"瞟一眼",1,"不看",1,)
+		CALL ASK_M("盯着看",CFLAG:68:1001>=10,"瞟一眼",1,"不看",1,)
 			SELECTCASE RESULT
 				CASE 0
 					PRINTFORML 「别盯着看……我，我会不好意思的……」

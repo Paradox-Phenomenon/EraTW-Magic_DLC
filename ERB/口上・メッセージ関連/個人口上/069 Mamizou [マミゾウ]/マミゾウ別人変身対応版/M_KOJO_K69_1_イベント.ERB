@@ -43,7 +43,7 @@
 RESULTS = _別人変身版
 ;初期口上とは違う事を明示するため、口上選択時に表示されます、必ずＸＸＸを変更してください
 RESULTS:1 = 变身补丁伴生
-RESULTS:2 = 与变身功能伴生的口上，旨在展示变身功能与口上的联动性项（详情查阅Update）<br><br>内容量较少（有效输出行：2013行）
+RESULTS:2 = 与变身功能伴生的剧本，旨在展示变身功能与剧本的联动（详情查阅Update）<br><br>内容量较少（有效输出行：2013行）
 
 ;口上存在判定です、けしてコメントアウトしないでください
 ;他の処理は一切行わないように
@@ -121,71 +121,46 @@ RESULTS:1 = %LOCALS:1%
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_別人変身版_UPDATE_K69
-#DIM TEMP
+;@M_KOJO_別人変身版_UPDATE_K69
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
-TEMP = CURRENTREDRAW()
-REDRAW 0
-PRINTL
-$SET_LOOP
-PRINTFORM [0]素質：変化　　　
-SIF !TALENT:69:変化
-	SETCOLOR C_GRAY
-PRINTFORML \[\@ TALENT:69:変化 ? 开启 # 关闭 \@\]
 
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_幽香南风天_OPTION_EXIST_K69
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_別人変身版_OPTION_K69
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 69
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"猯藏的变身素质", 1, "status:不启用:已启用", TALENT:69:変化)
+CALL KOJO_OPTION_ITEM(@"猯藏主动变身事件", 2, "status:不启用:已启用", CFLAG:69:1004, "cond", TALENT:69:変化)
+CALL KOJO_OPTION_ITEM(@"变身后台词代表色同步:变身时自动使用变身目标的代表色", 3, "status:不启用:已启用", CFLAG:69:1006, "cond", TALENT:69:変化)
+TARGET = LOCAL
 RESETCOLOR
-PRINTFORM [1]自主变身　　
-SIF !CFLAG:69:1004
-	SETCOLOR C_GRAY
-PRINTFORML \[\@ CFLAG:69:1004 ? 开启 # 关闭 \@\]
 
-RESETCOLOR
-PRINTFORM [2]变身时的口上颜色　
-SIF !CFLAG:69:1006
-	SETCOLOR C_GRAY
-PRINTFORML \[\@ CFLAG:69:1006 ? 开启 # 关闭 \@\]
+;process the input portion
+@KOJO_別人変身版_OPTION_K69_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+TALENT:69:変化 = !TALENT:69:変化
 
-RESETCOLOR
-PRINTL
-PRINTFORML [3]説明　
-PRINTFORML [4]完成设置
+@KOJO_別人変身版_OPTION_K69_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:69:1004 = !CFLAG:69:1004
 
-INPUT
-SELECTCASE RESULT
-CASE 0
-	TALENT:69:変化 = !TALENT:69:変化
-	GOTO SET_REF
-CASE 1
-	CFLAG:69:1004 = !CFLAG:69:1004
-	GOTO SET_REF
-CASE 2
-	CFLAG:69:1006 = !CFLAG:69:1006
-	GOTO SET_REF
-CASE 3
-	REDRAW TEMP
-	PRINTL
-	PRINTFORML 素質：変化		：是否赋予猯藏变身素质（关闭时会移除已有素质）
-	PRINTFORML 自主变身			：部分事件中猯藏会自主保持变身形态
-	PRINTFORMW 变身时口上颜色	：使用变身目标的角色口上颜色
-	PRINTL
-	REDRAW 0
-	GOTO SET_LOOP
-CASE 4
-	PRINTL
-CASEELSE
-	$SET_REF
-	CLEARLINE 7
-	GOTO SET_LOOP
-ENDSELECT
-REDRAW TEMP
-PRINTFORML 设置已完成
-PRINTFORML 猯藏的变身素质\@ TALENT:69:変化 ? 已赋予 # 未赋予 \@
-PRINTFORML 猯藏的自主变身功能\@ CFLAG:69:1004 ? 已启用 # 未启用 \@
-PRINTFORMW 猯藏的口上颜色风格同步功能\@ CFLAG:69:1006 ? 已生效 # 未生效 \@
-
-RETURN 1
+@KOJO_別人変身版_OPTION_K69_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:69:1006 = !CFLAG:69:1006
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -227,6 +202,11 @@ PRINTFORML 「原来如此，这么说来你小子是从外面来的……」
 	PRINTFORML 「……哎哟，莫慌莫慌。往后还请多多关照嘞」
 	PRINTFORMW 面对她妖异的笑容，%CALLNAME:MASTER%点头回应
 	CFLAG:1003 = 1
+CALL KOJO_別人変身版_OPTION_K69_RESULT_1
+IF TALENT:変化
+	CALL KOJO_別人変身版_OPTION_K69_RESULT_2
+	CALL KOJO_別人変身版_OPTION_K69_RESULT_3
+ENDIF
 RETURN 1
 
 @K69_BEFORETRAIN_別人変身版
