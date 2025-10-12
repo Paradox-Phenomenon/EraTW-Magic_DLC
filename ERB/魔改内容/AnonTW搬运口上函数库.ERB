@@ -8011,6 +8011,10 @@ RETURNF GROUPMATCH(ARG, 1, 2, 3, 10)
 ;===================================================
 
 @SPECIAL_FIRSTKISS(ARGS, ARG = -1)
+;修改语法
+CALL SPECIAL_FIRSTKISS_CN(ARGS,ARG)
+RETURN
+
 SIF ARG == -1
 	ARG = TARGET
 CALL MUTUAL_KISS(ARG)
@@ -8028,6 +8032,23 @@ IF TALENT:ARG:無接吻経験
 		LOCALS += " at the " + GET_MAPNAME(GET_MAPID(CFLAG:ARG:現在位置))
 	ENDIF
 	CSTR:ARG:初吻喪失履歴 = %ARGS%%LOCALS%.
+ENDIF
+
+@SPECIAL_FIRSTKISS_CN(ARGS, ARG = -1)
+SIF ARG == -1
+	ARG = TARGET
+CALL MUTUAL_KISS(ARG)
+CALL SET_FIRSTKISS(MASTER, ARG, LOCAL)
+IF TALENT:ARG:無接吻経験
+	CALL SET_FIRSTKISS(ARG, MASTER, LOCAL)
+	IF CHK_DATENOW(CFLAG:ARG:约会中) && CFLAG:ARG:現在位置 != OMANEKIBEYA()
+		CSTR:ARG:初吻位置 = %DATENAME_SPOT()%
+	ELSEIF CHK_DATENOW(CFLAG:MASTER:约会中) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+		CSTR:ARG:初吻位置 = %DATENAME_PLACE()%的%DATENAME_SPOT()%
+	ELSE
+		CSTR:ARG:初吻位置 = %NAME_FROM_PLACE(CFLAG:ARG:現在位置)%
+	ENDIF
+	CSTR:ARG:初吻喪失履歴 = %PRINT_DATE_F(DAY)%、在%CSTR:ARG:初吻位置%%ARGS%
 ENDIF
 
 ;=================================================
@@ -8228,7 +8249,13 @@ RETURNF LOCALS + NAME_FROM_PLACE(ARG)
 
 ;===================================================
 
-@TNAME(ARG, ARG:1 = 0, ARG:2 = 0)
+;title name, takes care of the "the"-part as well
+;the titles are unique
+;ARG - character ID
+;ARG:1 - capital letter at start
+;ARG:2 - removes the "the" 
+;ARG:3 - genetive case
+@TNAME(ARG, ARG:1 = 0, ARG:2 = 0, ARG:3 = 0)
 #FUNCTIONS
 ;if a dialogue uses custom titles, use those instead
 IF STRLENS(CUSTOM_TITLE:ARG:CT_TITLES)
@@ -8241,7 +8268,8 @@ ELSE
 ENDIF
 {
 SIF GROUPMATCH(LOCALS:1, "One of the Big Four", "Hell's Traffic Accident", "Shuten-Douji of the Gourd Pillow", "Old Youkai #1", "Shoutoku's Prized Steed"
-    , "Ibaraki-Douji", "Nega-Kasen", "Arm-chan", "[No Title]", "The Mighty of the Big Four", "The Seventh", "One of the Eight Great Youths")
+    , "Ibaraki-Douji", "Nega-Kasen", "Arm-chan", "[No Title]", "The Mighty of the Big Four", "The Seventh", "One of the Eight Great Youths"
+	, "Suzunaan's Girl with the Deciphering Eye", "Geidontei's Sake-Serving Poster Girl")
 }
 	ARG:2 = 1
 ;----------------------------
@@ -8254,22 +8282,22 @@ ENDIF
 IF ARG == RANDOM_CHARANUM
 	;might be better to use PRINT_GET_RACE to supplement?
 	IF TALENT:ARG:水棲
-		LOCALS:1 = 河童
+		LOCALS:1 = Kappa
 	ELSEIF TALENT:ARG:妖精
-		LOCALS:1 = 妖精
+		LOCALS:1 = Fairy
 	ELSEIF TALENT:ARG:妖怪 == 5
-		LOCALS:1 = 天狗
+		LOCALS:1 = Tengu
 	ELSEIF TALENT:ARG:動物耳 == 2
 		LOCALS:1 = Rabbit
 	ELSEIF TALENT:ARG:妖怪 == 9
-		LOCALS:1 = %SPLIT_G("Demon:悪魔")%
+		LOCALS:1 = %SPLIT_G("Demon:Devil")%
 	ELSEIF TALENT:ARG:妖怪 == 2
-		LOCALS:1 = 鬼
+		LOCALS:1 = Oni
 	ELSEIF TALENT:ARG:妖狐
 		LOCALS:1 = Kitsune
 	ELSEIF TALENT:ARG:動物耳 == 4
 		LOCALS:1 = Cat
-	ELSEIF GROUPMATCH(CSTR:ARG:路人子種族, "化け狸", "茨たぬき")
+	ELSEIF GROUPMATCH(CSTR:ARG:モブ子種族, "化け狸", "茨たぬき")
 		LOCALS:1 = Tanuki
 	ELSEIF TALENT:ARG:人妻
 		LOCALS:1 = Woman
@@ -8277,6 +8305,14 @@ IF ARG == RANDOM_CHARANUM
 		LOCALS:1 = Girl
 	ENDIF
 ENDIF
+IF ARG:3 && LOCALS:1 != ""
+	IF TOLOWER(SUBSTRINGU(LOCALS:1, STRLENSU(LOCALS:1)-1)) == "s"
+		LOCALS:1 += "'"
+	ELSE
+		LOCALS:1 += "'s"
+	ENDIF
+ENDIF
+
 SIF ARG:2
 	RETURNF LOCALS:1
 RETURNF @"%LOCALS% %LOCALS:1%"

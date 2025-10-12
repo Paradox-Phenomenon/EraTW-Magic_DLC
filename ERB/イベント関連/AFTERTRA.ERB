@@ -1,4 +1,4 @@
-﻿;────────────────────────────────────
+;────────────────────────────────────
 ;調教終了の処理
 ;────────────────────────────────────
 @EVENTEND
@@ -52,6 +52,9 @@ CFLAG:MASTER:没穿内裤 = 0
 CLEARBIT FLAG:999, 1
 ;你懐妊処理
 ;CALL MasterPregnancy
+
+;addition custom code, DAYEVENT handling
+CALL DAYEVENT_MAIN("night")
 
 ;中出しフラグリセット
 FOR LOCAL,0,CHARANUM
@@ -289,15 +292,19 @@ FOR LOCAL,0,CHARANUM
 	; 	CFLAG:LOCAL:600 = 0
 	IF CFLAG:LOCAL:面識
 		会ってない日数 = DAY - CFLAG:LOCAL:最後に会った日
+		;addition custom code, DAYEVENT
+		SIF DAYEVENT_TARGET == LOCAL
+			CALL DAYEVENT_EXECUTE_EVENT()
 		CALL KOJO_MESSAGE_SEND("EVENT", 31, LOCAL, TCVAR:LOCAL:今天有否见面 ? 0 # 会ってない日数)
 	ENDIF
+	CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, , , "AFTERTRAIN_BEGIN") ;addition custom code
 	
 	;肛内精液不残留，全部清理掉
 	FOR LOCAL:2,0,CHARANUM
 		;精液量リセット
 		CFLAG:LOCAL:(LOCAL:2 + 3500) = 0
 	NEXT
-	CVARSET cMorningGreeting ;clear the meeting flag
+
 NEXT
 
 FOR LOCAL, MINROOM(), MAXROOM
@@ -373,6 +380,7 @@ NEXT
 ;SIF CFLAG:MASTER:現在位置 != OMANEKIBEYA() && CFLAG:MASTER:约会中 == MAIN_MAP
 SIF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 	CALL DAILYEVENT
+
 ;畑の管理
 CALL YASAI
 
@@ -573,6 +581,7 @@ FOR LOCAL,0,CHARANUM
 	SIF CFLAG:LOCAL:兒童人数 <= 0
 		CONTINUE
 	VARSET CHILD_ACT:LOCAL:0
+	CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, , , "AFTERTRAIN_END") ;addition custom code
 NEXT
 VARSET CUSTOM_JOB_DESC
 SIF FLAG:睡四小时
