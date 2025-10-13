@@ -173,22 +173,26 @@ CFLAG:ARG:延迟 = MAX(CFLAG:ARG:延迟 - Lapse,0)
 ;汚れを付ける
 TCVAR:ARG:肮脏度 = 0
 IF AT_HOME(ARG) || CFLAG:ARG:現在位置 == OMANEKIBEYA()
-	TCVAR:ARG:肮脏度 = CFLAG:ARG:睡眠 ? 0 # 3 - ABL:ARG:清掃技能 / (1 + TALENT:ARG:懒散)
-	SIF TALENT:ARG:幼稚
-		TCVAR:ARG:肮脏度 += 2
-	SIF CFLAG:ARG:初期位置 == CFLAG:ARG:現在位置 && TALENT:ARG:懒散
-		TCVAR:ARG:肮脏度 += 3
-	SIF CFLAG:ARG:大掃除 > 0
-		TCVAR:ARG:肮脏度 = CFLAG:ARG:睡眠 ? 0 # 1 + TALENT:ARG:幼稚 - 3 * (ABL:ARG:清掃技能 + 1)
-	;掃除をしてる場合、汚れが減少
-	IF CFLAG:ARG:職種 == 40 && CFLAG:ARG:行動 == 5
-		TCVAR:ARG:肮脏度 = -2 * (ABL:ARG:清掃技能 * 20 + 100)
-	;掃除係は12～18時の間掃除,你の技能が高いと掃除させてもらえない
-	ELSEIF TALENT:ARG:掃除係 && CFLAG:ARG:神社在住 && BETWEENTIME(720,1080)
-		TCVAR:ARG:肮脏度 = -1 * MAX(ABL:ARG:清掃技能 + 2 - ABL:MASTER:清掃技能, 1)
+	IF !(ROOMDATA:(CFLAG:ARG:現在位置 % 100) & 場所_无尘)
+		TCVAR:ARG:肮脏度 = CFLAG:ARG:睡眠 ? 0 # 3 - ABL:ARG:清掃技能 / (1 + TALENT:ARG:懒散)
+		SIF TALENT:ARG:幼稚
+			TCVAR:ARG:肮脏度 += 2
+		SIF CFLAG:ARG:初期位置 == CFLAG:ARG:現在位置 && TALENT:ARG:懒散
+			TCVAR:ARG:肮脏度 += 3
+		SIF CFLAG:ARG:大掃除 > 0
+			TCVAR:ARG:肮脏度 = CFLAG:ARG:睡眠 ? 0 # 1 + TALENT:ARG:幼稚 - 3 * (ABL:ARG:清掃技能 + 1)
+		;掃除をしてる場合、汚れが減少
+		IF CFLAG:ARG:職種 == 40 && CFLAG:ARG:行動 == 5
+			TCVAR:ARG:肮脏度 = -2 * (ABL:ARG:清掃技能 * 20 + 100)
+		;掃除係は12～18時の間掃除,你の技能が高いと掃除させてもらえない
+		ELSEIF TALENT:ARG:掃除係 && CFLAG:ARG:神社在住 && BETWEENTIME(720,1080)
+			TCVAR:ARG:肮脏度 = -1 * MAX(ABL:ARG:清掃技能 + 2 - ABL:MASTER:清掃技能, 1)
+		ENDIF
+		YOGORE:(CFLAG:ARG:現在位置) += TCVAR:ARG:肮脏度 * Lapse / 5
+		YOGORE:(CFLAG:ARG:現在位置) = LIMIT(YOGORE:(CFLAG:ARG:現在位置), 0, 6000)
+	ELSE
+		YOGORE:(CFLAG:ARG:現在位置) = 0
 	ENDIF
-	YOGORE:(CFLAG:ARG:現在位置) += TCVAR:ARG:肮脏度 * Lapse / 5
-	YOGORE:(CFLAG:ARG:現在位置) = LIMIT(YOGORE:(CFLAG:ARG:現在位置), 0, 6000)
 ENDIF
 IF !CFLAG:ARG:诶嘿嘿 && CFLAG:ARG:行動 != 5 && Lapse >= 10 && ARG
 	体力回復量 = (10 + TALENT:ARG:回復速度) * Lapse / 20
