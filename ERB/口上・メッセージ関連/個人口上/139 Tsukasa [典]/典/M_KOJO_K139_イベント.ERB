@@ -28,6 +28,7 @@ RESULTS:2 = 初始剧本<br>内容量超多<br>内含争议内容
 ;本简介由画蛇添足制作组补充，若原作者想自行补充请联系我们
 ;口上存在判定です、けしてコメントアウトしないでください
 ;他の処理は一切行わないように
+SETBIT RESULT:1, 4
 RETURN 1
 
 ;### 口上基本フラグ設定 #############################
@@ -74,174 +75,151 @@ RETURN 1
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K139
+;@M_KOJO_UPDATE_K139
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
 
-;椛口上を引用させていただきました
-IF !CFLAG:139:1999
-	PRINTFORML 典的胸圍尺寸可以更改。
-	PRINTFORML 要更改嗎？
-	PRINTFORML
-	PRINTFORML [0] 更改 (可以在UPDATE時再次更改)
-	PRINTFORML [1] 保留
-	PRINTFORML [2] 不再更改
-	$INPUT_LOOP_K139_BS
-	INPUT
-	IF RESULT == 0
-		PRINTFORML
-		PRINTFORML [0] 選絕壁嗎、胸部可不是什么可怕的东西、請勇敢一點！
-		PRINTFORML [1] 選貧乳嗎、雖然没有什么胸部也没關係、但還是有一點會更好…不是嗎(TW預設)
-		PRINTFORML [2] 選普通的大小嗎、這是最接近正解的答案了
-		PRINTFORML [3] 選巨乳嗎、很聰明、也有点ＣＯＯＬ喔
-		PRINTFORML [4] 選爆乳嗎、很誠實呢、不打算隱藏自己的想法啊
-		$INPUT_LOOP_K139_ENCOUNTER
-		INPUT 
-		IF RESULT == 0
-			PRINTFORMW 典的現在是[絶壁]了
-			TALENT:139:105 = -2
-		ELSEIF RESULT == 1
-			PRINTFORMW 典的現在是[貧乳]了
-			TALENT:139:105 = -1
-		ELSEIF RESULT == 2
-			PRINTFORMW 典的現在既不是[貧乳]也不是[巨乳]了
-			TALENT:139:105 = 0
-		ELSEIF RESULT == 3
-			PRINTFORMW 典的現在是[巨乳]了
-			TALENT:139:105 = 1
-		ELSEIF RESULT == 4
-			PRINTFORMW 典的現在是[爆乳]了
-			TALENT:139:105 = 2
-		ELSE
-			GOTO INPUT_LOOP_K139_ENCOUNTER
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMW 典的胸部大小暫不做更改保留原狀。
-	ELSEIF RESULT == 2
-		PRINTFORMW 這个選項以後不會再顯示。
-		CFLAG:139:1999 = 1
-	ELSE
-		GOTO INPUT_LOOP_K139_BS
-	ENDIF
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K139
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K139
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 139
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:139%的胸围  现在是：%GET_TALENTNAME(105, TALENT:139:105)%", 1)
+CALL KOJO_OPTION_ITEM(@"重设%CALLNAME:139%的性经验", 2, "onetime", !FIRSTTIME("开局设定",1,139), "status:未采纳:采纳", CFLAG:139:1998)
+CALL KOJO_OPTION_ITEM(@"女儿性意识觉醒  与你的事件：\@GETBIT(CFLAG:139:1997, 0) ? 开启 # 关闭\@  与同级生的事件：\@GETBIT(CFLAG:139:1997, 1) ? 开启 # 关闭\@  越过界限开关：\@GETBIT(CFLAG:139:1997, 2) ? 允许 # 禁止\@", 3, "cond", HAS_PENIS(MASTER))
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:139%的阴茎尺寸  现在是：%GET_TALENTNAME(105, TALENT:139:形状)%", 4, "cond", HAS_PENIS(139))
+SIF !HAS_PENIS(139)
+	CLEARLINE 1
+CALL KOJO_OPTION_ITEM(@"其他随机事件的开关", 5)
+
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_OPTION_K139_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+{
+CALL ASK_M("是绝壁吗，胸部一点都不可怕——请拿出勇气来——",1,
+	"是贫乳吗，虽然没有也行，但稍微有一点会更好……是吧（TW默认）",1,
+	"不大也不小吗，那是最接近正确答案的呢",1,
+	"是巨乳吗，相当聪明，而且还有点酷的想法呢",1,
+	"是爆乳吗，对自己坦诚，藏不住心中的想法呢",1)
+}
+TALENT:139:105 = RESULT - 2
+
+@KOJO_OPTION_K139_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTL 
+PRINTFORML 其实典过去曾有过伴侣并生育过……
+PRINTFORML （前夫不会出场）
+PRINTFORML （前夫出现并且NTR……之类的要素一概没有。只为能从数字中兴奋起来的人准备）
+PRINTL 
+CALL ASK_YN("既然是管狐那当然是一大堆啦","才没有那种事吧")
+IF !RESULT
+	PRINTFORML 典的[处女]状态将失去
+	PRINTFORML 典将获得[人妻]属性
+	PRINTFORML 典的[生育经验]将设为73
+	PRINTFORMW 典各种性经验也会大大增加
+	EXP:139:出産経験 += 73
+	EXP:139:Ｖ経験 += 73
+	EXP:139:Ｖ性交経験 += 73
+	EXP:139:絶頂経験 += 30
+	EXP:139:精液経験 += 150
+	EXP:139:膣射経験 += 73
+	TALENT:139:処女 = 0
+	TALENT:139:人妻 = 1
+	CALL SET_ABL_AND_XP([[典]], "腰", 2)
+	CFLAG:139:1998 = 1
+ELSE
+	PRINTFORML 典（开局时）依然保持着纯洁之身。
+	PRINTFORMW 请由你来让她怀上孩子吧。
+	CFLAG:139:1998 = 0
 ENDIF
+CALLF FIRSTTIME("开局设定",0,139)
 
-	IF CFLAG:139:1998 == 0
-		PRINTL 
-		PRINTFORML 其实典過去曾有過伴侶並生過孩子…
-		PRINTFORML （不會在口上中出現任何前伴侶的角色）
-		PRINTFORML （前夫突然出現並NTR…之類的橋段並不會出現。只是面向於會對數字興奮的玩家）
-		PRINTL 
-		CALL ASK_YN("管狐已經生了不少孩子了","並没有")
-		IF !RESULT
-			PRINTFORML 典失去了[処女]
-			PRINTFORML 典被賦予了[人妻]
-			PRINTFORML 典的[出產経験]現在是73次
-			PRINTFORML 除了這些之外典也獲得了其他經驗
-			EXP:139:出産経験 += 73
-			EXP:139:Ｖ経験 += 73
-			EXP:139:Ｖ性交経験 += 73
-			EXP:139:絶頂経験 += 30
-			EXP:139:精液経験 += 150
-			EXP:139:膣射経験 += 73
-			TALENT:139:処女 = 0
-			TALENT:139:人妻 = 1
-			ABL:腰 = 2
-			CFLAG:139:1998 = 1
-		ELSE
-			PRINTFORML 典是清白之身
-			PRINTFORML 請親自讓典孕育您的孩子
-		ENDIF
-	ENDIF
+@KOJO_OPTION_K139_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 要开启女儿觉醒性意识的事件链吗？
+gLineCount = LINECOUNT
+$LOOP
+SIF LINECOUNT - gLineCount > 0
+    CLEARLINE LINECOUNT - gLineCount
+PRINTFORML [0] 与你的事件（现在是：\@GETBIT(CFLAG:139:1997, 0) ? 开启 # 关闭\@）
+PRINTFORML [1] 与同级生的事件（现在是：\@GETBIT(CFLAG:139:1997, 1) ? 开启 # 关闭\@）
+PRINTFORML [2] 越过界限开关（现在是：\@GETBIT(CFLAG:139:1997, 2) ? 允许 # 禁止\@）
+PRINTFORML ※女儿成长到一定程度后，会开始用性的目光看待你
+PRINTFORML ※没有硬核的近亲相奸（=插入行为），但会无意中与女儿产生某种程度的瓜葛
+PRINTFORML ※如果「有意识地」越过界限，则会与女儿跨入完全的肉体关系
+PRINTFORML ※对上述内容感到厌恶的人请选择关闭
+PRINTL [3] 全部关闭并返回
+PRINTL [4] 返回
+$INPUTLOOP
+INPUT
+SELECTCASE RESULT
+	CASE 0,1,2
+		INVERTBIT CFLAG:139:1997, RESULT
+		GOTO LOOP
+	CASE 3,4
+		SIF RESULT == 3
+			CFLAG:139:1997 = 0
+		RETURN
+	CASEELSE
+		CLEARLINE 1
+		GOTO INPUTLOOP
+ENDSELECT
 
-	;あなたがペニスを持っているときのみ発生する選択肢
-	IF (TALENT:MASTER:性別 == 2 || TALENT:MASTER:性別 == 3) && CFLAG:139:1997 != 2
-		IF CFLAG:139:1997 == 0
-			PRINTL 
-			PRINTFORML 典的女兒出生時、要打開女兒對性的觉醒的FLAG嗎？
-			PRINTL 
-			PRINTFORML ※當女兒成長到一定程度時、會開始以性的眼光看待你
-			PRINTFORML ※没有硬性的近親相姦（=插入行為）、但可能會意外地與女兒有某些關係
-			PRINTFORML ※如果你「故意地」採取特定的行動、你將與女兒發展出完全的肉體關係
-			PRINTFORML ※如果您對這種行為感到厭惡、請將其關閉
-			PRINTFORML ※即使是不小心打開了、也可以在UPDATE時關閉
-			PRINTL 
-			CALL ASK_M("打開（同學OFF）", 1,"打開（同學ON）", 1,"保持關閉狀態", 1,"永遠不再顯示", 1)
-			SELECTCASE RESULT
-			CASE 0
-				PRINTFORML 女兒的性觉醒FLAG現在是開啟的了
-				PRINTFORML 和同學的描述現在是關閉的了
-				PRINTFORML UPDATE之後可以開啟或重新選擇
-				CFLAG:139:1997 = 1
-			CASE 1
-				PRINTFORML 女兒的性觉醒（含有同學）FLAG現在是開啟的了
-				PRINTFORML UPDATE之後可以開啟或重新選擇
-				CFLAG:139:1997 = 3
-			CASE 2
-				PRINTFORML 女兒的性觉醒FLAG現在是關閉的了
-				PRINTFORML UPDATE之後可以開啟或重新選擇
-			CASE 3
-				PRINTFORML 女兒的性觉醒FLAG保持為關閉狀態、本周回中不會再出現該選項
-				CFLAG:139:1997 = 2
-			ENDSELECT
-			PRINTL 
-		ELSEIF CFLAG:139:1997 == 1 || CFLAG:139:1997 == 3
-			PRINTL 
-			PRINTFORML 要關閉女兒的性觉醒FLAG嗎？
-			PRINTL 
-			CALL ASK_M("關閉", 1,"只關閉同級生flag", 1,"打開同級生flag", 1,"保持打開狀態", 1)
-			SELECTCASE RESULT
-			CASE 0
-				PRINTFORML 女兒的性觉醒FLAG已經關閉了
-				CFLAG:139:1997 = 0
-			CASE 1
-				PRINTFORML 只關閉含同學的内容
-				CFLAG:139:1997 = 1
-			CASE 2
-				PRINTFORML 打開含同學的内容
-				CFLAG:139:1997 = 3
-			CASE 3
-				IF CFLAG:139:1997 == 1
-					PRINTFORML 女兒的性觉醒的FLAG還是處於開啟狀態
-					CFLAG:139:1997 = 1
-				ELSEIF CFLAG:139:1997 == 3
-					PRINTFORML 同班同學内容的FLAG還是處於開啟狀態
-					CFLAG:139:1997 = 3
-				ENDIF
-			ENDSELECT
-			PRINTL 
-		ENDIF
-	ENDIF
-	
-	;典が男かふたなり時発生
-	IF TALENT:性別 == 2 || TALENT:性別 == 3
-		PRINTFORML 典的陰莖尺寸是…
-		CALL ASK_M("超大的", 1,"巨大的", 1,"普通的", 1,"短小的", 1,"未成熟的", 1)
-		SELECTCASE RESULT
-		CASE 0
-			PRINTFORML 典的陰莖尺寸已經变成[超大的]了
-			PRINTFORML 不論對象是無知的幼女還是行將就木的老婦、邪惡的管狐都會毫不猶豫地把像凶器一樣的陰莖插進去
-			TALENT:形状 = 10
-		CASE 1
-			PRINTFORML 「典的陰莖尺寸已經变成[巨大的]了
-			PRINTFORML 即使没有勃起也具有足夠的厚度和長度、是一个相當大的陽具
-			TALENT:形状 = 6
-		CASE 2
-			PRINTFORML 「典的陰莖尺寸已經变成[普通的]了
-			PRINTFORML 是一个相當不錯的陽具有一定的厚度和長度
-			TALENT:形状 = 0
-		CASE 3
-			PRINTFORML 「典的陰莖大小变成[短小的]了
-			PRINTFORML 一个小到被人嘲笑的小雞雞
-			TALENT:形状 = 2
-		CASE 4
-			PRINTFORML 典的陰莖大小变成[未成熟的]了
-			PRINTFORML 就像幼兒一樣可愛的小雞雞
-			TALENT:形状 = 1
-		ENDSELECT
-		PRINTL 
-	ENDIF
-RETURN 1
+@KOJO_OPTION_K139_RESULT_4
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 典的阴茎尺寸是…
+CALL ASK_M("驴屌", 1,"巨屌", 1,"普通屌", 1,"小屌", 1,"幼屌", 1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORML 典的阴茎尺寸变成了[驴屌]
+		PRINTFORMW 邪恶的管狐即使面对无知的幼女或余日无多的老妪，也会毫不犹豫地将凶器般的鸡巴捅进去
+		TALENT:139:形状 = 10
+	CASE 1
+		PRINTFORML 典的阴茎尺寸变成了[巨屌]
+		PRINTFORMW 即使不勃起也具备足够的粗细和长度的鸡巴
+		TALENT:139:形状 = 6
+	CASE 2
+		PRINTFORML 典的阴茎尺寸变成了[普通]
+		PRINTFORMW 粗细和长度都还算过得去的鸡巴
+		TALENT:139:形状 = 0
+	CASE 3
+		PRINTFORML 典的阴茎尺寸变成了[短小]
+		PRINTFORMW 小到会被一部分人嗤之以鼻的鸡巴
+		TALENT:139:形状 = 2
+	CASE 4
+		PRINTFORML 典的阴茎尺寸变成了[幼屌]
+		PRINTFORMW 简直像小孩子东西一样惹人怜爱的鸡巴
+		TALENT:139:形状 = 1
+ENDSELECT
+
+@KOJO_OPTION_K139_RESULT_5
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 139
+CALL SET_KOJO_COLOR
+CALL K139_OPTION
+
+TARGET = LOCAL
+RESETCOLOR
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -251,38 +229,11 @@ RETURN 1
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 
-;椛口上を引用させていただきました
-PRINTFORML
-PRINTFORML 典的胸圍尺寸可以更改。
-PRINTFORML （另外、UPDATE時可以更改胸部尺寸）
-PRINTFORML
-PRINTFORML [0] 選絕壁嗎、胸部可不是什么可怕的东西、請勇敢一點！
-PRINTFORML [1] 選貧乳嗎、雖然没有什么胸部也没關係、但還是有一點會更好…不是嗎(TW預設)
-PRINTFORML [2] 選普通的大小嗎、這是最接近正解的答案了
-PRINTFORML [3] 選巨乳嗎、很聰明、也有点ＣＯＯＬ喔
-PRINTFORML [4] 選爆乳嗎、很誠實呢、不打算隱藏自己的想法啊
-PRINTFORML [5] 要繼續保持現狀嗎
-$INPUT_LOOP_K139_ENCOUNTER
-INPUT 
-IF RESULT == 0
-	TALENT:139:105 = -2
-PRINTFORMW 典的現在是[貧乳]了。
-ELSEIF RESULT == 1
-	TALENT:139:105 = -1
-PRINTFORMW 典的現在是[貧乳]了。
-ELSEIF RESULT == 2
-	TALENT:139:105 = 0
-	PRINTFORMW 典的現在既不是[貧乳]也不是[巨乳]了。
-ELSEIF RESULT == 2
-	TALENT:139:105 = 1
-	PRINTFORMW 典的現在是[巨乳]了
-ELSEIF RESULT == 4
-	TALENT:139:105 = 2
-	PRINTFORMW 典的現在是[爆乳]了
-ELSEIF RESULT == 5
-	PRINTFORMW 維持了現狀
-ELSE
-	GOTO INPUT_LOOP_K139_ENCOUNTER
+IF FIRSTTIME("开局设定",0,139)
+	CALL KOJO_OPTION_K139_RESULT_1
+	CALL KOJO_OPTION_K139_RESULT_2
+	SIF HAS_PENIS(139)
+		CALL KOJO_OPTION_K139_RESULT_4
 ENDIF
 
 PRINTFORML 
@@ -3902,7 +3853,7 @@ IF LOCAL
 							ENDSELECT
 						ELSE
 							;オナサポ中
-							IF CFLAG:1008 == 1 || CFLAG:1008 >= 4
+							IF GETBIT(CFLAG:1008,1)
 								SELECTCASE RAND:3
 								CASE 0
 									CALL HPH_PRINT,@"「哦呀哦呀…HPH　」","L"
@@ -10413,8 +10364,8 @@ IF LOCAL
 	;典のオナニーサポート
 	;-------------------------------------------------------------
 	;オナ禁３日目以上かつあなたが童貞、典の好感度500以上。恋人は不可
-	IF CFLAG:1008 == 2 || CFLAG:1008 == 3 || TALENT:139:恋人 == 1
-	ELSEIF FLAG:71 >= 3 && TALENT:MASTER:非童貞 == 0 && CFLAG:139:好感度 >= 500 && CFLAG:1008 != 2
+	IF TALENT:139:恋人 == 1
+	ELSEIF FLAG:71 >= 3 && TALENT:MASTER:非童貞 == 0 && CFLAG:139:好感度 >= 500 && (GETBIT(CFLAG:1008,1) || !GETBIT(CFLAG:1008,0))
 		CALL K139_ONASAPO
 	ENDIF
 

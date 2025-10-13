@@ -17,6 +17,7 @@ RETURNF 0
 ;-------------------------------------------------
 @K139_FIND_LOVER()
 #FUNCTION
+RETURNF FIND_LOVER(139) ;custom code
 SIF TALENT:MASTER:恋人 == 0
 	RETURNF 0
 SIF TALENT:139:恋人
@@ -35,7 +36,9 @@ RETURNF 1
 #DIM 知り合い,6 = 140, 142, 141, 29, 42, 65
 #DIM 総人数
 #DIM 抽選
-#LOCALSIZE 200
+#LOCALSIZE 1
+#LOCALSSIZE 1
+RETURNF FIND_AROUND(知り合い) ;custom code
 ;典の知り合いは6人,龍>百々世>千亦>文>極>椛の順に(勝手に)設定
 VARSET LOCAL
 抽選 = 0
@@ -429,98 +432,58 @@ ENDIF
 ;典のイベントON・OFF一覧
 ;-------------------------------------------------
 @K139_OPTION
-#DIM 娘の悪戯設定
-PRINTFORML [0] 手淫支持　　　　　現在の設定：{CFLAG:1008}
-PRINTFORML [1] 女儿恶作剧设定　　　　　現在の設定：{CFLAG:1997}
-PRINTFORML [2] 小怪天狗事件设定　　　現在の設定：{CFLAG:1045}
-PRINTFORML [3] 小怪河童事件设定　　　現在の設定：{CFLAG:1046}
-PRINTFORML [4] 不慎的狐狸事件设定　現在の設定：{CFLAG:1047}
+#LOCALSIZE 1
+#LOCALSSIZE 1
+gLineCount = LINECOUNT
+$LOOP
+SIF LINECOUNT - gLineCount > 0
+    CLEARLINE LINECOUNT - gLineCount
+PRINTFORML 
+CALL PRINTBUTTON_EX, @"[0] 小处男射精辅助舔耳　事件\@GETBIT(CFLAG:1008,0)?已#未\@触发 \@TALENT:MASTER:非童貞?已失效#\@　现在的设定：\@GETBIT(CFLAG:1008,1) ? 拜托管理 # 暂停管理\@", 0, 0, GETBIT(CFLAG:1008,0)
+PRINTFORML
+CALL PRINTBUTTON_EX, @"[1] 路人天狗娘事件　状态：%\@ !CFLAG:1045 ? 开启 # 关闭 \@%", 1, 0, !CFLAG:1045
+PRINTFORML
+CALL PRINTBUTTON_EX, @"[2] 路人河童娘事件　状态：%\@ !CFLAG:1046 ? 开启 # 关闭 \@%", 2, 0, !CFLAG:1046
+PRINTFORML
+CALL PRINTBUTTON_EX, @"[3] 事件造成实际的数值变动　状态：%\@ !CFLAG:1047 ? 开启 # 关闭 \@%", 3, 0, !CFLAG:1047
+PRINTFORML
 PRINTFORML [999] 设置完成
 $INPUT_LOOP
 INPUT
 IF RESULT == 0
-	IF CFLAG:1008 == 2
-		PRINTFORML 「呵呵，又想让我帮忙自慰了吗？」
-		CALL ASK_M("请求继续", 1,"保留", 1,"完全停止", 1)
-		SELECTCASE RESULT
-		CASE 0
-			PRINTFORML 「明白了。那么，等到那个时候，我会再来帮忙的♪」
-			PRINTFORML 标志已开启(1)
-			CFLAG:1008 = 1
-		CASE 1
-			PRINTFORML 「是吗。需要的话请再联系我」
-			PRINTFORML 标志保留(2)
-		CASE 2
-			PRINTFORML 「哎呀，那真是遗憾呢。不中意吗？」
-			PRINTFORML 「我不能强迫您。那么，就结束合约吧…」
-			PRINTFORML 「至此，感谢您一直的支持」
-			PRINTFORML 标志完全停止(3)
-			CFLAG:1008 = 3
-		ENDSELECT
+	IF TALENT:MASTER:非童貞
+		PRINTFORML 「啊啦，已经不是雏儿了呢，那契约就此结束吧」
+		PRINTFORMW 「别失望嘛，以后可以和咱做更多更开心的事哟」
+		GOTO LOOP
 	ENDIF
-	RESTART
+	IF GETBIT(CFLAG:1008,0)
+		INVERTBIT CFLAG:1008,1
+		IF GETBIT(CFLAG:1008,1)
+			PRINTFORML 「呵呵，又想让我帮忙给撸小鸡鸡打气了吗？」
+			PRINTFORML 「明白了。那么，等到合适的时候我会再来帮忙的♪」
+		ELSE
+			PRINTFORML 「哎呀要暂停了吗，那真是遗憾呢」
+			PRINTFORML 「也不能强求呢。那么，契约就此结束……」
+			PRINTFORML 「非常感谢您一直以来的惠顾」
+		ENDIF
+		WAIT
+	ENDIF
+	GOTO LOOP
 ELSEIF RESULT == 1
-;女儿对您进行不当恶作剧的标志
-	IF (CFLAG:139:1997 > 0)
-		PRINTFORML 女儿的恶作剧是…
-		CALL ASK_M("您ON", 1,"描写OFF", 1,"您和学生ON", 1,"越过界限ON・学生OFF", 1,"越过界限・学生ON", 1)
-		SELECTCASE RESULT
-		CASE 0
-			PRINTFORML 从幼年时期开始，对您进行性接触的描写将开启(1)
-			CFLAG:139:1997 = 1
-		CASE 1
-			PRINTFORML 从幼年时期开始，对您和私塾学生进行性接触的描写将关闭(2)
-			CFLAG:139:1997 = 2
-		CASE 2
-			PRINTFORML 从幼年时期开始，对您和私塾学生进行性接触的描写将开启(3)
-			CFLAG:139:1997 = 3
-		CASE 3
-			PRINTFORML 从幼年时期开始，对您进行性交的描写将开启，学生描写将关闭(4)
-			CFLAG:139:1997 = 4
-		CASE 4
-			PRINTFORML 从幼年时期开始，对您进行性交的描写和学生描写将开启(5)
-			CFLAG:139:1997 = 5
-		ENDSELECT
-	ENDIF
-	RESTART
+	CFLAG:1045 = !CFLAG:1045
+	PRINTFORMW 路人天狗娘事件「咻咻地射出来新闻」将\@ !CFLAG:1045 ? 开启 # 关闭 \@！（注：带你干妹子）
+	GOTO LOOP
 ELSEIF RESULT == 2
-	PRINTL 小怪天狗事件「ビュッビュッイクッ新聞」将…
-	CALL ASK_M("关闭事件", 1,"开启事件", 1)
-	SELECTCASE RESULT
-	CASE 0
-		PRINTL 事件将关闭(-1)
-		CFLAG:1045 = -1
-	CASE 1
-		PRINTL 事件将开启(0)
-		CFLAG:1045 = 0
-	ENDSELECT
-	RESTART
+	CFLAG:1046 = !CFLAG:1046
+	PRINTFORMW 路人河童娘事件「高潮过后染上精液的河童」将\@ !CFLAG:1045 ? 开启 # 关闭 \@！（注：带你干妹子）
+	GOTO LOOP
 ELSEIF RESULT == 3
-	PRINTL 小怪河童事件「沾满射精的河童」将…
-	CALL ASK_M("关闭事件", 1,"开启事件", 1)
-	SELECTCASE RESULT
-	CASE 0
-		PRINTL 事件将关闭(-1)
-		CFLAG:1046 = -1
-	CASE 1
-		PRINTL 事件将开启(0)
-		CFLAG:1046 = 0
-	ENDSELECT
-	RESTART
-ELSEIF RESULT == 4
-	PRINTL 事件「不知所措的狐狸性欲过剩」的体力等减少将…
-	CALL ASK_M("关闭减少", 1,"开启减少（保持原样）", 1)
-	SELECTCASE RESULT
-	CASE 0
-		PRINTL 减少将关闭(-1)
-		CFLAG:1047 = -1
-	CASE 1
-		PRINTL 减少将开启(0)
-		CFLAG:1046 = 0
-	ENDSELECT
-	RESTART
+	CFLAG:1047 = !CFLAG:1047
+	PRINTFORMW 轶事「淫荡女狐狸难以抑制性欲」将\@ !CFLAG:1047 ? 根据故事内容造成数值变化 # 不会根据故事内容造成数值变化 \@！
+	GOTO LOOP
 ELSEIF RESULT == 999
 	RETURN 1
 ELSE
+	CLEARLINE 1
 	GOTO INPUT_LOOP
 ENDIF

@@ -75,47 +75,80 @@ SETCOLOR 0xEC3860
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K109
+;@M_KOJO_UPDATE_K109
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K109
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K109
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 109
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:109%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:109%", MASTERNAME:109 != "")%", 1)
+CALL KOJO_OPTION_ITEM("可选设定", 2)
+TARGET = LOCAL
+RESETCOLOR
 
-IF CFLAG:109:1000 == 0
-	PRINTL 
-	PRINTFORML 需要更改哆来咪对你的称呼吗？
-	PRINTL 
-	CALL ASK_M("是",1 , "否",1 , "不再变更",1)
+;process the input portion
+@KOJO_OPTION_K109_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL M_KOJO_COLOR_K109
+MASTERNAME:109 = 
+LOCAL = TARGET
+TARGET = 109
+PRINTFORML 「唉～需要改一个称呼吗」
+PRINTL 
+CALL ASK_YN
+SIF !RESULT
+	CALL NAME_SET_K109
+TARGET = LOCAL
+RESETCOLOR
+WAIT
+	
+@KOJO_OPTION_K109_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 还有一些设定可以自由调整
+gLineCount = LINECOUNT
+DO
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	CALL ASK_M(@"\@ TALENT:109:バストサイズ > 0 ? 变回纤乳并抑制母乳体质 # 变为巨乳并拥有母乳体质 \@",1 , @"\@ CFLAG:109:生活時間補正 == -600 ? 恢复默认作息 # 改为早睡早起型 \@",1 , "结束更改",1)
 	SELECTCASE RESULT
 		CASE 0
-			CALL NAME_SET_K109
+			IF TALENT:109:バストサイズ > 0
+				PRINTFORMDW 咻啵啵…………
+				TALENT:109:バストサイズ = 0
+				TALENT:109:母乳体質 = 0
+			ELSE
+				PRINTFORMDW 欧派～欧派～
+				TALENT:109:バストサイズ = 1
+				TALENT:109:母乳体質 = 2
+			ENDIF
 		CASE 1
-			PRINTFORMW 需要更改称呼时可以再次点击[UPDATE]
+			IF CFLAG:109:生活時間補正 == -600
+				CFLAG:109:生活時間補正 = 0
+				PRINTFORMDL 已恢复默认设定
+			ELSE
+				CFLAG:109:生活時間補正 = -600
+				PRINTFORMDL 已将哆来咪改为早上6点起床，晚上11点睡觉
+				PRINTFORMDL （可能会让对话内容出现龃龉）
+			ENDIF
+			PRINTFORMDW 更改将在次日开始时生效！
 		CASE 2
-			PRINTFORMW 明白了
-			CFLAG:109:1000 = 1
-	ENDSELECT
-	PRINTL 
-	PRINTFORML 此外还有一些事可以変更
-	PRINTFORML 哆来咪的………
-	PRINTL 
-	$DOREMY_UPDATE
-	CALL ASK_M("巨乳使之成为母乳体质",1 , "养成早起习惯",1 , "结束变更",1)
-	SELECTCASE RESULT
-		CASE 0
-			PRINTFORMW 欧派~欧派~
-			TALENT:109:胸圍 = 1
-			TALENT:109:母乳体質 = 2
-		CASE 1
-			CFLAG:109:生活時間補正 = -600
-			PRINTFORMW 哆来咪改为6点起床23点睡觉
-			PRINTFORMW （口上に齟齬が発生する可能性があります）
-		CASE 2
-			PRINTFORMW 明白了
 			RETURN 1
 	ENDSELECT
-	GOTO DOREMY_UPDATE
-ENDIF
-RETURN 1
+LOOP 1
+
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -148,7 +181,8 @@ PRINTFORMW 「红茶可以吗？」
 PRINTFORMDW %CALLNAME:TARGET%将红茶倒入茶杯
 PRINTFORMW 「……再重新自我介绍一次、我叫哆来咪・苏伊特。按你喜欢的方式来称呼我就好了」
 PRINTFORMW 「你的名字是……」
-CALL NAME_SET_K109
+SIF FIRSTTIME("U109-1",0,109)
+	CALL NAME_SET_K109
 ;顔絵を表示（オプションでオンにしていないと表示されない）
 CALL PRINT_FACE, [[哆来咪]], "笑顔", "服", "", ""
 PRINTFORMW 「原来如此、%MASTERNAME:109%。是个好名字呢」
@@ -326,7 +360,7 @@ IF FLAG:周回数 && ITEM:甜蜜安眠枕
 					PRINTFORMW 処女喪失
 					RESETCOLOR
 				ENDIF
-				CALL COLORMESSAGE(@"哆来咪の合意を得た",C_YELLOW,2)
+				CALL COLORMESSAGE(@"获得了哆来咪的同意",C_YELLOW,2)
 				SETBIT CFLAG:109:既成事實 , 1
 				TALENT:109:炮友 = 1
 				CALL ADD_SAMEN_V(109, BASE:MASTER:精力)
@@ -1175,7 +1209,7 @@ IF LOCAL
 				CALL SPECIALDAY_EVENT_K109
 			;恋人
 			ELSEIF TALENT:恋人
-				PRINTFORMDL あなたは%CALLNAME:TARGET%と挨拶を交わした
+				PRINTFORMDL 你与%CALLNAME:TARGET%交换了问候
 				;季節で分岐
 				SELECTCASE DAY:2
 					;春
@@ -5678,7 +5712,7 @@ IF LOCAL
 					PRINTFORMDL 哆来咪向这边伸出了手，现在像是在说不要理他似的挥着手。
 					CALL HPH_PRINT,@"（快点收敛HPH吧HPH HPH HPH）","W"
 				CASE 2
-					CALL HPH_PRINT,@"「我゛的゛ッHPHふ、ぐ呜゛呜ッッHPH HPH HPH」","L"
+					CALL HPH_PRINT,@"「我的HPH呋哈、咕呜呜HPH HPH HPH」","L"
 					PRINTFORMDL 突然袭击身体的强烈高潮感，让哆来咪吓得痉挛着蹲了下来
 					PRINTFORMDL %CALLNAME:MASTER%把手放在了哆来咪的肩上，问她说"身体不舒服吗？"
 					CALL HPH_PRINT,@"「身、身体HPH突HPH然HPH」","L"
@@ -6365,7 +6399,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		PRINTL 
-		PRINTFORMW 漫漫长夜里无数次梦见的人啊へ 历经七世终于能再与你相会へ
+		PRINTFORMW 漫漫长夜里无数次梦见的人啊 历经七世终于能再与你相会
 		PRINTW 
 		PRINTFORMDW 梦之世界的某个地方
 		PRINTFORMDW 在与梦之国度相称的华丽城堡中，哆来咪開心地哼着小曲。
@@ -7366,7 +7400,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
 	;満足したところを押し倒された
-		CALL HPH_PRINT,@"「クスッHPH下一个轮到%CALLNAME:MASTER%了吗…HPH」","L"
+		CALL HPH_PRINT,@"「库库库HPH下一个轮到%CALLNAME:MASTER%了吗…HPH」","L"
 		PRINTFORMDL 哆来咪一边舔着嘴唇一边热切地看着这边
 		PRINTFORMDW 一对热得神魂颠倒的情侣像是要融化一般相拥…
 	RETURN 1
@@ -7444,9 +7478,9 @@ RETURN 1
 ;CALL M_KOJO_COLOR_K109
 
 IF ARG
-	PRINTFORML A弄ってる場合
+	PRINTFORML A弄てる場合
 ELSE
-	PRINTFORML V弄ってる場合
+	PRINTFORML V弄てる場合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -7464,9 +7498,9 @@ ENDIF
 ;CALL M_KOJO_COLOR_K109
 
 IF ARG
-	PRINTFORML A弄ってる場合
+	PRINTFORML A弄てる場合
 ELSE
-	PRINTFORML V弄ってる場合
+	PRINTFORML V弄てる場合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -7557,7 +7591,7 @@ SELECTCASE RAND:7
 		PRINTFORMDW 挣扎着想要脱离。束缚四肢的束缚具发出了咔咔的声音，看起来是被完全固定住了
 		PRINTFORML 「咕嘶,早上好。%CALLNAME:MASTER%」
 		PRINTFORMDW 为什么还有另一个我在那里
-		PRINTFORML 「他吗？他是梦の世界的%CALLNAME:MASTER%」
+		PRINTFORML 「他吗？他是梦世界的%CALLNAME:MASTER%」
 		PRINTFORMDW 眼前的显然是另一个自己。…那亲密的样子有些令人嫉妒
 		PRINTFORMW 「今天算是一点余兴…让%CALLNAME:MASTER%看看我和%CALLNAME:MASTER%做爱的样子吧」
 		PRINTFORMDW 什,你说什么?
@@ -7628,7 +7662,7 @@ SELECTCASE RAND:7
 		CALL HPH_PRINT,@"「啊啊…喜欢HPH…啊，HPH出来了…HPH」","L"
 		PRINTFORMDW 在肉棒上涂上足够多的爱液后，慢慢地插入了不知是不是因为期待而缓缓開合的阴道口…
 		PRINTFORML ………
-		CALL HPH_PRINT,@"「啊HPH…呜呼HPHちゅっHPH」","W"
+		CALL HPH_PRINT,@"「啊HPH…呜呼HPH啾HPH」","W"
 		PRINTFORMDL %CALLNAME:MASTER%扭动着腰细细品味着哆来咪的蜜壶
 		PRINTFORMDL 重复着亲吻，揉搓着颤抖的胸部，哆来咪扭动着身体吐出炽热的气息
 		PRINTFORMDW 随着阴道的放松,%CALLNAME:MASTER%加快速度不断地刺进深处
@@ -7642,7 +7676,7 @@ SELECTCASE RAND:7
 		CALL HPH_PRINT,@"「啊，HPH啊，HPH啊，HPH%CALLNAME:MASTER%，HPH%CALLNAME:MASTER%」","L"
 		PRINTFORMDL 咕啾 咕啾 随着每一次阴茎的激烈出入,哆来咪好几次都好像达到了轻微的绝顶
 		PRINTFORMDW 把接近极限涨得通红的龟头刺进哆来咪的子宫,她尖声娇喘着达到了高潮
-		CALL HPH_PRINT,@"「～～～～～っHPHOh゛っHPHOh゛Oh゛Oh゛Oh゛っHPH HPH HPH」","W"
+		CALL HPH_PRINT,@"「～～～～～HPHOhHPHOhOhOhOhHPH HPH HPH」","W"
 		PRINTFORML ………
 		PRINTFORMDW 给眼前的雌性配种完毕后，%CALLNAME:MASTER%休息了一会又開始动起腰来
 		CALL HPH_PRINT,@"「啊，HPH好厉害，HPH太厉害了…HPH」","L"
@@ -7866,11 +7900,11 @@ SELECTCASE RAND:7
 		CALL HPH_PRINT,@"「因为是狗嘛，所以必须得有一条尾巴HPH」","W"
 		PRINTFORMDL 这可不是開玩笑的啊。%CALLNAME:MASTER%想要抵抗，但被绳子一拉,力量一下子就没了
 		PRINTFORMDW 倒在地上的%CALLNAME:MASTER%的腰被哆来咪抓住,她把脸贴近菊花
-		CALL HPH_PRINT,@"「可能会很疼，所以先给您放松一下吧……ずるるるっHPH」","W"
+		CALL HPH_PRINT,@"「可能会很疼，所以先给您放松一下吧……滋噜噜噜HPH」","W"
 		PRINTFORMDL %CALLNAME:MASTER%发着抖。哆来咪仔细品尝着%CALLNAME:MASTER%的肛門，伸出舌头吸吮着
 		PRINTFORMDL 每次舌头来回转动时，全身都有一种脊背发凉的感觉，不由得发出凄厉的呻吟
 		PRINTFORMDW 看不见吸着肠液，喘着粗气一下一下品味直肠褶皱的哆来咪的表情
-		CALL HPH_PRINT,@"「じゅずるるっ…呼…是这样的东西吗」","L"
+		CALL HPH_PRINT,@"「啾滋噜噜…呼…是这样的东西吗」","L"
 		PRINTFORMDL 好像忘记了一開始的目的一样，对肛門狼吞虎咽的哆来咪满足地把嘴移開
 		PRINTFORMDW 自尊心受到打击，处于放空状态%CALLNAME:MASTER%茫然地接受了肛塞的插入
 		PRINTFORML ………
@@ -7885,7 +7919,7 @@ SELECTCASE RAND:7
 		PRINTFORMDL 看着宠物顺从地行动的身姿『主人』满足地笑了，抚摸着『狗』的下巴
 		CALL HPH_PRINT,@"「必须要给好孩子奖励呢HPH」","W"
 		PRINTFORML ………
-		CALL HPH_PRINT,@"「啊嗯HPHそうっHPH很不错哦…HPH」","W"
+		CALL HPH_PRINT,@"「啊嗯HPH对HPH很不错哦…HPH」","W"
 		PRINTFORMDL 啪嚓啪嚓地吞食爱液的声音在周围回响
 		PRINTFORMDW 虽然被当做一只黄油狗来对待，但是『狗』却一直配合着『主人』的自慰
 		CALL HPH_PRINT,@"「嗯，HPH那边再舔一下HPH」","L"
@@ -7948,14 +7982,14 @@ SELECTCASE RAND:7
 		PRINTFORMDL 被戴着手铐吊起的%CALLNAME:MASTER%，被哆来咪们用梦魂玩弄肉棒的同时，还被品尝着尻穴
 		PRINTFORMDW 长长的舌头执拗地刺激着前列腺，%CALLNAME:MASTER%马上就要射精了，但充满尿道的梦魂却不允许
 		PRINTFORML 「腰在扭动…很痛苦吗？但是不行哦」
-		CALL HPH_PRINT,@"『%CALLNAME:MASTER%的屁股、非常美味哦…HPHじゅぷっHPH吸溜HPH』","W"
+		CALL HPH_PRINT,@"『%CALLNAME:MASTER%的屁股、非常美味哦…HPH啾噗HPH吸溜HPH』","W"
 		PRINTFORMDL 哆来咪的舌头穿过S状结肠前端、到达了下行结肠，一下一下地仔细品尝着褶皱
 		PRINTFORMDW 据说熊喜欢吞食活着的人的内脏，那个被害者会有这样的感觉吗…虽然是貘…
 		PRINTFORML 「好厉害，玉袋肿得这么厉害…没关系吗？…没关系吧」
 		CALL HPH_PRINT,@"「因为，你的表情看起来这么舒服…HPH」","W"
 		PRINTFORMDL 哆来咪撸动肉棒的手在加速。%CALLNAME:MASTER%无意识地朝着不存在的子宫动起了腰
 		PRINTFORMDW 两个人并没有不屑一顾，反而温柔地注视着那样丑陋的姿态
-		CALL HPH_PRINT,@"『嗯っHPH呼啊っ…%CALLNAME:MASTER%的尻穴、像女孩子一样放松了呢…HPH』","L"
+		CALL HPH_PRINT,@"『嗯HPH呼啊…%CALLNAME:MASTER%的尻穴、像女孩子一样放松了呢…HPH』","L"
 		CALL HPH_PRINT,@"『插进去的话…一定很舒服吧…HPH』","W"
 		PRINTFORMDL 当哆来咪把嘴放開时，肛門突然有一种被坚硬的东西碰到的感觉
 		PRINTFORMDW 刚察觉到的那一瞬间已经晚了，那个物体…哆来咪的肉棒毫无抵抗地侵入了已经融化的%CALLNAME:MASTER%的尻穴…
@@ -7965,7 +7999,7 @@ SELECTCASE RAND:7
 		CALL HPH_PRINT,@"「扭成这样…后面被侵犯就这么舒服吗？HPH」","L"
 		PRINTFORMDL 哆来咪脸上浮现出非常開心的表情，就像调教变态一样，操纵着梦魂自慰器。
 		PRINTFORMDW 早就超过极限的肉棒膨胀得好似即将决堤的水坝，精液就像这水坝里的水一样滞留在尿道里…
-		CALL HPH_PRINT,@"『嗯、呵呵HPH一跳一跳的、想要射精吗…？HPHぉっ…HPH但是、在我拔出来前可不行哦…HPH』","L"
+		CALL HPH_PRINT,@"『嗯、呵呵HPH一跳一跳的、想要射精吗…？HPH…HPH但是、在我拔出来前可不行哦…HPH』","L"
 		CALL HPH_PRINT,@"「就是这样，请加油…HPH」","W"
 		PRINTFORMDL 哆来咪一边上下其手，一边贴近亲吻%CALLNAME:MASTER%。
 		PRINTFORMDL 背后像是发情了的野兽，不断地刺向替代子宫口的前列腺……
@@ -7983,7 +8017,7 @@ SELECTCASE RAND:7
 		CALL HPH_PRINT,@"「饶了我吧，HPH不要HPH嗯 Oh Oh OhHPH HPH HPH」","W"
 		PRINTFORMDL %CALLNAME:MASTER%不顾流泪恳求的哆来咪，只是为了发泄无尽的欲望而强暴着眼前的雌性
 		PRINTFORMDW 横躺在一边的,是刚被狠狠强暴到失神的哆来咪分身、两穴还在不断地流出精液
-		CALL HPH_PRINT,@"「喔HPH哦、喔゛哦HPHし、しんじゃっHPH啊゛啊゛ッHPH」","L"
+		CALL HPH_PRINT,@"「喔HPH哦、喔哦HPH死、死、死惹啦HPH啊啊HPH」","L"
 		PRINTFORMDL 哆来咪错估了%CALLNAME:MASTER%的性欲
 		PRINTFORMDL 已经射出了精液从子宫满溢出来滴到地板的量。但现在眼前的雄性还没有萎靡的迹象
 		PRINTFORMDW 承受着兽欲的女阴变得红肿，虽然从缝隙中渗出精液，却依然在大口地吞着肉棒
@@ -8030,7 +8064,7 @@ IF NAME:MASTER != "你"
 ELSE
 	LOCALS = %NAME:MASTER%
 ENDIF
-PRINTBUTTON @"[%LOCALS%で決定]", @"%LOCALS%"
+PRINTBUTTON @"[就是%LOCALS%了]", @"%LOCALS%"
 PRINTL 　
 ;名前を入力するループ
 $INPUT_LOOP_ONAMAE
@@ -8041,31 +8075,25 @@ REPLACE LOCALS, "\(\^\\s\+\|\\s\+\$)", ""
 ;10文字以上は受け付けない
 IF STRLENS(LOCALS) > 10
 	CLEARLINE 1
-	REUSELASTLINE 名前が長すぎます
+	REUSELASTLINE 名字太长了
 	GOTO INPUT_LOOP_ONAMAE
 ;空白は受け付けない
 ELSEIF RESULTS == ""
 	PRINTL 请输入名称
 	GOTO INPUT_LOOP_ONAMAE
 ELSE
-	PRINTFORML %RESULTS%で決定しますか？
-	PRINTL [0] 是
-	PRINTL [1] 否
-	;入力した名前を確定するループ
-	$INPUT_LOOP_KAKUTEI_1
-	INPUT
+	PRINTFORML %RESULTS%，可以吗？
+	CALL ASK_YN
 	IF RESULT == 0
 		;あなたの名前を%MASTERNAME:109%に格納
 		MASTERNAME:109 = %RESULTS%
 		PRINTFORML 
-	ELSEIF RESULT == 1
-		PRINTL 请输入名称
-		GOTO INPUT_LOOP_ONAMAE
 	ELSE
 		PRINTL 请输入名称
 		GOTO INPUT_LOOP_ONAMAE
 	ENDIF
 ENDIF
+CALLF FIRSTTIME("U109-1",0,109)
 
 @M_KOJO_CHECK_K109_IRAI_BLOCKED(ARGS,ARG,ARG:1)
 SIF GROUPMATCH(ARG, 12)

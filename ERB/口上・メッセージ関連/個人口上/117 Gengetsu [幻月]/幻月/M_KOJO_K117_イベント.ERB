@@ -86,34 +86,53 @@ RETURN 1
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K117
+;@M_KOJO_UPDATE_K117
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K117
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K117
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 117
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,117), "status:未采纳:采纳", CFLAG:117:1001)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K117_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+
 ;輝夜口上を参考に作りました
-IF !CFLAG:117:1001
-	;PRINTFORML 口上との齟齬を押さえるため幻月の能力を変更することができます。
-	PRINTFORML 为了防止和口上的不一致，可以变更幻月的能力。
-	PRINTFORML （戦闘能力A→S 料理技能C→E）
-	;PRINTFORML この変更はこのタイミングしかできません。ご注意ください。
-	PRINTFORML 这个变更只能在此时进行。请注意。
-	PRINTFORML	
-	;CALL ASK_M("する",1 , "しない" ,1)
-	CALL ASK_M("是",1 , "否" ,1)
-	SELECTCASE RESULT
-		CASE 0
-			ABL:117:料理技能 = 0
-			ABL:117:戦闘能力 = 5
-			EXP:117:料理経験 = 0
-			;PRINTFORMW 幻月の能力を変更しました。
-			PRINTFORMW 幻月的能力变更了。
-		CASE 1
-			;PRINTFORMW 幻月の能力を変更しませんでした。
-			PRINTFORMW 幻月的能力没有变更。
-	ENDSELECT
-	CFLAG:117:1001 = 1
-ENDIF
+PRINTFORML 为了防止和剧本文本产生龃龉，剧本推荐调整幻月的能力
+PRINTFORML （战斗能力A→S 料理技能C→E）
+PRINTFORML 这个变更只能进行一次。请注意。
+PRINTFORML	
+CALL ASK_M("是",1 , "否" ,1)
+SELECTCASE RESULT
+	CASE 0
+		ABL:117:料理技能 = 0
+		ABL:117:戦闘能力 = 5
+		EXP:117:料理経験 = 0
+		PRINTFORMW 幻月的能力变更了。
+		CFLAG:117:1001 = 1
+	CASE 1
+		PRINTFORMW 幻月的能力没有变更。
+		CFLAG:117:1001 = 0
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,117)
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -137,7 +156,7 @@ PRINTFORMW 因为她的翅膀就是那样值得盯着看的美丽啊。
 PRINTFORML 「那么在意的话要不要摸摸看呢？」
 PRINTFORMW 感到略微吃惊的少女如此说了、
 PRINTFORML
-PRINTFORML 「Hi呀！！！」
+PRINTFORML 「唏呀！！！」
 PRINTFORMW
 PRINTFORMW 是摸法弄错了吗、她发出了超级可爱的声音。
 PRINTFORML 「没想到你真的会去摸啊」
@@ -148,6 +167,8 @@ PRINTFORMW 「嘛行吧」
 PRINTFORML 「我是幻月。住在梦幻馆里呢」
 PRINTFORML 「嘛、请多关照呢」
 PRINTFORMW 简单地自我介绍后名为幻月的女孩子就不知道去哪里了。
+SIF FIRSTTIME("开局设定",0,117)
+	CALL KOJO_OPTION_K117_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

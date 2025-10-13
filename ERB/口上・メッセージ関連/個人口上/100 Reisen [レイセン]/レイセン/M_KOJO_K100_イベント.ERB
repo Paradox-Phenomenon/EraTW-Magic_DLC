@@ -91,25 +91,31 @@ SETCOLOR 0xCCDFFF
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
-IF CFLAG:100:1100 == 0
-	PRINTL 
-	PRINTFORML 要更改铃仙对你的称呼吗？
-	PRINTL 
-	CALL ASK_M("好的",1 , "不行",1 , "不再变更",1)
-	SELECTCASE RESULT
-		CASE 0
-			CALL NAME_SET_K100
-			RETURN 1
-		CASE 1
-			PRINTFORMW 想要更改名称时请再次按下[UPDATE]
-			RETURN 1
-		CASE 2
-			PRINTFORMW 了解了
-			CFLAG:100:1100 = 1
-			RETURN 1
-	ENDSELECT
-ENDIF
-RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K100
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K100
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:100%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:100%", MASTERNAME:100 != "")%", 1)
+
+;process the input portion
+@KOJO_OPTION_K100_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL M_KOJO_COLOR_K100
+MASTERNAME:100 = 
+LOCAL = TARGET
+TARGET = 100
+CALL NAME_SET_K100
+TARGET = LOCAL
+RESETCOLOR
+WAIT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -198,13 +204,13 @@ RETURN 1
 ;納茲琳口上からお借りしました
 ;-------------------------------------------------
 @NAME_SET_K100
- PRINTL 请输入你的名字(敬称を付けたい場合はそれ込みで入力してください)
+PRINTDL 请输入称呼(直接输入或点击按钮)
  IF NAME:MASTER != "你"
 	LOCALS = %CALLNAME:MASTER%
 ELSE
 	LOCALS = %NAME:MASTER%
 ENDIF
-PRINTBUTTON @"[%LOCALS%と名乗る]", @"%LOCALS%"
+PRINTBUTTON @"[名字就叫(%LOCALS%)]", @"%LOCALS%"
 PRINTL 　
 ;名前を入力するループ
 $INPUT_LOOP_ONAMAE
@@ -215,7 +221,7 @@ REPLACE LOCALS, "\(\^\\s\+\|\\s\+\$)", ""
 ;10文字以上は受け付けない
 IF STRLENS(LOCALS) > 10
 	CLEARLINE 1
-	REUSELASTLINE 名前が長すぎます
+	REUSELASTLINE 名字太长了
 	GOTO INPUT_LOOP_ONAMAE
 ;空白は受け付けない
 ELSEIF RESULTS == ""

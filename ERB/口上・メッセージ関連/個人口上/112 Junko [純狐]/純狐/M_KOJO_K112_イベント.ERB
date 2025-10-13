@@ -107,26 +107,53 @@ SETCOLOR 0xf8b500
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_POWERED_BY_OVERSEAS_UPDATE_K112
+;@M_KOJO_POWERED_BY_OVERSEAS_UPDATE_K112
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
-IF CFLAG:112:1001 == 0
-	PRINTFORML 根据口上创作者的形象设定，纯狐小姐擅长料理，这样可以吗？（口上可能会产生不一致）
-	FONTREGULAR
-	CALL ASK_M("是的",1,"这是一个误解",1)
-	IF RESULT == 0
-		PRINTFORML
-		PRINTFORMW 已经进行了更改
-		IF ABL:112:44 < 4
-			ABL:112:44 = 4
-			CFLAG:112:1001 = 1
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMW 那就保持原样吧
+;RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_POWERED_BY_OVERSEAS_OPTION_EXIST_K112
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_POWERED_BY_OVERSEAS_OPTION_K112
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 112
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,112), "status:未采纳:采纳", CFLAG:112:1001)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_POWERED_BY_OVERSEAS_OPTION_K112_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 是否采纳剧本推荐，进行素质的变更
+PRINTFORMDL 该剧本中纯狐非常擅长料理，如果不采纳可能与文本会有出入
+FONTREGULAR
+CALL ASK_YN
+IF RESULT == 0
+	PRINTFORML
+	PRINTFORMDW 更改已应用。
+	;custom code, reference ABL by name, moved flag below so it's a one time choice
+	IF ABL:112:料理技能 < 4
+		CALL ChangeABL(112, "料理技能", 4-ABL:112:料理技能) ;custom code, set to 4 by checking the difference
+		SIF EXP:112:料理経験 < 1000 ;custom code, added exp
+			EXP:112:料理経験 = 1000
 	ENDIF
+	CFLAG:112:1001 = 1
+ELSEIF RESULT == 1
+	PRINTFORMDW 那就保持原样吧。
+	CFLAG:112:1001 = 0
 ENDIF
-RETURN 1
+CALLF FIRSTTIME("开局设定",0,112)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -135,17 +162,18 @@ RETURN 1
 ;初対面、挨拶のタイミング
 ;在这里更改TALENT。
 
-		PRINTFORMW 当你走着的时候，突然注意到了一个女性
-		PRINTFORMW 她有着金色长发和美丽的容貌，身上散发着一种神秘的氛围
-		PRINTFORMW 
-		SETCOLOR 0xf8b500
-		PRINTFORMW 「……………」
-		PRINTFORMW 「……………有什么事吗？」
-		PRINTFORMW 「最近来到幻想乡的吗？是吗」
-		PRINTFORMW 「我叫纯狐。请多关照」
-		PRINTFORMW 「虽然我们可能不会经常见面」
-		PRINTFORMW 
-		
+	PRINTFORMW 当你走着的时候，突然注意到了一个女性
+	PRINTFORMW 她有着金色长发和美丽的容貌，身上散发着一种神秘的氛围
+	PRINTFORMW 
+	SETCOLOR 0xf8b500
+	PRINTFORMW 「……………」
+	PRINTFORMW 「……………有什么事吗？」
+	PRINTFORMW 「最近来到幻想乡的吗？是吗」
+	PRINTFORMW 「我叫纯狐。请多关照」
+	PRINTFORMW 「虽然我们可能不会经常见面」
+	PRINTFORMW 
+	SIF FIRSTTIME("开局设定",0,112)
+		CALL KOJO_POWERED_BY_OVERSEAS_OPTION_K112_RESULT_1
 	RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

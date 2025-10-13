@@ -146,17 +146,38 @@ SETCOLOR 0x008f97
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K88
-;口上独自のUPDATE用
-;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
-;UPDATE判定でCFLAGを使用场合、角色番号の指定が必要になります
-IF FIRSTTIME("U88-1",0,88) && CFLAG:88:面識
-	PRINTFORMDL 改变了称呼的情况下的救济措施
-	PRINTFORMDL 给没有改变称呼的玩家添麻烦了、实在抱歉
-	MASTERNAME:88 = 
-	CALL K88_KYOKO_INPUT_CALLNAME
-ENDIF
-RETURN 1
+;@M_KOJO_UPDATE_K88
+;;口上独自のUPDATE用
+;;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
+;;UPDATE判定でCFLAGを使用场合、角色番号の指定が必要になります
+;RETURN 1
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_OPTION_EXIST_K88
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_OPTION_K88
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:88%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:88%", MASTERNAME:88 != "")%", 1)
+
+;process the input portion
+@KOJO_OPTION_K88_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL M_KOJO_COLOR_K88
+MASTERNAME:88 = 
+LOCAL = TARGET
+TARGET = 88
+CALL K88_KYOKO_INPUT_CALLNAME
+TARGET = LOCAL
+RESETCOLOR
+WAIT
+
 
 ;-------------------------------------------------
 ; "ENCOUNTER"系イベント（エクストラ构文）
@@ -1045,32 +1066,32 @@ IF LOCAL
 ;		; 陪睡中
 		ELSEIF CFLAG:陪睡中
 			; 呼び名変更はここに放り込むことにした
-			IF TCVAR:353 == 0
-				PRINTFORML 「呐%MASTERNAME:88%、偶尔也不想改变一下称呼吗？」
-				PRINTFORMDL 响子的提案怎么样？
-				$INPUT_LOOP_KYO0
-				PRINTBUTTON "[ 0] 算了吧", 0
-				PRINTBUTTON "[ 1] 点头回答", 1
-				INPUT
-				SELECTCASE RESULT
-					CASE 0
-						PRINTFORML 「我知道」
-						PRINTFORMDW 响子一听不要改变就毫不犹豫地接受了
-					CASE 1
-						CALL K88_KYOKO_INPUT_CALLNAME
-						PRINTFORML 「%MASTERNAME:88%啊、我知道了」
-						PRINTFORMDW 让响子改了名字
-					CASEELSE
-						SIF STRLENS(@"{RESULT}")
-							CLEARLINE 1
-						REUSELASTLINE 
-						GOTO INPUT_LOOP_KYO0
-				ENDSELECT
-				SETBIT TCVAR:353, 0
-			ELSE
-				; <工事中>
-;				PRINTFORMDL 
-			ENDIF
+			;IF TCVAR:353 == 0
+			;	PRINTFORML 「呐%MASTERNAME:88%、偶尔也不想改变一下称呼吗？」
+			;	PRINTFORMDL 响子的提案怎么样？
+			;	$INPUT_LOOP_KYO0
+			;	PRINTBUTTON "[ 0] 算了吧", 0
+			;	PRINTBUTTON "[ 1] 点头回答", 1
+			;	INPUT
+			;	SELECTCASE RESULT
+			;		CASE 0
+			;			PRINTFORML 「我知道」
+			;			PRINTFORMDW 响子一听不要改变就毫不犹豫地接受了
+			;		CASE 1
+			;			CALL K88_KYOKO_INPUT_CALLNAME
+			;			PRINTFORML 「%MASTERNAME:88%啊、我知道了」
+			;			PRINTFORMDW 让响子改了名字
+			;		CASEELSE
+			;			SIF STRLENS(@"{RESULT}")
+			;				CLEARLINE 1
+			;			REUSELASTLINE 
+			;			GOTO INPUT_LOOP_KYO0
+			;	ENDSELECT
+			;	SETBIT TCVAR:353, 0
+			;ELSE
+			;	; <工事中>
+;			;	PRINTFORMDL 
+			;ENDIF
 		; 恋慕
 		ELSEIF TALENT:恋慕
 			; <工事中>
@@ -6190,19 +6211,19 @@ ELSEIF STRCOUNT(LOCALS, "\(魂魄\)\*\\s\*妖梦")
 	PRINTFORML 「已经不再挥刀了吗？」
 ENDIF
 ; 直接入力ならいけると思ったか？弾くぜ！
-IF FIRSTTIME("U88-1") && ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
+IF ABL:親密 < 4 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(さん\|ちゃん\)\)\$")
 	CLEARLINE 1
 	REUSELASTLINE 「山彦也说过要有选择的权利」
 	GOTO INPUT_LOOP_KYO0
-ELSEIF FIRSTTIME("U88-1") && ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
+ELSEIF ABL:親密 < 7 && STRCOUNT(LOCALS, "\(お\(\(兄\|にい\)\|\(姉\|ねえ\)\)\(様\|さま\)\)\$")
 	CLEARLINE 1
 	REUSELASTLINE 「山彦也说过要有选择的权利」
 	GOTO INPUT_LOOP_KYO0
-ELSEIF FIRSTTIME("U88-1") && (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
+ELSEIF (ABL:従順 < 7 || ABL:奉仕精神 < 7) && STRCOUNT(LOCALS, "\(\(御\|ご\)\(主人\|しゅじん\)\(様\|さま\)\)$")
 	CLEARLINE 1
 	REUSELASTLINE 「山彦也说过要有选择的权利」
 	GOTO INPUT_LOOP_KYO0
-ELSEIF FIRSTTIME("U88-1") && (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
+ELSEIF (!TALENT:恋人 || !TALENT:恋慕) && STRCOUNT(LOCALS, "\(\(旦那\|だんな\)\(様\|さま\)\)\$")
 	CLEARLINE 1
 	REUSELASTLINE 「山彦也说过要有选择的权利」
 	GOTO INPUT_LOOP_KYO0

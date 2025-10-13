@@ -64,190 +64,242 @@ CFLAG:143:口上内抱き寄せ判定_通常 = 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K143
-
+SETCOLOR 0x4692cb
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K143
+;@M_KOJO_UPDATE_K143
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
 ;UPDATE判定でCFLAG等の角色变量を使用场合、角色番号の指定が必要になります
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K143
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K143
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 143
+CALL SET_KOJO_COLOR
+
 ;※4.973注※修复时发现，几乎除了淫趴之外的所有事件链均已弃坑
-;选项1 怀孕设定
-IF !GETBIT(CFLAG:143:1500, 0)
-	PRINTDL 
-	PRINTFORMDL 接受尤魔变成不孕体质吗？（※现在是\@CFLAG:1009 ?不孕体质#正常体质\@）
-	PRINTDL ※注意※
-	PRINTFORMDL ※4.973注※如果开启该事件链，在完成【治愈尤魔的不孕体质8】之前，尤魔将不会怀孕
-	PRINTFORMDL 就算选择了「是」，尤魔也不会在时奸中怀孕（※这是一个机制）
-	PRINTFORMDL 如果选择「否」，尤魔会正常受孕，但关于怀孕的对话频率会减少
-	HTML_PRINT @"<font color='aqua'>※4.973再注※ 该事件链未完成，只写了事件1和事件2的开头。</font>"
-	HTML_PRINT @"<font color='aqua'>因此选了【是】就不会怀孕；而且没有解，因为没写。</font>"
-	PRINTDL 
-	CALL ASK_M("是",1 ,"否",1 ,"不改变，希望以后都不要再显示",1)
-	SELECTCASE RESULT
-		CASE 0
-			PRINTDL 
-			PRINTFORMDL 尤魔现在是「不孕体质」了
-			PRINTFORMDL 在精子受精前就会被直接吸收掉、如同吸收营养一样
-			PRINTDL 
-			CFLAG:1009 = 1
-		CASE 1
-			PRINTDL 
-			PRINTFORMDL 尤魔能像一般人一样怀孕
-			PRINTFORMDL 
-			CFLAG:1009 = 0
-		CASE 2
-			PRINTFORMDL 以后的update不会再显示怀孕设定
-			SETBIT CFLAG:143:1500, 0
-	ENDSELECT
-ENDIF
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,143), "status:未采纳:采纳", CFLAG:143:1000)
+CALL KOJO_OPTION_ITEM(@"重设%CALLNAME:143%的性经验", 2, "cond", !TALENT:143:処女, "onetime", !FIRSTTIME("YuumaVirginSet", 1, 143))
+CALL KOJO_OPTION_ITEM(@"不孕体质事件链（※现在是\@CFLAG:1009 ?不孕体质#正常体质\@）", 3)
+CALL KOJO_OPTION_ITEM(@"一日过后的\@CFLAG:1000 == 1 ?自慰#淫趴\@事件简略化（※现在：\@CFLAG:1012 ?开启#未开启\@）", 4,"cond",CFLAG:143:1000)
+SIF !CFLAG:143:1000
+	CLEARLINE 1
+CALL KOJO_OPTION_ITEM(@"时停爱爱事件链（※现在：\@CFLAG:143:1001 ?开启#未开启\@）", 5)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K143_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;选项2 贪婪设定&选项3 仅开局时的处女设定
-IF !GETBIT(CFLAG:143:1500, 1)
+LOCAL = TARGET
+TARGET = 143
+PRINTDL 
+PRINTFORMDL 剧本设定中尤魔的贪婪体现在性爱和料理两方面，喜欢自慰、并且是个料理高手
+PRINTFORMDL 是否采纳推荐，按剧本设定调整尤魔的人设？
+PRINTFORMDL 尤魔将会获得[风骚][好奇心][容易自慰][接受快感][精爱味觉]，料理和自慰相关素质和经验也大幅度增加
+PRINTDL 
+CALL ASK_M("是",1 ,"挺好的，但风骚我不接受",1, "否",1 )
+SELECTCASE RESULT
+CASE 0,1
 	PRINTDL 
-	PRINTFORMDL 尤魔对性爱和料理都很渴望吗？（※【\@CFLAG:1000 ?已#未\@】开启剧本设定）
-	PRINTFORMDL ※注意※尤魔将会变得在性爱和料理方面都非常贪婪，还成为了个料理高手
-	PRINTFORMDL 能力和素質都大幅度变化了、如果不喜欢请选择『否』
+	PRINTFORMDL 尤魔会被赋予
+	SIF !RESULT
+		PRINTFORMD [风骚]
+	PRINTFORMDL [好奇心][容易自慰][接受快感][精爱味觉]
 	PRINTDL 
-	CALL ASK_M("是",1 , "否",1 , "咱设定好了，以后都不要再显示",1)
+	TALENT:性的兴趣 = 1
+	TALENT:容易自慰 = 1
+	TALENT:快感応答 = 1
+	TALENT:精愛味覚 = 1
+	SIF !RESULT
+		TALENT:風騷 = 1
+	EXP:自慰経験 = 30000
+	EXP:絶頂経験 = 30000
+	EXP:料理経験 = 496000
+	CALL SET_ABL_AND_XP([[尤魔]], "Ｃ感覚", 3)
+	CALL SET_ABL_AND_XP([[尤魔]], "Ｂ感覚", 3)
+	CALL SET_ABL_AND_XP([[尤魔]], "Ｖ感覚", 2)
+	CALL SET_ABL_AND_XP([[尤魔]], "自慰中毒", 6)
+	CALL SET_ABL_AND_XP([[尤魔]], "指", 6)
+	CALL SET_ABL_AND_XP([[尤魔]], "料理技能", 5)
+	CFLAG:143:1000 = 1
+CASE 2
+	PRINTFORMDW 素质不做变更
+	CFLAG:143:1000 = 0
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,143)
+TARGET = LOCAL
+
+@KOJO_OPTION_K143_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;选项2 贪婪设定&选项3 仅开局时的处女设定
+LOCAL = TARGET
+TARGET = 143
+IF	CFLAG:143:1000
+	PRINTDL 
+	PRINTFORMDL 现在支持重新设定尤魔的性经历
+	PRINTDL 
+	PRINTFORMDL [0]贪婪的尤魔喜欢跟部下或喜欢的男人…
+	PRINTFORMDL [1]好色的尤魔只是个喜欢自慰的处女…
+	HTML_PRINT @"<font color='aqua'>※4.973再注※ 原版剧本中无论怎么选，都不可能将尤魔【变成】处女。如果不想那个看到臭名昭著的选项，就在这里选1即可</font>"
+	WHILE 1
+		INPUT
+		IF RESULT == 0
+			BREAK
+		ELSEIF RESULT == 1
+			GOTO 自慰处女
+		ELSE
+			CLEARLINE 1
+		ENDIF
+	WEND
+	PRINTDL 
+	PRINTDL ※注意※根据选项，尤魔将以非处女状态开局
+	PRINTDL 在一天结束时，她会将部下叫到房间里进行淫趴，但根据选项也可能不会实质性插入
+	PRINTDL 想要看到好色的同盟长，但无法接受她与自己以外的人发生关系的人请留心选择
+	HTML_PRINT @"<font color='aqua'>※4.973再注※ 作者标注的提示有误，尤魔默认不是处女。因此原版的任何选项都无法让尤魔作为处女开局</font>"
+	HTML_PRINT @"<font color='aqua'>现在（4974），选项5可以将尤魔变成一个非常好色、喜欢自慰的处女，同时禁止淫趴事件。其他不含性交的淫趴选项中尤魔也都是处女</font>"
+	CALL ASK_M("喜爱口交淫趴",1 , "喜爱性交淫趴",1 , "喜爱肛交淫趴",1 , "喜欢两穴淫趴",1 , "喜爱手交淫趴",1 , "喜欢自慰的雏儿",1)
 	SELECTCASE RESULT
 	CASE 0
-		PRINTDL 
-		PRINTFORMDL 尤魔会被赋予
-		PRINTFORMDL [好奇心][容易自慰][接受快感][精爱味觉][风骚]
-		PRINTDL 
-		TALENT:性的兴趣 = 1
-		TALENT:容易自慰 = 1
-		TALENT:快感応答 = 1
-		TALENT:精愛味覚 = 1
-		TALENT:風騷 = 1
-		EXP:自慰経験 = 30000
-		EXP:絶頂経験 = 30000
-		EXP:料理経験 = 496000
-		ABL:Ｃ感覚 = 3
-		ABL:Ｂ感覚 = 3
-		ABL:Ｖ感覚 = 2
-		ABL:自慰中毒 = 6
-		ABL:指 = 6
-		ABL:料理技能 = 5
-		
-		CFLAG:143:1000 = 1
-		
-		PRINTDL 
-		PRINTFORMDL [0]贪婪的尤魔喜欢跟部下或喜欢的男人…
-		PRINTFORMDL [1]好色的尤魔只是个喜欢自慰的处女…
-		HTML_PRINT @"<font color='aqua'>※4.973再注※ 原UPDATE无论怎么选，都不可能将尤魔【变成】处女。如果不想那个看到臭名昭著的选项，就在这里选1即可</font>"
-		WHILE 1
-			INPUT
-			IF RESULT == 0
-				BREAK
-			ELSEIF RESULT == 1
-				GOTO 自慰处女
-			ENDIF
-		WEND
-		PRINTDL 
-		PRINTDL ※注意※根据选项，尤魔将以非处女状态开局
-		PRINTDL 在一天结束时，她会将部下叫到房间里进行淫趴，但根据选项也可能不会实质性插入
-		PRINTDL 想要看到好色的同盟长，但无法接受她与自己以外的人发生关系的人请留心选择
-		HTML_PRINT @"<font color='aqua'>※4.973再注※ 作者标注的提示有误，尤魔默认不是处女。因此原来的任何选项都无法让尤魔作为处女开局</font>"
-		HTML_PRINT @"<font color='aqua'>现在，选项5可以将尤魔变成一个非常好色、喜欢自慰的处女，同时禁止淫趴事件</font>"
-		CALL ASK_M("喜爱口交淫趴",1 , "喜爱性交淫趴",1 , "喜爱肛交淫趴",1 , "喜欢两穴淫趴",1 , "喜爱手交淫趴",1 , "喜欢自慰的雏儿",1)
-		SELECTCASE RESULT
-		CASE 0
-			EXP:口淫経験 = 1024
-			CFLAG:143:1000 = 3
-			;4.973修复
-			TALENT:処女 = 1
-		CASE 1
-			EXP:Ｖ性交経験 = 1024
-			CFLAG:143:1000 = 4
-			TALENT:処女 = 0
-		CASE 2
-			EXP:Ａ性交経験 = 1024
-			CFLAG:143:1000 = 5
-			;4.973修复
-			TALENT:処女 = 1
-		CASE 3
-			EXP:手淫経験 = 1024
-			EXP:口淫経験 = 1024
-			EXP:乳交経験 = 1024
-			EXP:Ａ性交経験 = 1024
-			EXP:Ｖ性交経験 = 1024
-			CFLAG:143:1000 = 6
-			TALENT:処女 = 0
-		CASE 4
-			EXP:手淫経験 = 1024
-			CFLAG:143:1000 = 7
-			;4.973修复
-			TALENT:処女 = 1
-		CASE 5
-			$自慰处女
-			;4.973修复
-			TALENT:処女 = 1
-		ENDSELECT
+		EXP:口淫経験 = 1024
+		CFLAG:143:1000 = 3
+		;4.975修复
+		TALENT:処女 = 1
+		CFLAG:処女喪失記念日 = 0
+		CSTR:処女喪失履歴 = 还没被任何人进入
 	CASE 1
-		PRINTFORMDL 尤魔现在是默认素质，不按照剧本做出变更
-		;4.973修复
-		IF !GETBIT(CFLAG:143:1500, 2)
-			HTML_PRINT @"<font color='aqua'>※4.973再注※ 游戏中默认尤魔不是处女，剧本中原本也无法将尤魔变为处女。如有需要，请在这里选择：</font>"
-			PRINTFORMDL 希望让尤魔开局时是处女吗
-			CALL ASK_M("是",1 , "否",1)
-			IF !RESULT
-				PRINTFORMDL 尤魔开局时还是处女
-				TALENT:処女 = 1
-				CFLAG:処女喪失記念日 = 0
-				CSTR:処女喪失履歴 = 还没被任何人进入
-			ELSE
-				PRINTFORMDL 默认尤魔不是处女
-			ENDIF
-			SETBIT CFLAG:143:1500, 2
-		ENDIF
+		EXP:Ｖ性交経験 = 1024
+		CFLAG:143:1000 = 4
+		TALENT:処女 = 0
 	CASE 2
-		PRINTFORMDL 素质不做变更，以后不会再显示该选项
-		SETBIT CFLAG:143:1500, 1
+		EXP:Ａ性交経験 = 1024
+		CFLAG:143:1000 = 5
+		;4.975修复
+		TALENT:処女 = 1
+		CFLAG:処女喪失記念日 = 0
+		CSTR:処女喪失履歴 = 还没被任何人进入
+	CASE 3
+		EXP:手淫経験 = 1024
+		EXP:口淫経験 = 1024
+		EXP:乳交経験 = 1024
+		EXP:Ａ性交経験 = 1024
+		EXP:Ｖ性交経験 = 1024
+		CFLAG:143:1000 = 6
+		TALENT:処女 = 0
+	CASE 4
+		EXP:手淫経験 = 1024
+		CFLAG:143:1000 = 7
+		;4.975修复
+		TALENT:処女 = 1
+		CFLAG:処女喪失記念日 = 0
+		CSTR:処女喪失履歴 = 还没被任何人进入
+	CASE 5
+		$自慰处女
+		;4.975修复
+		TALENT:処女 = 1
+		CFLAG:処女喪失記念日 = 0
+		CSTR:処女喪失履歴 = 还没被任何人进入
 	ENDSELECT
+ELSE
+	PRINTFORMDL 尤魔现在是默认素质，不按照剧本做出变更
+	;4.973修复
+		HTML_PRINT @"<font color='aqua'>※4.973再注※ 尤魔的初始设定不是处女，原本剧本也无法将尤魔变为处女。如有需要，请在这里选择：</font>"
+		PRINTFORMDL 希望让尤魔开局时是处女吗
+		CALL ASK_M("是",1 , "否",1)
+		IF !RESULT
+			PRINTFORMDW 尤魔开局时还是处女
+			TALENT:処女 = 1
+			CFLAG:処女喪失記念日 = 0
+			CSTR:処女喪失履歴 = 还没被任何人进入
+		ELSE
+			PRINTFORMDW 默认尤魔不是处女
+		ENDIF
+		SETBIT CFLAG:143:1500, 2
 ENDIF
+CALLF FIRSTTIME("YuumaVirginSet", 0, 143)
+TARGET = LOCAL
+
+@KOJO_OPTION_K143_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;选项1 怀孕设定
+LOCAL = TARGET
+TARGET = 143
+PRINTDL 
+PRINTFORMDL 接受尤魔变成不孕体质吗？（※现在是\@CFLAG:1009 ?不孕体质#正常体质\@）
+PRINTDL ※注意※
+PRINTFORMDL ※4.973注※如果开启该事件链，在完成【治愈尤魔的不孕体质8】之前，尤魔将不会怀孕
+PRINTFORMDL 就算选择了「是」，尤魔也不会在时奸中怀孕（※这是一个机制）
+PRINTFORMDL 如果选择「否」，尤魔会正常受孕，但关于怀孕的对话频率会减少
+HTML_PRINT @"<font color='aqua'>※4.973再注※ 该事件链未完成，只写了事件1和事件2的开头。</font>"
+HTML_PRINT @"<font color='aqua'>因此选了【是】就不会怀孕；而且没有解，因为没写。</font>"
+PRINTDL 
+CALL ASK_M("是",1 ,"否",1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTDL 
+		PRINTFORMDL 尤魔现在是「不孕体质」了
+		PRINTFORMDL 在精子受精前就会被直接吸收掉、如同吸收营养一样
+		PRINTDW 
+		CFLAG:1009 = 1
+	CASE 1
+		PRINTDL 
+		PRINTFORMDL 尤魔能像一般人一样怀孕
+		PRINTFORMDW
+		CFLAG:1009 = 0
+ENDSELECT
+TARGET = LOCAL
 
 ;选项4 事件简略化设定
-IF !GETBIT(CFLAG:143:1500, 3) && CFLAG:143:1000
-	PRINTFORMDL 要如何显示一日过后尤魔的\@CFLAG:1000 == 1 ?自慰#淫趴\@事件（※现在是\@CFLAG:1012 == 1 ?简略版#完整版\@）
-	CALL ASK_M("简略版", 1,"完整版", 1,"咱不改了，以后不要再问我", 1)
-	SELECTCASE RESULT
-	CASE 0
-		CFLAG:1012 = 1
-		PRINTFORMDL 事件简化显示
-	CASE 1
-		CFLAG:1012 = 0
-		PRINTFORMDL 事件完整显示
-	CASE 2
-		PRINTFORMDL 以后不会再显示该选项
-		SETBIT CFLAG:143:1500, 3
-	ENDSELECT
-ENDIF
+@KOJO_OPTION_K143_RESULT_4
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:143:1012 = !CFLAG:143:1012
 
 ;选项5 时停设定
-IF !GETBIT(CFLAG:143:1500, 4)
-	PRINTDL 
-	PRINTFORMDL 尤魔可以在时停状态下有所反应吗？（※现在是\@CFLAG:143:1001 ?会#不会\@行动）
-	HTML_PRINT @"<font color='aqua'>※4.973注※ 该事件链的第一个事件没有写完便弃坑了，而且设计了时停时会吸收精液的设定，感觉造成困扰了可以随时关掉</font>"
-	PRINTDL 
-	CALL ASK_M("是",1 , "否",1 , "咱不改了，以后不要再问我",1)
-	SELECTCASE RESULT
-	CASE 0
-		PRINTFORMDL 尤魔在时停状态下可以行动
-		CFLAG:143:1001 = 1
-	CASE 1
-		PRINTFORMDL 尤魔在时停状态下不可行动
-		CFLAG:143:1001 = 0
-	CASE 2
-		PRINTFORMDL 以后不会再显示
-		SETBIT CFLAG:143:1500, 4
-	ENDSELECT
-ENDIF
-RETURN 1
+@KOJO_OPTION_K143_RESULT_5
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTDL 
+PRINTFORMDL 尤魔可以在时停状态下有所反应吗？（※现在是\@CFLAG:143:1001 ?会#不会\@行动）
+HTML_PRINT @"<font color='aqua'>※4.973注※ 该事件链的第一个事件没有写完便弃坑了，而且设计了时停时会吸收精液的设定，感觉造成困扰了可以随时关掉</font>"
+PRINTDL 
+CALL ASK_M("是",1 , "否",1 , "想再听听稍微详细些的说明",1)
+SELECTCASE RESULT
+CASE 0
+	PRINTFORMDW 尤魔在时停状态下可以行动
+	CFLAG:143:1001 = 1
+CASE 1
+	PRINTFORMDW 尤魔在时停状态下不可行动
+	CFLAG:143:1001 = 0
+CASE 2
+	CALL CHARA_TEXT,[[铃仙]],@"了解了，那么就由狂气小白兔来简单介绍一下"
+	CALL CHARA_TEXT,[[铃仙]],@"作者在所有可能的诶嘿嘿结束事件和数值结算中设计了吸收精液的不孕事件链机制，时停结束时也会吸收","w"
+	CALL CHARA_TEXT,[[铃仙]],@"作者设定尤魔是精之卡比，在吸收了你先生的精液后获得了时停能力"
+	CALL CHARA_TEXT,[[铃仙]],@"并在第二次被时停推倒时突然抓住了你先生并接受了两人的时停性爱","w"
+	CALL CHARA_TEXT,[[铃仙]],@"于是呢，尤魔拥有了一个设定——可以与你先生在时停状态下有意识地交互"
+	CALL CHARA_TEXT,[[铃仙]],@"想想也知道，这意味着作者需要给尤魔的所有互动添加一整套时停下有意识的差分"
+	CALL CHARA_TEXT,[[铃仙]],@"并且需要让游戏中所有指令、事件和机制有能力处理时停下有意识这一情况","w"
+	CALL CHARA_TEXT,[[铃仙]],@"光是发现，在推到时突然说话的尤魔会在时停诶嘿嘿中再次变得毫无互动，作者可能就意识到了自己挖了多大的一个坑"
+	CALL CHARA_TEXT,[[铃仙]],@"所以，这个【时停状态下有所反应】根本不可能是一个事件链，而是需要增加一整套系统去支持的全新玩法，远比猯藏的变身系统要牵扯更多"
+	CALL CHARA_TEXT,[[铃仙]],@"这是个虽然作者坑了、但也几乎没有可能实现的剧本机制，即使启用也没有任何意义","w"
+ENDSELECT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ构文）
@@ -1241,6 +1293,11 @@ ELSE
 
 	PRINTDW 
 ENDIF
+IF FIRSTTIME("开局设定",0,143)
+	CALL KOJO_OPTION_K143_RESULT_1
+	CALL KOJO_OPTION_K143_RESULT_2
+	PRINTDL ※尤魔还有其他允许多次改变的选项，请在剧本选项中确认
+ENDIF
 RETURN 1
 
 @K143_BEFORETRAIN
@@ -1249,7 +1306,7 @@ RETURN 1
 ;ただし「每天早上例外なく读み込まれる」ため、条件を设定しておくことが望ましい
 ;尤魔宅的客厅（厨房）は常に清洁に保たれている
 IF YOGORE:(653) > 0
-	PRINTFORMDL 尤魔似乎在起床后彻底打扫了厨房的每一个角落…
+	PRINTFORMDL 尤魔在起床后彻底打扫了厨房的每一个角落…
 	YOGORE:(653) = 0
 ENDIF
 

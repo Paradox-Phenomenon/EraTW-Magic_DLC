@@ -67,93 +67,83 @@ SETCOLOR 0xE65C7A
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K127
+;@M_KOJO_UPDATE_K127
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K127
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K127
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 127
+CALL SET_KOJO_COLOR
 
-IF !CFLAG:127:1001
-	;PRINTFORML 可以変更瓔花的胸围。
-	PRINTFORML 可以変更瓔花的胸围。
-	PRINTFORML 要进行変更吗？
-	PRINTFORML
-	;PRINTFORML [0] 変更 (可以在UPDATE时重新修改)
-	;PRINTFORML [1] 保留
-	;PRINTFORML [2] 不再变更
-	PRINTFORML [0] 変更 (可以在UPDATE时重新修改)
-	PRINTFORML [1] 保留
-	PRINTFORML [2] 不再变更
-	$INPUT_LOOP_K127_BS
-	INPUT
-	IF RESULT == 0
-		PRINTFORML
-		;PRINTFORML [0] 如果是水子的话就不会那么大了吧？(TW默认)
-		PRINTFORML [0] 如果是水子的话就不会那么大了吧？(TW默认)
-		;PRINTFORML [1] 既然是水子的领袖、就应该是母性洋溢的巨乳！
-		PRINTFORML [1] 既然是水子的领袖、应该是母性洋溢的巨乳！
-		$INPUT_LOOP_K127_ENCOUNTER
-		INPUT 
-		IF RESULT == 0
-			;PRINTFORMW 瓔花既不是[貧乳]也不是［巨乳］。
-			PRINTFORMW 瓔花既不是[貧乳]也不是［巨乳］。
-			TALENT:127:105 = 0
-		ELSEIF RESULT == 1
-			;PRINTFORMW 瓔花是[巨乳]。
-			PRINTFORMW 瓔花是[巨乳]。
-			TALENT:127:105 = 1
-		ELSE
-			GOTO INPUT_LOOP_K127_ENCOUNTER
-		ENDIF
-	ELSEIF RESULT == 1
-		;PRINTFORMW 保留瓔花的胸围变更。
-		PRINTFORMW 保留瓔花的胸围变更。
-	ELSEIF RESULT == 2
-		;PRINTFORMW 今后、这个选项不会被显示。
-		PRINTFORMW 今后、这个选项不会被显示。
-		CFLAG:127:1001 = 1
-	ELSE
-		GOTO INPUT_LOOP_K127_BS
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,127), "status:未采纳:采纳", CFLAG:127:1002)
+CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:127%的胸围  现在是：%GET_TALENTNAME(105, TALENT:127:105)%", 2)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K127_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 是否采纳推荐，进行与剧本设定相符的人设变更？
+PRINTFORML
+PRINTFORML 将获得【难以越过的底线】【积石排名】
+PRINTFORML 另外，在特定的条件下会得到【不信任人类】(取得【恋人】【恋慕】后就会消失)
+PRINTFORML
+CALL ASK_YN
+SELECTCASE RESULT
+;許可する
+CASE 0
+	CFLAG:127:1002 = 1
+	PRINTFORML 已变更
+	;変更内容はここに記述
+	IF !TALENT:127:難以越過的底線 == 1
+		TALENT:127:難以越過的底線 = 1
 	ENDIF
-ENDIF
-	
-IF CFLAG:127:1002 == 0
-			PRINTFORML
-			;PRINTFORML 本口上による素質の変更を許可しますか？
-			;PRINTFORML 許可した場合、【難以越過的底線】【積み石ランカー】を得ます
-			;PRINTFORML また、特定の条件で【不信任人類】を得るようになります(【恋人】【恋慕】を取得すると消えます)
-			PRINTFORML 允许根据本口上进行素质的变更吗？
-			PRINTFORML 在允许的情况下、获得【難以越過的底線】【积石排名】
-			PRINTFORML 另外，在特定的条件下会得到【不信任人類】(取得【恋人】【恋慕】后就会消失)
-			PRINTFORML
-			;PRINTFORML [0]-許可する
-			PRINTFORML [0]-允许
-			;PRINTFORML [1]-許可しない
-			PRINTFORML [1]-不允许
-			INPUT
-			SELECTCASE RESULT
-			;許可する
-			CASE 0
-				CFLAG:127:1002 = 1
-				;PRINTFORML 変更しました
-				PRINTFORML 变更了
-				;変更内容はここに記述
-				IF !TALENT:127:難以越過的底線 == 1
-					TALENT:127:難以越過的底線 = 1
-				ENDIF
-				IF !TALENT:127:積み石ランカー == 5
-					TALENT:127:積み石ランカー = 5
-				ENDIF
-			PRINTFORMW
-			;許可しない
-			CASEELSE
-				CFLAG:127:1002 = -1
-				;PRINTFORML 変更されません
-				PRINTFORML 未变更
-				PRINTFORMW
-			ENDSELECT
-ENDIF
+	IF !TALENT:127:積み石ランカー == 5
+		TALENT:127:積み石ランカー = 5
+	ENDIF
+PRINTFORMW
+;許可しない
+CASEELSE
+	CFLAG:127:1002 = 0
+	PRINTFORML 未变更
+	PRINTFORMW
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,127)
 
-RETURN 1
+@KOJO_OPTION_K127_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 支持自由更改璎花的胸围
+PRINTFORML 
+PRINTFORML 在您的印象中，璎花的胸围应该是…
+CALL ASK_M("既然是水子的话就不会太大吧？(TW默认)", 1, "她是水子灵的领袖，所以应该有母性洋溢的巨乳！", 1, "她是个娇小幼童，谁都知道幼童是平板一块！", 1, "…应该是贫乳，但是是与身材相称、小而挺的姣乳，如何？", 1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORMW 璎花的乳房不大不小，只是普通有料。
+		TALENT:127:バストサイズ = 0
+	CASE 1
+		PRINTFORMW 巨乳璎花！
+		TALENT:127:バストサイズ = 1
+	CASE 2
+		PRINTFORMW 绝赞平胸！
+		TALENT:127:バストサイズ = -2
+	CASE 3
+		PRINTFORMW 这才像话嘛！小而挺！
+		TALENT:127:バストサイズ = -1
+ENDSELECT
+	
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -163,39 +153,6 @@ RETURN 1
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 
-IF !CFLAG:127:1001
-	PRINTFORML 可以変更瓔花的胸围。
-	PRINTFORML 要进行変更吗？
-	PRINTFORML
-	PRINTFORML [0] 変更 (可以在UPDATE时重新修改)
-	PRINTFORML [1] 保留
-	PRINTFORML [2] 不再变更
-	$INPUT_LOOP_K127_BS
-	INPUT
-	IF RESULT == 0
-		PRINTFORML
-		PRINTFORML [0] 如果是水子的话就不会那么大了吧？(TW默认)
-		PRINTFORML [1] 既然是水子的领袖、就应该是母性洋溢的巨乳！
-		$INPUT_LOOP_K127_ENCOUNTER
-		INPUT 
-		IF RESULT == 0
-			PRINTFORMW 瓔花既不是[貧乳]也不是［巨乳］。
-			TALENT:127:105 = 0
-		ELSEIF RESULT == 1
-			PRINTFORMW 瓔花是[巨乳]。
-			TALENT:127:105 = 1
-		ELSE
-			GOTO INPUT_LOOP_K127_ENCOUNTER
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMW 保留瓔花的胸围变更。
-	ELSEIF RESULT == 2
-		PRINTFORMW 今后、这个选项不会被显示。
-		CFLAG:127:1001 = 1
-	ELSE
-		GOTO INPUT_LOOP_K127_BS
-	ENDIF
-ENDIF
 ;三途の河～冥界に住んでいて賽の河原で瓔花と会った
 IF MAIN_MAP == 6 && CFLAG:MASTER:現在位置 == 602
 	PRINTFORMW 「那边的你！」
@@ -281,6 +238,10 @@ ELSE
 	PRINTFORML 「你不知道堆石头吗？这样做很有趣的、是一种很好玩的游戏！」
 	PRINTFORMDL 看着瓔花迅速堆起的石头、%CALLNAME:MASTER%感到十分惊讶……
 	PRINTFORMDW 在询问了瓔花关于竞赛的举办日期后、你决定有空时去参加看看
+ENDIF
+IF FIRSTTIME("开局设定",0,127)
+	CALL KOJO_OPTION_K127_RESULT_1
+	CALL KOJO_OPTION_K127_RESULT_2
 ENDIF
 RETURN 1
 

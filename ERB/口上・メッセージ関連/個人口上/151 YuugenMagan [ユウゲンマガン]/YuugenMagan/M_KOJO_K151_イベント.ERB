@@ -115,13 +115,13 @@ CALL M_KOJO_COLOR_K151
 PRINTFORML %CSVCSTR(151, 10)%
 RESETCOLOR
 PRINTL 
-PRINTFORML 口上版本v{CFLAG:151:K151EN_FLAG_VER / 100}.{CFLAG:151:K151EN_FLAG_VER / 10}.{CFLAG:151:K151EN_FLAG_VER % 10}
+PRINTFORML 剧本版本v{CFLAG:151:K151EN_FLAG_VER / 100}.{CFLAG:151:K151EN_FLAG_VER / 10}.{CFLAG:151:K151EN_FLAG_VER % 10}
 PRINTL
 PRINTFORML 来自另一个位面的神秘造物
 PRINTFORML 这幅女人的躯壳只是幽幻魔眼用来与幻想乡居民互动的人造产物，那些眼睛才是她的本相貌
 PRINTFORML 幽幻魔眼坚信不久的将来，幻想乡将会毁灭，而她将会见证这一“事件”
 SIF CFLAG:[[幽幻魔眼]]:K151EN_YM_NATURE == 0
-	PRINTFORML 但你觉得她并没有她说的那么置身事外，而你决定…
+	PRINTFORML 但你觉得她并没有她说的那么置身事外…
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -133,9 +133,9 @@ RETURN 1
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
 IF CFLAG:151:K151EN_FLAG_VER == K151EN_VER
-	PRINTFORMDL 如果%CALLNAME:151%的文本不是最新版，请更新%FORMAT_VERSION(K151EN_VER)%
+	PRINTFORMDL %CALLNAME:151%剧本已是最新版 v%FORMAT_VERSION(K151EN_VER)%
 ELSE
-	PRINTFORMDL 更新%CALLNAME:151%文本至v%FORMAT_VERSION(K151EN_VER)%…
+	PRINTFORMDL 更新%CALLNAME:151%剧本至v%FORMAT_VERSION(K151EN_VER)%…
 	IF CFLAG:151:K151EN_FLAG_VER < 4
 		PRINTFORMDW 你将重新选择路线，因为我把变量搞乱了（作者原话）
 		PRINTFORMDL 当你第一次遇到幽幻魔眼，你感觉…
@@ -145,6 +145,77 @@ ELSE
 	PRINTFORMDL 更新完力！
 ENDIF
 RETURN 1
+
+@KOJO_UPDATE_K151
+;set character update version
+nCharaSaveUp:[[幽幻魔眼]]:0:21 = VAR_OR_DEFAULT("K151EN_VER")
+
+;config menu
+{
+	CALL KOJO_CONFIGURE(
+		151,
+		"肉体",
+		"",
+		@" 「……不久之前，时机终于到来，群星归于正位，我们也没有多少时间了…」\n「(这个世界真奇怪!我们还没有适应他们的…物理法则，神绮女士是这么称呼的？)」\n「如果我们要产下群星之子，也就只有这个机会了」\n「但我们需要一个肉体，不是吗？它应该是…」",
+		151,
+		)
+}
+
+@K151_SETTING_肉体
+IF !nCharaSaveUp:[[幽幻魔眼]]:0:20
+	{
+		CALL KOJO_SETTING_SEX(
+			151, 0,
+			@"「人类有不同的性别…？….哪个更加适合产下子嗣？我们都忘了…」", 151,
+			)
+	}
+
+	{
+		CALL KOJO_SETTING_SIZE(
+			151, 1, "「我们的躯壳应该和本地居民差不多…或者，更高的躯壳可以诞生更加强大的子嗣？」", 151)
+	}
+
+	{
+		CALL KOJO_SETTING_BREASTS(
+			151, 2, "「我们必须确保我们的胸部大小合适，这样可以用来吸引一个异类…」", 151)
+	}
+ENDIF
+
+@K151_Defaults
+#FUNCTION
+#DIM C_ID
+#DIM D_ID
+;REGEXPMATCH  GETDOINGFUNCTION(), @"K(\\d+)_", RESULT, RESULTS
+;C_ID = TOINT(RESULTS:1)
+;D_ID = CFLAG:C_ID:口上セレクタ
+C_ID = 151
+D_ID = 0
+
+nCharaUpdate:C_ID:D_ID:0 = 1
+nCharaUpdate:C_ID:D_ID:1 = 3
+nCharaUpdate:C_ID:D_ID:2 = 3
+
+@K151_SETTING_SUBMIT
+CALL KOJO_SUBMIT_SEX(151, 0)
+CALL KOJO_SUBMIT_SIZE(151, 1)
+CALL KOJO_SUBMIT_BREASTS(151, 2)
+CALL M_KOJO_COLOR_K151
+PRINTFORMW 「完成了」
+PRINTFORMDL 当房间的闪光熄灭过后，一个人影站在了那里
+PRINTFORMDW 他看向周围满意的笑了
+PRINTFORMW 「完美的躯壳，现在，去找到一个合适的伴侣…」
+PRINTFORMDL 
+RESETCOLOR
+
+;@K151_BEFORETRAIN
+;一日の開始時、正確には来訪判定時に読み込む関数
+;ここでCFLAG:XX:翌日来訪を設定して確実に来訪させたりTCVAR:XX:発情で朝っぱらからサカらせることもできる
+;ただし「毎朝例外なく読み込まれる」ため、条件を設定しておくことが望ましい
+IF !GROUPMATCH(CFLAG:[[幽幻魔眼]]:K151EN_YM_NATURE, 0, 1)
+	PRINTFORMDL 当你第一次遇到幽幻魔眼，你感觉到…
+	CALL K151_ROUTE_SELECT
+ENDIF
+
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;Custom dialogue settings, custom code
@@ -159,6 +230,8 @@ CALL KOJO_OPTION_ITEM("剧本专属更新页面", 1)
 
 ;process the input portion
 @KOJO_OPTION_K151_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 CALL KOJO_UPDATE_K151
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -235,73 +308,6 @@ SELECTCASE RESULT
 
 ENDSELECT
 PRINTFORMDL 
-
-@KOJO_UPDATE_K151
-;set character update version
-nCharaSaveUp:[[幽幻魔眼]]:0:21 = VAR_OR_DEFAULT("K151EN_VER")
-
-;config menu
-{
-	CALL KOJO_CONFIGURE(
-		151,
-		"肉体",
-		"",
-		@" 「……不久之前，时机终于到来，群星归于正位，我们也没有多少时间了…」\n「(这个世界真奇怪!我们还没有适应他们的…物理法则，神绮女士是这么称呼的？)」\n「如果我们要产下群星之子，也就只有这个机会了」\n「但我们需要一个肉体，不是吗？它应该是…」",
-		151,
-		)
-}
-
-@K151_SETTING_肉体
-IF !nCharaSaveUp:[[幽幻魔眼]]:0:20
-	{
-		CALL KOJO_SETTING_SEX(
-			151, 0,
-			@"「人类有不同的性好…？….哪个更加适合产下子嗣？我们都忘了…」", 151,
-			)
-	}
-
-	{
-		CALL KOJO_SETTING_SIZE(
-			151, 1, "「我们的躯壳应该和本地居民差不多…或者，更高的躯壳可以诞生更加强大的子嗣？」", 151)
-	}
-
-	{
-		CALL KOJO_SETTING_BREASTS(
-			151, 2, "「我们必须确保我们的胸部大小合适，这样可以用来吸引一个异类…」", 151)
-	}
-ENDIF
-
-@K151_Defaults
-#FUNCTION
-#DIM C_ID
-#DIM D_ID
-REGEXPMATCH  GETDOINGFUNCTION(), @"K(\\d+)_", RESULT, RESULTS
-C_ID = TOINT(RESULTS:1)
-D_ID = CFLAG:C_ID:口上セレクタ
-
-nCharaUpdate:C_ID:D_ID:0 = 1
-nCharaUpdate:C_ID:D_ID:1 = 3
-nCharaUpdate:C_ID:D_ID:2 = 3
-
-@K151_SETTING_SUBMIT
-CALL KOJO_SUBMIT_SEX(151, 0)
-CALL KOJO_SUBMIT_SIZE(151, 1)
-CALL KOJO_SUBMIT_BREASTS(151, 2)
-CALL M_KOJO_COLOR_K151
-PRINTFORMW 「完成了」
-PRINTFORMDL 当房间的闪光熄灭过后，一个人影站在了那里
-PRINTFORMDW 他看向周围满意的笑了
-PRINTFORMW 「完美的躯壳，现在，去找到一个合适的伴侣…」
-PRINTFORMDL 
-RESETCOLOR
-
-;一日の開始時、正確には来訪判定時に読み込む関数
-;ここでCFLAG:XX:翌日来訪を設定して確実に来訪させたりTCVAR:XX:発情で朝っぱらからサカらせることもできる
-;ただし「毎朝例外なく読み込まれる」ため、条件を設定しておくことが望ましい
-IF !GROUPMATCH(CFLAG:[[幽幻魔眼]]:K151EN_YM_NATURE, 1, 2)
-	PRINTFORMDL 当你第一次遇到幽幻魔眼，你感觉到…
-	CALL K151_ROUTE_SELECT
-ENDIF
 
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -5071,7 +5077,7 @@ ENDIF
 ;セフレ契約用
 ;"補正"でRETURNした数値が理性判定に加算されるので、
 ;簡単にセフレにしたいならマイナス、難易度を上げたかったり実質不可能にしたいならプラスすべし
-@KOJO_SF_CONTRACT_K151(ARGS)
+@KOJO_SF_CONTRACT_EVENT_K151(ARGS)
 SELECTCASE ARGS
 	;Start
 	CASE "導入"
@@ -5086,43 +5092,25 @@ SELECTCASE ARGS
 		;PRINTFORML 「No thanksー」
 ENDSELECT
 
-;framework from nue's file, refer to that
-@K151_DAYEVENT_COND(ARG)
-;RETURN -1 - means disallowed, 0 - fall back to original condition, 1 - allowed
-SIF !TALENT:恋慕 && ARG != 11
-	RETURN -1
-SIF MARK:反発刻印 || CFLAG:ブチギレ
-	RETURN -1
+@M_KOJO_CHECK_K151_DAYEVENT_COND(ARGS, ARG, ARG:1)
 SELECTCASE ARG
-	CASE 1 ;bj
+	CASE DAYEVENT_GENERAL ;initial, if the function is allowed to run at all
+		SIF !TALENT:恋慕
+			RETURN -1
+		SIF MARK:反発刻印 || CFLAG:ブチギレ
+			RETURN -1
+		SIF ARGS == "day" && CFLAG:初期位置 == CFLAG:MASTER:初期位置 ;Magan's morning events can trigger every day like it was before
+			RETURN 2
+		RETURN 1
+	;per event
+	;RETURN -1 - means disallowed, 0 - fall back to original condition, 1 - allowed
+	CASE DAYEVENT_ORAL
 		SIF !HAS_PENIS(MASTER) ;bj only
 			RETURN -1
-		SIF !( ABL:欲望 >= 3 && ABL:技巧 >= 3 && EXP:奉仕快楽経験 >= 50 && EXP:口淫経験 >= 20 ) ;og cond
-			RETURN -1
-		RETURN 1
-	CASE 3, 10 ;cow/youbai
-		SIF !HAS_PENIS(MASTER) ;penis only
-			RETURN -1
-
-		SIF !(ABL:欲望 >= 5)
-			RETURN -1
-
-		SIF !(!TALENT:処女 && !IS_DOUTEI(MASTER)) ;must be experienced
-			RETURN -1
-		RETURN 1
-	CASE 5
-		SIF !TALENT:恋人
-			RETURN -1
-		RETURN 1
-	CASE 11 ;afternight drink
-		SIF !( ABL:奉仕精神 >= 3 && EXP:奉仕快楽経験 >= 50 )
-			RETURN -1
-		SIF (TALENT:妊娠 || TALENT:育児中)
-			RETURN -1
-		SIF	CFLAG:2 >= 1500 ;allowed without love
-			RETURN 1
-		RETURN -1
-	CASE 7, 8, 12 ;disabled, no dialogue
+		RETURN 0 ;normal condition
+	CASE DAYEVENT_PAIZURI
+		RETURN 0 ;normal condition
+	CASEELSE ;disabled, no dialogue
 		RETURN -1
 ENDSELECT
 RETURN 0

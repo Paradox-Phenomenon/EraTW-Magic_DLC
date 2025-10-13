@@ -71,12 +71,35 @@ SETCOLOR 0x00A485
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K122
+;@M_KOJO_UPDATE_K122
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K122
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K122
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 122
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"可选的背景设定", 1, "onetime", !FIRSTTIME("开局设定",1,122), "status:幸福设定（默认）:黑深残设定", TALENT:122:狂気)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K122_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 CALL SATOMAI_TALENTSETTING(122)
-RETURN 1
+CALLF FIRSTTIME("开局设定",0,122)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -95,6 +118,8 @@ PRINTFORMDL 名为舞的这个少女、开始在%CALLNAME:MASTER%身边旋转起
 PRINTFORMDW 渐渐的、%CALLNAME:MASTER%开始身体发热、精神亢奋……
 PRINTFORML 「……呵呵，开个玩笑啦♪ 请多关照吧、%CALLNAME:MASTER%……」
 PRINTFORMDW 当%CALLNAME:MASTER%恢复理智时、舞已经转身离开了……
+SIF FIRSTTIME("开局设定",0,122)
+	CALL KOJO_OPTION_K122_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -3283,10 +3308,8 @@ RETURN 0
 @SATOMAI_TALENTSETTING(ARG)
 SIF ARG != [[舞]] && ARG != [[里乃]]
 	RETURN
-SIF CFLAG:ARG:1001
-	RETURN
-PRINTFORMDL 有传言说%CALLNAME:ARG%被强迫进行不情愿的洗脑性交
-CALL ASK_YN(@"是的 （%CALLNAME:ARG%会失去重要的东西）","骗人的 （不变更素质）")
+PRINTFORMDL %CALLNAME:ARG%与隐岐奈她们似乎有一些不好的传言
+CALL ASK_YN(@"是的 （%CALLNAME:ARG%会失去重要的东西）","胡说的 （不变更素质）")
 IF !RESULT
 	CFLAG:ARG:処女喪失記念日 = -1
 	TALENT:ARG:無接吻経験 = 0
@@ -3302,13 +3325,12 @@ IF !RESULT
 	EXP:ARG:精液経験 = 30 + RAND:10
 	EXP:ARG:膣射経験 = 10 + RAND:5
 	EXP:ARG:肛射経験 = 5 + RAND:5
-	CALL COLORMESSAGE(@"%CALLNAME:ARG%失去了【处女】之身，而且心里有什么东西坏掉了……",C_YELLOW,1)
+	CALL COLORMESSAGE(@"%CALLNAME:ARG%被洗脑后强制进行性侍奉，失去了【处女】之身，而且心里有什么东西坏掉了……",C_YELLOW,1)
 	CFLAG:ARG:1001 = -1
 	IF TALENT:ARG:処女 == 1
 		TALENT:ARG:処女 = 0
 	ENDIF
 	TALENT:ARG:狂気 = 1
 ELSE
-	PRINTFORMDW %CALLNAME:ARG%似乎生活得很幸福
-	CFLAG:ARG:1001 = 1
+	PRINTFORMDW %CALLNAME:ARG%她们过得安稳又幸福
 ENDIF

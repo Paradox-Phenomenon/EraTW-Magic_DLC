@@ -86,12 +86,32 @@ SETCOLOR 0xD8ADFF
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
 
-;攻略し直しがダルい人用
-IF CFLAG:[[依姫]]:面識 && !CFLAG:[[依姫]]:1999
-	CALL YORIHIME_SETTINGS
-	CFLAG:[[依姫]]:1999 = 1
-ENDIF
-RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 98
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,98), "status:未采纳:采纳", CFLAG:98:1999)
+
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_OPTION_K98_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL YORIHIME_SETTINGS
+CALLF FIRSTTIME("开局设定",0,98)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -136,7 +156,7 @@ IF (CFLAG:MASTER:現在位置 / 100) == 10
 		PRINTFORMW 「现在明白了吧。你不受欢迎」
 		PRINTFORMW 「如果你现在就回去的话，我们就……」
 		;顔絵を表示（オプションでオンにしていないと表示されない）
-		CALL PRINT_FACE, [[豊姫]], "通常", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "通常", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「嘛嘛，没关系啦，依姬」
 		;显示表情图（如果选项未开启，则不显示）
@@ -169,8 +189,8 @@ ELSE
 	PRINTFORML 「初次见面。我是绵月依姬」
 	PRINTFORMW 「顺便问一下，你有没有看到我的姐姐？」
 ENDIF
-CFLAG:[[依姫]]:1999 = 1
-CALL YORIHIME_SETTINGS
+SIF FIRSTTIME("开局设定",0,98)
+	CALL YORIHIME_SETTINGS
 RETURN 1
 
 ;==================================================
@@ -179,24 +199,26 @@ RETURN 1
 @YORIHIME_SETTINGS
 
 PRINTL 
-PRINTFORMDL 依姫の素質・経験等を口上推奨に変更しますか？
-PRINTFORMDL ※依姫が告白してこなくなります（あなたから告白することを想定しています）
-PRINTFORMDL ※素質【器用な指】を失います
-PRINTFORMDL ※依姫のＶ経験・精液経験を０にします
-PRINTFORMDL ※非処女の場合は処女になります
+PRINTFORMDL 是否将依姬的资质・经验等修改为剧本推荐设定？
+PRINTFORMDL ※依姬将不再向您告白（剧本推定您主动告白）
+PRINTFORMDL ※将失去【灵巧手指】
+PRINTFORMDL ※依姬的V经验・精液经验将归零
+PRINTFORMDL ※非处女的情况下会变为处女
 PRINTL 
-CALL ASK_YN("変更する","変更しない")
+CALL ASK_YN("修改","不修改")
 SELECTCASE RESULT
 	CASE 0
 		SETBIT CFLAG:[[依姫]]:约会後イベントフラグ , 1
 		TALENT:[[依姫]]:靈活手指 = 0
 		EXP:[[依姫]]:Ｖ経験 = 0
 		EXP:[[依姫]]:精液経験 = 0
-		SIF !TALENT:[[依姫]]:処女
-			TALENT:[[依姫]]:処女 = 1
-		PRINTFORMDW 変更しました
+		TALENT:[[依姫]]:処女 = 1
+		CSTR:[[依姫]]:46 = 还没被任何人进入
+		CFLAG:98:1999 = 1
+		PRINTFORMDW 已修改
 	CASE 1
-		PRINTFORMDW 変更しませんでした
+		PRINTFORMDW 未修改
+		CFLAG:98:1999 = 0
 ENDSELECT
 
 @K98_BEFORETRAIN
@@ -614,7 +636,7 @@ IF LOCAL
 				IF TALENT:恋慕
 					CALL PRINT_FACE, [[依姫]], "通常", "服", "", ""
 					PRINTFORML 「他们那么亲密……」
-					CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+					CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 					CALL M_KOJO_COLOR_K99
 					PRINTFORML 「真羡慕啊……」
 					CALL PRINT_FACE, [[依姫]], "憤怒", "服", "", ""
@@ -2110,7 +2132,7 @@ IF LOCAL
 		PRINTFORMDL 豊姬坐在平常坐的地方，眺望着大海
 		PRINTFORMDW 微风吹动的水面上，倒映着郁郁葱葱的地球
 		;显示笑脸图案（如果选项未开启，则不显示）
-		CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「噢，真是稀奇啊。依姬在这种地方发呆」
 		;显示脸图案（如果选项未开启，则不显示）
@@ -2763,7 +2785,7 @@ IF LOCAL
 		PRINTFORMDL %CALLNAME:TARGET% 明确地表示想要生下孩子
 		PRINTFORMDW 你端正姿态，告诉%CALLNAME:TARGET% 你会负责任的
 		;笑顔絵を表示（オプションでオンにしていないと表示されない）
-		CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「做得好！依姬！」
 		;発情顔絵を表示（オプションでオンにしていないと表示されない）
@@ -2827,7 +2849,7 @@ IF LOCAL
 		PRINTFORMDL 当你走进房间时，看到%CALLNAME:TARGET%躺在床上
 		PRINTFORMDW 旁边，她的姐姐豊姬正在把桃切成一口大小的块。
 		;笑顔絵を表示（オプションでオンにしていないと表示されない）
-		CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「欢迎，%CALLNAME:MASTER%」
 		PRINTFORMW 「嗯，请坐。随便找个地方」
@@ -2848,7 +2870,7 @@ IF LOCAL
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「我们姐妹决定一起抚养这个孩子」
 		PRINTFORMW 「不会追究你的责任」
-		PRINTFORMDL 豊姫不再使用平常的温柔口吻，而是用敬语说道。
+		PRINTFORMDL 丰姬不再使用平常的温柔口吻，而是用敬语说道。
 		PRINTFORMDW 虽然没有直接说出来，但你不禁意识到自己受到了指责。
 		CALL M_KOJO_COLOR_K98
 		PRINTFORMW 「…………」
@@ -2856,11 +2878,11 @@ IF LOCAL
 		PRINTFORMDW 你希望能说些什么，但你无话可说。
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「……但是如果」
-		PRINTFORMDW 你抬起头，对豊姫说道。
+		PRINTFORMDW 你抬起头，对丰姬说道。
 		PRINTFORMW 「如果你想要负责任的话」
-		PRINTFORMDW 豊姫在一个切开的桃子上插上了牙签。
+		PRINTFORMDW 丰姬在一个切开的桃子上插上了牙签。
 		PRINTFORMW 「那么，下次一定要好好长大，对吧？」
-		PRINTFORMDW 豊姫这样说着，递给你一颗甜甜的桃子。
+		PRINTFORMDW 丰姬这样说着，递给你一颗甜甜的桃子。
 		CALL M_KOJO_COLOR_K98
 		PRINTFORMW 「负责任，是吗。姐姐……」
 		CALL M_KOJO_COLOR_K99
@@ -2868,7 +2890,7 @@ IF LOCAL
 		PRINTFORMW 「对吧？ 依姬？」
 		CALL M_KOJO_COLOR_K98
 		PRINTFORMW 「…………」
-		PRINTFORMDL %CALLNAME:TARGET%用一种略带厌倦的眼神看着豊姫。
+		PRINTFORMDL %CALLNAME:TARGET%用一种略带厌倦的眼神看着丰姬。
 		PRINTFORMDW 然后叹了口气，转向你。
 		PRINTFORMW 「请负起责任」
 		PRINTFORMDL %CALLNAME:TARGET%一边困惑地笑着，一边这样说道。
@@ -2915,7 +2937,7 @@ IF LOCAL
 		PRINTFORMW 「――啊，%CALLNAME:MASTER%」
 		PRINTFORMDW 进入房间，看到%CALLNAME:TARGET%和刚出生的孩子。
 		;笑顔絵を表示（オプションでオンにしていないと表示されない）
-		CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「嘻嘻，进来进来♪」
 		PRINTFORMDW 接着，丰姬带着咀嚼着桃子的豊姬迎接着你。
@@ -2971,7 +2993,7 @@ IF LOCAL
 		PRINTFORMDL 桌子上摆满了许多出生礼物。
 		PRINTFORMDW %CALLNAME:TARGET%认识的每个人都在庆祝孩子的诞生。
 		;显示笑脸表情（如果未启用选项，则不会显示）
-		CALL PRINT_FACE, [[豊姫]], "笑顔", "服", "", ""
+		CALL PRINT_FACE, [[丰姬]], "笑顔", "服", "", ""
 		CALL M_KOJO_COLOR_K99
 		PRINTFORMW 「咕噜咕噜……真是太好了呢……」
 		;显示愤怒脸表情（如果未启用选项，则不会显示）

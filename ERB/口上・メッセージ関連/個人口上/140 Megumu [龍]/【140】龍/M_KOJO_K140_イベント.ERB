@@ -14,20 +14,9 @@
 ;CFLAG:1004 有多个恋人
 ;CFLAG:1005 完全插入子宫口
 ;CFLAG:1006 没啥用的神秘小开关
-;MASTERの恋人がその場に居るかどうか返す式中関数
-;=-1 龙が恋人 =0 元から恋人無 =1 その場に居ない =2 恋人と同席
 ;CFLAG:1500 up选项的收纳 =bit0 选项1已完成修改 =bit1 选项1已略过 =bit2 选项2已略过
 ;CFLAG:1501 角色对话颜色决定
 ;-------------------------------------------------
-@K140_FIND_LOVER()
-#FUNCTION
-SIF TALENT:MASTER:恋人 == 0
-	RETURNF 0
-SIF TALENT:140:恋人
-	RETURNF -1
-SIF CFLAG:(TALENT:MASTER:恋人):現在位置 == CFLAG:MASTER:現在位置
-	RETURNF 2
-RETURNF 1
 ;******************************************************************************
 
 ;### 口上存在判定 ###################################
@@ -86,117 +75,203 @@ RETURN RESULT
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_UPDATE_K140
-;选项1，角色素质更改
-IF !GETBIT(CFLAG:140:1500,1)
-	LOCAL = LINECOUNT
-	PRINTFORMDL 为了更贴合口上、作者稍微修改了一下素质（不多）、如果不想修改素质对游玩口上也没有影响
-	PRINTFORMDL 是否选择修改素质？
-	PRINTFORMDL [0] 修改吧
-	PRINTFORMDL [1] 先不修改，下次再决定
-	PRINTFORMDL [2] 不修改，不用再次询问
-	PRINTFORMDL [3] 玩TW喜欢攻略龙的小朋友你们好啊……
-	INPUT
-	IF RESULT == 0
-		PRINTFORMDW 感谢对作者XP的体谅OTZ
-		TALENT:140:24 = 1
-		TALENT:140:100 = 1
-		TALENT:140:105 = 1
-		TALENT:140:102 = 1
-		;变为巨乳
-		TALENT:140:105 = 1
-		CFLAG:140:1500 = 3
-	ELSEIF RESULT == 1
-		PRINTFORMDW 好，下次UPDATE时再问你
-	ELSEIF RESULT == 2
-		PRINTFORMDW 可惜啊……
-		CFLAG:140:1500 = 2
-	ELSEIF RESULT == 3
-		CALL PRINT_IMAGE("Milk_megumu",1000,"left")
-		PRINTFORMDW 哇沃————————！！！！！！
-		PRINTFORMW
-		PRINTFORML （接下请自行脑补正常龙或奶龙状态为你献上的爱意满满的MV） 
-		PRINTFORMW
-		PRINTFORMDL 今夜星光闪闪
-		PRINTFORMDW 我爱你的心暖暖
-		PRINTFORMDL 想你一晚又一晚
-		PRINTFORMDW 把爱你的心填满
-		PRINTFORMDL 享受爱情的苦
-		PRINTFORMDW 做你的小公主
-		PRINTFORMDL 月亮不睡我不睡
-		CALL HPH_PRINT,@"我是你的小美味～～HPH","DW"
-		PRINTFORMDW 
-		PRINTFORML
-		PRINTFORML
-		PRINTFORMDW 啊哈哈…刚才作者被贝利亚打晕过去了…无论发生了什么都和作者没有关系的哦……
-		CLEARLINE LINECOUNT - LOCAL
-		RESTART
-	ENDIF
-ENDIF
-CLEARLINE LINECOUNT - LOCAL
-;选项2 设定口上色
-IF !GETBIT(CFLAG:140:1500,2)
-	PRINTPLAIN 可以调整本剧本的台词颜色，
-	LOCAL = 0x5198F5, 0x446FFA, 0x4F6ED4, 0x3456C4
-	CALL M_KOJO_COLOR_K140
-	PRINTFORML （现在为这样，与选项[{FINDELEMENT(LOCAL,GETCOLOR())}]一致）
-	SETCOLOR LOCAL:0
-	PRINTL
-	PRINTL [0] - 今夜星光闪闪～我爱你的心暖暖♪
-	SETCOLOR LOCAL:1
-	PRINTL
-	PRINTL [1] - 想你一晚又一晚～把爱你的心填满♪
-	SETCOLOR LOCAL:2
-	PRINTL
-	PRINTL [2] - 享受爱情的苦～做你的小公主♪
-	SETCOLOR LOCAL:3
-	PRINTL
-	PRINTL [3] - 月亮不睡我不睡♪我是你的小美味～～❤
-	RESETCOLOR
-	DO
-	INPUT
-	SIF RESULT >= 0 && RESULT <= 3
-		BREAK
+;@M_KOJO_UPDATE_K140
+
+@KOJO_OPTION_EXIST_K140
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K140
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 140
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,140), "status:未采纳:采纳", GETBIT(CFLAG:140:1500,1))
+CALL KOJO_OPTION_ITEM("变更台词颜色", 2)
+CALL KOJO_OPTION_ITEM("奶龙纯享版:哈哈，知道大家想看，特意为家人们保留了彩蛋", 3,"cond", !FIRSTTIME("开局设定",1,140))
+SIF FIRSTTIME("开局设定",1,140)
 	CLEARLINE 1
-	LOOP 1
-	CFLAG:140:1501 = LOCAL:RESULT
-	CALL M_KOJO_COLOR_K140
-	PRINTFORMDL 感谢您的欣赏～～
-	PRINTFORMDW 请以剧本中的实际台词混排确认一下效果
-	SELECTCASE RAND:4
-		CASE 0
-			PRINTFORMDL 随着最后一发激烈的冲击、%CALLNAME:MASTER%蛋蛋里面的所有存货全部一股脑地喂给了龙小穴里面那个已经学会真空口交的发情大天狗子宫 		        
-			CALL HPH_PRINT,@"「——哦哦哦哦%"HPH" *3% 要被烫死惹好烫好烫烫%"HPH" *3% 子宫已经喝不下了啊啊啊%"HPH" *3%」","L"
-			CALL HPH_PRINT,@"「爽的要飞起来了啊HPH 小穴已经变成%CALLNAME:MASTER%的形状了啊HPH」","L"
-			CALL HPH_PRINT,@"「不行不行又去去了了噢噢噢噢%"HPH" *3%  水喷的停不下来啊啊%"HPH" *3% 要缺水而死了噢噢%"HPH" *3% 」","L"
-			PRINTFORMDL 伴随着绵延不断的高昂的雌兽呻吟声、感觉到灵魂都被射出一部分的%CALLNAME:MASTER%以自身的胜利宣布终结了这场交合…还是看下龙怎么样了吧
-			PRINTFORMDW 此刻终于结束完高潮余韵的龙已经整个人被抽取了骨头般趴在床上、而床单早已被龙刚才如同喷泉般的潮吹全部打湿、连地上也有不少爱液的痕迹
-		CASE 1
-		    PRINTFORMDL 那超高速的抽动如同抽水泵一样、把小穴里的所有的爱液全部一股脑给抽送出来、尤其是子宫内刚产出一股蜜液、就被冲进来的肉棒全部给抽出去、形成一股股喷泉般的水流
-		    PRINTFORMDL 穴口早已在这波高压攻势下整个的外翻了出来、就连子宫也随着肉棒的进出不断地被往下拉、如果不是肉棒的每次都以飞快的速度进出、让子宫来不及进行真空吸附、否则真的有可能被带出来
-			PRINTFORML 「欸…欸…%CALLNAME:MASTER%…发生了…什么…脑袋…一片空白…什么也…感觉不到…」
-		    PRINTFORMDL 看见龙终于慢慢地恢复了意识、%CALLNAME:MASTER%心底里的石头落了下来、腰肢的速度也放慢了下来、毕竟、要是还保持刚才的速度、怕不是一醒过来又昏过去
-		    PRINTFORMDL 但作为打搅睡觉的惩罚还是逃不了的、%CALLNAME:MASTER%还是紧紧的以种付位的姿势抱住了龙、贪婪地渴求着阴道的吞噬
-		    CALL HPH_PRINT,@"「…呜哦！呜哦！%CALLNAME:MASTER%轻点轻点啊～～～ 小穴…要被顶…哦～…哦～…破…了…噫噫噫噫————%"HPH" *3%高潮了高潮了————%"HPH" *3%」","L"
-		    CALL HPH_PRINT,@"「不要…再…欺负…子宫了…欸、要射了？……噫啊啊啊啊啊啊————噢噢噢噢——————好烫好烫好烫————子宫被烫死了呀啊啊啊…%"HPH" *3%」","L"
-		    PRINTFORMW 「…啊哈…啊哈…终于停下来了…太爽了…我好满足呢～ %CALLNAME:MASTER%你也应该和我一样满足了…吧？」
-		CASE 2
-			PRINTFORML 「齁噫噫！呜喔噢噢噢噢！啊啊…哦啊啊啊啊啊啊啊～～～♪」
-			PRINTFORMDL 在不知疲倦地收缩吸吮包裹肉棒的膣肉中%CALLNAME:MASTER%终于爆发出来小穴一直渴求的浓厚精液
-			PRINTFORMDL 龙仿佛要把自己腰给折断大幅度地向后仰起、那头飘柔顺滑的深蓝长发也随着身体的摆动在空中飞舞
-			PRINTFORML 「啊…呜呜啊啊啊…%CALLNAME:MASTER%…射进来了…好舒服…但还不够…%CALLNAME:MASTER%的一切…我都想要呀」
-			PRINTFORMW 「不要怜惜我…请将你的所有欲望释放出来吧…只有那样我才能感受你全部的一切…」
-		CASE 3
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K140_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;选项1，角色素质更改
+PRINTFORMDL 为了更贴合剧本设定、作者稍微修改了一下素质（不多）、如果不想修改素质对游玩也没有影响
+PRINTFORMDL 龙获得【开朗】【高大】【巨乳】【V敏感】，这是作者的XP，求求惹
+PRINTFORMDL 是否选择修改素质？
+PRINTFORMDL [0] 修改吧
+PRINTFORMDL [1] 不修改
+PRINTFORMDL [2] 先不修改，下次再选
+PRINTFORMDL [3] 哈喽！玩TW喜欢攻略龙的小朋友你们好啊……
+$inputloop
+INPUT
+IF RESULT == 0
+	PRINTFORMDW 感谢对作者XP的体谅OTZ
+	TALENT:140:24 = 1
+	TALENT:140:100 = 1
+	TALENT:140:105 = 1
+	TALENT:140:102 = 1
+	SETBIT CFLAG:140:1500,1
+	CALLF FIRSTTIME("开局设定",0,140)
+ELSEIF RESULT == 1
+	PRINTFORMDW 可惜啊……
+	CLEARBIT CFLAG:140:1500,1
+	CALLF FIRSTTIME("开局设定",0,140)
+ELSEIF RESULT == 2
+ELSEIF RESULT == 3
+	CALL 我是奶龙我是奶龙
+ELSE
+	CLEARLINE 1
+	GOTO inputloop
+ENDIF
+
+@KOJO_OPTION_K140_RESULT_2
+#LOCALSIZE 4
+#LOCALSSIZE 1
+;选项2 设定口上色
+PRINTPLAIN 可以调整本剧本的台词颜色，
+LOCAL = 0x5198F5, 0x446FFA, 0x4F6ED4, 0x3456C4
+CALL M_KOJO_COLOR_K140
+PRINTFORML （现在为这样，与选项[{FINDELEMENT(LOCAL,GETCOLOR())}]一致）
+SETCOLOR LOCAL:0
+PRINTL
+PRINTL [0] - 今夜星光闪闪～我爱你的心暖暖♪
+SETCOLOR LOCAL:1
+PRINTL
+PRINTL [1] - 想你一晚又一晚～把爱你的心填满♪
+SETCOLOR LOCAL:2
+PRINTL
+PRINTL [2] - 享受爱情的苦～做你的小公主♪
+SETCOLOR LOCAL:3
+PRINTL
+PRINTL [3] - 月亮不睡我不睡♪我是你的小美味～～❤
+RESETCOLOR
+DO
+INPUT
+CLEARLINE 1
+SIF RESULT >= 0 && RESULT <= 3
+	BREAK
+LOOP 1
+CFLAG:140:1501 = LOCAL:RESULT
+CALL M_KOJO_COLOR_K140
+PRINTFORMDL 感谢您的欣赏～～
+PRINTFORMDW 请以剧本中的实际台词混排确认一下效果
+SELECTCASE RAND:4
+	CASE 0
+		PRINTFORMDL 随着最后一发激烈的冲击、%CALLNAME:MASTER%蛋蛋里面的所有存货全部一股脑地喂给了龙小穴里面那个已经学会真空口交的发情大天狗子宫 		        
+		CALL HPH_PRINT,@"「——哦哦哦哦%"HPH" *3% 要被烫死惹好烫好烫烫%"HPH" *3% 子宫已经喝不下了啊啊啊%"HPH" *3%」","L"
+		CALL HPH_PRINT,@"「爽的要飞起来了啊HPH 小穴已经变成%CALLNAME:MASTER%的形状了啊HPH」","L"
+		CALL HPH_PRINT,@"「不行不行又去去了了噢噢噢噢%"HPH" *3%  水喷的停不下来啊啊%"HPH" *3% 要缺水而死了噢噢%"HPH" *3% 」","L"
+		PRINTFORMDL 伴随着绵延不断的高昂的雌兽呻吟声、感觉到灵魂都被射出一部分的%CALLNAME:MASTER%以自身的胜利宣布终结了这场交合…还是看下龙怎么样了吧
+		PRINTFORMDW 此刻终于结束完高潮余韵的龙已经整个人被抽取了骨头般趴在床上、而床单早已被龙刚才如同喷泉般的潮吹全部打湿、连地上也有不少爱液的痕迹
+	CASE 1
+		PRINTFORMDL 那超高速的抽动如同抽水泵一样、把小穴里的所有的爱液全部一股脑给抽送出来、尤其是子宫内刚产出一股蜜液、就被冲进来的肉棒全部给抽出去、形成一股股喷泉般的水流
+		PRINTFORMDL 穴口早已在这波高压攻势下整个的外翻了出来、就连子宫也随着肉棒的进出不断地被往下拉、如果不是肉棒的每次都以飞快的速度进出、让子宫来不及进行真空吸附、否则真的有可能被带出来
+		PRINTFORML 「欸…欸…%CALLNAME:MASTER%…发生了…什么…脑袋…一片空白…什么也…感觉不到…」
+		PRINTFORMDL 看见龙终于慢慢地恢复了意识、%CALLNAME:MASTER%心底里的石头落了下来、腰肢的速度也放慢了下来、毕竟、要是还保持刚才的速度、怕不是一醒过来又昏过去
+		PRINTFORMDL 但作为打搅睡觉的惩罚还是逃不了的、%CALLNAME:MASTER%还是紧紧的以种付位的姿势抱住了龙、贪婪地渴求着阴道的吞噬
+		CALL HPH_PRINT,@"「…呜哦！呜哦！%CALLNAME:MASTER%轻点轻点啊～～～ 小穴…要被顶…哦～…哦～…破…了…噫噫噫噫————%"HPH" *3%高潮了高潮了————%"HPH" *3%」","L"
+		CALL HPH_PRINT,@"「不要…再…欺负…子宫了…欸、要射了？……噫啊啊啊啊啊啊————噢噢噢噢——————好烫好烫好烫————子宫被烫死了呀啊啊啊…%"HPH" *3%」","L"
+		PRINTFORMW 「…啊哈…啊哈…终于停下来了…太爽了…我好满足呢～ %CALLNAME:MASTER%你也应该和我一样满足了…吧？」
+	CASE 2
+		PRINTFORML 「齁噫噫！呜喔噢噢噢噢！啊啊…哦啊啊啊啊啊啊啊～～～♪」
+		PRINTFORMDL 在不知疲倦地收缩吸吮包裹肉棒的膣肉中%CALLNAME:MASTER%终于爆发出来小穴一直渴求的浓厚精液
+		PRINTFORMDL 龙仿佛要把自己腰给折断大幅度地向后仰起、那头飘柔顺滑的深蓝长发也随着身体的摆动在空中飞舞
+		PRINTFORML 「啊…呜呜啊啊啊…%CALLNAME:MASTER%…射进来了…好舒服…但还不够…%CALLNAME:MASTER%的一切…我都想要呀」
+		PRINTFORMW 「不要怜惜我…请将你的所有欲望释放出来吧…只有那样我才能感受你全部的一切…」
+	CASE 3
 		CALL HPH_PRINT,@"「齁噢噢噢噢咿咿噢噢噢哦～～～～～HPHHPHHPHHPHHPH」","L"    
 		CALL HPH_PRINT,@"「咿呀啊啊啊HPH高潮HPH潮喷高潮HPH小穴高潮HPH要死了HPH要死了要死了要高潮死啦啊啊啊啊啊————！！！HPHHPHHPHHPH」","L"  
 		CALL HPH_PRINT,@"「噗噫噫噫HPH呜齁呜齁呜齁HPH我不想再去了HPH不想再去了HPH肉棒HPH肉棒HPH在小穴里HPH在子宫里HPH在脑袋里HPH嘿啊啊啊～～HPH」","L"  
 		CALL HPH_PRINT,@"「呜呜呜子宫小穴痉挛抽搐的好厉害好害怕HPH%CALLNAME:MASTER%抱紧我抱紧我抱紧我HPH喔咿咿咿咿忘记被抱紧会让肉棒插进来的啦HPH齁呜HPH齁呜HPH又要去惹HPH让脑袋烧糊的连续高潮又要去惹HPH」","L"  
 		CALL HPH_PRINT,@"「去了————！去了——————！！去了——————————！！！ 发情雌兽的杂鱼小穴又要被凶猛粗暴的大肉棒操到高潮了啊啊啊啊啊～～～～～HPHHPHHPHHPH」","L"  
-		CALL HPH_PRINT,@"「噗噫HPH噗噫HPH噗噫HPH齁噫噫噫噫噫噫～～～HPHHPHHPH」","L"  
-	ENDSELECT
-	PRINTFORMDL 
-	PRINTFORMDL ※您可以随时通过UPDATE更改龙龙的台词颜色
-	RESETCOLOR
+		CALL HPH_PRINT,@"「噗噫HPH噗噫HPH噗噫HPH齁噫噫噫噫噫噫～～～HPHHPHHPH」","W"  
+ENDSELECT
+RESETCOLOR
+
+@KOJO_OPTION_K140_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL 我是奶龙我是奶龙
+
+@我是奶龙我是奶龙
+#LOCALSIZE 3
+#LOCALSSIZE 1
+#DIMS DYNAMIC LINES,8
+gLineCount = LINECOUNT
+REPEAT 100
+	PRINTL
+REND
+CALL SET_KOJO_COLOR(140)
+LOCAL:1 = GETBGCOLOR()
+CALL TITLE画像_K140
+RESETBGCOLOR
+	FOR LOCAL:0, 0, 35
+		HTML_PRINT "<p align='center'><img src='K140_TITLE" + TOSTR(LOCAL:0, "000") + "'></p>"
+		TWAIT 60,0
+	NEXT
+CALL ANIMATION_ROLL_TEXT,"                                        ！！！！！！哇沃————————♪(*ﾉ・ω・)ﾉ♫",,25
+PRINTFORML
+ALIGNMENT CENTER
+LOCAL:2 = LINECOUNT
+RESETCOLOR
+CUSTOMDRAWLINE ━
+CALL HTMLPRINTL(@"<b>%GAMEBASE_TITLE%</b>",,, "ＭＳ 明朝")
+CALL HTMLPRINTL(@"<b>%eraTW_Version%</b>",,, "ＭＳ 明朝")
+CALL HTMLPRINTL(@"<b>(%GAMEBASE_YEAR%)</b>",,, "ＭＳ 明朝")
+PRINTL
+CALL HTMLPRINTL(@"汉化版仅为学习日语的交流之用，禁止对该版本的一切盗用、商用行为",,, )
+CALL HTMLPRINTL(@"%GAMEBASE_INFO%",,, )
+CUSTOMDRAWLINE ━
+PRINTFORML [0] 开始游戏
+PRINTFORML [1] 继续游戏
+TWAIT 3000,0
+CALL SET_KOJO_COLOR(140)
+ALIGNMENT LEFT
+CLEARLINE LINECOUNT - LOCAL:2
+CALL LINECENTER,"哈哈，开个玩笑，接下请自行脑补正常龙或奶龙状态为你献上的爱意满满的MV","━",MAXWIDTH()
+TWAIT 1000,0
+ALIGNMENT CENTER
+{
+LINES '= @"　　今夜星光闪闪♫ヽ(゜∇゜ヽ)♪ ",
+@"　　　　　　　 我爱你的心暖暖(*ﾉ・ω・)ﾉ嘿！～～",
+@"想你一晚又一晚ヽ(・ω・ヽ*)嚯！",
+@"　　　　　　　　　 把爱你的心填满～♪(*ﾉ・ω・)ﾉ♫❤",
+@"　　　　　享受爱情的苦　(｡’▽’｡)♡",
+@"做你的小公主♫ヽ(゜∇゜ヽ)♪ ",
+@"　　　　　　月亮不睡我不睡ԅ(≖﹏≖ԅ)",
+@"　　　　　　　　　　　　　　　　 我是你的小美味～～(´◠ω◠`) ❤"
+}
+CALL FADEIN_GROUP,LINES,8,150,8
+PRINTFORML
+PRINTFORML
+ALIGNMENT LEFT
+PRINTFORMDW 啊哈哈…刚才作者被贝利亚打晕过去了…无论发生了什么都和作者没有关系的哦……
+CALL EVENT_GDISPOSE_K140
+RESETCOLOR
+CLEARLINE LINECOUNT - gLineCount
+
+@TITLE画像_K140
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF !GCREATED(100140)
+	GCREATEFROMFILE 100140, "剧本自定义附件/megumu/K140_TITLE.webp"
+FOR I, 0, 35
+	SPRITECREATE "K140_TITLE"+TOSTR(I, "D3"), 100140, 0, I*16, 1071, 16
+NEXT
+
+@EVENT_GDISPOSE_K140
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF GCREATED(100140)
+	GDISPOSE 100140
+	FOR I, 0, 35
+		SPRITEDISPOSE "K140_TITLE"+TOSTR(I, "D3")
+	NEXT
 ENDIF
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -232,6 +307,8 @@ PRINTFORMW 「平时没事的话也可以来拜访、我很欢迎%CALLNAME:MASTE
 PRINTFORMW 「那么、请跟我来」
 PRINTFORMDL 深蓝发红瞳的女性、鸦天狗的首领————饭纲丸龙、对你浅浅一笑后、就朝着住宅走去了
 PRINTFORMDL %CALLNAME:MASTER%生怕跟丢了步伐、连忙小跑过去追着龙的倩影…
+SIF FIRSTTIME("开局设定",0,140)
+	CALL KOJO_OPTION_K140_RESULT_1
 
 RETURN 1
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
