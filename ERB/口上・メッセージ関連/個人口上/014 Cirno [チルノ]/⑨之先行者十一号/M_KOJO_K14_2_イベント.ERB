@@ -99,6 +99,8 @@ CFLAG:14:時間停止口上有 = 1
 ;### 口上色判定 ###################################
 @M_KOJO_9_COLOR_K14
 SETCOLOR 0x51dede
+SIF CFLAG:14:1501
+	SETCOLOR CFLAG:14:1501
 ;SETCOLOR 0x51c4d3	较暗
 ;SETCOLOR 0x51dede	普通
 ;SETCOLOR 0x7dffe7	较亮
@@ -107,12 +109,70 @@ SETCOLOR 0x51dede
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_9_UPDATE_K14
+;@M_KOJO_9_UPDATE_K14
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_9_OPTION_EXIST_K14
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_9_OPTION_K14
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 14
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本专属更新页面", 1)
+CALL KOJO_OPTION_ITEM("变更台词颜色", 2)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_9_OPTION_K14_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 14
+CALL SET_KOJO_COLOR
 CALL CIRNO_UPDATE
-RETURN 1
+TARGET = LOCAL
+RESETCOLOR
+
+@KOJO_9_OPTION_K14_RESULT_2
+#LOCALSIZE 4
+#LOCALSSIZE 1
+;选项2 设定口上色
+PRINTPLAIN 可以调整本剧本的台词颜色，
+LOCAL = 0x51c4d3, 0x51dede, 0x7dffe7, 0x66ffdb
+CALL SET_KOJO_COLOR
+PRINTFORML （现在为这样，与选项[{FINDELEMENT(LOCAL,GETCOLOR())}]一致）
+SETCOLOR LOCAL:0
+PRINTL
+PRINTL [0] 较暗较暗较暗较暗
+SETCOLOR LOCAL:1
+PRINTL
+PRINTL [1] 普通普通普通普通
+SETCOLOR LOCAL:2
+PRINTL
+PRINTL [2] 较亮较亮较亮较亮
+SETCOLOR LOCAL:3
+PRINTL
+PRINTL [3] 原案原案原案原案
+RESETCOLOR
+DO
+INPUT
+CLEARLINE 1
+SIF RESULT >= 0 && RESULT <= 3
+	BREAK
+LOOP 1
+CFLAG:14:1501 = LOCAL:RESULT
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）

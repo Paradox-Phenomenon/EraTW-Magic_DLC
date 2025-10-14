@@ -86,82 +86,119 @@ SETCOLOR C_AQUA
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
 ;UPDATE判定でCFLAG等の角色变量を使用场合、角色番号の指定が必要になります
-#DIM LCOUNT
-LCOUNT = 0
-SETCOLOR C_AQUA
-PRINTFORML 这个口上中琪露诺的台词完全是以玩家扮演大妖精来设计的
-PRINTFORML 仅包括大妖精与琪露诺的日常互动台词
-PRINTFORML 为避免繁琐的判定，该剧本禁用性指令
-PRINTFORML 当玩家并非大妖精时，该剧本的绝大部分内容将默认关闭
-IF FLAG:扮演 == 13
-	PRINTFORML 你正在扮演大妖精
+LOCAL = GETCOLOR()
+SIF FLAG:扮演 == 13
 	CFLAG:14:1001 = 1
-ELSE
-	PRINTFORML 你可以就这么继续，那么对应台词将不会启用
-	PRINTFORML 也同时提供将全部台词启用的选项
-	PRINTFORML [0] 我已知晓，就这么继续吧
-	PRINTFORML [1] 我会在脑内替换成大妖精和琪露诺的对话，请启用全部台词吧
-	$LOOP
-	INPUT
-	SELECTCASE RESULT
-		CASE 0
-			PRINTFORML ※现在大妖精与琪露诺对应台词将不会启用
-		CASE 1
-			CFLAG:14:1001 = 1
-			PRINTFORM 你成为了
-			IF TALENT:MASTER:性別 == 2
-				SELECTCASE TALENT:MASTER:年齢
-					CASE -1
-						PRINTFORMW 带把的大妖精。
-					CASE 2
-						PRINTFORMW 科斯的孤儿。
-					CASEELSE
-						PRINTFORMW 大妖精（震声）
-						PRINTFORML ……
-						PRINTFORML …
-						PRINTFORMW 不管谁说什么都是大妖精。
-				ENDSELECT
-			ELSE
-				PRINTFORMW 大妖精(假)。
-				SIF TALENT:MASTER:胸圍 < 0
-					PRINTFORMW 虽然胸部对衣服来说有点松松垮垮但这是小问题。
-			ENDIF
-			PRINTFORML ※将启用全部台词
-		CASEELSE
-			GOTO LOOP
-	ENDSELECT
-	PRINTFORMW ※你可以随时在UPDATE中重新选择
-ENDIF
-;只有在大酱对应台词启用时才进入关系选项
-IF CFLAG:14:1001
-	PRINTFORML 请告诉我大酱和琪露诺酱之间的关系。
-	PRINTFORML
-	PRINTFORML [0] 刚刚认识哦
-	PRINTFORML [1] 大酱和琪露诺酱当然是要好的伙伴啦
-	PRINTFORML ※有一些刚刚认识阶段的对话差分和变成好朋友的事件（思慕事件）
-	;PRINTFORMW [2] 暗自想要成为琪露诺最特别的人♥（没写）
-	$INPUT_LOOP_K14_ENCOUNTER
-	INPUT 
-	IF RESULT == 0
-		PRINTFORMW 大酱\@FLAG:扮演 == 13 ?#(%CALLNAME:MASTER%版)\@和琪露诺今后很快会成为好朋友哒。
-		CFLAG:14:1002 = 2
-	ELSEIF RESULT == 1
-		CFLAG:14:1002 = 1
-		PRINTFORMW 大酱\@FLAG:扮演 == 13 ?#(%CALLNAME:MASTER%版)\@和琪露诺是最强的搭档哒。
-	;ELSEIF RESULT == 2
-		;PRINTFORMW %CALLNAME:MASTER%成为了琪露诺的新娘(自称)。
-	ELSE
-		IF LCOUNT >5
-			PRINTFORMW 都说了还没设定了啊！
+SETCOLOR C_AQUA
+PRINTFORML 初始剧本中琪露诺的台词完全是以玩家扮演大妖精来设计的
+PRINTFORML 仅包括大妖精与琪露诺的日常互动台词
+PRINTFORML 在4974的维护中，该剧本用于展示健全模式、扮演模式的可行性，为避免繁琐的判定而禁用性指令
+PRINTFORMW 完整游戏体验请转至另外两个有更多对应文本的剧本
+SETCOLOR LOCAL
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K14
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K14
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 14
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"扮演模式对应内容%COND_STR(@"：有效", CFLAG:14:1001 == 1)%", 1, "cond", FLAG:扮演 != 13)
+CALL KOJO_OPTION_ITEM("琪露诺与大酱的关系开局", 2,"cond",FLAG:扮演 == 13 || CFLAG:14:1001 == 1)
+SIF !(FLAG:扮演 == 13 || CFLAG:14:1001 == 1)
+	CLEARLINE 1	
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K14_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 14
+CALL SET_KOJO_COLOR
+PRINTFORMDL 初始剧本中琪露诺的台词完全是以玩家扮演大妖精来设计的
+PRINTFORMDL 因为你不是大妖精，请从下方选择应对方式
+gLineCount = LINECOUNT
+$LOOP
+SIF LINECOUNT - gLineCount > 0
+    CLEARLINE LINECOUNT - gLineCount
+CALL ASK_M("知晓并就这么继续（绝大部分内容不显示）",1, @"我会在脑内替换成大妖精与琪露诺在对话，请启用全部台词吧",1,"想听听更多说明",1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORMDW ※现在大妖精与琪露诺对应台词将不会启用
+	CASE 1
+		CFLAG:14:1001 = 1
+		PRINTFORM 你成为了
+		IF TALENT:MASTER:性別 == 2
+			SELECTCASE TALENT:MASTER:年齢
+				CASE -1
+					PRINTFORML 带把的大妖精。
+				CASE 2
+					PRINTFORML 科斯的孤儿。
+				CASEELSE
+					PRINTFORML 大妖精（震声）
+					PRINTFORML ……
+					PRINTFORML …
+					PRINTFORML 不管谁说什么都是大妖精。
+			ENDSELECT
 		ELSE
-			PRINTFORMW 尚未进行设定。
-			LCOUNT ++
+			PRINTFORMW 大妖精(假)。
+			SIF TALENT:MASTER:胸圍 < 0
+				PRINTFORMDL 虽然胸部对衣服来说有点松松垮垮但这是小问题。
 		ENDIF
-		GOTO INPUT_LOOP_K14_ENCOUNTER
+		PRINTFORMW ※将启用全部台词
+	CASE 2
+		PRINTFORMDL 初始剧本中琪露诺的台词完全是以玩家扮演大妖精来设计的
+		PRINTFORMDL 仅包括大妖精与琪露诺的日常互动台词，实际上是健全的日常生活模拟剧本
+		PRINTFORMDW 由于它是初始剧本，为了不影响玩家正常体验游戏的核心交互，才设计了隐藏与大酱互动内容的兼容机制\n让玩家可以与琪露诺进行性交互，但实际上剧本内并无相关文本
+		PRINTFORMDL 鉴于目前有另外两个内容相对丰富的剧本存在，该剧本无需担负保证游戏体验完整性的责任\n可以特化为小品剧本，只用于展示健全模式、扮演模式的可行性\n为避免繁琐的判定，该剧本禁用性指令
+		PRINTFORMDW 当玩家并非大妖精时，该剧本的绝大部分内容将默认关闭
+		GOTO LOOP
+ENDSELECT
+TARGET = LOCAL
+RESETCOLOR
+
+;只有在大酱对应台词启用时才进入关系选项
+@KOJO_OPTION_K14_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SETCOLOR C_AQUA
+PRINTFORMDL 请告诉我大酱和琪露诺酱之间的关系。
+PRINTFORML
+PRINTFORML [0] 刚刚认识哦
+PRINTFORML [1] 大酱和琪露诺酱当然是要好的伙伴啦
+PRINTFORMDL ※如果选择刚刚认识，会有一丢丢刚认识阶段的对话差分、以及变成要好伙伴的事件（安排在达成思慕时）
+;PRINTFORMW [2] 暗自想要成为琪露诺最特别的人♥（没写）
+gLineCount = LINECOUNT
+$INPUT_LOOP_K14_ENCOUNTER
+SIF LINECOUNT - gLineCount > 0
+    CLEARLINE LINECOUNT - gLineCount
+INPUT 
+IF RESULT == 0
+	PRINTFORMW 大酱\@FLAG:扮演 == 13 ?#(%CALLNAME:MASTER%版)\@和琪露诺今后很快会成为好朋友哒。
+	CFLAG:14:1002 = 2
+ELSEIF RESULT == 1
+	CFLAG:14:1002 = 1
+	PRINTFORMW 大酱\@FLAG:扮演 == 13 ?#(%CALLNAME:MASTER%版)\@和琪露诺是最强的搭档哒。
+;ELSEIF RESULT == 2
+	;PRINTFORMW %CALLNAME:MASTER%成为了琪露诺的新娘(自称)。
+ELSE
+	IF LOCAL >5
+		PRINTFORMW 都说了还没设定了啊！
+	ELSE
+		PRINTFORMDW 尚未进行设定。
+		LOCAL ++
 	ENDIF
+	GOTO INPUT_LOOP_K14_ENCOUNTER
 ENDIF
 RESETCOLOR
-RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ构文）
