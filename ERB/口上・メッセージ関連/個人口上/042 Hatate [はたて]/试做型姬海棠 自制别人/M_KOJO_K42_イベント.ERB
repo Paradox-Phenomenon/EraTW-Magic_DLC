@@ -21,7 +21,8 @@
 ;******************************************************************************
 ;### 口上存在判定 ###################################
 @M_KOJO_K42_1(ARG)
-
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RESULTS = _中文自制
 RESULTS:1 = 狼exb中文自制版
 RESULTS:2 = 国人自制<br>含有特殊选项（详情查阅Update）<br>内容量较少（有效输出行：2493行）
@@ -31,7 +32,8 @@ RETURN 1
 
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_中文自制_FLAGSETTING_K42
-
+#LOCALSIZE 1
+#LOCALSSIZE 1
 IF CFLAG:42:998 == 1
 	CFLAG:42:眠姦口上有 = 1
 	CFLAG:42:時間停止口上有 = 1
@@ -42,101 +44,77 @@ RETURN 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_中文自制_COLOR_K42
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SETCOLOR 0xF09664
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_中文自制_UPDATE_K42
+;@M_KOJO_中文自制_UPDATE_K42
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
-IF !CFLAG:42:1001
-	PRINTFORMDL 现在可以変更姫海棠極的胸部尺寸。
-	PRINTFORMDL 要変更吗？
-	PRINTFORMDL
-	PRINTFORMDL [0] 要 (今后UPDATE時还可以再変更)
-	PRINTFORMDL [1] 现在这样就好
-	PRINTFORMDL [2] 现在这样就好，且今后UPDATE时不再提示
-	$INPUT_LOOP_K42_BS
-	INPUT
-	IF RESULT == 0
-		PRINTFORMDL
-		PRINTFORMDL [0] 贫乳吧，这样就很好 (TW默认)
-		PRINTFORMDL [1] 普通就不错。
-		PRINTFORMDL [2] 巨乳，奶子！
-		$INPUT_LOOP_K42_ENCOUNTER
-		INPUT 
-		IF RESULT == 0
-			TALENT:42:105 = -1
-			PRINTFORMDW 姫海棠極现在是[貧乳]了。
-		ELSEIF RESULT == 1
-			TALENT:42:105 = 0
-			PRINTFORMDW 姫海棠極现在既不是[貧乳]也不是[巨乳]了。
-		ELSEIF RESULT == 2
-			TALENT:42:105 = 1
-			PRINTFORMDW ……姫海棠極现在是[巨乳]了。
-		ELSE
-			GOTO INPUT_LOOP_K42_ENCOUNTER
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMDW 保留了姫海棠極的胸部尺寸変更。
-	ELSEIF RESULT == 2
-		PRINTFORMDW 保留了姫海棠極的胸部尺寸変更，且今后不再提示。
-		CFLAG:42:1001 = 1
-	ELSE
-		GOTO INPUT_LOOP_K42_BS
-	ENDIF
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_中文自制_OPTION_EXIST_K42
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_中文自制_OPTION_K42
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 42
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM("改变乳量", 1)
+CALL KOJO_OPTION_ITEM(@"改变[はたて]的译名  现在是：（%CALLNAME:42%）", 2)
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_中文自制_OPTION_K42_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 现在可以变更%NAME:42%的胸部尺寸
+PRINTFORMDL
+CALL ASK_M("贫乳吧，这样就很好 (TW默认)",1,"普通就不错。",1,"巨乳，奶子！",1)
+IF RESULT == 0
+	TALENT:42:105 = -1
+	PRINTFORMDW %NAME:42%现在是[貧乳]了。
+ELSEIF RESULT == 1
+	TALENT:42:105 = 0
+	PRINTFORMDW %NAME:42%现在既不是[貧乳]也不是[巨乳]了。
+ELSEIF RESULT == 2
+	TALENT:42:105 = 1
+	PRINTFORMDW ……%NAME:42%现在是[巨乳]了。
 ENDIF
 
-IF !CFLAG:42:1002
-	PRINTFORMDL 
-	PRINTFORMDL 现在可以変更姫海棠極的中文译名。
-	PRINTFORMDL 要変更吗？
-	PRINTFORMDL
-	PRINTFORMDL [0] 要 (今后UPDATE時还可以再変更)
-	PRINTFORMDL [1] 现在这样就好
-	PRINTFORMDL [2] 现在这样就好，且今后UPDATE时不再提示
-	$INPUT_LOOP_K42_N
-	INPUT
-	IF RESULT == 0
-		PRINTFORMDL 
-		PRINTFORMDL [0] 姫海棠極(TW默认)
-		PRINTFORMDL [1] 姬海棠极
-		PRINTFORMDL [2] 姬海棠羽立
-		PRINTFORMDL [3] 姬海棠果
-		$INPUT_LOOP_K42_ENCOUNTER_N
-		INPUT 
-		IF RESULT == 0
-			NAME:42 = 姫海棠極
-			CALLNAME:42 = 極
-			PRINTFORMDW 现在的译名是『姫海棠極』。
-		ELSEIF RESULT == 1
-			NAME:42 = 姬海棠极
-			CALLNAME:42 = 极
-			PRINTFORMDW 现在的译名是『姬海棠极』。
-		ELSEIF RESULT == 2
-			NAME:42 = 姬海棠羽立
-			CALLNAME:42 = 羽立
-			PRINTFORMDW 现在的译名是『姬海棠羽立』。
-		ELSEIF RESULT == 3
-			NAME:42 = 姬海棠果
-			CALLNAME:42 = 果
-			PRINTFORMDW 现在的译名是『姬海棠果』。
-		ELSE
-			GOTO INPUT_LOOP_K42_ENCOUNTER_N
-		ENDIF
-	ELSEIF RESULT == 1
-		PRINTFORMDW 保留了姫海棠極的当前中文译名。
-	ELSEIF RESULT == 2
-		PRINTFORMDW 保留了姫海棠極的当前中文译名，且今后不再提示。
-		CFLAG:42:1002 = 1
-	ELSE
-		GOTO INPUT_LOOP_K42_N
-	ENDIF
+@KOJO_中文自制_OPTION_K42_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMDL 
+PRINTFORMDL 现在可以变更%NAME:42%的中文译名
+PRINTFORMDL
+CALL ASK_M(@"%NAME:42%(TW默认)",1,"姬海棠极",1,"姬海棠羽立",1,"姬海棠果",1)
+IF RESULT == 0
+	NAME:42 = 姬海棠 果
+	CALLNAME:42 = 果
+ELSEIF RESULT == 1
+	NAME:42 = 姬海棠极
+	CALLNAME:42 = 极
+ELSEIF RESULT == 2
+	NAME:42 = 姬海棠羽立
+	CALLNAME:42 = 羽立
+ELSEIF RESULT == 3
+	NAME:42 = 姬海棠果
+	CALLNAME:42 = 果
 ENDIF
-RETURN 1
+PRINTFORMDW 现在的译名是『%NAME:42%』。
+
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）『初见语』
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -145,61 +123,16 @@ RETURN 1
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
 
-PRINTFORMDL 现在可以変更姫海棠極的胸部尺寸。
-PRINTFORMDL (UPDATE時还可以再次変更)
-PRINTFORMDL 
-PRINTFORMDL [0] 贫乳吧，这样就很好 (TW默认)
-PRINTFORMDL [1] 普通就不错
-PRINTFORMDL [2] 巨乳，奶子！
-$INPUT_LOOP_K42_ENCOUNTER
-INPUT 
-IF RESULT == 0
-	TALENT:42:105 = -1
-	PRINTFORMDW 姫海棠極现在是[貧乳]了。
-ELSEIF RESULT == 1
-	TALENT:42:105 = 0
-	PRINTFORMDW 姫海棠極现在既不是[貧乳]也不是[巨乳]了。
-ELSEIF RESULT == 2
-	TALENT:42:105 = 1
-	PRINTFORMDW 姫海棠極现在是[巨乳]了。
-ELSE
-	GOTO INPUT_LOOP_K42_ENCOUNTER
-ENDIF
-
-PRINTFORMDL 
-PRINTFORMDL 现在可以変更姫海棠極的中文译名。
-PRINTFORMDL (UPDATE時还可以再次変更)
-PRINTFORMDL 
-PRINTFORMDL [0] 姫海棠極(TW默认)
-PRINTFORMDL [1] 姬海棠极
-PRINTFORMDL [2] 姬海棠羽立
-PRINTFORMDL [3] 姬海棠果
-$INPUT_LOOP_K42_ENCOUNTER_N
-INPUT 
-IF RESULT == 0
-	NAME:42 = 姫海棠極
-	CALLNAME:42 = 極
-	PRINTFORMDW 现在的译名是『姫海棠極』。
-ELSEIF RESULT == 1
-	NAME:42 = 姬海棠极
-	CALLNAME:42 = 极
-	PRINTFORMDW 现在的译名是『姬海棠极』。
-ELSEIF RESULT == 2
-	NAME:42 = 姬海棠羽立
-	CALLNAME:42 = 羽立
-	PRINTFORMDW 现在的译名是『姬海棠羽立』。
-ELSEIF RESULT == 3
-	NAME:42 = 姬海棠果
-	CALLNAME:42 = 果
-	PRINTFORMDW 现在的译名是『姬海棠果』。
-ELSE
-	GOTO INPUT_LOOP_K42_ENCOUNTER_N
-ENDIF
-
-
 PRINTFORMDL 
 PRINTFORMDW 看着近前这位少女的一身装扮，%CALLNAME:MASTER%感到了一份熟悉。
 PRINTFORMDW 无论是衬衣，领带，还是格纹短裙，都很接近外界近年来的服装搭配。
+
+gLineCount = LINECOUNT
+CALL KOJO_中文自制_OPTION_K42_RESULT_1
+CALL KOJO_中文自制_OPTION_K42_RESULT_2
+PRINTFORMDW (可以在剧本选项里再次修改)
+CLEARLINE LINECOUNT - gLineCount
+
 PRINTFORMDW 在这边的世界里，倒是难得一见。
 IF (TALENT:42:105 >= 1)
 	PRINTFORMDW ……不过胸口看起来有点紧的样子，真的没问题吗？

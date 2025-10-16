@@ -23,12 +23,16 @@
 
 ;### 口上存在判定 ###################################
 @M_KOJO_K16_2(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RESULTS = _AYA10
 RESULTS:1 = 无幼稚测试版
 RESULTS:2 = 原语言汉语口上，性格偏严肃向的蕾米莉亚口上，目前仅有日常为主的内容，可期待后续更新
 RETURN 1
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_AYA10_FLAGSETTING_K16
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;基本フラグ設定はここで行ってください
 ;共通の口上フラグは必要な箇所のコメントアウトを外してご利用ください
 ;口上専用フラグはご自由に
@@ -65,145 +69,169 @@ RETURN 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_AYA10_COLOR_K16
-IF !CFLAG:16:1564 == 1
-	SETCOLOR 0xff130b
-ELSEIF CFLAG:16:1564 == 2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF CFLAG:16:1564 == 2
 	SETCOLOR 0xDB7093
 ELSEIF CFLAG:16:1564 == 3
 	SETCOLOR GETDEFCOLOR()
+ELSE
+	SETCOLOR 0xff130b
 ENDIF
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_AYA10_UPDATE_K16
+;@M_KOJO_AYA10_UPDATE_K16
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
-
-PRINTFORMDL
+@KOJO_AYA10_OPTION_EXIST_K16
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_AYA10_OPTION_K16
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 16
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM("作者的话", 1)
+CALL KOJO_OPTION_ITEM("变更台词颜色", 2)
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 3, "onetime", !FIRSTTIME("开局设定",1,16), "status:未采纳:采纳", TALENT:16:82 == 0)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_AYA10_OPTION_K16_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORMDL 感谢您选择本测试口上
 PRINTFORMDL 目前可以体验到"日常互动"与"随着攻略推进由eraTW自行触发"的内容
 PRINTFORMDL 很遗憾没有任何H指令内容、希望您不要介意
 PRINTFORMDW 若您在游玩中出现了报错、请打开"无幼稚蕾米莉亚readme.txt"文件联系作者
-PRINTFORMDL
-PRINTFORMDL
-PRINTFORMDL
+
+@KOJO_AYA10_OPTION_K16_RESULT_2
+#LOCALSIZE 3
+#LOCALSSIZE 1
+;选项2 设定口上色
 PRINTFORML 对蕾米莉亚对话内容的文本颜色进行设定
-IF FLAG:口上色
-	LOCAL = 0xff130b, 0xDB7093, GETDEFCOLOR()
-	PRINTFORMDL	设定文本颜色。
-	SETCOLOR LOCAL:0
-	PRINTFORMLC	[1]默认红色、可能会伤眼睛
-	SETCOLOR LOCAL:1
-	PRINTFORMLC	[2]少女粉
-	RESETCOLOR
-	PRINTFORMLC	[3]和tw系统文本一样的颜色
-	$COLOR_SELECT
-	INPUT
-	IF !INRANGE(RESULT, 0, 2)
-		CLEARLINE 1
-		GOTO COLOR_SELECT
-	ENDIF
-	CFLAG:16:1564 = RESULT
-	CALL M_KOJO_AYA10_COLOR_K16
-	SELECTCASE CFLAG:16:1564 
-		CASE 1
-		PRINTFORML 记得爱护好眼睛哦
-        CFLAG:16:1564 = 1
-        CASE 2
-        PRINTFORML 粉色的大小姐也很威严
-        CFLAG:16:1564 = 2
-        CASE 3
-        PRINTFORML 普普通通就好
-        CFLAG:16:1564 = 3
-	ENDSELECT
-ENDIF
+LOCAL = 0xff130b, 0xDB7093, GETDEFCOLOR()
+CALL SET_KOJO_COLOR(16)
+PRINTFORML （现在为这样，与选项[{FINDELEMENT(LOCAL,GETCOLOR())}]一致）
+PRINTL
+SETCOLOR LOCAL:0
+PRINTFORMLC	[1] 默认红色、可能会伤眼睛
+SETCOLOR LOCAL:1
+PRINTFORMLC	[2] 少女粉少女粉
+RESETCOLOR
+PRINTFORMLC	[3] 和tw系统文本一样的颜色
+DO
+INPUT
+CLEARLINE 1
+SIF RESULT >= 0 && RESULT <= 3
+	BREAK
+LOOP 1
+CFLAG:16:1564 = RESULT
+CALL M_KOJO_AYA10_COLOR_K16
+SELECTCASE CFLAG:16:1564 
+	CASE 1
+	PRINTFORML 记得爱护好眼睛哦
+	CFLAG:16:1564 = 1
+	CASE 2
+	PRINTFORML 粉色的大小姐也很威严
+	CFLAG:16:1564 = 2
+	CASE 3
+	PRINTFORML 普普通通就好
+	CFLAG:16:1564 = 3
+ENDSELECT
+RESETCOLOR
+WAIT
 
-
+@KOJO_AYA10_OPTION_K16_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORML
-PRINTFORML
-PRINTFORML
-PRINTFORMDW  如口上名所述、本口上没有对蕾米莉亚的无知、幼稚行为有相关的描写、同时也对其他素质做了些许调整
-PRINTFORMDW  允许对蕾米莉亚的多项素质进行自定义的变更吗
+PRINTFORMDL  如口上名所述、本口上没有对蕾米莉亚的无知、幼稚行为有相关的描写、同时也对其他素质做了些许调整
+PRINTFORMDL  允许对蕾米莉亚的多项素质进行自定义的变更吗
 CALL ASK_M("允许",1, "不允许" ,1)
-    SELECTCASE RESULT
+SELECTCASE RESULT
     CASE 0
-		    PRINTFORMDL 删除[无知]素质、是否进行	
-		    CALL ASK_YN("是","否")
-			IF !RESULT 
-				PRINTFORMW  蕾米莉亚失去了[无知]
-				TALENT:16:27 = 0
-			ELSE
-				PRINTFORMW  此处不进行变更
-			ENDIF
-			PRINTFORMDL
-			PRINTFORMDL
-			PRINTFORMDL 删除[幼稚]素质、是否进行	
-			PRINTFORMDW  (总体表现为蕾米莉亚是合法萝莉且只会看着别人玩闹、不会对口上内容的展示有影响)
-		    CALL ASK_YN("是","否")
-			IF !RESULT 
-				PRINTFORMW  蕾米莉亚失去了[幼稚]
-				TALENT:16:151 = 0
-			ELSE
-				PRINTFORMW  此处不进行变更
-			ENDIF
-			PRINTFORMDL
-			PRINTFORMDL
-			PRINTFORMDL 对蕾米莉亚的教养水平进行变更是否进行
-			PRINTFORMDW  (此处会对本口上事件判定产生影响、同时高教养会难以进行对话)
-			CALL ASK_YN("是","否")
-			IF !RESULT 
-				PRINTFORML 蕾米莉亚的教养水平是...
-				PRINTFORMDL 
-				PRINTFORML [1]什么都不懂的小萝莉(教养0)
-				PRINTFORML [2]tw中默认的大小姐(教养2)
-				PRINTFORML [3]上流的现代血族(教养4)
-				INPUT
-				SELECTCASE RESULT
-				CASE 1
-				PRINTFORMW  只是个不懂装懂的小萝莉罢了
-				ABL:16:43 = 0
-				CASE 2
-				PRINTFORMW  幻想乡中喜欢指指点点的知识分子阶级
-				ABL:16:43 = 2
-				CASE 3
-				PRINTFORMW  很重视自身和周围人礼仪的大小姐
-				ABL:16:43 = 4
-				ENDSELECT
-			ELSE
-				PRINTFORMW  此处不进行变更
-			ENDIF
-			PRINTFORMDL
-			PRINTFORMDL
-			PRINTFORMDL 懂得欣赏音乐的贵族少女蕾米莉亚、可以接受吗、具体表现为演奏等级为3
-			PRINTFORMDW  (此处仅使部分口上的内容描述更加合理)
-			CALL ASK_YN("是","否")
-			IF !RESULT 
-				PRINTFORMW  蕾米莉亚的[音乐技能]变成3了
-				ABL:16:45 = 3
-			ELSE
-				PRINTFORMW  此处不进行变更
-			ENDIF
-			PRINTFORMDL
-			PRINTFORMDL
-			PRINTFORMDL 对性有较高好奇心的成熟萝莉蕾米莉亚、可以接受吗、具体表现为获得"性的兴趣:好奇心"
-			PRINTFORMDW  (对想要走非纯爱路线的玩家可能有帮助)
-			CALL ASK_YN("是","否")
-			IF !RESULT 
-				PRINTFORMW  蕾米莉亚获得了[性的兴趣:好奇心]
-				TALENT:16:23 = 1
-			ELSE
-				PRINTFORMW  此处不进行变更
-			ENDIF
-			PRINTFORMDL
-			PRINTFORMDL
-			PRINTFORMW  已全部变更完毕
+		PRINTFORMDL 删除[无知]素质、是否进行	
+		CALL ASK_YN("是","否")
+		IF !RESULT 
+			PRINTFORMW  蕾米莉亚失去了[无知]
+			TALENT:16:27 = 0
+		ELSE
+			PRINTFORMW  此处不进行变更
+		ENDIF
+		PRINTFORMDL
+		PRINTFORMDL
+		PRINTFORMDL 删除[幼稚]素质、是否进行	
+		PRINTFORMDL  (总体表现为蕾米莉亚是合法萝莉且只会看着别人玩闹、不会对口上内容的展示有影响)
+		CALL ASK_YN("是","否")
+		IF !RESULT 
+			PRINTFORMW  蕾米莉亚失去了[幼稚]
+			TALENT:16:151 = 0
+		ELSE
+			PRINTFORMW  此处不进行变更
+		ENDIF
+		PRINTFORMDL
+		PRINTFORMDL
+		PRINTFORMDL 对蕾米莉亚的教养水平进行变更是否进行
+		PRINTFORMDL  (此处会对本口上事件判定产生影响、同时角色若是高教养会难以进行对话)
+		CALL ASK_YN("是","否")
+		IF !RESULT 
+			PRINTFORML 蕾米莉亚的教养水平是...
+			PRINTFORMDL 
+			PRINTFORML [1]什么都不懂的小萝莉(教养0)
+			PRINTFORML [2]tw中默认的大小姐(教养2)
+			PRINTFORML [3]上流的现代血族(教养4)
+			INPUT
+			SELECTCASE RESULT
+			CASE 1
+			PRINTFORMW  只是个不懂装懂的小萝莉罢了
+			ABL:16:43 = 0
+			CASE 2
+			PRINTFORMW  幻想乡中喜欢指指点点的知识分子阶级
+			ABL:16:43 = 2
+			CASE 3
+			PRINTFORMW  很重视自身和周围人礼仪的大小姐
+			ABL:16:43 = 4
+			ENDSELECT
+		ELSE
+			PRINTFORMW  此处不进行变更
+		ENDIF
+		PRINTFORMDL
+		PRINTFORMDL
+		PRINTFORMDL 懂得欣赏音乐的贵族少女蕾米莉亚、可以接受吗、具体表现为演奏等级为3
+		PRINTFORMDL  (此处仅使部分口上的内容描述更加合理)
+		CALL ASK_YN("是","否")
+		IF !RESULT 
+			PRINTFORMW  蕾米莉亚的[音乐技能]变成3了
+			ABL:16:45 = 3
+		ELSE
+			PRINTFORMW  此处不进行变更
+		ENDIF
+		PRINTFORMDL
+		PRINTFORMDL
+		PRINTFORMDL 对性有较高好奇心的成熟萝莉蕾米莉亚、可以接受吗、具体表现为获得"性的兴趣:好奇心"
+		PRINTFORMDL  (对想要走非纯爱路线的玩家可能有帮助)
+		CALL ASK_YN("是","否")
+		IF !RESULT 
+			PRINTFORMW  蕾米莉亚获得了[性的兴趣:好奇心]
+			TALENT:16:23 = 1
+		ELSE
+			PRINTFORMW  此处不进行变更
+		ENDIF
+		PRINTFORMDL
+		PRINTFORMDL
+		PRINTFORMW  已全部变更完毕
     CASE 1
-    PRINTFORMW  不进行变更
-	PRINTFORMDL
-    PRINTFORMDL
-    ENDSELECT
-	PRINTFORMDW  希望你能玩得开心
+		PRINTFORMW  不进行变更
+		PRINTFORMDL
+		PRINTFORMDL
+ENDSELECT
+PRINTFORMDW  希望你能玩得开心
+CALLF FIRSTTIME("开局设定",0,16)
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -327,6 +355,8 @@ RETURN 1
 		PRINTFORMDL 蕾米莉亚一边默念着%CALLNAME:MASTER%的名字、一边饶有兴致地看了过来
 	ENDIF
 	PRINTFORMW 「你还有什么想做的吗?」 
+SIF FIRSTTIME("开局设定",0,16)
+	CALL KOJO_AYA10_OPTION_K16_RESULT_1
 RETURN 1
 
 ;@K16_BEFORETRAIN

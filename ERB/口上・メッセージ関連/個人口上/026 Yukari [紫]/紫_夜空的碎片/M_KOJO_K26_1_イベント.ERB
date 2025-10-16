@@ -37,6 +37,8 @@
 
 ;### 口上存在判定 ###################################
 @M_KOJO_K26_1(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;別人口上判定です1を同キャラ口上の通し番号に置き換えてください（一つ目の別人口上なら1、二つ目の別人口上なら2
 ;複数の同キャラ口上が同時表示されないために必要です、必ず自制を変更してください
 RESULTS = _自制
@@ -49,6 +51,8 @@ RETURN 1
 
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_自制_FLAGSETTING_K26
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;基本フラグ設定はここで行ってください
 ;共通の口上フラグは必要な箇所のコメントアウトを外してご利用ください
 ;口上専用フラグはご自由に
@@ -92,7 +96,9 @@ ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_自制_COLOR_K26
-     SETCOLOR 97,52,124
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SETCOLOR 97,52,124
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 
@@ -100,33 +106,55 @@ ENDIF
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_自制_UPDATE_K26
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
 ;病娇线有点带感、之后有小概率可能会写点？
+SIF MASTERNAME:26 == ""
+	MASTERNAME:26 = %CALLNAME:MASTER%
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_自制_OPTION_EXIST_K26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_自制_OPTION_K26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 26
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,26), "status:未采纳:采纳", TALENT:26:130)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_自制_OPTION_K26_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORMDL 为了贴合本口上、作者稍微给油咖喱修改了一点素质、如果拒绝修改也不妨碍游玩本口上
 PRINTFORMDL 是否要选择修改？
-PRINTFORMDL [1] 你说是、那就是（调律者的微笑.JPG）
-PRINTFORMDL [2] 强者便是要逆天而行口也！！！
-PRINTFORMDL [3] 恢复自己的名字（如果突然发现称呼没了请点这个
-INPUT
-IF RESULT == 1
-PRINTFORMDL 识时务者为俊杰～
-ABL:26:話術技能 = 5
-TALENT:26:24 = -1
-TALENT:26:121 = 1
-TALENT:26:130 = 1
-TALENT:26:32 = 1
-TALENT:26:18 = 1
-TALENT:26:0 = 1
-EXP:26:精液経験 = 0
-ELSEIF RESULT == 2
-PRINTFORMDL 呵、油盐不进啊、算了算了放你走吧
-ELSEIF RESULT == 3
-PRINTFORMDL 现在修好了不显示名字的问题、为了一个事件要做出的改动还真多......
-MASTERNAME:26 = %CALLNAME:MASTER%
+CALL ASK_YN("你说是、那就是（调律者的微笑.JPG）","强者便是要逆天而行口也！！！")
+IF RESULT == 0
+	PRINTFORMDL 识时务者为俊杰～
+	ABL:26:話術技能 = 5
+	TALENT:26:24 = -1
+	TALENT:26:121 = 1
+	TALENT:26:130 = 1
+	TALENT:26:32 = 1
+	TALENT:26:18 = 1
+	EXP:26:精液経験 = 0
+ELSEIF RESULT == 1
+	PRINTFORMDL 呵、油盐不进啊、算了算了放你走吧
 ENDIF
-RETURN 1
+
+CALLF FIRSTTIME("开局设定",0,26)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -502,6 +530,8 @@ ELSE
   CFLAG:26:2 += 1
   ENDIF
 ENDIF
+SIF FIRSTTIME("开局设定",0,26)
+	CALL KOJO_自制_OPTION_K26_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

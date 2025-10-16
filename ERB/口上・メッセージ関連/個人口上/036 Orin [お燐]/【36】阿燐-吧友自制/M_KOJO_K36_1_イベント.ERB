@@ -47,6 +47,8 @@
 
 ;### 口上存在判定 ###################################
 @M_KOJO_K36_1(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RESULTS = _吧友火焔猫燐制作
 ;KOJO替换为KOJO_吧友火焔猫燐制作
 RESULTS:1 = 贫乳御阿燐
@@ -58,10 +60,14 @@ RETURN 1
 
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_吧友火焔猫燐制作_FLAGSETTING_K36
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RETURN 1
 
 ;### 口上色判定 ###################################
 @M_KOJO_吧友火焔猫燐制作_COLOR_K36
+#LOCALSIZE 1
+#LOCALSSIZE 1
 	SETCOLOR 0xDC143C
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xDC143C
@@ -70,6 +76,8 @@ RETURN 1
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_吧友火焔猫燐制作_UPDATE_K36
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
@@ -149,28 +157,47 @@ CFLAG:36:1026 = 0
 携带物品名 = ""
 准备送的礼物名 = ""
 
-PRINTFORML 是否打开尿道玩法
-PRINTL 
-CALL ASK_YN("我要玩弄阿燐的尿道","不了")
-IF !RESULT
-	SETBIT CFLAG:36:1014,0
-ELSE
-	CLEARBIT CFLAG:36:1014,0
-	PRINTFORML 之后不会出现尿道开发的玩法了
-ENDIF
-PRINTFORML 是否打开进一步的肛门、阴道、气味等玩法
-PRINTFORML 可能会存在异物插入，以及腋下、足酿、肛内食物等情节
-PRINTL 
-CALL ASK_YN("我需要进一步的玩法","不了，我很纯洁")
-IF !RESULT
-	CFLAG:36:1021 = 1
-ELSE
-	CFLAG:36:1021 = 0
-	PRINTFORML 之后不会出现这些玩法了
-ENDIF
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+;note: options start from 1!
+@KOJO_吧友火焔猫燐制作_OPTION_EXIST_K36
+#LOCALSIZE 1
+#LOCALSSIZE 1
+@KOJO_吧友火焔猫燐制作_OPTION_K36
+#LOCALSIZE 1
+#LOCALSSIZE 1
+TARGET = 36
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM(@"重口味内容开关", 1)
+TARGET = LOCAL
+RESETCOLOR
 
-
-RETURN 1
+;process the input portion
+@KOJO_吧友火焔猫燐制作_OPTION_K36_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+gLineCount = LINECOUNT
+DO
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	CALL PRINTBUTTON_EX, @"[0] 尿道玩法：\@GETBIT(CFLAG:36:1014,0) ? 开启 # 关闭\@", 0, 0, GETBIT(CFLAG:36:1014,0)
+	PRINTFORML
+	CALL PRINTBUTTON_EX, @"[1] 异物癖玩法：%\@ CFLAG:36:1021 ? 开启 # 关闭 \@%", 1, 0, CFLAG:36:1021
+	PRINTFORML n\异物癖例如：气味、异物插入、腋下、足酿、肛内食物等情节
+	PRINTFORML
+	PRINTL [9] 返回
+	INPUT
+	SELECTCASE RESULT
+		CASE 0
+			INVERTBIT CFLAG:36:1014,0
+		CASE 1
+			CFLAG:36:1021 = !CFLAG:36:1021
+		CASE 9
+			RETURN
+	ENDSELECT
+LOOP 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）

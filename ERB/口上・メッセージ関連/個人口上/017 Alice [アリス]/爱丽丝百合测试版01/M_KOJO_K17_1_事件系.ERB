@@ -116,13 +116,49 @@ CALL K17_ALICECHANGED_RMB
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_MAS式百合_UPDATE_K17
+;@M_KOJO_MAS式百合_UPDATE_K17
+;口上独自的UPDATE用
+;当您专门为 ENCOUNTER 准备了自己的分支标志时，请使用它（原文如此）
+;在UPDATE判断中使用字符变量（如CFLAG）时，不会有自动填充，需要自己指定角色编号
+;
+;目前可作为口上自定义设置用，可以控制一些功能是否开启
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_MAS式百合_OPTION_EXIST_K17
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_MAS式百合_OPTION_K17
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 17
+CALL SET_KOJO_COLOR
+CALL KOJO_OPTION_ITEM("作者的话", 1)
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 2, "onetime", !FIRSTTIME("开局设定",1,17), "status:未采纳:采纳", !TALENT:17:60)
+PRINTL
+PRINTL
+CALL KOJO_OPTION_ITEM(@"\@FIRSTTIME("二周目设定",1,17)?诶……这是什么选项？#二周目特殊路线\@",3, "onetime", !FIRSTTIME("二周目设定",1,17),"status:未采纳:采纳",CFLAG:17:1716, "cond", GETBIT(CFLAG:31, 1) && (MAS_ALICE_ASSUME:1))
+SIF !(GETBIT(CFLAG:31, 1) && (MAS_ALICE_ASSUME:1))
+	CLEARLINE 1
+
+TARGET = LOCAL
+RESETCOLOR
+
+;process the input portion
+@KOJO_MAS式百合_OPTION_K17_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SETCOLOR 0xFFEC8B
 PRINTFORMW   各位好，我是MAS0，在此感谢使用本口上
 PRINTFORMW   如果对本口上有什么疑问，请在这里选择选项，我会给出大概的解答
+gLineCount = LINECOUNT
 $INPUT_UPDATE
-SIF GETBIT(CFLAG:31, 1) && (MAS_ALICE_ASSUME:1)
-PRINTFORML  [0] 诶……这是什么选项？
+SIF LINECOUNT - gLineCount > 0
+	CLEARLINE LINECOUNT - gLineCount
 PRINTFORML  [1] 关于测试版
 PRINTFORML  [2] 关于h
 PRINTFORML  [3] 故事背景
@@ -131,77 +167,8 @@ PRINTFORML  [5] 说起爱丽丝的二设……
 PRINTFORMDL
 PRINTFORMDL
 PRINTFORML  [6] 你太碍事了快让我开始游戏罢（半恼）
-  INPUT
-  IF RESULT == 0
-     PRINTFORMW   「诶诶、这是什么？我们的update里原来是有这个选项的吗？」
-     PRINTFORMW   「等等、你……好像不是新面孔啊、上次也来过吗？」
-     PRINTFORML   「『上次？』、就是上周目嘛……」
-     PRINTFORMW   「你『败者食尘』过了吧、所以才能看到现在的内容、不是么？」
-     PRINTFORML
-     PRINTFORML   ……
-     PRINTFORML   ……
-     PRINTFORML   ……
-     PRINTFORML
-     PRINTFORMW   「只是我不明白」
-     PRINTFORML
-     PRINTFORMW   「既然爱丽丝已经成为恋人了、你攻略的目的也就达到了吧」
-     PRINTFORMW   「去往下一周目难道不是为了再去攻略其他角色么？」
-     PRINTFORMW   「…既然如此、你再次点开爱丽丝的update、是为了什么呢？」
-     PRINTFORML   「……」
-     PRINTFORML   「……」
-     PRINTFORMW   「……」
-     PRINTFORML
-     PRINTFORMW   「…话说、有个好消息要告诉你」
-     PRINTFORMW   「在某种契机下、爱丽丝·玛格特罗依德好像还没有忘记你哦？」
-     PRINTFORMW   「这就是爱的奇迹吗？」
-     SETCOLOR 0XFF0000
-     PRINTFORMW   「真是令人嫉妒啊……」
-     PRINTFORMW   「唔、产生嫉妒的对象不止我一个？」
-     RESETCOLOR
-     $INPUT_PRINTFORMDL
-       PRINTFORMDL  [0] 烦内、我还要去找其他女人呀！（不进入特殊路线）
-       PRINTFORMDL  [1] ……（进入特殊路线）
-       INPUT
-     IF RESULT == 0
-       SETCOLOR 0xFFEC8B
-       PRINTFORMW   「啊……这样吗」
-       PRINTFORMW   「也是呢、会选择『败者食尘』、本来也没有别的原因了吧」
-       PRINTFORMW   「点进这个update也是因为手滑么？」
-       PRINTFORML
-       PRINTFORMW   「总之先稍等一下！」
-       PRINTFORMW   「……」
-       PRINTFORMW   「……」
-       PRINTFORMW   「……」
-         CALL RESET_KOJO_CHARA(17)
-       PRINTFORMW   「…帮你把爱丽丝的遗留物处理掉了」
-       PRINTFORMW   「祝你和其他女孩子玩得开心哦～」
-       SETCOLOR 0XFF0000
-       PRINTFORML   爱丽丝彻底失去了与你有关的记忆
-       PRINTFORML   爱丽丝彻底遗忘了曾与你一同度过的日子
-       RESETCOLOR
-       PRINTFORMDW   爱丽丝的数据被重置了
-     ELSEIF RESULT == 1
-       SETCOLOR 0xFFEC8B
-       PRINTFORMW   「你在犹豫吗？」
-       PRINTFORMW   「犹豫也就是说……你也有别的心思吧」
-       PRINTFORMW   「我懂的——毕竟为了讨得爱丽丝欢心、你也付出了很多努力呢」
-       PRINTFORMW   「仅仅只是成为恋人这种事情、对你来说还不够、是吗？」
-       PRINTFORMW   「爱丽丝身上尚未被发掘的魅力还有很多呢」
-       PRINTFORMW   「就比如、此刻你心里正想着的那个词^_^」
-       ;目前设定的是，这个说话的人是上海
-       ;可能会改
-       PRINTFORMW
-       PRINTFORML
-       PRINTFORML
-       CFLAG:17:1716 += 1
-       SETCOLOR 0XFF0000
-       PRINTFORML   爱丽丝似乎变得有些不一样了……？
-       PRINTFORML   但爱丽丝仍然还记得、且很想再见到你……
-       RESETCOLOR
-       PRINTFORMDW   已进入特殊路线
-     ENDIF
-     GOTO INPUT_UPDATE
-  ELSEIF RESULT == 1
+INPUT
+IF RESULT == 1
     PRINTFORML   你好，如你所见，这是个测试版本，会有很多未完善的剧情和各种莫名其妙的bug
     PRINTFORML   还有池沼的陷落文本，虽然写得真的很烂但不知道怎么写所以暂时就这样，以后会改的
     PRINTFORML   以及，还有一些虽然写了但并不能触发的文本…
@@ -212,75 +179,77 @@ PRINTFORML  [6] 你太碍事了快让我开始游戏罢（半恼）
     PRINTFORMW   顺便关于之后的更新，大概也是遥遥无期吧？不过我会尽力写下去的
     PRINTFORMW   总之这就是关于本测试版的口上了，祝你玩得开心
     PRINTFORML
-     GOTO INPUT_UPDATE
-  ELSEIF RESULT == 2
-  SETCOLOR 0xFFEC8B
-     PRINTFORMW   如标题所言，口上内容为爱丽丝百合特化，自机默认性别为女，所以想要获得更好的游玩体验请务必将自机性别变更为女性
-     PRINTFORML   有爱丽丝扶她的差分，不过内容较少，请根据个人喜好自行选择    
-     PRINTFORMW   （男性自机的差分是不会有的，扶她自机也没有……嗯，大概）
-     PRINTFORMW   而后，口上里的你小姐，表现出来的感觉会比较弱受，请注意
-     PRINTFORML
-     PRINTFORMW   本口上中，对爱丽丝的描写相较原版，“孤高”与“冷淡”的性格会更为突出
-     PRINTFORMW   因此，为了使爱丽丝更符合本版口上的感觉，原版中[容易自慰][容易中毒]这两个标签会被删除，自慰经验也会变更为0
-     PRINTFORML   同时增加三个正面标签，四个负面标签…
-     PRINTFORMW   （喂，这会不会太多了
-     PRINTFORMW   以及、随着攻略进程爱丽丝的性格也会发生改变。如何？很严谨吧
-     PRINTFORML   赞美的话说出来也是可以的，虽然我听不见
-     PRINTFORML
-     GOTO INPUT_UPDATE
-  ELSEIF RESULT == 3
-     PRINTFORMW   懒狗施工中
-     PRINTFORMDW   ……
-     PRINTFORMDW   ……
-     PRINTFORMDW   ……
-     PRINTFORMW   也就是说，这里是一片空白吗
-     PRINTFORML   没事的，故事背景方面的内容
-     PRINTFORMW   通过正常的游戏流程差不多也能讲清楚！
-     PRINTFORMW   ……总之就是这样，故事背景暂时不会在update中出现……
-     PRINTFORMW   （真的只是暂时吗（目移）
-     GOTO INPUT_UPDATE
-  ELSEIF RESULT == 4
-     PRINTFORMW   口上里遍布了关于自机标签的特殊差分，而后由于作者的小心思，给爱丽丝贴了很多负面标签，导致好感增长较慢
-     PRINTFORML   于是问题就来了：该怎么选自机标签，又该使什么法子攻略爱丽丝？
-     PRINTFORML   其一，本口上里拥有特殊差分的自机标签有：
-     PRINTFORMW   幼儿退行/幼稚/儿童/年龄-1＞开朗/引人注目＞胆怯
-     PRINTFORMW   为什么关于小孩子的标签会分这么细，自然是因为内容很多…
-    PRINTFORMW   基本上，所有行动都被作者我写上了小孩差分，yy过自己是幼女的朋友一定不能错过…
-    PRINTFORMW   萝莉真是最棒了……呃呃，跑题了
-    PRINTFORMW   关于你小姐得是什么性格，也并非有强求选择之意，这是你自己创造的角色，所以跟着自己喜欢的来选择就好
-    PRINTFORMW   说不定某天，闲得蛋疼的作者会把所有标签的差分补全呢，，哈哈哈，，
-    PRINTFORML
-    PRINTFORML   其二，关于本口上的爱丽丝攻略
-    PRINTFORMW   给爱丽丝增添了[音感]标签，所以在演奏上是有加成的，同时乐器选择钢琴的话也会有特别剧情、欢迎来找小爱演奏
-    PRINTFORML   然后，出于私心给了爱丽丝偏好甜食的设定，计划是给每个甜食料理写差分
-    PRINTFORMW   ……不过现在还完全没实施，总之敬请期待，应该会写的，应该……
-    PRINTFORMW   （ps.甜品制作需要料理等级>＝3，请注意）
-    PRINTFORML
-    GOTO INPUT_UPDATE
-  ELSEIF RESULT == 5
-     PRINTFORMW   啊，说起爱丽丝的二设各位会想到什么？
-    PRINTFORMW   比如痴女、病娇之类的……？
-    PRINTFORMW   那么，既然痴女属性已经在原版口上展现过了……
-    PRINTFORML
-    PRINTFORML
-    PRINTFORML   是的、就是这样，本口上还有一个
-    PRINTFORMW   正在施工中的第二条线路！也就是病娇线！
-    PRINTFORMW   各个内容都会发生全面的改变，能体验到船新口上内容！！
-    PRINTFORMW   当然，「正在施工中」，内容虽然有那么一点点，但完全撑不起游玩，而且我也没测试过到底能不能触发
-    PRINTFORMW   更可恶的是因为我太懒，所以现在这个测试版本里也并没有对病娇线做屏蔽处理，真是抱歉……
-    PRINTFORMW   总之，不要玩病娇线
-    GOTO INPUT_UPDATE
-  ELSEIF RESULT == 6
-     PRINTFORMW   啊、好的
-     PRINTFORMW   那么不多废话，祝您游玩愉快！
-  ENDIF
+	GOTO INPUT_UPDATE
+ELSEIF RESULT == 2
+	SETCOLOR 0xFFEC8B
+	PRINTFORMW   如标题所言，口上内容为爱丽丝百合特化，自机默认性别为女，所以想要获得更好的游玩体验请务必将自机性别变更为女性
+	PRINTFORML   有爱丽丝扶她的差分，不过内容较少，请根据个人喜好自行选择    
+	PRINTFORMW   （男性自机的差分是不会有的，扶她自机也没有……嗯，大概）
+	PRINTFORMW   而后，口上里的你小姐，表现出来的感觉会比较弱受，请注意
+	PRINTFORML
+	PRINTFORMW   本口上中，对爱丽丝的描写相较原版，“孤高”与“冷淡”的性格会更为突出
+	PRINTFORMW   因此，为了使爱丽丝更符合本版口上的感觉，原版中[容易自慰][容易中毒]这两个标签会被删除，自慰经验也会变更为0
+	PRINTFORML   同时增加三个正面标签，四个负面标签…
+	PRINTFORMW   （喂，这会不会太多了
+	PRINTFORMW   以及、随着攻略进程爱丽丝的性格也会发生改变。如何？很严谨吧
+	PRINTFORML   赞美的话说出来也是可以的，虽然我听不见
+	PRINTFORML
+	GOTO INPUT_UPDATE
+ELSEIF RESULT == 3
+	PRINTFORMW   懒狗施工中
+	PRINTFORMDW   ……
+	PRINTFORMDW   ……
+	PRINTFORMDW   ……
+	PRINTFORMW   也就是说，这里是一片空白吗
+	PRINTFORML   没事的，故事背景方面的内容
+	PRINTFORMW   通过正常的游戏流程差不多也能讲清楚！
+	PRINTFORMW   ……总之就是这样，故事背景暂时不会在update中出现……
+	PRINTFORMW   （真的只是暂时吗（目移）
+	GOTO INPUT_UPDATE
+ELSEIF RESULT == 4
+	PRINTFORMW   口上里遍布了关于自机标签的特殊差分，而后由于作者的小心思，给爱丽丝贴了很多负面标签，导致好感增长较慢
+	PRINTFORML   于是问题就来了：该怎么选自机标签，又该使什么法子攻略爱丽丝？
+	PRINTFORML   其一，本口上里拥有特殊差分的自机标签有：
+	PRINTFORMW   幼儿退行/幼稚/儿童/年龄-1＞开朗/引人注目＞胆怯
+	PRINTFORMW   为什么关于小孩子的标签会分这么细，自然是因为内容很多…
+	PRINTFORMW   基本上，所有行动都被作者我写上了小孩差分，yy过自己是幼女的朋友一定不能错过…
+	PRINTFORMW   萝莉真是最棒了……呃呃，跑题了
+	PRINTFORMW   关于你小姐得是什么性格，也并非有强求选择之意，这是你自己创造的角色，所以跟着自己喜欢的来选择就好
+	PRINTFORMW   说不定某天，闲得蛋疼的作者会把所有标签的差分补全呢，，哈哈哈，，
+	PRINTFORML
+	PRINTFORML   其二，关于本口上的爱丽丝攻略
+	PRINTFORMW   给爱丽丝增添了[音感]标签，所以在演奏上是有加成的，同时乐器选择钢琴的话也会有特别剧情、欢迎来找小爱演奏
+	PRINTFORML   然后，出于私心给了爱丽丝偏好甜食的设定，计划是给每个甜食料理写差分
+	PRINTFORMW   ……不过现在还完全没实施，总之敬请期待，应该会写的，应该……
+	PRINTFORMW   （ps.甜品制作需要料理等级>＝3，请注意）
+	PRINTFORML
+	GOTO INPUT_UPDATE
+ELSEIF RESULT == 5
+	PRINTFORMW   啊，说起爱丽丝的二设各位会想到什么？
+	PRINTFORMW   比如痴女、病娇之类的……？
+	PRINTFORMW   那么，既然痴女属性已经在原版口上展现过了……
+	PRINTFORML
+	PRINTFORML
+	PRINTFORML   是的、就是这样，本口上还有一个
+	PRINTFORMW   正在施工中的第二条线路！也就是病娇线！
+	PRINTFORMW   各个内容都会发生全面的改变，能体验到船新口上内容！！
+	PRINTFORMW   当然，「正在施工中」，内容虽然有那么一点点，但完全撑不起游玩，而且我也没测试过到底能不能触发
+	PRINTFORMW   更可恶的是因为我太懒，所以现在这个测试版本里也并没有对病娇线做屏蔽处理，真是抱歉……
+	PRINTFORMW   总之，不要玩病娇线
+	GOTO INPUT_UPDATE
+ELSEIF RESULT == 6
+	PRINTFORMW   啊、好的
+	PRINTFORMW   那么不多废话，祝您游玩愉快！
+ENDIF
+RESETCOLOR
+@KOJO_MAS式百合_OPTION_K17_RESULT_2
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SETCOLOR 0xFFEC8B
 PRINTFORMDW   请问是否要对爱丽丝的特性进行变更？
-PRINTFORMDL   （删去[容易自慰]、[容易中毒]，自慰经验变更为0，增加
-PRINTFORMDL   [音感][学习快][擅长针][自制心][冷漠][阴郁][难以逾越的底线]）
-$INPUT_PRINT
-PRINTL [0] 删去
-PRINTL [1] 不做改变
-INPUT
+PRINTFORMDL   （删去[容易自慰]、[容易中毒]，自慰经验变更为0，
+PRINTFORMDL   增加[音感][学习快][擅长针][自制心][冷漠][阴郁][难以逾越的底线]）
+CALL ASK_YN("删去","不做改变")
 IF RESULT == 0
 	PRINTFORMDW   变更完成      
 	TALENT:17:60 = 0
@@ -297,13 +266,76 @@ ELSEIF RESULT == 1
 	PRINTFORMW   好吧，虽然改不改其实都无伤大雅，没关系的（碎碎念）
 ENDIF
 RESETCOLOR
-;口上独自的UPDATE用
-;当您专门为 ENCOUNTER 准备了自己的分支标志时，请使用它（原文如此）
-;在UPDATE判断中使用字符变量（如CFLAG）时，不会有自动填充，需要自己指定角色编号
-;
-;目前可作为口上自定义设置用，可以控制一些功能是否开启
+CALLF FIRSTTIME("开局设定",0,17)
 
-RETURN 1
+@KOJO_MAS式百合_OPTION_K17_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORMW   「诶诶、这是什么？原来是有这个选项的吗？」
+PRINTFORMW   「等等、你……好像不是新面孔啊、上次也来过吗？」
+PRINTFORML   「『上次？』、就是上周目嘛……」
+PRINTFORMW   「你『败者食尘』过了吧、所以才能看到现在的内容、不是么？」
+PRINTFORML
+PRINTFORML   ……
+PRINTFORML   ……
+PRINTFORML   ……
+PRINTFORML
+PRINTFORMW   「只是我不明白」
+PRINTFORML
+PRINTFORMW   「既然爱丽丝已经成为恋人了、你攻略的目的也就达到了吧」
+PRINTFORMW   「去往下一周目难道不是为了再去攻略其他角色么？」
+PRINTFORMW   「…既然如此、你再次点开爱丽丝的剧本选项、是为了什么呢？」
+PRINTFORML   「……」
+PRINTFORML   「……」
+PRINTFORMW   「……」
+PRINTFORML
+PRINTFORMW   「…话说、有个好消息要告诉你」
+PRINTFORMW   「在某种契机下、爱丽丝·玛格特罗依德好像还没有忘记你哦？」
+PRINTFORMW   「这就是爱的奇迹吗？」
+SETCOLOR 0XFF0000
+PRINTFORMW   「真是令人嫉妒啊……」
+PRINTFORMW   「唔、产生嫉妒的对象不止我一个？」
+RESETCOLOR
+CALL ASK_YN("烦内、我还要去找其他女人呀！（不进入特殊路线）","……（进入特殊路线）")
+IF RESULT == 0
+	SETCOLOR 0xFFEC8B
+	PRINTFORMW   「啊……这样吗」
+	PRINTFORMW   「也是呢、会选择『败者食尘』、本来也没有别的原因了吧」
+	PRINTFORMW   「点进这个update也是因为手滑么？」
+	PRINTFORML
+	PRINTFORMW   「总之先稍等一下！」
+	PRINTFORMW   「……」
+	PRINTFORMW   「……」
+	PRINTFORMW   「……」
+	CALL RESET_KOJO_CHARA(17)
+	PRINTFORMW   「…帮你把爱丽丝的遗留物处理掉了」
+	PRINTFORMW   「祝你和其他女孩子玩得开心哦～」
+	SETCOLOR 0XFF0000
+	PRINTFORML   爱丽丝彻底失去了与你有关的记忆
+	PRINTFORML   爱丽丝彻底遗忘了曾与你一同度过的日子
+	RESETCOLOR
+	PRINTFORMDW   爱丽丝的数据被重置了
+ELSEIF RESULT == 1
+	SETCOLOR 0xFFEC8B
+	PRINTFORMW   「你在犹豫吗？」
+	PRINTFORMW   「犹豫也就是说……你也有别的心思吧」
+	PRINTFORMW   「我懂的——毕竟为了讨得爱丽丝欢心、你也付出了很多努力呢」
+	PRINTFORMW   「仅仅只是成为恋人这种事情、对你来说还不够、是吗？」
+	PRINTFORMW   「爱丽丝身上尚未被发掘的魅力还有很多呢」
+	PRINTFORMW   「就比如、此刻你心里正想着的那个词^_^」
+	;目前设定的是，这个说话的人是上海
+	;可能会改
+	PRINTFORMW
+	PRINTFORML
+	PRINTFORML
+	CFLAG:17:1716 += 1
+	SETCOLOR 0XFF0000
+	PRINTFORML   爱丽丝似乎变得有些不一样了……？
+	PRINTFORML   但爱丽丝仍然还记得、且很想再见到你……
+	RESETCOLOR
+	PRINTFORMDW   已进入特殊路线
+ENDIF
+CALLF FIRSTTIME("二周目设定",0,17)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系事件（额外语法）
@@ -318,6 +350,10 @@ LOCAL = 1
 ;注、由于初见之前依然可以看到角色的经验信息，此时将不会触发这里的修正
 ;——————————
 IF LOCAL
+;在进入二周目之前，需要确保玩家看到了二周目选项
+SIF GETBIT(CFLAG:31, 1) && (MAS_ALICE_ASSUME:1) && FIRSTTIME("二周目设定",0,17)
+	CALL KOJO_MAS式百合_OPTION_K17_RESULT_3
+
 IF CFLAG:17:1716 ==1
 ;病娇初遇
 PRINTFORMDW   准备动身前往下一个目的地时、一道曼妙的金色身影吸引了你的视线
@@ -441,37 +477,8 @@ PRINTFORMDW   ……还是尽量避而远之、疏远未知的麻烦比较好呢
 PRINTFORML   
 PRINTFORML
 PRINTFORMDW   *————————————*
-PRINTFORMDW   为更符合本口上中爱丽丝的性格，需要对爱丽丝的特性进行调整，虽然不变也不会对剧情产生影响…
-PRINTFORMDW   于是，请根据个人意愿，选择是否变更特性
-PRINTFORMDW   （如果已经在update中进行过选择，则可直接跳过该选项）
-PRINTFORMDW   请问是否要对爱丽丝的特性进行变更？
-PRINTFORMDL   （删去[容易自慰]、[容易中毒]，自慰经验变更为0，增加
-PRINTFORMDL   [音感][学习快][擅长针][自制心][冷漠][阴郁][难以逾越的底线]）
-$INPUT_PRINT
-PRINTL [0] 删去
-PRINTL [1] 不做改变
-PRINTL
-PRINTL [2] 跳过
-INPUT
-   IF RESULT == 0
- 
-     PRINTFORMDW   变更完成      
-     TALENT:17:60 = 0
-     TALENT:17:71 = 0
-     EXP:17:22 = 0
-     TALENT:17:162 = 1
-     TALENT:17:50 = 1     
-     TALENT:17:20 = 1
-     TALENT:17:21 = 1
-     TALENT:17:24 = -1
-     TALENT:17:25 = 1
-   ELSEIF RESULT == 1
-      PRINTFORMDW   诶……即便如此也要保持原汁原味的特性吗
-      PRINTFORMDW   好吧，虽然改不改其实都无伤大雅，没关系的（碎碎念）
-   ELSEIF RESULT == 2
-      PRINTFORMDW   好的，祝您游玩愉快
-      PRINTFORML
-   ENDIF
+SIF FIRSTTIME("开局设定",0,17)
+	CALL KOJO_MAS式百合_OPTION_K17_RESULT_2
 RESETCOLOR
 ENDIF
 ENDIF
@@ -479,7 +486,7 @@ RETURN 1
 
 @K17_BEFORETRAIN_MAS式百合
 ;在一天开始时读取的函数，或者更准确地说，在来访判断之前读取的函数
-;在这里，您可以设置 CFLAG：XX：次日访问以确保角色来访问，或者 TCVAR:XX:発情 并使其一天都在发情（原文如此）
+;在这里，您可以设置 CFLAG：17：次日访问以确保角色来访问，或者 TCVAR:17:発情 并使其一天都在发情（原文如此）
 ;但是，由于它每天早上必定会被加载，因此需要设置条件
 
 
@@ -3528,12 +3535,12 @@ ELSEIF ARGS == "二人で"			;一起做
 ENDIF
 
 ;使用例
-;IF !TALENT:XX:恋慕
-;	PRINTFORMW %CALLNAME:XX%はガードが堅いぞ！
+;IF !TALENT:17:恋慕
+;	PRINTFORMW %CALLNAME:17%はガードが堅いぞ！
 ;	RETURN -1
 ;ENDIF
 ;IF TALENT:MASTER:濃厚精液
-;	PRINTFORMW %CALLNAME:XX%はちんぽに弱いぞ！
+;	PRINTFORMW %CALLNAME:17%はちんぽに弱いぞ！
 ;	RETURN 1
 ;ENDIF
 ;==================================================
@@ -4699,14 +4706,14 @@ ENDIF
 ;外出处特殊遭遇事件
 @RUN_INTO_MAS式百合_K17(MAP_ID)
 #DIM MAP_ID
-;XX要换成角色编号
+;17要换成角色编号
 ;最后一定要RETURN 1;不认识的情况下不会发生
 ;一定要让不见面的情况下发生，请RETURN -1
-;	SIF !CFLAG:XX:面識
+;	SIF !CFLAG:17:面識
 ;		RETURN -1
-;	PRINTFORML %CALLNAME:XX%がいた
+;	PRINTFORML %CALLNAME:17%がいた
 ;	PRINTFORML 「どうも」
-;	CFLAG:XX:好感度 += 5
+;	CFLAG:17:好感度 += 5
 ;	RETURN 1
 
 ;炮友契約用补正
