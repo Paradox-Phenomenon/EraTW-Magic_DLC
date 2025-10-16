@@ -71,7 +71,8 @@ ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_Axl_COLOR_K60
-
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SETCOLOR 0x4F32F
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
@@ -79,43 +80,66 @@ SETCOLOR 0x4F32F
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_Axl_UPDATE_K60
+;@M_KOJO_Axl_UPDATE_K60
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
-IF !CFLAG:60:1060
-	PRINTFORML 要把帕露西变成更符合口上设定的素质吗
-	PRINTFORML 总的来说、帕露西会失去【施虐狂】和【容易中毒】，然后获得【保守】、【难以越过的底线】、【压抑】、【自制心】和【容易自慰】
-	PRINTFORML 你应该选择变更的理由：
-	PRINTFORML 1：增加代入感
-	PRINTFORML 2：原来的素质可能会导致某些场合下帕露西的行为比较出戏
-	PRINTFORML 3:求你了求你了求你了
-	CALL ASK_M("变更",1,"不变",1,"暂时保留（下次update的时候再说）",1)
-	SELECTCASE RESULT
-		CASE 0
-			PRINTFORMW 那么请看着吧，我的变身！
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_Axl_OPTION_EXIST_K60
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_Axl_OPTION_K60
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 60
+CALL SET_KOJO_COLOR
 
-			TALENT:60:自制心 = 1
-			TALENT:60:難以越過的底線 = 1
-			TALENT:60:施虐狂 = 0
-			TALENT:60:容易中毒 = 0
-			TALENT:60:容易自慰 = 1
-			TALENT:60:性的兴趣 = -1
-			TALENT:60:自己愛 = -1
-			CFLAG:60:1060 = 1
-		CASE 1
-			PRINTFORMW 啊...怎会如此
-			CFLAG:60:1060 = 1
-		CASE 2
-			PRINTFORMW 那就暂时保留了呢
-	ENDSELECT
-ENDIF
-RETURN 1
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,60), "status:未采纳:采纳", CFLAG:60:1060)
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_Axl_OPTION_K60_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML 要把帕露西变成更符合口上设定的素质吗
+PRINTFORML 总的来说、帕露西会失去【施虐狂】和【容易中毒】，然后获得【保守】、【难以越过的底线】、【压抑】、【自制心】和【容易自慰】
+PRINTFORML 你应该选择变更的理由：
+PRINTFORML 1：增加代入感
+PRINTFORML 2：原来的素质可能会导致某些场合下帕露西的行为比较出戏
+PRINTFORML 3:求你了求你了求你了
+CALL ASK_M("变更",1,"不变",1,"暂时保留（下次update的时候再说）",1)
+SELECTCASE RESULT
+	CASE 0
+		PRINTFORMW 那么请看着吧，我的变身！
+
+		TALENT:60:自制心 = 1
+		TALENT:60:難以越過的底線 = 1
+		TALENT:60:施虐狂 = 0
+		TALENT:60:容易中毒 = 0
+		TALENT:60:容易自慰 = 1
+		TALENT:60:性的兴趣 = -1
+		TALENT:60:自己愛 = -1
+		CFLAG:60:1060 = 1
+	CASE 1
+		PRINTFORMW 啊...怎会如此
+		CFLAG:60:1060 = 0
+	CASE 2
+		PRINTFORMW 那就暂时保留了呢
+		RETURN
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,60)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_Axl_ENCOUNTER_K60
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;初対面、挨拶のタイミング
 ;TALENTの変更はここでどうぞ。
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
@@ -141,9 +165,11 @@ IF MAIN_MAP == 9 || 拠点_家主 == 60
 	PRINTFORMDL 【想做什么都无所谓、但是不要跟我扯上关系比较好】
 	PRINTFORMDW  少女自顾自的走开了、背影有些落寞的样子
  ENDIF
+SIF FIRSTTIME("开局设定",0,60)
+	CALL KOJO_Axl_OPTION_K60_RESULT_1
 RETURN 1
 
-@K60_BEFORETRAIN_Axl
+;@K60_BEFORETRAIN_Axl
 ;一日の開始時、正確には来訪判定時に読み込む関数
 ;ここでCFLAG:XX:翌日来訪を設定して確実に来訪させたりTCVAR:XX:発情で朝っぱらからサカらせることもできる
 ;ただし「毎朝例外なく読み込まれる」ため、条件を設定しておくことが望ましい

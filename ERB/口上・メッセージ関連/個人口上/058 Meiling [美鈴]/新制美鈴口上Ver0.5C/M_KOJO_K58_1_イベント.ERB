@@ -44,6 +44,8 @@
 
 ;### 口上存在判定 ###################################
 @M_KOJO_K58_1(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;別人版を作成する際はこのテンプレではなく別人版用口上テンプレをご利用ください
 RESULTS = _MeiLingNewVision
 RESULTS:1 = 新制美铃
@@ -54,6 +56,8 @@ RETURN 1
 
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_MeiLingNewVision_FLAGSETTING_K58
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;基本フラグ設定はここで行ってください
 ;共通の口上フラグは必要な箇所のコメントアウトを外してご利用ください
 ;口上専用フラグはご自由に
@@ -92,7 +96,7 @@ CFLAG:58:時間停止口上有 = 1
 CFLAG:58:7500 = 1
 
 ;用于侦测美铃当下音乐技能TAG的状态 平日 上班日 一至五 美铃会暂时取消音乐技术相关 六日 假期 则取回相应技术 让美铃能够分别演绎锻炼与音艺等等自由行动/陪同行动情节
-IF CFLAG:3501 == 1
+IF CFLAG:1501 == 1
 	IF YOUBI_MATCH(DAY, "土日") 
 		;乐器知识 获得
 		TALENT:58:161 = 1
@@ -112,7 +116,8 @@ ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_MeiLingNewVision_COLOR_K58
-
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;ここでSETCOLORすることで口上に色を付けられます
 ;例：SETCOLOR 0xC07070
 SETCOLOR 0xC07070
@@ -120,7 +125,30 @@ SETCOLOR 0xC07070
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_MeiLingNewVision_UPDATE_K58
+;@M_KOJO_MeiLingNewVision_UPDATE_K58
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_MeiLingNewVision_OPTION_EXIST_K58
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_MeiLingNewVision_OPTION_K58
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 58
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,58), "status:未采纳:采纳", CFLAG:58:1501)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_MeiLingNewVision_OPTION_K58_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORMDL 大家好，我是老红，是这个口上的作者。
 PRINTFORMDL 嗯，只是这个口上也未尽善尽美，我也不打算做一个碎碎念了
 PRINTFORMDL 比起初版美铃，本人笔下的美铃会稍微的聪明一些，也多才多艺了些
@@ -132,7 +160,7 @@ $INPUT_UPDATE
 PRINTL [0] 可
 PRINTL [1] 否
 INPUT
-	IF RESULT == 0
+IF RESULT == 0
 	PRINTFORMDW 谢谢你的理解。
 	PRINTFORML 
 	PRINTFORMDW 无论如何，希望你们玩得高兴呢。
@@ -152,21 +180,22 @@ INPUT
 	;学习经验调整至200 是B吧？嗯
 	EXP:58:75 = 200
 	;启动开关 判断美铃什么时候获得乐器知识
-	CFLAG:3501 = 1
-	ELSEIF	RESULT == 1
+	CFLAG:1501 = 1
+ELSEIF	RESULT == 1
 	PRINTFORMDL 并没有进行更改。
 	PRINTFORML 
 	PRINTFORMDW 无论如何，希望你们玩得高兴呢。
 	PRINTFORMW 
 	;要是不小心按了其他数字
-	ELSE
+ELSE
 	PRINTFORMDL 看起来你按了其他数字了？
 	PRINTFORMDL 这儿倒好，要是在部分有选项的口上输入其他不相关的数字然后回车键输入，会出Bug哦。
 	PRINTFORMDW 不好意思，请你在1和0选择吧。
 	PRINTFORMW 
 	GOTO INPUT_UPDATE
-	ENDIF
-RETURN 1
+ENDIF
+CALLF FIRSTTIME("开局设定",0,58)
+
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -281,6 +310,8 @@ ELSE
 ENDIF
 
 PRINTL
+SIF FIRSTTIME("开局设定",0,58)
+	CALL KOJO_MeiLingNewVision_OPTION_K58_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※

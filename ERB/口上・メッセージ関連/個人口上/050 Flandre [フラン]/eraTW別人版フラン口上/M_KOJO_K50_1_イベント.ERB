@@ -35,6 +35,8 @@
 
 ;### 口上存在判定 ###################################
 @M_KOJO_K50_1(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;別人口上判定ですX2を同角色口上の通し番号に置き換えてください（一つ目の別人口上なら1、二つ目の別人口上なら2
 ;複数の同角色口上が同時表示されないために必要です、必ずXXXを変更してください
 RESULTS = _ふらん
@@ -48,6 +50,8 @@ RETURN 1
 
 ;### 口上基本フラグ設定 #############################
 @M_KOJO_ふらん_FLAGSETTING_K50
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;基本フラグ設定はここで行ってください
 ;共通の口上フラグは必要な箇所のコメントアウトを外してご利用ください
 ;口上専用フラグはご自由に
@@ -84,6 +88,8 @@ ENDIF
 
 ;### 口上色判定 ###################################
 @M_KOJO_ふらん_COLOR_K50
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SETCOLOR 0xB22222
 ;口上色出ません。なんで？
 ;↑直りました
@@ -93,40 +99,26 @@ SETCOLOR 0xB22222
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-@M_KOJO_ふらん_UPDATE_K50
+;@M_KOJO_ふらん_UPDATE_K50
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等の角色変数を使用場合、角色番号の指定が必要になります
 
-IF CFLAG:50:1500 == 0 && TALENT:50:幼稚 && TALENT:50:無知 == 1
-	PRINTFORML 要许可本口上对素质的变更吗
-	PRINTFORML 许可的话、会失去【幼稚】【無知】
-	PRINTFORML 不许可的话、很抱歉口上和素质会起冲突。
-	PRINTFORML 
-	PRINTFORML [0]-许可
-	PRINTFORML [1]-不许可
-	INPUT
-	SELECTCASE RESULT
-	;許可
-	CASE 0
-		CFLAG:50:1500 = 1
-		PRINTFORML 素质已经变更
-		IF TALENT:50:幼稚 == 1
-			TALENT:50:幼稚 = 0
-		ENDIF
-			
-		IF TALENT:50:無知 == 1
-			TALENT:50:無知 = 0
-		ENDIF
-	PRINTFORMW
-	;不許可
-	CASEELSE
-		CFLAG:50:1500 = -1
-		PRINTFORML 素质没有进行变更
-		PRINTFORMW
-	ENDSELECT
-ENDIF
-RETURN 1
+@KOJO_ふらん_OPTION_EXIST_K50
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_ふらん_OPTION_K50
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL KOJO_OPTION_ITEM("剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("FlanMature", 1, [[芙兰]]), "cond", (TALENT:[[芙兰]]:無知 || TALENT:[[芙兰]]:幼稚), "status:未采纳:采纳", CFLAG:50:1001)
+
+;process the input portion
+@KOJO_ふらん_OPTION_K50_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL K50_FLAN_MATURE
+;和他的英文逆输入变体采用同一个函数
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -149,6 +141,7 @@ PRINTFORMW 「那么、你的名字是？」
 PRINTFORML 「%CALLNAME:MASTER%。%CALLNAME:MASTER%、呢」
 PRINTFORMW 「我记住了。那么、有什么事吗？」
 ;経験の変更は齟齬が出る場合がありますので、CSVを修正し同梱する事を推奨します
+CALL KOJO_ふらん_OPTION_K50_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
