@@ -256,6 +256,8 @@ RETURN 1
 ;ENDIF
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K83
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;ライムグリーン
 SETCOLOR 0x32cd32
 
@@ -271,76 +273,116 @@ VERSION = 119
 CALL M_KOJO_COLOR_K83
 IF !TALENT:[[琪斯美]]:無接吻経験 || EXP:[[琪斯美]]:接吻経験
 	SIF FIRSTTIME("初吻", 0, [[琪斯美]])
-		PRINTFORML ・このデータの琪斯美は接吻を経験済みです
+		PRINTFORML ・检测到存档中琪斯美已有过初吻，正在更新标志
 ENDIF
 RESETCOLOR
 IF CFLAG:[[琪斯美]]:1100 == VERSION
 	CALL M_KOJO_COLOR_K83
-	PRINTFORML 最新版本(ver.{CFLAG:[[琪斯美]]:1100 / 100}.{CFLAG:[[琪斯美]]:1100 % 100})
+	PRINTFORML 已是最新版本(ver.{CFLAG:[[琪斯美]]:1100 / 100}.{CFLAG:[[琪斯美]]:1100 % 100})
 	RESETCOLOR
 ELSE
-	IF TALENT:[[琪斯美]]:開朗／阴郁 != -1
-		PRINTFORML 添加[阴郁]素质吗？
-		PRINTL [1] - 好呀
-		PRINTL [0] - 不行
-		INPUT
-		IF RESULT
-			TALENT:[[琪斯美]]:開朗／阴郁 = -1
-			CALL M_KOJO_COLOR_K83
-			PRINTFORMW 「有那么阴沉吗……」
-			RESETCOLOR
-		ELSE
-			PRINTFORMW 那就这样吧。
-		ENDIF
-	ENDIF
-	IF TALENT:[[琪斯美]]:汚臭耐性 != 1
-		PRINTFORML 添加[汚臭鈍感]素质吗？
-		PRINTL [1] - 好呀
-		PRINTL [0] - 不行
-		INPUT
-		IF RESULT
-			TALENT:[[琪斯美]]:汚臭耐性 = 1
-			CALL M_KOJO_COLOR_K83
-			PRINTFORMW 「才、才不脏啊…！」
-			RESETCOLOR
-		ELSE
-			PRINTFORMW 那就这样吧。
-		ENDIF
-	ENDIF
-	IF TALENT:[[琪斯美]]:倒錯的 != 1
-		PRINTFORML 添加[倒錯的]素质吗？
-		PRINTL [1] - 好呀
-		PRINTL [0] - 不行
-		INPUT
-		IF RESULT
-			TALENT:[[琪斯美]]:倒錯的 = 1
-			CALL M_KOJO_COLOR_K83
-			PRINTFORMW 「那、那种事情……」
-			RESETCOLOR
-		ELSE
-			PRINTFORMW 那就这样吧。
-		ENDIF
-	ENDIF
-	IF RELATION:[[琪斯美]]:[[山女]] < 150
-		PRINTFORML 要提高与山女、帕露西、勇仪的相性吗？
-		PRINTL [1] - 好呀
-		PRINTL [0] - 不行
-		INPUT
-		IF RESULT
-			RELATION:[[琪斯美]]:[[山女]] = 150
-			RELATION:[[琪斯美]]:[[帕露西]] = 120
-			RELATION:[[琪斯美]]:[[勇儀]] = 120
-			PRINTFORMW 上调了相性。
-		ELSE
-			PRINTFORMW 那就这样吧。
-		ENDIF
-	ENDIF
 	CFLAG:[[琪斯美]]:1100 = VERSION
 	CALL M_KOJO_COLOR_K83
-	PRINTFORML UPDATE完成！(ver.{CFLAG:[[琪斯美]]:1100 / 100}.{CFLAG:[[琪斯美]]:1100 % 100})
+	PRINTFORML UPDATE已完成，可以在剧本选项或是初见时完成开局设定！(ver.{CFLAG:[[琪斯美]]:1100 / 100}.{CFLAG:[[琪斯美]]:1100 % 100})
 	RESETCOLOR
 ENDIF
-RETURN 1
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;Custom dialogue settings, custom code
+;※※※※※※※※※※※※※※※※※※※※※※※※※※
+;made it as a way to speed up the update process and separate simple flag updates from various customization options
+@KOJO_OPTION_EXIST_K83
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;note: options start from 1!
+@KOJO_OPTION_K83
+#LOCALSIZE 1
+#LOCALSSIZE 1
+LOCAL = TARGET
+TARGET = 83
+CALL SET_KOJO_COLOR
+
+CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,83), "status:未采纳:采纳", TALENT:[[琪斯美]]:倒錯的 == 1)
+
+TARGET = LOCAL
+RESETCOLOR
+;process the input portion
+@KOJO_OPTION_K83_RESULT_1
+#LOCALSIZE 1
+#LOCALSSIZE 1
+PRINTFORML
+PRINTFORML 要根据推荐，将%CALLNAME:83%设定为符合该剧本的人设吗？
+PRINTFORML 如果采纳，会增加[阴郁][污臭钝感][污臭钝感][倒错的]素质，与山女、帕露西、勇仪的关系会更好
+CALL ASK_M("好的", 1, "不行", 1, "逐项设定", 1)
+SELECTCASE RESULT
+	CASE 0
+		TALENT:[[琪斯美]]:倒錯的 = 1
+		TALENT:[[琪斯美]]:汚臭耐性 = 1
+		TALENT:[[琪斯美]]:開朗／阴郁 = -1
+		RELATION:[[琪斯美]]:[[山女]] = 150
+		RELATION:[[琪斯美]]:[[帕露西]] = 120
+		RELATION:[[琪斯美]]:[[勇儀]] = 120
+		PRINTFORMW 已采用推荐设定
+	CASE 1
+		PRINTFORMW 未采用推荐设定
+	CASE 2
+		IF TALENT:[[琪斯美]]:開朗／阴郁 != -1
+			PRINTFORML 添加[阴郁]素质吗？
+			PRINTL [1] - 好呀
+			PRINTL [0] - 不行
+			INPUT
+			IF RESULT
+				TALENT:[[琪斯美]]:開朗／阴郁 = -1
+				CALL M_KOJO_COLOR_K83
+				PRINTFORMW 「有那么阴沉吗……」
+				RESETCOLOR
+			ELSE
+				PRINTFORMW 那就这样吧。
+			ENDIF
+		ENDIF
+		IF TALENT:[[琪斯美]]:汚臭耐性 != 1
+			PRINTFORML 添加[污臭钝感]素质吗？
+			PRINTL [1] - 好呀
+			PRINTL [0] - 不行
+			INPUT
+			IF RESULT
+				TALENT:[[琪斯美]]:汚臭耐性 = 1
+				CALL M_KOJO_COLOR_K83
+				PRINTFORMW 「才、才不脏啊…！」
+				RESETCOLOR
+			ELSE
+				PRINTFORMW 那就这样吧。
+			ENDIF
+		ENDIF
+		IF TALENT:[[琪斯美]]:倒錯的 != 1
+			PRINTFORML 添加[倒错的]素质吗？
+			PRINTL [1] - 好呀
+			PRINTL [0] - 不行
+			INPUT
+			IF RESULT
+				TALENT:[[琪斯美]]:倒錯的 = 1
+				CALL M_KOJO_COLOR_K83
+				PRINTFORMW 「那、那种事情……」
+				RESETCOLOR
+			ELSE
+				PRINTFORMW 那就这样吧。
+			ENDIF
+		ENDIF
+		IF RELATION:[[琪斯美]]:[[山女]] < 150
+			PRINTFORML 要提高与山女、帕露西、勇仪的相性吗？
+			PRINTL [1] - 好呀
+			PRINTL [0] - 不行
+			INPUT
+			IF RESULT
+				RELATION:[[琪斯美]]:[[山女]] = 150
+				RELATION:[[琪斯美]]:[[帕露西]] = 120
+				RELATION:[[琪斯美]]:[[勇儀]] = 120
+				PRINTFORMW 上调了相性。
+			ELSE
+				PRINTFORMW 那就这样吧。
+			ENDIF
+		ENDIF
+ENDSELECT
+CALLF FIRSTTIME("开局设定",0,83)
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -426,7 +468,8 @@ ELSE
 	ENDIF
 ENDIF
 PRINTL 
-
+SIF FIRSTTIME("开局设定",0,83)
+	CALL KOJO_OPTION_K83_RESULT_1
 RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
