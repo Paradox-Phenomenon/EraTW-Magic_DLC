@@ -1723,21 +1723,25 @@ ELSE
 	RETURN 1
 ENDIF
 
-;framework from nue's file, refer to that
-@K128_DAYEVENT_COND(ARG)
-;RETURN -1 - means disallowed, 0 - fall back to original condition, 1 - allowed
-;love only, not pissed off
-SIF !IS_MALE(MASTER) ;male only
-	RETURN -1
-SIF !TALENT:恋人 ;!TALENT:恋慕 ;do we go love only or actually lover? judging by the text, it needs lover
-	RETURN -1
-SIF MARK:反発刻印 || CFLAG:ブチギレ
-	RETURN -1
+@M_KOJO_CHECK_K128_DAYEVENT_COND(ARGS, ARG, ARG:1)
 SELECTCASE ARG
-	CASE 1 ;bj
-		RETURN 0 ;og condition otherwise
-	CASE 2 ;titjob
-		RETURN 0 ;og condition
+	CASE DAYEVENT_GENERAL ;initial, if the function is allowed to run at all, 0 is disallowed, 1 is allowed
+		;love only, not pissed off
+		SIF !IS_MALE(MASTER) ;male only
+			RETURN 0
+		SIF !TALENT:恋人 ;!TALENT:恋慕 ;do we go love only or actually lover? judging by the text, it needs lover
+			RETURN 0
+		SIF MARK:反発刻印 || CFLAG:ブチギレ
+			RETURN 0
+		SIF ARGS == "day" && RAND:3 ;Urumi has a morning event of her own, so don't trigger these every day
+			RETURN 2
+		RETURN 1
+	;per event
+	;RETURN -1 - means disallowed, 0 - fall back to original condition, 1 - allowed
+	CASE DAYEVENT_ORAL
+		RETURN 0 ;normal condition
+	CASE DAYEVENT_PAIZURI
+		RETURN 0 ;normal condition
 	CASEELSE ;disabled, no dialogue
 		RETURN -1
 ENDSELECT

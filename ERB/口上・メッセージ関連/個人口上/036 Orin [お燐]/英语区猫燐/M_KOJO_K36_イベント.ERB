@@ -366,47 +366,50 @@ ENDIF
 RETURN 1
 
 ;custom code, added
-;framework from nue's file, refer to that
-@K36_DAYEVENT_COND(ARG)
-;RETURN -1 - means disallowed, 0 - fall back to original condition, 1 - allowed
-SIF !TALENT:恋慕 && ARG != 11
-	RETURN -1
-SIF MARK:反発刻印 || CFLAG:ブチギレ
-	RETURN -1
+@M_KOJO_ENG01_CHECK_K36_DAYEVENT_COND(ARGS, ARG, ARG:1)
 SELECTCASE ARG
-	CASE 1 ;bj
+	CASE DAYEVENT_GENERAL ;initial, if the function is allowed to run at all
+		SIF MARK:反発刻印 || CFLAG:ブチギレ
+			RETURN -1
+		SIF ARGS == "day" && CFLAG:初期位置 == CFLAG:MASTER:初期位置 ;Orin's morning events can trigger every day like it was before
+			RETURN 2
+		RETURN 1
+	;per event
+	CASE DAYEVENT_ORAL
 		SIF !HAS_PENIS(MASTER) ;bj only
 			RETURN -1
-		SIF !( ABL:欲望 >= 3 && ABL:技巧 >= 3 && EXP:奉仕快楽経験 >= 50 && EXP:口淫経験 >= 20 ) ;og cond
+		SIF !TALENT:恋慕
 			RETURN -1
-		RETURN 1
-	CASE 3, 10 ;cow/youbai
+		RETURN 0
+	CASE DAYEVENT_COWGIRL, NIGHTEVENT_YOBAI
 		SIF !HAS_PENIS(MASTER) ;penis only
 			RETURN -1
-	
+		SIF !TALENT:恋慕
+			RETURN -1
 		SIF !(ABL:欲望 >= 5)
 			RETURN -1
-			
 		SIF !(!TALENT:処女 && !IS_DOUTEI(MASTER)) ;must be experienced
 			RETURN -1
 		RETURN 1
-	CASE 5
+	CASE DAYEVENT_WAKEUP
 		SIF !TALENT:恋人
 			RETURN -1
 		RETURN 1
-	CASE 11 ;afternight drink
-		SIF !( ABL:奉仕精神 >= 3 && EXP:奉仕快楽経験 >= 50 )
+	CASE NIGHTEVENT_DRINK
+		SIF !(ABL:奉仕精神 >= 3 && EXP:奉仕快楽経験 >= 50)
 			RETURN -1
 		SIF (TALENT:妊娠 || TALENT:育児中)
 			RETURN -1
-		SIF	CFLAG:2 >= 1500 ;allowed without love
-			RETURN 1
+		SIF	CFLAG:2 < 1500 ;allowed without love
+			RETURN -1
+		RETURN 1
+	CASE DAYEVENT_STARE, DAYEVENT_PRANK, NIGHTEVENT_MOONVIEWING ;disabled, no dialogue
 		RETURN -1
-	CASE 7, 8, 12 ;disabled, no dialogue
-		RETURN -1
+	CASEELSE
+		SIF !TALENT:恋慕
+			RETURN -1
 ENDSELECT
 RETURN 0
-
 
 ;==================================================
 ;朝イベント（诶嘿嘿）
