@@ -66,6 +66,8 @@ IF BASE:64:酒気 > 0
 ELSE
 	CFLAG:64:推倒禁止 = 1
 ENDIF
+CFLAG:64:眠姦口上有 = 1
+CFLAG:64:時間停止口上有 = 1
 
 ;来訪不能に1を入れると、来訪してこなくなります
 ;以下は面識があるまで来訪してこなくなる使用例
@@ -607,7 +609,7 @@ IF LOCAL
 				PRINTFORML 「抱歉呐、刚刚还在喝酒。一瞬间没分清是谁」
 				PRINTFORML 「对了、不是说迟到罚酒三杯吗、接下来要一起喝吗？」
 				PRINTFORMW 「不需要客气！酒的话要多说有多少！」
-				BASE:酒気 += 2000
+				CALL RECOVER(TARGET, 2000, "酒気", " ")
 				TALENT:64:心情 = 1
 			;恋慕
 			ELSEIF TALENT:恋慕
@@ -728,7 +730,9 @@ IF LOCAL
 				PRINTFORML 「所以就在这里喝酒等你起来了」
 				PRINTFORMDL %CALLNAME:TARGET%的身边丢着好几个酒瓶
 				PRINTFORMDW ……之后的扫除看起来会很麻烦
-				BASE:酒気 += 500
+				CALL RECOVER(TARGET, 500, "酒気", " ")
+				LOCAL = CFLAG:MASTER:現在位置
+				YOGORE:LOCAL = MIN(YOGORE:LOCAL + 1000 + RAND:4000, 6000)
 			ELSE
 				PRINTFORML 「早上好！ 终于睡醒了吗？」
 				PRINTFORMW 「……っ啊、还在打瞌睡啊？ 来、喝点水」
@@ -736,7 +740,7 @@ IF LOCAL
 				PRINTFORMDW 啊ーーーッッ！！！ 本来以为是水、结果居然是酒！
 				PRINTFORML 「啊哈哈哈哈！ 好好清醒起来了呐！」
 				PRINTFORMW 「对人类来说有点烈的酒。拿来醒觉很不错吧？」
-				BASE:MASTER:酒気 += 100
+				CALL RECOVER(MASTER, 100, "酒気", " ")
 			ENDIF
 			RETURN 1
 		ENDIF
@@ -969,7 +973,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;TARGETが寝るために自室まで戻ってきた
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 1
+	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
 		;-------------------------------------------------
@@ -1771,7 +1775,7 @@ IF LOCAL
 				PRINTFORML 「总觉得好像一直都是我在喝的样子啊……」
 				PRINTFORML 「好不容易来一次你也多喝点啊」
 				PRINTFORMDW %CALLNAME:MASTER%被%CALLNAME:TARGET%强硬的灌了不少酒
-				BASE:MASTER:酒気 += 200
+				CALL RECOVER(MASTER, 200, "酒気", " ")
 			CASE 1
 				PRINTFORML 「嗯、还很能喝呐」
 				PRINTFORML 「呐、能帮我把那边的酒递过来吗？」
@@ -1785,7 +1789,7 @@ IF LOCAL
 				PRINTFORML 「呼哈啊～ッッ！！！」
 				PRINTFORMDL %CALLNAME:TARGET%仿佛喝水一样的灌着酒……
 				PRINTFORMDW 看着这勇猛的喝法、%CALLNAME:MASTER%也不由得稍微喝多了一些
-				BASE:MASTER:酒気 += 50
+				CALL RECOVER(MASTER, 50, "酒気", " ")
 			CASE 4
 				PRINTFORML 「这个还剩……一半」
 				PRINTFORML 「这边这个……空了、这个也空了」
@@ -1795,7 +1799,7 @@ IF LOCAL
 				PRINTFORMDL %CALLNAME:TARGET%不断的将酒注入杯中
 				PRINTFORMDL %CALLNAME:MASTER%拒绝不掉、只好一口气喝光了
 				PRINTFORMW 「哈哈哈哈！真是不错的喝法！」
-				BASE:MASTER:酒気 += 200
+				CALL RECOVER(MASTER, 200, "酒気", " ")
 			CASE 6
 				PRINTFORML 「哦、这个里边还有剩」
 				PRINTFORML 「额ー嗯……这个应该怎么读……？」
@@ -1807,8 +1811,8 @@ IF LOCAL
 				PRINTFORML 「说到好喝的酒的话、果然还得配这个」
 				PRINTFORMDW %CALLNAME:TARGET%很开心的品尝着下酒菜
 			CASE 9
-				PRINTFORML 「嗯？ 这是什么、乙醇？」
-				PRINTFORML 「emmmm……嗯！？」
+				PRINTFORML 「嗯？ 甲基…烈酒？这是什么牌子？」
+				PRINTFORML 「咕噜……嗯！？」
 				PRINTFORMW 「噶～～～ッッ！！！ 这个可真有劲！」
 		ENDSELECT
 		RETURN 1
@@ -1908,9 +1912,8 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		;睡眠中
-		IF CFLAG:睡眠
-			PRINTFORML 
+		IF CFLAG:睡眠 || FLAG:70
+			;PRINTFORML
 			RETURN 1
 		;危険日＆危険日生Ｈ解禁済＆非妊娠＆口服避孕薬未使用＆膣内精液１以上
 		ELSEIF CFLAG:900 == 7 && CFLAG:允许无套 >= 2 && !TALENT:妊娠 && !TCVAR:口服避孕薬 && 充填率(TARGET,1) > 0
@@ -3361,9 +3364,9 @@ ENDIF
 ;RETURN -1で強制失敗、RETURN 1で強制成功
 @M_KOJO_EVENT_K64_26_1(ARGS)
 #DIM 補正値
-IF ARGS == "请这样继续下去"
+IF ARGS == "どうぞそのまま"
 
-ELSEIF ARGS == "两个人一起"
+ELSEIF ARGS == "二人で"
 
 ENDIF
 
@@ -4467,7 +4470,7 @@ SIF 0
 ;納茲琳口上からお借りしました
 ;-------------------------------------------------
 @NAME_SET_K64
-PRINTL 请输入姓名
+PRINTDL 请输入姓名
 IF NAME:MASTER != "你"
 	LOCALS = %CALLNAME:MASTER%
 ELSE
@@ -4492,18 +4495,11 @@ ELSEIF RESULTS == ""
 	GOTO INPUT_LOOP_ONAMAE
 ELSE
 	PRINTFORML 就决定是%RESULTS%了吗？
-	PRINTL [0] 是的
-	PRINTL [1] 不
-	;入力した名前を確定するループ
-	$INPUT_LOOP_KAKUTEI_1
-	INPUT
+	CALL ASK_YN
 	IF RESULT == 0
 		;你の名前を%MASTERNAME:64%に格納
 		MASTERNAME:64 = %RESULTS%
 		PRINTFORML 
-	ELSEIF RESULT == 1
-		PRINTL 请输入姓名
-		GOTO INPUT_LOOP_ONAMAE
 	ELSE
 		PRINTL 请输入姓名
 		GOTO INPUT_LOOP_ONAMAE

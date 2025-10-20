@@ -28,20 +28,21 @@
 
 ;**** FlagManagement **********************************************************
 ;本口上にて使用しているCFLAG・TCVAR等
-;CFLAG:1100 UP约会処理
+;CFLAG:1100 アップデート処理
 ;CFLAG:62:1101 告白回数分岐
 ;CFLAG:62:1102 思慕特殊セリフ
 ;CFLAG:62:1103 恋慕特殊セリフ
 ;CFLAG:62:1104 恋人特殊セリフ
 ;CFLAG:62:1105 輝夜嫉妬フラグ
-;CFLAG:62:1106 乌冬麺げフラグ
+;CFLAG:62:1106 うどんげフラグ
 ;TCVAR:62:351 遭遇回数
 ;TCVAR:62:352 えっちもーど遭遇回数
 ;TCVAR:62:353 意識ありえっち判定用
-;TCVAR:62:354 约会遭遇回数用
+;TCVAR:62:354 デート遭遇回数用
 ;TCVAR:62:355 お手伝い回数
 ;TCVAR:62:356 お手伝いえっち
-;TCVAR:62:357 前回のえっちもーど 1ラブハメ　２ゆったり　３ごつごつ
+
+;CFLAG 1091  check if @K62_GETTO has been triggered before (bugfix)
 ;******************************************************************************
 
 ;### 口上存在判定 ###################################
@@ -110,6 +111,10 @@ SETCOLOR 0Xab903d
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAGを使用場合、角色番号の指定が必要になります
+;对于保证辉夜在恋慕之后才会告白的机制，在flagsetting里每回合重置不太合理，也不必影响启用机制之前的玩家存档，只做一次就好
+SETBIT CFLAG:62:13 , 1
+SIF TALENT:62:恋慕
+	CLEARBIT CFLAG:62:13 , 1
 IF CFLAG:62:1100 == 1
 	IF TALENT:62:恋人 || (TALENT:62:迷信 && TALENT:MASTER:追加種族 == 4)
 	;恋人輝夜は真面目系想定。何かの原因で素質変更が抜けてるのを処理。
@@ -290,6 +295,13 @@ RETURN 1
 ;==================================================
 ;约会帰りにファーストKISS（合意も付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_SPEVENT_MESSAGECHECK_K62_1
+RETURN 1
+
 @M_KOJO_SPEVENT_K62_1(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
@@ -319,8 +331,7 @@ IF LOCAL && !FLAG:70 && (TALENT:思慕 || TALENT:恋慕)
 	PRINTFORMDW “还想再来一次吗？”、我询问辉夜有何感想、她似乎稍显懊恼、然后认输似地叹了口气――
 	PRINTFORMW 「……我、还想继续做」
 	PRINTFORMDW 她双眼湿润地说道。
-	EXP:接吻経験 ++
-	EXP:MASTER:接吻経験 ++
+	CALL MUTUAL_KISS
 	EXP:愛情経験 += 10
 ENDIF
 RETURN 1
@@ -328,6 +339,13 @@ RETURN 1
 ;==================================================
 ;约会帰りに告白（恋人が付く）
 ;==================================================
+;==================================================
+;Optional: Determines if the standard description should be skipped.
+;Return 0 if description and KOJO should be shown, 1 if description should be hidden and KOJO shown, 2 if description should be shown and KOJO hidden, and 3 if both description and KOJO should be hidden.
+;==================================================
+@M_KOJO_SPEVENT_MESSAGECHECK_K62_2
+RETURN 1
+
 @M_KOJO_SPEVENT_K62_2(ARG,ARG:1)
 ;口上主はTARGET
 ;地の文表示
@@ -399,31 +417,30 @@ IF LOCAL && !FLAG:70 && TALENT:恋慕
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-			PRINTFORMDW 我刚一开口、她就摇头。
-			PRINTFORMDW 我又重复了一遍、一直直视着她的眼睛。
-			PRINTFORMDW 遵循自己的内心、没有说谎、诚实地告诉她――我也爱你。
-			PRINTFORMDW 她听了之后、呆呆地看着我、
-			PRINTFORMW 「我明明跟你说过、不要再说了……」
-			PRINTFORMDW 像是要把压抑已久的感情表露出来似的、泪水夺眶而出。
-			PRINTFORMDW 然后、紧紧地抱住我、泪水玷污了我的胸口。
-			PRINTFORMW 「……我好怕。我越是爱你、就越想让你永远陪在我身边」
-			PRINTFORMDW 每当我抚摸她的头时、她就会颤抖着、不断地念叨着“我好害怕”。
-			PRINTFORMW 「会变得……想要犯罪一般」
-			PRINTFORMDW 所以我好害怕、辉夜告诉我。
-			PRINTFORMDW 如幼童一般、只是不住地颤抖着――完全没有了平时那凛然的样子。
-			PRINTFORMDW 我抱着那样的她、不断地重复着“我爱你”。
-			PRINTFORMDW 只要能在有限的岁月里用力去爱着辉夜、无论是什么结果都可以接受。
-			PRINTFORMDW 听了这话、埋在我胸口的辉夜点了点头、慢慢抬起头来。
-			PRINTFORMW 「……你真是个笨蛋。不过是一时的迷惘……也许你会永远后悔的」
-			PRINTFORMDW 到那时、就让这种迷惘成为永恒就好了。
-			PRINTFORMDW 辉夜肯定办得到吧、我这么告诉她、辉夜愣了一下、微笑着说。
-			PRINTFORMW 「……你啊、真是个笨蛋呢」
-			PRINTFORMDW 辉夜似乎有些惊讶、但又温柔地吻了上来、回答道。
-			PRINTFORMDW ――好的、夫君大人。
-			PRINTFORMDW 就那样、如耳语一般低吟着。
-			PRINTFORMDW 
-				EXP:接吻経験 ++
-				EXP:MASTER:接吻経験 ++
+			PRINTFORMDW %CALLNAME:MASTER%一开口，她便摇了摇头。
+			PRINTFORMDW %CALLNAME:MASTER%仍旧继续说着，并笔直地凝视着她的眼睛。
+			PRINTFORMDW 遵从自己的内心，毫无虚假，坦率地——告诉她自己爱她。
+			PRINTFORMDW 她听了之后，愣住了，
+			PRINTFORMW 「我明明说过了，不要说出来的……」
+			PRINTFORMDW 过了一会儿，她流下了眼泪，仿佛要将一直压抑的感情释放出来一般。
+			PRINTFORMDW 然后，她紧紧地抱住%CALLNAME:MASTER%，眼泪沾湿了%CALLNAME:MASTER%的胸口。
+			PRINTFORMW 「……我好害怕。越是爱你，就越是想要将你化为永恒。」
+			PRINTFORMDW 当%CALLNAME:MASTER%抚摸她的头时，她颤抖着，低声说“我好害怕”。
+			PRINTFORMW 「因为我会忍不住想要犯下……罪孽。」
+			PRINTFORMDW 所以才害怕啊，辉夜如此说道。
+			PRINTFORMDW 她像个小女孩一样，只是颤抖着——平时那凛然的身姿已不复存在。
+			PRINTFORMDW %CALLNAME:MASTER%紧紧抱住这样的她，一遍又一遍地说着“我爱你”。
+			PRINTFORMDW %CALLNAME:MASTER%说，如果是爱辉夜所带来的结果的话，无论是什么，都会接受。
+			PRINTFORMDW 听到这话的辉夜轻轻地在怀里点了点头，然后慢慢地抬起头。
+			PRINTFORMW 「……你真是个笨蛋。明明可能只是一时冲动……却要为此后悔一辈子。」
+			PRINTFORMDW 到那时，只要把这份冲动化为永恒就好。
+			PRINTFORMDW 『如果是辉夜的话，一定能做到吧』当%CALLNAME:MASTER%这么说时，辉夜先是愣住了，然后微笑了。
+			PRINTFORMW 「……真是的，你这笨蛋。」
+			PRINTFORMDW 辉夜带着一丝无奈，却又温柔地吻了%CALLNAME:MASTER%一下，然后回答道。
+			PRINTFORMDW ——是，夫君。
+			PRINTFORMDW 她仿佛低语着。
+			PRINTFORMW 
+			CALL MUTUAL_KISS(TARGET, 1, 0)
 				EXP:愛情経験 += 20
 			IF CFLAG:62:1100 == 0
 				PRINTFORML
@@ -447,6 +464,7 @@ IF LOCAL && !FLAG:70 && TALENT:恋慕
 				ENDSELECT
 			ELSEIF CFLAG:62:1100 == 1
 				PRINTFORMDW 辉夜失去了[傲慢][讨厌男人]、获得了[坦率][献身的]。
+				CFLAG:62:性格傾向 = 4
 				TALENT:62:献身的 = 1
 				TALENT:62:性別嗜好 = 0
 				TALENT:62:応答 = 0
@@ -461,15 +479,15 @@ IF LOCAL && !FLAG:70 && TALENT:恋慕
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 		IF FIRSTTIME(1062)
-			PRINTFORMDW 我理解了永生的她、那句话的含义。
-			PRINTFORMDW 正因如此、我无论如何也没能开口。
+			PRINTFORMDW %CALLNAME:MASTER%理解了永生的她、那句话的含义。
+			PRINTFORMDW 正因如此、%CALLNAME:MASTER%无论如何也没能开口。
 			PRINTFORMDL 她安心似地闭上眼睛、擦拭着眼角笑了。
 			PRINTFORMW 「我只是想告诉你而已。不要在意」
 			PRINTFORMW 「我今天很开心。下次再带我去别的地方吧」
 			PRINTFORMDL 那平常的口吻仿佛是在掩饰什么一般、辉夜轻轻地吻了上来。
 			PRINTFORMDW ――不知从何时起、时间的流逝又回复到了正常的状态。
 		ELSE
-			PRINTFORMDW 我理解了永生的她、那句话的含义。
+			PRINTFORMDW %CALLNAME:MASTER%理解了永生的她、那句话的含义。
 			PRINTFORMDW 正因如此、%CALLNAME:MASTER%没能开口。至少现如今、这样就足矣。
 			PRINTFORMW 「我今天很开心。下次再带我去别的地方吧」
 			PRINTFORMDW 辉夜若无其事地说着、迈开了步子。
@@ -507,9 +525,9 @@ IF LOCAL
 				PRINTFORML 「约会的最后、要不要做那件事呢……♥」
 				PRINTFORMDW 回去的路上也一直在想那种事情吧。
 				PRINTFORMDW 辉夜抑制不住兴奋的样子、不断渴求着%CALLNAME:MASTER%。
-					IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-						PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
-					ENDIF
+				IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
+				ENDIF
 			ELSEIF TALENT:恋慕
 				PRINTFORML
 				PRINTFORML 「那个……♥」
@@ -517,9 +535,9 @@ IF LOCAL
 				PRINTFORML 「在约会的最后……♥」
 				PRINTFORMDW 回去的路上也一直在想那种事情吧。
 				PRINTFORMDW 辉夜抑制不住兴奋的样子、不断渴求着%CALLNAME:MASTER%。
-					IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-						PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
-					ENDIF
+				IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
+				ENDIF
 			ELSEIF TALENT:愛欲
 				PRINTFORML
 				PRINTFORML 「既然约会结束了……♥」
@@ -527,18 +545,18 @@ IF LOCAL
 				PRINTFORML 「快点……♥」
 				PRINTFORMDW 回去的路上也一直在想那种事情吧。
 				PRINTFORMDW 辉夜用充满情欲的瞳孔、渴求着%CALLNAME:MASTER%。
-					IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-						PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
-					ENDIF
+				IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDW 小穴应该已经被注满了、但好像还不够。
+				ENDIF
 			ELSE
 				PRINTFORML
 				PRINTFORMDL 脸颊发烫、心不在焉。
 				PRINTFORMDL 辉夜磨蹭着膝盖、指尖捏着你的衣服。
 				PRINTFORMDW 满脑子都是下流的事情吧。
 				PRINTFORMDW 与辉夜四目相对、又马上移开了视线。
-					IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
-						PRINTFORMDW 小穴应该已经被注满了、但身体好像还在发疼着。
-					ENDIF
+				IF EX:膣内精液 > 100 || EX:肛門内精液 > 100
+					PRINTFORMDW 小穴应该已经被注满了、但身体好像还在发疼着。
+				ENDIF
 			ENDIF
 
 
@@ -3687,7 +3705,7 @@ IF LOCAL
 					PRINTFORMDL 辉夜按着被射满精液的菊穴、瞪着你。
 					PRINTFORMW 「真是的、不是叫你射进菊穴里面啊……♥」
 				ENDIF
-			ELSEIF 被射精部位合算 >= 6 && CFLAG:口内精液 ==1 && CFLAG:脸上精液 ==1
+			ELSEIF 被射精部位合算 >= 2 && CFLAG:口内精液 ==1 && CFLAG:脸上精液 ==1
 				IF  TALENT:恋人 || (TALENT:迷信 && TALENT:MASTER:追加種族 == 4)
 					PRINTFORML 「呵呵、夫君大人、射出来了很多呢……♥」
 					PRINTFORMDL 闻着怎么擦也擦不掉的精液的味道、辉夜还舔了舔手上残留的精液。
@@ -3807,7 +3825,7 @@ IF LOCAL
 							PRINTFORMDW 
 					ENDSELECT
 				ELSEIF TALENT:恋慕 || TALENT:思慕
-					SELECTCASE RAND:5
+					SELECTCASE RAND:3
 						CASE 2
 							PRINTFORML 「真的很厉害呢……♥」
 							PRINTFORMDW 整理完衣物、靠在我身上的辉夜抚摸着下腹、微笑着说道。
@@ -4402,6 +4420,7 @@ IF LOCAL
 			PRINTFORMDL 虽然理性上明白、但感情无法消失、腐蚀着内心。
 			PRINTFORML 「……夫君大人」
 			PRINTFORMDW 不假思索地叫了出来、这到底有多么幸福啊。
+			CLEARBIT CFLAG:62:13 , 1
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
