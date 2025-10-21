@@ -7,12 +7,13 @@
 ;SKILL_LV           作るのに必要な料理技能レベル
 ;練習モード         練習時はDISH_TYPEが設定されていないのでDISHDATA側からTYPECHECKを渡してあげる
 ;-------------------------------------------------
-@DISHDATA(DISH_NUM, ARGS, 練習モード)
+@DISHDATA(DISH_NUM, ARGS, 練習モード, SKIPTYPECHECK)
 #DIM DISH_NUM
 #DIMS TYPECHECK
 #DIM SKILL_LV
 #DIM SP_CHARA
 #DIM 練習モード
+#DIM SKIPTYPECHECK
 DISH_NAME = 
 DISH_TASTE = 
 DISH_COMMENT = 
@@ -1037,6 +1038,16 @@ ELSEIF STRCOUNT(DISH_TASTE, "冬物/")
 	ENDIF
 ENDIF
 
+
+IF STRCOUNT(DISH_TASTE, "卵/")
+	FOR LOCAL, 1, 11
+		IF DISH_ING:LOCAL < 0
+				DISH_ING:LOCAL = GETNUM(ITEM, "少女の卵")
+			BREAK
+		ENDIF
+	NEXT
+ENDIF
+
 ;変数の補完設定
 IF TYPECHECK == ""
 	SELECTCASE DISH_NUM
@@ -1099,7 +1110,7 @@ IF 練習モード
 	DISH_TYPE = %TYPECHECK%
 ELSE
 	;TYPECHECK判定
-	SIF TYPECHECK != ARGS
+	SIF TYPECHECK != ARGS && !SKIPTYPECHECK
 		RESULT = 0
 
 	;固有料理判定
@@ -1211,6 +1222,9 @@ IF ARG >= 0 && ITEMNAME:ARG != ""
 	CASE "优质陈酿红酒"
 		DISH_TASTE += "上品/"
 		DISH_TASTE += "豪華/"
+	CASE "少女の卵"
+		SIF STR_MULTI_COUNT(DISH_TASTE, "卵") == 0
+			DISH_TASTE += "卵/"
 	CASEELSE
 		DISH_TASTE += ITEMNAME:ARG + "/"
 	ENDSELECT
@@ -1756,6 +1770,8 @@ CASE "冬虫夏草", "魔法菌菇", "高級薬草", "彼岸花", "曼陀罗草"
 	LOCAL = 4
 CASE "龍之爪", "氷之鱗", "特薬草", "雪霊草", "高麗人参", "竜血", "鳳凰の尾"
 	LOCAL = 5
+CASE "少女の卵"
+	LOCAL = 4
 CASEELSE
 	SELECTCASE ITEMPRICE:ARG
 	CASE IS < 500

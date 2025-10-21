@@ -137,7 +137,7 @@ IF TALENT:ARG:処女 == 1 && EXP_UP(1,ARG) > 0 && !TFLAG:2 && GETBIT(TALENT:ARG:
 			;親愛かつ相手が主人(現在親愛がないので、恋人で代用
 			ELSEIF TALENT:ARG:恋人 || TALENT:ARG:恋慕 > 1
 				SIF TCVAR:ARG:誤爆挿入フラグ
-					PRINT 事故虽然是导火索，但是
+					PRINT 虽然起因是事故，但
 				PRINTFORMW %喪失者名%因为能让%取得者名%成为第一次的对象而感到无上的幸福感的样子……
 				TFLAG:150 = 2
 				TIMES SOURCE:ARG:情愛 , 3.00
@@ -146,7 +146,7 @@ IF TALENT:ARG:処女 == 1 && EXP_UP(1,ARG) > 0 && !TFLAG:2 && GETBIT(TALENT:ARG:
 			;恋慕かつ相手が主人
 			ELSEIF TALENT:ARG:恋慕
 				SIF TCVAR:ARG:誤爆挿入フラグ
-					PRINT 事故虽然是导火索，但是
+					PRINT 虽然起因是事故，但
 				PRINTFORMW %喪失者名%因为把处女献给了%取得者名%而感到幸福的样子……
 				TFLAG:150 = 2
 				TIMES SOURCE:ARG:情愛 , 2.00
@@ -253,6 +253,7 @@ FONTBOLD
 SETCOLOR 255,100,255
 IF !TALENT:ARG:非童貞 && TALENT:ARG:性別 & 2
 	IF TCVAR:ARG:童貞喪失 == 1
+		CALL SET_HISTORY_LOST_DT(ARG, ARG == MASTER ? TARGET # MASTER)
 		PRINTFORMW 童贞丧失(%CALLNAME:ARG%)
 		TALENT:ARG:非童貞 = 1
 	ENDIF
@@ -321,7 +322,7 @@ IF CFLAG:ARG:尻穴処女喪失対象 & 喪失_時間停止 || !CFLAG:ARG:尻穴
 					PRINTFORMW %CALLNAME:ARG%在无意识的情况下，被\@ TALENT:ARG:路人 == 1 ? 刚遇到的# \@%CALLNAME:MASTER%夺走了肛门处女……
 					CFLAG:ARG:尻穴処女喪失対象 |= 喪失_時間停止
 				ELSEIF TALENT:ARG:無知
-					PRINTFORMW 性知识匱乏的%CALLNAME:ARG%完全不知道自己在被做什么、只是对排泄的后穴被插入的事感到了困惑与慌张……
+					PRINTFORMW 性知识匮乏的%CALLNAME:ARG%完全不知道自己在被做什么、只是对排泄的后穴被插入的事感到了困惑与慌张……
 					PRINTFORMW %CALLNAME:MASTER%安慰起了%CALLNAME:ARG%。
 					CFLAG:ARG:尻穴処女喪失対象 |= 喪失_無知
 				ELSEIF TALENT:ARG:思慕
@@ -372,7 +373,7 @@ IF CFLAG:ARG:尻穴処女喪失対象 & 喪失_時間停止 || !CFLAG:ARG:尻穴
 			IF (!FLAG:70 || CFLAG:ARG:344 == 1)
 				TCVAR:ARG:Ａ破瓜 = 1
 			ELSE
-				TCVAR:ARG:Ａ破瓜 = -2
+				TCVAR:ARG:Ａ破瓜 = 2
 			ENDIF
 			IF ARG == TARGET || (CFLAG:MASTER:诶嘿嘿 == 2 && ARG != TARGET && ARG != MASTER)
 				CALL SET_HISTORY_LOST_A(ARG, PLAYER, @"%LOCALS%")
@@ -391,6 +392,7 @@ SIF !SHIRAHU(ARG)
 	RETURN
 IF CFLAG:ARG:破瓜中止口上有
 	;口上側から干渉可能に
+	CALL SET_KOJO_COLOR(ARG)
 	CALL KOJO_MESSAGE_SEND("LOST_VIRGIN_STOP", 0, ARG)
 	IF RESULT == 1
 		RETURN -1
@@ -415,7 +417,7 @@ ELSEIF !TALENT:ARG:無知 && !TALENT:ARG:恋慕 && !TALENT:ARG:愛欲 && !TALENT
 		IF RESULT == 1
 			IF TALENT:ARG:貞操 > 0 && ABL:ARG:戦闘能力 > ABL:MASTER:戦闘能力 && !TCVAR:ARG:强行
 				PRINTFORMW %CALLNAME:MASTER%虽然想霸王硬上弓、但因为%CALLNAME:ARG%相当激烈的抵抗而放弃了
-				RETURN 1
+				RETURN -1
 			ELSEIF TALENT:ARG:貞操 > 0 && FLAG:催眠強度 <= 75
 				PRINTFORMW %CALLNAME:ARG%流着眼泪拒绝了%CALLNAME:MASTER%
 				PRINTL [0] 真的那么讨厌做就算了
@@ -658,6 +660,34 @@ ENDIF
 TCVAR:ARG:破瓜 = 1
 CFLAG:ARG:処女喪失对手 = 相手
 CSTR:ARG:処女喪失履歴 = %HISTORY_LOST_TEXT(ARG,相手,対象,場所,修飾語,"处女")%
+;Male virginity loss handler
+@SET_HISTORY_LOST_DT(ARG,相手,対象,場所,修飾語)
+#DIM 相手
+#DIMS 対象
+#DIMS 場所
+#DIMS 修飾語
+
+CFLAG:ARG:童貞喪失記念日 = DAY
+TCVAR:ARG:筆下ろし = 1
+CFLAG:ARG:童貞喪失相手 = 相手
+;by default we assume it's vagina
+IF STRLENS(対象) ;for events and such outside of normal sex
+	CATCHER_ORIFICE:ARG:0 = (対象 == "肛门" ? DT_ANUS # DT_VAGINA)
+ELSE
+	;to specify the orifice it was lost to
+	IF GROUPMATCH(TFLAG:3, 62, 63, 66, 69, 70, 92, 93, 94) ||  TEQUIP:相手:Ａセックス == ARG
+		LOCAL = 1
+	ELSE
+		LOCAL = 0
+	ENDIF
+	CATCHER_ORIFICE:ARG:0 = LOCAL ? DT_ANUS # DT_VAGINA
+	対象 '= (LOCAL ? "肛门" # "小穴")
+ENDIF
+;failsafe if something retarded happens
+SIF !GROUPMATCH(対象, "小穴", "肛门")
+	THROW "SET_HISTORY_LOST_DT的指定操作符错误: " + 対象
+	
+CSTR:ARG:童貞喪失履歴 = %HISTORY_LOST_TEXT(ARG,相手,対象,場所,修飾語,"童貞")%
 
 @HISTORY_LOST_TEXT(ARG,相手,対象,場所,修飾語,喪失したもの)
 #FUNCTIONS
@@ -668,7 +698,12 @@ CSTR:ARG:処女喪失履歴 = %HISTORY_LOST_TEXT(ARG,相手,対象,場所,修飾
 #DIMS 喪失したもの
 #DIMS 状況
 #DIM 自己
-
+#DIM DYNAMIC GAVE
+;剧本侧诶嘿嘿模块的状况修饰符：1=献给；2=被夺走；3=抛弃
+IF SUBSTRINGU(修飾語,0,12) == "GaveSetting:"
+	GAVE = TOINT(SUBSTRINGU(修飾語,12))
+	修飾語 = ""
+ENDIF
 VARSET LOCALS
 LOCALS:4 = 
 自己 = 0
@@ -754,7 +789,7 @@ IF 修飾語 == ""  && SHIRAHU(ARG)
 	ENDIF
 ENDIF
 
-IF 自己
+IF 自己 || GAVE == 1
 	LOCALS:4 = 在%LOCALS:4%%修飾語%将%喪失したもの%献给了%LOCALS:0%%LOCALS:1%
 ELSEIF ARG == MASTER || 修飾語 == "治療と称して"
 	修飾語 = 以治疗的名义
@@ -762,6 +797,8 @@ ELSEIF ARG == MASTER || 修飾語 == "治療と称して"
 ELSEIF 修飾語 == "お金を払って"
 	修飾語 = 付了钱后
 	LOCALS:4 = 在%LOCALS:4%%修飾語%让%LOCALS:0%%LOCALS:1%夺走了%喪失したもの%
+ELSEIF GAVE == 3
+	LOCALS:4 = 在%LOCALS:4%，%修飾語%在%LOCALS:0%%LOCALS:1%身上抛弃了%喪失したもの%
 ELSE
 	LOCALS:4 = 在%LOCALS:4%%修飾語%%喪失したもの%被%LOCALS:0%%LOCALS:1%夺走了
 ENDIF

@@ -1,0 +1,267 @@
+﻿;-------------------------------
+;HELPER FUNCTIONS
+;-------------------------------
+
+;-------------------------------------
+; Check if given character is inside the date array
+;
+;-------------------------------------
+@IS_IN_GROUP_DATE(ARG)
+#FUNCTION
+FOR LOCAL, 0, NumberOfDates
+	IF Datees:LOCAL == ARG
+		RETURNF 1
+	ENDIF
+NEXT
+RETURNF 0
+
+;-------------------------------------
+; Returns a random character value from the date array
+;
+;-------------------------------------
+@GET_RANDOM_DATE()
+#FUNCTION
+RETURNF Datees:(RAND:NumberOfDates)
+
+;-------------------------------------
+; Returns a string of all the character names in a neat row
+; ARG is the character calling it for dialogue possibilities
+; exclude removes ARG from the displayed list so one date can mention all the others
+; printAnd replaces the last comma with an "and"
+;-------------------------------------
+@GET_DATEES_NAMES(ARG, EXCLUDE = 0, PRINTAND = 1)
+#FUNCTIONS
+#DIM EXCLUDE
+#DIM PRINTAND
+#DIM NAMELIST, 200 ; use another array that doesn't contain ARG for all the cases where that would mess up the string
+#DIM SKIPPED
+#DIM FORLIMIT
+#DIMS returnString
+SKIPPED = 0
+FOR LOCAL, 0, 200
+	IF !EXCLUDE || (EXCLUDE && Datees:LOCAL != ARG)
+		IF !SKIPPED
+			NAMELIST:LOCAL = Datees:LOCAL
+		ELSE
+			NAMELIST:(LOCAL-1) = Datees:LOCAL
+		ENDIF
+	ELSE 
+		SKIPPED = 1
+	ENDIF
+NEXT
+returnString '= "" 
+FORLIMIT = EXCLUDE ? NumberOfDates -1 # NumberOfDates
+FOR LOCAL, 0, FORLIMIT
+	IF !EXCLUDE || (EXCLUDE && NAMELIST:LOCAL != ARG) 
+		returnString = %returnString%%CALLNAME:(NAMELIST:LOCAL)% 
+		IF (LOCAL == FORLIMIT - 2 && PRINTAND)
+			returnString '= @"%returnString% and "
+		ELSEIF LOCAL != FORLIMIT - 1
+			returnString '= @"%returnString%, "
+		ENDIF
+	ENDIF
+NEXT
+RETURNF returnString
+
+;-------------------------------------
+; Add character to the group date, here to avoid repeating so much code everywhere it applies
+; Directly adds them to the end of the list
+;-------------------------------------
+@ADD_TO_GROUP_DATE(ARG)
+IF !IS_IN_GROUP_DATE(ARG) ; sometimes date gets assigned to current date, this ensures it doesn't cause problems in the group date array
+	Datees:NumberOfDates = ARG
+	DatesPrevLike:NumberOfDates = CFLAG:ARG:好感度
+	NumberOfDates += 1
+	CFLAG:ARG:デート中 = CFLAG:MASTER:デート中 ; just in case
+	CFLAG:ARG:同行 = 60 ; just in case
+	;Dialogue events for adding new person to the date
+	;FOR LOCAL, 0, NumberDates
+	;	CALL KOJO_MESSAGE_SEND("EVENT",1,(Datees:LOCAL),1008,ARG)
+	;NEXT
+	;New person dialogue / reply
+	;CALL KOJO_MESSAGE_SEND("EVENT",1,ARG,1009,GET_RANDOM_DATE)
+ENDIF
+;-------------------------------------
+; Remove character from the group date, here to avoid repeating so much code everywhere it applies
+; Used for when character has to leave for work, sleep, festival, etc.
+;-------------------------------------
+@REMOVE_FROM_GROUP_DATE(ARG)
+#DIM NewNumberOfDatees
+#DIM NewDatees, 200
+#DIM NewPrevLike, 200
+IF NumberOfDates > 1
+	;Check if currently dating 
+	NewNumberOfDatees = 0
+	FOR LOCAL, 0, NumberOfDates ;iterate and remove only ARG from current dates
+		IF (Datees:LOCAL) != ARG
+			NewDatees:NewNumberOfDatees = (Datees:LOCAL)
+			NewPrevLike:NewNumberOfDatees = DatesPrevLike:LOCAL
+			NewNumberOfDatees += 1
+			CFLAG:(Datees:LOCAL):デート中 = CFLAG:MASTER:デート中; some end of date things loop CHARANUM to remove デート中 so let's add it back
+			CFLAG:ARG:同行 = 60 ; same for 同行
+			FLAG:デート相手 = Datees:LOCAL ;pass the focus to whoever to not break things
+			TFLAG:デート前好感度 = DatesPrevLike:LOCAL
+		ELSE
+			CFLAG:ARG:デート中 = MAIN_MAP
+			CFLAG:ARG:同行 = 0
+		ENDIF
+	NEXT
+	FOR LOCAL, 0, 200
+		Datees:LOCAL = NewDatees:LOCAL
+		DatesPrevLike:LOCAL = NewPrevLike:LOCAL
+	NEXT
+	NumberOfDates = NewNumberOfDatees
+	CFLAG:MASTER:同行 = 60 ; some of the remove date codes remove 同行 so let's add it back
+ELSE
+	CFLAG:ARG:デート中 = MAIN_MAP
+	FLAG:デート相手 = 0
+	TFLAG:デート前好感度 = 0
+	CFLAG:ARG:同行 = 0
+	CALL CLEAN_GROUP_DATES
+ENDIF
+
+;-------------------------------------
+; Remove all characters from the group date, here to avoid repeating so much code everywhere it applies
+; Used for when player faints and the day ends or is forcibly dragged, mostly cleanup
+;-------------------------------------
+@CLEAN_GROUP_DATES()
+FOR LOCAL, 0, NumberOfDates
+	CFLAG:(Datees:LOCAL):约会中 = MAIN_MAP
+	CFLAG:(Datees:LOCAL):同行 = 0
+	Datees:LOCAL = 0
+	DatesPrevLike:LOCAL = 0
+NEXT
+Datees = 0
+DatesPrevLike = 0
+NumberOfDates = 0
+CFLAG:MASTER:同行 = 0
+FLAG:デート相手 = 0
+TFLAG:约会前好感度 = 0
+
+;-------------------------------------
+; Group date function, takes an array as the parameter, unlike SET_DATE you should never be able to TSP with it
+;
+;-------------------------------------
+@SET_DATES(P_ID, C_IDS, NumberDates, 所要時間)
+#DIM P_ID
+#DIM REF C_IDS
+#DIM NumberDates
+#DIM 所要時間
+#DIM 現在地MAPID
+#DIM PrevLikeness, 200
+;お出掛け終了
+IF P_ID >= MAXHOME
+	CFLAG:MASTER:デート中 = MAIN_MAP
+	FLAG:デート相手 = 0
+	Datees = 0
+	NumberOfDates = 0
+	DatesPrevLike = 0
+	TFLAG:デート前好感度 = 0
+	CFLAG:MASTER:現在位置 = GET_ENTRANCE(MAIN_MAP)
+	TFLAG:デート道中 = 0
+	FOR LOCAL, 0, NumberDates
+		CFLAG:(C_IDS:LOCAL):デート中 = MAIN_MAP
+		CFLAG:(C_IDS:LOCAL):現在位置 = GET_ENTRANCE(MAIN_MAP)
+		;addition custom code
+		IF TCVAR:(C_IDS:LOCAL):本来の服装 && !TCVAR:Exhibitionist_Nudist_Sense ;custom code
+			CALL OKIGAE((C_IDS:LOCAL),100 + (C_IDS:LOCAL))
+			PRINTFORMW %CALLNAME:(C_IDS:LOCAL)% changed back to %HIS_HER((C_IDS:LOCAL))% original clothing.
+			TCVAR:(C_IDS:LOCAL):本来の服装 = 0
+		ENDIF
+	NEXT
+	;---------------------
+;お出掛け開始
+ELSE
+	;整合性チェック
+	SIF BASE:MASTER:気力 <= 0
+		RETURN
+	FOR LOCAL, 0, NumberDates
+		SIF CFLAG:(C_IDS:LOCAL):衰弱
+			RETURN
+		SIF BASE:(C_IDS:LOCAL):気力 <= 0
+			RETURN
+	NEXT
+	CFLAG:MASTER:デート中 = P_ID
+	現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
+	;C_IDとデート
+	FOR LOCAL, 0, NumberDates
+		FLAG:デート相手 = (C_IDS:LOCAL)
+		CFLAG:(C_IDS:LOCAL):デート中 = P_ID
+		TFLAG:デート前好感度 = CFLAG:(C_IDS:LOCAL):好感度
+		PrevLikeness:LOCAL = CFLAG:(C_IDS:LOCAL):好感度
+		;人里デート専用処理
+		IF P_ID == 2
+			CALL EX_COSTUME((C_IDS:LOCAL), "人里デート")
+			SIF RESULT
+				PRINTFORMW %CALLNAME:(C_IDS:LOCAL)% changed into clothes more suitable to wear in the Human Village.
+		;addition custom code, change to date clothes for some chara
+		ELSE
+			CALL EX_COSTUME((C_IDS:LOCAL), "デート")
+			SIF RESULT
+				PRINTFORMW %CALLNAME:(C_IDS:LOCAL)% changed %HIS_HER((C_IDS:LOCAL))% clothes to %HIS_HER((C_IDS:LOCAL))% dating attire.
+		ENDIF
+		;-----------------------------------------------------------
+		CFLAG:MASTER:現在位置 = ROAD_TO(P_ID)
+		CFLAG:(C_IDS:LOCAL):現在位置 = ROAD_TO(P_ID)
+		;開始時は+1000する
+		TFLAG:デート道中 = 所要時間 + 1000
+		TFLAG_LastArea = 現在地MAPID ;qol custom code, keep track of where we left from
+		IF GROUPMATCH(所要時間, -1000, 0) ;qol custom code, instant travel check against -1000 and 0 to cover both inviting and being invited
+			PRINTFORMW You arrive at %DATENAME_PLACE()% before you even realize it.
+			TFLAG:デート道中 = 0
+			CFLAG:MASTER:現在位置 = GET_ENTRANCE(CFLAG:MASTER:デート中)
+			CFLAG:(FLAG:デート相手):現在位置 = CFLAG:MASTER:現在位置
+		ENDIF
+		;CALL Add_HMF_DateGemRecord((C_IDS:LOCAL)) ;addition custom code
+	NEXT
+	FOR LOCAL, 0, 200
+		Datees:LOCAL = C_IDS:LOCAL
+		DatesPrevLike:LOCAL = PrevLikeness:LOCAL
+	NEXT
+	NumberOfDates = NumberDates
+	CALL HappenToChild
+	CALL PICK_RUNINTO(P_ID)
+ENDIF
+
+@MOREDATES_DISPLAY_ALL_KOJO(EVENTID, PreText = "", PostText = "")
+#DIM EVENTID
+#DIM TEMP
+#DIMS PreText
+#DIMS PostText
+#DIMS PostTextPrint
+TEMP = TARGET
+;Display dialogue if exists - don't call original because that one will be done automatically
+FOR LOCAL:10, 0, (NumberOfDates + 1)
+	SIF DATEES:(LOCAL:10) == TEMP; skip temp until the end
+		LOCAL:10 += 1
+	IF LOCAL:10 == NumberOfDates ; print the original target last but in the same loop to not repeat code
+		TARGET = TEMP
+	ELSE
+		TARGET =  Datees:(LOCAL:10) ; switch target in case that matters
+	ENDIF
+	PRINTFORML
+	CALL SET_KOJO_COLOR(TARGET)
+	IF PreText == ""
+		PreText '= @"%CAPITALIZE(VERBT_PAST(Add_Custom_COM_Name(EVENTID)))% with "
+	ENDIF
+	IF PostText == ""
+		SELECTCASE RAND:4 ; feel free to expand
+			CASE 0
+				PostTextPrint = , who enjoyed it greatly.
+			CASE 1
+				PostTextPrint = , who had a nice time.
+			CASE 2
+				PostTextPrint = , enjoying %HIS_HER(TARGET)% company.
+			CASE 3
+				PostTextPrint = . It was nice.	
+			CASEELSE
+				PostTextPrint = .
+		ENDSELECT
+	ELSE
+		PostTextPrint = %PostText%
+	ENDIF
+	PRINTFORML %PreText%%CALLNAME:(TARGET)%%PostTextPrint%
+	IF TARGET != TEMP
+		TRYCALLFORM M_KOJO_MESSAGE_COM_K{TARGET}_{EVENTID}
+	ENDIF
+NEXT

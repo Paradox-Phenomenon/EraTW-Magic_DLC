@@ -263,7 +263,7 @@ ENDSELECT
 ;Modded to it uses full-width commas, i.e. "、"
 ;Added option to adjust the last connector, enabling the use of " or" instead of " and" 
 ;----------------------------------------------------------------------
-@LIST_IN_STRING(ARGS, strSplit = "、", strLast = " and")
+@LIST_IN_STRING(ARGS, strSplit = "、", strLast = "和")
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #FUNCTIONS
@@ -847,19 +847,19 @@ SIF HAS_VAGINA(ARG) && !HAS_PENIS(ARG) && TALENT:ARG:処女 == 1
 SIF !HAS_VAGINA(ARG) && HAS_PENIS(ARG) && IS_DOUTEI(ARG)
 	RETURNF 1
 ;SIF HAS_VAGINA(ARG) && HAS_PENIS(ARG) && (PENILE_VIRGINITY_LOSS_WAS_UNAWARE(ARG) || IS_DOUTEI(ARG)) && (VAGINAL_VIRGINITY_LOSS_WAS_UNAWARE(ARG) || TALENT:ARG:処女 == 1)
-SIF HAS_VAGINA(ARG) && HAS_PENIS(ARG) && (IS_DOUTEI(ARG)) && (VAGINAL_VIRGINITY_LOSS_WAS_UNAWARE(ARG) || TALENT:ARG:処女 == 1)
+SIF HAS_VAGINA(ARG) && HAS_PENIS(ARG) && (IS_DOUTEI(ARG)) && (TALENT:ARG:処女 == 1)
 	RETURNF 1
 RETURNF 0
 
-@VAGINAL_VIRGINITY_LOSS_WAS_UNAWARE(ARG = -1)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTION
-SIF ARG == -1
-	ARG = TARGET
-RETURNF STRCOUNT( TOLOWER(CSTR:ARG:処女喪失履歴), "stolen")
+;@VAGINAL_VIRGINITY_LOSS_WAS_UNAWARE(ARG = -1)
+;#LOCALSIZE 1
+;#LOCALSSIZE 1
+;#FUNCTION
+;SIF ARG == -1
+;	ARG = TARGET
+;RETURNF STRCOUNT( TOLOWER(CSTR:ARG:処女喪失履歴), "stolen")
 
-@PENILE_VIRGINITY_LOSS_WAS_UNAWARE(ARG = -1)
+;@PENILE_VIRGINITY_LOSS_WAS_UNAWARE(ARG = -1)
 ;#FUNCTION
 ;SIF ARG == -1
 ;	ARG = TARGET
@@ -874,85 +874,6 @@ RETURNF STRCOUNT( TOLOWER(CSTR:ARG:処女喪失履歴), "stolen")
 #LOCALSSIZE 1
 #FUNCTION
 RETURNF (IS_FEMALE(MASTER) && IS_VIRGIN(MASTER)) || (IS_MALE(MASTER) && IS_DOUTEI(MASTER)) || (IS_FUTA(MASTER) && IS_DOUTEI(MASTER) && IS_VIRGIN(MASTER))
-
-
-
-;note to self: DOUBLE CHECK!!! DOUBLE CHECK!!! DOUBLE CHECK!!! DOUBLE CHECK!!!
-
-[SKIPSTART]
-;warning for the faulty cflag value
-@EVENTLOAD
-#LATER
-
-LOCALS '= ""
-LOCAL:1 = 0
-FOR LOCAL, 1, CHARANUM
-	;don't bother if the value is not tampered with
-	SIF !CFLAG:LOCAL:口上セレクタ
-		CONTINUE
-	;check if the main dialogue still works with it
-	TRYCCALLFORM M_KOJO_K{LOCAL}_{CFLAG:LOCAL:口上セレクタ}
-		IF !RESULT
-			LOCAL:1 ++
-			LOCALS += CALLNAME:LOCAL + "、"
-		ENDIF
-	CATCH
-		LOCAL:1 ++
-		LOCALS += CALLNAME:LOCAL + "、"
-	ENDCATCH
-NEXT
-IF LOCAL:1
-	CALL COLORMESSAGE("Warning! Abnormal value for the dialogue selector detected!",C_RED,2,1)
-	PRINTFORML Number of characters: {LOCAL:1}
-	PRINTFORML Affected characters: %LIST_IN_STRING(LOCALS)%
-	CALL COLORMESSAGE("Make sure to run [500] Update option from the main menu first!",C_RED,2,1)
-ENDIF
-
-;fix unset dick size tweak and etc
-@EVENTLOAD
-#LATER
-FOR LOCAL, 0, CHARANUM
-	SIF !HAS_PENIS(LOCAL)
-		CONTINUE
-	IF TALENT:LOCAL:形状 <= 0 || MAXBASE:LOCAL:精力 <= 0 || MAXBASE:LOCAL:勃起 <= 0
-		CALL COLORMESSAGE(@"Fixing incorrect penis properties for %CALLNAME:LOCAL%...",C_YELLOW,1,1)
-		SIF TALENT:LOCAL:形状 <= 0 
-			TALENT:LOCAL:形状 = 3
-		SIF MAXBASE:LOCAL:勃起 <= 0
-			MAXBASE:LOCAL:勃起 = 1500
-		SIF MAXBASE:LOCAL:精力 <= 0
-			MAXBASE:LOCAL:精力 = 1000
-	ENDIF
-	IF TALENT:LOCAL:絶倫 && MAXBASE:LOCAL:勃起 == 1500 ;addition custom code
-		CALL COLORMESSAGE(@"Fixing incorrect max erection for %CALLNAME:LOCAL%...",C_YELLOW,1,1)
-		MAXBASE:LOCAL:勃起 *= 2
-	ENDIF
-	IF LOCAL == MASTER && MAXBASE:LOCAL:精力 == 1000 ;give back bonus vig the game owes you if you're at base VIG
-		CALL Pc_Vig_Recover(MASTER) ;custom code
-	ENDIF
-NEXT
-
-;garbage collection from enter's emuera, wip possibly
-;@EVENTLOAD
-;#PRI
-;CALL MEM_CLEAN
-
-@EVENTEND
-#LATER
-CALL MEM_CLEAN
-
-@MEM_CLEAN
-;#; PRINTFORMW MemUse: {GETMEMORYUSAGE()/1024/1024}MB
-LOCAL = CLEARMEMORY()
-;#; PRINTFORMW Cleared: {LOCAL/1024/1024}MB MemUse: {GETMEMORYUSAGE()/1024/1024}MB
-;/*************************************************************
-;Convenient checking functions
-;/*************************************************************
-[SKIPEND]
-
-
-
-
 
 ;-------------------------------------------------
 ;ARG:0番のキャラにＶがあるかどうかを返す関数

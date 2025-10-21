@@ -1,10 +1,12 @@
 ﻿;一日の終わりに呼び出される関数
 @GET_CHILD(ARG)
-#DIM C_ID
+#DIM DYNAMIC C_ID
 #DIM 妊娠必要值
 #DIM 中毒補正
 #DIM 妊娠精液判定
-;Custom code, don't process if the character's womb or nest is at the child limit.
+#DIM DYNAMIC ConceptionCount
+
+	;don't process if the character's womb or nest is at the child limit.
 SIF CFLAG:ARG:WithChildCount >= MAXCHILD
 	RETURN
 
@@ -86,7 +88,7 @@ EX:ARG:妊娠判定用精液量 = CFLAG:ARG:(DADDY + 2000)
 DEBUGPRINTFORML %CALLNAME:ARG%の子宮にある%CALLNAME:DADDY%の子種は{EX:ARG:妊娠判定用精液量}
 
 ;1≦出産経過日≦59の場合、子宮内精液リセット処理を追記
-SIF  (!TALENT:ARG:初潮 && (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行)) || INRANGE(CFLAG:ARG:出産経過日, 1, CHILD_就学 - 1)
+SIF  (!TALENT:ARG:初潮 && (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行)) || Qol_IS_IN_RECOVERY(ARG)
 	EX:ARG:妊娠判定用精液量 = 0
 
 IF !TALENT:MASTER:万能孕 && BABYDLC == 0
@@ -149,16 +151,16 @@ SIF FLAG:抱負 == 6
 	妊娠必要值 = 妊娠必要值 / 2
 SIF FLAG:抱負 == 9
 	妊娠必要值 = 妊娠必要值 * 9 / 10
-SIF TALENT:ARG:人类
-	妊娠必要值 /= 2
+;apply racial bonuses
+CALL QOL_RACIAL_PREGNANCY_BONUS(妊娠必要值, ARG)
 SIF TALENT:ARG:路人
 	妊娠必要值 /= 4
 SIF TALENT:DADDY:濃厚精液
 	妊娠必要值 /= 4
 SIF TALENT:ARG:妊娠願望
 	妊娠必要值 = 妊娠必要值 * 8 / 10
-			;Custom code, bonus while hyperfertile for second child with normal pregnancy type or under 7 children with litter type.
-SIF (TALENT:ARG:PREGNANCY_TYPE == 4 && CFLAG:ARG:WithChildCount == 1) || (TALENT:ARG:PREGNANCY_TYPE == 5 && CFLAG:ARG:WithChildCount < 7)
+		;bonus while hyperfertile for second child with normal pregnancy type or under 7 children with litter type.
+SIF TALENT:ARG:HYPERFERTILE && ((TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_NORMAL && CFLAG:ARG:WithChildCount == 1) || (TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_LITTERS && CFLAG:ARG:WithChildCount < 7))
 	妊娠必要值 = 妊娠必要值 * 9 / 10
 SIF ARG == 0
 	妊娠必要值 = 500
@@ -288,165 +290,164 @@ ELSEIF 充填率(ARG,5) > 10
 	ENDIF
 ENDIF
 SETFONT
-IF CFLAG:ARG:妊娠経過日数 > 0
-	RETURN
-ELSE
-	IF MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100 > RAND:妊娠必要值
-		DRAWLINE
-		DEBUGPRINTFORML %CALLNAME:ARG%怀上了%CALLNAME:DADDY%的孩子
-		;CFLAG:ARG:妊娠経過日数 = 1 + FLAG:妊娠日程倍率
-				;Custom code, increase the number of unborn children, with a chance for twins or triplets if it's a live birth. Maximum of ten at one time, except for egg layers.
-		ConceptionCount += CONCEPTION_COUNT(ARG,ConceptionCount)
-		CALL ADD_PREGNANCY_PROGRESS(ARG,ConceptionCount)
-		CFLAG:ARG:誰の子 = DADDY
-		SIF FLAG:抱負 == 6
-			FLAG:抱負 = 9
-		IF FLAG:1007
-			SETCOLOR C_CREAM
-			PRINTFORML 伴随着%CALLNAME:ARG%子宫一阵微微颤动、%CALLNAME:ARG%不知为何升起莫名的幸福感(づ﹃ど)♡
-			CALL PrintOnanismImage(ARG)
-			PRINTFORML %CALLNAME:ARG%的卵子对%CALLNAME:DADDY%的精子屈服了…
-			IF !FLAG:画像表示
-				SETFONT CHKFONTNAME("ＭＳ ゴシック")
-				PRINTL 　　　　　　　　　　　　　　　　..__＿....-------....＿..
-				PRINTL 　　　　　　　　　　　　 .._..-‐'"⌒　　　　　　　　 ｀"'''ゝ､_..
-				PRINTL 　　　　　　　　　　_..‐''´　　　　　　　　　　　　　　　　　"ｰ 、..
-				PRINTL 　　　　　　　　 .:ノ'´　　. .　. 　 .　 . . .. .: . .　.　 ..　　　 　 　 `＼:.
-				PRINTL 　　　　　　　.:ノ′ 　 .　 . .: .:.: .:. .: . .: .: .:. . : .: .:.. : . .　. 　 　 　 ﾞゝ:.　　こ二ﾆ==-‐'´￣｀ヽ、_,
-				PRINTL 　　　　　 .:_／ 　 . ..:..:.:.::;:;;';:;';';.:　'"´　　　　'　　;.:.. : .　.　　　　 　 ＼:.
-				PRINTL 　　　　　.:/′ 　 .. ..:.:.:;:;';;';'.''´　　　　　 　 　 　 　 　 ;.:. . .　　 　 　 ヽ、:.
-				PRINTL 　　　　.:丿　.　.　. ..:.::;';':''　　　　　　　　　 　 　 　 　 　 :.:. : .　　　 　 ヽ::
-				PRINTL 　　　 .:丿　　　..　. ..::;'′　　　　　　　 　 　 　 　 　 　 　 ,:.:.. . .　 　 　 '、::
-				PRINTL 　　　 ::「　　　　.. . .:.;'　　　　　　　　　　　　　　　　　 　 　 :.:.　 . 　 　 .　i、::　　　こ二ﾆ==-‐'⌒丶、＿ノ
-				PRINTL 　　　::||　　　　. . ..:.;　　　　　　　　 　 　 　 　 　 　 　 　 　 ;.: . . .　　 ,::　!::
-				PRINTL 　　　::〕 　 　 　 . ..:;　　　　　　　　　　　　　　　　　　　　 　 :.:. . .　:';';にﾆ==-‐'´￣｀ヽ、_,
-				PRINTL 　　　::|!　　　　　..:.:;　　　　　　　　　　　　　　　　　　　　 　 ;.: :.　　 　｀: .!'::　　　　　　　　"
-				PRINTL 　　　::卜　　　　.. .:.:,　　　　　　　　　　　　　　　　　　　　　.:.:. . .. . 　 　 |::′　[][]/7
-				PRINTL 　　　 ::'、　　　 　 . .::,　　　　　　　　　　　　 　 　 　 　 　 ,:.: . .　　　　 │:: 　 　 //lニ◎
-				PRINTL 　　　 ::弋 　 　 　 .. . :.,　　　　　　　　　　　　　　　　 　 ,.:.: : .　　　 　 丿::　　　　　　// ﾟﾟ〃
-				PRINTL 　　　　 ::ヽ　　 　 　 . . .:...　　　 　 　 　 　 　 　 　 　 ,..: .: . ..　 　 　 _j′　　　　　　　　　´　ﾟ　｡
-				PRINTL 　　　　　':ヽ、　　　　　.　.: :': . ..　　 　 　 　 　 　 ,. .:.: . :　.. 　 　 　 /′　　　　　　　　　 　 　 　 °
-				PRINTL 　　　　　　':ヽ、　　 　 　 ..　. : .: ' : . ...,. .,... . : ' :. : .　.　　　 　 　 _／:'
-				PRINTL 　　　　　　　 ':ヾ 、　　　　　　 ..　:　. .: . . : .　:　.　　　　　　　 _／:'　　　　こ二ﾆ==-‐'⌒丶、＿ノ
-				PRINTL 　　　　　　　　　':ﾞゝ､　　　　　　　　　 .　 .　　　　　　　　　_ノ'´:'
-				PRINTL 　　　　　　　　　　　':ﾞﾞ'ゝ､_ 　　　　　　　　　　　　　　_..-‐'´:'
-				PRINTL 　　　　　　　　　　　　　　':ﾞﾞ'''ｰ-....＿＿____＿....-一"´:'
-				PRINTW 　　　　　　　　　　　　　　　　　　　　 ''￣｀''
-				SETFONT
-			ELSE
-				CALL PRINT_IMAGE_ANIMATION("受精",0,12,FLAG:アニメーション,0)
-				CALL PRINT_IMAGE("受精11")
-				WAIT
-			ENDIF
-			IF TALENT:ARG:人妻
-				IF TALENT:ARG:妊娠願望
-					PRINTFORMW %CALLNAME:ARG%的身体如愿以偿的接受了期待已久的%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
-					PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
-				ELSEIF TALENT:ARG:恋人
-					PRINTFORMW %CALLNAME:ARG%的身体幸福的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
-					PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
-				ELSEIF TALENT:ARG:恋慕
-					PRINTFORMW %CALLNAME:ARG%的身体开心的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
-					PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
-				ELSEIF TALENT:ARG:思慕
-					PRINTFORMW 思慕着%CALLNAME:DADDY%的%CALLNAME:ARG%，安然接纳了%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
-					PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
-				ELSEIF TALENT:ARG:愛欲
-					PRINTFORMW %CALLNAME:ARG%的雌躯自然的接受了无法反抗的%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
-					PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
-				ELSEIF TALENT:ARG:炮友
-					PRINTFORMW %CALLNAME:ARG%目前只是把%CALLNAME:DADDY%当成泄欲的工具
-					PRINTFORMW 然而她身为雌性的躯体，却率先接纳了%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
-					PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
-				ELSE
-					PRINTFORMW %CALLNAME:ARG%的身体非本意的接受了毫无关系的%CALLNAME:DADDY%的遗传因子…
-					PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
-					PRINTFORMW 即便是不熟的%CALLNAME:DADDY%的遗传因子，也会像最爱的老公一样全盘接纳…
-				ENDIF
-			ELSE
-				IF TALENT:ARG:妊娠願望
-					PRINTFORMW %CALLNAME:ARG%的身体如愿以偿的接受了期待已久的%CALLNAME:DADDY%的遗传因子…
-				ELSEIF TALENT:ARG:恋人
-					PRINTFORMW %CALLNAME:ARG%的身体幸福的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
-				ELSEIF TALENT:ARG:恋慕
-					PRINTFORMW %CALLNAME:ARG%的身体开心的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
-				ELSEIF TALENT:ARG:思慕
-					PRINTFORMW 思慕着%CALLNAME:DADDY%的%CALLNAME:ARG%，安然接纳了%CALLNAME:DADDY%的遗传因子…
-				ELSEIF TALENT:ARG:愛欲
-					PRINTFORMW %CALLNAME:ARG%的雌躯自然的接受了无法反抗的%CALLNAME:DADDY%的遗传因子…
-				ELSEIF TALENT:ARG:炮友
-					PRINTFORMW %CALLNAME:ARG%目前只是把%CALLNAME:DADDY%当成泄欲的工具
-					PRINTFORMW 然而她身为雌性的躯体，却率先接纳了%CALLNAME:DADDY%的遗传因子…
-				ENDIF
-			ENDIF
-			IF TALENT:ARG:傲嬌
-				PRINTFORMW 不管%CALLNAME:ARG%嘴上如何说着不要不要，身体也只是一个雌性罢了
-				PRINTFORMW %CALLNAME:DADDY%的遗传因子让轻易的击溃了她的卵子…
-			ENDIF
-			IF TALENT:ARG:無知
-				PRINTFORMW 对性行为缺乏知识的%CALLNAME:ARG%，错在身体先于知变成一个成熟的雌性，
-				PRINTFORMW %CALLNAME:DADDY%的遗传因子无耻的在%CALLNAME:ARG%幼小的身躯里留下自己的印记…
-			ENDIF
-			IF TALENT:ARG:難以越過的底線
-				PRINTFORMW 难以对他人放下戒心的%CALLNAME:ARG%怎么也没能想到
-				PRINTFORMW 她那雌性的身躯竟然先于意志力屈服于%CALLNAME:DADDY%的遗传因子…
-			ENDIF
-			SIF TALENT:ARG:抵抗
-				PRINTFORMW 即便是像%CALLNAME:ARG%一样抵抗，也无法阻止身为雌性而被动接受的%CALLNAME:DADDY%的遗传因子…
-			SIF TALENT:ARG:把柄
-				PRINTFORMW 借由被抓住把柄而被推到的%CALLNAME:ARG%，雌性的身体在不知不觉间接受了%CALLNAME:DADDY%的遗传因子…
-			SIF TALENT:ARG:子宮口性感
-				PRINTFORMW 由于%CALLNAME:ARG%的子宫口已经被完全调教了❤，雌性的身体早已学会主动接纳%CALLNAME:DADDY%的遗传因子…
-
-			IF TALENT:ARG:路人 == 1
-				FONTBOLD
-				PRINTFORMW %CALLNAME:MASTER%让路人%CALLNAME:ARG%怀孕了……
-				FONTREGULAR
-			ENDIF
-					;Custom code, egg laying.
-			IF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE,2,3)
-				IF FLAG:EGGNANCY
-					IF TALENT:ARG:PREGNANCY_TYPE == 3
-							;Skip describing the hard shell because clutch layers are bugs and fish.
-						PRINTFORMDW \@ ConceptionCount > 1 ? 卵 # 卵 \@ 停留在子宫内…
-					ELSE
-						PRINTFORMDW \@ ConceptionCount > 1 ? 形成了卵壳 # 形成了卵膜 \@，但停留在子宫内…
-					ENDIF
-				ELSE
-					PRINTFORMDW %CALLNAME:ARG%产下了受精卵
-					LOCAL:52 = 3
-					IF TALENT:ARG:恋慕
-						LOCAL:52 = 1
-					ELSEIF TALENT:ARG:愛欲
-						LOCAL:52 = 2
-					ENDIF
-					CALL KOJO_MESSAGE_SEND("EVENT", 0, ARG, LOCAL:52, ConceptionCount, "LAY_EGG")
-					IF TALENT:ARG:妊娠願望
-						TALENT:ARG:妊娠願望 = 0
-						PRINTFORMW %CALLNAME:ARG%失去了[怀孕愿望]
-					ENDIF
-				ENDIF
-			ENDIF
-			SIF TALENT:ARG:路人 == 1
-				FLAG:路人孕ませ数 ++
-			SIF DADDY == MASTER
-				EXP:MASTER:孕ませ経験 ++
-		ENDIF
-		IF TCVAR:(ARG):種付けられ自覚
-			CFLAG:ARG:身に覚え_母 = 1
-			CFLAG:DADDY:身に覚え_父 = 1
-			;PRINTFORML Succeed2
+;IF CFLAG:ARG:妊娠経過日数 > 0
+;	RETURN
+;ELSE
+IF MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100 > RAND:妊娠必要值
+	DRAWLINE
+	DEBUGPRINTFORML %CALLNAME:ARG%怀上了%CALLNAME:DADDY%的孩子
+	;Custom code, increase the number of unborn children, with a chance for twins or triplets if it's a live birth. Maximum of ten at one time, except for egg layers.
+	ConceptionCount += CONCEPTION_COUNT(ARG,ConceptionCount)
+	CALL ADD_PREGNANCY_PROGRESS(ARG,ConceptionCount)
+	CFLAG:ARG:誰の子 = DADDY
+	SIF FLAG:抱負 == 6
+		FLAG:抱負 = 9
+	IF FLAG:1007
+		SETCOLOR C_CREAM
+		PRINTFORML 伴随着%CALLNAME:ARG%子宫一阵微微颤动、%CALLNAME:ARG%不知为何升起莫名的幸福感(づ﹃ど)♡
+		CALL PrintOnanismImage(ARG)
+		PRINTFORML %CALLNAME:ARG%的卵子对%CALLNAME:DADDY%的精子屈服了…
+		IF !FLAG:画像表示
+			SETFONT CHKFONTNAME("ＭＳ ゴシック")
+			PRINTL 　　　　　　　　　　　　　　　　..__＿....-------....＿..
+			PRINTL 　　　　　　　　　　　　 .._..-‐'"⌒　　　　　　　　 ｀"'''ゝ､_..
+			PRINTL 　　　　　　　　　　_..‐''´　　　　　　　　　　　　　　　　　"ｰ 、..
+			PRINTL 　　　　　　　　 .:ノ'´　　. .　. 　 .　 . . .. .: . .　.　 ..　　　 　 　 `＼:.
+			PRINTL 　　　　　　　.:ノ′ 　 .　 . .: .:.: .:. .: . .: .: .:. . : .: .:.. : . .　. 　 　 　 ﾞゝ:.　　こ二ﾆ==-‐'´￣｀ヽ、_,
+			PRINTL 　　　　　 .:_／ 　 . ..:..:.:.::;:;;';:;';';.:　'"´　　　　'　　;.:.. : .　.　　　　 　 ＼:.
+			PRINTL 　　　　　.:/′ 　 .. ..:.:.:;:;';;';'.''´　　　　　 　 　 　 　 　 ;.:. . .　　 　 　 ヽ、:.
+			PRINTL 　　　　.:丿　.　.　. ..:.::;';':''　　　　　　　　　 　 　 　 　 　 :.:. : .　　　 　 ヽ::
+			PRINTL 　　　 .:丿　　　..　. ..::;'′　　　　　　　 　 　 　 　 　 　 　 ,:.:.. . .　 　 　 '、::
+			PRINTL 　　　 ::「　　　　.. . .:.;'　　　　　　　　　　　　　　　　　 　 　 :.:.　 . 　 　 .　i、::　　　こ二ﾆ==-‐'⌒丶、＿ノ
+			PRINTL 　　　::||　　　　. . ..:.;　　　　　　　　 　 　 　 　 　 　 　 　 　 ;.: . . .　　 ,::　!::
+			PRINTL 　　　::〕 　 　 　 . ..:;　　　　　　　　　　　　　　　　　　　　 　 :.:. . .　:';';にﾆ==-‐'´￣｀ヽ、_,
+			PRINTL 　　　::|!　　　　　..:.:;　　　　　　　　　　　　　　　　　　　　 　 ;.: :.　　 　｀: .!'::　　　　　　　　"
+			PRINTL 　　　::卜　　　　.. .:.:,　　　　　　　　　　　　　　　　　　　　　.:.:. . .. . 　 　 |::′　[][]/7
+			PRINTL 　　　 ::'、　　　 　 . .::,　　　　　　　　　　　　 　 　 　 　 　 ,:.: . .　　　　 │:: 　 　 //lニ◎
+			PRINTL 　　　 ::弋 　 　 　 .. . :.,　　　　　　　　　　　　　　　　 　 ,.:.: : .　　　 　 丿::　　　　　　// ﾟﾟ〃
+			PRINTL 　　　　 ::ヽ　　 　 　 . . .:...　　　 　 　 　 　 　 　 　 　 ,..: .: . ..　 　 　 _j′　　　　　　　　　´　ﾟ　｡
+			PRINTL 　　　　　':ヽ、　　　　　.　.: :': . ..　　 　 　 　 　 　 ,. .:.: . :　.. 　 　 　 /′　　　　　　　　　 　 　 　 °
+			PRINTL 　　　　　　':ヽ、　　 　 　 ..　. : .: ' : . ...,. .,... . : ' :. : .　.　　　 　 　 _／:'
+			PRINTL 　　　　　　　 ':ヾ 、　　　　　　 ..　:　. .: . . : .　:　.　　　　　　　 _／:'　　　　こ二ﾆ==-‐'⌒丶、＿ノ
+			PRINTL 　　　　　　　　　':ﾞゝ､　　　　　　　　　 .　 .　　　　　　　　　_ノ'´:'
+			PRINTL 　　　　　　　　　　　':ﾞﾞ'ゝ､_ 　　　　　　　　　　　　　　_..-‐'´:'
+			PRINTL 　　　　　　　　　　　　　　':ﾞﾞ'''ｰ-....＿＿____＿....-一"´:'
+			PRINTW 　　　　　　　　　　　　　　　　　　　　 ''￣｀''
+			SETFONT
 		ELSE
-			CFLAG:ARG:無自覚妊娠 = 1
+			CALL PRINT_IMAGE_ANIMATION("受精",0,12,FLAG:アニメーション,0)
+			CALL PRINT_IMAGE("受精11")
+			WAIT
+		ENDIF
+		IF TALENT:ARG:人妻
+			IF TALENT:ARG:妊娠願望
+				PRINTFORMW %CALLNAME:ARG%的身体如愿以偿的接受了期待已久的%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
+				PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
+			ELSEIF TALENT:ARG:恋人
+				PRINTFORMW %CALLNAME:ARG%的身体幸福的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
+				PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
+			ELSEIF TALENT:ARG:恋慕
+				PRINTFORMW %CALLNAME:ARG%的身体开心的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯再一次接受了深爱的人的遗传因子…
+				PRINTFORMW 尽管这一次不是她原来所最爱的老公的…
+			ELSEIF TALENT:ARG:思慕
+				PRINTFORMW 思慕着%CALLNAME:DADDY%的%CALLNAME:ARG%，安然接纳了%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
+				PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
+			ELSEIF TALENT:ARG:愛欲
+				PRINTFORMW %CALLNAME:ARG%的雌躯自然的接受了无法反抗的%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
+				PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
+			ELSEIF TALENT:ARG:炮友
+				PRINTFORMW %CALLNAME:ARG%目前只是把%CALLNAME:DADDY%当成泄欲的工具
+				PRINTFORMW 然而她身为雌性的躯体，却率先接纳了%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
+				PRINTFORMW 即便不是最爱的老公的遗传因子，也一样全盘接纳…
+			ELSE
+				PRINTFORMW %CALLNAME:ARG%的身体非本意的接受了毫无关系的%CALLNAME:DADDY%的遗传因子…
+				PRINTFORMW %CALLNAME:ARG%的雌躯不能很好的分辨体内的的遗传因子到底是谁的…
+				PRINTFORMW 即便是不熟的%CALLNAME:DADDY%的遗传因子，也会像最爱的老公一样全盘接纳…
+			ENDIF
+		ELSE
+			IF TALENT:ARG:妊娠願望
+				PRINTFORMW %CALLNAME:ARG%的身体如愿以偿的接受了期待已久的%CALLNAME:DADDY%的遗传因子…
+			ELSEIF TALENT:ARG:恋人
+				PRINTFORMW %CALLNAME:ARG%的身体幸福的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
+			ELSEIF TALENT:ARG:恋慕
+				PRINTFORMW %CALLNAME:ARG%的身体开心的接受了深爱着的%CALLNAME:DADDY%的遗传因子…
+			ELSEIF TALENT:ARG:思慕
+				PRINTFORMW 思慕着%CALLNAME:DADDY%的%CALLNAME:ARG%，安然接纳了%CALLNAME:DADDY%的遗传因子…
+			ELSEIF TALENT:ARG:愛欲
+				PRINTFORMW %CALLNAME:ARG%的雌躯自然的接受了无法反抗的%CALLNAME:DADDY%的遗传因子…
+			ELSEIF TALENT:ARG:炮友
+				PRINTFORMW %CALLNAME:ARG%目前只是把%CALLNAME:DADDY%当成泄欲的工具
+				PRINTFORMW 然而她身为雌性的躯体，却率先接纳了%CALLNAME:DADDY%的遗传因子…
+			ENDIF
+		ENDIF
+		IF TALENT:ARG:傲嬌
+			PRINTFORMW 不管%CALLNAME:ARG%嘴上如何说着不要不要，身体也只是一个雌性罢了
+			PRINTFORMW %CALLNAME:DADDY%的遗传因子让轻易的击溃了她的卵子…
+		ENDIF
+		IF TALENT:ARG:無知
+			PRINTFORMW 对性行为缺乏知识的%CALLNAME:ARG%，错在身体先于知变成一个成熟的雌性，
+			PRINTFORMW %CALLNAME:DADDY%的遗传因子无耻的在%CALLNAME:ARG%幼小的身躯里留下自己的印记…
+		ENDIF
+		IF TALENT:ARG:難以越過的底線
+			PRINTFORMW 难以对他人放下戒心的%CALLNAME:ARG%怎么也没能想到
+			PRINTFORMW 她那雌性的身躯竟然先于意志力屈服于%CALLNAME:DADDY%的遗传因子…
+		ENDIF
+		SIF TALENT:ARG:抵抗
+			PRINTFORMW 即便是像%CALLNAME:ARG%一样抵抗，也无法阻止身为雌性而被动接受的%CALLNAME:DADDY%的遗传因子…
+		SIF TALENT:ARG:把柄
+			PRINTFORMW 借由被抓住把柄而被推到的%CALLNAME:ARG%，雌性的身体在不知不觉间接受了%CALLNAME:DADDY%的遗传因子…
+		SIF TALENT:ARG:子宮口性感
+			PRINTFORMW 由于%CALLNAME:ARG%的子宫口已经被完全调教了❤，雌性的身体早已学会主动接纳%CALLNAME:DADDY%的遗传因子…
+
+		IF TALENT:ARG:路人 == 1
+			FONTBOLD
+			PRINTFORMW %CALLNAME:MASTER%让路人%CALLNAME:ARG%怀孕了……
+			FONTREGULAR
+		ENDIF
+		;egg laying.
+		IF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH)
+			IF TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_CLUTCH
+				;Skip describing the hard shell because clutch layers are bugs and fish.
+				PRINTFORMDW \@ ConceptionCount > 1 ? 卵 # 卵 \@ 停留在子宫内…
+			ELSE
+				PRINTFORMDW \@ ConceptionCount > 1 ? 形成了卵壳 # 形成了卵膜 \@，但停留在子宫内…
+			ENDIF
 		ENDIF
 	ENDIF
+		;egg laying.
+	IF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
+		PRINTFORMDW %CALLNAME:ARG%产下了受精卵
+		LOCAL:52 = 3
+		IF TALENT:ARG:恋慕
+			LOCAL:52 = 1
+		ELSEIF TALENT:ARG:愛欲
+			LOCAL:52 = 2
+		ENDIF
+		CALL KOJO_MESSAGE_SEND("EVENT", 0, ARG, LOCAL:52, ConceptionCount, "LAY_EGG")
+		IF TALENT:ARG:妊娠願望
+			TALENT:ARG:妊娠願望 = 0
+			PRINTFORMW %CALLNAME:ARG%失去了[怀孕愿望]
+		ENDIF
+	ENDIF
+	SIF TALENT:ARG:路人 == 1
+		FLAG:路人孕ませ数 ++
+	SIF DADDY == MASTER
+		EXP:MASTER:孕ませ経験 ++
+	IF TCVAR:(ARG):種付けられ自覚
+		CFLAG:ARG:身に覚え_母 = 1
+		CFLAG:DADDY:身に覚え_父 = 1
+		;PRINTFORML Succeed2
+	ELSE
+		CFLAG:ARG:無自覚妊娠 = 1
+	ENDIF
 ENDIF
+;ENDIF
 RESETCOLOR
 ;妊娠に伴う那个これ
 @CHANGE_N_STATUS(ARG)
@@ -468,11 +469,14 @@ IF CFLAG:ARG:妊娠経過日数 == 71
 	DRAWLINE
 	PRINTFORMW %CALLNAME:ARG%即将临产了。
 	PRINTFORMW 最好请避免激烈的行为…
-	;CFLAG:産休タイプ=-1以外の工作情报がCSV定义済角色は产假に入る
-	IF CFLAG:ARG:産休タイプ > -1 && CFLAG:ARG:産休中 == 0 && CSTR:ARG:3 != ""
-		PRINTFORMW 因为母体有危险的可能性、%CALLNAME:ARG%决定休养到出产…
-		CFLAG:ARG:産休中 = 1
+	IF !TALENT:ARG:HYPERFERTILE
+		;CFLAG:産休タイプ=-1以外の工作情报がCSV定义済角色は产假に入る
+		IF CFLAG:ARG:産休タイプ > -1 && CFLAG:ARG:産休中 == 0 && CSTR:ARG:3 != ""
+			PRINTFORMW 因为有可能会对母体造成危险，所以决定让%CALLNAME:ARG%休息直到生产…
+			CFLAG:ARG:産休中 = 1
+		ENDIF
 	ENDIF
+		;Custom code, egg laying.
 ELSEIF CFLAG:ARG:妊娠経過日数 == 60 || TALENT:ARG:NESTING == 60
 	DRAWLINE
 	IF TALENT:ARG:胸圍 < 2
@@ -526,6 +530,8 @@ ELSEIF CFLAG:ARG:妊娠経過日数 == 40
 	MAXBASE:ARG:体力 -= 200
 	BASE:ARG:気力 -= 200
 	MAXBASE:ARG:気力 -= 200
+
+
 ELSEIF CFLAG:ARG:妊娠経過日数 == 30
 	DRAWLINE
 	PRINTFORML %CALLNAME:ARG%腹部的隆起还不是很明显…
@@ -594,7 +600,7 @@ ELSEIF CFLAG:ARG:妊娠経過日数 == 20
 		;36=阿燐 を64=勇儀 に変更。勇儀には産休も設定
 		;SIF ARG == 10 || ARG == 36
 		IF ARG == 10 || ARG == 64
-			PRINTFORMW 妊娠中的%CALLNAME:ARG%、决定不饮酒直至出产…
+			PRINTFORMW 怀孕的%CALLNAME:ARG%决定在分娩前禁酒…
 			SIF ARG == 64
 				CFLAG:ARG:産休中 = 1
 		ENDIF

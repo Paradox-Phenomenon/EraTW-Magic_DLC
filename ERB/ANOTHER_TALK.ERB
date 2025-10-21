@@ -21,6 +21,12 @@ CALL ANOTHER_TALK_SET_TALKER(TALKER)
 HATAKE = INT_NOUMIN(FLAG:地主, "場所ID")
 
 DEBUGPRINTFORML 【ANOTHERTARGET_TALK】会話者１ = {TALKER:0} 会話者２ = {TALKER:1}
+	;Custom code, work sites for commissions.
+;RESULT = 0
+;LOCAL:1 = 0
+;TRYCALL COMMISSION_WORK_SITE(CFLAG:MASTER:現在位置)
+;SIF RESULT
+;	LOCAL:1 = 1
 IF (TCVAR:TARGET:工作開始 - TIME:0 <= 30 && TCVAR:TARGET:工作開始 - TIME:0 > 0) && !FLAG:70
 	CALL MESSAGE_TALK(12)
 ELSEIF CFLAG:TARGET:睡眠
@@ -275,7 +281,6 @@ SELECTCASE ARG
 					IF FLAG:70
 						PRINTL 雨滴静止了…
 					ELSEIF WIND_VELOCITY >= 1
-						; PRINTL 大粒の雨が吹き荒れている…
 						PRINTL 狂风之下大雨飘摇…
 					ELSE
 						PRINTL 大雨如注…
@@ -286,10 +291,8 @@ SELECTCASE ARG
 					IF FLAG:70
 						PRINTL 雨滴静止了…
 					ELSEIF WIND_VELOCITY >= 1
-						; PRINTL 風雨が強くて息苦しい…
 						PRINTL 风雨强劲得让人喘不上气…
 					ELSE
-						; PRINTL 圧迫感を感じる大雨だ…前が見えにくい…
 						PRINTL 相当有压迫感的大雨…看不清前方的事物…
 					ENDIF
 				;霧・霧雨・霧雪
@@ -333,7 +336,6 @@ SELECTCASE ARG
 				;(天候パッチ)ひょう
 				CASE 15
 					IF FLAG:70
-						; PRINTL 雹の粒すら停止している…
 						PRINTL 大粒的冰雹静止在了空中…
 					ELSE
 						PRINTL 拳头大的的冰雹砸落着…
@@ -372,7 +374,7 @@ SELECTCASE ARG
 			PRINTFORML %CALLNAME:(ARG:1)%的周围站满了人群
 			IF 充填率(ARG:1,3) >= 10
 				IF !RAND:10
-					PRINTFORML %CALLNAME:MASTER%感觉她的表情带着些许的逞强　是因为精液从腿上流下来了吗？
+					PRINTFORML %CALLNAME:MASTER%注意到她的表情有一丝僵硬，是精液漏出来了吗？
 				ELSE
 					PRINTFORML 起哄者们并不知道、她的腹内现在也积攒了%CALLNAME:MASTER%\@ 充填率(ARG:1,3) >= 30 ? 满满# \@的精液
 				ENDIF
@@ -500,12 +502,13 @@ SELECTCASE ARG
 			CHARA = TFLAG:描写中の兒童
 			CHILDNUM = TALENT:CHARA:育児中
 		ENDIF
-		;LOCAL:10 = CFLAG:CHARA:出産経過日 ;store current age
-		;FOR LOCAL:11, 0, nChildrenPresentCount
-		;	CHARA = nChildrenPresent:(LOCAL:11) % 1000
-		;	CHILDNUM = nChildrenPresent:(LOCAL:11) / 1000
-			;LOCAL:10 = CFLAG:CHARA:出産経過日 ;store current age
-			;CFLAG:CHARA:出産経過日 = DAY - CHILD_BIRTHDAY:CHARA:CHILDNUM + 1
+		LOCAL:10 = CFLAG:CHARA:出産経過日 ;store current age
+		FOR LOCAL:11, 0, nChildrenPresentCount
+			CHARA = nChildrenPresent:(LOCAL:11) % 1000
+			CHILDNUM = nChildrenPresent:(LOCAL:11) / 1000
+			LOCAL:10 = CFLAG:CHARA:出産経過日 ;store current age
+			CFLAG:CHARA:出産経過日 = DAY - CHILD_BIRTHDAY:CHARA:CHILDNUM + 1
+
 			兒童の名前 = %CHILDNAME:CHARA:CHILDNUM%
 			兒童の行動 = %CHILD_ACT:CHARA:CHILDNUM%
 			SELECTCASE 兒童の行動
@@ -877,9 +880,8 @@ SELECTCASE ARG
 					ENDIF
 			ENDSELECT
 			PRINTL 
-			;CFLAG:CHARA:出産経過日 = LOCAL:10
-		;NEXT
-
+			CFLAG:CHARA:出産経過日 = LOCAL:10
+		NEXT
 	CASE 15
 		IF !CHARA_HOLIDAY(30) && BETWEENTIME(540, 719)
 			IF FLAG:70
