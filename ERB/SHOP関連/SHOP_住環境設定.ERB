@@ -7,8 +7,14 @@
 ;COMMENT	
 ;----------------------------------------------------------
 @SCHEDULE
+#DIM nLineCnt_Head
+nLineCnt_Head = LINECOUNT
+DO
+
+SIF LINECOUNT - nLineCnt_Head > 0
+	CLEARLINE LINECOUNT - nLineCnt_Head
 PRINTFORML [0] - 起床时间设定（现在：%時刻表示(TIME:3)%）
-PRINTFORML [1] - 私室设定（现在：%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%）
+PRINTFORML [1] - 私室设定（现在：%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%%COND_STR(@", 家主: %CALLNAME:拠点_家主%", 拠点_家主)%）
 ;SIF FLAG:住宿人物== 0
 ;	PRINTL [2] - 住宿
 PRINTFORML [3] - 只睡\@ zzz1min ? 一分钟 # 四小时 \@（现在：\@ FLAG:睡四小时 ? ON # OFF \@）
@@ -51,7 +57,7 @@ ELSEIF RESULT == -99
 	;@TEST_動作テスト用の中身をいじって下さいね
 	;#; CALL TEST_動作テスト用
 ENDIF
-RETURN 1
+LOOP 1
 
 [SKIPSTART]
 関数の動作テスト用
@@ -160,6 +166,8 @@ SIF TIME:3 < 0
 @起床時間設定
 #DIM 同居人
 #DIM 前日就寝時間
+#DIM nStoreTime
+nStoreTime = TIME:3
 前日就寝時間 = CFLAG:MASTER:就寝時間 - DAY * 1440
 同居人 = 0
 FOR LOCAL,1,CHARANUM
@@ -168,8 +176,11 @@ FOR LOCAL,1,CHARANUM
 		BREAK
 	ENDIF
 NEXT
+gLineCount = LINECOUNT
 DO
-	PRINTFORML 要几点起床呢？（前日就寝时间：%時刻表示(前日就寝時間)%）（睡眠时间：{睡眠時間予測(TIME:3) / 60}时{睡眠時間予測(TIME:3) % 60}分）
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	PRINTFORML 要几点起床呢？（前日就寝时间：%時刻表示(前日就寝時間)%）（睡眠时间：%時刻表示(睡眠時間予測(TIME:3))%）
 	PRINTBUTTON "┏━ △ ", 60
 	PRINTBUTTON "━△", 10
 	PRINTBUTTON "△━┓", 1
@@ -190,16 +201,19 @@ DO
 	SIF 同居人 < CHARANUM && 同居人
 		PRINTFORM [2222] - 和同居中的%CALLNAME:同居人%的起床时间同步
 	PRINTL 
+	PRINT [2223] - 配合某人的起床时间
+	PRINTL 
 	PRINT [3333] - 日历
 	PRINT 　
 	PRINTL [4444] - 直接输入
+	PRINTL [9999] - 返回
 	IF !zzz1min && 睡眠時間予測(TIME:3) < 240
 		PRINTFORM [5555] - 
 		CALL COLORMESSAGE("至少需要睡4个小时以上", C_ORANGE, 1)
 	ELSEIF !睡眠時間予測(TIME:3)
 		PRINTFORM [5555] - 
-		CALL COLORMESSAGE("至少需要睡1分钟", C_ORANGE, 1)	
-	ELSE	
+		CALL COLORMESSAGE("至少需要睡1分钟", C_ORANGE, 1)
+	ELSE
 		PRINTFORML [{0,4}] - 结束
 	ENDIF
 	INPUT
@@ -208,8 +222,35 @@ DO
 		CALL COLORMESSAGE(@"%時刻表示(TIME:3)%", C_YELLOW)
 		PRINTFORMW 了。
 		RETURN 1
+	ELSEIF RESULT == 9999
+		TIME:3 = nStoreTime
+		RETURN 0
 	ELSEIF RESULT == 2222 && 同居人 < CHARANUM && 同居人
 		TIME:3 = CFLAG:同居人:起床時間
+	ELSEIF RESULT == 2223
+		PRINTFORML 选谁？
+		DRAWLINE
+			FOR LOCAL,1,CHARANUM
+				SIF CFLAG:LOCAL:出禁
+					CONTINUE
+				IF 同居人 == LOCAL
+					SETCOLOR C_H_PINK
+					PRINTFORMLC [{LOCAL}] %CALLNAME:LOCAL,15,LEFT%
+					RESETCOLOR
+					CONTINUE
+				ENDIF
+				PRINTFORMLC [{LOCAL}] %CALLNAME:LOCAL,15,LEFT%
+			NEXT
+		PRINTL 
+		DRAWLINE
+		PRINTL [999] 返回
+		INPUT
+		IF INRANGE(RESULT, 1, CHARANUM-1) && !CFLAG:RESULT:出禁
+			TIME:3 = CFLAG:RESULT:起床時間
+			PRINTFORML 配合%CALLNAME:RESULT%的起床时间起床
+		ELSEIF RESULT != 999
+			PRINTFORML 输入无效
+		ENDIF
 	ELSEIF RESULT == 3333
 		CALL 日历()
 	ELSEIF RESULT == 4444
@@ -223,7 +264,6 @@ DO
 		ELSEIF TIME:3 < 0
 			TIME:3 += 1440
 		ENDIF
-		CLEARLINE 8
 	ENDIF
 LOOP 1
 [SKIPSTART]

@@ -58,28 +58,6 @@ CALL DAYEVENT_MAIN("night")
 
 ;中出しフラグリセット
 FOR LOCAL,0,CHARANUM
-	IF FLAG:妊娠開关 == 1 
-		IF CFLAG:LOCAL:妊娠経過日数 > 0
-			D_BEFORE = CFLAG:LOCAL:妊娠経過日数
-			CFLAG:LOCAL:妊娠経過日数 += FLAG:妊娠日程倍率 + 1
-			FOR LOCAL:2,20,72
-				SIF !GROUPMATCH(LOCAL:2, 20, 30, 40, 60, 71)
-					CONTINUE
-				CALL PREG_DAY_ADJUSTER(LOCAL, LOCAL:2, D_BEFORE, CFLAG:LOCAL:妊娠経過日数)
-			NEXT
-
-		ENDIF
-			;Custom code, egg laying.
-		SIF TALENT:LOCAL:NESTING > 0
-			TALENT:LOCAL:NESTING += FLAG:妊娠日程倍率 + 1
-		SIF CFLAG:LOCAL:出産経過日 > 0
-			CFLAG:LOCAL:出産経過日 += FLAG:妊娠日程倍率 + 1
-	ELSE
-		SIF CFLAG:LOCAL:妊娠経過日数 != 0
-			CFLAG:LOCAL:妊娠経過日数 = 0
-		SIF CFLAG:LOCAL:出産経過日 != 0
-			CFLAG:LOCAL:出産経過日 = 0
-	ENDIF
 	CFLAG:LOCAL:286 = 0
 	CFLAG:LOCAL:287 = 0
 	CFLAG:LOCAL:288 = 0
@@ -213,7 +191,7 @@ FOR LOCAL,0,CHARANUM
 			   TALENT:LOCAL:回復速度 = 1
 			   TALENT:LOCAL:淫乱 = 1
 	   ENDIF
-	   {
+	{
 	IF (TALENT:LOCAL:150 || TALENT:LOCAL:151) && !TALENT:LOCAL:初潮 && EXP:LOCAL:Ｖ絶頂経験 > MAX(0, 200 - CFLAG:LOCAL:子宝補正)
 	 && !RAND:(10 - MIN(9, CFLAG:LOCAL:子宝補正 / 10 + ABL:LOCAL:膣射中毒)) && EX:LOCAL:膣内精液
 	 }
@@ -238,7 +216,7 @@ FOR LOCAL,0,CHARANUM
 			PRINTFORML 今后即使是无意识下也会变得主动想要了吧
 			PRINTFORMW %CALLNAME:LOCAL%的精液中毒达到了3级
 			ABL:LOCAL:精液中毒 = 3
-		ELSEIF CFLAG:LOCAL:累計精浴 + CFLAG:LOCAL:累計精飲 * 5 +CFLAG:LOCAL:累計膣内精液 + CFLAG:LOCAL:累計肛門精液 >= 5000 * (10 - 2 * TALENT:LOCAL:容易中毒) / 10 && ABL:LOCAL:精液中毒 == 1
+		ELSEIF CFLAG:LOCAL:累計精浴 + CFLAG:LOCAL:累計精飲 * 5 +CFLAG:LOCAL:累計膣内精液 + CFLAG:LOCAL:累計肛門精液 >= 5000 * (10 - 2 * TALENT:LOCAL:容易中毒) / 10 && ABL:LOCAL:精液中毒 < 2
 			PRINTFORML %CALLNAME:LOCAL%淫荡的身体、已经记住了\@ LOCAL ? %CALLNAME:MASTER%# \@精液的味道…
 			PRINTFORMW %CALLNAME:LOCAL%的精液中毒达到了2级
 			ABL:LOCAL:精液中毒 = 2
@@ -266,10 +244,6 @@ FOR LOCAL,0,CHARANUM
 		ENDIF
 	ENDIF
 	RESETCOLOR
-	IF FLAG:妊娠開关 == 1 && (LOCAL || SELF_PREGNANCY)
-		SIF !FLAG:避妊 && !TCVAR:LOCAL:口服避孕薬 && TALENT:LOCAL:路人 != 2
-			CALL GET_CHILD(LOCAL)
-	ENDIF
 	;------ ALTER 殘留精液
 	IF JYCL == 1
 
@@ -287,9 +261,8 @@ FOR LOCAL,0,CHARANUM
 
 	;------ END 殘留精液
 
-	CALL 出産経過(LOCAL)
-	; SIF CFLAG:LOCAL:600
-	; 	CFLAG:LOCAL:600 = 0
+	SIF CFLAG:LOCAL:600
+		CFLAG:LOCAL:600 = 0
 	IF CFLAG:LOCAL:面識
 		会ってない日数 = DAY - CFLAG:LOCAL:最後に会った日
 		;addition custom code, DAYEVENT
@@ -449,14 +422,29 @@ ENDIF
 
 BASE:MASTER:TSP = MAXBASE:MASTER:TSP
 
+;魔改禁止自慰
+SIF NO_ONANISM == 0
+	CALL ONANISM
+
+FOR LOCAL,0,CHARANUM
+	IF FLAG:妊娠開关 == 1 && (LOCAL || SELF_PREGNANCY)
+			;enable pregnancy check while pregnant if the character isn't using the normal or litters pregnancy type.
+		SIF (CFLAG:LOCAL:妊娠経過日数 == 0 || TALENT:LOCAL:PREGNANCY_TYPE > 1) && !FLAG:避妊 && !TCVAR:LOCAL:口服避孕薬 && TALENT:LOCAL:路人 != 2
+			CALL GET_CHILD(LOCAL)
+	ELSE
+	
+	ENDIF
+	CALL 出産経過(LOCAL)
+NEXT
+
 IF TALENT:MASTER:2 & 2
-;------ ALTER 殘留精液
+	;------ ALTER 殘留精液
 	IF JYCL == 1 && TALENT:MASTER:120
 	 	TALENT:MASTER:濃厚精液殘留 = TALENT:MASTER:120
 	ELSE
 		TALENT:MASTER:濃厚精液殘留 = 0
 	ENDIF
-;------ END 殘留精液
+	;------ END 殘留精液
 	IF BASE:MASTER:精力 == MAXBASE:MASTER:精力 && !GETBIT(TFLAG:一日一回,8)
 		FLAG:71 ++
 		IF FLAG:71 >= 5 && !RAND:3
@@ -543,9 +531,6 @@ ENDIF
 ;魔改功能，诱导逆推
 SIF 诱导逆推_开关
 	VARSET 诱导逆推_进程
-;魔改禁止自慰
-SIF NO_ONANISM == 0
-	CALL ONANISM
 
 CALL GIFT_FAVORITE
 
@@ -587,16 +572,6 @@ VARSET CUSTOM_JOB_DESC
 SIF FLAG:睡四小时
 	CALL 最低睡眠時間設定()
 
-;清理掉体内自己的精液
-; FOR LOCAL,0,CHARANUM
-; 	;精液量リセット
-; 	CFLAG:LOCAL:(LOCAL + 2000) = 0
-; 	CFLAG:LOCAL:(LOCAL + 3000) = 0
-; 	;debug，孩子行为存储清理
-; 	SIF CFLAG:LOCAL:兒童人数 <= 0
-; 		CONTINUE
-; 	VARSET CHILD_ACT:LOCAL:0
-; NEXT
 
 BEGIN ABLUP
 
@@ -1009,10 +984,12 @@ SIF TALENT:ARG:自己愛 > 0
 	LOCAL = LOCAL * 5 / 4
 SIF TALENT:ARG:幼稚 && !TALENT:ARG:初潮
 	LOCAL /= 4
-SIF TALENT:ARG:妊娠
-	LOCAL /= 4
-SIF TALENT:ARG:育児中
-	LOCAL /= 2
+IF !TALENT:ARG:HYPERFERTILE
+	SIF TALENT:ARG:妊娠
+		LOCAL /= 4
+	SIF TALENT:ARG:育児中
+		LOCAL /= 2
+ENDIF
 SIF CFLAG:ARG:オナバレ
 	LOCAL /= 4
 RETURNF LOCAL

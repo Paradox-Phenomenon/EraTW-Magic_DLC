@@ -53,7 +53,7 @@ ELSE
 	IF (!TARGET || !SHIRAHU(TARGET))
 		CALL 胖次発見
 	ENDIF
-	IF TARGET && ABL:親密 * 500 + ABL:従順 * 500 + ABL:清掃技能 * 1000 > CFLAG:310 - CFLAG:MASTER:310
+	IF TARGET && ABL:親密 * 500 + ABL:従順 * 500 + ABL:清掃技能 * 1000 > CFLAG:310 - CFLAG:MASTER:310 && (!CFLAG:行動 || (CFLAG:行動 == 5 && GROUPMATCH(CFLAG:職種, JOB_清掃, JOB_宴会の片づけ)) ) ;allow characters to join as long as they're not working (or if they are cleaning)
 		TFLAG:193 = 1
 	ELSE
 		TFLAG:193 = 0
@@ -87,13 +87,13 @@ ELSE
 	掃除後的污垢 = YOGORE:(CFLAG:MASTER:現在位置)
 	EX:MASTER:今日的掃除回数 = EX:MASTER:今日的掃除回数 + 掃除前的污垢 - 掃除後的污垢
 	IF FLAG:70
-		BASE:MASTER:TSP -= 25
+		BASE:MASTER:TSP -= 50
 		LOCAL:3 = 0
 		FOR LOCAL,1,CHARANUM
 			SIF CFLAG:LOCAL:同室
 				LOCAL:3 ++
 		NEXT
-		IF LOCAL:3 == 1
+		IF LOCAL:3
 			EXP:MASTER:異常清掃経験 ++
 			IF !GETBIT(CFLAG:MASTER:3,11)
 				EXP:MASTER:異常経験 ++
@@ -101,8 +101,8 @@ ELSE
 			ENDIF
 		ENDIF
 	ELSE
-		DOWNBASE:MASTER:体力 = 15
-		DOWNBASE:MASTER:気力 = 30
+		DOWNBASE:MASTER:体力 = 50
+		DOWNBASE:MASTER:気力 = 100
 	ENDIF
 
 	IF TARGET > 0 && !CFLAG:睡眠 && !FLAG:70 && !CFLAG:诶嘿嘿
@@ -156,7 +156,7 @@ ELSE
 	ENDIF
 
 	IF !FLAG:70
-		TIME += 5
+		TIME += 30
 		SIF CFLAG:同行
 			CFLAG:同行 += 30
 	ENDIF
@@ -277,7 +277,7 @@ ENDIF
 @OSOUJI_LIMIT(ARG)
 #FUNCTION
 #DIM O_LIMIT
-O_LIMIT = 30
+O_LIMIT = 300
 SIF TALENT:ARG:懒散
 	O_LIMIT *= 10
 O_LIMIT = O_LIMIT * (3 + TALENT:ARG:汚臭耐性) / 3
@@ -304,7 +304,7 @@ SIF CFLAG:陪睡中
 	RETURN 0
 SIF CFLAG:诶嘿嘿 == 2
 	RETURN 0
-SIF CFLAG:行動 == 5 && CFLAG:350 != 40 && !FLAG:70
+SIF CFLAG:行動 == 5 && GROUPMATCH(CFLAG:職種, JOB_宴会準備, JOB_宴会参加, JOB_酔いつぶれる) && !FLAG:70
 	RETURN 0
 ;外出中はダメ、待客室は掃除できる
 SIF AT_HOME(MASTER) == 0 && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
@@ -312,8 +312,8 @@ SIF AT_HOME(MASTER) == 0 && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 ;気力0
 SIF BASE:MASTER:気力 <= 0
 	RETURN 0
-;你の酒気が0以上なら偽
-SIF BASE:MASTER:酒気 > 0
+;あなたの酒気が0以上なら偽
+SIF GETPERCENT(BASE:MASTER:酒気, MAXBASE:MASTER:酒気) > 15
 	RETURN 0
 RETURN 1
 
@@ -343,6 +343,9 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 	IF (BASE:MASTER:体力 == 0 || BASE:MASTER:気力 == 0)
 		RETURN -1
 	ENDIF
+	
+	SIF GETPERCENT(BASE:MASTER:酒気, MAXBASE:MASTER:酒気) > 15
+		RETURN -1
 	
 	;掃除処理
 	清掃力 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
@@ -398,7 +401,7 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 		
 	ELSE 
 		;掃除失敗
-		SELECTCASE RAND:10
+		SELECTCASE IFRAND("0TO10", 1, "D2, D6, D7", FLAG:70)
 			CASE 1
 				PRINTFORML %CALLNAME:PLAYER%想在%NAME_FROM_PLACE(SWEEPID)%做扫除、却把水桶打翻了
 			CASE 2

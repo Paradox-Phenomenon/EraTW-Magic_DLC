@@ -55,7 +55,7 @@ ELSE
 			DOWNBASE:MASTER:気力 += 100
 	ENDSELECT
 	;所要時間
-	IF JOBTYPE == JOB_宴会準備 || JOBTYPE == JOB_宴会の片づけ
+	IF JOBTYPE == JOB_宴会準備 || JOBTYPE == JOB_宴会の片づけ || JOBTYPE == JOB_清掃
 		TIME += 30
 	ELSE
 		SELECTCASE TARGET
@@ -136,6 +136,23 @@ ELSE
 
 	SOURCE:受動 = 230 + 80 * ABL:従順
 	SOURCE:征服 = 150 + 200 * ABL:施虐属性
+ENDIF
+
+;do actual cleaning
+IF GROUPMATCH(JOBTYPE, 40, 50) && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP
+	;cleaning power
+    LOCAL:10 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
+	SELECTCASE ITEM:特制竹箒
+		CASE 1
+			LOCAL:10 += 2
+		CASE 2
+			LOCAL:10 += 3
+		CASE 3
+			LOCAL:10 += 4
+	ENDSELECT
+	
+	LOCAL:10 = LOCAL:10 * (5 - TALENT:MASTER:汚臭耐性) / 5
+	YOGORE:(CFLAG:MASTER:現在位置) /= LOCAL:10
 ENDIF
 RETURN 1
 
@@ -332,6 +349,9 @@ SIF TARGET == [[艾伦]] && CFLAG:職種 == JOB_商売
 ;みすちーは料理経験におまけ
 SIF TARGET == [[米斯蒂亜]]
 	EXP:MASTER:料理経験 ++
+;half assistance for cleaning due to it taking less time
+SIF GROUPMATCH(ARG, 40, 50)
+	LOCAL:3 /= 2
 ;TCVAR:315が2じゃなければ工作量減る
 IF TCVAR:TARGET:沒法幫忙 != 2
 	BASE:工作量 = BASE:工作量 - LOCAL:3
@@ -380,6 +400,9 @@ SIF CHK_DATENOW(CFLAG:约会中)
 	RETURN 0
 ;気力0
 SIF BASE:MASTER:気力 <= 0
+	RETURN 0
+;disable helping Miyoi out with work in timestop, was an infinite XP exploit
+SIF FLAG:70 && TARGET == [[美宵]]
 	RETURN 0
 RETURN 1
 

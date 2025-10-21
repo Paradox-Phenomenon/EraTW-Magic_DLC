@@ -28,6 +28,8 @@ SELECTCOM = TFLAG:3
 ;調教SELECTCOMの時間経過
 CALL TRACHECK_TIME
 
+nTrainMessageCalled = 0
+
 ;-------------------------------------------------
 ;身体接触の継続、解除
 ;-------------------------------------------------
@@ -512,13 +514,17 @@ $SOURCE_SKIP
 ;調教口上
 ;-------------------------------------------------
 ;CALL KOJO_MESSAGE_COM
-;VARSET DOUBLE_MESSAGE_BLOCKED
-;TFLAG:SKIPASSIKOJO = 0
-CALL KOJO_MESSAGE_SEND("COMMAND",-1,TARGET,-1,-1)
-SIF !TFLAG:SKIPASSIKOJO
-	CALL SEND_ASSISTANT_KOJO
+IF !nSkipKojo
+	TFLAG:TRAIN_MESSAGE_CALLED = 0
+	TFLAG:SKIPASSIKOJO = 0
+	CALL KOJO_MESSAGE_SEND("COMMAND",-1,TARGET,-1,-1)
+	SIF !TFLAG:SKIPASSIKOJO
+		CALL SEND_ASSISTANT_KOJO
+ENDIF
+nSkipKojo = 0
 SIF !IS_HERE(TARGET)
-	TARGET = 0
+	TARGET = IN_ROOM_MEMBER(, CFLAG:MASTER:現在位置, "RAND")
+
 ;挿絵　正面系　ゴムありの射精時、体位もなくなるのはどうしてだ
 IF Ｖ性交保存 != -1 && GROUPMATCH(体位保存,1,2,3,4,5) && !FLAG:挿入アニメ过滤器 & アニメ过滤器_挿入
 	SIF FLAG:画像表示 && FLAG:挿絵表示
