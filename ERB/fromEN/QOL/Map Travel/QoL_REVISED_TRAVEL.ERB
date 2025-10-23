@@ -1,0 +1,118 @@
+@QOL_REVISED_TIME_REQUIRED(DEPARTURE, DESTINATION)
+#FUNCTION
+#DIM DEPARTURE
+#DIM DESTINATION
+#DIM TRAVEL_TIME
+#DIM WEATHER_MULTIPLIER
+#DIM NODES
+#DIM IS_DANGEROUS
+
+TRAVEL_TIME = QOL_REVISED_DISTANCE(DEPARTURE, DESTINATION, FLAG:DANGEROUS_TRAVEL && 同行人数() == 0)
+IS_DANGEROUS = RESULT:1
+NODES = RESULT:2
+WEATHER_MULTIPLIER = QOL_REVISED_TRAVEL_WEATHER_MULTIPLIER()
+
+SIF WEATHER_MULTIPLIER > 100 && ITEM:レインコート
+	WEATHER_MULTIPLIER -= (WEATHER_MULTIPLIER-100) / 2
+
+TRAVEL_TIME = QOL_REVISED_TRAVEL_SPECIAL_ADJUSTMENTS(DEPARTURE, DESTINATION, TRAVEL_TIME, WEATHER_MULTIPLIER, NODES)
+TRAVEL_TIME = MULTIPLY(TRAVEL_TIME, WEATHER_MULTIPLIER)
+
+RETURNF TRAVEL_TIME
+
+@QOL_REVISED_TRAVEL_SPECIAL_ADJUSTMENTS(DEPARTURE, DESTINATION, TRAVEL_TIME, WEATHER_MULTIPLIER, NODES)
+#FUNCTION
+#DIM DEPARTURE
+#DIM DESTINATION
+#DIM TRAVEL_TIME
+#DIM REF WEATHER_MULTIPLIER
+#DIM NODES
+#DIM DYNAMIC IGNORE_SHORTCUTS
+;小町の能力
+SIF CFLAG:[[小町]]:同行
+	TRAVEL_TIME = TRAVEL_TIME * 2 / 3
+;わかさぎ姫の負担
+SIF CFLAG:[[わかさぎ姫]]:同行 && !GETBIT (FLAG:プール, 0)
+	TRAVEL_TIME = TRAVEL_TIME * 3 / 2
+
+;神子の能力
+IF CFLAG:[[神子]]:同行 && INRANGE(CFLAG:[[神子]]:現在位置, 100, 199) ;miko
+	IF DESTINATION == MAP月
+		TRAVEL_TIME = 30
+	ELSE
+		TRAVEL_TIME = 10
+	ENDIF
+    IGNORE_SHORTCUTS = 1
+ENDIF
+
+IF CFLAG:[[紫]]:同行 ;yukari
+    TRAVEL_TIME = NODES * 10 ;ten minutes for each node
+    SIF (DESTINATION == MAP月 || DEPARTURE == MAP月) && MOON_WATCH(DAY:3, 1) != 9 ;travel to the moon works normally, excepting on full moon
+        TRAVEL_TIME += 10
+    IGNORE_SHORTCUTS = 1
+ENDIF
+
+IF (CFLAG:[[隠岐奈]]:同行 && TRAVEL_TIME >= 20) || ((CFLAG:[[舞]]:同行 || CFLAG:[[里乃]]:同行) && TRAVEL_TIME >= 30) ;okina/mai/satono
+    IF CFLAG:[[隠岐奈]]:同行 ;okina's better at it
+        TRAVEL_TIME = 20 ;fixed time to traverse the land of the backdoor
+    ELSE
+        TRAVEL_TIME = 30 ;fixed time to traverse the land of the backdoor
+    ENDIF
+    SIF (DESTINATION == MAP月 || DEPARTURE == MAP月) ;travel to the moon works normally
+        TRAVEL_TIME += 20
+    IGNORE_SHORTCUTS = 1
+ENDIF
+
+IF CFLAG:[[天子]]:同行 ;tenshi
+    WEATHER_MULTIPLIER = 100 ;ignore weather affects
+ELSEIF CFLAG:[[衣玖]]:同行 ;iku
+    SIF WEATHER_MULTIPLIER > 100
+        WEATHER_MULTIPLIER -= (WEATHER_MULTIPLIER-100) / 2 ;halve weather effects
+ENDIF
+
+IF CFLAG:[[豊姫]]:同行 ;toyohime
+    TRAVEL_TIME = 0
+    WEATHER_MULTIPLIER = 100
+    IGNORE_SHORTCUTS = 1
+    RESULT:1 = 0 ;not dangerous
+ENDIF
+
+;その他のショートカット効果
+SIF SHORTCUT(DEPARTURE, DESTINATION) && !IGNORE_SHORTCUTS
+	TRAVEL_TIME = TRAVEL_TIME * 1 / 2
+
+;月の羽衣の効果
+IF (DESTINATION == MAP月 || DEPARTURE == MAP月) && ITEM:月の羽衣 && TRAVEL_TIME >= 40
+	TRAVEL_TIME = MIN(TRAVEL_TIME, 40)
+    RESULT:1 = 0 ;not dangerous
+ENDIF
+
+RETURNF TRAVEL_TIME
+
+@QOL_REVISED_TRAVEL_WEATHER_MULTIPLIER()
+#FUNCTION
+LOCAL = 100
+;(天候パッチ)悪天候時には所要時間増加
+SELECTCASE TIME:5
+	CASE 4, 6, 10, 12
+		TIMES LOCAL, 1.2
+	CASE 7, 8, 11, 13
+		TIMES LOCAL, 1.5
+	CASE 5, 15
+		TIMES LOCAL, 2
+	CASE 9
+		TIMES LOCAL, 3
+	CASE 14
+		TIMES LOCAL, 4
+ENDSELECT
+;(天候パッチ)強風時には所要時間増加
+SELECTCASE WIND_VELOCITY
+	CASE 1
+		TIMES LOCAL, 2
+	CASE 2
+		TIMES LOCAL, 4
+	CASE IS >= 3
+		TIMES LOCAL, 6
+ENDSELECT
+
+RETURNF LOCAL
