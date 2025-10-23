@@ -1,0 +1,341 @@
+﻿;-----------------------------------------------------------
+;遠距離移動の設定
+;ARG     目的地
+;ARG:1   現在地
+;RETURN  次の目的地
+;-----------------------------------------------------------
+@SKIP_MOVE_11(ARG, ARG:1)
+#DIM 現在的位置
+;現在位置取得
+IF ARG:1
+	現在的位置 = ARG:1
+ELSE
+	現在的位置 = CFLAG:MASTER:現在位置
+ENDIF
+
+;目的地に直接移動できる場合そこに移動
+SIF CAN_MOVE(現在的位置, ARG) & 1
+	RETURN ARG
+
+;袋小路から行ける場所は固定なので、そこを目指す
+SELECTCASE 現在的位置
+	CASE P1103萨拉的小屋・浴室
+		RETURN P1102萨拉的小屋
+	CASE P1113别墅区・闲置的冈崎宅 TO P1115别墅区・闲置的怨灵宅
+		RETURN P1112船夫别墅区
+	CASE P1119雪的公寓・浴室
+		RETURN P1118雪的公寓
+	CASE P1121舞的公寓・浴室
+		RETURN P1120舞的公寓
+	CASE P1123空浴室
+		RETURN P1122空屋子
+	CASE P1125奥莲姬的公寓・浴室
+		RETURN P1124奥莲姬的公寓
+	CASE P1127里香的公寓・浴室
+		RETURN P1126里香的公寓
+	CASE P1129露易兹的公寓・浴室
+		RETURN P1128露易兹的公寓
+	CASE P1132朝仓研究室・无菌室, P1134朝仓研究室・总实验室 TO P1136朝仓研究室・储存室
+		RETURN P1133朝仓研究室・走廊	
+	CASE P1138理香子的小屋・浴室
+		RETURN P1137理香子的小屋
+	CASE P1144明罗宅・浴室
+		RETURN P1143明罗宅・卧室
+	CASE P1146魔眼宅・厨房 TO P1148魔眼宅・浴室
+		RETURN P1145魔眼宅・仪式间
+	CASE P1152矜羯罗宅・浴室
+		RETURN P1151矜羯罗宅・卧室
+	CASE P1156万魔殿一楼・厨房, P1157万魔殿一楼・饭堂
+		RETURN P1155万魔殿一楼・左走廊		
+	CASE P1159万魔殿・菜园 TO P1161万魔殿一楼・会客厅
+		RETURN P1158万魔殿一楼・右走廊
+	CASE P1165万魔殿二楼・梦子卧室 TO P1167万魔殿二楼・神绮卧室
+		RETURN P1162万魔殿二楼・左走廊
+	CASE P1168万魔殿二楼・空屋 TO P1170万魔殿二楼・闲置的爱丽丝卧室
+		RETURN P1163万魔殿二楼・右走廊
+	CASE P1176堕落神殿・厨房
+		RETURN P1175堕落神殿・会客室
+	CASE P1178堕落神殿・厕所 TO P1181堕落神殿・萨丽爱尔的卧室
+		RETURN P1177堕落神殿・二楼走廊
+ENDSELECT
+
+;直接移動できない場合、1つ近い位置を暫定目的地に設定し直してループ
+;基本的に最短で行けるコースを設定する
+;現在地によってコースが変わることも考慮して対応する
+;例如：	CASE P301正門
+		;SELECTCASE 現在的位置
+		;CASE P305仓库 TO P333大浴場
+		;	RETURN P302庭
+		;CASEELSE
+		;	RETURN P343湖畔
+		;ENDSELECT
+;对应：其他地点→湖畔→正门←庭←红魔馆内部（左右两边不需要包括湖畔和庭这两个本来就有的位置）
+	;CASE P310図書館
+		;RETURN P309大廳
+;对应：除了帕琪和小恶魔的卧室外的所有地点→大厅→图书馆（因为前两者可以直达图书馆）		
+SELECTCASE ARG
+	CASE P1101传送点
+		SELECTCASE 現在的位置
+		CASE P1103萨拉的小屋・浴室
+			RETURN P1102萨拉的小屋
+		CASEELSE
+			RETURN P1105黄昏街
+		ENDSELECT
+	CASE P1102萨拉的小屋
+		RETURN P1101传送点
+	CASE P1103萨拉的小屋・浴室
+		RETURN P1102萨拉的小屋
+	CASE P1104万魔殿・仿
+		SELECTCASE 現在的位置
+		CASE P1109智者写字楼外, P1130智者写字楼・3F走廊 TO P1138理香子的小屋・浴室
+			RETURN P1108先知环形路
+		CASE P1111渡鸦小区・小路, P1139渡鸦小区・6F电梯口 TO P1152矜羯罗宅・浴室
+			RETURN P1110流光巷
+		CASE P1113别墅区・闲置的冈崎宅 TO P1115别墅区・闲置的怨灵宅
+			RETURN P1112船夫别墅区
+		CASEELSE
+			RETURN P1105黄昏街
+		ENDSELECT	
+	CASE P1105黄昏街
+		SELECTCASE 現在的位置
+		CASE P1102萨拉的小屋, P1103萨拉的小屋・浴室
+			RETURN P1101传送点
+		CASE P1109智者写字楼外, P1130智者写字楼・3F走廊 TO P1138理香子的小屋・浴室
+			RETURN P1108先知环形路
+		CASE P1116星辰之家・5F电梯口 TO P1129露易兹的公寓・浴室
+			RETURN P1107星辰之家外
+		CASEELSE 
+			RETURN P1104万魔殿・仿
+		ENDSELECT
+	CASE P1106魔界商贸城
+		RETURN P1105黄昏街
+	CASE P1107星辰之家外
+		SELECTCASE 現在的位置
+		CASE P1117星辰之家・5F走廊 TO P1129露易兹的公寓・浴室
+			RETURN P1116星辰之家・5F电梯口
+		CASEELSE
+			RETURN P1105黄昏街
+		ENDSELECT
+	CASE P1108先知环形路
+		SELECTCASE 現在的位置
+		CASE P1130智者写字楼・3F走廊 TO P1138理香子的小屋・浴室
+			RETURN P1109智者写字楼外
+		CASE P1101传送点 TO P1103萨拉的小屋・浴室, P1106魔界商贸城, P1107星辰之家外, P1116星辰之家・5F电梯口 TO P1129露易兹的公寓・浴室
+			RETURN P1105黄昏街
+		CASE P1111渡鸦小区・小路, P1139渡鸦小区・6F电梯口 TO P1152矜羯罗宅・浴室
+			RETURN P1110流光巷
+		CASEELSE
+			RETURN P1104万魔殿・仿
+		ENDSELECT
+	CASE P1109智者写字楼外
+		SELECTCASE 現在的位置
+		CASE P1131朝仓研究室・准备室 TO P1138理香子的小屋・浴室
+			RETURN P1130智者写字楼・3F走廊
+		CASEELSE
+			RETURN P1108先知环形路	
+		ENDSELECT	
+	CASE P1110流光巷
+		SELECTCASE 現在的位置
+		CASE P1101传送点 TO P1103萨拉的小屋・浴室, P1106魔界商贸城, P1107星辰之家外, P1116星辰之家・5F电梯口 TO P1129露易兹的公寓・浴室
+			RETURN P1111渡鸦小区・小路
+		CASE P1111渡鸦小区・小路, P1139渡鸦小区・6F电梯口 TO P1152矜羯罗宅・浴室
+			RETURN P1108先知环形路
+		CASEELSE
+			RETURN P1104万魔殿・仿
+		ENDSELECT
+	CASE P1111渡鸦小区・小路
+		SELECTCASE 現在的位置
+		CASE P1140渡鸦小区・6F走廊 TO P1152矜羯罗宅・浴室
+			RETURN P1139渡鸦小区・6F电梯口
+		CASEELSE
+			RETURN P1110流光巷	
+		ENDSELECT	
+	CASE P1112船夫别墅区
+		RETURN P1104万魔殿・仿
+	CASE P1113别墅区・闲置的冈崎宅 TO P1115别墅区・闲置的怨灵宅
+		RETURN P1112船夫别墅区
+
+	CASE P1116星辰之家・5F电梯口
+		SELECTCASE 現在的位置
+		CASE P1118雪的公寓 TO P1129露易兹的公寓・浴室
+			RETURN P1117星辰之家・5F走廊
+		CASEELSE
+			RETURN P1107星辰之家外
+		ENDSELECT		
+	CASE P1117星辰之家・5F走廊
+		SELECTCASE 現在的位置
+		CASE P1119雪的公寓・浴室
+			RETURN P1118雪的公寓
+		CASE P1121舞的公寓・浴室
+			RETURN P1120舞的公寓
+		CASE P1123空浴室
+			RETURN P1122空屋子
+		CASE P1125奥莲姬的公寓・浴室
+			RETURN P1124奥莲姬的公寓
+		CASE P1127里香的公寓・浴室
+			RETURN P1126里香的公寓
+		CASE P1129露易兹的公寓・浴室
+			RETURN P1128露易兹的公寓
+		CASEELSE
+			RETURN P1116星辰之家・5F电梯口
+		ENDSELECT	
+	CASE P1118雪的公寓, P1120舞的公寓, P1122空屋子, P1124奥莲姬的公寓, P1126里香的公寓, P1128露易兹的公寓
+		RETURN P1117星辰之家・5F走廊
+	CASE P1119雪的公寓・浴室
+		RETURN P1118雪的公寓
+	CASE P1121舞的公寓・浴室
+		RETURN P1120舞的公寓
+	CASE P1123空浴室
+		RETURN P1122空屋子
+	CASE P1125奥莲姬的公寓・浴室
+		RETURN P1124奥莲姬的公寓
+	CASE P1127里香的公寓・浴室
+		RETURN P1126里香的公寓
+	CASE P1129露易兹的公寓・浴室
+		RETURN P1128露易兹的公寓
+
+	CASE P1130智者写字楼・3F走廊
+		SELECTCASE 現在的位置
+		CASE P1132朝仓研究室・无菌室 TO P1138理香子的小屋・浴室
+			RETURN P1131朝仓研究室・准备室
+		CASEELSE
+			RETURN P1109智者写字楼外
+		ENDSELECT
+	CASE P1131朝仓研究室・准备室
+		SELECTCASE 現在的位置
+		CASE P1132朝仓研究室・无菌室 TO P1138理香子的小屋・浴室
+			RETURN P1131朝仓研究室・准备室
+		CASEELSE
+			RETURN P1130智者写字楼・3F走廊
+		ENDSELECT
+	CASE P1132朝仓研究室・无菌室, P1134朝仓研究室・总实验室 TO P1136朝仓研究室・储存室
+		RETURN P1133朝仓研究室・走廊
+	CASE P1133朝仓研究室・走廊
+		SELECTCASE 現在的位置
+		CASE P1138理香子的小屋・浴室
+			RETURN P1137理香子的小屋
+		CASEELSE
+			RETURN P1132朝仓研究室・无菌室
+		ENDSELECT	
+	CASE P1137理香子的小屋
+		RETURN P1138理香子的小屋・浴室
+	CASE P1138理香子的小屋・浴室
+		RETURN P1137理香子的小屋
+	CASE P1139渡鸦小区・6F电梯口
+		SELECTCASE 現在的位置
+		CASE P1141明罗宅・道场 TO P1152矜羯罗宅・浴室
+			RETURN P1140渡鸦小区・6F走廊
+		CASEELSE
+			RETURN P1140渡鸦小区・6F走廊
+		ENDSELECT	
+	CASE P1140渡鸦小区・6F走廊
+		SELECTCASE 現在的位置
+		CASE P1142明罗宅・厨房 TO P1144明罗宅・浴室
+			RETURN P1141明罗宅・道场
+		CASE P1146魔眼宅・厨房 TO P1148魔眼宅・浴室
+			RETURN P1145魔眼宅・仪式间
+		CASE P1150矜羯罗宅・厨房 TO P1152矜羯罗宅・浴室
+			RETURN P1149矜羯罗宅・练功房			
+		CASEELSE
+			RETURN P1139渡鸦小区・6F电梯口
+		ENDSELECT		
+	CASE P1141明罗宅・道场
+		SELECTCASE 現在的位置
+		CASE P1144明罗宅・浴室
+			RETURN P1143明罗宅・卧室			
+		CASEELSE
+			RETURN P1140渡鸦小区・6F走廊
+		ENDSELECT	
+	CASE P1142明罗宅・厨房
+		RETURN P1141明罗宅・道场
+	CASE P1143明罗宅・卧室
+		RETURN P1141明罗宅・道场
+	CASE P1144明罗宅・浴室
+		RETURN P1143明罗宅・卧室
+	CASE P1145魔眼宅・仪式间
+		RETURN P1140渡鸦小区・6F走廊
+	CASE P1146魔眼宅・厨房 TO P1148魔眼宅・浴室
+		RETURN P1145魔眼宅・仪式间
+	CASE P1149矜羯罗宅・练功房
+		SELECTCASE 現在的位置
+		CASE P1152矜羯罗宅・浴室
+			RETURN P1151矜羯罗宅・卧室			
+		CASEELSE
+			RETURN P1140渡鸦小区・6F走廊
+		ENDSELECT		
+	CASE P1150矜羯罗宅・厨房
+		RETURN P1149矜羯罗宅・练功房
+	CASE P1151矜羯罗宅・卧室
+		RETURN P1149矜羯罗宅・练功房
+	CASE P1152矜羯罗宅・浴室
+		RETURN P1151矜羯罗宅・卧室
+
+	CASE P1153万魔殿・庭院
+		RETURN P1154万魔殿一楼・大厅
+	CASE P1154万魔殿一楼・大厅
+		SELECTCASE 現在的位置
+		CASE P1156万魔殿一楼・厨房, P1157万魔殿一楼・饭堂, P1162万魔殿二楼・左走廊, P1165万魔殿二楼・梦子卧室 TO P1167万魔殿二楼・神绮卧室 
+			RETURN P1155万魔殿一楼・左走廊		
+		CASEELSE
+			RETURN P1158万魔殿一楼・右走廊
+		ENDSELECT			
+	CASE P1155万魔殿一楼・左走廊
+		SELECTCASE 現在的位置
+		CASE P1165万魔殿二楼・梦子卧室 TO P1167万魔殿二楼・神绮卧室 
+			RETURN P1162万魔殿二楼・左走廊		
+		CASEELSE
+			RETURN P1154万魔殿一楼・大厅
+		ENDSELECT		
+	CASE P1156万魔殿一楼・厨房, P1157万魔殿一楼・饭堂
+		RETURN P1155万魔殿一楼・左走廊
+	CASE P1158万魔殿一楼・右走廊
+		SELECTCASE 現在的位置
+		CASE P1164万魔殿二楼・宴会厅, P1168万魔殿二楼・空屋 TO P1170万魔殿二楼・闲置的爱丽丝卧室
+			RETURN P1163万魔殿二楼・右走廊		
+		CASEELSE
+			RETURN P1154万魔殿一楼・大厅
+		ENDSELECT
+	CASE P1159万魔殿・菜园 TO P1161万魔殿一楼・会客厅
+		RETURN P1158万魔殿一楼・右走廊
+	CASE P1162万魔殿二楼・左走廊
+		SELECTCASE 現在的位置
+		CASE P1153万魔殿・庭院, P1154万魔殿一楼・大厅, P1156万魔殿一楼・厨房, P1157万魔殿一楼・饭堂
+			RETURN P1155万魔殿一楼・左走廊		
+		CASEELSE
+			RETURN P1163万魔殿二楼・右走廊
+		ENDSELECT		
+	CASE P1163万魔殿二楼・右走廊
+		SELECTCASE 現在的位置
+		CASE P1159万魔殿・菜园 TO P1161万魔殿一楼・会客厅
+			RETURN P1158万魔殿一楼・右走廊	
+		CASEELSE
+			RETURN P1162万魔殿二楼・左走廊
+		ENDSELECT		
+	CASE P1164万魔殿二楼・宴会厅
+		SELECTCASE 現在的位置
+		CASE P1153万魔殿・庭院 TO P1157万魔殿一楼・饭堂, P1165万魔殿二楼・梦子卧室 TO P1167万魔殿二楼・神绮卧室
+			RETURN P1162万魔殿二楼・左走廊	
+		CASEELSE
+			RETURN P1163万魔殿二楼・右走廊
+		ENDSELECT		
+	CASE P1165万魔殿二楼・梦子卧室 TO P1167万魔殿二楼・神绮卧室
+		RETURN P1162万魔殿二楼・左走廊	
+	CASE P1168万魔殿二楼・空屋 TO P1170万魔殿二楼・闲置的爱丽丝卧室
+		RETURN P1163万魔殿二楼・右走廊
+
+	CASE P1173堕落神殿・殿外
+		RETURN P1174堕落神殿・主教堂
+	CASE P1174堕落神殿・主教堂
+		RETURN P1175堕落神殿・会客室
+	CASE P1175堕落神殿・会客室
+		SELECTCASE 現在的位置
+		CASE P1173堕落神殿・殿外
+			RETURN P1174堕落神殿・主教堂	
+		CASEELSE
+			RETURN P1177堕落神殿・二楼走廊
+		ENDSELECT
+	CASE P1176堕落神殿・厨房, P1177堕落神殿・二楼走廊
+		RETURN P1175堕落神殿・会客室		
+	CASE P1178堕落神殿・厕所 TO P1181堕落神殿・萨丽爱尔的卧室
+			RETURN P1177堕落神殿・二楼走廊
+ENDSELECT		
