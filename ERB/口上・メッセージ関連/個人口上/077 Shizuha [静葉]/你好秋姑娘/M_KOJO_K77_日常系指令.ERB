@@ -777,10 +777,18 @@ ELSE
             ELSE
                 CALL K77_SHOW_AA(0)
             ENDIF
+            CALL K77_MAINTALK_CASUAL
+            RETURN 1
         ENDIF
+        ;发情对话
+        IF TCVAR:発情 && !RAND:7
+            CALL K77_MAINTALK_INHEAT
         ;地点相关对话
-        IF GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP && !RAND:5
+        ELSEIF GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP && !RAND:7
             CALL K77_MAINTALK_LOCATION
+        ;季节相关对话
+        ELSEIF !RAND:7
+            CALL K77_MAINTALK_SEASON
         ;通常对话
         ELSE
             CALL K77_MAINTALK_CASUAL
@@ -805,7 +813,7 @@ TFLAG:192 = 0
 @M_KOJO_MESSAGE_MESSAGECHECK_COM_K77_301
 TFLAG:192 = 0
 ;特殊事件（注意下面的函数可能改变TFLAG:192的值）
-IF ABL:MASTER:欲望 >= 6 && HAS_PENIS(MASTER) && CFLAG:MASTER:勃起度 >= 1200 && !RAND:3 && ONCE("MAKING_WEIRDTEA")
+IF ABL:MASTER:欲望 >= 6 && GETBIT(TALENT:MASTER:性別, 1) && CFLAG:MASTER:勃起度 >= 1200 && !RAND:3 && ONCE("MAKING_WEIRDTEA")
     CALL K77_MAKING_WEIRDTEA_YOU
     RETURN RESULT
 ENDIF
@@ -2276,7 +2284,7 @@ IF LOCAL
                     CASE 0
                         PRINTFORML 「难道说，%CALLNAME:MASTER%……」
                         PRINTFORMDL 静叶望着一边的你……
-                        PRINTFORML （啊，\@ IS_MALE(MASTER) ? 他 # 她\@不会真的比我更适合干这个吧？）
+                        PRINTFORML （啊，\@ TALENT:MASTER:性別 == 2 ? 他 # 她\@不会真的比我更适合干这个吧？）
                     CASE 1
                         PRINTFORML 「什么声音？……这个是？！」
                         PRINTFORMDL 静叶看着已然熟练掌握落叶技巧的你，张大了嘴
@@ -3612,7 +3620,7 @@ IF LOCAL
 		;更高的亲密，好像很幸福
 		CASEELSE
             IF TALENT:恋人 || TALENT:恋慕
-                IF CFLAG:好感度 >= 15000 && (TCVAR:発情 || TCVAR:媚薬 || CFLAG:积攒度 > 800) && GET_TARGETNUM() <= 2 && HAS_PENIS(MASTER) && !RAND:3
+                IF CFLAG:好感度 >= 15000 && (TCVAR:発情 || TCVAR:媚薬 || CFLAG:积攒度 > 800) && GET_TARGETNUM() <= 2 && GETBIT(TALENT:MASTER:性別, 1) && !RAND:3
                     CALL K77_LAPPILLOW_BLOWJOB
                 ELSE
                     PRINTFORML 「诶，亲爱的想给我做枕头么？」
@@ -3832,7 +3840,7 @@ RETURN 1
 @M_KOJO_MESSAGE_MESSAGECHECK_COM_K77_351
 RETURN 0
 ;如果态度较差的角色在非烂醉，非因依赖而允许同行的情况下，或者角色正在工作且非烂醉时，是不能带着同行的。
-;如果身处室外，正在下雨，MASTER手里有伞或者角色带着伞则会相合伞，多人不可。
+;如果身处室外，正在下雨，MASTER手里有伞或者角色带着伞则会共用雨伞，多人不可。
 @M_KOJO_MESSAGE_COM_K77_351
 ;带出去这个指令没有地文
 CALL M_KOJO_MESSAGE_COM_K77_351_1
@@ -3846,7 +3854,7 @@ LOCAL = 1
 IF LOCAL
 	;同行，带TARGET离开
 	IF CFLAG:320 == 60
-		;相合伞（相合伞）
+		;共用雨伞（相合伞）
 		IF TEQUIP:201
 
 		ENDIF
@@ -4267,12 +4275,12 @@ IF LOCAL
 			PRINTFORMW
 		;被TARGET（拥有男性器）口交/舐阴
 		CASE 51
-            IF HAS_PENIS(MASTER)
+            IF GETBIT(TALENT:MASTER:性別, 1)
 			    PRINTFORMW
             ENDIF
 		;被TARGET（拥有男性器）素股/磨豆腐
 		CASE 52
-            IF HAS_PENIS(MASTER)
+            IF GETBIT(TALENT:MASTER:性別, 1)
 			    PRINTFORMW
             ENDIF
 		;TARGET为MASTER乳交
@@ -4393,12 +4401,12 @@ IF LOCAL
 			PRINTFORMW
 		;被TARGET（拥有男性器）口交/舐阴
 		CASE 51
-            IF HAS_PENIS(MASTER)
+            IF GETBIT(TALENT:MASTER:性別, 1)
 			    PRINTFORMW
             ENDIF
 		;被TARGET（拥有男性器）素股/磨豆腐
 		CASE 52
-            IF HAS_PENIS(MASTER)
+            IF GETBIT(TALENT:MASTER:性別, 1)
 			    PRINTFORMW
             ENDIF
 		;TARGET为MASTER乳交
@@ -5049,7 +5057,7 @@ ELSEIF TALENT:思慕 || TALENT:炮友
     ELSEIF 充填率(77, 1) >= 10 || 充填率(77, 2) >= 10
         PRINTFORMDL 静叶，需要我帮忙吗？
         PRINTFORML 「啊！那、那就请吧……」
-        PRINTFORML （真的不想让\@ IS_MALE(MASTER) ? 他 # 她\@看到我现在这样子啊……）
+        PRINTFORML （真的不想让\@ TALENT:MASTER:性別 == 2 ? 他 # 她\@看到我现在这样子啊……）
     ELSE
         SELECTCASE ABL:MASTER:清掃技能
             CASE 0,1
@@ -5754,7 +5762,7 @@ ENDIF
 
 ;被炉活动
 @K77_ACTIVITY_KOTATSU
-IF (TALENT:恋人 || TALENT:恋慕) && HAS_PENIS(MASTER) && CFLAG:允许无套 == 2 && TALENT:処女 == 0 && (CFLAG:MASTER:勃起度 > 800 || ABL:MASTER:欲望 >= 5) && GET_TARGETNUM() == 1 + CFLAG:78:同室 && !RAND:4 && ONCE("K77_KOTATSU_SEX")
+IF (TALENT:恋人 || TALENT:恋慕) && GETBIT(TALENT:MASTER:性別, 1) && CFLAG:允许无套 == 2 && TALENT:処女 == 0 && (CFLAG:MASTER:勃起度 > 800 || ABL:MASTER:欲望 >= 5) && GET_TARGETNUM() == 1 + CFLAG:78:同室 && !RAND:4 && ONCE("K77_KOTATSU_SEX")
     CALL K77_KOTATSU_SEX
 ELSEIF TALENT:恋人 || TALENT:恋慕
     IF 充填率(77, 1) >= 150 || 充填率(77, 2) >= 150
@@ -6326,7 +6334,7 @@ IF LOCAL
 		;精力超群
 		CASE 200	
 
-		;内心平靜
+		;內心平靜
 		CASE 201	
 
 		;内裤能扫除出来

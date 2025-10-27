@@ -11,6 +11,7 @@
 
 @ADD_CUSTOM_COM102
 #DIM JOURNALIST_STATUS, 1
+#DIM PREV_BUYFILMDAY, 2
 
 ;指令初始化
 SIF TARGET == 29 && FIRSTTIME("9102_BUYFILM",,29)
@@ -19,9 +20,9 @@ SIF TARGET == 42 && FIRSTTIME("9102_BUYFILM",,42)
     SETBIT JOURNALIST_STATUS, 1
 
 ;补货
-SIF DAY % 124 % 31 == 1 && ONCE("HAS_FILM",,29)
+SIF DAY >= (PREV_BUYFILMDAY:0 / 31 + 1) * 31 + 1
     SETBIT JOURNALIST_STATUS, 0
-SIF DAY % 124 % 31 == 16 && ONCE("HAS_FILM",,42)
+SIF DAY >= (PREV_BUYFILMDAY:1 / 31 + 1) * 31 + 16
     SETBIT JOURNALIST_STATUS, 1
 
 IF TARGET == 29
@@ -37,6 +38,7 @@ IF TARGET == 29
             ELSE
                 PRINTFORMDL 从文那里买了一盒胶卷，好好使用吧
                 TFLAG:193 = 1
+                PREV_BUYFILMDAY:0 = DAY
                 CLEARBIT JOURNALIST_STATUS, 0
             ENDIF
         ELSE
@@ -60,6 +62,7 @@ ELSE
             ELSE
                 PRINTFORMDL 从果那里买了一盒胶卷，好好使用吧
                 TFLAG:193 = 1
+                PREV_BUYFILMDAY:1 = DAY
                 CLEARBIT JOURNALIST_STATUS, 1
             ENDIF
         ELSE
