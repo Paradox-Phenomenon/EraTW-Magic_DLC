@@ -1,4 +1,4 @@
-﻿;----------------------------------
+;----------------------------------
 ;隠密中フラグセット CFLAG:330SET
 ;呼び出し時の整合性を判定し引数として渡された値をフラグにセットする
 ;ARG=SET値 ARG:1=セット対象 ARG:2=MASTER連動
@@ -218,6 +218,13 @@ IF P_ID >= MAXHOME
 			CFLAG:C_ID:约会中 = MAIN_MAP
 			CFLAG:C_ID:現在位置 = GET_ENTRANCE(MAIN_MAP)
 		ENDIF
+		;addition custom code
+		IF TCVAR:C_ID:本来の服装
+			CALL OKIGAE(C_ID,TCVAR:C_ID:本来の服装)
+			PRINTFORMW %CALLNAME:C_ID%换回了原本的衣装
+			TCVAR:C_ID:本来の服装 = 0
+		ENDIF
+		;---------------------
 	ENDIF
 ;お出掛け開始
 ELSE
@@ -252,6 +259,14 @@ ELSE
 		CFLAG:C_ID:現在位置 = ROAD_TO(P_ID)
 		;開始時は+1000する
 		TFLAG:约会道中 = 所要時間 + 1000
+        TFLAG:LastArea = 現在地MAPID ;qol custom code, keep track of where we left from
+		IF GROUPMATCH(所要時間, -1000, 0) ;qol custom code, instant travel check against -1000 and 0 to cover both inviting and being invited
+			PRINTFORMW 你还没反应过来就已经到达了%DATENAME_PLACE()%
+			TFLAG:デート道中 = 0
+			CFLAG:MASTER:現在位置 = GET_ENTRANCE(CFLAG:MASTER:デート中)
+			CFLAG:(FLAG:デート相手):現在位置 = CFLAG:MASTER:現在位置
+		ENDIF
+		;CALL Add_HMF_DateGemRecord(C_ID) ;addition custom code
 	;一人でお出掛け
 	ELSE
 		CFLAG:MASTER:現在位置 = GET_ENTRANCE(P_ID)

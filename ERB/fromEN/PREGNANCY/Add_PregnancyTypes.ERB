@@ -282,6 +282,9 @@ SELECTCASE RESULT
 			FLAG:EGGNANCY = 0
 			FLAG:TWINS_CHANCE = 0
 			FLAG:TRIPLETS_CHANCE = 0
+			FLAG:USE_EXPANDED_PREGNANCY_OPTIONS = 0
+		ELSE
+			FLAG:USE_EXPANDED_PREGNANCY_OPTIONS = 1
 		ENDIF
 	CASE 9
 		CALL PREGNANCY_CONVERT_TYPES
@@ -291,15 +294,21 @@ SELECTCASE RESULT
 ENDSELECT
 GOTO TOP
 
-@CONCEPTION_COUNT(Character,ConceptionCount)
+@CONCEPTION_COUNT(Character,ProgressDay=1)
 	;Determine how many children should be conceived from a single impregnation.
 #FUNCTION
 #DIM DYNAMIC Character
+#DIM DYNAMIC ProgressDay
 #DIM DYNAMIC ConceptionCount
+IF !FLAG:USE_EXPANDED_PREGNANCY_OPTIONS
+	CFLAG:Character:妊娠経過日数 = 1
+	CFLAG:Character:WithChildCount ++
+	RETURNF 1
+ENDIF
 SELECTCASE TALENT:Character:PREGNANCY_TYPE
 	CASE PREGNANCY_LITTERS
 			;Has Litters.
-		CFLAG:Character:妊娠経過日数 = 1
+		CFLAG:Character:妊娠経過日数 = MAX(CFLAG:Character:妊娠経過日数,ProgressDay)
 			;Usually has 3-4, with a small chance to have up to 6 or down to 2.
 		ConceptionCount += RAND:2+3
 		IF !RAND:10
@@ -310,18 +319,18 @@ SELECTCASE TALENT:Character:PREGNANCY_TYPE
 	CASE PREGNANCY_EGGS
 			;Egg Layer.
 		IF FLAG:EGGNANCY
-				;Eggnancies are treated as regular pregnancies to work with existing functions, might cause funkiness if the setting is changed midway.
-			CFLAG:Character:妊娠経過日数 = 1
+				;Eggnancies are treated as regular pregnancies to work with existing functions.
+			CFLAG:Character:妊娠経過日数 = MAX(CFLAG:Character:妊娠経過日数,ProgressDay)
 		ELSE
-			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,1)
+			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,ProgressDay)
 		ENDIF
 		ConceptionCount++
 	CASE PREGNANCY_CLUTCH
 			;Clutch Layer.
 		IF FLAG:EGGNANCY
-			CFLAG:Character:妊娠経過日数 = 1
+			CFLAG:Character:妊娠経過日数 = MAX(CFLAG:Character:妊娠経過日数,ProgressDay)
 		ELSE
-			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,1)
+			TALENT:Character:NESTING = MAX(TALENT:Character:NESTING,ProgressDay)
 		ENDIF
 		ConceptionCount += RAND:2+3
 		IF !RAND:10
@@ -331,7 +340,7 @@ SELECTCASE TALENT:Character:PREGNANCY_TYPE
 		ENDIF
 	CASEELSE
 			;Normal.
-		CFLAG:Character:妊娠経過日数 = 1
+		CFLAG:Character:妊娠経過日数 = MAX(CFLAG:Character:妊娠経過日数,ProgressDay)
 		ConceptionCount++
 		IF RAND:100 < FLAG:TRIPLETS_CHANCE
 			ConceptionCount += 2
@@ -339,18 +348,22 @@ SELECTCASE TALENT:Character:PREGNANCY_TYPE
 			ConceptionCount++
 		ENDIF
 ENDSELECT
-CFLAG:Character:WithChildCount += MIN(ConceptionCount,MAXCHILD)
+CFLAG:Character:WithChildCount = MIN(CFLAG:Character:WithChildCount+ConceptionCount,MAXCHILD)
 RETURNF ConceptionCount
 
 @NESTING_MESSAGE
 	;Display descriptions of fertilized eggs in the rooms of nesting girls.
 #DIM DYNAMIC Children
+#DIMS DYNAMIC eggs
+SIF !FLAG:USE_EXPANDED_PREGNANCY_OPTIONS
+	RETURN
+
 FOR LOCAL,1,CHARANUM
 		;Loop through all characters.
 	IF CFLAG:LOCAL:初期位置 == CFLAG:MASTER:現在位置 && TALENT:LOCAL:NESTING
 			;Find if the player is in their room and they're nesting.
-		IF IS_HERE(LOCAL) && SHIRAHU(LOCAL) && !CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:うふふ && !TCVAR:LOCAL:泥酔 && !CFLAG:LOCAL:イタズラ && !CFLAG:LOCAL:添い寝中
-				;If they're conscious and not having sex, drunk, being molested, or in bed with the player.
+		IF IS_HERE(LOCAL) && !FLAG:70 && !CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:うふふ && !TCVAR:LOCAL:泥酔 && !CFLAG:LOCAL:イタズラ && !CFLAG:LOCAL:添い寝中
+				;If time isn't stopped and they're not asleep, having sex, drunk, being molested, or in bed with the player.
 			Children = CFLAG:LOCAL:WithChildCount
 			PRINTFORM %CALLNAME:LOCAL%正在
 			SELECTCASE RAND:2
@@ -420,11 +433,12 @@ RETURNF 0
 
 @EGG_GIFT_DATE_EVENT(CHARA)
 	;Like GIFT_DATE_EVENT, but for eggs.
-	;デート帰りに卵をくれる
 #DIM CHARA
 #DIM EGG
 #DIM RELATIONSHIP
 #DIM CONST MAX_EGG = 6
+SIF !FLAG:USE_EXPANDED_PREGNANCY_OPTIONS
+	RETURN
 
 PRINTL 
 SELECTCASE CFLAG:CHARA:性格傾向
@@ -487,18 +501,32 @@ FOR LOCAL,0,CHARANUM
 		CFLAG:LOCAL:BirthEventsCount = CFLAG:LOCAL:子供人数
 NEXT
 
-@ADD_PREGNANCY_PROGRESS(CharacterNumber,ConceptionCount)
+@ADD_PREGNANCY_PROGRESS(CharacterNumber,ConceptionCount,ProgressDay=1)
 	;Set a progress tracker for a new pregnancy or egg, so that they can be born at different times if applicable.
 #DIM DYNAMIC CharacterNumber
 #DIM DYNAMIC ConceptionCount
+#DIM DYNAMIC ProgressDay
+#DIM DYNAMIC ProgressList,MAXCHILD
 VARSET LOCAL
 FOR LOCAL,0,ConceptionCount
 	FOR LOCAL:1,0,MAXCHILD
 		IF PregnancyProgress:CharacterNumber:(LOCAL:1) == 0
-			PregnancyProgress:CharacterNumber:(LOCAL:1) = 1
+			PregnancyProgress:CharacterNumber:(LOCAL:1) = ProgressDay
 			BREAK
 		ENDIF
 	NEXT
+NEXT
+	;Sort pregnancy progress in case a later pregnancy is added with a further progress.
+FOR LOCAL,0,MAXCHILD
+	SIF PregnancyProgress:CharacterNumber:LOCAL == 0
+		BREAK
+	ProgressList:LOCAL = PregnancyProgress:CharacterNumber:LOCAL
+NEXT
+ARRAYSORT ProgressList,BACK
+FOR LOCAL,0,MAXCHILD
+	SIF ProgressList:LOCAL == 0
+		BREAK
+	PregnancyProgress:CharacterNumber:LOCAL = ProgressList:LOCAL
 NEXT
 
 @PROGRESS_PREGNANCIES(CharacterNumber)
@@ -546,19 +574,26 @@ FOR LOCAL,0,MAXCHILD
 NEXT
 RETURNF ChildCount
 
-@ADD_WITH_CHILD(CharacterNumber,Quantity=1)
+@ADD_WITH_CHILD(CharacterNumber,Quantity=1,ProgressDay=1)
+	;Helper function to make a character pregnant or nesting with one or more additional children.
+	;If Quantity is -1, decides based on pregnancy type.
 #DIM DYNAMIC CharacterNumber
 #DIM DYNAMIC Quantity
-	;Helper function to make a character pregnant with one or more additional children, to be used in dialogues.
-SIF !Quantity
+#DIM DYNAMIC ProgressDay
+Quantity = MIN(CFLAG:CharacterNumber:WithChildCount+Quantity,MAXCHILD)
+SIF Quantity < 1
 	RETURN
 IF GROUPMATCH(TALENT:CharacterNumber:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
-	CFLAG:CharacterNumber:妊娠経過日数 = MAX(CFLAG:CharacterNumber:妊娠経過日数,1)
+	TALENT:CharacterNumber:NESTING = MAX(TALENT:CharacterNumber:NESTING,ProgressDay)
 ELSE
-	TALENT:CharacterNumber:NESTING = MAX(TALENT:CharacterNumber:NESTING,1)
+	CFLAG:CharacterNumber:妊娠経過日数 = MAX(CFLAG:CharacterNumber:妊娠経過日数,ProgressDay)
 ENDIF
-CFLAG:CharacterNumber:WithChildCount += Quantity
-CALL ADD_PREGNANCY_PROGRESS(CharacterNumber,Quantity)
+IF Quantity < 0
+	Quantity = CONCEPTION_COUNT(CharacterNumber,ProgressDay)
+ELSE
+	CFLAG:CharacterNumber:WithChildCount += Quantity
+ENDIF
+CALL ADD_PREGNANCY_PROGRESS(CharacterNumber,Quantity,ProgressDay)
 
 @PREGNANCY_CONVERT_TYPES
 FOR LOCAL, 1, CHARANUM
@@ -601,7 +636,7 @@ RETURNF Child
 	;Returns true if the character would normally be aware that she's carrying more than one child.
 #FUNCTION
 #DIM DYNAMIC Character
-SIF CFLAG:Character:LatestChildCount > 1 && TALENT:Character:PREGNANCY_TYPE && !(TALENT:Character:PREGNANCY_TYPE == PREGNANCY_EGGS && FLAG:EGGNANCY)
+SIF CFLAG:Character:WithChildCount > 1 && TALENT:Character:PREGNANCY_TYPE && !(TALENT:Character:PREGNANCY_TYPE == PREGNANCY_EGGS && FLAG:EGGNANCY)
 	RETURNF 1
 RETURNF 0
 
@@ -649,7 +684,7 @@ SIF !CFLAG:Character:子供人数 && !CFLAG:Character:WithChildCount
 	RETURNF 0
 LastNumber = -1
 IF CFLAG:Character:子供人数
-	FOR LOCAL,1,CFLAG:Character:子供人数+1
+	FOR LOCAL,1,MIN(CFLAG:Character:子供人数+1,MAXCHILD)
 		IF CHILD_BIRTHDATE:Character:LOCAL > LastNumber
 			ConceptionCount++
 			LastNumber = CHILD_BIRTHDATE:Character:LOCAL
@@ -677,7 +712,7 @@ RETURNF ConceptionCount
 #DIM DYNAMIC ChildCount
 SIF Child > CFLAG:Character:子供人数 || Child < 1
 	RETURNF 0
-FOR LOCAL,1,CFLAG:Character:子供人数+1
+FOR LOCAL,1,MIN(CFLAG:Character:子供人数+1,MAXCHILD)
 	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
 		ChildCount++
 NEXT
@@ -685,7 +720,7 @@ IF !SameMother
 	FOR LOCAL:1,1,CHARANUM
 		SIF LOCAL:1 == Character
 			CONTINUE
-		FOR LOCAL,1,CFLAG:(LOCAL:1):子供人数+1
+		FOR LOCAL,1,MIN(CFLAG:(LOCAL:1):子供人数+1,MAXCHILD)
 			SIF CHILD_BIRTHDATE:(LOCAL:1):LOCAL == CHILD_BIRTHDATE:Character:Child
 				ChildCount++
 		NEXT
@@ -698,7 +733,7 @@ RETURNF ChildCount
 #FUNCTION
 #DIM DYNAMIC Character
 #DIM DYNAMIC Child
-FOR LOCAL,1,CFLAG:Character:子供人数+1
+FOR LOCAL,1,MIN(CFLAG:Character:子供人数+1,MAXCHILD)
 	SIF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
 		RETURNF LOCAL
 NEXT
@@ -711,7 +746,7 @@ RETURNF -1
 #DIM DYNAMIC Child
 #DIM DYNAMIC LastChild
 LastChild = -1
-FOR LOCAL,1,CFLAG:Character:子供人数+1
+FOR LOCAL,1,MIN(CFLAG:Character:子供人数+1,MAXCHILD)
 	IF CHILD_BIRTHDATE:Character:LOCAL == CHILD_BIRTHDATE:Character:Child
 		LastChild = LOCAL
 		SIF LOCAL == CFLAG:Character:子供人数
@@ -726,19 +761,19 @@ RETURNF -1
 #FUNCTION
 SIF !ARG
 	ARG = TARGET
-RETURNF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH)
+RETURNF FLAG:USE_EXPANDED_PREGNANCY_OPTIONS && GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH)
 
 @PREGNANCY_NESTER(ARG)
 #FUNCTION
 SIF !ARG
 	ARG = TARGET
-RETURNF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
+RETURNF FLAG:USE_EXPANDED_PREGNANCY_OPTIONS && GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
 
 @PREGNANCY_MULTIPLES(ARG)
 #FUNCTION
 SIF !ARG
 	ARG = TARGET
-RETURNF TALENT:ARG:PREGNANCY_TYPE > 0
+RETURNF FLAG:USE_EXPANDED_PREGNANCY_OPTIONS && TALENT:ARG:PREGNANCY_TYPE > 0
 
 @PREGNANCY_CHARA_DEFAULT(CHARA)
 #FUNCTION

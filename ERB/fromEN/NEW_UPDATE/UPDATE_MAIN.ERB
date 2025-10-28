@@ -97,8 +97,8 @@ FOR C_ID,1,人物数量上限 ;終わったら新キャラ追加
 	IF GETCHARA(C_ID) == -1 && EXISTCSV(C_ID)
 		;add new character, check if they have KOJO and set a variable if they do
 		CALL ADDCHARA_INIT(C_ID)
-		IF !TALENT:C_ID:行きずり
-			PRINTFORML %NAME:C_ID%がキャラリストに追加されました
+		IF !TALENT:C_ID:行きずり && !CFLAG:C_ID:出禁
+			PRINTFORML %NAME:C_ID%已添加到角色列表
 
 			CALL KOJO_COUNT_CHECK(C_ID)
 			CALL UPDATE_MAIN_UPDATE_ABL(C_ID)
@@ -415,6 +415,13 @@ FOR C_ID, 1, CHARANUM - 1
 	FOR LOCAL:1, 1, CHARANUM
 		RELATION:C_ID:(LOCAL:1) = CSVRELATION(NO:C_ID, LOCAL:1)
 	NEXT
+	IF FIRSTTIME("关系补丁",,MASTER)
+		PRINTFORML 你想启用为每个角色重新设计过的关系性扩展补丁吗？
+		CALL ASK_YN
+		UPDATE_EXPANDED_AFFINITIES = !RESULT	
+	ENDIF
+	SIF UPDATE_EXPANDED_AFFINITIES
+		CALL ADD_SET_RELATION_PROC(C_ID)
 
 	;setting several flags according to CSV values
 	;大家フラグ
@@ -1108,19 +1115,20 @@ PRINTFORML %LOCALS%%"-"*(MAXWIDTH()-LOCAL)%
 #DIM C_ID
 #DIM Img_Detected
 #DIM Img_CharaNum, 人物数量上限
-#DIM Count_Face
-#DIM Count_Standing
+#DIM Count_Sets
 #DIMS Resources_Face, 10
 #DIMS Resources_Standing, 10
 
 VARSET Img_CharaNum
 VARSET Img_Detected
 
+;mostly done before the change overview, but needs to be done again to ensure it's handled correctly for the new characters
+CALL ModImg_Set
 ;差し替え画像の有無を確認
 FOR C_ID, 1, CHARANUM
 	SIF CFLAG:C_ID:出禁
 		CONTINUE
-	IF CFLAG:C_ID:別顔有 != CSVCFLAG(C_ID, 562) || CFLAG:C_ID:別立ち有 != CSVCFLAG(C_ID, 563)
+	IF CFLAG:C_ID:別顔有 != IMG_ALTERNATE_SETS:C_ID || CFLAG:C_ID:別立ち有 != IMG_ALTERNATE_SETS:C_ID ;image tweak custom code
 		Img_CharaNum:Img_Detected = C_ID
 		Img_Detected ++
 	ENDIF
@@ -1139,68 +1147,48 @@ ELSE
 	RETURN
 ENDIF
 FOR LOCAL, 0, Img_Detected
-	IF LOCAL:3
-		CFLAG:((Img_CharaNum:LOCAL)):別顔有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 562)
-		CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 563)
-		CONTINUE
-	ENDIF
 	CALL SET_KOJO_COLOR(Img_CharaNum:LOCAL)
 	PRINTFORML %CALLNAME:(Img_CharaNum:LOCAL)%
 	RESETCOLOR
 	
-	;get the state prior so we can handle header better
-	Count_Face = CFLAG:((Img_CharaNum:LOCAL)):別顔有 < CSVCFLAG((Img_CharaNum:LOCAL), 562) ? CSVCFLAG((Img_CharaNum:LOCAL), 562) # 0
-	Count_Standing = CFLAG:((Img_CharaNum:LOCAL)):別立ち有 < CSVCFLAG((Img_CharaNum:LOCAL), 563) ? CSVCFLAG((Img_CharaNum:LOCAL), 563) # 0
+	;get the new amount of alternate sets
+	Count_Sets = CFLAG:(Img_CharaNum:LOCAL):別顔有 < IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL) ? IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL) # 0
 
-	IF !Count_Face && !Count_Standing
-		CFLAG:((Img_CharaNum:LOCAL)):別顔有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 562)
-		CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 563)
+	SIF !Count_Sets
 		CONTINUE
-	ENDIF
 	VARSET Resources_Face
 	VARSET Resources_Standing
 
-	TRYCALLFORM COMPOSE_SPRITE_{NO:(Img_CharaNum:LOCAL)}
-
-	IF Count_Face
+		;TRYCALLFORM COMPOSE_SPRITE_{NO:(Img_CharaNum:LOCAL)}
+	IF Count_Sets
 		Resources_Face:0 = 顔絵_服_通常_{NO:(Img_CharaNum:LOCAL)}
-		FOR LOCAL:1, 1, MAX(Count_Face, Count_Standing) + 1
+		Resources_Standing:0 = 立絵_服_通常_{NO:(Img_CharaNum:LOCAL)}
+		FOR LOCAL:1, 1, Count_Sets + 1
+
+			;face
 			LOCALS '= @"\@LOCAL:1 >= 2?別顔{LOCAL:1}#別顔\@_服_通常_{NO:(Img_CharaNum:LOCAL)}"
 			SIF RM_リソースチェック(LOCALS)
 				Resources_Face:(LOCAL:1) '= LOCALS
-		NEXT
-	ENDIF
-	IF Count_Standing
-		Resources_Standing:0 = 立絵_服_通常_{NO:(Img_CharaNum:LOCAL)}
-		FOR LOCAL:1, 1, MAX(Count_Face, Count_Standing) + 1
+
+			;standing
 			LOCALS '= @"\@LOCAL:1 >= 2?別立ち{LOCAL:1}#別立ち\@_服_通常_{NO:(Img_CharaNum:LOCAL)}"
 			SIF RM_リソースチェック(LOCALS)
 				Resources_Standing:(LOCAL:1) '= LOCALS
 		NEXT
 	ENDIF
 
-	;display face portraits, print headers for both face and standing
-	SIF Count_Face
-		CALL Update_ImageSets_Print_Row(Resources_Face, MAX(Count_Face, Count_Standing), 1)
-	;display standing portraits, only print headers if there are no face portraits
-	SIF Count_Standing
-		CALL Update_ImageSets_Print_Row(Resources_Standing, MAX(Count_Face, Count_Standing), !Count_Face)
-	CFLAG:((Img_CharaNum:LOCAL)):別顔有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 562)
-	CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = CSVCFLAG(NO:(Img_CharaNum:LOCAL), 563)
+	CFLAG:((Img_CharaNum:LOCAL)):別顔有 = Count_Sets
+	CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = Count_Sets
+	SIF LOCAL:3
+		CONTINUE
+	;display portraits
+	CALL Update_ImageSets_Print_Row(Resources_Face, Count_Sets, 1)
+	CALL Update_ImageSets_Print_Row(Resources_Standing, Count_Sets)
 	WAIT
 NEXT
 SIF Img_Detected
 	PRINTFORML 立绘更新已完成
 CUSTOMDRAWLINE -
-CALL PRINTBUTTON_EX(@"[结束]",0, , , ,)
-$LOOP
-INPUT
-SELECTCASE RESULT
-	CASE 0
-		RETURN
-	CASEELSE
-		GOTO LOOP
-ENDSELECT
 
 @Update_ImageSets_Print_Row(Resources_Array, Element_Count, Print_Header)
 #DIMS REF Resources_Array

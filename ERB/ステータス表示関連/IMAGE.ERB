@@ -510,38 +510,65 @@ SIF !FLAG:画像表示
 
 角色画像表示尺寸比 = 100
 
-立ち顔保存 = FLAG:立絵種類
-FLAG:立絵種類 = 1
+変数保存 = nCloseAndPersonal
+nCloseAndPersonal = 0
+立ち顔保存 = FLAG:立ち絵種類
+FLAG:立ち絵種類 = 1
 
-CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "自慰")
-;無ければ発情、なお無ければ通常表情
-IF !RESULT
-	CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "発情")
-	SIF !RESULT
-		CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "通常")
-ENDIF
-SIF FLAG:多尺寸
-	默认角色画像横幅 = RM_リソースの高さ(RESULTS)
-CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 0)
+TRYCALLFORM IMAGE_EX_I{NO:C_ID}_PREリソースチェック(C_ID, "顔絵", "", "", "", "", "")
 
-CALL GET_EFFECT_RESOURCE(C_ID, "吐息")
-SIF RESULT
-	CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 1)
+CALL IMAGE_CHARA_OVERRIDE("特殊自慰", C_ID) ;image custom code, KOJO compatibility
+IF RESULT:1
+	;特殊オナニー
+	特殊自慰_主体 '= @"%RESULTS:0%"
+	FOR LOCAL, 0, VARSIZE("特殊自慰_エフェクト")
+		特殊自慰_エフェクト:LOCAL '= @"%RESULTS:(LOCAL + 1)%"
+	NEXT
 
-TRYCALLFORM SPECIAL_BASE_IMAGE_{C_ID}
-IF RESULTS == "EagloV"
-	CALL GET_EFFECT_RESOURCE(C_ID, "照れ")
-	SIF RESULT
-		CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 1)
-ELSE
-	CALL IMAGE_CHARA_OVERRIDE("自慰エフェクト", C_ID)
-	IF RESULT:1
-		FOR LOCAL, 0, RESULT
-			SIF SPRITECREATED(RESULTS:LOCAL)
-				CALL 画像セット(RESULTS:LOCAL, 0, 0, 角色画像表示尺寸比, LOCAL + 2)
+	SIF FLAG:マルチサイズ
+		デフォルトキャラ画像横幅 = SPRITEHEIGHT(特殊自慰_主体)
+
+	CALL 画像セット(特殊自慰_主体, 0, 0, キャラ画像表示サイズ比, LAYER_COUNT++)
+
+	IF 特殊自慰_エフェクト:0 != ""
+		FOR LOCAL, 0, VARSIZE("特殊自慰_エフェクト")
+			SIF RM_リソースチェック(特殊自慰_エフェクト:LOCAL) ;debloat custom code
+				CALL 画像セット(特殊自慰_エフェクト:LOCAL, 0, 0, キャラ画像表示サイズ比, LAYER_COUNT++)
 		NEXT
 	ENDIF
+ELSE
+	;通常オナニー
+	CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "自慰")
+	;無ければ発情、なお無ければ通常表情
+	IF !RESULT
+		CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "発情")
+		SIF !RESULT
+			CALL GET_BASE_RESOURCE(C_ID, "顔絵", "裸", "通常")
+	ENDIF
+	SIF FLAG:多尺寸
+		默认角色画像横幅 = RM_リソースの高さ(RESULTS)
+	CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, LAYER_COUNT++)
+
+	CALL GET_EFFECT_RESOURCE(C_ID, "吐息")
+	SIF RESULT
+		CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, LAYER_COUNT++)
+
+	TRYCALLFORM SPECIAL_BASE_IMAGE_{C_ID}
+	IF RESULTS == "EagloV"
+		CALL GET_EFFECT_RESOURCE(C_ID, "照れ")
+		SIF RESULT
+			CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, LAYER_COUNT++)
+	ELSE
+		CALL IMAGE_CHARA_OVERRIDE("自慰エフェクト", C_ID)
+		IF RESULT:1
+			FOR LOCAL, 0, RESULT
+				SIF RM_リソースチェック(RESULTS:LOCAL) ;debloat custom code
+					CALL 画像セット(RESULTS:LOCAL, 0, 0, 角色画像表示尺寸比, LAYER_COUNT++)
+			NEXT
+		ENDIF
+	ENDIF
 ENDIF
+
 CALL 画像一斉表示(0, 0, 1, -1)
 FLAG:立絵種類 = 立ち顔保存
 ;=========================================================
@@ -840,6 +867,11 @@ SIF BASE:CHARA:憤怒 >= 500
 	LOCAL --
 SIF BASE:CHARA:情緒 >= 650
 	LOCAL ++
+;addition custom code: display jealous characters' angry portraits if you're on dates with them and they aren't the current target (thanks to Harris for the idea) 
+IF TALENT:CHARA:嫉妬 && FLAG:デート相手 == CHARA && TARGET != CHARA 
+	RESULTS:0 = 憤怒 
+	LOCAL = -1 
+ENDIF 
 SELECTCASE RESULTS:0
 CASE "笑顔"
 ;	笑顔時は表情が固まらないように
@@ -968,12 +1000,12 @@ SIF TEQUIP:ARG:Ｖ性交 == MASTER || TEQUIP:ARG:Ａ性交 == MASTER || TEQUIP:M
 RETURNF 0
 
 ;=========================================================
-;@GET_EFFECT_RESOURCE(CHARA, エフェクト, 表示形式, 差分)
+;@GET_EFFECT_RESOURCE(CHARA, エフェクト, 表示形式, 差分, 服装)
 ;	エフェクト画像のリソースを返却する
 ;		RETURNS配列 にリソースをそれぞれ格納
-;		CHARAに角色クタ番号、エフェクトに入力
-;		引数を省略または空文字入力で現在的ステータスから自動決定
-;	リソースが那个ばエフェクト数を返却、無ければ0を返却
+;		CHARAにキャラクタ番号、エフェクトに入力
+;		引数を省略または空文字入力で現在のステータスから自動決定
+;	リソースがあればエフェクト数を返却、無ければ0を返却
 ;=========================================================
 @GET_EFFECT_RESOURCE(CHARA, エフェクト = "", 表示形式 = "", 差分 = "", 服装 = "")
 #DIM CHARA
@@ -1177,7 +1209,7 @@ SIF TARGET_CHARA == -1
 ;store content of RESULTS since KOJO_MESSAGE_SEND will clear it
 LOCALS:0 '= RESULTS:0
 LOCALS:1 '= RESULTS:1
-CALL KOJO_MESSAGE_SEND("IMAGE", 0, CHARA, VALUE,, FUNC_TYPE, STR_VALUE,,,TARGET_CHARA)
+CALL KOJO_MESSAGE_SEND_IMAGE("IMAGE", 0, CHARA, VALUE,, FUNC_TYPE, STR_VALUE,,,TARGET_CHARA) ;qol custom code
 SIF RESULT
 	RETURN RESULT < 0 ? 0 # RESULT, 1
 
