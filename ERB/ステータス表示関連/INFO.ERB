@@ -446,6 +446,12 @@ PRINTFORM 携行中(%CALLNAME:PLAYER%)
 ;料理の情報
 SIF DISH_NAME != ""
 	CALL INFO_DISH
+;addition custom code
+SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) ;addition custom code
+	PRINTFORM <伞\@ GETBIT(nUmbrellaMods, Umbrella_HPDisplay) ? (HP:{Add_UmbrellaMaxHealth()-FLAG:傘耐久度}/{Add_UmbrellaMaxHealth()})#\@>
+;qol custom code
+SIF VAR_WATER != ""
+	PRINTFORM <带着%VAR_WATER%>
 
 IF TFLAG:接吻マーク && !TFLAG:绷帯
 	PRINTFORM <%CALLNAME:接吻マークの相手%弄的吻痕>
@@ -572,6 +578,8 @@ IF ARG == 1
 		RETURNF 1
 ;	SIF TEQUIP:TARGET:継続接吻
 ;		RETURNF 1
+	SIF TEQUIP:TARGET:SWIMMING ;addition custom code
+		RETURNF 1
 ELSEIF ARG == 3
 	SIF TFLAG:接吻マーク
 		RETURNF 1
@@ -607,6 +615,10 @@ ELSEIF ARG == 3
 	SIF TCVAR:MASTER:加護
 		RETURNF 1
 	SIF TCVAR:MASTER:豊穣
+		RETURNF 1
+	SIF VAR_WATER != ""
+		RETURNF 1
+	SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) ;addition custom code
 		RETURNF 1
 ENDIF
 RETURNF 0
@@ -1516,13 +1528,15 @@ ENDIF
 ;料理の情報
 ;-------------------------------------------------
 @INFO_DISH
-PRINTFORM <%EX_DISH_NAME%
+PRINTFORM <%EX_DISH_NAME%\@ ITEM:保温ジャー ? (保温中) #\@
 SIF STRCOUNT(DISH_TASTE, "できたて") == 1
-	PRINT (新鲜制作)
+	PRINT (刚做好)
 SIF STRCOUNT(DISH_TASTE, "劣化") == 1
 	PRINT (劣)
 SIF STRCOUNT(DISH_TASTE, "劣化") >= 2
 	PRINT (腐)
+SIF ITEM:保温ジャー && GETBIT(nThermalJarMods, ThermalJar_FreshDisplay) ;addition custom code
+	PRINTFORM (新鲜度:{DISH_LIMIT}/{DISH_MAXLIMIT})
 SIF DISH_DRG
 	PRINTFORM (%ITEMNAME_TR(DISH_DRG)%)
 SIF DISH_DRG_2
