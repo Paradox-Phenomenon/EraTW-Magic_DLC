@@ -3,7 +3,7 @@
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_MONTH
 #DIM 神簽代
@@ -84,7 +84,7 @@ SIF DAY:2 < 1 || DAY:2 > 4
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_TIMEZONE
 #DIM 現在時間帯
@@ -172,7 +172,7 @@ CALL SET_MAP_WEATHER_BGCOLOR
 ;CALL		USER
 ;ARG		引数がない場合DAY:2
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @GET_MONTH(ARG)
 #FUNCTIONS
@@ -187,7 +187,7 @@ RETURNF LOCALS:(ARG)
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @GET_WEATHER
 #FUNCTIONS
@@ -270,10 +270,10 @@ RETURNF 星期:(ARG % 7)
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_WEATHER
-#DIM 地底
+#DIM 无天气
 #DIM 入手胖次
 #DIM 持ち主
 #DIM ループ開始
@@ -283,14 +283,15 @@ DEBUGPRINTL 【CHANGE_WEATHER】CALL CHANGE_WATHER
 ;天候管理にメッセージ表示処理させてすみましぇん＞＜；
 ;诶嘿嘿中は読取周圍環境程度的能力
 ;天候変化しなくても虹は消える
-地底 = 0
-IF CFLAG:MASTER:约会中 == 9
-	地底 = 1
+无天气 = 0
+;地底、月都、魔界无天气
+IF CFLAG:MASTER:约会中 == 9 || CFLAG:MASTER:约会中 == 10 || CFLAG:MASTER:约会中 == 11
+	无天气 = 1
 ELSEIF CFLAG:MASTER:現在位置 == OMANEKIBEYA() && GROUPMATCH(CFLAG:MASTER:招待, 36, 37, 38, 49, 60, 64, 83, 84)
-	地底 = 1
+	无天气 = 1
 ENDIF
 TIME:7 = 0
-IF !地底
+IF !无天气
 	SELECTCASE FLAG:異常気象
 		CASE 7
 			;こうでもしないとまた没穿内裤が飛んできてしまうと思うの
@@ -320,11 +321,11 @@ SIF FLAG:異常気象 >= 1 && FLAG:異常気象 <= 8
 
 SIF TIME:5 > 15
 	TIME:5 = 0
-	
+
 ;(天候パッチ)天候変更禁止ならば処理終了
 SIF FORBIDDEN_CHANGE_WEATHER == 1
 	RETURN
-	
+
 ;(天候パッチ)新しい天候管理システムへ
 TRYCALLFORM CHANGE_WEATHER_SYSTEM_{NOW_WEATHER_CONTROL}
 
@@ -700,15 +701,15 @@ FOR LOCAL, 1, CHARANUM
 	VARSET RESULT
 	;新增剧本侧接口，调用剧本侧设定的角色移动数值
 	CALL KOJO_CHECK(LOCAL, "CHARADATA", "MOVE", 1)
-	IF RESULT == -1 
+	IF RESULT == -1
 		;剧本侧禁用该机制，但是请作者务必清楚自己在做什么
 		VARSET RESULT
-	ELSEIF RESULT || RESULT:1 
+	ELSEIF RESULT || RESULT:1
 		;采用剧本设定的值
 	ELSE
 		;剧本没有采用CHECK函数或者剧本需要是结果为0，从而采用原版移动数值
 		CALLFORM CHARAMOVE_DATA_{NO:LOCAL}(1)
-	ENDIF 
+	ENDIF
 	;依存連動
 	IF RESULT
 		CFLAG:LOCAL:遭遇位置 = CFLAG:RESULT:遭遇位置

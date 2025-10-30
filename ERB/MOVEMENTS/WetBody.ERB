@@ -1,14 +1,15 @@
 ﻿@Wet_Body(ARG)
 #DIM DYNAMIC 衣着度
 #DIM DYNAMIC 淋雨量
-#DIM 地底
+#DIM 无天气
 衣着度 = 1      ;模拟角色裸体时（主要是分母不能是0）+每次计算时自动重置
 淋雨量 = 0
-地底 = 0
-IF CFLAG:MASTER:约会中 == 9
-	地底 = 1
+无天气 = 0
+;地底、月都、魔界无天气
+IF CFLAG:MASTER:约会中 == 9 || CFLAG:MASTER:约会中 == 10 || CFLAG:MASTER:约会中 == 11
+	无天气 = 1
 ELSEIF CFLAG:MASTER:現在位置 == OMANEKIBEYA() && GROUPMATCH(CFLAG:MASTER:招待, 36, 37, 38, 49, 60, 64, 83, 84)
-	地底 = 1
+	无天气 = 1
 ENDIF
 
 ;计算衣着度
@@ -28,8 +29,8 @@ SIF equip:ARG:7 || equip:ARG:8       ;胸罩
     衣着度 += 5
 ;#;CFLAG:ARG:4444 = 衣着度
 ;计算淋雨量（只有在室外同行时才会触发）
-IF OUTROOF(CFLAG:ARG:300) && !地底
-    SELECTCASE TIME:5	
+IF OUTROOF(CFLAG:ARG:300) && !无天气
+    SELECTCASE TIME:5
     CASE 4  ;雨
         IF !CFLAG:ARG:同行
             淋雨量 += 0
@@ -49,7 +50,7 @@ IF OUTROOF(CFLAG:ARG:300) && !地底
             淋雨量 += TIME_PROGRESS(TIME:1) * 2
         ELSE
             淋雨量 += TIME_PROGRESS(TIME:1) * 7 / 5
-        ENDIF            
+        ENDIF
     CASE 14 ;暴雨
         IF !CFLAG:ARG:同行
             淋雨量 += 0
@@ -71,17 +72,17 @@ SIF BATHROOM(CFLAG:ARG:現在位置)
     湿身度:ARG = 0  ;洗澡时湿身度:ARG自动清空
 SIF CFLAG:ARG:睡眠 && 湿身度:ARG > 2
     湿身度:ARG = 2  ;睡觉时湿身度:ARG自动几乎清空（还是会残留点水渍的）
-IF OUTROOF(CFLAG:ARG:300) && !地底
+IF OUTROOF(CFLAG:ARG:300) && !无天气
     SELECTCASE TIME:5
     CASE 0,1    ;晴天/晴朗
         SIF 湿身度:ARG > 0
             湿身度:ARG = 湿身自然衰减(湿身度:ARG,TIME_PROGRESS(TIME:1),80)
-    CASE 2      ;多云	
+    CASE 2      ;多云
         SIF 湿身度:ARG > 0
-            湿身度:ARG = 湿身自然衰减(湿身度:ARG,TIME_PROGRESS(TIME:1),90)	
+            湿身度:ARG = 湿身自然衰减(湿身度:ARG,TIME_PROGRESS(TIME:1),90)
     CASE 3    ;阴
         SIF 湿身度:ARG >= 10
-            湿身度:ARG = 湿身自然衰减(湿身度:ARG,TIME_PROGRESS(TIME:1),95)	
+            湿身度:ARG = 湿身自然衰减(湿身度:ARG,TIME_PROGRESS(TIME:1),95)
     ENDSELECT
 ELSE
     SIF 湿身度:ARG >= 10
