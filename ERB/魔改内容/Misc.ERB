@@ -17,6 +17,7 @@ TRYCALLFORM KOJO_OPTION_K{ARG:1}_WALKTHROUGH_{ARG}(ARG)
 @RELINE(ARG,ARG:1)
 ;ARG，存行栏位，0~9；1，存行开关
 #LOCALSIZE 10
+#LOCALSSIZE 1
 ;自机喜好，4；OPTIONDLC，5、6
 ;无ARG:1与存行，记录；否则清行
 IF !LOCAL:ARG || ARG:1
@@ -41,7 +42,9 @@ SIF STRCOUNT(ARGS, @"^0x[0-9a-fA-F]{6}$") == 1
 SIF COLOR_FROMNAME(ARGS) >= 0
 	RETURNF 1
 
-;qol,优化并调整过的TSP升级
+;-------------------------------------------------
+;概　要:优化并调整过的TSP升级
+;-------------------------------------------------
 @TSP_GRADE_MODIFICATION
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -66,8 +69,55 @@ SELECTCASE MAXBASE:MASTER:TSP
 ENDSELECT
 RETURNF 0
 
+;-------------------------------------------------
+;函数名:IS_TSUKIAU
+;概　要:同行状态的综合判断
+;-------------------------------------------------
 @IS_TSUKIAU(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #FUNCTION
 RETURNF CFLAG:ARG:同行 || FLAG:デート相手 == ARG || FINDELEMENT(Datees, ARG) > -1
+
+;qol天气系统配套判定
+;-------------------------------------------------
+;概　要:不受天气影响
+;-------------------------------------------------
+@在地底(ARG = -1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF ARG == -1
+	ARG = MASTER
+RETURNF GROUPMATCH(AT_MAP(ARG),MAP地底,MAP冥界)
+
+;原判定：CFLAG:MASTER:現在位置 != 天界
+@在天外(ARG = -1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF ARG == -1
+	ARG = MASTER
+SIF AT_AREA(ARG) == 天界
+	RETURNF 1
+SIF GROUPMATCH(AT_MAP(ARG),MAP月,MAP魔界)
+	RETURNF 1
+RETURNF 0
+
+;判定角色现在在哪
+;参数：CID
+;返回值：PID，AREAID，参见ERB\DIM.ERH
+@AT_AREA(ARG)
+#LOCALSIZE 2
+#LOCALSSIZE 1
+#FUNCTION
+SIF CFLAG:ARG:300 == OMANEKIBEYA()
+	RETURNF (CFLAG:(CFLAG:ARG:招待):自宅位置)
+RETURNF VISITOR_LOCATION(CFLAG:ARG:300)
+
+;返回MapID，参见ERB\MOVEMENTS\物件関連\PLACE_ERH.ERH
+@AT_MAP(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+RETURNF AT_AREA(ARG) / 100
