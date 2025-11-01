@@ -35,6 +35,10 @@ RETURN 0
 ;RETURN 自定义条件的数量
 ;RESULT(S) 存储每个条件的结果及其描述文本
 ;-------------------------------------------------
+;自定义陷落条件
+;YEARNING-思慕 LOVE-恋慕 FUCK BUDDY-炮友 LUST-爱欲
+;-------------------------------------------------
+;-------------------------------------------------
 @M_KOJO_幽香南风天_CHECK_K68_FALL_STATE(ARGS,ARG,ARG:1)
 SELECTCASE ARGS
 	CASE "YEARNING"
@@ -130,23 +134,68 @@ ENDSELECT
 SELECTCASE ARGS
 	CASE "SETUP"
 		;工作的设定
-		IF DAY:2 < 4 && DAY:3 % 7 == 0
+		IF TIME:5 < 4 && DAY:3 % 7 == 0
 			;天气好在花田
 			MAXBASE:ARG:工作量 = 600 * 1000
 			IF TIME:0<=690
 				;11点半
 				TCVAR:ARG:工作開始 = CLOCK_TO_TIME( 9, 0)
 				TCVAR:ARG:工作結束 = CLOCK_TO_TIME(11, 0)
+				IF once("上午场天气检测")
+				ELSE
+					IF TIME:5 >= 4
+						TIME:5 = 0
+						WIND_VELOCITY = 0
+						IF CFLAG:MASTER:300 == CFLAG:ARG:300
+							PRINTFORMW 令人担忧的乌云在太阳花田的太空附近游荡
+							PRINTFORMDL 你看了看还在欢笑着的大家
+							PRINTFORMDL （要不要提醒一下把宴会搬到梦幻馆里呢？若是下起大雨……）
+							PRINTFORML 「别担心，花田可是我风见幽香的地盘」
+							PRINTFORMDL 幽香给自己的茶杯沏满七分，慢悠悠地起身拿起阳伞，朝天空一指
+							PRINTFORMDL 强烈的能量弹迸发而去在天穹爆烈，驱散了苍穹上的云
+							PRINTFORML 「嗯…茶的温度正好呢」
+							IF RAND:3==1 || FIRSTTIME("幽香解释")
+								PRINTFORMDL 『既然能改变天气，为什么以前不用，还要改到梦幻馆里？』
+								PRINTFORML 「一味地滥用只会扭曲人，若非中途出现，顺其自然不好吗？」
+							ENDIF
+							PRINTFORML 太阳花田的边缘亮了起来，攀延空中的魔法纹路在天穹形成一个半圆
+							PRINTFORML 「后续就由魔法阵出手吧，作为花田，有温室也很正常吧」
+							CALL yuka_AA("饮茶")
+						ENDIF
+					ENDIF
+				ENDIF
 			ELSE
 				TCVAR:ARG:工作開始 = CLOCK_TO_TIME( 12, 0)
-				TCVAR:ARG:工作結束 = CLOCK_TO_TIME(16, 0)
+				TCVAR:ARG:工作結束 = CLOCK_TO_TIME(17, 0)
+				IF once("下午场天气检测")
+				ELSE
+					IF TIME:5 >= 4
+						TIME:5 = 0
+						WIND_VELOCITY = 0
+						IF CFLAG:MASTER:300 == CFLAG:ARG:300
+							PRINTFORMW 令人担忧的乌云在太阳花田的太空附近游荡
+							PRINTFORMDL 你看了看还在欢笑着的大家
+							PRINTFORMDL （要不要提醒一下把宴会搬到梦幻馆里呢？若是下起大雨……）
+							PRINTFORML 「别担心，花田可是我风见幽香的地盘」
+							PRINTFORMDL 幽香给自己的茶杯沏满七分，慢悠悠地起身拿起阳伞，朝天空一指
+							PRINTFORMDL 强烈的能量弹迸发而去在天穹爆烈，驱散了苍穹上的云
+							PRINTFORML 「嗯…茶的温度正好呢」
+							IF RAND:3==1 || FIRSTTIME("幽香解释")
+								PRINTFORMDL 『既然能改变天气，为什么以前不用，还要改到梦幻馆里？』
+								PRINTFORML 「一味地滥用只会扭曲人，若非中途出现，顺其自然不好吗？」
+							ENDIF
+							PRINTFORML 太阳花田的边缘亮了起来，攀延空中的魔法纹路在天穹形成一个半圆
+							PRINTFORML 「后续就由魔法阵出手吧，作为花田，有温室也很正常吧」
+						ENDIF
+					ENDIF
+				ENDIF
 			ENDIF
 			CFLAG:ARG:職場 = P438太陽花田
 			SIF CFLAG:68:1001<=10
 				TCVAR:ARG:沒法幫忙 = 1
 			CFLAG:ARG:職種 = JOB_家事
 			TCVAR:ARG:工资 = 0
-		ELSEIF DAY:2 >= 4 && DAY:3 % 7 == 0
+		ELSEIF TIME:5 >= 4 && DAY:3 % 7 == 0
 			;天气差在梦幻馆
 			MAXBASE:ARG:工作量 = 600 * 1000
 			IF TIME:0<=690
@@ -236,10 +285,14 @@ SELECTCASE ARGS
 				;如果返回1，将使用自定义数值）不然原版数值将覆盖赋值
 				;如果返回0，将使用原版的数值
 				;如果返回-1，则什么也不会发生
-				IF DAY:3 % 7 == 0 &&  DAY:2 < 4&&TIME:0<=960
+				IF DAY:3 % 7 == 0 && TIME:5 < 4&&(660>=TIME:0&&TIME:0>=540)
 					TCVAR:引力点 =P438太陽花田
-				ELSEIF DAY:3 % 7 == 0&&  DAY:2 >= 4&&TIME:0<=1020
+				ELSEIF DAY:3 % 7 == 0 && TIME:5 < 4&&(1020>=TIME:0&&TIME:0>=720)
+					TCVAR:引力点 =P438太陽花田
+				ELSEIF DAY:3 % 7 == 0&& TIME:5>= 4&&(660>=TIME:0&&TIME:0>=540)
 					;在秋月18号，将不惜一切代价尝试访问幽香卧室
+					TCVAR:引力点 = P465大堂
+				ELSEIF	DAY:3 % 7 == 0&& TIME:5>= 4&&(1020>=TIME:0&&TIME:0>=720)
 					TCVAR:引力点 = P465大堂
 				ENDIF
 				RETURN 1 ;覆盖默认值
