@@ -3,11 +3,11 @@
 ;CALL		SYSTEM
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @SHOW_STATUS
-#DIM 天気非表示
-#DIM 元の天気
+;#DIM 天気非表示
+;#DIM 元の天気
 VARSET LOCAL
 
 VARSET DOUBLE_MESSAGE_BLOCKED
@@ -83,12 +83,13 @@ SIF !同行人数()
 ;-------------------------------------------------
 ;背景色設定
 ;-------------------------------------------------
-IF FLAG:時間停止
-	SETBGCOLOR 1, 24, 60
-ELSE
-	;(天候パッチ)時刻・天候に応じて背景色を変更
-	CALL SET_MAP_WEATHER_BGCOLOR
-ENDIF
+;由于现在qol_INFO_SHOW_WEATHER内需要改变显示天气，因此背景色也将在该函数内进行
+;IF FLAG:時間停止
+;	SETBGCOLOR 1, 24, 60
+;ELSE
+;	;(天候パッチ)時刻・天候に応じて背景色を変更
+;	CALL SET_MAP_WEATHER_BGCOLOR
+;ENDIF
 
 ;-------------------------------------------------
 ;情報表示
@@ -96,7 +97,7 @@ ENDIF
 PRINTL
 ;天気の表示/非表示の更新
 ;天界への行き来の際の天気の更新
-CALL INFO_CULC_WEATHER(天気非表示)
+;CALL INFO_CULC_WEATHER(天気非表示)
 
 ;「一日が終わりました」表示と宴会関連の更新処理など
 CALL INFO_GO_NEXTDAY
@@ -122,8 +123,9 @@ CALL INFO_TIME_WATCH
 ;PRINTFORM 睡眠深度:{TCVAR:TARGET:睡眠深度}
 
 ;天気と月齢の表示
-SIF !天気非表示
-	CALL INFO_SHOW_WEATHER
+;SIF !天気非表示
+;	CALL INFO_SHOW_WEATHER
+CALL qol_INFO_SHOW_WEATHER
 
 ;現在の気温を表示
 CALL INFO_現在の気温
@@ -146,7 +148,7 @@ VARSET LOCAL
 CALL INFO_TARGET_DATAGROUP
 CALL PRINTBUTTON_EX(TFLAG:Status非表示 ? "▽[＋][Status]--------" # "▼[－][Status]--------", 3001, TFLAG:Status非表示)
 PRINTBUTTON "[能力显示]",803
-PRINTL 
+PRINTL
 IF !TFLAG:Status非表示
 	CALL INFO_BASE(MASTER)
 	SIF TARGET
@@ -166,7 +168,7 @@ SIF !CFLAG:诶嘿嘿
 	TFLAG:102 = 1
 IF CFLAG:MASTER:诶嘿嘿 == 2
 	SIF !TFLAG:PALAM非表示
-		PRINTL 
+		PRINTL
 	DRAWLINE
 	CALL Counter呼び出し処理
 ENDIF
@@ -184,7 +186,7 @@ ENDIF
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @STAIN_INFO
 ;主人的污垢
@@ -221,9 +223,9 @@ FOR BODY_PARTS, 0, 8
 			PRINT <巧克力>
 		ENDIF
 	ENDIF
-	PRINTL 
+	PRINTL
 NEXT
-PRINTL 
+PRINTL
 
 
 
@@ -425,7 +427,7 @@ SIF TEQUIP:TARGET:挿入禁止
 ;SIF TEQUIP:TARGET:継続接吻
 ;	PRINTFORM <接吻中>
 
-PRINTL 
+PRINTL
 
 ;ココより↑にTEQUIPに登録したものを書き込む
 
@@ -506,7 +508,7 @@ SIF TCVAR:MASTER:加護
 SIF TCVAR:MASTER:豊穣
 	PRINTFORM <丰穰>
 
-PRINTL 
+PRINTL
 
 ;FileName_INFO.ERB --------------------------------- Rev1.00
 ;装備状態判定
@@ -628,11 +630,11 @@ RETURNF 0
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @SHOW_INFO_PALAM
 CALL PRINTBUTTON_EX(TFLAG:PALAM非表示 ? "▽[＋][Palam]---------" # "▼[－][Palam]---------", 3000, TFLAG:PALAM非表示)
-PRINTL 
+PRINTL
 VARSET LOCAL
 IF !TFLAG:PALAM非表示
 	FOR LOCAL,0,100
@@ -709,7 +711,7 @@ IF !TFLAG:PALAM非表示
 		ENDIF
 		LOCAL:3 ++
 		SIF LOCAL:3 % PRINTCPERLINE() == 0
-			PRINTL 
+			PRINTL
 	NEXT
 ENDIF
 
@@ -738,7 +740,7 @@ NEXT
 ;CALL		USER
 ;ARG		VOID
 ;RETURN		VOID
-;COMMENT	
+;COMMENT
 ;-----------------------------------------------------------
 @DISH_FRESHNESS
 #DIM FRESH_MESSAGE
@@ -1034,7 +1036,7 @@ FOR LOCAL, 0, CHARANUM
 		CALL CHANGE_CLOTHES(LOCAL, "复原衣服")
 	ENDIF
 	CALL CLOTHES_SETTING_TRAIN(LOCAL)
-	
+
 	;相合伞フラグ（同行依存）
 	;相合伞できるのはターゲットだけ
 	SIF LOCAL != 0 && !CHK_DATENOW(CFLAG:LOCAL:约会中) && (!CFLAG:LOCAL:同行 || LOCAL != TARGET)
@@ -1048,17 +1050,25 @@ NEXT
 
 ;天気の表示/非表示の更新
 ;天界への行き来の際の天気の更新
+;该已功能整合进qol_INFO_SHOW_WEATHER
+[SKIPSTART]
 @INFO_CULC_WEATHER(天気非表示)
 #DIM REF 天気非表示
 #DIM     元の天気
-天気非表示 = 无天气判定(AT_AREA())
-IF 无天气判定(AT_AREA())
+天気非表示 = 0
+IF CFLAG:MASTER:约会中 == 9 || CFLAG:MASTER:現在位置 == 槐安通路
+	天気非表示 = 1
+ELSEIF CFLAG:MASTER:現在位置 == OMANEKIBEYA() && GROUPMATCH(CFLAG:MASTER:招待, 36, 37, 38, 49, 60, 64, 83, 84)
+	天気非表示 = 1
+ENDIF
+IF CFLAG:MASTER:現在位置 == 天界 && !元の天気
 	元の天気 = TIME:5
 	TIME:5 = 1
-ELSEIF 元の天気
+ELSEIF CFLAG:MASTER:現在位置 != 天界 && 元の天気
 	TIME:5 = 元の天気
 	元の天気 = 0
 ENDIF
+[SKIPEND]
 
 
 
@@ -1066,7 +1076,7 @@ ENDIF
 @INFO_GO_NEXTDAY
 SIF TIME <= 1440
 	RETURN
-PRINTL  
+PRINTL
 IF !CFLAG:MASTER:诶嘿嘿
 	IF FESTIVAL() == "大晦日"
 		PRINTW HAPPY NEW YEAR!!
@@ -1080,7 +1090,7 @@ IF !CFLAG:MASTER:诶嘿嘿
 		PRINTW 一天结束了
 	ENDIF
 ENDIF
-PRINTL  
+PRINTL
 ;宴会当日に一日が終わると宴会フラグOFF
 IF DAY > FLAG:開始日 && FLAG:宴会開催FLAG
 	CALL ENKAI_END()
@@ -1422,7 +1432,7 @@ ENDIF
 SIF TATTO_SYSTEM
 	CALL PRINTBUTTON_EX(" [烙印系统测试]",900,0,0)
 
-PRINTL 
+PRINTL
 ;MASTERの眠気など
 @INFO_SITUATION
 SIF TEQUIP:挑逗モード
@@ -1781,7 +1791,7 @@ ELSE
 		ENDSELECT
 	ENDIF
 ENDIF
-PRINTL 
+PRINTL
 IF TARGET
 	PRINT 工作情报：
 	PRINTFORM %CSTR:TARGET:工作情報%　
@@ -1821,7 +1831,7 @@ ENDIF
 CALL COLORMESSAGE(ALCOHOL_FACE(CHARA), C_ORANGE, 0)
 SIF HAS_PENIS(CHARA)
 	CALL INFO_SHOW_BOKKI(CHARA)
-PRINTL 
+PRINTL
 
 ;勃起状態のアナログ表示
 @INFO_SHOW_BOKKI(CHARA)
@@ -2037,7 +2047,7 @@ SELECTCASE TCVAR:ARG:射精我慢
 ENDSELECT
 PRINTBUTTON "["+LOCALS+"]", 5000 + ARG
 RESETCOLOR
-PRINTFORML 
+PRINTFORML
 
 ;------------------------------------------
 ;帰宅予告とか

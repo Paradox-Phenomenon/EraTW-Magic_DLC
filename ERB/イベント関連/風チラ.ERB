@@ -15,20 +15,16 @@ SIF TARGET <= 0
 SIF CFLAG:睡眠
 	RETURN 0
 
-;地底、月都、魔界无天气（原函数地底包括在了屋内讨论内）
-SIF GET_MAPID(CFLAG:MASTER:現在位置) == 9 || GET_MAPID(CFLAG:MASTER:現在位置) == 10 || GET_MAPID(CFLAG:MASTER:現在位置) == 11
-	RETURN 0
-
 ;屋外（屋根の有無は問わない）でないと発生しない
 SIF !OUTROOF(CFLAG:MASTER:現在位置) && INROOM(CFLAG:MASTER:現在位置)
 	RETURN 0
 
-;晴天到阴天之外不发生
-SIF !(TIME:5 >= 0 && TIME:5 <= 3)
+;地底以外だと晴れか曇りでないと発生しない
+SIF !无天气判定(AT_AREA(MASTER)) && !(TIME:5 >= 0 && TIME:5 <= 3)
 	RETURN 0
 
-;台风和暴风雪不发生
-SIF GROUPMATCH(FLAG:異常気象, 9, 10)
+;地底以外で台風、および吹雪だと発生しない
+SIF !无天气判定(AT_AREA(MASTER)) && GROUPMATCH(FLAG:異常気象, 9, 10)
 	RETURN 0
 
 ;会話、仕事を手伝う、自由行動に付き合う、休憩、掃除、戦闘訓練、待つのいずれかでないと発生しない
@@ -55,8 +51,8 @@ SIF WIND_VELOCITY >= 2
 SIF GET_MAPID(CFLAG:MASTER:現在位置) == 8
 	LOCAL += 10
 
-;强风天气下发生概率提高
-SIF WIND_VELOCITY == 1
+;地底以外で強風だと発生確率上昇
+SIF !无天气判定(AT_AREA(MASTER)) && WIND_VELOCITY == 1
 	LOCAL += 10
 
 $LOOP

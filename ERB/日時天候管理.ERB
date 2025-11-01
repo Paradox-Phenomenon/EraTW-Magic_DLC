@@ -189,10 +189,13 @@ RETURNF LOCALS:(ARG)
 ;RETURN		VOID
 ;COMMENT
 ;-----------------------------------------------------------
-@GET_WEATHER
+@GET_WEATHER(ARG = -1)
 #FUNCTIONS
 #DIMS 表示_异常气象,15
+SIF ARG == -1
+	ARG = TIME:5
 ;(天候パッチ)台風・猛吹雪は表示しない
+;为什么不表示呢qwq，好多地方都在引用你呢，INFO_SHOW_WEATHER我帮你处理了哦
 IF WEATHERDLC == 1
 	IF FLAG:異常気象
 		SPLIT " /Ｃ敏感/Ｖ敏感/Ａ敏感/Ｂ敏感/Ｍ敏感/裙子/胖次/桃色之风/台风/暴风雪/钻石尘/黄沙/烈日/极光", "/", 表示_异常气象
@@ -201,15 +204,17 @@ IF WEATHERDLC == 1
 	SIF !STRLENS(LOCALS)
 		SPLIT "晴天/晴朗/多云/阴天/雨/大雨/雾雨/雾/雪/吹雪/细雪/雾雪/雨雪交加/霰/豪雨/冰雹/太阳雨/疏雨/风雨/晴岚/川雾/无风/梅雨", "/", LOCALS
 ELSE
-	IF FLAG:異常気象 && FLAG:異常気象 != 9 && FLAG:異常気象 != 10
+	IF FLAG:異常気象; && FLAG:異常気象 != 9 && FLAG:異常気象 != 10
 		SPLIT " /Ｃ敏感/Ｖ敏感/Ａ敏感/Ｂ敏感/Ｍ敏感/裙子/胖次/桃色之风/台风/暴风雪", "/", 表示_异常气象
 		RETURNF 表示_异常气象:(FLAG:異常気象)
 	ENDIF
 	;(天候パッチ)豪雨・ひょうを追加
 	SIF !STRLENS(LOCALS)
-		SPLIT "晴天/晴朗/多云/阴天/雨/大雨/雾雨/雾/雪/大雪/细雪/雾雪/雨雪交加/霰/豪雨/冰雹", "/", LOCALS
+		;SPLIT "晴天/晴朗/多云/阴天/雨/大雨/雾雨/雾/雪/大雪/细雪/雾雪/雨雪交加/霰/豪雨/冰雹", "/", LOCALS
+		SPLIT "少云/晴/多云/阴/雨/大雨/雾雨/雾/雪/大雪/细雪/雾雪/雨夹雪/冰霰/暴雨/冰雹", "/", LOCALS
 ENDIF
-RETURNF LOCALS:(TIME:5)
+;RETURNF LOCALS:(TIME:5)
+RETURNF LOCALS:(ARG)
 
 ;-------------------------------------------------
 ;平日判定(ARG)
@@ -273,7 +278,7 @@ RETURNF 星期:(ARG % 7)
 ;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_WEATHER
-#DIM 无天气
+;#DIM 无天气
 #DIM 入手胖次
 #DIM 持ち主
 #DIM ループ開始
@@ -283,38 +288,32 @@ DEBUGPRINTL 【CHANGE_WEATHER】CALL CHANGE_WATHER
 ;天候管理にメッセージ表示処理させてすみましぇん＞＜；
 ;诶嘿嘿中は読取周圍環境程度的能力
 ;天候変化しなくても虹は消える
-无天气 = 0
-;地底、月都、魔界无天气
-IF CFLAG:MASTER:约会中 == 9 || CFLAG:MASTER:约会中 == 10 || CFLAG:MASTER:约会中 == 11
-	无天气 = 1
-ELSEIF CFLAG:MASTER:現在位置 == OMANEKIBEYA() && GROUPMATCH(CFLAG:MASTER:招待, 36, 37, 38, 49, 60, 64, 83, 84)
-	无天气 = 1
-ENDIF
+;无天气 = 无天气判定(AT_AREA(MASTER))
 TIME:7 = 0
-IF !无天气
-	SELECTCASE FLAG:異常気象
-		CASE 7
-			;こうでもしないとまた没穿内裤が飛んできてしまうと思うの
-			DO
-				CALL RAND_CHARASELECT("主人公以外的角色列表")
-				持ち主 = RESULT
-				入手胖次 = 今天穿的内裤(持ち主)
-			LOOP !入手胖次
-			SIF CFLAG:持ち主:(入手胖次 + 胖次管理) == 0
-				SETCOLOR C_PINK
-			PRINTFORML 强风把%CALLNAME:持ち主%的%PANTSNAME(入手胖次,持ち主)%吹过来了
-			RESETCOLOR
-			CALL ASK_YN("捡起","不捡")
-			IF !RESULT
-				PRINTFORMW %CALLNAME:MASTER%捡到了%CALLNAME:持ち主%的%PANTSNAME(入手胖次,持ち主)%
-				CALL PANTS_GETTING(持ち主, 入手胖次)
-			ELSE
-				PRINTFORML %PANTSNAME(入手胖次,持ち主)%就这样飞到不知道哪里去了
-			ENDIF
-		CASE 8
-			CALL PINK_WIND(1)
-	ENDSELECT
-ENDIF
+;IF !无天气		地底都有刮裙子的妖风没道理把胖次风和桃色风拦住
+SELECTCASE FLAG:異常気象
+	CASE 7
+		;こうでもしないとまた没穿内裤が飛んできてしまうと思うの
+		DO
+			CALL RAND_CHARASELECT("主人公以外的角色列表")
+			持ち主 = RESULT
+			入手胖次 = 今天穿的内裤(持ち主)
+		LOOP !入手胖次
+		SIF CFLAG:持ち主:(入手胖次 + 胖次管理) == 0
+			SETCOLOR C_PINK
+		PRINTFORML 强风把%CALLNAME:持ち主%的%PANTSNAME(入手胖次,持ち主)%吹过来了
+		RESETCOLOR
+		CALL ASK_YN("捡起","不捡")
+		IF !RESULT
+			PRINTFORMW %CALLNAME:MASTER%捡到了%CALLNAME:持ち主%的%PANTSNAME(入手胖次,持ち主)%
+			CALL PANTS_GETTING(持ち主, 入手胖次)
+		ELSE
+			PRINTFORML %PANTSNAME(入手胖次,持ち主)%就这样飞到不知道哪里去了
+		ENDIF
+	CASE 8
+		CALL PINK_WIND(1)
+ENDSELECT
+;ENDIF
 
 SIF FLAG:異常気象 >= 1 && FLAG:異常気象 <= 8
 	RETURN
@@ -327,7 +326,8 @@ SIF FORBIDDEN_CHANGE_WEATHER == 1
 	RETURN
 
 ;(天候パッチ)新しい天候管理システムへ
-TRYCALLFORM CHANGE_WEATHER_SYSTEM_{NOW_WEATHER_CONTROL}
+;TRYCALLFORM CHANGE_WEATHER_SYSTEM_{NOW_WEATHER_CONTROL}
+TRYCALLFORM qol_CHANGE_WEATHER_SYSTEM_{NOW_WEATHER_CONTROL}(无天气判定(AT_AREA(MASTER)))
 
 [SKIPSTART]
 @現在気温設定
