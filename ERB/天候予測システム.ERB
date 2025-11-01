@@ -1236,13 +1236,15 @@ ENDIF
 
 ;-------------------------------------------------
 ;天候システム上の時間帯に応じた名前を返す
+;直接把翻译函数合并了
+;ARG:1为真，返回翻译
 ;-------------------------------------------------
-@GET_NAME_WEATHER_TIMEZOME(ARG = -1)
+@GET_NAME_WEATHER_TIMEZOME(ARG = -1,ARG:1 = 0)
 #FUNCTIONS
 
 SIF ARG == -1
 	ARG = TIME
-
+IF !ARG:1
 SELECTCASE ARG
 	;AM0~3
 	CASE 0 TO 179
@@ -1271,7 +1273,36 @@ SELECTCASE ARG
 	CASEELSE
 		RETURNF "時間帯エラー"
 ENDSELECT
-
+ELSE
+	SELECTCASE ARG
+		;AM0~3
+		CASE 0 TO 179
+			RETURNF "凌晨"
+		;AM3~6
+		CASE 180 TO 359
+			RETURNF "黎明"
+		;AM6~9
+		CASE 360 TO 539
+			RETURNF "早晨"
+		;AM9~12
+		CASE 540 TO 719
+			RETURNF "上午"
+		;PM0~3
+		CASE 720 TO 899
+			RETURNF "下午"
+		;PM3~6
+		CASE 900 TO 1079
+			RETURNF "傍晚"
+		;PM6~9
+		CASE 1080 TO 1259
+			RETURNF "夜晚"
+		;PM9~12
+		CASE IS >= 1260
+			RETURNF "深夜"
+		CASEELSE
+			RETURNF "时间段错误"
+	ENDSELECT
+ENDIF
 ;-------------------------------------------------
 ;台風接近時・猛吹雪時にFLAG:異常気象を設定する
 ;-------------------------------------------------
@@ -1295,7 +1326,8 @@ ENDIF
 ;2023/01/01改変
 ;	・旧関数の互換処理を削除、描画制御と背景色比較処理のみに変更
 ;-------------------------------------------------
-@SET_MAP_WEATHER_BGCOLOR(ARG = -1)
+@SET_MAP_WEATHER_BGCOLOR(ARG = -1, 无天气)
+#DIM 无天气
 #DIM CURRED		;CURRENT REDRAW。CURRENTREDRAWを保存
 #DIM NEXTCOLOR
 #DIMS 低気圧位置
@@ -1326,9 +1358,9 @@ SELECTCASE TIME:0
 	CASE 360 TO 479
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏"
+				IF 低気圧位置 == "台風勢力圏" && !无天气
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF (低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近"
+				ELSEIF ((低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !无天气
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_晴天_朝
@@ -1362,40 +1394,41 @@ SELECTCASE TIME:0
 
 	;PM12~6　昼
 	CASE 720 TO 1079
-		SELECTCASE 積乱雲位置
-			CASE "積乱雲接近", "積乱雲直下"
-				SELECTCASE CAN_CUMULUS:0
+		;SELECTCASE 積乱雲位置
+		;	CASE "積乱雲接近", "積乱雲直下"
+		IF (積乱雲位置 == "積乱雲接近" || 積乱雲位置 == "積乱雲直下") && !无天气
+			SELECTCASE CAN_CUMULUS:0
 				CASE 天气_阴, 天气_雨, 天气_大雨
 					NEXTCOLOR = C_MAP_積乱雲_昼
 				CASEELSE
 					NEXTCOLOR = C_MAP_陰天_昼
-				ENDSELECT
-			CASEELSE
-				SELECTCASE ARG
-					CASE 天气_少云, 天气_晴
-						NEXTCOLOR = C_MAP_晴天_昼
-					CASE 天气_多云
-						NEXTCOLOR = C_MAP_多雲_昼
-					CASE 天气_阴
-						NEXTCOLOR = C_MAP_陰天_昼
-					CASE 天气_雾雨, 天气_雾, 天气_雾雪
-						NEXTCOLOR = C_MAP_霧_昼
-					CASE 天气_雨, 天气_大雨, 天气_冰霰, 天气_暴雨, 天气_冰雹
-						NEXTCOLOR = C_MAP_雨_昼
-					CASE 天气_雪, 天气_大雪, 天气_细雪, 天气_雨夹雪
-						NEXTCOLOR = C_MAP_雪_昼
-					CASEELSE
-						NEXTCOLOR = C_MAP_晴天_昼
-				ENDSELECT
-		ENDSELECT
+			ENDSELECT
+		ELSE
+			SELECTCASE ARG
+				CASE 天气_少云, 天气_晴
+					NEXTCOLOR = C_MAP_晴天_昼
+				CASE 天气_多云
+					NEXTCOLOR = C_MAP_多雲_昼
+				CASE 天气_阴
+					NEXTCOLOR = C_MAP_陰天_昼
+				CASE 天气_雾雨, 天气_雾, 天气_雾雪
+					NEXTCOLOR = C_MAP_霧_昼
+				CASE 天气_雨, 天气_大雨, 天气_冰霰, 天气_暴雨, 天气_冰雹
+					NEXTCOLOR = C_MAP_雨_昼
+				CASE 天气_雪, 天气_大雪, 天气_细雪, 天气_雨夹雪
+					NEXTCOLOR = C_MAP_雪_昼
+				CASEELSE
+					NEXTCOLOR = C_MAP_晴天_昼
+			ENDSELECT
+		ENDIF
 
 	;PM6~8　夕
 	CASE 1080 TO 1199
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏"
+				IF 低気圧位置 == "台風勢力圏" && !无天气
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF 低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近"
+				ELSEIF (低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !无天气
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_夕焼け_通常
