@@ -1,1 +1,1 @@
-START LazyloadingV2.4-Snake-EM53-NAudio.exe -debug
+START LazyloadingV2.4-Snake-EEv53-x64.exe -debug
