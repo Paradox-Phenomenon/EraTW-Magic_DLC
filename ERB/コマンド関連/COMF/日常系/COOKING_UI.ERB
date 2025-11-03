@@ -460,7 +460,7 @@ CVARSET TCVAR, GETNUM(TCVAR, "盗み食い抑制")
 ;-------------------------------------------------
 ;料理中にたかりに来る関数
 ;-------------------------------------------------
-@COOKING_TAKARI(ARG, 確率)
+@COOKING_TAKARI(ARG, 確率 = 0)
 #DIM 確率
 
 ;タカらない
@@ -468,7 +468,7 @@ IF !CAN_TAKARI(ARG)
 	確率 = -1 ;bug fix, could still activate if rand rolls 0 because 0 = 0
 ;来訪中なら100%
 ELSEIF AT_HOME(ARG) && !CFLAG:ARG:神社在住
-	確率 = 100
+	確率 = MAX(100,確率)
 ;同じ拠点なら二分の一
 ELSEIF AT_HOME(ARG) && CFLAG:ARG:神社在住
 	確率 = 確率 * 1 / 2
@@ -477,12 +477,15 @@ ENDIF
 ;確率
 SIF 確率 < RAND:100
 	RETURN
-
+IF AT_HOME(ARG)
+	PRINTFORMW \@確率>100?感受到自己心心念念的料理的波动#闻到料理的气味\@，%CALLNAME:ARG%串门来了……
+ELSE
+	PRINTFORMW \@確率>100?感受到自己心心念念的料理的波动#料理刚做好\@，%CALLNAME:ARG%不知从何处笑眯眯地冒了出来……
+ENDIF
 CFLAG:ARG:拠点来訪 = 1
 CFLAG:ARG:現在位置 = CFLAG:MASTER:現在位置
 TCVAR:ARG:なるべく動かない = 1
-PRINTFORMW 闻到料理的气味，%CALLNAME:ARG%过来了……
-PRINTL 
+
 
 ;-------------------------------------------------
 ;たかれるかの判定関数
