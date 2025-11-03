@@ -1326,14 +1326,18 @@ ENDIF
 ;2023/01/01改変
 ;	・旧関数の互換処理を削除、描画制御と背景色比較処理のみに変更
 ;-------------------------------------------------
-@SET_MAP_WEATHER_BGCOLOR(ARG = -1, 无天气)
-#DIM 无天气
+;@SET_MAP_WEATHER_BGCOLOR
+@SET_MAP_WEATHER_BGCOLOR(ARG = -1, 非幻想乡色光 = -1)
+#DIM 非幻想乡色光
 #DIM CURRED		;CURRENT REDRAW。CURRENTREDRAWを保存
 #DIM NEXTCOLOR
 #DIMS 低気圧位置
 #DIMS 積乱雲位置
+;目前而言无天气判定区域（天界、仙界区域等恒定晴，以及独立天气系统区域冥地月魔四个地图）统一设置为晴
 SIF ARG == -1
-	ARG = TIME:5
+	ARG = 无天气判定(AT_AREA(MASTER)) ? 天气_晴 # TIME:5
+SIF 非幻想乡色光 == -1
+	非幻想乡色光 = GROUPMATCH(GET_MAPID(AT_AREA(MASTER)),MAP冥界,MAP地底,MAP月,MAP魔界)
 
 SIF FLAG:時間停止 || !FLAG:背景色推移
 	RETURN
@@ -1358,9 +1362,9 @@ SELECTCASE TIME:0
 	CASE 360 TO 479
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏" && !无天气
+				IF 低気圧位置 == "台風勢力圏" && !非幻想乡色光
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF ((低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !无天气
+				ELSEIF ((低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !非幻想乡色光
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_晴天_朝
@@ -1396,7 +1400,7 @@ SELECTCASE TIME:0
 	CASE 720 TO 1079
 		;SELECTCASE 積乱雲位置
 		;	CASE "積乱雲接近", "積乱雲直下"
-		IF (積乱雲位置 == "積乱雲接近" || 積乱雲位置 == "積乱雲直下") && !无天气
+		IF (積乱雲位置 == "積乱雲接近" || 積乱雲位置 == "積乱雲直下") && !非幻想乡色光
 			SELECTCASE CAN_CUMULUS:0
 				CASE 天气_阴, 天气_雨, 天气_大雨
 					NEXTCOLOR = C_MAP_積乱雲_昼
@@ -1426,9 +1430,9 @@ SELECTCASE TIME:0
 	CASE 1080 TO 1199
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏" && !无天气
+				IF 低気圧位置 == "台風勢力圏" && !非幻想乡色光
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF (低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !无天气
+				ELSEIF (低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !非幻想乡色光
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_夕焼け_通常
