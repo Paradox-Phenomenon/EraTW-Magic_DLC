@@ -135,6 +135,8 @@ RETURN 表示行
 @LIST_ITEM(TYPE = "全て")
 #DIMS TYPE
 #DIM 表示数
+;custom code
+#DIM PADDING = 32 ;tweak if necessary in translated, make sure to merge logging branch afterwards
 
 SELECTCASE TYPE
 CASE "全て"
@@ -157,13 +159,46 @@ CASE "全て"
 	CALL LIST_ITEM("書物")
 	CALL LIST_ITEM("特殊")
 	CALL LIST_ITEM("其他")
+	
+	;logging custom code, show current stock of lumber
+	CALL LIST_ITEM("製材")
+;logging custom code
+CASE "製材"
+	;logging custom code, show current stock of lumber
+	表示数 = 0
+	FOR LOCAL, 1, 50
+		IF LOG_SALES:LOCAL
+            CALL WoodData(LOCAL)
+			PRINTFORM %@"%WOOD_NAME(LOCAL)%({LOG_SALES:LOCAL})", PADDING, LEFT%
+			表示数 ++
+			SIF 表示数 % 4 == 0
+				PRINTL 
+		ENDIF
+	NEXT
+	SIF 表示数 % 4 != 0
+		PRINTL 
 CASEELSE
+	CALL QOL_LIST_ITEM_HTML(TYPE) ;qol custom code
+	RETURN
 	;全部回す
 	表示数 = 0
 	FOR LOCAL, 0, 1000
 		CALL ITEMDATA(LOCAL, "TYPE:" + TYPE)
 		IF RESULT && ITEM:LOCAL
-			PRINTFORMLC %ITEMNAME_TR(LOCAL)%({ITEM:LOCAL})
+			;custom code, formatting printing
+			LOCALS = %ITEMNAME_TR(LOCAL)%({ITEM:LOCAL})
+			IF STRLENS(LOCALS) > PADDING
+				IF 表示数 % 3 == 0 && 表示数 % 4 != 0
+					表示数 ++
+					PRINTL
+				ENDIF
+				PRINTFORM %LOCALS, PADDING*2, LEFT%
+				;SIF 表示数 % 4 != 0
+					表示数 ++
+			ELSE
+				PRINTFORM %LOCALS, PADDING, LEFT%
+			ENDIF
+			;-----------
 			表示数 ++
 			SIF 表示数 % 4 == 0
 				PRINTL 
@@ -181,6 +216,8 @@ ENDSELECT
 @SHOP_ASK(ARG, 割引)
 #DIM 割引
 #DIM price
+;Qol Custom code, prints descriptions of items
+CALL PRINT_ITEM_DESC(ARG)
 PRINTFORML 要购入%ITEMNAME_TR(ARG)%吗？
 CALL ASK_YN
 IF !RESULT
@@ -207,6 +244,8 @@ RETURN RESULT
 @ITEM_MATOMEGAI(ARG, 割引)
 #DIM 割引
 #DIM 値段
+;Qol Custom code, prints descriptions of items
+CALL PRINT_ITEM_DESC(ARG)
 PRINTFORM 要购买多少%ITEMNAME_TR(ARG)%？(在库：{ITEMSALES:ARG}　所持数：{ITEM:ARG})
 PRINTL 
 値段 = ITEMPRICE:ARG * (100 - 割引) / 100

@@ -112,15 +112,15 @@ CALL PHARMACY_CONSUME(R_ID, 0, 1)
 
 PRINTBUTTON "[0] 放弃", 0
 PRINT     
-PRINTBUTTON "[1] 1回", 1
+PRINTBUTTON "[1] 1次", 1
 PRINT     
 IF !PHARMA_VOLATILE(调合候补)
 	IF CAN_PHARMA(R_ID, 5)
-		PRINTBUTTON "[5] 5回", 5
+		PRINTBUTTON "[5] 5次", 5
 		PRINT   
 	ENDIF
 	IF CAN_PHARMA(R_ID, 10)
-		PRINTBUTTON "[10] 10回", 10
+		PRINTBUTTON "[10] 10次", 10
 		PRINT   
 	ENDIF
 ENDIF
@@ -151,7 +151,7 @@ IF PRODUCTION && 调合件数 <= 10
 	ELSEIF PHARMACY_RANK(调合候补) >= 2
 		SELECTCASE (调合パワー - (PHARMACY_RANK(调合候补) * 20))
 			CASE IS <= -100
-				PRINTL 虽然制订了方案、但是未知的要素太多了…应该会失败吧
+				PRINTL 虽然配方知道了、但是未知的要素太多了…应该会失败吧
 			CASE -99 TO -50
 				PRINTL 不得不说想让这次调合成功的话会非常困难…
 			CASE -49 TO -30
@@ -434,54 +434,61 @@ RETURNF 0
 SIF RECIPE_DATA(R_ID) == -1
 	RETURNF 0
 ;SIF RECIPE_DATA(R_ID, 7) && !TFLAG:打水
-SIF RECIPE_DATA(R_ID, 7) && VAR_WATER == ""
+SIF RECIPE_DATA(R_ID, 7) && VAR_WATER == "" && !GETBIT(FLAG:プール, 2) ;addition custom code, use faucet
 	RETURNF 0
 
 ;特定角色の亲密依存道具を弹く
-SELECTCASE R_ID / 10
-	CASE 513 
-		SIF ABL:[[阿求]]:親密 < 5
-			RETURNF 0
-	CASE 514, 515
-		SIF ABL:[[永琳]]:親密 < 5
-			RETURNF 0
-	CASE 516, 517
-		SIF ABL:[[梅蒂欣]]:親密 < 5
-			RETURNF 0
-	CASE 531
-		SIF ABL:[[妹红]]:親密 < 5
-			RETURNF 0
-	CASE 850
-		SIF ABL:[[魔理沙]]:親密 < 5
-			RETURNF 0
-	CASE 851
-		SIF ABL:[[琪露诺]]:親密 < 5
-			RETURNF 0
-	CASE 852
-		SIF ABL:[[布都]]:親密 < 5
-			RETURNF 0
-	CASE 853
-		SIF ABL:[[紫]]:親密 < 5
-			RETURNF 0
-	CASE 854
-		SIF ABL:[[帕秋莉]]:親密 < 5
-			RETURNF 0
-	CASE 855
-		SIF ABL:[[成美]]:親密 < 5
-			RETURNF 0
-ENDSELECT
+;SELECTCASE R_ID / 10
+;	CASE 513 
+;		SIF ABL:[[阿求]]:親密 < 5
+;			RETURNF 0
+;	CASE 514, 515
+;		SIF ABL:[[永琳]]:親密 < 5
+;			RETURNF 0
+;	CASE 516, 517
+;		SIF ABL:[[梅蒂欣]]:親密 < 5
+;			RETURNF 0
+;	CASE 531
+;		SIF ABL:[[妹红]]:親密 < 5
+;			RETURNF 0
+;	CASE 850
+;		SIF ABL:[[魔理沙]]:親密 < 5
+;			RETURNF 0
+;	CASE 851
+;		SIF ABL:[[琪露诺]]:親密 < 5
+;			RETURNF 0
+;	CASE 852
+;		SIF ABL:[[布都]]:親密 < 5
+;			RETURNF 0
+;	CASE 853
+;		SIF ABL:[[紫]]:親密 < 5
+;			RETURNF 0
+;	CASE 854
+;		SIF ABL:[[帕秋莉]]:親密 < 5
+;			RETURNF 0
+;	CASE 855
+;		SIF ABL:[[成美]]:親密 < 5
+;			RETURNF 0
+;ENDSELECT
 
-FOR LOCAL,0,6
-	INGREDIENT = RECIPE_DATA(R_ID, LOCAL)
-	SIF !INGREDIENT
-		BREAK
-	SIF ITEM:INGREDIENT < AMT
-		RETURNF 0
-NEXT
-SIF ITEM:RECIPE_DATA(R_ID) < AMT * RECIPE_DATA(R_ID, 8)
+;new player guide custom code, replaced
+SIF !CraftingDeny(R_ID)
 	RETURNF 0
 
-RETURNF AMT * RECIPE_DATA(R_ID, 6)
+;qol custom code, revised this part
+RETURNF CAN_PHARMA_INGREDIENT_COUNT_TR(R_ID, AMT)
+
+;FOR LOCAL,0,6
+;	INGREDIENT = RECIPE_DATA(R_ID, LOCAL)
+;	SIF !INGREDIENT
+;		BREAK
+;	SIF ITEM:INGREDIENT < AMT
+;		RETURNF 0
+;NEXT
+;SIF ITEM:RECIPE_DATA(R_ID) < AMT * RECIPE_DATA(R_ID, 8)
+;	RETURNF 0
+;
+;RETURNF AMT * RECIPE_DATA(R_ID, 6)
 
 
 ;-----------------------------------------------------------
@@ -600,10 +607,14 @@ PRINTL
 @TEXT_FOR_RECIPEBUTTON(R_ID)
 #DIM R_ID
 #DIM INGREDIENT
+;qol, replaced
+CALL TEXT_FOR_RECIPEBUTTON_TR(R_ID)
+RETURN
+
 VARSET LOCALS
 ;单一素材复数使用レシピは×いくつ表记で省略する
 IF RECIPE_DATA(R_ID, 8)
-	LOCALS += ITEMNAME:RECIPE_DATA(R_ID, 0)
+	LOCALS += ITEMNAME_TR(RECIPE_DATA(R_ID, 0))
 	LOCALS += "("
 	LOCALS += TOSTR(ITEM:RECIPE_DATA(R_ID, 0))
 	LOCALS += ")×"
@@ -614,7 +625,7 @@ ELSE
 		INGREDIENT = RECIPE_DATA(R_ID, LOCAL)
 		SIF !INGREDIENT
 			BREAK
-		LOCALS += ITEMNAME:INGREDIENT
+		LOCALS += ITEMNAME_TR(INGREDIENT)
 		LOCALS += "("
 		LOCALS += TOSTR(ITEM:INGREDIENT)
 		LOCALS += ")"
@@ -629,17 +640,30 @@ LOCALS += "）"
 CALL BUTTON_RECIPE(@"%LOCALS%", R_ID % 10, R_ID / 10)
 
 ;-----------------------------------------------------------
-;道具番号ARG:0の调合レシピをボタン形式で列表化し描画する
+;アイテム番号ARG:0の調合レシピをボタン形式でリスト化し描画する
+;STOPPPP
 ;-----------------------------------------------------------
 @PHARMACY_RECIPELIST(ARG:0)
 #DIM R_ID
+#DIM DYNAMIC CanCraft; new player guide custom code
 
 FOR LOCAL,1,6
 	R_ID = ARG:0 * 10 + LOCAL
 	SIF RECIPE_DATA(R_ID) == -1
 		BREAK
+	; new player guide custom code
+	SIF !CanCraft
+	CALL CraftingDenyReason(R_ID, "", 1)
+	IF !RESULT && !CanCraft
+		GOTO BYPASS
+	ELSE
+		CanCraft = 1
+	ENDIF
+	;=============================
 	CALL TEXT_FOR_RECIPEBUTTON(R_ID)
 NEXT
+; new player guide custom code
+$BYPASS
 PRINTL [0] 放弃
 
 ;-----------------------------------------------------------
@@ -657,13 +681,15 @@ PRINTL [0] 放弃
 FOR LOCAL,0,6
 	ING:LOCAL = RECIPE_DATA(ARG:0, LOCAL)
 NEXT
+
+CALL PHARMACY_CONSUME_T_TR(ARG:0, ARG:1) ;qol custom code
 ;单一素材复数利用型レシピの场合は表记を变える
-IF RECIPE_DATA(ARG:0, 8)
-	CALL PHARMACY_CONSUME_T_LOT(ING:0, ARG:1, RECIPE_DATA(ARG:0, 8))
-ELSE
-	CALL PHARMACY_CONSUME_T(ING:0, ARG:1, ING:1, ARG:1, ING:2, ARG:1, ING:3, ARG:1, ING:4, ARG:1, ING:5, ARG:1)
-ENDIF
-;单一素材复数利用の时になぜか素材の消耗がおかしくなるため修正
+;IF RECIPE_DATA(ARG:0, 8)
+;	CALL PHARMACY_CONSUME_T_LOT(ING:0, ARG:1, RECIPE_DATA(ARG:0, 8))
+;ELSE
+;	CALL PHARMACY_CONSUME_T(ING:0, ARG:1, ING:1, ARG:1, ING:2, ARG:1, ING:3, ARG:1, ING:4, ARG:1, ING:5, ARG:1)
+;ENDIF
+;;单一素材复数利用の时になぜか素材の消耗がおかしくなるため修正
 IF ARG:2 == 0
 	IF RECIPE_DATA(ARG:0, 8)
 		ITEM:(ING:0) -=  (ARG:1)*RECIPE_DATA(ARG:0, 8)
@@ -677,9 +703,14 @@ IF ARG:2 == 0
 	ENDIF
 ENDIF
 ;打水フラグを0にするのは、ARG:2が0の时（实际に调合が行われた时）のみ
-SIF RECIPE_DATA(ARG:0, 7) && ARG:2 == 0
-	;TFLAG:打水 = 0
-	VAR_WATER =
+IF RECIPE_DATA(ARG:0, 7) && ARG:2 == 0
+	;TFLAG:水汲み = 0
+	IF GETBIT(FLAG:プール, 2) ;addition custom code
+		PRINTFORML +++直接从泳池取水。科学的力量真伟大。
+	ELSE
+		VAR_WATER =
+	ENDIF
+ENDIF
 ;-----------------------------------------------------------
 ;道具を调合したときの素材消费量を文章で表记する
 ;（素材は水を除いて６种が上限）
@@ -691,29 +722,29 @@ SIF RECIPE_DATA(ARG:0, 7) && ARG:2 == 0
 @PHARMACY_CONSUME_T(ARG:0, ARG:1, ARG:2 = 0, ARG:3 = 0, ARG:4 = 0, ARG:5 = 0, ARG:6 = 0, ARG:7 = 0, ARG:8 = 0, ARG:9 = 0, ARG:10 = 0, ARG:11 = 0)
 
 IF ARG:1 > 0
-	PRINTFORM %ITEMNAME_TR((ARG:0))%({ITEM:(ARG:0)}→{ITEM:(ARG:0) - ARG:1})
+	PRINTFORM %ITEMNAME_TR(ARG:0)%({ITEM:(ARG:0)}→{ITEM:(ARG:0) - ARG:1})
 	SIF ARG:2
-		PRINTFORM 　%ITEMNAME_TR((ARG:2))%({ITEM:(ARG:2)}→{ITEM:(ARG:2) - ARG:3})
+		PRINTFORM 　%ITEMNAME_TR(ARG:2)%({ITEM:(ARG:2)}→{ITEM:(ARG:2) - ARG:3})
 	SIF ARG:4
-		PRINTFORM 　%ITEMNAME_TR((ARG:4))%({ITEM:(ARG:4)}→{ITEM:(ARG:4) - ARG:5})
+		PRINTFORM 　%ITEMNAME_TR(ARG:4)%({ITEM:(ARG:4)}→{ITEM:(ARG:4) - ARG:5})
 	SIF ARG:6
-		PRINTFORM 　%ITEMNAME_TR((ARG:6))%({ITEM:(ARG:6)}→{ITEM:(ARG:6) - ARG:7})
+		PRINTFORM 　%ITEMNAME_TR(ARG:6)%({ITEM:(ARG:6)}→{ITEM:(ARG:6) - ARG:7})
 	SIF ARG:8
-		PRINTFORM 　%ITEMNAME_TR((ARG:8))%({ITEM:(ARG:8)}→{ITEM:(ARG:8) - ARG:9})
+		PRINTFORM 　%ITEMNAME_TR(ARG:8)%({ITEM:(ARG:8)}→{ITEM:(ARG:8) - ARG:9})
 	SIF ARG:10
-		PRINTFORM 　%ITEMNAME_TR((ARG:10))%({ITEM:(ARG:10)}→{ITEM:(ARG:10) - ARG:11})
+		PRINTFORM 　%ITEMNAME_TR(ARG:10)%({ITEM:(ARG:10)}→{ITEM:(ARG:10) - ARG:11})
 ELSE
-	PRINTFORM %ITEMNAME_TR((ARG:0))%({ITEM:(ARG:0)})
+	PRINTFORM %ITEMNAME_TR(ARG:0)%({ITEM:(ARG:0)})
 	SIF ARG:2
-		PRINTFORM 　%ITEMNAME_TR((ARG:2))%({ITEM:(ARG:2)})
+		PRINTFORM 　%ITEMNAME_TR(ARG:2)%({ITEM:(ARG:2)})
 	SIF ARG:4
-		PRINTFORM 　%ITEMNAME_TR((ARG:4))%({ITEM:(ARG:4)})
+		PRINTFORM 　%ITEMNAME_TR(ARG:4)%({ITEM:(ARG:4)})
 	SIF ARG:6
-		PRINTFORM 　%ITEMNAME_TR((ARG:6))%({ITEM:(ARG:6)})
+		PRINTFORM 　%ITEMNAME_TR(ARG:6)%({ITEM:(ARG:6)})
 	SIF ARG:8
-		PRINTFORM 　%ITEMNAME_TR((ARG:8))%({ITEM:(ARG:8)})
+		PRINTFORM 　%ITEMNAME_TR(ARG:8)%({ITEM:(ARG:8)})
 	SIF ARG:10
-		PRINTFORM 　%ITEMNAME_TR((ARG:10))%({ITEM:(ARG:10)})
+		PRINTFORM 　%ITEMNAME_TR(ARG:10)%({ITEM:(ARG:10)})
 ENDIF
 PRINTL 
 ;-----------------------------------------------------------
@@ -727,9 +758,9 @@ PRINTL
 @PHARMACY_CONSUME_T_LOT(ARG:0, ARG:1, ARG:2)
 
 IF ARG:1 > 0
-	PRINTFORM %ITEMNAME_TR((ARG:0))%({ITEM:(ARG:0)}→{ITEM:(ARG:0) - (ARG:1 * ARG:2)})
+	PRINTFORM %ITEMNAME_TR(ARG:0)%({ITEM:(ARG:0)}→{ITEM:(ARG:0) - (ARG:1 * ARG:2)})
 ELSE
-	PRINTFORM %ITEMNAME_TR((ARG:0))%({ITEM:(ARG:0)})
+	PRINTFORM %ITEMNAME_TR(ARG:0)%({ITEM:(ARG:0)})
 ENDIF
 PRINTL 
 ;-----------------------------------------------------------
@@ -841,9 +872,11 @@ SELECTCASE ARG:0
 			CASEELSE
 				PRINTFORML %CALLNAME:(LOCAL:1)%变成了扶她
 				TALENT:(LOCAL:1):性別 |= 2
+				;Custom code bugfix, futanari medicine gives a penis type now
+				TALENT:(LOCAL:1):形状 = RAND:6 + 1
 				MAXBASE:(LOCAL:1):2 = 10000
-				MAXBASE:(LOCAL:1):精力 = 1000
 				MAXBASE:(LOCAL:1):勃起 = 1500
+				MAXBASE:(LOCAL:1):精力 = 1000
 				SIF BASE:(LOCAL:1):精力 > 1000
 					BASE:(LOCAL:1):精力 = 1000
 			ENDSELECT
@@ -860,6 +893,17 @@ SELECTCASE ARG:0
 				MAXBASE:(LOCAL:1):2 = 0
 				MAXBASE:(LOCAL:1):精力 = 0
 				TALENT:(LOCAL:1):120 = 0
+			ENDSELECT
+	CASE 73 ;addition custom code
+		PRINTFORML 要给谁使用【蓝色糖果】呢？
+		CALL SHOW_CHARA_LIST("母乳体質")
+		LOCAL:1 = RESULT
+		SELECTCASE LOCAL:1
+			CASE 999
+				PRINTFORML 还是放弃吧，药就这么浪费掉了…
+			CASEELSE
+				PRINTFORML %CALLNAME:(LOCAL:1)%的变成【泌乳体质】了
+				TALENT:(LOCAL:1):母乳体質 = 2
 			ENDSELECT
 	CASE 74
 		PRINTFORML 要给谁使用【红色糖果】呢？
@@ -916,7 +960,7 @@ ENDSELECT
 #DIMS 道具名
 #DIM 改行用
 #DIM R_ID
-道具名 = [{ARG}] %ITEMNAME_TR(ARG), 18, LEFT% 
+道具名 = [{ARG,3}] %ITEMNAME_TR(ARG), 24, LEFT% 
 改行用 += STRLENS(道具名)
 SIF LOCAL:0 < 100
 	改行用 ++
@@ -940,9 +984,9 @@ FOR LOCAL,1,6
 		RESETCOLOR
 NEXT
 
-PRINTFORM [{ARG}] %ITEMNAME_TR(ARG), 18, LEFT%
-SIF ARG < 100
-	PRINT  
+PRINTFORM [{ARG,3}] %ITEMNAME_TR(ARG), 24, LEFT%
+;SIF ARG < 100
+;	PRINT  
 RESETCOLOR
-PRINT 　　
+;PRINT 　　
 RETURN 改行用
