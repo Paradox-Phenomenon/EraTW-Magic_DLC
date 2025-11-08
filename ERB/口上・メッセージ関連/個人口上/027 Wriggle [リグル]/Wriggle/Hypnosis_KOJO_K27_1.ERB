@@ -1,0 +1,202 @@
+﻿;==================================================
+;催眠口上
+;XX　　　　　　Chara ID
+;ARG　　　　　Hypnosis Type
+;ARG:1　　　Hypnosis Result
+;==================================================
+@M_KOJO_EN01_EVENT_K27_666(ARG, ARG:1)
+;口上主はTARGET
+;ARGは催眠タイプ（0催眠キャンセル、1反発抑制、2合意誤認、3発情抑制/発情促進、4常識改変）
+;ARG:1は催眠結果（-3大失敗、-2大失敗、-1失敗、0キャンセル、1成功、2大成功、3大成功）
+;臨時素質（TALENT:反発抑制、TALENT:合意誤認、TCVAR:Common_Sense_Alteration_Status）
+;--------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SIF 顔絵付きメッセージ && ARG != 0 && ARG:1 > 0
+		PRINTFORML
+
+	;催眠タイプ
+	SELECTCASE ARG
+		;催眠キャンセル　　Hypnosis Cancel
+		CASE 0
+			;催眠結果　　必ず0である　　そして記入を推奨しない
+			PRINTFORMW 「Bwuh?」
+			PRINTFORMDW Wriggle blinks and rubs %HIS_HER([[リグル]])% forehead.
+			PRINTFORMW 「I feel kinda weird...」
+
+		;反発抑制　　Resistance Weakened
+		CASE 1
+			;催眠結果
+			SELECTCASE ARG:1
+				;失敗　　Fail
+				CASE -1, -2, -3
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「Uhh... %K27_MASTER()%? What the heck are you doing?」
+						CASE 1
+							PRINTFORMW 「I'm startin' to get a headache. Can you do that somewhere else?」
+						CASE 2
+							PRINTFORML 「If you want me to forgive you, just apologize.」
+							PRINTFORMW 「Or you could give me a nice apple pie. That works too.」
+					ENDSELECT
+				;成功　　Success
+				CASE 1
+					PRINTFORMW 「Huh? Why do I feel like forgiving...」
+					PRINTFORMDW Wriggle shakes %HIS_HER([[リグル]])% head.
+					PRINTFORMW 「I think I blacked out for a second there. What happened?」
+				;Great Success
+				CASE 2, 3
+					PRINTFORMW 「Huh? I feel like I was mad at you for something, but I can't remember what.」
+					PRINTFORMDW Wriggle smiles.
+					PRINTFORMW 「So it must not have been a big deal! Besides, a hero never holds a grudge!」
+			ENDSELECT
+		;合意誤認　　Make Sex Acceptable
+		CASE 2
+			;催眠結果
+			SELECTCASE ARG:1
+				;失敗　　Fail
+				CASE -1, -2, -3
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「What? No! The great %NAME:[[リグル]]% is not a slut!」
+						CASE 1
+							PRINTFORMW 「No way. Do a mating dance first and I'll think about it.」
+						CASE 2
+							PRINTFORMW 「If I wanted to do it, I'd be letting off pheromones. And I'm not.」
+					ENDSELECT
+				;成功　　Success
+				CASE 1
+					IF TALENT:[[リグル]]:恋人
+						PRINTFORMW 「But... what if I get pregnant and %HE_SHE(MASTER)% leaves me?」
+					ELSEIF TALENT:[[リグル]]:思慕 || TALENT:[[リグル]]:恋慕
+						PRINTFORMW 「But... what if %HE_SHE(MASTER)% doesn't like me back?」
+					ELSE
+						PRINTFORMW 「But... I don't know %HIM_HER(MASTER)% that well...」
+					ENDIF
+					PRINTFORMDL Wriggle grits %HIS_HER([[リグル]])% teeth as %HE_SHE([[リグル]])% tries to resist the suggestion.
+					IF TALENT:[[リグル]]:恋人
+						PRINTFORMW 「No, that's crazy. %K27_MASTER()%'s a good person. %HE_SHE(MASTER,1)% wouldn't do that.」
+						PRINTFORMW 「Besides, I've got plenty of contraceptive pills. I can just take those on a dangerous day.」
+					ELSEIF TALENT:[[リグル]]:思慕 || TALENT:[[リグル]]:恋慕
+						IF EXP:[[リグル]]:愛情経験 > 0
+							PRINTFORMW 「No... if %K27_MASTER()% didn't like me, %HE_SHE(MASTER)% wouldn't have gone on a date with me.」
+							PRINTFORMW 「Besides, it's just mating.」
+						ELSE
+							PRINTFORMW 「Well... even if %HE_SHE(MASTER)% doesn't, it's just mating.」
+						ENDIF
+						GOTO WRIGGLE_JUST_MATING
+					ELSE
+						PRINTFORMW 「So what? It's just mating.」
+						$WRIGGLE_JUST_MATING
+						PRINTFORMW 「I just have to do my courtship ritual, and if %HE_SHE(MASTER)% responds, we do it. That's all.」
+						PRINTFORMW 「And if %HE_SHE(MASTER)% doesn't... well, whatever. No hard feelings.」
+					ENDIF
+				;Great Success
+				CASE 2, 3
+					IF CFLAG:[[リグル]]:既成事実 & 合意_うふふ
+						PRINTFORML （I had sex with %K27_MASTER()% before, and it was really good.）
+						PRINTFORMW （I should ask if %HE_SHE(MASTER)% wants to do it again...）
+					ELSE
+						PRINTFORMW 「Hey, %K27_MASTER()%?」
+						PRINTFORMDW Wriggle blushes.
+						PRINTFORMW 「If you wanna do it with me, you just have to ask.」
+						PRINTFORMW 「I don't know why I didn't tell you before. Maybe I forgot?」
+					ENDIF
+			ENDSELECT
+		;発情抑制/発情促進　　Estrus Control
+		CASE 3
+			;催眠結果
+			SELECTCASE ARG:1
+				;失敗　　Fail
+				CASE -1, -2, -3
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「Seriously? I go into estrus every Spring, and that's more than enough.」
+						CASE 1
+							PRINTFORMW 「Uhh... you can't make people horny just by waving your hands around and muttering stuff.」
+						CASE 2
+							PRINTFORMW 「If you were just asking me for sex, that would be weird enough.」
+							PRINTFORMW 「But you're trying to... cast a spell on me to make me go into heat?」
+							PRINTFORMDW Wriggle glares at you.
+							PRINTFORMW 「Knock it off before I give you a Wriggle Kick.」
+					ENDSELECT
+				;成功　　Success
+				CASE 1
+					PRINTFORMW （Nghh... why am I getting turned on?）
+					PRINTFORMW （I gotta calm down. Think about something not sexy. Like spiders.）
+					PRINTFORMW （I bet it would be really hot if %K27_MASTER()% tied me up with spider silk and spank- gah!）
+					PRINTFORMW （Okay, maybe cold? Imagine being really cold. Too cold to be horny.）
+					PRINTFORMW （So cold you have to screw %K27_MASTER()% to keep wa- what's wrong with me?!）
+					PRINTFORMDW Wriggle wipes the sweat from %HIS_HER([[リグル]])% forehead.
+				;Great Success
+				CASE 2, 3
+					PRINTFORMDW Wriggle bites %HIS_HER([[リグル]])% lip to stifle a moan.
+					PRINTFORMD %HIS_HER([[リグル]],1)% 
+					IF HAS_PENIS([[リグル]])
+						PRINTFORMD %FSYN("penis")% 
+						IF HAS_VAGINA([[リグル]])
+							PRINTFORMD and nipples harden
+						ELSE
+							PRINTFORMD hardens
+						ENDIF
+					ELSE
+						PRINTFORMD nipples harden
+					ENDIF
+					PRINTFORMDW .
+					PRINTFORMDW A sweet smell fills the air. %HIS_HER([[リグル]],1)% butt starts glowing.
+					PRINTFORMDW And, seemingly without realizing, %HE_SHE([[リグル]])% starts... walking around you in circles while shaking %HIS_HER([[リグル]])% legs?
+					PRINTFORMDW Firefly youkai do some weird stuff when they go into heat...
+			ENDSELECT
+		;常識改変　　Common-Sense Control
+		CASE 4
+			;催眠結果
+			SELECTCASE ARG:1
+				;失敗　　Fail
+				CASE -1, -2
+					SELECTCASE RAND:3
+						CASE 0
+							PRINTFORMW 「What are you even talking about?」
+						CASE 1
+							PRINTFORMW 「Is this some kinda weird mind control stuff?」
+							PRINTFORMDW Wriggle glares at you.
+							PRINTFORMW 「That's really messed up. Stop it.」
+						CASE 2
+							PRINTFORMW 「Why are you talking about "common sense" when you're acting like a weirdo?」
+					ENDSELECT
+				;成功　　Success
+				CASE 1
+					PRINTFORMDW Wriggle swallows.
+					PRINTFORMW （I feel weird. It's kind of like I'm in heat... but when that happens, I just get really horny.）
+					PRINTFORMW （But now I only feel horny when I think about mating with %K27_MASTER()%. And I don't just wanna mate with %HIM_HER(MASTER)%.）
+					PRINTFORMW （I wanna do whatever %HE_SHE(MASTER)% tells me. I...）
+					PRINTFORMDW Wriggle bites %HIS_HER([[リグル]])% lip. It looks like %HE_SHE([[リグル]])%'s fighting the hypnosis.
+					PRINTFORMDW You look into %HIS_HER([[リグル]])% eyes and deepen the suggestion.
+					PRINTFORMW （Wait, what am I talking about? Of course I wanna do all those things. I'm in love with %K27_MASTER()%!）
+					PRINTFORMW （And it's only natural to wanna do that with the person you love, right?）
+					PRINTFORMDW A huge dopey grin spreads across Wriggle's face. %HE_SHE([[リグル]])% gazes at you with glazed eyes.
+					PRINTFORMW 「Ah, %K27_MASTER()%... do you wanna do something?」
+					PRINTFORMW 「I could make you dinner, I could draw you a bath... or you could do me～」
+				;Great Success
+				CASE 2
+					IF FIRSTTIME("WriggleCommonSenseInstantLoss")
+						PRINTFORMW （I feel so weird. Like I'm in heat and I'm drunk at the same time.）
+						PRINTFORMW （And I can hear %K27_MASTER()%'s voice echoing in my head. It's like-）
+						PRINTFORMW 「(Oh... %HE_SHE(MASTER)% hypnotized me, didn't %HE_SHE(MASTER)%)? That's...」
+						PRINTFORMDW A huge dopey grin spreads across Wriggle's face. %HE_SHE([[リグル]])% gazes at you with glazed eyes.
+						PRINTFORMW （That's so hot...）
+						PRINTFORMW （Now %HE_SHE(MASTER)% can make me do %HE_SHE(MASTER)% wants, whenever %HE_SHE(MASTER)% wants, and I can't resist.）
+						PRINTFORMW （%HE_SHE(MASTER,1)% could hypnotize me into stripping naked and doing %HIM_HER(MASTER)% out in public where everyone can see.）
+						PRINTFORMW （And if %HE_SHE(MASTER)% felt really sadistic, %HE_SHE(MASTER)% could make it so I know what's going on.）
+						PRINTFORMW （No matter how much I struggle, my body won't listen to me and the pleasure builds and builds and %K27_MASTER()% laughs and laughs-）
+					ELSE
+						PRINTFORMDW A huge dopey grin spreads across Wriggle's face. %HE_SHE([[リグル]])% gazes at you with glazed eyes.
+						PRINTFORMW 「%K27_MASTER()%～ Didja hypnotize me again?」
+						CALL HPH_PRINT, @"「Oh man, I sure hope you don't make me do all kinds of dirty things against my willHPH」", "W"
+					ENDIF
+					PRINTFORMDW Wriggle starts rubbing %HIS_HER([[リグル]])% thighs together.
+			ENDSELECT
+	ENDSELECT
+ENDIF
+RETURN 1

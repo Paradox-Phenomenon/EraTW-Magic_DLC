@@ -3,16 +3,16 @@
 ;表示タイプの名称
 {
 #DIMS CONST DISP_NAME , 5 = 
-	"体力气力", "感度など", "性技", "刻印", "好感度"
+	"体力気力", "感度など", "性技", "刻印", "好感度"
 }
 ;表示項目の名称
 {
 #DIMS CONST DISP_MEMO , 25 = 
-	"体力", "气力", 
+	"体力", "気力", 
 	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", 
-	"亲密", "顺从", "欲望", "技巧", 
+	"親密", "従順", "欲望", "技巧", 
 	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", 
-	"苦痛", "快乐", "顺从", "反感", "时奸", 
+	"苦痛", "快楽", "不埒", "反発", "時姦", 
 	"好感", "信頼", "欲求"
 }
 [SKIPEND]
@@ -23,8 +23,8 @@
 ;------<表示タイプ一覧>------
 ;    1:BASE/MAXBASE形式のゲージ。体力、気力など。カラムを２個１組で処理する
 ;    2:溜まってる度などの参照する変数が一個だけのゲージ
-;    3:最大値6の技能系(采集、演奏など)
-;    4:最大値99が想定されるABL系統(Ｃ感觉、侍奉精神など)
+;    3:最大値6の技能系(採集、演奏など)
+;    4:最大値99が想定されるABL系統(Ｃ感覚、奉仕精神など)
 ;    5:信頼度
 ;    6:好感度
 ;    7:素質などのbool型
@@ -33,7 +33,7 @@
 ;   10:それ以外の刻印(0～3)
 ;   11:個別に専用処理が必要なもの(TALENT:度胸、TALENT:プライドなど)
 ;   12:ハートマークを表示するbool型。恋慕とか思慕とかで
-;   13:炮友、恋慕、愛欲などの相手との关系性を一括して表示する。実質専用処理
+;   13:セフレ、恋慕、愛欲などの相手との関係性を一括して表示する。実質専用処理
 ; ELSE:値を直接表示
 ;----------------------------
 
@@ -48,9 +48,9 @@
 
 
 ;この関数を抜けるときは@LIST_BY_DT_SAVEXMLを実行すること！(変更した変数がXMLへ記録される)
-@SHOW_CHARA_LIST_DT(ARG_LIST_TYPE = "现有的角色列表" , ARG_DISP_TYPE = "" , ARG_OPTION = "")
-;("现有的角色列表", "体力气力", "「情報表示」「条件変更」")
-;, DISP_TYPE_STR = "体力气力", OP)
+@SHOW_CHARA_LIST_DT(ARG_LIST_TYPE = "存在するキャラリスト" , ARG_DISP_TYPE = "" , ARG_OPTION = "")
+;("存在するキャラリスト", "体力気力", "「情報表示」「条件変更」")
+;, DISP_TYPE_STR = "体力気力", OP)
 [SKIPSTART]
 ローカルからグローバル変数へ移転したもの（主にXML記録のため）
 #DIMS COLUMN_GROUP_NAME , MAX_COLUMN_GROUP
@@ -65,7 +65,7 @@
 #DIMS FILTER_OPR , LIST_MAX_FILTER
 #DIMS FILTER_NUMBER , LIST_MAX_FILTER
 #DIM LIST_COLOR , 10 ;一応リストの色づけも設定可能
-#DIM CHRLIST , 人物数量上限 + 10 ;いちおう大きめに取っておく
+#DIM CHRLIST , キャラクタ数上限 + 10 ;いちおう大きめに取っておく
 #DIMS CONST DT_SORT_TYPE = "DESC" , "ASC"
 [SKIPEND]
 #DIMS ARG_LIST_TYPE ;引数として受け取るMAKE_CHARA_LISTのモードを指定する変数。L_LIST_TYPEのほうが優先
@@ -190,7 +190,7 @@ PER_PAGE = C_PER_PAGE_DEFAULT ;初期値
 
 ;XMLからの読み出し
 IF STRLENS(LIST_BY_DT_XML)
-	;角色列表の色読み込み
+	;キャラリストの色読み込み
 	FOR CNT_0 , 0 , XML_GET(LIST_BY_DT_XML , @"/ROOT/%XML_LIST_COLOR%")
 		XML_GET LIST_BY_DT_XML , @"/ROOT/%XML_LIST_COLOR%[{CNT_0 + 1}]/text()" , RESULTS
 		LIST_COLOR:CNT_0 = TOINT(RESULTS)
@@ -232,7 +232,7 @@ IF STRLENS(LIST_BY_DT_XML)
 		NEXT
 	NEXT
 ELSE
-	;角色列表の色初期値
+	;キャラリストの色初期値
 	;LIST_COLOR = 0x44000000 + COLOR_FROMNAME("dimgray") , 0xFF000000
 	CALL LIST_COLOR_SET_DEFAULT
 
@@ -246,7 +246,7 @@ SIF STRLENS(ARG_DISP_TYPE) > 0
 	L_SELECTED_COLUMN_GROUP = FINDELEMENT(COLUMN_GROUP_NAME , ARG_DISP_TYPE)
 
 ;カラムを追加/削除したとか、(そんな機能付けてないが)FLAG:並び替えを切り替えたとかでDTの再生成から必要ならここから
-;角色列表作成、DT作成の両方を行うので重い。必要な時だけ
+;キャラリスト作成、DT作成の両方を行うので重い。必要な時だけ
 L_LC:0 = LINECOUNT
 $RELOAD_DT
 CLEARLINE LINECOUNT - L_LC:0
@@ -292,7 +292,7 @@ FOR CNT_CHR , 0 , L_CHRLIST_NUM
 	DT_ROW_ADD L_DTNAME , DEF_DT_CID , CHRLIST:CNT_CHR , DEF_DT_CNAME , CALLNAME:(CHRLIST:CNT_CHR) , DEF_DT_NAME , CALLNAME:(CHRLIST:CNT_CHR) , DEF_DT_ADDNO , CNT_CHR
 	L_TEMP = RESULT
 
-	;COLUMN_NAMEで定義された列(亲密、Ｃ感など)にキャラの現在の数値を文字列としてセット
+	;COLUMN_NAMEで定義された列(親密、Ｃ感など)にキャラの現在の数値を文字列としてセット
 	FOR CNT_0 , 0 , VARSIZE("COLUMN_NAME" , 0)
 		FOR CNT_1 , 0 , VARSIZE("COLUMN_NAME" , 1)
 			VARSET L_ELEMENT
@@ -337,7 +337,7 @@ NEXT
 
 
 ;----------リスト生成、ソート順適用----------
-;ソートを適用して並べ替え。ソート·フィルターが変わったときなど、リスト再生成が必要な時はここから
+;ソートを適用して並べ替え。ソート・フィルターが変わったときなど、リスト再生成が必要な時はここから
 L_LC:1 = LINECOUNT
 $SORT_LIST
 CLEARLINE LINECOUNT - L_LC:1
@@ -361,7 +361,7 @@ L_NOW_PAGE = 0
 
 
 
-;----------カラム表示·リスト背景作成部分----------
+;----------カラム表示・リスト背景作成部分----------
 ;ページ移動だけする場合はここ
 L_LC:2 = LINECOUNT
 $MOVE_PAGE
@@ -371,22 +371,22 @@ SIF STRLENS(COLUMN_GROUP_NAME:L_SELECTED_COLUMN_GROUP) == 0
 	L_SELECTED_COLUMN_GROUP = 0
 
 DRAWLINE
-L_BUTTONTEMP = 　页码：{L_NOW_PAGE + 1 , 3 , RIGHT}/{L_MAX_PAGE + 1 , 3 , LEFT}(符合条件:{L_CHRLIST_NUM}名)　　
-L_BUTTONTEMP += @"<button value='%C_BUTTON_CHARA_PER_PAGE%'>[设置每页显示人数]</button>　　"
+L_BUTTONTEMP = 　ページ：{L_NOW_PAGE + 1 , 3 , RIGHT}/{L_MAX_PAGE + 1 , 3 , LEFT}(該当:{L_CHRLIST_NUM}名)　　
+L_BUTTONTEMP += @"<button value='%C_BUTTON_CHARA_PER_PAGE%'>[ページ当たりの表示人数設定]</button>　　"
 
 ;L_Gが0以下ならGraphics未使用設定とみなす
 ;2025/10/2  L_Gがなんであれ設定可能にする
 IF L_G > 0 || 1
-	L_BUTTONTEMP += @"<button value='%C_CHANGE_LIST_COLOR%'>[更改列表背景色]</button>　　"
+	L_BUTTONTEMP += @"<button value='%C_CHANGE_LIST_COLOR%'>[リストの背景色を変更]</button>　　"
 ELSE
-	L_BUTTONTEMP += @"<font color='gray'><nonbutton title='已禁用Graphics'>[更改列表背景色]</nonbutton></font>　　"
+	L_BUTTONTEMP += @"<font color='gray'><nonbutton title='Graphicsが使用禁止になっています'>[リストの背景色を変更]</nonbutton></font>　　"
 ENDIF
 
-L_BUTTONTEMP += @"<button value='%C_BUTTON_INIT_ALL%'>[初始化列表设置]</button>"
+L_BUTTONTEMP += @"<button value='%C_BUTTON_INIT_ALL%'>[リストの設定を初期化]</button>"
 
-HTML_PRINT @"当前显示类别：%COLUMN_GROUP_NAME:L_SELECTED_COLUMN_GROUP%　　　　%L_BUTTONTEMP%"
+HTML_PRINT @"表示中の種別：%COLUMN_GROUP_NAME:L_SELECTED_COLUMN_GROUP%　　　　%L_BUTTONTEMP%"
 
-HTML_PRINT @"<font color='#%INT_TO_RGB(C_KOJO_EXIST_COLOR)%'>·此颜色表示有剧本</font>"
+HTML_PRINT @"<font color='#%INT_TO_RGB(C_KOJO_EXIST_COLOR)%'>・この色は口上あり</font>"
 
 ;カラム直上の区切り線
 ;一旦罫線を変数に格納し、長さを測る
@@ -443,9 +443,9 @@ ENDIF
 PRINT │
 L_TEMP = FINDELEMENT(SORT_TARGET , DEF_DT_ADDNO , , , 1) 
 IF L_TEMP >= 0
-	PRINTBUTTON @"%SORT_TYPE_TO_TRIANGLE(DT_SORT_TYPE:(SORT_IS_ASC:L_TEMP)) + "[角色编号]" , C_NAMELEN , RIGHT%" , C_BUTTON_COL_SORT + DEF_DT_ADDNO
+	PRINTBUTTON @"%SORT_TYPE_TO_TRIANGLE(DT_SORT_TYPE:(SORT_IS_ASC:L_TEMP)) + "[キャラクター番号]" , C_NAMELEN , RIGHT%" , C_BUTTON_COL_SORT + DEF_DT_ADDNO
 ELSE
-	PRINTBUTTON @"%"　[角色编号]" , C_NAMELEN , RIGHT%" , C_BUTTON_COL_SORT + DEF_DT_ADDNO
+	PRINTBUTTON @"%"　[キャラクター番号]" , C_NAMELEN , RIGHT%" , C_BUTTON_COL_SORT + DEF_DT_ADDNO
 ENDIF
 PRINT │
 
@@ -538,7 +538,7 @@ NEXT
 
 
 
-;----------角色列表表示部----------
+;----------キャラリスト表示部----------
 CNT_1 = 0 ;行着色用のカウンタとして使う
 FOR CNT_CHR , PER_PAGE * L_NOW_PAGE , PER_PAGE * (L_NOW_PAGE + 1)
 	;-----名前-----
@@ -600,7 +600,7 @@ FOR CNT_CHR , PER_PAGE * L_NOW_PAGE , PER_PAGE * (L_NOW_PAGE + 1)
 			PRINTFORM %" " * MAX(((COLUMN_LEN:L_SELECTED_COLUMN_GROUP:CNT_0 / 2 + COLUMN_LEN:L_SELECTED_COLUMN_GROUP:CNT_0 % 2) - (STRLENS(RESULTS) / 2)) , 0)%%RESULTS%%" " * MAX(COLUMN_LEN:L_SELECTED_COLUMN_GROUP:CNT_0 / 2 - (STRLENS(RESULTS) / 2) , 0)%
 			RESETCOLOR
 			;ほんとはツールチップで使用不可な理由とか出したかったんだけど、HTML_PRINTを挟むと一行全部のボタン化が崩れるので断念
-			;角色列表の一行全部を一旦文字列に格納するようなやり方も@PRINT_RANKが式中関数化できないので断念
+			;キャラリストの一行全部を一旦文字列に格納するようなやり方も@PRINT_RANKが式中関数化できないので断念
 			;HTML_PRINT @"<nonbutton title='%RESULTS%'>%" " * COLUMN_LEN:L_SELECTED_COLUMN_GROUP:CNT_0%</nonbutton>" , 1
 			GOTO PRINT_LINE
 		ENDIF
@@ -644,7 +644,7 @@ FOR CNT_CHR , PER_PAGE * L_NOW_PAGE , PER_PAGE * (L_NOW_PAGE + 1)
 	;[SKIPEND]
 NEXT
 
-;角色列表直下の区切り線
+;キャラリスト直下の区切り線
 L_BUTTONTEMP = └%"─" * (C_NAMELEN / 2)%┴
 FOR CNT_0 , 0 , VARSIZE("COLUMN_NAME" , 1)
 	L_BUTTONTEMP += @"%"─" * (COLUMN_LEN:L_SELECTED_COLUMN_GROUP:CNT_0 / 2)%"
@@ -666,11 +666,11 @@ HTML_PRINT L_BUTTONTEMP
 L_BUTTONTEMP = <p align='center'>
 
 IF L_MAX_PAGE == 0
-	L_BUTTONTEMP += @"<nonbutton><font color='gray'>＜＜上一页</font></nonbutton>　　　　"
-	L_BUTTONTEMP += @"<nonbutton><font color='gray'>下一页＞＞</font></nonbutton>"
+	L_BUTTONTEMP += @"<nonbutton><font color='gray'>＜＜前のページ</font></nonbutton>　　　　"
+	L_BUTTONTEMP += @"<nonbutton><font color='gray'>次のページ＞＞</font></nonbutton>"
 ELSE
-	L_BUTTONTEMP += @"<button value='%C_BUTTON_PREVPAGE%'>＜＜上一页</button>　　　　"
-	L_BUTTONTEMP += @"<button value='%C_BUTTON_NEXTPAGE%'>下一页＞＞</button>"
+	L_BUTTONTEMP += @"<button value='%C_BUTTON_PREVPAGE%'>＜＜前のページ</button>　　　　"
+	L_BUTTONTEMP += @"<button value='%C_BUTTON_NEXTPAGE%'>次のページ＞＞</button>"
 ENDIF
 
 L_BUTTONTEMP += "</p>"
@@ -721,34 +721,27 @@ ENDIF
 PRINTL 
 IF CHARA_LIST_FIND_OP(ARG_OPTION , "「条件変更」")
 	IF STRLENS(L_LIST_TYPE)
-		L_BUTTONTEMP = <font color='orange'><button value='%C_TW_FILTER%'>[更改列表筛选条件(当前：%L_LIST_TYPE%)]</button></font>
-		L_BUTTONTEMP += @"<button value='%C_TW_FILTER_REMOVE%'>[清除此筛选条件]</button>"
+		L_BUTTONTEMP = <font color='orange'><button value='%C_TW_FILTER%'>[リストの絞り込み条件を変更(現在：%L_LIST_TYPE%)]</button></font>
+		L_BUTTONTEMP += @"<button value='%C_TW_FILTER_REMOVE%'>[この絞り込み条件を消去]</button>"
+		L_BUTTONTEMP = <p align="center">%L_BUTTONTEMP%</p>
 	ELSE
-		L_BUTTONTEMP = <button value='%C_TW_FILTER%'>[更改列表筛选条件]</button>
+		L_BUTTONTEMP = <p align="center"><button value='%C_TW_FILTER%'>[リストの絞り込み条件を変更]</button></p>
 	ENDIF
 ELSE
 	L_BUTTONTEMP = 
 ENDIF
-IF 隐藏筛选器
-	L_BUTTONTEMP += "　　<font color='gray'><button value='隐藏筛选器'>[显示筛选器]</button></font>"
-ELSE
-	L_BUTTONTEMP += "　　<button value='隐藏筛选器'>[隐藏筛选器]</button>"
-ENDIF
 
-HTML_PRINT @"<p align='center'>%L_BUTTONTEMP%</p>"
+HTML_PRINT L_BUTTONTEMP
 ;--------------------------------------------------------
 
-;----------隐藏筛选器----------
-SIF 隐藏筛选器
-	gLineCount = LINECOUNT
 
 DRAWLINE
 
 
-;----------カラム追加·削除選択肢----------
+;----------カラム追加・削除選択肢----------
 ;カラム追加処理
 ;そのカラムグループに空き配列があるかチェック、あるならカラムを追加ボタンを表示
-;2025/9/23  列の追加·削除は列の編集に統合
+;2025/9/23  列の追加・削除は列の編集に統合
 [SKIPSTART]
 L_TEMP = -1
 FOR CNT_0 , VARSIZE("COLUMN_NAME" , 1) - 1 , -1 , -1
@@ -772,7 +765,7 @@ ELSE
 	L_BUTTONTEMP '= @"<font color='gray'><nonbutton>(これ以上列を増やせません)</nonbutton></font>"
 ENDIF
 
-;消す対象になり得るカラムがあるか调べる
+;消す対象になり得るカラムがあるか調べる
 L_TEMP = -1
 FOR CNT_0 , VARSIZE("COLUMN_NAME" , 1) - 1 , -1 , -1
 	IF STRLENS(COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0) > 0
@@ -788,7 +781,7 @@ ELSE
 ENDIF
 [SKIPEND]
 
-L_BUTTONTEMP = <button value='%C_BUTTON_CGROUP_SETTING%'>[编辑当前表单]</button>　　
+L_BUTTONTEMP = <button value='%C_BUTTON_CGROUP_SETTING%'>[現在の列グループを編集]</button>　　
 
 L_TEMP = -1
 FOR CNT_0 , 0 , MAX_COLUMN_GROUP
@@ -799,9 +792,9 @@ FOR CNT_0 , 0 , MAX_COLUMN_GROUP
 NEXT
 
 IF L_TEMP == 0
-	L_BUTTONTEMP += @"<nonbutton title='表单栏位已满'><font color='gray'>[添加表单]</font></nonbutton>"
+	L_BUTTONTEMP += @"<nonbutton title='列グループ配列に空きがありません'><font color='gray'>[列グループを追加]</font></nonbutton>"
 ELSE
-	L_BUTTONTEMP += @"<button value='%C_BUTTON_CGROUP_ADD%'>[添加表单]</button>"
+	L_BUTTONTEMP += @"<button value='%C_BUTTON_CGROUP_ADD%'>[列グループを追加]</button>"
 ENDIF
 HTML_PRINT @"<p align='center'>%L_BUTTONTEMP%</p>"
 ;------------------------------------------
@@ -812,22 +805,22 @@ DRAWLINE
 
 ;----------フィルター状態表示、作成選択肢----------
 ;現在のフィルター表示
-PRINTFORML %UNICODE(0x25C6)%筛选器状态（点击条件即可移除）
+PRINTFORML %UNICODE(0x25C6)%フィルター状態（条件をクリックすると除去します）
 L_TEMP = 0
 L_BUTTONTEMP = 
 FOR CNT_0 , 0 , LIST_MAX_FILTER
 	IF FILTER_TARGET:CNT_0 != ""
 		IF STRLENS(L_BUTTONTEMP) == 0
-			L_BUTTONTEMP = <button value='%C_BUTTON_DELFILTER%{CNT_0}'>[%FILTER_TARGET:CNT_0%%FILTER_OPR_TO_STR(FILTER_OPR:CNT_0)%%FILTER_NUMBER:CNT_0%]</button>
+			L_BUTTONTEMP = <button value='%C_BUTTON_DELFILTER%{CNT_0}'>[%FILTER_TARGET:CNT_0%が%FILTER_NUMBER:CNT_0%%FILTER_OPR_TO_STR(FILTER_OPR:CNT_0)%]</button>
 		ELSE
-			L_BUTTONTEMP += @"、<button value='%C_BUTTON_DELFILTER%{CNT_0}'>[%FILTER_TARGET:CNT_0%%FILTER_OPR_TO_STR(FILTER_OPR:CNT_0)%%FILTER_NUMBER:CNT_0%]</button>"
+			L_BUTTONTEMP += @"、<button value='%C_BUTTON_DELFILTER%{CNT_0}'>[%FILTER_TARGET:CNT_0%が%FILTER_NUMBER:CNT_0%%FILTER_OPR_TO_STR(FILTER_OPR:CNT_0)%]</button>"
 		ENDIF
 		L_TEMP++
 	ENDIF
 NEXT
 
 IF L_TEMP == 0
-	PRINTFORML 　（无筛选器）
+	PRINTFORML 　（フィルターなし）
 ELSE
 	HTML_PRINT "　" + L_BUTTONTEMP
 ENDIF
@@ -837,20 +830,20 @@ PRINTL
 
 
 ;現在作成中のフィルターを追加する選択肢
-L_BUTTONTEMP = ·筛选器创建状态
+L_BUTTONTEMP = ・フィルター作成状態
 IF STRLENS(L_FILTER_TARGET_TEMP) > 0 && STRLENS(L_FILTER_OPR_TEMP) > 0 && STRLENS(L_FILTER_NUMBER_TEMP) > 0
-	L_BUTTONTEMP += @"<font color='gold'><button value='%C_BUTTON_ADDFILTER%'>＞＞以当前设置添加筛选器＜＜</button></font>"
+	L_BUTTONTEMP += @"<font color='gold'><button value='%C_BUTTON_ADDFILTER%'>＞＞現在の設定でフィルターを追加する＜＜</button></font>"
 ELSE
-	L_BUTTONTEMP += @"<font color='gray'><nonbutton title='筛选器未完成。请填写所有项目'>　　以当前设置添加筛选器　　</nonbutton></font>"
+	L_BUTTONTEMP += @"<font color='gray'><nonbutton title='フィルターは未完成です。項目を埋めてください'>　　現在の設定でフィルターを追加する　　</nonbutton></font>"
 ENDIF
 
 L_BUTTONTEMP += "　　"
 
-;抹消当前创建中的筛选器的选项
+;現在作成中のフィルターを抹消する選択肢
 IF STRLENS(L_FILTER_TARGET_TEMP) > 0 || STRLENS(L_FILTER_OPR_TEMP) > 0 || STRLENS(L_FILTER_NUMBER_TEMP) > 0
-	L_BUTTONTEMP += @"<button value='%C_BUTTON_CLEAR_TEMPFILTER%'>[放弃正在创建的筛选器]</button>"
+	L_BUTTONTEMP += @"<button value='%C_BUTTON_CLEAR_TEMPFILTER%'>[作成途中のフィルターを破棄]</button>"
 ELSE
-	L_BUTTONTEMP += @"<font color='gray'>[放弃正在创建的筛选器]</font>"
+	L_BUTTONTEMP += @"<font color='gray'>[作成途中のフィルターを破棄]</font>"
 ENDIF
 HTML_PRINT L_BUTTONTEMP
 
@@ -874,7 +867,7 @@ FOR CNT_0 , 0 , MAX_COLUMN
 	}
 	IF RESULT == 0
 		;もしフィルター不可ならクリック不可の選択肢を表示するだけ
-		L_BUTTONTEMP:0 = <nonbutton title='此列不支持筛选器'><font color='gray'>[%COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0%]</font></nonbutton>
+		L_BUTTONTEMP:0 = <nonbutton title='この列はフィルターに対応していません'><font color='gray'>[%COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0%]</font></nonbutton>
 		GOTO FILTER_BUTTON_ADD
 	ENDIF
 
@@ -896,9 +889,9 @@ FOR CNT_0 , 0 , MAX_COLUMN
 NEXT
 
 IF L_TEMP
-	HTML_PRINT "<nonbutton>　筛选目标：</nonbutton>" + L_BUTTONTEMP:1
+	HTML_PRINT "<nonbutton>　絞り込み対象：</nonbutton>" + L_BUTTONTEMP:1
 ELSE
-	HTML_PRINT @"<font color='gray'>(没有可以作为筛选目标的列)</font>"
+	HTML_PRINT @"<font color='gray'>(フィルターの対象になれるカラムはありません)</font>"
 ENDIF
 
 ;条件を選択
@@ -915,7 +908,7 @@ IF STRLENS(L_FILTER_TARGET_TEMP)
 	NEXT
 	;FILTER_TARGETが設定されてるのに見つからないのおかしいよね
 	SIF L_TEMP == -1
-		THROW 筛选器中包含意外的值 L_FILTER_TARGET_TEMP=%L_FILTER_TARGET_TEMP%
+		THROW フィルターに予想しない値が入っています  L_FILTER_TARGET_TEMP=%L_FILTER_TARGET_TEMP%
 	{
 		CALL LIST_BY_DT_DEFINE_TYPE(
 			"IS_FILTER_TARGET" , 
@@ -930,7 +923,7 @@ IF STRLENS(L_FILTER_TARGET_TEMP)
 	SIF RESULT == 0
 		CONTINUE
 	SIF STRLENS(RESULTS:3) == 0
-		THROW 评价运算(RESULTS:3)未定义
+		THROW 評価演算(RESULTS:3)が未定義です
 
 	;フィルター条件が一個しか無いならそれで確定
 	IF STRCOUNT(RESULTS:3 , ",") == 0
@@ -949,7 +942,7 @@ IF STRLENS(L_FILTER_TARGET_TEMP)
 	ENDIF
 ELSE
 	;まだフィルター対象を選んでいないなら先に選ばせる
-	L_BUTTONTEMP:1 = <font color='gray'><nonbutton title='请先选择筛选目标'>(无法选择)</nonbutton></font>
+	L_BUTTONTEMP:1 = <font color='gray'><nonbutton title='先にフィルターの対象を選んでください'>(選択不可)</nonbutton></font>
 ENDIF
 HTML_PRINT "　　　　　条件：" + L_BUTTONTEMP:1
 
@@ -1005,35 +998,35 @@ IF STRLENS(L_FILTER_OPR_TEMP) && L_TEMP > -1
 			ENDIF
 		NEXT
 
-		;如果允许任意输入，则添加任意输入按钮
+		;任意入力が許可されているなら任意入力ボタン追加
 		IF L_FILTER_NO_ANY_INPUT == 0
 			IF STRLENS(L_BUTTONTEMP:0) == 0
-				L_BUTTONTEMP:0 = <button value='%C_BUTTON_FILTERNUM_INPUT%'>[直接输入值]</button>
+				L_BUTTONTEMP:0 = <button value='%C_BUTTON_FILTERNUM_INPUT%'>[値を直接入力]</button>
 			ELSE
-				L_BUTTONTEMP:0 += @"　　<button value='%C_BUTTON_FILTERNUM_INPUT%'>[直接输入值]</button>"
+				L_BUTTONTEMP:0 += @"　　<button value='%C_BUTTON_FILTERNUM_INPUT%'>[値を直接入力]</button>"
 			ENDIF
-			L_BUTTONTEMP:0 += @"\@ ISNUMERIC(L_FILTER_NUMBER_TEMP) ? （当前设置值：%L_FILTER_NUMBER_TEMP%） # \@"
+			L_BUTTONTEMP:0 += @"\@ ISNUMERIC(L_FILTER_NUMBER_TEMP) ? （現在の設定値：%L_FILTER_NUMBER_TEMP%） # \@"
 		ENDIF
 	ENDIF
 ELSE
-	;如果尚未选择筛选条件，则先让用户选择
-	L_BUTTONTEMP:0 = <font color='gray'><nonbutton title='请先选择筛选的\@STRLENS(L_FILTER_TARGET_TEMP) > 0 ? 条件 # 目标 \@'>(无法设置)</nonbutton></font>
+	;まだフィルター条件を選んでいないなら先に選ばせる
+	L_BUTTONTEMP:0 = <font color='gray'><nonbutton title='先にフィルターの\@STRLENS(L_FILTER_TARGET_TEMP) > 0 ? 条件 # 対象 \@を選んでください'>(設定不可)</nonbutton></font>
 ENDIF
-HTML_PRINT "　　　　　　值：" + L_BUTTONTEMP:0
+HTML_PRINT "　　　　　　値：" + L_BUTTONTEMP:0
 ;--------------------------------------------------
 
 
 DRAWLINE
 
 
-;----------排序状态显示·删除选项----------
-;当前排序状态显示
+;----------ソート状態表示・削除選択肢----------
+;現在のソート状態表示
 L_TEMP = 0
-;Uniocde25C6是倾斜45度的四边形
-PRINTFORML %UNICODE(0x25C6)%排序状态（越靠左的条件优先级越高。点击条件即可删除）
+;Uniocde25C6は45度傾いた四角形
+PRINTFORML %UNICODE(0x25C6)%ソート状態（左にある条件ほど優先されます。条件をクリックするとそれを消去します）
 FOR CNT_0 , 0 , LIST_MAX_SORT
 	IF SORT_TARGET:CNT_0 != ""
-		PRINTBUTTON @"[%SORT_TARGET:CNT_0%按%SORT_TYPE_TO_NAME(DT_SORT_TYPE:(SORT_IS_ASC:CNT_0))%]" , C_BUTTON_DELSORT + TOSTR(CNT_0)
+		PRINTBUTTON @"[%SORT_TARGET:CNT_0%を%SORT_TYPE_TO_NAME(DT_SORT_TYPE:(SORT_IS_ASC:CNT_0))%]" , C_BUTTON_DELSORT + TOSTR(CNT_0)
 		SIF CNT_0 < LIST_MAX_SORT - 2 && SORT_TARGET:(CNT_0 + 1) != ""
 			PRINT 　
 		L_TEMP++
@@ -1042,16 +1035,13 @@ NEXT
 PRINTL 
 ;----------------------------------------------
 
-;----------隐藏筛选器----------
-SIF 隐藏筛选器
-	CLEARLINE LINECOUNT - gLineCount
 
 DRAWLINE
 
 
-;----------取消选择的选项----------
+;----------選択をやめる選択肢----------
 ALIGNMENT CENTER
-PRINTBUTTON "[取消]" , C_BUTTON_LISTCANCEL
+PRINTBUTTON "[キャンセル]" , C_BUTTON_LISTCANCEL
 PRINTL 
 ALIGNMENT LEFT
 ;--------------------------------------
@@ -1060,7 +1050,7 @@ ALIGNMENT LEFT
 DRAWLINE
 
 
-;----------输入·循环标签----------
+;----------入力・ループラベル----------
 L_LC:3 = LINECOUNT
 $INPUT_LOOP
 CLEARLINE LINECOUNT - L_LC:3
@@ -1072,19 +1062,19 @@ L_RS = %RESULTS%
 
 
 
-;----------以下输入处理部分----------
+;----------以下入力処理部----------
 IF ISNUMERIC(L_RS) && INRANGE(TOINT(L_RS) , 0 , CHARANUM)
-	;选择了角色编号（实际上想把识别用字符串放到选项里，但由于不能使用PRINTBUTTON和HTML_PRINT，所以只是个普通编号）
+	;キャラ番号を選択した(本当は識別用文字列を選択肢に入れたいが、PRINTBUTTONやHTML_PRINTを使えない関係でただの番号になっている)
 
-	;从输入中获取角色编号
+	;入力からキャラクター番号を取得
 	L_TEMP = DT_CELL_GET(L_DTNAME , CHRLIST:TOINT(L_RS) , DEF_DT_CID , 1)
 
-	;来自TW本体的@SHOW_CHARA_LIST
+	;TW本体の@SHOW_CHARA_LISTより
 	IF L_LIST_CLASS == -1 && !CHECK_CHARA(L_TEMP, STRLENS(L_LIST_TYPE) ? ARG_LIST_TYPE # L_LIST_TYPE)
-		PRINTFORMW {RESULT} 不是列表
+		PRINTFORMW {RESULT} リストじゃない
 		GOTO MOVE_PAGE
-	ELSEIF L_LIST_CLASS > 0 && !GET_INT(L_TEMP, "角色列表", L_LIST_CLASS, "判定")
-		PRINTFORMW {RESULT} 被列表过滤
+	ELSEIF L_LIST_CLASS > 0 && !GET_INT(L_TEMP, "キャラリスト", L_LIST_CLASS, "判定")
+		PRINTFORMW {RESULT} リストに弾かれる
 		GOTO MOVE_PAGE
 	ENDIF
 
@@ -1094,7 +1084,7 @@ IF ISNUMERIC(L_RS) && INRANGE(TOINT(L_RS) , 0 , CHARANUM)
 			CHRLIST:CNT_0 = DT_CELL_GET(L_DTNAME , CHRLIST:CNT_0 , DEF_DT_CID , 1)
 		NEXT
 
-		CALL LIST_CHARA_STATE(CHRLIST , TOINT(L_RS) , L_CHRLIST_NUM , ARG_OPTION)
+		CALL TEMP_LIST_CHARA_STATE(CHRLIST , TOINT(L_RS) , L_CHRLIST_NUM , ARG_OPTION)
 		;上の処理でCHRLISTを破壊してしまったのでソートのやり直しから
 		SIF RESULT == 0
 			GOTO SORT_LIST
@@ -1109,7 +1099,7 @@ IF ISNUMERIC(L_RS) && INRANGE(TOINT(L_RS) , 0 , CHARANUM)
 		RETURN L_TEMP
 	ENDIF
 ELSEIF STRCOUNT(L_RS , C_BUTTON_SELECTCOLG) > 0
-	;表单を直接指定して移動
+	;列グループを直接指定して移動
 	L_RS '= REPLACE(L_RS , C_BUTTON_SELECTCOLG , "")
 	SIF ISNUMERIC(L_RS) == 0 || INRANGE(TOINT(L_RS) , 0 , MAX_COLUMN_GROUP) == 0 || STRLENS(COLUMN_GROUP_NAME:TOINT(L_RS)) == 0
 		GOTO MOVE_PAGE
@@ -1117,8 +1107,8 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_SELECTCOLG) > 0
 	L_SELECTED_COLUMN_GROUP = TOINT(L_RS)
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_PREVPAGE) > 0 || STRCOUNT(L_RS , C_BUTTON_NEXTPAGE)
-	;页面移动
-	;当只有一页时，不显示选项，但这里不会过滤。不过滤应该也不会有实际损害
+	;ページ移動
+	;ページが1しかない時には選択肢を出さないようにしているが、ここでは弾かない。弾かずとも実害はないはず
 	IF STRCOUNT(L_RS , C_BUTTON_PREVPAGE) > 0
 		L_NOW_PAGE = VALUE_LOOP(L_NOW_PAGE - 1 , 0 , L_MAX_PAGE)
 	ELSEIF STRCOUNT(L_RS , C_BUTTON_NEXTPAGE) > 0
@@ -1126,15 +1116,15 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_PREVPAGE) > 0 || STRCOUNT(L_RS , C_BUTTON_NEXTPA
 	ENDIF
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_CHARA_PER_PAGE) > 0
-	;更改每页显示人数
-	PRINTFORML 请设置每页显示人数。当前为{PER_PAGE}人，默认值为{C_PER_PAGE_DEFAULT}人（输入0以下或{CHARANUM}以上将返回）
+	;1ページ当たりの表示人数変更
+	PRINTFORML １ページ当たりの表示人数を設定してください。現在{PER_PAGE}人、初期値は{C_PER_PAGE_DEFAULT}人です(0以下、または{CHARANUM}以上を入力すると戻ります)
 	INPUT
 	L_TEMP = RESULT
 
 	SIF INRANGE(L_TEMP , 1 , CHARANUM - 1) == 0
 		GOTO MOVE_PAGE
 
-	PRINTFORML 将每页显示人数设置为{L_TEMP}人。确定吗？
+	PRINTFORML １ページ当たりの表示人数を{L_TEMP}人に設定します。よろしいですか？
 
 	CALL ASK_YN
 
@@ -1142,8 +1132,8 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_CHARA_PER_PAGE) > 0
 		PER_PAGE = L_TEMP
 	GOTO SORT_LIST
 ELSEIF STRCOUNT(L_RS , C_BUTTON_CGROUP_ADD)
-	;添加表单
-	;检查表单数组是否有空余
+	;列グループを追加する
+	;列グループ配列に空きがあるかチェック
 	L_TEMP = -1
 	FOR CNT_0 , 0 , MAX_COLUMN_GROUP
 		IF STRLENS(COLUMN_GROUP_NAME:CNT_0) == 0
@@ -1155,89 +1145,86 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_CGROUP_ADD)
 		GOTO MOVE_PAGE
 
 	$CGROUP_ADD_LOOP
-	PRINTFORML 请输入新表单的名称
-	PRINTL 输入空值将中止
+	PRINTFORML 新たな列グループに設定する名前を入力してください
+	PRINTL 空欄を入れると中止します
 	INPUTS
 
 	SIF STRLENS(RESULTS) == 0
 		GOTO MOVE_PAGE
 
-	PRINTFORML 新表单的名称是「%RESULTS%」。确定吗？
+	PRINTFORML 新たな列グループの名前は「%RESULTS%」です。よろしいですか？
 	CALL ASK_YN
 
 	IF RESULT == 0
 		L_SELECTED_COLUMN_GROUP = L_TEMP
 		COLUMN_GROUP_NAME:L_SELECTED_COLUMN_GROUP '= RESULTS
-		PRINTW 已设置名称。接下来将进入列设置
+		PRINTW 名前を設定しました。続いて列の設定に移ります
 		GOTO CGROUP_SETTING_LOOP
 	ELSE
 		GOTO CGROUP_ADD_LOOP
 	ENDIF
 ELSEIF STRCOUNT(L_RS , C_BUTTON_CGROUP_SETTING)
-	;编辑表单（函数名是PRINT但不用在意）
+	;列グループを編集(関数名はPRINTだが気にしない)
 	$CGROUP_SETTING_LOOP
 	CALL PRINT_PRESET_COLUMN(L_SELECTED_COLUMN_GROUP)
 	IF RESULT
-		;如果上述函数返回非0，则表单有更改
+		;上記関数が非0を返したなら列グループに変更があった
 		GOTO RELOAD_DT
 	ELSE
-		;如果上述函数返回0，则没有更改
+		;上記関数が0を返したなら変更はなかった
 		GOTO MOVE_PAGE
 	ENDIF
 ELSEIF CHARA_LIST_FIND_OP(ARG_OPTION , "「情報固定」") == 0 && (STRCOUNT(L_RS , C_BUTTON_PREVCOLG) > 0 || STRCOUNT(L_RS , C_BUTTON_NEXTCOLG) > 0)
-	;如果选项不是信息固定模式，则移动列组
+	;オプションが情報固定モードでないならばカラムグループを移動
 	IF STRCOUNT(L_RS , C_BUTTON_PREVCOLG) > 0
-		;后退一个
+		;一個戻る
 		L_SELECTED_COLUMN_GROUP = MOVE_COLUMN_GROUP(L_SELECTED_COLUMN_GROUP , -1)
 	ELSEIF STRCOUNT(L_RS , C_BUTTON_NEXTCOLG) > 0
-		;前进一个
+		;一個進む
 		L_SELECTED_COLUMN_GROUP = MOVE_COLUMN_GROUP(L_SELECTED_COLUMN_GROUP , 1)
 	ENDIF
 
-	;移动列组后，放弃正在创建的筛选器（因为列会看不见）
+	;カラムグループを移動したら作成中フィルターを破棄(カラムが見えなくなるので)
 	L_FILTER_TARGET_TEMP = 
 	L_FILTER_OPR_TEMP = 
 	L_FILTER_NUMBER_TEMP = 
 
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_TW_FILTER) && CHARA_LIST_FIND_OP(ARG_OPTION , "「条件変更」")
-	;设置传递给TW的@MAKE_CHARA_LIST函数的参数
-	CALL CHANGE_LIST(L_LIST_TYPE, ARG_OPTION)
-	;RESULT==1表示有更改。0表示没有
+	;TWの@MAKE_CHARA_LIST関数に渡す引数を設定
+	CALL TEMP_CHANGE_LIST(L_LIST_TYPE, ARG_OPTION)
+	;RESULT==1なら変更があった。0ならなかった
 	IF RESULT == 1
 		GOTO RELOAD_DT
 	ELSE
 		GOTO MOVE_PAGE
 	ENDIF
-ELSEIF STRCOUNT(L_RS , "隐藏筛选器")
-	隐藏筛选器 = !隐藏筛选器
-	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_TW_FILTER_REMOVE) && STRLENS(L_LIST_TYPE) > 0
-	;设置传递给TW的@MAKE_CHARA_LIST函数的参数
+	;TWの@MAKE_CHARA_LIST関数に渡す引数を設定
 	L_LIST_TYPE = 
 	GOTO RELOAD_DT
 ELSEIF STRCOUNT(L_RS , C_BUTTON_COL_SORT + DEF_DT_ADDNO)
-	;按角色编号排序（COLUMN_NAME中没有此列，因此特殊处理）
+	;キャラ番号でソート(COLUMN_NAMEにないカラムなので特別に処理)
 	CALLF ADD_SORT(DEF_DT_ADDNO)
 	GOTO SORT_LIST
 ELSEIF STRCOUNT(L_RS , C_BUTTON_COL_SORT)
-	;对选定的列进行排序
-	;获取要排序的列名
+	;選択したカラムをソートする
+	;ソート対象のカラム名を取得
 	L_RS '= REPLACE(L_RS , C_BUTTON_COL_SORT , "")
 	SIF STRLENS(L_RS) == 0
 		GOTO INPUT_LOOP
 
 	L_TEMP = -1
-	;首先搜索是否存在用于字符串列的排序列
+	;まず文字列カラム用のソート列があるか検索
 	FOR CNT_0 , 0 , MAX_COLUMN
 		IF DEF_SORT_FOR_14 + L_RS == COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0
-			L_TEMP = CNT_0
-			;在L_RS后加上表示排序列的字符串
+			L_TEMP == CNT_0
+			;L_RSにソート用列を示す文字列を足しておく
 			L_RS '= COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0
 			BREAK
 		ENDIF
 	NEXT
-	;如果上述搜索未找到任何内容，则正常搜索列
+	;上の捜索で何も見つからなければ普通にカラムを検索
 	IF L_TEMP == -1
 		FOR CNT_0 , 0 , MAX_COLUMN
 			IF L_RS == COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0
@@ -1247,15 +1234,15 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_COL_SORT)
 		NEXT
 	ENDIF
 	
-	;确认该列是否可用。不可用的列也无法排序
+	;そのカラムが使用可能か確認。使用不可カラムはソートも不可
 	SIF L_TEMP == -1
 		GOTO INPUT_LOOP
 
 	IF FINDELEMENT(SORT_TARGET , L_RS , , , 1) >= 0
-		;如果选择了与当前选中列相同的列，则切换升序降序
+		;現在選択中のカラムと同じ物が選択されたなら昇順降順切り替え
 		SORT_IS_ASC:FINDELEMENT(SORT_TARGET , L_RS , , , 1) = !SORT_IS_ASC:FINDELEMENT(SORT_TARGET , L_RS , , , 1)
 	ELSEIF DT_COLUMN_EXIST(L_DTNAME , L_RS)
-		;如果选择了与当前选中列不同的列，则添加到排序目标。FINDELEMENT无法搜索空字符串
+		;現在選択中とは別のカラムが選択されたならソート対象に追加。FINDELEMENTは空文字を探せない
 		L_TEMP = -1
 		FOR CNT_0 , 0 , LIST_MAX_SORT
 			IF SORT_TARGET:CNT_0 == ""
@@ -1264,19 +1251,19 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_COL_SORT)
 			ENDIF
 		NEXT
 		IF L_TEMP >= 0
-			;如果有空数组，则记录在那里
+			;空き配列があるならそこへ記録
 			SORT_TARGET:L_TEMP '= L_RS
 			SORT_IS_ASC:L_TEMP = 0
 		ELSE
-			;如果没有空数组，则删除数组开头以腾出空间
+			;空き配列がないなら配列の先頭を消して空きを作る
 			ARRAYSHIFT SORT_TARGET , -1 , L_RS
 			ARRAYSHIFT SORT_IS_ASC , -1 , 0
 		ENDIF
 	ENDIF
 	GOTO SORT_LIST
 ELSEIF STRCOUNT(L_RS , C_BUTTON_ADDCOL_PRESET) > 0
-	;废弃
-	;从预设中添加列
+	;廃止
+	;カラムをプリセットから追加
 	CALL PRINT_PRESET_COLUMN(L_SELECTED_COLUMN_GROUP)
 	IF RESULT == 1
 		GOTO RELOAD_DT
@@ -1284,8 +1271,8 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_ADDCOL_PRESET) > 0
 		GOTO MOVE_PAGE
 	ENDIF
 ELSEIF STRCOUNT(L_RS , C_BUTTON_DELCOL) > 0
-	;废弃
-	;删除显示中的列
+	;廃止
+	;表示中のカラムを削除
 	CALL LIST_BY_DT_DELETE_COLUMN(L_SELECTED_COLUMN_GROUP)
 	IF RESULT
 		GOTO RELOAD_DT
@@ -1293,15 +1280,15 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_DELCOL) > 0
 		GOTO MOVE_PAGE
 	ENDIF
 ELSEIF STRCOUNT(L_RS , C_BUTTON_ANY_ADDCOL) > 0 && 0
-	;列的任意添加处理。有点不确定会发生什么，所以暂时禁用
+	;カラムの任意追加処理。ちょっと何が起こるか分からないので封印
 	;#;CALL LIST_BY_DT_ADD_ANY_COLUMN(L_SELECTED_COLUMN_GROUP)
 	;#;GOTO RELOAD_DT
 	[IF_NDEBUG]
-		PRINTFORMW 那是调试模式才有的。你小子直接输入了是吧
+		PRINTFORMW それはデバッグモードだけだよ。値を直打ちしたねこの野郎
 		GOTO INPUT_LOOP
 	[ENDIF]
 ELSEIF STRCOUNT(L_RS , C_BUTTON_DELSORT) > 0
-	;移除排序条件
+	;ソート条件を除去
 	L_RS '= REPLACE(L_RS , C_BUTTON_DELSORT , "")
 	IF ISNUMERIC(L_RS) && INRANGE(TOINT(L_RS) , 0 , LIST_MAX_SORT - 1) && SORT_TARGET:TOINT(L_RS) != ""
 		CALLF REMOVE_SORT(TOINT(L_RS))
@@ -1309,10 +1296,10 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_DELSORT) > 0
 	ENDIF
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERTARGET) > 0
-	;设置筛选的目标列
+	;フィルターの対象カラムを設定
 	L_RS '= REPLACE(L_RS , C_BUTTON_FILTERTARGET , "")
 
-	;确认该列是否可用
+	;そのカラムが使用可能か確認
 	L_TEMP = -1
 	FOR CNT_0 , 0 , MAX_COLUMN
 		IF COLUMN_NAME:L_SELECTED_COLUMN_GROUP:CNT_0 == L_RS
@@ -1323,7 +1310,7 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERTARGET) > 0
 	SIF L_TEMP == -1
 		GOTO INPUT_LOOP
 
-	;检查该COLUMN_TYPE是否为筛选目标
+	;そのCOLUMN_TYPEがフィルター対象かチェック
 	{
 		CALL LIST_BY_DT_DEFINE_TYPE(
 			"IS_FILTER_TARGET" , 
@@ -1336,10 +1323,10 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERTARGET) > 0
 
 	SIF RESULT == 0
 		GOTO INPUT_LOOP
-	;如果筛选器的评价运算符只有一个，就直接确定
+	;もしフィルターの評価演算子が一個しか無ければ確定しちゃう
 	IF STRCOUNT(RESULTS:3 , ",") == 0
 		L_FILTER_OPR_TEMP '= RESULTS:3
-		;为了找出评价运算符的描述错误，将其传递给函数
+		;評価演算子記述ミスをあぶり出すため関数にかける
 		CALLF FILTER_OPR_TO_STR(RESULTS:3)
 	ENDIF
 
@@ -1347,57 +1334,57 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERTARGET) > 0
 		L_FILTER_TARGET_TEMP = %L_RS%
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_LISTTYPE_FILTER) > 0 && STRLENS(ARG_LIST_TYPE) == 0
-	;设置@MAKE_CHARA_LIST中使用的筛选器。如果ARG_LIST_TYPE已设置，则优先使用它，因此此项不可用
-	CALL CHANGE_LIST(L_LIST_TYPE)
+	;@MAKE_CHARA_LISTで使うフィルターを設定。ARG_LIST_TYPEが設定されているならそっちを優先するためこの項目は不可
+	CALL TEMP_CHANGE_LIST(L_LIST_TYPE)
 	GOTO RELOAD_DT
 ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTEROPR) > 0
-	;设置筛选器的评价运算
+	;フィルターの評価演算を設定
 	L_RS '= REPLACE(L_RS , C_BUTTON_FILTEROPR , "")
 	SIF FINDELEMENT(C_FILTEROPR_PRESET , L_RS) >= 0 && STRLENS(L_FILTER_TARGET_TEMP) > 0
 		L_FILTER_OPR_TEMP = %L_RS%
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERNUM) > 0
-	;设置筛选器的操作数
+	;フィルターのオペランドを設定
 	L_RS '= REPLACE(L_RS , C_BUTTON_FILTERNUM , "")
 	SIF ISNUMERIC(L_RS) && STRLENS(L_FILTER_OPR_TEMP) > 0
 		L_FILTER_NUMBER_TEMP = %L_RS%
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_FILTERNUM_INPUT) > 0 && L_FILTER_NO_ANY_INPUT == 0
-	;通过INPUT指定筛选器的操作数
-	PRINTFORML 请输入要设置为筛选条件的数值
+	;フィルターのオペランドをINPUTで指定
+	PRINTFORML フィルター条件として設定する数値を入力してください
 	INPUT
 	L_TEMP = RESULT
 
-	;PRINTFORML 输入的是{L_TEMP}。确定吗？
+	;PRINTFORML 入力は{L_TEMP}です。よろしいですか？
 	;CALL ASK_YN
 
 	;SIF RESULT == 0
 		L_FILTER_NUMBER_TEMP = {L_TEMP}
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_CLEAR_TEMPFILTER) > 0
-	;删除正在创建的筛选器
+	;作成途中のフィルターを削除
 	L_FILTER_TARGET_TEMP = 
 	L_FILTER_NUMBER_TEMP = 
 	L_FILTER_OPR_TEMP = 
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_ADDFILTER) > 0
-	;以当前条件添加筛选器
-	;如果新添加的筛选器未完成则返回。在嵌套的最后会删除用于添加筛选器的临时数组，所以如果不需要添加筛选器，就不要执行到嵌套的最后。
+	;現在の条件でフィルターを追加
+	;新規追加フィルターが未完成なら戻す。ネストの最後でフィルター追加用一時配列を消すので、フィルター追加をしないならネストの最後まで行かないこと
 	SIF L_FILTER_TARGET_TEMP == "" || L_FILTER_OPR_TEMP == "" || L_FILTER_NUMBER_TEMP == ""
 		GOTO MOVE_PAGE
 
 	CALLF ADD_FILTER(L_FILTER_TARGET_TEMP , L_FILTER_OPR_TEMP , L_FILTER_NUMBER_TEMP)
 
-	;删除临时变量
+	;一時変数削除
 	L_FILTER_TARGET_TEMP = 
 	L_FILTER_OPR_TEMP = 
 	L_FILTER_NUMBER_TEMP = 
 
 	GOTO SORT_LIST
 ELSEIF STRCOUNT(L_RS , C_BUTTON_DELFILTER) > 0
-	;移除指定的筛选器
-	;获取指定了哪个筛选器
-	L_RS '= REPLACE(L_RS , C_BUTTON_DELFILTER , "") ;获取筛选器编号
+	;指定したフィルターを除去
+	;どのフィルターが指定されていたか取得
+	L_RS '= REPLACE(L_RS , C_BUTTON_DELFILTER , "") ;フィルター番号を取得
 	IF ISNUMERIC(L_RS) && INRANGE(TOINT(L_RS) , 0 , LIST_MAX_FILTER - 1) && FILTER_TARGET:TOINT(L_RS) != ""
 		CALLF REMOVE_FILTER(TOINT(L_RS))
 		GOTO SORT_LIST
@@ -1405,24 +1392,24 @@ ELSEIF STRCOUNT(L_RS , C_BUTTON_DELFILTER) > 0
 	GOTO MOVE_PAGE
 ELSEIF STRCOUNT(L_RS , C_BUTTON_LIST_COLOR)
 	; && L_G > 0
-	;设置列表背景色
+	;リストの背景色設定
 	CALL LIST_CHANGE_COLOR()
 	GOTO MOVE_PAGE
 ELSEIF L_RS == C_BUTTON_LISTCANCEL
-	;选择了不选择角色而返回
+	;キャラを選ばずに戻ることを選んだ
 	CALL LIST_BY_DT_SAVEXML
-	;不选角色返回时这样可以吗
+	;キャラ選ばずに戻る時ってこれでええんやろか
 	RETURN 999
 ELSEIF STRCOUNT(L_RS , C_BUTTON_INIT_ALL)
-	;初始化列表设置
-	PRINTFORML 将初始化角色列表设置。确定吗？
+	;リストの設定を初期化
+	PRINTFORML キャラ一覧の設定を初期化します。よろしいですか？
 
 	CALL ASK_YN
 
 	IF RESULT == 0
 		VARSET LIST_BY_DT_XML
 		VARSET L_LIST_TYPE
-		PRINTW 已初始化。将重新显示列表
+		PRINTW 初期化しました。リストを再表示します
 		RESTART
 	ELSE
 		GOTO MOVE_PAGE

@@ -1,9 +1,9 @@
 ﻿;存否関数
 ;F関数はTRYCALL系が使えないので通常関数で存否配列を作っちゃう
 	;暫定的コメントアウト
-@EXIST_一般依頼14
-#LOCALSIZE 1
-#LOCALSSIZE 1
+;@EXIST_一般依頼14
+;#LOCALSIZE 1
+;#LOCALSSIZE 1
 
 ;オブジェクト本体
 ;ここでARGで渡されるのはCLIENT_IDです
@@ -15,13 +15,13 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	CALLF MAKE_STR(V_NAME, "缺柴火了")
+	CALLF MAKE_STR(V_NAME, "薪を切らしてる")
 CASE "依頼内容表示"
-	CALLF MAKE_STR(V_NAME, @"运送木柴")
+	CALLF MAKE_STR(V_NAME, @"木材を渡す")
 CASE "依頼報酬表示"
-	CALLF MAKE_STR(V_NAME, @"平价食材３个")
-CASE "依頼実行指令名"
-	CALLF MAKE_STR(V_NAME, "给5块木柴")
+	CALLF MAKE_STR(V_NAME, @"安物食材３個")
+CASE "依頼実行コマンド名"
+	CALLF MAKE_STR(V_NAME, "木材を５つ渡す")
 CASE "依頼内容"
 	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(GETNUM(ITEM, "木材"), "調達"))
 CASE "依頼サブ"
@@ -39,9 +39,11 @@ CASE "依頼発生率"
 CASE "依頼発生条件"
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼受託可能条件"
+;木材を持ってる
+	SIF ITEM:木材
 		CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼実行可能条件"
-	;実行可能は@COM_ABLE367も確認のこと
+	SIF ITEM:木材 >= 5
 		CALLF MAKE_INT(V_NAME, 1)
 ;成功/失敗処理はCARRYOUTで直接書く
 ;SOURCEやITEM入手、消費が煩雑になるので
@@ -72,12 +74,12 @@ CASE "依頼条件表示"
 CASE "依頼実行時"
 ;このCASEに限り、RESULTが意味を持ちます
 ;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 ;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
-	PRINTFORML %CALLNAME:MASTER%交付了木柴
+	PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%に木材を渡した
 	IF DAY:2 == 4
 	;冬はメッセージあり
-		PRINTFORML %CALLNAME:TARGET%高兴地表示这样就不用在寒冷中发抖了
+		PRINTFORML これで寒さに震えずに済む、と喜ばれた
 		SOURCE:TARGET:歓楽 += 2000
 	ELSE
 		PRINTFORML 
@@ -89,8 +91,8 @@ CASE "依頼成功時"
 ;成功報告時の報酬など
 	CALL CHANGE_CFLAG(2, TARGET, 30)
 	CALL CHANGE_CFLAG(4, TARGET, 20)
-	TALENT:心情 = LIMIT(TALENT:心情 + 1, -1, 1)
-	CALL GET_ITEM("平价食材", 3, 2)
+	TALENT:機嫌 = LIMIT(TALENT:機嫌 + 1, -1, 1)
+	CALL GET_ITEM("安物食材", 3, 2)
 CASE "依頼失敗時"
 ;失敗報告時の処理
 	CALL CHANGE_CFLAG(2, TARGET, -5)

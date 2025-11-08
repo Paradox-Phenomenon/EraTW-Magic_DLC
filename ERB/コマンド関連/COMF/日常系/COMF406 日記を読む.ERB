@@ -1,6 +1,6 @@
 ﻿;-------------------------------------------------
-;読日記
-;日常系指令
+;日記を読む
+;日常系コマンド
 ;-------------------------------------------------
 @COM406
 #DIM 同棲
@@ -39,7 +39,7 @@ SELECTCASE TFLAG:192
 	;強制失敗
 	CASE -1
 		TFLAG:193 = 1
-	;指令終了
+	;コマンド終了
 	CASE -2
 		TFLAG:193 = -1
 		RETURN 0
@@ -49,27 +49,27 @@ TFLAG:194 = OWNER
 
 IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 	$START
-	PRINTFORML 书桌上放着\@ 同棲 ? 两本 # 一本 \@日记。
-	PRINTFORML 要做什么？
+	PRINTFORML 机の上には日記帳が\@ 同棲 ? 二冊# \@置いてある。
+	PRINTFORML 何をする？
 	VARSET LOCALS, "？？？？"
 	IF TARGET > 0
-		LOCALS:0 = 让%CALLNAME:TARGET%读日记
-		LOCALS:1 = 读%CALLNAME:TARGET%的日记
+		LOCALS:0 = %CALLNAME:TARGET%に日記を読んでもらう
+		LOCALS:1 = %CALLNAME:TARGET%の日記を読む
 	ENDIF
 	{
-	CALL ASK_M("写日记",1,"读日记",1,@"%LOCALS:0%", TARGET > 0,
+	CALL ASK_M("日記をつける",1,"日記を読む",1,@"%LOCALS:0%", TARGET > 0 && SHIRAHU(TARGET),
 	@"%LOCALS:1%", 同棲 && (!SHIRAHU(TARGET) || TALENT:TARGET:恋慕 ),
-	"保存日记簿",1, "读取日记簿",1,
-	"什么也不做",1)
+	"日記を保存する",1, "日記を読み取り",1,
+	"何もしない",1)
 	}
 	SELECTCASE RESULT
 		CASE 0
 			IF STRCOUNT(SAVESTR:1,"//") >= 100
-				PRINTFORML 这本日记簿已经写满了。
-				PRINTFORMW 更换另一个日记簿吧。
+				PRINTFORML この日記帳はもういっぱいだ。
+				PRINTFORMW 別の日記帳に取り替えよう。
 			ELSE
-				PRINTFORML 请直接输入日记内容。
-				PRINTFORML 日期由系统自动记录、故不需要手动输入。
+				PRINTFORML 日記の内容を直接入力してください。
+				PRINTFORML システム側で自動記録されるので日付の記入はいりません。
 				PRINTL
 				CALL MASTER_DIARY_INPUT
 				SIF RESULTS != ""
@@ -82,10 +82,10 @@ IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 			SIF !SHIRAHU(TARGET)
 				GOTO SKIP
 			IF ABL:TARGET:親密 >= 5
-				PRINTFORMW %CALLNAME:TARGET%拿起了%CALLNAME:MASTER%的日记…
+				PRINTFORMW %CALLNAME:TARGET%は%CALLNAME:MASTER%の日記を手に取った…
 				CALL SHARE_MASTER_DIARY
 			ELSE
-				PRINTFORMW %CALLNAME:TARGET%似乎不感兴趣…
+				PRINTFORMW %CALLNAME:TARGET%は興味なさそうだ…
 			ENDIF
 		CASE 3
 			CALL CHARA_DIARY_COM(TARGET)
@@ -98,30 +98,30 @@ IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 	ENDSELECT
 	GOTO START
 ELSEIF TALENT:OWNER:恋慕 && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
-	PRINTFORML 枕头旁边放置着日记本。
-	PRINTFORML %CALLNAME:OWNER%似乎愿意分享日记的内容。
-	PRINTFORML 该怎么做呢？
-	CALL ASK_YN("读日记","不读")
+	PRINTFORML 枕の隣に日記帳が置いてある。
+	PRINTFORML %CALLNAME:OWNER%は日記の内容をシェアする気があるようだ。
+	PRINTFORML どうしますか？
+	CALL ASK_YN("日記を読む","読まない")
 	IF !RESULT
 		CALL CHARA_DIARY_COM(OWNER)
 	ELSE
 		RETURN -1
 	ENDIF
 ELSEIF CFLAG:OWNER:現在位置 != CFLAG:MASTER:現在位置 && TARGET && !(FLAG:70 || !SHIRAHU(TARGET))
-	PRINTFORML 枕头下放置着%CALLNAME:OWNER%的日记本。
-	PRINTFORML 然而…%CALLNAME:TARGET%就在旁边…
-	PRINTFORML 该怎么做呢？
-	CALL ASK_YN("一起偷看日记","不读")
+	PRINTFORML 枕の下に%CALLNAME:OWNER%の日記帳が置いてあるようだ。
+	PRINTFORML しかし…すぐ傍には%CALLNAME:TARGET%がいる…
+	PRINTFORML どうしますか？
+	CALL ASK_YN("一緒に日記を盗み読む","読まない")
 	IF !RESULT && TFLAG:193 > 0
 		CALL CHARA_DIARY_COM(OWNER)
 	ELSE
-		PRINTFORML 还是算了吧…
+		PRINTFORML やっぱりやめよう…
 		RETURN -1
 	ENDIF
 ELSE
-	PRINTFORML 枕头下面放置着日记本。
-	PRINTFORML 怎么做？
-	CALL ASK_YN("偷看","不读")
+	PRINTFORML 枕の下に日記帳が置いてあるようだ。
+	PRINTFORML どうする？
+	CALL ASK_YN("盗み読む","読まない")
 	IF !RESULT
 		CALL CHARA_DIARY_COM(OWNER)
 	ELSE
@@ -160,7 +160,7 @@ IF SHIRAHU(TARGET) && TARGET > 0
 
 
 	SOURCE:受動 = 100 + 100 * ABL:従順
-	SOURCE:征服 = 100 + 100 * ABL:施虐属性
+	SOURCE:征服 = 100 + 100 * ABL:サドっ気
 
 	IF TFLAG:193 == -1 || TFLAG:193 == -2
 		TIMES SOURCE:歓楽 , 0.10
@@ -215,14 +215,14 @@ OWNER = COM406_CHECK_OWNER()
 SIF !TFLAG:100
 	RETURN 0
 	
-;恶作剧かウフフ中
-SIF CFLAG:MASTER:恶作剧
+;イタズラかウフフ中
+SIF CFLAG:MASTER:イタズラ
 	RETURN 0
 
-SIF CFLAG:MASTER:诶嘿嘿
+SIF CFLAG:MASTER:うふふ
 	RETURN 0
 
-;拠点にいる時か待客室のみ
+;拠点にいる時かお招き部屋のみ
 SIF !AT_HOME(MASTER) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 	RETURN 0
 
@@ -248,7 +248,7 @@ RETURN 1
 OWNER = COM406_CHECK_OWNER()
 
 IF (!TALENT:OWNER:恋慕 && !(FLAG:70 || !SHIRAHU(OWNER))) && !(CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置)
-	PRINTFORML 读完之后、把日记本轻轻放回原处。
+	PRINTFORML 読み終わった後、日記帳をそっと元の場所に戻した。
 ELSE
 ENDIF
 
@@ -258,8 +258,8 @@ ENDIF
 
 IF TARGET > 0 && CFLAG:TARGET:初期位置 == CFLAG:MASTER:初期位置 && CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 	RETURNF TARGET
-ELSEIF TARGET == CFLAG:MASTER:招待 && CFLAG:MASTER:現在位置 == OMANEKIBEYA()
-	RETURNF CFLAG:MASTER:招待
+ELSEIF TARGET == CFLAG:MASTER:お招き && CFLAG:MASTER:現在位置 == OMANEKIBEYA()
+	RETURNF CFLAG:MASTER:お招き
 ELSE
 	RETURNF PRIVATEROOM:(CFLAG:MASTER:現在位置 % 100)
 ENDIF

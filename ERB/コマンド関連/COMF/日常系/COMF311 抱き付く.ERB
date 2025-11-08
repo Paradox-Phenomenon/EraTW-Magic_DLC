@@ -1,9 +1,9 @@
 ﻿;-------------------------------------------------
-;擁抱
-;日常系指令　レベル2
+;抱き付く
+;日常系コマンド　レベル2
 ;-------------------------------------------------
 @COM311
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 	BASE:MASTER:TSP -= 10
 	IF HETEROSEX(TARGET,PLAYER)
 		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 1
@@ -16,10 +16,8 @@ ELSE
 				CONTINUE
 			IF GET_UWAKI_HISTORY(TARGET:LOCAL, TARGET:0) < 2
 				DRAWLINE
-				; PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%に抱き着こうとしたが
-				PRINTFORML %CALLNAME:MASTER%试图抱住%CALLNAME:TARGET%
-				; PRINTFORMW 視界の端に%CALLNAME:(TARGET:LOCAL)%の姿が映ると思わず手を引いてしまった…
-				PRINTFORMW 但视野的边缘出现%CALLNAME:(TARGET:LOCAL)%的身影时，%CALLNAME:MASTER%不由得缩回了手…
+				PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%に抱き着こうとしたが
+				PRINTFORMW 視界の端に%CALLNAME:(TARGET:LOCAL)%の姿が映ると思わず手を引いてしまった…
 				RETURN -1
 			ENDIF
 		NEXT
@@ -35,9 +33,9 @@ ELSE
 			IF LOCAL <= 9
 				;10％で大成功
 				TFLAG:193 = 1
-				IF CHK_DATENOW(CFLAG:TARGET:约会中)
-					EXP:MASTER:約會経験 ++
-					EXP:TARGET:約會経験 ++
+				IF CHK_DATENOW(CFLAG:TARGET:デート中)
+					EXP:MASTER:デート経験 ++
+					EXP:TARGET:デート経験 ++
 				ENDIF
 			ELSEIF LOCAL >= LOCAL:1
 				;10～1％で失敗
@@ -51,9 +49,9 @@ ELSE
 			IF RAND:110 <= 9
 				;10％で大成功
 				TFLAG:193 = 1
-				IF CHK_DATENOW(CFLAG:TARGET:约会中)
-					EXP:MASTER:約會経験 ++
-					EXP:TARGET:約會経験 ++
+				IF CHK_DATENOW(CFLAG:TARGET:デート中)
+					EXP:MASTER:デート経験 ++
+					EXP:TARGET:デート経験 ++
 				ENDIF
 			ELSE
 				;残りは成功
@@ -62,7 +60,7 @@ ELSE
 		;強制失敗
 		CASE -1
 			TFLAG:193 = -1
-		;指令終了
+		;コマンド終了
 		CASE -2
 			TFLAG:193 = -1
 			RETURN 0
@@ -70,7 +68,7 @@ ELSE
 	;先制発生時は失敗しない
 	SIF TFLAG:102 == 3 && TFLAG:192 != -1
 		TFLAG:193 = MAX(TFLAG:193,0)
-	IF CFLAG:TARGET:陪睡中
+	IF CFLAG:TARGET:添い寝中
 		DOWNBASE:MASTER:気力 += 50
 	ELSE
 		DOWNBASE:気力 += 100
@@ -125,7 +123,7 @@ ELSE
 
 
 	SOURCE:受動 = 120 + 240 * ABL:従順
-	SOURCE:征服 = 120 + 240 * ABL:施虐属性
+	SOURCE:征服 = 120 + 240 * ABL:サドっ気
 
 	;好感度変化
 	TFLAG:97 += LOCAL
@@ -142,20 +140,20 @@ ELSE
 		TIMES SOURCE:征服 , 1.00
 		TIMES SOURCE:受動 , 1.00
 		TIMES SOURCE:露出 , 0.90
-		TFLAG:情緒BONUS = 30
+		TFLAG:ムードボーナス = 30
 	ELSE
 		TIMES SOURCE:歓楽 , 2.00
 		TIMES SOURCE:情愛 , 2.00
 		TIMES SOURCE:征服 , 2.00
 		TIMES SOURCE:受動 , 2.00
 		TIMES SOURCE:露出 , 1.80
-		TFLAG:情緒BONUS = 50
+		TFLAG:ムードボーナス = 50
 	ENDIF
 	TIME += 10
 
-	IF CHK_DATENOW(CFLAG:TARGET:约会中)
-		EXP:MASTER:約會経験 ++
-		EXP:TARGET:約會経験 ++
+	IF CHK_DATENOW(CFLAG:TARGET:デート中)
+		EXP:MASTER:デート経験 ++
+		EXP:TARGET:デート経験 ++
 	ENDIF
 
 	IF HETEROSEX(TARGET,PLAYER)
@@ -169,22 +167,22 @@ RETURN 1
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE311
-;擁抱実行判定
+;抱き付く実行判定
 SIF !TFLAG:100
 	RETURN 0
 ;一括管理
 SIF GLOBAL_COMABLE(311)
 	RETURN RESULT
-;时间停止中以及潜伏诶嘿嘿时跳过
-IF (!FLAG:70 || CFLAG:344 == 1) && !GETBIT(CFLAG:526,0)
-	;亲热強度1
-	SIF TCVAR:MASTER:亲热 < 1 && !CFLAG:陪睡中
+;時間停止中はスキップ
+IF !FLAG:70
+	;馴れ合い強度1
+	SIF TCVAR:MASTER:馴れ合い < 1 && !CFLAG:添い寝中
 		RETURN 0
 	;甲斐性なしはもう少し馴れ合い強度と既成事実が必要
-	SIF FLAG:甲斐性無 && ((TCVAR:MASTER:亲热 < 2 && !CFLAG:陪睡中) || (!CFLAG:诶嘿嘿 && !GETBIT(CFLAG:既成事實, 1)))
+	SIF FLAG:甲斐性無 && ((TCVAR:MASTER:馴れ合い < 2 && !CFLAG:添い寝中) || (!CFLAG:うふふ && !GETBIT(CFLAG:既成事実, 1)))
 		RETURN 0
 	;睡眠中
-	SIF CFLAG:睡眠 && !CFLAG:陪睡中
+	SIF CFLAG:睡眠 && !CFLAG:添い寝中
 		RETURN 0
 	;仕事中
 	SIF CFLAG:行動 == 5
@@ -198,8 +196,8 @@ SIF TFLAG:61
 	RETURN 0
 SIF GETBIT (TCVAR:26,1)
 	RETURN 0
-;六九式体勢
-SIF TEQUIP:六九式
+;シックスナイン体勢
+SIF TEQUIP:シックスナイン
 	RETURN 0
 RETURN 1
 

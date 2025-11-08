@@ -19,24 +19,24 @@
 #DIM DishEXP
 #DIM FirstWinBonus
 
-PRINTFORML 请选择对战对手
+PRINTFORML 対戦相手を選んでください
 IF !TARGET == CFLAG:MASTER
-	CALL ASK_M("新手",1,"入门",1,"高手",1,"老手",1,CALLNAME:TARGET,1,"取消",1)
+	CALL ASK_M("素人",1,"駆け出し",1,"腕利き",1,"熟練",1,CALLNAME:TARGET,1,"やめる",1)
 ELSE
-	CALL ASK_M("新手",1,"入门",1,"高手",1,"老手",1,"取消",1)
+	CALL ASK_M("素人",1,"駆け出し",1,"腕利き",1,"熟練",1,"やめる",1)
 ENDIF
 SELECTCASE RESULT
 	CASE 0
-		対戦相手 = 新手料理人
+		対戦相手 = 素人料理人
 		ENEMY_LV = 1
 	CASE 1
-		対戦相手 = 入门料理人
+		対戦相手 = 駆け出し料理人
 		ENEMY_LV = 3
 	CASE 2
-		対戦相手 = 高手料理人
+		対戦相手 = 腕利き料理人
 		ENEMY_LV = 4
 	CASE 3
-		対戦相手 = 老手料理人
+		対戦相手 = 熟練料理人
 		ENEMY_LV = 5
 	CASE 4
 		SIF TARGET == CFLAG:MASTER
@@ -59,24 +59,22 @@ SELECTCASE DISH_TYPE_NUM
 		DISH_TYPE = 主食
 ENDSELECT
 IF DISH_TYPE == "軽食"
-	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/汁物/油炸食品/煮物/下酒菜/家庭料理")%
+	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/汁物/揚げ物/煮物/おつまみ/家庭料理")%
 ELSEIF DISH_TYPE == "主食"
-	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/麺類/鍋物/汁物/油炸食品/謎料理/家庭料理")%
+	THEME = %TEXTR("和食/洋食/中華/肉料理/魚料理/麺類/鍋物/汁物/揚げ物/謎料理/家庭料理")%
 ENDIF
 
-PRINTFORML 「好，各位观众！接下来即将开幕的是大家期待已久的——料理铁人！今日灶台上燃起的火焰，究竟会点燃胜利的意志，还是化作败北的泪水呢！」
+PRINTFORML 「さあ、皆さま！これより幕を開けますは、お待ちかねの――調理の鉄人！本日の竈に灯る炎は、勝利の意志を燃やすのか、それとも敗北の涙と化すのか！」
 IF 対戦相手 == CALLNAME:TARGET
-	PRINTFORML 「本次的主题是【%TASTE_TR(THEME)%】。若我的记忆无误，说到%TASTE_TR(THEME)%当属此女！」
+	PRINTFORML 「今回のテーマは【%THEME%】。私の記憶が確かならば、%THEME%といえばこの女！」
 ELSE
-	PRINTFORML 「本次的主题是【%TASTE_TR(THEME)%】。若我的记忆无误，说到%TASTE_TR(THEME)%当属此男！」
+	PRINTFORML 「今回のテーマは【%THEME%】。私の記憶が確かならば、%THEME%といえばこの男！」
 ENDIF
-PRINTFORML 「请大家用热烈的掌声欢迎！%TASTE_TR(THEME)%的铁人，%対戦相手%！」
+PRINTFORML 「皆さん大きな拍手でお迎えください！%THEME%の鉄人、%対戦相手%！」
 SIF THEME == "家庭料理"
 	THEME = 家庭的
-SIF THEME == "下酒菜"
-	THEME = 開胃
-PRINTFORML 「而挑战者则是%CALLNAME:MASTER%！」
-PRINTFORML 「评审团由以下诸位组成」
+PRINTFORML 「対する挑戦者は%CALLNAME:MASTER%！」
+PRINTFORML 「そして審査員は以下の面々です」
 
 $JUDGE_SELECT
 CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
@@ -86,7 +84,7 @@ ARRAYCOPY "SHAFFLE_ARRAY" , "JUDGE"
 ;対戦相手,なりきり時は自分だった場合も再抽選
 FOR LOCAL, 0 , 3
 	C_ID = JUDGE:LOCAL + 1
-	SIF STRCOUNT(GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), THEME)
+	SIF STRCOUNT(GET_STR(, "キャラデータ", C_ID, "料理：嫌いな味"), THEME)
 		GOTO JUDGE_SELECT
 	SIF C_ID == TARGET
 		GOTO JUDGE_SELECT
@@ -99,11 +97,11 @@ FOR LOCAL, 0 , 3
 	C_ID = JUDGE:LOCAL
 	CALL PRINT_FACE, C_ID, "通常", "服", "", ""
 	PRINTFORML 
-	PRINTFORML 【评审员 No.{LOCAL + 1} %CALLNAME:C_ID%】
-	PRINTL 喜欢的味道：
-	CALL SHOW_TASTE(GET_STR(, "キャラデータ", C_ID, "料理：喜欢的味道"), "POSITIVE", ABL:C_ID:親密 < 3)
-	PRINTL 讨厌的味道：
-	CALL SHOW_TASTE(GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), "NEGATIVE", ABL:C_ID:親密 < 3)
+	PRINTFORML 【審査員 no.{LOCAL + 1} %CALLNAME:C_ID%】
+	PRINTL 好きな味：
+	CALL SHOW_TASTE(GET_STR(, "キャラデータ", C_ID, "料理：好きな味"), "POSITIVE", ABL:C_ID:親密 < 3)
+	PRINTL 嫌いな味：
+	CALL SHOW_TASTE(GET_STR(, "キャラデータ", C_ID, "料理：嫌いな味"), "NEGATIVE", ABL:C_ID:親密 < 3)
 	PRINTFORMW 
 	CALL JUDGE_RESEARCH(C_ID,"GET")
 NEXT
@@ -113,43 +111,43 @@ TASTE_TREND_BAD =
 
 ;好きな味、嫌いな味の内気を付けるべきものを提示
 CALL JUDGE_RESEARCH(C_ID,"OUT")
-PRINTFORM 「本次料理铁人中…
+PRINTFORM 「今回の調理の鉄人は…
 FOR LOCAL, 0, 6
 	IF LOCAL < 3
-		PRINTFORM [%TASTE_TR(RESULTS:LOCAL)%]
+		PRINTFORM [%RESULTS:LOCAL%]
 		TASTE_TREND_GOOD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 2
-			PRINTFORM 等口味的运用似乎会成为关键！相反，
-	ELSEIF LOCAL > 2 
-		PRINTFORM [%TASTE_TR(RESULTS:LOCAL)%]
+			PRINTFORM 味の使い方がカギになりそうです！反対に、
+	ELSEIF LOCAL > 2
+		PRINTFORM [%RESULTS:LOCAL%]
 		TASTE_TREND_BAD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 5
-			PRINTFORM 等口味要谨慎！」
+			PRINTFORM 味には要注意！」
 	ENDIF
 NEXT
 PRINTFORMW 
 
 {
-PRINTFORML 「%TEXTR("胜负关键取决于食材中凝聚的灵魂与驾驭天赋的才能！挑战者将展现怎样的奇迹之皿，敬请拭目以待！
-/这座厨房即是今日战场。两位料理人将在此施展毕生绝技，这场激战请诸位尽情欣赏！
-/究竟谁能夺得最终桂冠？在有限时间里诞生的至高料理——诸位请看！")%」
+	PRINTFORML 「%TEXTR("勝利の行方を握るのは、食材に込められし魂と、それを操る天賦の才！迎え撃つ挑戦者はいかなる奇跡の皿を繰り出すのか、注目でございます！
+		/このキッチンが、此度の戦場。二人の料理人が、秘めたる匠の技をぶつけ合う壮絶な一戦を、どうぞ心ゆくまでご堪能あれ！
+		/果たして、華麗なる技の応酬の先にある栄冠はどちらの手に！？　さあ、限られた時間の中で生み出される至高の一皿――いざ皆さま、ご覧いただきましょう！")%」
 }
-PRINTFORMW 「那么……Allez cuisine(法语：开始料理)！」
+PRINTFORMW 「それでは……Allez cuisine(アレ・キュイジーヌ)！」
 
 ;相手の料理を生成する
 CALL ENEMY_DISH_MENU(対戦相手, DISH_TYPE_NUM, THEME, ENEMY_LV, TASTE_TREND_GOOD, TASTE_TREND_BAD)
 DISH_NAME_ENEMY = %RESULTS:0%
 DISH_TASTE_ENEMY = %RESULTS:1%
 
-CALL COLORMESSAGE(@"【%TASTE_TR(DISH_TYPE)%】【%TASTE_TR(THEME)%】(如果偏离主题则丧失资格)",C_YELLOW,1)
+CALL COLORMESSAGE(@"【%DISH_TYPE%】【%THEME%】(テーマから外れている場合失格)",C_YELLOW,1)
 DRAWLINE
 PREV_REDRAW = CURRENTREDRAW()
 REDRAW 0
 CALL COOKING_MATCH_SELECT(DISH_TYPE_NUM, THEME)
 REDRAW PREV_REDRAW
-IF RESULTS == "弃权"
-	PRINTFORML 哦呀挑战者宣布弃权了！
-	WINNER = 弃权
+IF RESULTS == "棄権"
+	PRINTFORML おおっと挑戦者、棄権を宣言しました！
+	WINNER = 棄権
 	GOTO PLAYER_LOSE
 ENDIF
 
@@ -157,8 +155,8 @@ BASEPOINT_TEMP = DISH_BASEPOINT
 CALL ENEMY_COOKING(DISH_NAME_ENEMY, DISH_TASTE_ENEMY, ENEMY_LV, 対戦相手)
 DISH_NAME_ENEMY = %RESULTS%
 
-PRINTFORML 双方都完成了料理！
-PRINTFORMW 那么首先请品尝%対戦相手%的%DISH_NAME_ENEMY%！
+PRINTFORML 両者ともに完成しました！
+PRINTFORMW それでは%対戦相手%の%DISH_NAME_ENEMY%からご賞味いただきましょう！
 
 TOTAL_ENEMY = 0
 FOR LOCAL, 0 , 3
@@ -166,17 +164,17 @@ FOR LOCAL, 0 , 3
 	CALL PRINT_FACE, C_ID, "通常", "服", "", ""
 	CALL REVIEW_DISH(C_ID, DISH_TASTE_ENEMY)
 	SCORE:LOCAL = TCVAR:C_ID:料理評価値/10
-	PRINTFORMW 【评审员 No.{LOCAL + 1} %CALLNAME:C_ID%】 {SCORE:LOCAL}分
+	PRINTFORMW 【審査員 no.{LOCAL + 1} %CALLNAME:C_ID%】 {SCORE:LOCAL}点
 	TOTAL_ENEMY += SCORE:LOCAL
 NEXT
-CALL COLORMESSAGE(@"总分：{TOTAL_ENEMY}分",C_YELLOW,1)
+CALL COLORMESSAGE(@"合計点：{TOTAL_ENEMY}点",C_YELLOW,1)
 DISH_BASEPOINT = BASEPOINT_TEMP
 
-PRINTFORMW 挑战者的%DISHNAME_TR()%会获得怎样的评价呢！？
+PRINTFORMW 対する挑戦者の%DISH_NAME%の評価やいかに！？
 
 IF STRFIND(DISH_TASTE, THEME) == -1
-	PRINTFORML 糟糕！？
-	PRINTFORML 没有包含【%THEME%】！失去资格！
+	PRINTFORML おっと！？
+	PRINTFORML 【%THEME%】が含まれていません！失格です！
 	GOTO PLAYER_LOSE
 ENDIF
 
@@ -190,35 +188,35 @@ FOR LOCAL, 0 , 3
 		SETCOLOR C_GREEN
 		FONTBOLD
 		{
-		PRINTFORML 在%CALLNAME:C_ID%身后的是%TEXTR("红魔馆爆炸了/
-		妖怪之山喷发了/铃奈庵被烧毁了/
-		辉针城坠落砸塌了博丽神社/动物灵和埴轮跳起了桑巴/
-		月亮弹起并嵌在了赫卡提亚的头上/
-		守矢神社一分为二发射核热造神非想天则升空/
-		血池地狱变成了钴蓝色，周围长出了椰子树/
-		巨大的键山雏脸庞浮现而出/
-		七色魔炮发射")%的背景
+			PRINTFORML %CALLNAME:C_ID%の背景で%TEXTR("紅魔館が爆発した
+				/妖怪の山が噴火した/鈴奈庵が炎上した
+				/逆さ城が墜落して博麗神社が倒壊した/動物霊とハニワがサンバを踊った
+				/月がバウンドしてヘカーティアの頭に嵌った
+				/守矢神社が二つに割れてヒソウテンソクが発進した
+				/血の池地獄がコバルトブルーに変わり周囲にヤシの木が生えた
+				/巨大な鍵山雛の顔が浮かび上がった
+				/七色のキャノンボールが発射された")%
 		}
 		RESETCOLOR
 		FONTREGULAR
 	ENDIF
-	PRINTFORMW 【评审员 No.{LOCAL + 1} %CALLNAME:C_ID%】 {SCORE:LOCAL}分
+	PRINTFORMW 【審査員 no.{LOCAL + 1} %CALLNAME:C_ID%】 {SCORE:LOCAL}点
 	TOTAL_PLAYER += SCORE:LOCAL
 NEXT
-CALL COLORMESSAGE(@"总分：{TOTAL_PLAYER}分",C_YELLOW,2)
+CALL COLORMESSAGE(@"合計点：{TOTAL_PLAYER}点",C_YELLOW,2)
 IF TOTAL_PLAYER > TOTAL_ENEMY
 	WINNER = 勝利
-	PRINTFORMW 挑战者获胜！
+	PRINTFORMW 挑戦者の勝利です！
 ELSE
 	WINNER = 敗北
 	$PLAYER_LOSE
-	PRINTFORMW %対戦相手%获胜！
+	PRINTFORMW %対戦相手%の勝利です！
 ENDIF
 CALL RESET_DISH
 
 IF WINNER == "勝利"
 	IF !CFLAG:TARGET:料理勝負勝利 && 対戦相手 == CALLNAME:TARGET
-		CALL COLORMESSAGE(@"【对%CALLNAME:TARGET%首次取得料理对决胜利】",C_YELLOW,1)
+		CALL COLORMESSAGE(@"【%CALLNAME:TARGET%に初勝利】",C_YELLOW,1)
 		CFLAG:TARGET:料理勝負勝利 = 1
 		SELECTCASE ABL:TARGET:料理技能
 			CASE 0
@@ -264,12 +262,12 @@ RETURN 1
 #DIMS THEME
 
 CALL COOKING_UI(DISH_TYPE_NUM, SELECT_MENU, SELECT_ING, 0, 0, 0, THEME)
-PRINTFORML [ 0] 弃权
+PRINTFORML [ 0] 棄権する
 INPUT
-;取消
+;やめる
 RESULTS =
 IF RESULT == 0
-	RESULTS = 弃权
+	RESULTS = 棄権
 ELSEIF RESULT == 9 && SELECT_MENU
 	CALL DISHDATA(SELECT_MENU, DISH_TYPE, 0)
 	IF RESULT != 10
@@ -282,7 +280,7 @@ ELSEIF RESULT == 9 && SELECT_MENU
 	DISHNAME = %DISH_NAME%
 	FLAG:料理 = SELECT_MENU
 	SELECT_MENU = 0
-	PRINTFORML 使用食材：%ITEMNAME_TR(SELECT_ING)%
+	PRINTFORML 使用食材：%ITEMNAME:SELECT_ING%
 	ITEM:SELECT_ING --
 	CALL DISH_COOKING(0)
 ELSE
@@ -310,7 +308,7 @@ ELSE
 			;選択中の材料がなければ材料を再設定
 			IF !RESULT
 				FOR LOCAL, 1, 11
-					IF ITEM:(DISH_ING:LOCAL) > 0
+					IF ITEM:(DISH_ING:LOCAL)
 						SELECT_ING = DISH_ING:LOCAL
 						BREAK
 					ENDIF
@@ -351,8 +349,8 @@ ENDSELECT
 #DIMS TASTE_STR              	;表示対象の味データ
 #DIMS TASTE_LIST_PO, 100		;好きな味リスト
 #DIMS TASTE_LIST_NE, 100		;嫌いな味リスト
-#DIM  TASTE_CNT_PO,  100	;好きな味リスト各要素の重複个数
-#DIM  TASTE_CNT_NE,  100	;嫌いな味リスト各要素の重複个数
+#DIM  TASTE_CNT_PO,  100	;好きな味リスト各要素の重複個数
+#DIM  TASTE_CNT_NE,  100	;嫌いな味リスト各要素の重複個数
 #DIM  TASTE_NUM_PO			;好きな味の種類の総数
 #DIM  TASTE_NUM_NE			;嫌いな味の種類の総数
 #DIMS RESULTS_TASTE,6		;最終的な好みの傾向(3位まで)
@@ -361,8 +359,8 @@ ENDSELECT
 
 IF MODE == "GET"
 	;味リストの取得
-	TASTE_LIST_PO += GET_STR(, "キャラデータ", C_ID, "料理：喜欢的味道")
-	TASTE_LIST_NE += GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道")
+	TASTE_LIST_PO += GET_STR(, "キャラデータ", C_ID, "料理：好きな味")
+	TASTE_LIST_NE += GET_STR(, "キャラデータ", C_ID, "料理：嫌いな味")
 	
 ELSEIF MODE == "OUT"
 	CALLF CNT_SPLIT(TASTE_LIST_PO, TASTE_LIST_PO, TASTE_CNT_PO, TASTE_NUM_PO)
@@ -443,14 +441,14 @@ IF DISH_NAME_ENEMY == ""
 	LOOP_CHECK = 1
 	GOTO LOOP
 ENDIF
-;4.974确认，生成的料理编号随机控制序列超过100个元素，就会导致TEXTR报错
+
 DISH_NAME_ENEMY = %TEXTR(DISH_NAME_ENEMY)%
 DISH_NUM = TOINT(DISH_NAME_ENEMY)
 CALL DISHDATA(DISH_NUM, DISH_TYPE, 0)
 IF 対戦相手 == CALLNAME:TARGET
 	CALL DISH_TASTE_FROM_CHARA(TARGET)
 ENDIF
-RESULTS:0 = %DISHNAME_TR()%
+RESULTS:0 = %DISH_NAME%
 RESULTS:1 = %DISH_TASTE%
 RETURN 0
 
@@ -458,7 +456,7 @@ RETURN 0
 ;対戦相手の料理を生成する
 ;-------------------------------------------------
 @ENEMY_COOKING(DISH_NAME_ENEMY, DISH_TASTE_ENEMY, ENEMY_LV, 対戦相手)
-#DIM BONUS点
+#DIM ボーナス点
 #DIM 減点
 #DIMS DISH_NAME_ENEMY
 #DIMS DISH_TASTE_ENEMY
@@ -477,10 +475,10 @@ DISH_TASTE_ENEMY += DISH_NAME_ENEMY + "/"
 DISH_TASTE_ENEMY += DISH_TYPE + "/"
 ;[中立温度]は夏だけ冷たい（そば,うどん等）
 IF STRCOUNT(DISH_TASTE_ENEMY, "中立温度/")
-	IF GET_MONTH() == "夏之月"
-		DISH_TASTE_ENEMY '= REPLACE(DISH_TASTE_ENEMY, "中立温度\/", "冷/")
+	IF GET_MONTH() == "夏の月"
+		DISH_TASTE_ENEMY '= REPLACE(DISH_TASTE_ENEMY, "中立温度\/", "冷たい/")
 	ELSE
-		DISH_TASTE_ENEMY '= REPLACE(DISH_TASTE_ENEMY, "中立温度\/", "温暖/")
+		DISH_TASTE_ENEMY '= REPLACE(DISH_TASTE_ENEMY, "中立温度\/", "温かい/")
 	ENDIF
 ENDIF
 ;鮮度設定,調理時間を追加しておく
@@ -488,87 +486,87 @@ DISH_LIMIT = DISH_MAXLIMIT + DISH_TIME
 
 ;表示用の料理名設定
 EX_DISH_NAME = 
-IF STRCOUNT(DISH_TASTE_ENEMY, "女僕流/")
-	EX_DISH_NAME += "女仆流"
+IF STRCOUNT(DISH_TASTE_ENEMY, "メイド流/")
+	EX_DISH_NAME += "メイド流"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "天狗流/")
 	EX_DISH_NAME += "天狗流"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "冥界風/")
-	EX_DISH_NAME += "冥界风"
+	EX_DISH_NAME += "冥界風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "天界風/")
-	EX_DISH_NAME += "天界风"
+	EX_DISH_NAME += "天界風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "地底風/")
-	EX_DISH_NAME += "地底风"
+	EX_DISH_NAME += "地底風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "地獄風/")
-	EX_DISH_NAME += "地狱风"
+	EX_DISH_NAME += "地獄風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "畜生流/")
 	EX_DISH_NAME += "畜生流"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "月都風/")
-	EX_DISH_NAME += "月都风"
+	EX_DISH_NAME += "月都風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "玉兎流/")
-	EX_DISH_NAME += "玉兔流"
+	EX_DISH_NAME += "玉兎流"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "魔界風/")
-	EX_DISH_NAME += "魔界风"
+	EX_DISH_NAME += "魔界風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "夢幻風/")
-	EX_DISH_NAME += "梦幻风"
+	EX_DISH_NAME += "夢幻風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "外界風/")
-	EX_DISH_NAME += "外界风"
+	EX_DISH_NAME += "外界風"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "化学的/")
 	EX_DISH_NAME += "化学的"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "小人族秘伝の味/")
-	EX_DISH_NAME += "小人族秘传的"
+	EX_DISH_NAME += "小人族秘伝の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "稗田家秘伝の味/")
-	EX_DISH_NAME += "稗田家秘传的"
-ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "純化的味道/")
-	EX_DISH_NAME += "纯化的"
+	EX_DISH_NAME += "稗田家秘伝の"
+ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "純化した味/")
+	EX_DISH_NAME += "純化した"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "逆転/")
-	EX_DISH_NAME += "逆转的"
+	EX_DISH_NAME += "逆転した"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "大火力/")
 	EX_DISH_NAME += "大火力"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "氷結/")
-	EX_DISH_NAME += "结冰的"
-ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "心跳味/")
-	EX_DISH_NAME += "惊喜口味"
+	EX_DISH_NAME += "氷結"
+ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "ドッキリ味/")
+	EX_DISH_NAME += "ドッキリ"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "未知の味/")
-	EX_DISH_NAME += "奇妙口味"
-ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "闪耀/")
-	EX_DISH_NAME += "闪光"
+	EX_DISH_NAME += "不思議な"
+ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "きらめき/")
+	EX_DISH_NAME += "きらめく"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "生命力/")
-	EX_DISH_NAME += "妖精的"
+	EX_DISH_NAME += "妖精の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "仙術/")
-	EX_DISH_NAME += "仙人的"
+	EX_DISH_NAME += "仙人の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "鬼の魔力/")
-	EX_DISH_NAME += "鬼的"
+	EX_DISH_NAME += "鬼の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "血の魔力/")
-	EX_DISH_NAME += "吸血鬼的"
+	EX_DISH_NAME += "吸血鬼の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "魔力/")
-	EX_DISH_NAME += "魔法的"
+	EX_DISH_NAME += "魔法の"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "妖力/")
-	EX_DISH_NAME += "妖气的"
+	EX_DISH_NAME += "妖しい"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "霊障/")
-	EX_DISH_NAME += "灵气的"
+	EX_DISH_NAME += "霊的"
 ELSEIF STRCOUNT(DISH_TASTE_ENEMY, "秘術/")
-	EX_DISH_NAME += "神秘的"
+	EX_DISH_NAME += "ミスティックな"
 ENDIF
 EX_DISH_NAME += DISH_NAME_ENEMY
 
-BONUS点 = 0
+ボーナス点 = 0
 減点 = 0
 
 SIF STRCOUNT(DISH_TASTE_ENEMY, "旬/")
-	BONUS点 += 2
-SIF STRCOUNT(DISH_TASTE_ENEMY, "玉兎流/") && STRCOUNT(DISH_TASTE, "胡萝卜/")
-	BONUS点 += 2
+	ボーナス点 += 2
+SIF STRCOUNT(DISH_TASTE_ENEMY, "玉兎流/") && STRCOUNT(DISH_TASTE_ENEMY, "ニンジン/")
+	ボーナス点 += 2
 SIF STRCOUNT(DISH_TASTE_ENEMY, "プロの味/")
-	BONUS点 += 2
-SIF STRCOUNT(DISH_TASTE_ENEMY, "闪耀/")
-	BONUS点 += 1
+	ボーナス点 += 2
+SIF STRCOUNT(DISH_TASTE_ENEMY, "きらめき/")
+	ボーナス点 += 1
 ;得意料理や切れ味は該当していない場合消去されているのでこれでOK,得意料理は"/"を外す
 SIF STRCOUNT(DISH_TASTE_ENEMY, "得意料理")
-	BONUS点 += 2
+	ボーナス点 += 2
 SIF STRCOUNT(DISH_TASTE_ENEMY, "切れ味/")
-	BONUS点 += 1
-SIF STRCOUNT(DISH_TASTE_ENEMY, "美味的水/")
-	BONUS点 += 1
+	ボーナス点 += 1
+SIF STRCOUNT(DISH_TASTE_ENEMY, "おいしい水/")
+	ボーナス点 += 1
 ;嫉妬,隠し味の効果は食べる時
 
 DISH_RANK_ENEMY = 1
@@ -576,7 +574,7 @@ SIF ENEMY_LV >= 3
 	DISH_RANK_ENEMY = 3
 
 
-DISH_BASEPOINT = ENEMY_LV + ENEMY_LV + DISH_RANK_ENEMY + BONUS点 - 減点
+DISH_BASEPOINT = ENEMY_LV + ENEMY_LV + DISH_RANK_ENEMY + ボーナス点 - 減点
 DISH_BASEPOINT = MIN(300 + (DISH_BASEPOINT * 20), 700)
 RESULTS = %EX_DISH_NAME%
 

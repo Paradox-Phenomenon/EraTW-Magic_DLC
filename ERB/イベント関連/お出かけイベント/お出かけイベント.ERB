@@ -30,34 +30,33 @@ SIF GETBIT(TFLAG:固有遭遇イベント, MAP_ID)
 	RETURN
 SETBIT TFLAG:固有遭遇イベント, MAP_ID
 CALL FISHER_YATES_SHAFFLE(RANDOM_CHARANUM)
-;随机挑选50人
+;ランダムで50人ピックアップ
 FOR COUNT, 0, 50
 	C_ID = SHAFFLE_ARRAY:COUNT
-	;排除禁用/住在据点、和玩家你
+	;出禁/拠点住まい、あなたを弾く
 	SIF CFLAG:C_ID:出禁 || CFLAG:C_ID:神社在住 || !C_ID
 		CONTINUE
-	;排除预定来访/工作/参加宴会的角色
+	;訪問予定/仕事/宴会参加キャラを弾く
 	SIF CFLAG:C_ID:拠点来訪 || 仕事日チェック(C_ID) || CFLAG:C_ID:宴会参加
 		CONTINUE
-	;排除活动时间外/衰弱中/今天已经见过的角色
-	SIF !VISIT(C_ID) || CFLAG:C_ID:衰弱 || TCVAR:C_ID:今天有否见面
+	;活動時間外/衰弱中キャラ/もう会った子を弾く
+	SIF !VISIT(C_ID) || CFLAG:C_ID:衰弱 || !TCVAR:C_ID:今日会ったか
 		CONTINUE
-	;排除不是这张地图的居民或者不会到这里来的角色
-	SIF CFLAG:C_ID:自宅位置 / 100 != MAP_ID && CFLAG:C_ID:經常去的地方 != MAP_ID
+	;自宅があるかよく行く地域じゃないと駄目
+	SIF CFLAG:C_ID:自宅位置 / 100 != MAP_ID && CFLAG:C_ID:よく行く地域 != MAP_ID
 		CONTINUE
-	;剧本内的实行判定
+	;ここまで通ったキャラをチェック
 	RESULT = 0
 	CALL KOJO_MESSAGE_SEND("ODEKAKE", MAP_ID, C_ID)
 	SIF RESULT == -1
 		CONTINUE
-	;角色出现的预处理
+	;その子を出現させる処理
 	CFLAG:C_ID:遭遇位置 = MAP_ID * 100 + 10
 	CFLAG:C_ID:現在位置 = CFLAG:C_ID:遭遇位置
 	CFLAG:C_ID:最後に会った日 = DAY
-	TCVAR:C_ID:今天有否见面 = 1
+	TCVAR:C_ID:今日会ったか = 1
 	IF RESULT == 0
-		;PRINTFORMW %CALLNAME:C_ID%に出くわした
-		PRINTFORMW 遇到了%CALLNAME:C_ID%
+		PRINTFORMW %CALLNAME:C_ID%に出くわした
 		CALL KOJO_MESSAGE_SEND("EVENT",1,C_ID,9,0)
 	ENDIF
 	BREAK

@@ -1,0 +1,1433 @@
+;======================================================
+;A place to store things until they can be done cleaner or until I can find a place to put them
+;======================================================
+
+@TEMP_SHOW_CHARA_LIST(LIST_TYPE = "存在するキャラリスト", DISP_TYPE_STR = "体力気力", OP)
+#DIMS LIST_TYPE                     ;リストの種別
+#DIMS DISP_TYPE_STR                 ;Ensures it can still be called like normal
+#DIM  DISP_TYPE                      ;Handle the type as int, rather than string
+#DIMS OP                            ;機能オプション
+#DIM  GET_LIST = 1                  ;リスト更新フラグ
+#DIM  L_ID                          ;リスト上の番号（ループカウンタ）、登録番号にあらず
+#DIM  L_CLASS_ID                    ;リストのクラス内ID
+#DIM  CHARA_LIST , キャラクタ数上限 ;リスト本体、登録番号にて記録
+#DIM  CHARA_CNT                     ;リストに該当したキャラの数
+#DIMS INPUT_STR                     ;入力内容の一時保持
+#DIM  INPUT_INT                     ;入力内容をINT化したモノ
+#DIM  NOW_GROUP = 1                 ;表示中のキャラグループ
+#DIM  LAST_GROUP                    ;キャラグループ総数
+#DIM  SORT_TYPE                     ;キャラリストのソートタイプ
+;表示タイプの名称
+{
+#DIMS CONST DISP_NAME = 
+	"体力気力", "感度など", "性技", "刻印", "技能", "好感度", "勝負"
+}
+{
+#DIMS CONST DISP_MEMO = 
+	"体力", "気力",
+	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感",
+	"親密", "従順", "欲望", "技巧", "奉仕精神", "露出癖",
+	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "マゾ", "サド", "精液",
+	"苦痛", "快楽", "不埒", "反発", "時姦",
+	"教養", "話術", "戦闘", "清掃", "料理", "音楽", "釣り", "採集", "調合",
+	"好感", "信頼", "欲求",
+	"弾幕", "ムシバトル", "料理"
+}
+#DIM CREDRAW
+#DIM FIRST_LINE
+
+;情報表示用
+SELECTCASE DISP_TYPE_STR
+	CASE "体力気力"
+		DISP_TYPE = 0
+	CASE "感度など"
+		DISP_TYPE = 1
+	CASE "性技"
+		DISP_TYPE = 2
+	CASE "刻印"
+		DISP_TYPE = 3
+	CASE "好感度"
+		DISP_TYPE = 4
+ENDSELECT
+
+FIRST_LINE = LINECOUNT
+$REPRINT
+CLEARLINE LINECOUNT - FIRST_LINE
+CREDRAW = CURRENTREDRAW()
+REDRAW 0
+
+;LIST_TYPE_TR '= LISTING_TR(LIST_TYPE)
+
+IF GET_LIST || ResetList
+	CALL MAKE_CHARA_LIST(LIST_TYPE, L_CLASS_ID, CHARA_LIST, CHARA_CNT)
+	GET_LIST = 0
+	SORT_TYPE = -1
+	ResetList = 0
+ENDIF
+DRAWLINE
+
+;項目なし
+IF CHARA_CNT <= 0
+	PRINTFORML ＜該当なし＞　%LIST_TYPE%
+	PRINTFORML 
+	DRAWLINE
+	FOR LOCAL, 0, 40
+		PRINTL
+	NEXT
+;項目あり
+ELSE
+	;現在のタイプの総グループ数を更新
+	LAST_GROUP = 1 + (CHARA_CNT - 1) / 40
+	PRINTFORML （該当{CHARA_CNT}名　{NOW_GROUP}/{LAST_GROUP}）　%LIST_TYPE%　　色付きのキャラは口上あり
+	PRINTFORM 
+	CALL TEMP_CHARA_BUTTON(-1, , DISP_TYPE, SORT_TYPE)
+	DRAWLINE
+	FOR L_ID, (NOW_GROUP - 1) * 40, NOW_GROUP * 40
+		IF INRANGE(L_ID, 0, CHARA_CNT - 1)
+			CALL TEMP_CHARA_BUTTON(L_ID, CHARA_LIST:L_ID, DISP_TYPE, SORT_TYPE)
+		ELSE
+			PRINTL
+		ENDIF
+	NEXT
+ENDIF
+DRAWLINE
+
+
+IF STRCOUNT(OP, "「情報固定」")
+	PRINTFORM %" "*20%
+ELSE
+	PRINTBUTTON @"<- %DISP_NAME:((DISP_TYPE - 1 + VARSIZE("DISP_NAME")) % VARSIZE("DISP_NAME")), 16, LEFT%", 444
+ENDIF
+
+;modded to have infinite scroll
+IF LAST_GROUP == 1
+	SETCOLOR 0x606060
+	PRINTFORM %"前のキャラ",15,LEFT%
+	RESETCOLOR 
+ELSE
+	PRINTBUTTON @"%"前のキャラ",15,LEFT%", 888
+ENDIF
+PRINTFORM 
+IF LAST_GROUP == 1
+	SETCOLOR 0x606060
+	PRINTFORM %"次のキャラ",15,LEFT%
+	RESETCOLOR 
+ELSE
+	PRINTBUTTON @"%"次のキャラ",15,LEFT%", 222
+ENDIF
+IF STRCOUNT(OP, "「情報固定」")
+	PRINTFORM 　　　　　　　　　　　
+ELSE
+	PRINTBUTTON @"%DISP_NAME:((DISP_TYPE + 1 + VARSIZE("DISP_NAME")) % VARSIZE("DISP_NAME")), 20, LEFT% →", 666
+ENDIF
+PRINTFORML 
+
+PRINTFORML 
+PRINTBUTTON "[999] もどる　", 999
+PRINTFORM                
+SIF STRCOUNT(OP, "「条件変更」")
+	PRINTBUTTON "[500] 条件変更", 555
+IF FLAG:画像表示
+	PRINTFORM %" "*15%
+	PRINTBUTTON "[777] 人物名簿", 777
+ENDIF
+PRINTFORML 
+
+
+INPUT
+SELECTCASE RESULT
+	;先にシステム系を処理、222なら余裕あるっしょ（Kでは使えんわな）
+	CASE 222, 888
+		SIF LAST_GROUP == 1
+			GOTO REPRINT
+		NOW_GROUP = PAGE_HANDLE(RESULT, 888, NOW_GROUP, 1, LAST_GROUP)
+		GOTO REPRINT
+	CASE 444
+		SIF STRCOUNT(OP, "「情報固定」")
+			GOTO RETRY
+		DISP_TYPE = (DISP_TYPE - 1 + VARSIZE("DISP_NAME")) % VARSIZE("DISP_NAME")
+		GOTO REPRINT
+	CASE 555
+		SIF !STRCOUNT(OP, "「条件変更」")
+			GOTO RETRY
+		CALL TEMP_CHANGE_LIST(LIST_TYPE, OP)
+		GET_LIST = 1
+		NOW_GROUP = 1
+		GOTO REPRINT
+	CASE 666
+		SIF STRCOUNT(OP, "「情報固定」")
+			GOTO RETRY
+		DISP_TYPE = (DISP_TYPE + 1 + VARSIZE("DISP_NAME")) % VARSIZE("DISP_NAME")
+		GOTO REPRINT
+	CASE 999
+		;REFで配列作れば多キャラ選択も行けそう
+		;受け渡しはともかくとして表示まわりがめんどいか
+		GET_LIST = 1
+		NOW_GROUP = 1
+		RETURN 999
+	CASE 1008 TO 1091 ;the max range after TO is DISP_MEMO-1*2?
+		SORT_TYPE = RESULT
+		CALL TEMP_SORT_LIST(RESULT, CHARA_LIST, CHARA_CNT)
+		GOTO REPRINT
+	CASE 777
+		SIF !FLAG:画像表示
+			GOTO REPRINT
+		CALL TEMP_FULL_ROSTER
+		GOTO REPRINT
+	CASEELSE
+	;キャラが選択された時
+		IF !INRANGE(RESULT, MAX(0, (NOW_GROUP - 1) * 40), MIN(CHARA_CNT - 1, NOW_GROUP * 40))
+			PRINTFORMW {RESULT} 範囲外
+			GOTO REPRINT
+		ELSEIF L_CLASS_ID == -1 && !CHECK_CHARA(CHARA_LIST:RESULT, LIST_TYPE)
+			PRINTFORMW {RESULT} リストじゃない
+			GOTO REPRINT
+		ELSEIF L_CLASS_ID > 0 && !GET_INT(CHARA_LIST:RESULT, "キャラリスト", L_CLASS_ID, "判定")
+			PRINTFORMW {RESULT} リストに弾かれる
+			GOTO REPRINT
+		ENDIF
+		;ここだけDO-LOOPぬけます
+ENDSELECT
+$RETRY
+
+IF STRCOUNT(OP, "「情報表示」")
+	CALL TEMP_LIST_CHARA_STATE(CHARA_LIST, RESULT, CHARA_CNT, OP)
+	SIF !RESULT
+		GOTO REPRINT
+	NOW_GROUP = 1
+	GET_LIST = 1
+	;一応RESULTが正になるのは「最終確認」のみだが念のために判定
+	SIF STRCOUNT(OP, "「最終確認」")
+		RETURN RESULT
+ELSE
+	NOW_GROUP = 1
+	GET_LIST = 1
+	RETURN CHARA_LIST:RESULT
+ENDIF
+
+
+@TEMP_CHARA_BUTTON(LABEL, C_ID, DISP_TYPE = 0, SORT_TYPE)
+#DIM  LABEL
+#DIM  C_ID
+#DIM DISP_TYPE
+#DIM SORT_TYPE
+#DIMS 表示文
+#DIM  表示ステータス番号
+#DIM  CONST バー長さ = 10
+;LABELが負数はありえないので表示内容のアナウンスに流用してます
+{
+#DIMS CONST DISP_NAME = 
+	"体力気力", "感度など", "性技", "刻印", "技能", "好感度", "勝負"
+}
+{
+#DIMS CONST DISP_MEMO = 
+	"体力", "気力",
+	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感",
+	"親密", "従順", "欲望", "技巧", "奉仕精神", "露出癖",
+	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "マゾ", "サド", "精液",
+	"苦痛", "快楽", "不埒", "反発", "時姦",
+	"教養", "話術", "戦闘", "清掃", "料理", "音楽", "釣り", "採集", "調合",
+	"好感", "信頼", "欲求",
+	"弾幕", "ムシバトル", "料理"
+}
+;2
+;7
+;13
+;22
+;27
+;36
+;39
+;42
+
+IF LABEL >= 0
+	;Temporary code, stopgap since the original flag used isn't set correctly
+	TRYCALLFORM M_KOJO_K{NO:C_ID}
+	SIF RESULT
+		SETCOLOR 103,228,126
+	SIF C_ID == MASTER
+		SETCOLOR C_AQUA
+	PRINTFORM [{LABEL, 3}] %CALLNAME:C_ID, 14, LEFT%
+	RESETCOLOR
+ENDIF
+
+SELECTCASE DISP_TYPE
+CASE 0 ;STA and ENE
+	IF LABEL < 0
+		PRINTFORM %"　" * 11%
+		CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 0)
+		PRINTFORM %"　" * 8%
+		CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 1)
+	ELSE
+		CALL BASE_BAR(C_ID, "体力", 10, "緑", "「種類表記無し」")
+		CALL BASE_BAR(C_ID, "気力", 10, "青", "「種類表記無し」")
+	ENDIF
+	PRINTFORML 
+CASE 1 ;Sense
+	IF LABEL < 0
+		PRINTFORM %" " * 6%感度%" "*10%
+		FOR LOCAL, 2, 13
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, LOCAL)
+			PRINT |
+		NEXT
+	ELSE
+		FOR LOCAL, 0, 15
+			SIF ABLNAME:LOCAL == ""
+				CONTINUE
+			SELECTCASE LOCAL
+				CASE 13
+					PRINTFORM     
+				CASE 14
+					PRINTFORM   
+			ENDSELECT
+			CALL PRINT_RANK(ABL:C_ID:LOCAL, "MAX_99")
+			PRINTFORM {ABL:C_ID:LOCAL, 4}|
+		NEXT
+	ENDIF
+	PRINTFORML 
+
+CASE 2 ;Technique
+	IF LABEL < 0
+		PRINTFORM %" " * 6%性技%" "*10%
+		FOR LOCAL, 13, 22
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, LOCAL)
+			PRINT |
+		NEXT
+	ELSE
+		;超適当につき修正の余地あり
+		FOR LOCAL, 50, 56
+			SIF ABLNAME:LOCAL == ""
+				CONTINUE
+			CALL PRINT_RANK(ABL:C_ID:LOCAL, "MAX_6")
+			PRINTFORM {ABL:C_ID:LOCAL, 4}|
+		NEXT
+		PRINTFORM 
+		CALL PRINT_RANK(ABL:C_ID:15, "MAX_99")
+		PRINTFORM {ABL:C_ID:15, 4}|
+		PRINTFORM 
+		CALL PRINT_RANK(ABL:C_ID:16, "MAX_99")
+		PRINTFORM {ABL:C_ID:16, 4}|
+		PRINTFORM 
+		CALL PRINT_RANK(ABL:C_ID:31, "MAX_99")
+		PRINTFORM {ABL:C_ID:31, 4}|
+	ENDIF
+	PRINTFORML 
+
+
+CASE 3 ;Marks
+	IF LABEL < 0
+		PRINTFORM %" " * 6%刻印%" "*10%
+		FOR LOCAL, 22, 27
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, LOCAL)
+			PRINT |
+		NEXT
+	ELSE
+		;超適当につき修正の余地あり
+		FOR 表示ステータス番号, 0, 6
+			IF MARKNAME:表示ステータス番号 == ""
+				CONTINUE
+			ENDIF
+			;反発刻印履歴は表示しないように
+			SIF 表示ステータス番号 == 4
+				CONTINUE
+			IF 表示ステータス番号 == 3
+				CALL COLOR_STAMP(MARK:C_ID:表示ステータス番号, 3, "×", C_RED)
+			ELSE
+				CALL COLOR_STAMP(MARK:C_ID:表示ステータス番号, 3, "★", 0xFFFF00)
+			ENDIF
+			PRINTFORM |
+		NEXT
+	ENDIF
+	PRINTFORML 
+
+CASE 4 ;skills
+	IF LABEL < 0
+		PRINTFORM %" " * 6%技能%" "*10%
+		FOR LOCAL, 27, 36
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, LOCAL)
+			PRINT |
+		NEXT
+	ELSE
+		COUNT = 43, 41, 42, 40, 44, 45
+		;超適当につき修正の余地あり
+		FOR LOCAL, 0, 6
+			SIF ABLNAME:(COUNT:LOCAL) == ""
+				CONTINUE
+			CALL PRINT_RANK(ABL:C_ID:(COUNT:LOCAL), "MAX_6")
+			PRINTFORM {ABL:C_ID:(COUNT:LOCAL), 4}|
+		NEXT
+		FOR LOCAL, 47, 50
+			SIF TALENTNAME:LOCAL == ""
+				CONTINUE
+			CALL PRINT_RANK(TALENT:C_ID:LOCAL, "MAX_6")
+			PRINTFORM {TALENT:C_ID:LOCAL, 4}|
+		NEXT
+	ENDIF
+	PRINTFORML 
+
+CASE 5 ;Favor
+	IF LABEL < 0
+		PRINTFORM %" " * 23%
+		FOR LOCAL, 36, 38
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, LOCAL)
+			PRINT |
+			SELECTCASE LOCAL
+				CASE 36
+					PRINTFORM     
+				CASE 37
+					SIF TALENT:MASTER:劣情察知
+						PRINTFORM    
+			ENDSELECT
+		NEXT
+		IF TALENT:MASTER:劣情察知
+			CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 38)
+			PRINT |
+		ENDIF
+		PRINTFORML
+	ELSE
+		;好感度
+		CALL PRINT_RANK(CFLAG:C_ID:好感度, "MAX_50000")
+		PRINTFORM {CFLAG:C_ID:好感度, 7}| 
+		
+		;信頼度
+		CALL PRINT_RANK(CFLAG:C_ID:信頼度, "MAX_20000")
+		PRINTFORM {CFLAG:C_ID:信頼度, 7}|
+		
+		;欲求
+		IF TALENT:MASTER:劣情察知
+			SELECTCASE CFLAG:C_ID:溜まってる度
+			CASE IS >= 665
+				SETCOLOR C_RED
+			CASE IS >= 332
+				SETCOLOR C_YELLOW
+			ENDSELECT
+			PRINTFORM {CFLAG:C_ID:溜まってる度 / 10, 6}
+			RESETCOLOR
+			PRINT ％|
+		ENDIF
+		;IF DIALOGSTATUS:C_ID:0 == -1 || C_ID == MASTER
+			;PRINTFORM %" ",10%|
+		;ELSE
+			;PRINTFORM {DIALOGSTATUS:C_ID:(CFLAG:C_ID:口上セレクタ), 8}％|
+		;ENDIF
+
+		;恋慕
+		;IF TALENT:C_ID:妻
+			;SETCOLOR C_RED
+			;表示文 '= PRINT_MALE("Husband", C_ID)
+		;ELSEIF TALENT:C_ID:妾
+			;SETCOLOR C_RED
+			;表示文 = Concubine
+		IF TALENT:C_ID:恋人
+			SETCOLOR C_RED
+			表示文 = 恋人
+		;ELSEIF TALENT:C_ID:恋慕 > 1
+			;SETCOLOR 0xEE60EE
+			;表示文 = Deep Love
+		ELSEIF TALENT:C_ID:恋慕 == 1
+			SETCOLOR 0xEE60EE
+			表示文 = 恋慕
+		ELSEIF TALENT:C_ID:愛欲 == 1
+			SETCOLOR 0x2E8B57
+			表示文 = 愛欲
+		ELSEIF TALENT:C_ID:セフレ == 1
+			SETCOLOR 0x3D85C6
+			表示文 = セフレ
+		ELSEIF TALENT:C_ID:セフレ == 2
+			SETCOLOR 0xFF6347
+			表示文 = 愛人
+		ELSEIF TALENT:C_ID:思慕 == 1
+			表示文 = 思慕
+		ELSE
+			表示文 = 
+		ENDIF
+		PRINTFORM %表示文, 9, LEFT%
+		RESETCOLOR
+		PRINT |
+		
+		;既成事実
+		SELECTCASE CFLAG:(C_ID):生解禁
+			CASE 2
+				表示文 = 危険日生Ｈ解禁
+			CASE 1
+				表示文 = 生Ｈ解禁
+			CASE 0
+				IF GETBIT(CFLAG:(C_ID):既成事実,1)
+					表示文 = 合意取得
+				ELSE
+					表示文 = 
+				ENDIF
+		ENDSELECT
+		PRINTFORM %表示文, 14, LEFT%|
+		
+		;生理周期可視化
+		SIF FLAG:1007
+			CALL PRINT_CYCLE_翌日(C_ID)
+		SIF CFLAG:(C_ID):出産経過日 > 0
+			PRINTFORM 育児中 
+		
+		RESETCOLOR
+		SIF GETBIT(CFLAG:(C_ID):既成事実,2)
+			;PRINTFORM 恋人同士 
+			PRINTFORM 
+		;弱み
+		IF CFLAG:(C_ID):弱み握り && CFLAG:(C_ID):弱み握られ
+			PRINTFORM %CALLNAME:MASTER%と互いの弱みを握りあっている
+		ELSEIF CFLAG:(C_ID):弱み握り
+			PRINTFORM %CALLNAME:MASTER%の弱みを握っている
+		;SIF GETBIT(CFLAG:(C_ID):弱み,0)
+		;	PRINTFORM ぱんつを没収された 
+		;SIF GETBIT(CFLAG:(C_ID):弱み,1)
+		;	PRINTFORM 情事を見られた 
+		ELSEIF CFLAG:(C_ID):弱み握られ
+			PRINTFORM %CALLNAME:MASTER%にオナニー現場を目撃されたことがある
+		ENDIF
+		PRINTFORML
+	ENDIF
+	
+CASE 6 ;victories&etc
+	IF LABEL < 0
+		PRINTFORM %" " * 24%
+		CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 39)
+		PRINT |
+		PRINTFORM 
+		CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 40)
+		PRINT |
+		PRINTFORM       
+		CALL TEMP_MAKE_SORT_BUTTON(SORT_TYPE, 41)
+		PRINT |
+		PRINTFORML
+	ELSE
+		PRINTFORM 　
+		SELECTCASE CFLAG:(C_ID):弾幕勝負勝利
+			CASE IS >= 1
+				表示文 = 勝済
+				CALL COLORMESSAGE, "★", C_YELLOW
+		CASEELSE
+			表示文 = 
+			PRINTFORM 　
+		ENDSELECT
+		PRINTFORM %表示文, 6, RIGHT%|
+		
+		PRINTFORM     
+		SELECTCASE CFLAG:(C_ID):ムシバトル直接勝利
+			CASE IS >= 1
+				表示文 = 勝済
+				CALL COLORMESSAGE, "★", C_YELLOW
+		CASEELSE
+			表示文 = 
+			PRINTFORM 　
+		ENDSELECT
+		PRINTFORM %表示文, 6, RIGHT%|
+
+		PRINTFORM     
+		SELECTCASE CFLAG:(C_ID):料理勝負勝利
+			CASE IS >= 1
+				表示文 = 勝済
+				CALL COLORMESSAGE, "★", C_YELLOW
+		CASEELSE
+			表示文 = 
+			PRINTFORM 　
+		ENDSELECT
+		PRINTFORM %表示文, 6, RIGHT%|
+		PRINTFORML
+	ENDIF
+CASEELSE
+	THROW 異常なDISP_TYPE　{DISP_TYPE}
+ENDSELECT
+
+@TEMP_SORT_LIST(SORT_TYPE, CHARA_LIST, CHARA_CNT)
+#DIM      SORT_TYPE  ;ソート内容の指示
+#DIM      MEMO_TYPE  ;今回のソート項目、CSVでの要素数
+#DIMS     CHECK_VAR  ;チェック対象となる変数名
+#DIMS     CHECK_TYPE ;比較演算子の種類
+#DIM      NUM_LOOP   ;ループ回数
+#DIM  REF CHARA_LIST ;キャラリストの内容配列
+#DIM      CHARA_CNT  ;リストに含まれるキャラ数
+;ソート項目の種別
+{
+#DIMS CONST DISP_MEMO = 
+	"体力", "気力", 
+	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", 
+	"親密", "従順", "欲望", "技巧", "奉仕精神", "露出癖",
+	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "マゾ", "サド", "精液",
+	"苦痛", "快楽", "不埒", "反発", "時姦", 
+	"教養", "話術", "戦闘", "清掃", "料理", "音楽", "釣り", "採集", "調合",
+	"好感", "信頼", "欲求", 
+	"弾幕勝負勝利", "ムシバトル直接勝利", "料理勝負勝利"
+}
+;ソート項目の各キャラ変数における位置
+{
+#DIM CONST MEMO_ID = 
+	 0,  1, 
+	 0,  1,  2,  3,  4, 
+	 9, 10, 11, 12, 13, 14,
+	50, 51, 52, 53, 54, 55, 15, 16, 31,
+	 0,  1,  2,  3,  5, 
+	43, 41, 42, 40, 44, 45, 47, 48, 49,
+	 2,  4,340,
+   930,932,933
+}
+;ソート項目の検索
+MEMO_TYPE = 0
+NUM_LOOP = SortListSize
+MEMO_TYPE = SORT_TYPE%SortListSize
+
+SELECTCASE DISP_MEMO:MEMO_TYPE ;refer to CHARA_COMPARE for CHECK_VAR
+CASE "体力", "気力"
+	CHECK_VAR '= "BASE"
+CASE "Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", "親密", "従順", "欲望", "技巧", "奉仕精神", "露出癖"
+	CHECK_VAR '= "ABL"
+CASE "指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "マゾ", "サド", "精液"
+	CHECK_VAR '= "ABL"
+CASE "苦痛", "快楽", "不埒", "反発", "時姦",
+	CHECK_VAR '= "MARK"
+CASE "教養", "話術", "戦闘", "清掃", "料理", "音楽",
+	CHECK_VAR '= "ABL"
+CASE "釣り", "採集", "調合",
+	CHECK_VAR '= "TALENT"
+CASE "好感", "信頼", "欲求"
+	CHECK_VAR '= "CFLAG"
+CASE "弾幕勝負勝利", "ムシバトル直接勝利", "料理勝負勝利"
+	CHECK_VAR '= "CFLAG"
+CASEELSE
+	THROW 不正なDISP_MEMO:MEMO_TYPE %DISP_MEMO:MEMO_TYPE%、MEMO_TYPE {MEMO_TYPE}
+ENDSELECT
+
+IF SORT_TYPE < 1050
+	CHECK_TYPE '= ">="
+ELSEIF SORT_TYPE >= 1050
+	CHECK_TYPE '= "<="
+ENDIF
+
+;ソート実処理
+LOCAL:0 = 1
+WHILE LOCAL:0 < CHARA_CNT
+	SIF !(LOCAL:0)
+		LOCAL:0 ++
+	IF CHARA_COMPARE(CHECK_VAR, MEMO_ID:MEMO_TYPE, CHARA_LIST:(LOCAL:0 - 1), CHECK_TYPE, CHARA_LIST:(LOCAL:0))
+		LOCAL:0 ++
+	ELSE
+		SWAP CHARA_LIST:(LOCAL:0 - 1), CHARA_LIST:(LOCAL:0)
+		LOCAL:0 --
+	ENDIF
+WEND
+
+
+;###############################################
+;SORT_TYPE, <41 descending, >41 ascending
+;BUTTON, which button it is, corresponds with DISP_MEMO
+;starting value of a first button with modulo % should be equal to 0! update all button values accordingly afterward!
+;main thing is the total amount of items in DISP_MEMO (aka headers for sorting, must be the same everywhere)
+;you'll need to change the button modulo with it (%41) (41 is the amount of items), then see which nearest value of 1000%41 produces 0, that'll be the starting value of a button
+;next you update the button result code where it's handled (min-max range)
+@TEMP_MAKE_SORT_BUTTON(SORT_TYPE, BUTTON)
+#DIM SORT_TYPE ;現在のソートタイプ
+#DIM BUTTON    ;基本のボタン名
+#DIM StartingValue
+{
+#DIMS CONST DISP_MEMO = 
+	"体力", "気力",
+	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感",
+	"親密", "従順", "欲望", "技巧", "奉仕精神", "露出癖",
+	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "マゾ", "サド", "精液",
+	"苦痛", "快楽", "不埒", "反発", "時姦",
+	"教養", "話術", "戦闘", "清掃", "料理", "音楽", "釣り", "採集", "調合",
+	"好感", "信頼", "欲求",
+	"弾幕", "ムシバトル", "料理"
+}
+;auto sort
+SortListSize = VARSIZE("DISP_MEMO")
+FOR LOCAL, 1000, 9999
+	IF LOCAL%SortListSize == 0
+		StartingValue = LOCAL
+		BREAK
+	ENDIF
+NEXT
+
+IF SORT_TYPE%SortListSize != BUTTON
+	;LOCAL = 1032+BUTTON+24	;PRINT
+	;BUTTON @"{LOCAL}", LOCAL
+	PRINTBUTTON @"　%DISP_MEMO:BUTTON%", StartingValue+BUTTON
+ELSEIF SORT_TYPE < StartingValue+SortListSize ;this is the sum of <button value> + total amount of items in DISP_MEMO
+	PRINTBUTTON @"▼%DISP_MEMO:BUTTON%", StartingValue+BUTTON+SortListSize
+ELSEIF SORT_TYPE >= StartingValue+SortListSize
+	PRINTBUTTON @"▲%DISP_MEMO:BUTTON%", StartingValue+BUTTON
+ENDIF
+
+;#####################################################
+
+;LIST_TYPEが変更を伴ったかどうか分かるように微少な改造
+;RETURN 1なら変更した。RETURN 0なら変更しなかった
+@TEMP_CHANGE_LIST(LIST_TYPE, OP)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS REF LIST_TYPE;現在使用中の表示内容
+#DIMS OP           ;実行オプション
+PRINTFORML リストの表示条件の変更（現在の設定：%LIST_TYPE%）
+PRINTFORML 
+CALL TEMP_CLASS_LIST("キャラリスト", "SHOP表示")
+PRINTFORML 
+PRINTFORML [999] - やめる
+DO
+	INPUT
+	SELECTCASE RESULT
+	CASE 999
+		RETURN 0
+	CASEELSE
+		IF !STRLENS(GET_STR(0, "キャラリスト", RESULT, "名前")) 
+		ELSEIF GET_INT(0, "キャラリスト", RESULT, "SHOP表示")
+			IF LIST_TYPE == GET_STR(0, "キャラリスト", RESULT, "名前")
+				;もし現在の設定値と新しい設定値が同じなら変更は無かったと見なす
+				RETURN 0
+			ELSE
+				LIST_TYPE '= GET_STR(0, "キャラリスト", RESULT, "名前")
+				RETURN 1
+			ENDIF
+		ENDIF
+		REUSELASTLINE 無効な入力です
+		CONTINUE
+	ENDSELECT
+LOOP 1
+
+@TEMP_CLASS_LIST(CLASS_NAME, CHECK_NAME)
+#DIMS CLASS_NAME  ;表示対象となるクラスの名称
+#DIMS CHECK_NAME  ;判定対象項目（INT限定）、未設定なら存在するものをすべて表示
+LOCAL = 0
+IF STRLENS(CHECK_NAME)
+	FOR LOCAL, OBJ_ID_FIRST, OBJ_ID_LAST + 1
+		SIF !GET_INT(0, CLASS_NAME, LOCAL, CHECK_NAME)
+			CONTINUE
+		PRINTFORML [{LOCAL, 3}] - %GET_STR(0, CLASS_NAME, LOCAL, "名前")%
+
+	NEXT
+ELSE
+	FOR LOCAL, OBJ_ID_FIRST, OBJ_ID_LAST + 1
+		SIF !STRLENS(GET_STR(0, CLASS_NAME, LOCAL, "名前"))
+			CONTINUE
+		PRINTFORML [{LOCAL, 3}] - %GET_STR(0, CLASS_NAME, LOCAL, "名前")%
+	NEXT
+ENDIF
+
+@TEMP_SINGLE_CHARA_STATE(C_ID,OP)
+#DIMS    OP         ;実行オプション
+#DIM     C_ID       ;登録番号
+#DIM     PAGE       ;表示中のページ
+#DIMS CONST DISP_NAME = "能力", "経験と宝珠", "個人情報", "好き嫌い", "身体情報", "陥落条件"
+#DIM CREDRAW
+#DIM FIRST_LINE
+FIRST_LINE = LINECOUNT
+$REPRINT
+CLEARLINE LINECOUNT - FIRST_LINE
+CREDRAW = CURRENTREDRAW()
+REDRAW 0
+CALL TEMP_CHARA_STATE(C_ID, PAGE, OP)
+DRAWLINE
+FOR LOCAL, 0, VARSIZE("DISP_NAME")
+	SIF PAGE == LOCAL
+		SETCOLOR 0x00FFFF
+	;exception for player character
+	PRINTBUTTON C_ID == MASTER && LOCAL == 5 ? "技能" # DISP_NAME:LOCAL, LOCAL + 2
+	RESETCOLOR
+	PRINTFORM 　　
+NEXT
+PRINTFORML 
+IF STRCOUNT(OP, "「最終確認」")
+	PRINTBUTTON "[1] このキャラで決定", 1
+	PRINTFORM 　　　　　　　　　
+	PRINTBUTTON "[0] もどる", 0
+	PRINTFORML 
+ELSE
+	PRINTBUTTON "[0] もどる", 0
+ENDIF
+DO
+	INPUT
+	SELECTCASE RESULT
+	CASE 0
+		RETURN 0
+	CASE 1
+		SIF STRCOUNT(OP, "「最終確認」")
+			RETURN C_ID
+		GOTO RETRY
+	CASE 2 TO 7
+		PAGE = RESULT-2
+	CASE 98
+		CFLAG:C_ID:差し替え適用 ++
+		IF FLAG:立ち絵種類
+			SIF CFLAG:C_ID:別顔有 < CFLAG:C_ID:差し替え適用
+				CFLAG:C_ID:差し替え適用 = 0
+		ELSE
+			SIF CFLAG:C_ID:別立ち有 < CFLAG:C_ID:差し替え適用
+				CFLAG:C_ID:差し替え適用 = 0
+		ENDIF
+	;表示・非表示の切替
+	CASE 160 TO 169, 900, 904, 909
+		TFLAG:RESULT = !TFLAG:RESULT
+	CASE 画像切り替え
+		IF !FLAG:画像表示
+			FLAG:画像表示 = !FLAG:画像表示
+			SIF FLAG:画像表示 && nStoreImageCount > 0 ;restore previous value if enabled
+				FLAG:画像表示 = nStoreImageCount
+			
+			FLAG:立ち絵種類 = 0
+			CFLAG:C_ID:差し替え適用 = 0
+		ELSEIF !FLAG:立ち絵種類
+			FLAG:立ち絵種類 = !FLAG:立ち絵種類
+		ELSEIF FLAG:立ち絵種類
+			SIF FLAG:画像表示
+				nStoreImageCount = FLAG:画像表示
+				
+			FLAG:画像表示 = !FLAG:画像表示
+		ENDIF
+	;CASE 9997
+		;CALL Qol_Info_ChildList(C_ID, 1)
+		;WAIT
+	;CASE 9998
+		;CALL Qol_MC_CHILD_LIST
+		;switch to a mother's page when clicked
+		;IF INRANGE(RESULT, 10000, 11000)
+			;RESULT -= 10000
+			;IF EXISTCSV(NO:RESULT)
+				;PAGE = 0
+				;C_ID = RESULT
+			;ENDIF
+		;ENDIF
+		;BREAK
+	CASE 9999
+		qol_Relation_AscendingOrder = !qol_Relation_AscendingOrder
+	CASE 3500 TO 3505
+		SFSR_PAGE = RESULT-3500
+	CASEELSE
+		$RETRY
+		REUSELASTLINE 無効な入力です
+		CONTINUE
+	ENDSELECT
+	BREAK
+LOOP 1
+GOTO REPRINT
+
+@TEMP_LIST_CHARA_STATE(CHARA_LIST, C_VIEW, CHARA_CNT, OP)
+#DIM REF CHARA_LIST ;リスト本体、登録番号にて記録
+#DIM     C_VIEW     ;表示中キャラのリスト上の位置
+#DIM     CHARA_CNT  ;リストに該当したキャラの数
+#DIMS    OP         ;実行オプション
+#DIM     C_ID       ;登録番号
+#DIM     PAGE       ;表示中のページ
+#DIMS CONST DISP_NAME = "能力", "経験と宝珠", "個人情報", "好き嫌い", "身体情報", "陥落条件", "個人設定"
+#DIM CREDRAW
+#DIM FIRST_LINE
+#DIM nSettingsEnable
+FIRST_LINE = LINECOUNT
+$REPRINT
+
+;conditions for the setting page
+;commented out some lines, I really want dialogue switching to get handled only by the Update
+;RESULT = 0
+LOCAL = 0
+;CALL KOJO_MULTIPLE(CHARA_LIST:C_VIEW, 1)
+;SIF RESULT > 1
+;	SETBIT LOCAL, 0
+;RESULT = 0
+CALL KOJO_OPTION_EXIST(CHARA_LIST:C_VIEW)
+SIF RESULT
+	SETBIT LOCAL, 1
+;disable the button if no extra dialogues or settings exist
+nSettingsEnable = (GETBIT(LOCAL, 0) || GETBIT(LOCAL, 1)) && OP != "「調教中」" && CHARA_LIST:C_VIEW != MASTER
+;SIF PAGE == 6 && !nSettingsEnable ;revert to default page if character settings aren't accessible
+;	PAGE = 0
+;actually keep the page even if it's empty
+;reset the page if outside of sleep menu/looking at yourself (pending: might add special settings under PC?)
+SIF PAGE == 6 && (OP == "「調教中」" || CHARA_LIST:C_VIEW == MASTER)
+	PAGE = 0
+;--------------------------------
+
+CLEARLINE LINECOUNT - FIRST_LINE
+CREDRAW = CURRENTREDRAW()
+REDRAW 0
+CALL TEMP_CHARA_STATE(CHARA_LIST:C_VIEW, PAGE, OP)
+DRAWLINE
+FOR LOCAL, 0, VARSIZE("DISP_NAME")
+	;extra cond for settings
+	SIF DISP_NAME:LOCAL == "個人設定" && !nSettingsEnable
+		BREAK
+	
+	SIF PAGE == LOCAL
+		SETCOLOR 0x00FFFF
+	;exception for player character
+	PRINTBUTTON CHARA_LIST:C_VIEW == MASTER && LOCAL == 5 ? "技能" # DISP_NAME:LOCAL, LOCAL + 2
+	RESETCOLOR
+	PRINTFORM 　　
+NEXT
+
+PRINTFORML 
+PRINTBUTTON "[77] 前のキャラ", 77
+PRINTFORM   
+PRINTBUTTON "[88] 次のキャラ", 88
+PRINTFORML 
+
+IF STRCOUNT(OP, "「最終確認」")
+	PRINTBUTTON "[1] このキャラで決定", 1
+	PRINTFORM 　　　　　　　　　
+	PRINTBUTTON "[0] もどる", 0
+	PRINTFORML 
+ELSE
+	PRINTBUTTON "[0] もどる", 0
+ENDIF
+DO
+	INPUT
+	SELECTCASE RESULT
+	CASE 0
+		RETURN 0
+	CASE 1
+		SIF STRCOUNT(OP, "「最終確認」")
+			RETURN CHARA_LIST:C_VIEW
+		GOTO RETRY
+	CASE 2 TO 7
+		PAGE = RESULT-2
+	CASE 8
+		SIF !nSettingsEnable
+			GOTO RETRY
+		PAGE = RESULT-2 
+	CASE 77
+		C_VIEW = (C_VIEW - 1 + CHARA_CNT) % MAX(1,CHARA_CNT)
+	CASE 88
+		C_VIEW = (C_VIEW + 1 + CHARA_CNT) % MAX(1,CHARA_CNT)
+	CASE 98
+		CFLAG:(CHARA_LIST:C_VIEW):差し替え適用 ++
+		IF FLAG:立ち絵種類
+			SIF CFLAG:(CHARA_LIST:C_VIEW):別顔有 < CFLAG:(CHARA_LIST:C_VIEW):差し替え適用
+				CFLAG:(CHARA_LIST:C_VIEW):差し替え適用 = 0
+		ELSE
+			SIF CFLAG:(CHARA_LIST:C_VIEW):別立ち有 < CFLAG:(CHARA_LIST:C_VIEW):差し替え適用
+				CFLAG:(CHARA_LIST:C_VIEW):差し替え適用 = 0
+		ENDIF
+	;表示・非表示の切替
+	CASE 160 TO 169, 900, 904, 909
+		TFLAG:RESULT = !TFLAG:RESULT
+	CASE 画像切り替え
+		IF !FLAG:画像表示
+			FLAG:画像表示 = !FLAG:画像表示
+			SIF FLAG:画像表示 && nStoreImageCount > 0 ;restore previous value if enabled
+				FLAG:画像表示 = nStoreImageCount
+			
+			FLAG:立ち絵種類 = 0
+			CFLAG:(CHARA_LIST:C_VIEW):差し替え適用 = 0
+		ELSEIF !FLAG:立ち絵種類
+			FLAG:立ち絵種類 = !FLAG:立ち絵種類
+		ELSEIF FLAG:立ち絵種類
+			SIF FLAG:画像表示
+				nStoreImageCount = FLAG:画像表示
+			
+			FLAG:画像表示 = !FLAG:画像表示
+		ENDIF
+	CASE 7000 TO 7050
+		CALL KOJO_OPTION_RESULT(CHARA_LIST:C_VIEW, RESULT)
+		SIF RESULT == -1
+			GOTO RETRY
+		SIF RESULT
+			ResetList = 1
+	;CASE 9997
+		;CALL Qol_Info_ChildList(CHARA_LIST:C_VIEW, 1)
+		;WAIT
+	;CASE 9998
+		;CALL Qol_MC_CHILD_LIST
+		;switch to a mother's page when clicked
+		;IF INRANGE(RESULT, 10000, 11000)
+			;RESULT -= 10000
+			;IF RESULT < CHARANUM && EXISTCSV(NO:RESULT)
+				;PAGE = 0
+				;C_VIEW = RESULT
+			;ENDIF
+		;ENDIF
+		;BREAK
+	CASE 9999
+		qol_Relation_AscendingOrder = !qol_Relation_AscendingOrder
+	CASE 3500 TO 3505 ;Falling Condition Tab
+		SFSR_PAGE = RESULT-3500
+    CASE -999
+	CASEELSE
+		$RETRY
+		REUSELASTLINE 無効な入力です
+		CONTINUE
+	ENDSELECT
+	BREAK
+LOOP 1
+GOTO REPRINT
+
+
+@TEMP_CHARA_STATE(C_ID, PAGE, OP)
+#DIM  C_ID
+#DIM  PAGE
+#DIMS OP
+CALL BASIC_STATE(C_ID, OP)
+SELECTCASE PAGE
+CASE 0
+	CALL SHOW_SIZE(C_ID)
+	CALL PRINT_STATE_IMAGE(C_ID)
+	IF FLAG:画像表示
+		;the 65, 75, 149 and 75 are based on the normal 50, 60, 120, and 60 presumably being related to screen width
+		IF FLAG:立ち絵種類
+			IF キャラ画像表示サイズ比 <= 65
+				PRINTL 
+				PRINTL 
+			ELSEIF キャラ画像表示サイズ比 <= 75
+				PRINTL 
+			ELSEIF キャラ画像表示サイズ比 >= 149
+				CLEARLINE 1
+			ENDIF
+			SIF TALENT:C_ID:行きずり
+				PRINTL 
+		ELSE
+			SIF キャラ画像表示サイズ比 <= 75
+				PRINTL 
+		ENDIF
+	ENDIF
+	CALL PRINT_STATE_CLOTH(C_ID)
+	
+	CALL PRINT_STATE_TALENT(C_ID)
+	PRINTL
+	CALL SHOW_ABILITY(C_ID)
+CASE 1
+	PRINTL
+	CALL PRINT_STATE_EXP(C_ID)
+	;PRINTL
+	;現状マスターは妊娠しないはずだが将来の機能拡張を考えるとこれでいいのか？
+	SIF !(C_ID == MASTER) && (TALENT:C_ID:妊娠 || CFLAG:C_ID:子供人数 > 0)
+		CALL 妊娠関連(C_ID)
+	;SIF (C_ID == MASTER) && (CFLAG:MASTER:子供人数 > 0)	;custom code
+		;CALL Qol_MC_CHILD
+	IF STRCOUNT(OP, "「調教中」")
+		CALL PRINT_STATE_EX(C_ID)
+	ELSEIF !(C_ID == MASTER)
+		CALL TEMP_PRINT_STATE_JUEL(C_ID)
+	ENDIF
+	PRINTL
+	IF C_ID == MASTER
+		CALL 予定
+	ELSE
+		CALL パンツ収集状況(C_ID)
+	ENDIF
+
+    SIF C_ID != MASTER ;custom code
+        CALL TEMP_QOL_CHARA_SCORES(C_ID)
+CASE 2
+	CALL PRINT_STATE_PERSONAL(C_ID)
+	CALL SHOW_RELATION(C_ID)
+CASE 3
+	CALL PRINT_STATE_PREFERENCE(C_ID)
+	CALL PRINT_STATE_GIFTDATA(C_ID, 15)
+CASE 4
+	CALL 肉体情報(C_ID)
+CASE 5
+	IF C_ID == MASTER
+		CALL SHOW_ALLITEM_INFO
+	ELSE
+		CALL SHOW_FALL_STATE_REV_REQUIREMENTS(C_ID)
+		CALL 浮気把握状況(C_ID)
+	ENDIF
+CASE 6
+	CALL KOJO_OPTION_PRINT(C_ID)
+CASEELSE
+	THROW 異常なPAGE {PAGE}
+ENDSELECT
+
+
+@TEMP_PRINT_STATE_JUEL(選択中キャラID)
+#DIM 選択中キャラID
+#DIM 表示項目数
+PRINTL
+CALL PRINTLINE, "宝珠"
+表示項目数 = 0
+FOR LOCAL, 0, 23
+	;go to denial gems at the end
+	SIF LOCAL == 22
+		LOCAL = 100
+	;PALAM.CSVに名称が登録されていないとCONTINUE
+	SIF !STRLENS(PALAMNAME:LOCAL)
+		CONTINUE
+	
+	LOCALS '= PALAM_NUM(JUEL:選択中キャラID:LOCAL, 1)
+	PRINTFORM 　%PALAMNAME:LOCAL%
+
+	LOCAL:1 = 29 - STRLENS(PALAMNAME:LOCAL) - STRLENS(LOCALS)
+	IF LOCAL:1 > 0
+		SETCOLOR 0x606060
+		PRINTFORM %"." * LOCAL:1%
+		RESETCOLOR
+	ENDIF
+	PRINTFORM %LOCALS% 
+	RESETCOLOR
+	
+	;改行or表示位置あけ
+	SIF (++表示項目数) % 4 == 0 
+		PRINTL 
+NEXT
+
+;print full roster page by page
+@TEMP_FULL_ROSTER
+#DIM DYNAMIC nPage = 1
+#DIM DYNAMIC nPageLength
+#DIM nPageSize
+#DIM DYNAMIC nPrintCount
+#DIM nRoster, 100
+
+#DIMS DYNAMIC strPrintRange
+#DIMS DYNAMIC strSearch
+
+SIF !FLAG:画像表示
+	RETURN 0
+
+nPageSize = MAX(CLIENTHEIGHT() / GETCONFIG("フォントサイズ")-4, 1)
+;round down to nearest 10th
+nPageSize = MAX(nPageSize/10)*10
+SIF CLIENTHEIGHT() < 600
+	nPageSize = 10
+
+gLineCount = LINECOUNT
+REDRAW 0
+DO
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+	DRAWLINE
+	PRINTFORML 人物名簿
+	DRAWLINE
+
+	;search mode
+	IF STRLENS(strSearch)
+		PRINTFORM %strSearch%を検索中、
+		LOCAL:1 = 0
+		strPrintRange =
+		FOR LOCAL:0, 1, CHARANUM
+			SIF CFLAG:LOCAL:出禁
+				CONTINUE
+			IF (STRCOUNT(TOLOWER(CALLNAME:LOCAL), TOLOWER(strSearch))) ;inspired by @LIST_SEARCHABLE
+				strPrintRange += TOSTR(LOCAL) + ":"
+				LOCAL:1 ++
+			ENDIF
+		NEXT
+		;total amount of items
+		nPageLength = LOCAL:1 / nPageSize + ((LOCAL:1 % nPageSize) == 0 ? 0 # 1)
+
+		;reset current page in case it gets overflowed
+		SIF nPage > nPageLength
+			nPage = 1
+
+		PRINTFORML {LOCAL:1}件が見つかりました！
+		DRAWLINE
+
+		VARSET nRoster
+		nPrintCount = 0
+		LOCAL:1 = 0
+		FOR LOCAL:0, 1, CHARANUM-1
+			SIF !SPLIT_CHECK(strPrintRange, LOCAL:0) ;show only those who are in the list
+				CONTINUE
+
+			SIF (nPrintCount >= (nPage-1) * nPageSize) && (nPrintCount < (nPage) * nPageSize)
+				nRoster:(LOCAL:1++) = LOCAL
+
+			nPrintCount ++
+		NEXT
+	ELSE
+		LOCAL:1 = 0
+		strPrintRange =
+
+		;build a list of items
+		FOR LOCAL:0, 1, CHARANUM
+			SIF !FLAG:並び替え && CFLAG:LOCAL:出禁 ;hide banned character slots with default sorting
+				CONTINUE
+
+			strPrintRange += TOSTR(LOCAL) + ":"
+			LOCAL:1 ++
+		NEXT
+
+		;total amount of items
+		nPageLength = LOCAL:1 / nPageSize + ((LOCAL:1 % nPageSize) == 0 ? 0 # 1)
+
+		;reset current page in case it gets overflowed
+		SIF nPage > nPageLength
+			nPage = 1
+
+		VARSET nRoster
+		nPrintCount = 0
+		LOCAL:1 = 0
+		SIF FLAG:並び替え
+			CALL CHARASORT_EX
+		FOR LOCAL:0, 1, CHARANUM-1
+			SIF !SPLIT_CHECK(strPrintRange, LOCAL:0) ;show only those who are in the list
+				CONTINUE
+			SIF FLAG:並び替え && CFLAG:(RESULT:LOCAL):出禁 ;hide banned characters at display stage when zun sorting is enabled
+				CONTINUE
+			SIF (nPrintCount >= (nPage-1) * nPageSize) && (nPrintCount < (nPage) * nPageSize)
+				nRoster:(LOCAL:1++) = (FLAG:並び替え ? RESULT:LOCAL # LOCAL)
+
+			nPrintCount ++
+		NEXT
+	ENDIF
+	PRINTFORML
+
+	IF nRoster:0 == 0
+		DRAWLINE
+		PRINTFORML
+		PRINTFORML 結果なし
+		PRINTFORML
+		DRAWLINE
+	ELSE
+		CALL TEMP_PRINT_ROSTER(nRoster, "roster")
+	ENDIF
+
+	;controls
+	PRINTFORML
+	IF nPageLength == 1
+		SETCOLOR 0x606060
+		PRINTFORM %"前ページ",15,LEFT%
+		RESETCOLOR 
+	ELSE
+		PRINTBUTTON @"%"前ページ",15,LEFT%", 888
+	ENDIF
+	PRINTFORM ({nPage}/{nPageLength})%BL(6)%
+	PRINTFORM 
+	IF nPageLength == 1
+		SETCOLOR 0x606060
+		PRINTFORM %"次ページ",15,LEFT%
+		RESETCOLOR 
+	ELSE
+		PRINTBUTTON @"%"次ページ",15,LEFT%", 777
+	ENDIF
+	IF nRoster:0 != 0 || STRLENS(strSearch)
+		PRINTFORM %" "*15%
+		IF STRLENS(strSearch)
+			PRINTBUTTON @"%"検索リセット",15,LEFT%", 666
+		ELSE
+			PRINTBUTTON @"%"名前で検索",15,LEFT%", 666
+		ENDIF
+	ENDIF
+
+	PRINTFORML 
+	PRINTFORML 
+	PRINTBUTTON "[999] 戻る　", 999
+	PRINTFORM  
+
+	INPUT
+	SELECTCASE RESULT
+		CASE 666
+			IF STRLENS(strSearch)
+				strSearch '= ""
+			ELSE
+				PRINTL 名前入力:
+				INPUTS
+				strSearch '= RESULTS
+				nPage = 1
+			ENDIF
+		CASE 777, 888
+			SIF nPageLength == 1
+				CONTINUE
+			nPage = PAGE_HANDLE(RESULT, 888, nPage, 1, nPageLength)
+		CASE 1 TO CHARANUM-1
+			CALL TEMP_SINGLE_CHARA_STATE(RESULT)
+			SIF !RESULT
+				CONTINUE
+		CASE 999
+			RETURN 1
+	ENDSELECT
+LOOP 1
+
+;put an array of characters to show their pictures one by one in a line, args dictates name highlight mode, zoom for pic zoom level, br for how many pictures to show per line
+@TEMP_PRINT_ROSTER(iID, sHighlightMode, nZoomLevel = 60, nBR = 10, nSpacing, bDisplayNames = 1, sExpression = "通常")
+#DIM REF iID
+#DIMS sHighlightMode
+#DIM nZoomLevel
+#DIM nBR
+#DIM bDisplayNames
+#DIMS sExpression
+
+#DIM iSpaceSize
+#DIM nSpacing
+#DIMS sPrint_Text
+
+#DIM nStore, 2
+
+SIF !iID
+	RETURN RESULT
+
+sPrint_Text =  <p align='left'><nobr>
+
+;set img size
+nStore:0 = FLAG:マルチサイズ
+nStore:1 = デフォルトキャラ画像横幅
+FLAG:マルチサイズ = 0
+デフォルトキャラ画像横幅 = 180
+
+LOCAL = 0
+LOCAL:1 = 0
+DO
+	;iSpaceSize = (デフォルトキャラ画像横幅 * nZoomLevel/GETCONFIG("フォントサイズ") - (RESULT*nSpacing)) / 2
+	iSpaceSize = (デフォルトキャラ画像横幅 * nZoomLevel/100 - HTML_STRINGLEN(CALLNAME:(iID:LOCAL), 1) - GETCONFIG("フォントサイズ")) / 2
+	iSpaceSize = MAX(iSpaceSize, 0)
+
+	IF bDisplayNames
+		sPrint_Text += @"<shape type = 'space' param = '{iSpaceSize}px'>"
+		
+		IF sHighlightMode == "roster"
+			LOCALS = <button value='{iID:LOCAL}' title='Target: {iID:LOCAL}'>[%CALLNAME:(iID:LOCAL)%]</button>
+		ELSE
+			LOCALS = [%CALLNAME:(iID:LOCAL)%]
+		ENDIF
+		;highlight
+		IF sHighlightMode == "broad"
+			IF IsRequestProgressable(iID:LOCAL) ;highlight in progress requests
+				LOCALS = <font color='#0x00FF00'>%LOCALS%</font>
+			ELSEIF CFLAG:(iID:LOCAL):行動 ;orange work
+				LOCALS = <font color='#0xFA6400'>%LOCALS%</font>
+			ELSEIF TCVAR:(iID:LOCAL):発情 ;pink in heat
+				LOCALS = <font color='#0xFF64FF'>%LOCALS%</font>
+			ENDIF
+		ENDIF
+			
+		sPrint_Text += LOCALS
+	ENDIF
+	
+	sPrint_Text += @"<shape type = 'space' param = '{iSpaceSize}px'>"
+
+	IF TALENT:(iID:LOCAL):行きずり && !GCREATED(CFLAG:(iID:LOCAL):モブ子素材CFLAG開始位置)
+		CALL モブ子生成(iID:LOCAL,0)
+		CALL モブ子生成(iID:LOCAL,1)
+	ENDIF
+	
+	TRYCALLFORM IMAGE_EX_I{NO:(iID:LOCAL)}_PREリソースチェック(iID:LOCAL, "顔絵", "服", sExpression)
+
+	RESULT = 0
+	CALL GET_BASE_RESOURCE(iID:LOCAL, "顔絵", "服", sExpression)
+	;PRINTFORML RESULT - {RESULT}
+	IF !RESULT || RESULT > 1 ;if failed to generate or if breast size difference flag returns different value than 1
+		RESULTS:0 = %GET_BASESTYLE(iID:LOCAL, "顔絵")%_服_%sExpression%_{iID:LOCAL}
+		RESULTS:1 =
+	ENDIF
+	;PRINTFORML RESULTS - %RESULTS% iID:LOCAL - {iID:LOCAL}
+	IF sHighlightMode == "roster"
+		;enable button with value + popup
+		CALL 画像セット(RESULTS, 0, 0, nZoomLevel, 0, 1, @"{iID:LOCAL}", @"Target: {iID:LOCAL}")
+	ELSE
+		CALL 画像セット(RESULTS, 0, 0, nZoomLevel, 0, 0)
+	ENDIF
+
+	;spacing between pics (manual sucks I know)
+	TEMP_HTML_MAX_HEIGHT = nSpacing ? nSpacing # MULTIPLY(nZoomLevel, 190)
+
+	LOCAL++
+	;break line
+	IF ++(LOCAL:1) % nBR == 0
+		HTML_PRINT sPrint_Text
+		CALL 画像一斉表示(0, 0, 1, -1)
+		sPrint_Text =  <p align='left'><nobr>
+	ENDIF
+LOOP VARSIZE("iID") > LOCAL && iID:LOCAL
+HTML_PRINT sPrint_Text
+SIF 描画開始行数 == 0 ;prevent the below function from creating excessive space on new game saves, wtf is going on
+	描画開始行数 = LINECOUNT
+CALL 画像一斉表示(0, 0, 1, -1)
+
+FLAG:マルチサイズ = nStore:0
+デフォルトキャラ画像横幅 = nStore:1
+
+
+
+
+;ARG - whose ass it is
+;LONG ensures it stays long
+;ARG:1 - stops prevention of duplicates
+;Max length - 24 with SHORT, else 60+
+@HIP_TR(ARG, LONG = 0, ARG:1)
+#FUNCTIONS
+#DIM LONG
+VARSET LOCALS
+;Custom code, moved adjective-structure around
+IF TALENT:ARG:体型 == -2 && TALENT:ARG:ヒップサイズ <= -2
+	SELECTCASE RAND:2
+	CASE 0
+		LOCALS += "small and smooth ass"
+	CASE 1
+		LOCALS += "cutesy ass"
+	ENDSELECT
+ELSEIF TALENT:ARG:ヒップサイズ < 0
+	SELECTCASE RAND:3
+	CASE 0
+		LOCALS += "thin ass"
+	CASE 1
+		LOCALS += "slender ass"
+	CASE 2
+		LOCALS += "small ass"
+	ENDSELECT
+ELSEIF TALENT:ARG:ヒップサイズ == 2
+	SELECTCASE RAND:4
+	CASE 0
+		LOCALS += "extremely well-padded ass"
+	CASE 1
+		LOCALS += "huge ass"
+	CASE 2
+		LOCALS += "impressively large ass"
+	CASE 3
+		LOCALS += "extremely voluptuous ass"
+	ENDSELECT
+ELSEIF TALENT:ARG:ヒップサイズ == 1
+	SELECTCASE RAND:4
+	CASE 0
+		LOCALS += "well-padded ass"
+	CASE 1
+		LOCALS += "plentiful ass"
+	CASE 2
+		LOCALS += "plump ass"
+	CASE 3
+		LOCALS += "voluptuous ass"
+	;Removed "child-bearing" since it could sort of duplicate
+	ENDSELECT
+ELSEIF TALENT:ARG:ヒップサイズ == 0
+	SELECTCASE RAND:5
+	CASE 0
+		IF CFLAG:ARG:乳ランクアップ
+			LOCALS += "maternal and rounded ass"
+		ELSE
+			LOCALS += "shapely ass"
+		ENDIF
+	CASE 1
+		LOCALS += "supple ass"
+	CASE 2
+		LOCALS += "tight ass"
+	CASE 3
+		LOCALS += "slender ass"
+	CASE 4
+		LOCALS += "juicy ass"
+	ENDSELECT
+ENDIF
+IF !LONG
+	IF LOCALS == LOCALS:1 && !ARG:1 ;If it is about to return the same thing in a row
+		FOR LOCAL, 0, 3
+			LOCALS = %HIP_TR(ARG, LONG, 1)%
+			SIF LOCALS != LOCALS:1
+				BREAK
+		NEXT
+	ENDIF
+	SIF !ARG:1
+		LOCALS:1 = LOCALS
+	RETURNF LOCALS
+ENDIF
+IF PALAM:ARG:欲情 >= PALAMLV:4 && !RAND:6
+	;Nopan should block this, but somehow doesn't
+	IF CFLAG:ARG:ノーパン || STRCOUNT(TOLOWER(PANTSNAME(EQUIP:ARG:下半身下着２, ARG)), "no underwear") >= 1
+		LOCALS += " dripping with beads of sweat"
+	ELSE
+		LOCALS += @", %HIS_HER(ARG)% %PANTSNAME(EQUIP:ARG:下半身下着２, ARG)% clinging to the skin, transparent with sweat"
+	ENDIF
+ELSEIF !RAND:5 && EXP:ARG:出産経験 && TALENT:ARG:ヒップサイズ <= 0
+	LOCALS += @" that belies her having given birth to {EXP:ARG:出産経験} children"
+ELSEIF !RAND:5 && TALENT:ARG:ヒップサイズ > 0
+	LOCALS += " that seems made to rear children"
+ENDIF
+IF LOCALS == LOCALS:1 && !ARG:1 ;If it is about to return the same thing in a row
+	FOR LOCAL, 0, 3
+		LOCALS = %HIP_TR(ARG, LONG, 1)%
+		SIF LOCALS != LOCALS:1
+			BREAK
+	NEXT
+ENDIF
+SIF !ARG:1
+	LOCALS:1 = LOCALS
+RETURNF LOCALS

@@ -14,19 +14,19 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	CALLF MAKE_STR(V_NAME, "谁来告诉我！")
+	CALLF MAKE_STR(V_NAME, "誰か教えて！")
 CASE "依頼内容表示"
-	CALLF MAKE_STR(V_NAME, @"回答%CALLNAME:ARG%的疑问")
+	CALLF MAKE_STR(V_NAME, @"%CALLNAME:ARG%のギモンに答える")
 CASE "依頼報酬表示"
 	CALLF MAKE_STR(V_NAME, @"%金額表示(500)%")
-CASE "依頼実行指令名"
+CASE "依頼実行コマンド名"
 	IF IS_LIBRARY(CFLAG:MASTER:現在位置)
-		CALLF MAKE_STR(V_NAME, "查资料")
+		CALLF MAKE_STR(V_NAME, "しらべもの")
 	ELSE
-		CALLF MAKE_STR(V_NAME, "进行解答")
+		CALLF MAKE_STR(V_NAME, "教えてあげる")
 	ENDIF
 CASE "依頼内容"
-	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "其他"))
+	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "その他"))
 CASE "依頼サブ"
 	CALLF MAKE_INT(V_NAME, (ABL:ARG:教養 + RAND(1, 10)) * 10)
 CASE "依頼期限"
@@ -40,7 +40,7 @@ CASE "依頼発生条件"
 CASE "依頼受託可能条件"
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼実行可能条件"
-	;查資料是つでも
+	;しらべものはいつでも
 	IF FLAG:70
 	ELSEIF IS_LIBRARY(CFLAG:MASTER:現在位置)
 		CALLF MAKE_INT(V_NAME, 1)
@@ -84,24 +84,24 @@ CASE "依頼実行時"
 ;依頼実行時にはRESULTが意味を持ちます
 ;このCASEに限り、RESULTが意味を持ちます
 ;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 ;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 	LIBRARY_ID = IS_LIBRARY(CFLAG:MASTER:現在位置)
 	IF LIBRARY_ID
 		IF INRANGE(LIBRARY_ID, 1, 99)
-			LIBRARY_NAME '= STR_TR(LIBRARY_ID)
+			LIBRARY_NAME '= STR:LIBRARY_ID
 		ELSE
-			LIBRARY_NAME '= STR_TR(8000 + LIBRARY_ID)
+			LIBRARY_NAME '= STR:(8000 + LIBRARY_ID)
 		ENDIF
 		IF TARGET == CLIENT_ID
-			PRINTFORML %CALLNAME:MASTER%为了回答%CALLNAME:TARGET%的疑问访问了%LIBRARY_NAME%
-			PRINTFORML 在那里找到了有用的资料
-			CALL ASK_M("停止", 1, "调查", 1, "试着回答", 1)
+			PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%の疑問に答えるために%LIBRARY_NAME%を訪れた
+			PRINTFORML ここなら役に立つ資料が見つかりそうだ
+			CALL ASK_M("やめておく", 1, "しらべもの", 1, "回答してみる", 1)
 			SELECTCASE RESULT
 			CASE 0
-				RETURN IRAI_CONST_RESULT("中止")
+				RETURN IRAI_CONST_RESULT("キャンセル")
 			CASE 1
-				PRINTFORMW %CALLNAME:MASTER%和%CALLNAME:TARGET%在%LIBRARY_NAME%做着调查
+				PRINTFORMW %CALLNAME:MASTER%と%CALLNAME:TARGET%は%LIBRARY_NAME%で調べ物をした
 				EXP:MASTER:学習経験 ++
 				EXP:TARGET:学習経験 ++
 				IRAI_SUB:CHK_SLOT -= ABL:MASTER:教養 + ABL:TARGET:教養 + 5
@@ -111,19 +111,19 @@ CASE "依頼実行時"
 				GOTO ANSWER
 			ENDSELECT
 		ELSE
-			PRINTFORML %CALLNAME:MASTER%在%LIBRARY_NAME%做着调查
+			PRINTFORML %CALLNAME:MASTER%は%LIBRARY_NAME%で調べ物をした
 			EXP:MASTER:学習経験 ++
 			IRAI_SUB:CHK_SLOT -= ABL:MASTER:教養 + 3
 			IRAI_SUB:CHK_SLOT = MAX(IRAI_SUB:CHK_SLOT, 1)
 		ENDIF
-		PRINTFORML 现在你的理解度
+		PRINTFORML 現在のあなたの理解度
 		PRINTFORMW 　%IRAI_一般6_DIFFICULTY(CHK_SLOT)%
 		RETURN IRAI_CONST_RESULT("実行して未解決")
 	ELSE
 		$ANSWER
-		PRINTFORML %CALLNAME:MASTER%回答了%CALLNAME:TARGET%的疑问
+		PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%の疑問に答えた
 		IF IRAI_一般6_SUCCESS(CHK_SLOT)
-			PRINTFORMW %CALLNAME:TARGET%的疑问冰消瓦解了！
+			PRINTFORMW %CALLNAME:TARGET%の疑問は氷解した！
 			SOURCE:歓楽 = 300
 			EXP:MASTER:学習経験 += ABL:TARGET:教養 * 5
 			EXP:TARGET:学習経験 += ABL:TARGET:教養 * 5
@@ -138,7 +138,7 @@ CASE "依頼実行時"
 			TIME += 30
 			RETURN IRAI_CONST_RESULT("実行して成功")
 		ELSE
-			PRINTFORMW %CALLNAME:TARGET%好像没能理解……
+			PRINTFORMW %CALLNAME:TARGET%は納得できなかったようだ……
 			RETURN IRAI_CONST_RESULT("実行して失敗")
 		ENDIF
 	ENDIF
@@ -165,23 +165,23 @@ SIF RAND:MAX(1, IRAI_SUB:CHK_SLOT) <= (1 + ABL:MASTER:教養) * 20
 #FUNCTIONS
 #DIM CHK_SLOT
 SIF IRAI_SUB:CHK_SLOT <= (1 + ABL:MASTER:教養) * 20
-	RETURNF "非常完美的让对方理解了"
+	RETURNF "完璧に理解させてみせる"
 ;難易度全体で差分をパーセント化したもの
 SELECTCASE (IRAI_SUB:CHK_SLOT - ((1 + ABL:MASTER:教養) * 20)) * 100 / IRAI_SUB:CHK_SLOT
 CASE 0, 1, 2, 3
-	RETURNF "好像可以给出高明的回答"
+	RETURNF "うまく教えられそうだ"
 CASE 4, 5, 6
-	RETURNF "已经可以回答了"
+	RETURNF "十分に教えられる"
 CASE 7 TO 10
-	RETURNF "能够回答出来吧"
+	RETURNF "答えられるだろう"
 CASE 11 TO 33
-	RETURNF "这样算是理解了么"
+	RETURNF "これで納得してくれないかな"
 CASE 34 TO 50
-	RETURNF "一定会有办法的、大概"
+	RETURNF "きっとどうにかなる、たぶん"
 CASE 51 TO 70
-	RETURNF "很难的疑问"
+	RETURNF "難しい質問だ"
 CASEELSE
-	RETURNF "完全无法推测"
+	RETURNF "まるで見当もつかない"
 ENDSELECT
 
 

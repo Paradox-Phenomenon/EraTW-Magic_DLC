@@ -1,6 +1,6 @@
 ﻿;-------------------------------------------------
-;演奏
-;日常系指令、レベル1
+;演奏する
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 @COM416
 #DIM DYNAMIC NOW_TARGET
@@ -17,31 +17,31 @@ TFLAG:使用楽器 = 0
 IF 宴会場所在判定(MASTER)
 ;IF CFLAG:MASTER:現在位置 == TFLAG:宴会場 && MASTER != TARGET && DAY >= FLAG:開始日 && TIME >= FLAG:33 && FLAG:参加人数
 	IF ABL:MASTER:音楽技能 < 3
-		PRINTL 对现在的音乐技能是否能达到宴会演奏的相应水平还不是很有自信……
+		PRINTL 今の音楽技能では宴会に相応しい演奏をする自信がない……
 		RETURN -1
-	ELSEIF ABL:MASTER:音楽技能 <= ABL:TARGET:戦闘能力 - TALENT:TARGET:心情
-		PRINTFORML 如果演奏不好的话会被%CALLNAME:TARGET%\@ TALENT:TARGET:心情 < 0 ? 生气地 # \@扔石头的
+	ELSEIF ABL:MASTER:音楽技能 <= ABL:TARGET:戦闘能力 - TALENT:TARGET:機嫌
+		PRINTFORML 上手く演奏しなければ%CALLNAME:TARGET%は石を投げてきそう\@ TALENT:TARGET:機嫌 < 0 ? な機嫌の悪さだ # だ \@
 	ELSEIF ABL:MASTER:音楽技能 < 5
-		PRINTL 演奏不好的话大概会有石头飞过来吧
+		PRINTL 下手な演奏をしようものなら石が飛んでくるかもしれない
 	ELSE
-		PRINTL 要用哪种乐器给宴会助兴呢
+		PRINTL 宴会をどの楽器で盛り上げようか
 	ENDIF
 ELSE
-	PRINTL 要使用什么乐器呢……
+	PRINTL 何を使おうか……
 ENDIF
 {
 	CALL ASK_M(
-		"返回", 1,
-		ITEMNAME_TR(30), MUSIC_ABLE(30),
-		ITEMNAME_TR(31), MUSIC_ABLE(31),
-		ITEMNAME_TR(32), MUSIC_ABLE(32),
-		ITEMNAME_TR(33), MUSIC_ABLE(33),
-		ITEMNAME_TR(34), MUSIC_ABLE(34)
+		"戻る", 1,
+		ITEMNAME:30, MUSIC_ABLE(30),
+		ITEMNAME:31, MUSIC_ABLE(31),
+		ITEMNAME:32, MUSIC_ABLE(32),
+		ITEMNAME:33, MUSIC_ABLE(33),
+		ITEMNAME:34, MUSIC_ABLE(34)
 	)
 }
 TFLAG:使用楽器 = RESULT
 SIF ITEM:演奏指南書 && !RAND:2
-	EXP:MASTER:演奏経験 += 2
+	EXP:MASTER:演奏経験 ++
 SIF !TFLAG:使用楽器
 	RETURN -1
 INTERRUPTED = 0
@@ -51,30 +51,30 @@ FOR LOCAL,1,CHARANUM
 	SIF CFLAG:LOCAL:行動 != 5
 		CONTINUE
 	IF !GROUPMATCH(CFLAG:LOCAL:職種, JOB_音楽, JOB_遊び, JOB_宴会参加, JOB_酔いつぶれる)
-		PRINTFORML 「吵死了！」
+		PRINTFORML 「うるさい！」
 		CALL THROW_STONE(LOCAL)
 	ELSEIF CFLAG:LOCAL:職種 == JOB_宴会参加 && !ACCOMPANY_ABLE(LOCAL)
 		EXP:MASTER:演奏経験 ++
 		SIF ABL:LOCAL:戦闘能力 >= 4
 			EXP:MASTER:演奏経験 ++
-		IF ABL:MASTER:音楽技能 + TALENT:LOCAL:心情 >= ABL:LOCAL:戦闘能力
-			PRINTFORML %CALLNAME:LOCAL%%TEXTR("陶醉于你的演奏/双眼闪着光/称赞了你的演奏")%
+		IF ABL:MASTER:音楽技能 + TALENT:LOCAL:機嫌 >= ABL:LOCAL:戦闘能力
+			PRINTFORML %CALLNAME:LOCAL%は%TEXTR("うっとりした/目を輝かせた/あなたの演奏を褒めたたえた")%
 			OHINERI = MAX(RAND:(ABL:LOCAL:戦闘能力 + 1), 1)
 			MONEY:2 += OHINERI
-			PRINTPLAIN *叮啷*
-			CALL COLORMESSAGE(@"被投了{OHINERI}个筹码过来！",C_YELLOW,1)
+			PRINTPLAIN *ﾁｬﾘﾝ*
+			CALL COLORMESSAGE(@"{OHINERI}カリスマのおひねりが飛んできた！",C_YELLOW,1)
 			IF !RAND:7
 				IF !RAND:2
-					;落空了くじ
+					;はずれくじ
 					CHOSEN_OMAKE = 131
 				ELSE
 					CHOSEN_OMAKE = OMAKE:(RAND:20)
 				ENDIF
-				CALL COLORMESSAGE(@"%ITEMNAME_TR((CHOSEN_OMAKE))%被扔了过来！",C_YELLOW,1)
+				CALL COLORMESSAGE(@"%ITEMNAME:(CHOSEN_OMAKE)%が飛んできた！",C_YELLOW,1)
 				ITEM:CHOSEN_OMAKE ++
 			ENDIF
 		ELSE
-			PRINTFORML 「%TEXTR("吵死了！/滚蛋！/真烂！")%」
+			PRINTFORML 「%TEXTR("うるさい！/引っ込め！/下手くそ！")%」
 			CALL THROW_STONE(LOCAL)
 		ENDIF
 	ENDIF
@@ -82,8 +82,8 @@ FOR LOCAL,1,CHARANUM
 		INTERRUPTED ++
 NEXT
 IF INTERRUPTED
-	PRINTFORML 「真是严格的客人啊」
-	CALL COLORMESSAGE(@"%CALLNAME:MASTER%中断了演奏",C_YELLOW,1)
+	PRINTFORML 「厳しい客だぜ」
+	CALL COLORMESSAGE(@"%CALLNAME:MASTER%は演奏を中断した",C_YELLOW,1)
 	RETURN -1
 ENDIF
 
@@ -122,7 +122,7 @@ SELECTCASE TFLAG:192
 	;強制失敗
 	CASE -1
 		TFLAG:193 = -1
-	;指令終了
+	;コマンド終了
 	CASE -2
 		TFLAG:193 = -1
 		RETURN 0
@@ -160,9 +160,9 @@ IF TFLAG:193 < 0
 		SOURCE:(TARGET:LOCAL):鬱屈 = SOURCE:(TARGET:LOCAL):鬱屈 * (2 + BAND_BONUS + DANCE_BONUS) / 2
 		SOURCE:(TARGET:LOCAL):歓楽 = SOURCE:(TARGET:LOCAL):歓楽 * 2 / (2 + BAND_BONUS + DANCE_BONUS)
 		SOURCE:(TARGET:LOCAL):征服 = SOURCE:(TARGET:LOCAL):征服 * 2 / (2 + BAND_BONUS + DANCE_BONUS)
-		;この手の个別処理は無いほうが良いが思いついてしまったものは仕方がない
-		;露娜薩
-		SIF TCVAR:[[露娜薩]]:演奏参加
+		;この手の個別処理は無いほうが良いが思いついてしまったものは仕方がない
+		;ルナサ
+		SIF TCVAR:[[ルナサ]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):鬱屈, 1.1
 		SIF TCVAR:[[舞]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):鬱屈, 0.9
@@ -179,21 +179,21 @@ ELSE
 		SOURCE:(TARGET:LOCAL):征服 += MUSIC_BONUS * 10
 		SOURCE:(TARGET:LOCAL):歓楽 = MAX(0, SOURCE:(TARGET:LOCAL):歓楽 * (2 + BAND_BONUS + DANCE_BONUS) / 2)
 		SOURCE:(TARGET:LOCAL):征服 = MAX(0, SOURCE:(TARGET:LOCAL):征服 * (2 + BAND_BONUS + DANCE_BONUS) / 2)
-		;梅露蘭
-		SIF TCVAR:[[梅露蘭]]:演奏参加
+		;メルラン
+		SIF TCVAR:[[メルラン]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):歓楽, 1.1
 		;雷鼓
 		SIF TCVAR:[[雷鼓]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):征服, 1.1
-		;心
-		SIF TCVAR:[[心]]:演奏参加
+		;こころ
+		SIF TCVAR:[[こころ]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):歓楽, 1.2
-		SIF TCVAR:[[心]]:演奏参加
+		SIF TCVAR:[[こころ]]:演奏参加
 			TIMES SOURCE:(TARGET:LOCAL):征服, 1.2
 	NEXT
 ENDIF
 
-TFLAG:好感度BONUS = BAND_BONUS * 50
+TFLAG:好感度ボーナス = BAND_BONUS * 50
 TARGET = NOW_TARGET
 
 TIME += 30
@@ -234,7 +234,7 @@ ENDIF
 ;[音楽知識]を持っている場合、歓楽増加
 SIF TALENT:MASTER:音楽知識
 	TIMES SOURCE:歓楽 , 1.50
-;音感のある無でもう少し増減
+;音感のあるなしでもう少し増減
 IF TALENT:MASTER:音感 == 2
 	TIMES SOURCE:歓楽 , 2.00
 ELSEIF TALENT:MASTER:音感 == 1
@@ -246,7 +246,7 @@ ENDIF
 SIF TARGET <= 0
 	RETURN 1
 SELECTCASE TALENT:TARGET:音楽知識
-;楽器持ち角色、プリリバ三姉妹と九十九姉妹と雷鼓がTARGET
+;楽器持ちキャラ、プリリバ三姉妹と九十九姉妹と雷鼓がTARGET
 CASE 1
 	EXP:MASTER:演奏経験 ++
 	IF ACCOMPANY_ABLE(TARGET)
@@ -256,13 +256,13 @@ CASE 1
 		TIMES SOURCE:歓楽 , 2.00
 		TCVAR:演奏参加 = 1
 		EXP:演奏経験 ++
-		PRINTFORMW %CALLNAME:TARGET%开始演奏乐器！
+		PRINTFORMW %CALLNAME:TARGET%は楽器を奏で始めた！
 		IF ABL:MASTER:音楽技能 >= ABL:TARGET:音楽技能
 			EXP:演奏経験 ++
 			TIMES SOURCE:征服 , 1.50
 		ENDIF
 	ENDIF
-;歌唱角色、米斯蒂亜と響子、艾伦がTARGET
+;歌唱キャラ、ミスティアと響子、エレンがTARGET
 CASE 2
 	EXP:MASTER:演奏経験 ++
 	IF ACCOMPANY_ABLE(TARGET)
@@ -272,13 +272,13 @@ CASE 2
 		TIMES SOURCE:歓楽 , 2.00
 		TCVAR:演奏参加 = 2
 		EXP:歌唱経験 ++
-		PRINTFORMW %CALLNAME:TARGET%配合着%CALLNAME:MASTER%的旋律唱起了歌！
+		PRINTFORMW %CALLNAME:TARGET%は%CALLNAME:MASTER%の旋律に合わせて歌い始めた！
 		IF ABL:MASTER:音楽技能 >= ABL:TARGET:音楽技能
 			EXP:歌唱経験 ++
 			TIMES SOURCE:征服 , 1.50
 		ENDIF
 	ENDIF
-;舞踏角色、心、舞、里乃
+;舞踏キャラ、こころ、舞、里乃
 CASE 3
 	EXP:MASTER:演奏経験 ++
 	IF ACCOMPANY_ABLE(TARGET)
@@ -288,7 +288,7 @@ CASE 3
 		TIMES SOURCE:歓楽 , 2.00
 		TCVAR:演奏参加 = 3
 		EXP:舞踏経験 ++
-		PRINTFORMW %CALLNAME:TARGET%配合着%CALLNAME:MASTER%的旋律跳起了舞！
+		PRINTFORMW %CALLNAME:TARGET%は%CALLNAME:MASTER%の旋律に合わせて踊り出した！
 		IF ABL:MASTER:音楽技能 >= ABL:TARGET:音楽技能
 			EXP:舞踏経験 ++
 			TIMES SOURCE:征服 , 1.50
@@ -320,18 +320,18 @@ NEXT
 SIF !LOCAL:1
 	RETURN 0
 
-;楽器三種のいずれかを持っていても13,24,30風呂と14,40廁所では演奏できない
+;楽器三種のいずれかを持っていても13,24,30風呂と14,40トイレでは演奏できない
 ;SIF CFLAG:MASTER:現在位置 == 13 || CFLAG:MASTER:現在位置 == 14 || CFLAG:MASTER:現在位置 == 24 || CFLAG:MASTER:現在位置 == 30 || CFLAG:MASTER:現在位置 == 39 || CFLAG:MASTER:現在位置 == 40
 SIF (IN_TOILET(CFLAG:MASTER:現在位置) || BATHCHECK(CFLAG:MASTER:現在位置)) && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP
 	RETURN 0
 ;気力0
 SIF BASE:MASTER:気力 <= 0
 	RETURN 0
-SIF CFLAG:诶嘿嘿 == 2
+SIF CFLAG:うふふ == 2
 	RETURN 0
 ;睡眠中
-;いっそ强行起床させるという案もあったり
-SIF CFLAG:睡眠 && !CFLAG:陪睡中 || CFLAG:陪睡中
+;いっそ無理やり起床させるという案もあったり
+SIF CFLAG:睡眠 && !CFLAG:添い寝中 || CFLAG:添い寝中
 	RETURN 0
 ;仕事中、かつ、宴会参加者ではない
 SIF CFLAG:行動 == 5 && CFLAG:職種 != JOB_宴会参加
@@ -346,10 +346,10 @@ RETURN 1
 SIF !ITEM:ARG
 	RETURNF 0
 SELECTCASE ARG
-;電子琴、吉他、ペット
+;キーボード、ギター、ペット
 	CASE 30,32,33
 		RETURNF 1
-;鋼琴
+;ピアノ
 ;博麗神社居間、紅魔館の広場と廃洋館、地霊殿の広場、寺子屋に設置しているという形です。
 	CASE 31
 		SIF GROUPMATCH(CFLAG:MASTER:現在位置,GET_MAP_REPLACEMENT(9),GET_MAP_REPLACEMENT(222),GET_MAP_REPLACEMENT(309),GET_MAP_REPLACEMENT(335))
@@ -380,60 +380,11 @@ RETURNF 1
 
 @THROW_STONE(ARG)
 #DIM LISTENER_P
-CALL COLORMESSAGE(@"%CALLNAME:ARG%扔了石头过来",C_YELLOW,1)
+CALL COLORMESSAGE(@"%CALLNAME:ARG%は石を投げた",C_YELLOW,1)
 LISTENER_P = ABL:ARG:戦闘能力
 IF RAND:(ABL:MASTER:戦闘能力 * (2 + CFLAG:ARG:弾幕勝負勝利) + 1) > LISTENER_P
-	CALL COLORMESSAGE(@"%CALLNAME:MASTER%华丽地回避了攻击",C_YELLOW,1)
+	CALL COLORMESSAGE(@"%CALLNAME:MASTER%は華麗に攻撃を回避した",C_YELLOW,1)
 ELSE
-	CALL RECOVER(MASTER, (LISTENER_P + 1) * (-150), "体力", @"%CALLNAME:ARG%的投石")
+	CALL RECOVER(MASTER, (LISTENER_P + 1) * (-150), "体力", @"%CALLNAME:ARG%の投石")
 	RETURN -1
 ENDIF
-@演奏集合
-#DIM 集合, 人物数量上限, 3 ;集合:X:Y
-#DIM 人数                      ;同一Mapにいる人数、移動できない角色も表示され、人数に加算されている
-#DIM 入力値                    ;RESULT取得用
-#DIM C_ID
-#DIM NOW_TARGET
-SIF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
-	RETURN
-SIF !AT_HOME(MASTER)
-	RETURN
-SIF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
-	RETURN
-SIF PRIVATEROOM:(CFLAG:MASTER:現在位置 % 100)
-	RETURN
-CALL SYUGOS_GETDATA(人数, 集合)
-CALL SYUGOS_COST(人数, 集合)
-SIF TARGET
-	NOW_TARGET = TARGET
-FOR LOCAL, 0, 人数
-	C_ID = 集合:LOCAL:0
-	SIF GETBIT(集合:LOCAL:1, 0)
-		CONTINUE
-	;移動回数が多いと除外
-	SIF 睡眠時間(C_ID)
-		CONTINUE
-	SIF 集合:LOCAL:2 > 3
-		CONTINUE
-	SIF CFLAG:C_ID:ブチギレ
-		CONTINUE
-	;IF RAND:(7-ABL:MASTER:音楽技能) == 0
-	;	CFLAG:C_ID:現在位置 = CFLAG:MASTER:現在位置
-	;	CFLAG:C_ID:同室 = 1
-	;	PRINTFORML %CALLNAME:C_ID,12%听说%CALLNAME:MASTER%正在演奏乐器,于是赶过来旁听了
-	;ENDIF
-
-	CFLAG:C_ID:現在位置 = CFLAG:MASTER:現在位置
-	CFLAG:C_ID:同室 = 1
-	;自由行動の中断
-	Activity_Duration:C_ID = 0
-	Activity_Type:C_ID = 0
-	;PRINTFORML %CALLNAME:C_ID%过来了
-	;PRINTFORM %CALLNAME:C_ID%.
-NEXT
-CALL TARGETSET_CHECK
-;SIF NOW_TARGET
-;	TARGET = NOW_TARGET
-
-;PRINTFORML 听说%CALLNAME:MASTER%正在演奏乐器,于是赶过来了...
-PRINTFORML 搞不好会吸引到附近的人,so...是时候表演真正的技术了!!!

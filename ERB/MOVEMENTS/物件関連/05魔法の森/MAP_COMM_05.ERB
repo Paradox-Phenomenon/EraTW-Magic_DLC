@@ -1,41 +1,41 @@
 ﻿;--------------------------------------------------
 ;地点名変更関数
 ;--------------------------------------------------
-@MAP_PLACENAME_5(ARG,ARG:1)
+@MAP_PLACENAME_5(ARG)
 #FUNCTIONS
 IF GET_MAPID(ARG) == MAIN_MAP
 	SELECTCASE ARG
-		CASE P531人偶洋館・空的部屋
+		CASE P531人形の館・空き部屋
 			IF CFLAG:MASTER:初期位置 == ARG
-				RETURNF "人偶洋馆・" + CALLNAME:MASTER + "的房间"
+				RETURNF "人形の館・" + CALLNAME:MASTER + "の部屋"
 			ELSE
-				RETURNF "人偶洋馆・空的房间"
+				RETURNF "人形の館・空き部屋"
 			ENDIF
 		CASE SUMIKOMI_ROOM
-			;※このMapでは未実装
-			IF FLAG:住宿人物
-				RETURNF CALLNAME:(FLAG:住宿人物) + "的房间"
+			;※このマップでは未実装
+			IF FLAG:住み込みキャラ
+				RETURNF CALLNAME:(FLAG:住み込みキャラ) + "の部屋"
 			ELSE
-				RETURNF "空的房间"
+				RETURNF "空き部屋"
 			ENDIF
 		CASE MINROOM() TO (MAXROOM - 1)
-			RETURNF ARG:1 ? STR:(ARG + 8000) # STR_TR(ARG + 8000) ;custom code
+			RETURNF STR:(ARG + 8000)
 		CASE OMANEKIBEYA()
 			RETURNF OMANEKI_PLACE()
 		CASE SUKIMA()
-			RETURNF "隙间空间"
+			RETURNF "スキマ空間"
 		CASE MAXROOM
-			RETURNF "森林之外"
+			RETURNF "森の外"
 		CASEELSE
 			RETURNF "不明"
 	ENDSELECT
 ELSE
-	RETURNF "森林之外"
+	RETURNF "森の外"
 ENDIF
 
 ;--------------------------------------------------
 ;場所ARGがどのエリアにあるか
-;表示するMapの番号と連動（TFLAG:地圖切換）
+;表示するマップの番号と連動（TFLAG:マップ切り替え）
 ;ARG     場所ID
 ;--------------------------------------------------
 @MAP_AREASELECT_5(ARG)
@@ -44,20 +44,20 @@ SELECTCASE ARG
 	;魔理沙宅
 	CASE P510霧雨魔法店 TO P515魔理沙宅・倉庫
 		RETURNF 3
-	;人偶的洋館
-	CASE P521人偶洋館・愛麗絲的房間 TO P531人偶洋館・空的部屋
+	;人形の洋館
+	CASE P521人形の館・アリスの部屋 TO P531人形の館・空き部屋
 		RETURNF 2
-	;软绵绵艾伦の店
-	CASE P534轻飘飘的艾伦魔法商店 TO P537艾伦宅・風呂
+	;ふわふわエレンの店
+	CASE P534ふわふわエレン魔法の店 TO P537エレン宅・風呂
 		RETURNF 4
-	;魔法之森
+	;魔法の森
 	CASEELSE
 		RETURNF 1
 ENDSELECT
 
 ;--------------------------------------------------
 ;内部構造がある場所の内部の判定
-;TFLAG:地圖切換  内部察知が必要なMap番号
+;TFLAG:マップ切り替え  内部察知が必要なマップ番号
 ;                P_ID  表示ボタンの場所ID
 ;                Q_ID  判定する内部の場所ID,必ずP_IDと一致した数値も含める
 ;--------------------------------------------------
@@ -65,7 +65,7 @@ ENDSELECT
 #FUNCTION
 #DIM P_ID
 #DIM Q_ID
-IF TFLAG:地圖切換 == 1
+IF TFLAG:マップ切り替え == 1
 	SELECTCASE P_ID
 		;魔理沙宅
 		CASE P510霧雨魔法店
@@ -73,16 +73,16 @@ IF TFLAG:地圖切換 == 1
 			CASE P510霧雨魔法店 TO P514魔理沙宅・風呂
 				RETURNF 1
 			ENDSELECT
-		;人偶洋館
-		CASE P525人偶洋館・生活間
+		;人形の館
+		CASE P525人形の館・リビング
 			SELECTCASE Q_ID
-			CASE P521人偶洋館・愛麗絲的房間 TO P531人偶洋館・空的部屋
+			CASE P521人形の館・アリスの部屋 TO P531人形の館・空き部屋
 				RETURNF 1
 			ENDSELECT
-		;艾伦宅
-		CASE P534轻飘飘的艾伦魔法商店
+		;エレン宅
+		CASE P534ふわふわエレン魔法の店
 			SELECTCASE Q_ID
-			CASE P534轻飘飘的艾伦魔法商店 TO P537艾伦宅・風呂
+			CASE P534ふわふわエレン魔法の店 TO P537エレン宅・風呂
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
@@ -92,7 +92,7 @@ RETURNF 0
 ;--------------------------------------------------
 ;移動制限設定
 ;ARG    場所ID
-;CHARA  移動する角色ID
+;CHARA  移動するキャラID
 ;RETURNF 1=移動できる,0=移動できない
 ;TFLAG:移動不能メッセージ   ↓の@MAP_CANNOT_WORD用の設定
 ;--------------------------------------------------
@@ -115,7 +115,7 @@ RETURNF 1
 @MAP_CANNOT_WORD_5(ARG)
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
-		PRINTFORMW 非営業時間
+		PRINTFORMW 営業時間外だ
 		CLEARLINE 2
 ENDSELECT
 REUSELASTLINE
@@ -127,16 +127,14 @@ REUSELASTLINE
 @MAP_UNIQUEMESSAGE_5
 SELECTCASE CFLAG:MASTER:現在位置
 	CASE P502香霖堂
-		PRINTFORML 狭窄的地方对着各种杂物
-		PRINTFORML 有很多都随便贴着「非卖品」……
-	CASE P503岔道
-		PRINTFORML 看见了魔理沙家的后门和水井
+		PRINTFORML 雑多な品が所狭しと並んでいる
+		PRINTFORML 「非売品」の表示がやたらと多い……
+	CASE P503分かれ道
+		PRINTFORML 魔理沙の家の裏口と井戸が見える
 ;	CASE 520
-;		PRINTFORML 摆放着写着「慶贺新筑」的大花圈
-	CASE P524人偶洋館・研究室
-		PRINTFORML 书架上摆放着药瓶和人偶
-	;CASE P543露米娅的栖息处
-	;	PRINTFORML 角落里散落着不认识的骨头
+;		PRINTFORML 「新築祝い」と書かれた大きな花輪が並んでいる
+	CASE P524人形の館・研究室
+		PRINTFORML 棚に薬瓶と人形が並んでいる
 ENDSELECT
 
 RETURN 1
@@ -150,28 +148,28 @@ RETURN 1
 SELECTCASE ARG
 	CASE P502香霖堂
 		RETURNF 香霖堂
-	CASE P540古木的大樹 TO P545慧ノ子の棲み処
-		RETURNF 古木的大樹
+	CASE P540古木の大樹 TO P545慧ノ子の棲み処
+		RETURNF 古木の大樹
 	CASE P510霧雨魔法店 TO P515魔理沙宅・倉庫
 		RETURNF 霧雨魔法店
-	CASE P520人偶洋館前 TO P531人偶洋館・空的部屋
-		RETURNF 人偶的洋館
+	CASE P520人形の館前 TO P531人形の館・空き部屋
+		RETURNF 人形の洋館
 	CASE P506無縁塚
 		RETURNF 無縁塚
-	CASE P509再思之道
-		RETURNF 再思之道
+	CASE P509再思の道
+		RETURNF 再思の道
 	CASEELSE
-		RETURNF 森林的入口
+		RETURNF 森の入り口
 ENDSELECT
 RETURNF 0
 
 ;--------------------------------------------------
-;Mapの紹介文
+;マップの紹介文
 ;--------------------------------------------------
-@Map紹介_5
+@マップ紹介_5
 ;とりあえず5行
-PRINTFORML 这里是以魔理沙宅邸、人形馆、软绵绵艾伦的店为中心的地区。
-PRINTFORML 这里有着不需要工具也能进行合成的场所、以及多种类的采集地点。
-PRINTFORML 而其中【蘑菇群生地】也只有以此为据点时才会出现的采集地点。若想采集蘑菇类的物品时、推荐来这里。
-PRINTFORML 房间也相对的多、很适合展现你的扫除技能。但能搭把手帮忙的工作则相对比较少。
-PRINTFORML 从无缘冢到冥界有互通的道路。
+PRINTFORML 魔理沙宅や人形の館、ふわふわエレンの店を中心としたエリア。
+PRINTFORML アイテム無しでも調合が可能な場所や、複数の採集ポイントを有する。
+PRINTFORML なかでも「キノコ群生地」はこの拠点選択時のみの採集場所となっており、キノコ系アイテムが採集したい場合にはおすすめ。
+PRINTFORML 部屋もそれなりに多く掃除の腕の振るい甲斐はあるが、手伝える拠点内での仕事は控えめ。
+PRINTFORML 無縁塚からは中有の道へ移動することができる。

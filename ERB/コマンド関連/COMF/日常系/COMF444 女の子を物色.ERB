@@ -1,19 +1,19 @@
 ﻿;-------------------------------------------------
-;物色路人女子
-;日常系指令、レベル1
+;女の子を物色
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 
 @COM444
 #DIMS YUKIZURI_RACE  ;生成するMOB娘の種類
 
-IF FLAG:约会的对象
-	PRINTFORMW 身边已有一位非常可爱的女孩
+IF FLAG:デート相手
+	PRINTFORMW 物凄く可愛い娘がすぐ隣にいる
 	RETURN -1
 ENDIF
 
 ;潜伏モード中は不可
 IF GETBIT(FLAG:潜伏,0)
-	PRINTFORMW 现在不是将目光转移到其他人身上的时候
+	PRINTFORMW 他の子に目移りしている場合ではない
 	RETURN -1
 ENDIF
 
@@ -23,26 +23,26 @@ IF !FLAG:70
 ELSE
 	BASE:MASTER:TSP -= 10
 ENDIF
-PRINTFORML %CALLNAME:MASTER%物色着周围是否有可爱的女孩
-PRINTFORMW ……那个女孩怎么样？
+PRINTFORML %CALLNAME:MASTER%は可愛い娘がいないか物色した
+PRINTFORMW ……あの子はどうだろう？
 SELECTCASE CAN_NANPA(CFLAG:MASTER:現在位置)
 	CASE 1
-		YUKIZURI_RACE '= TEXTR("村姑/人妻")
+		YUKIZURI_RACE '= TEXTR("町娘/人妻")
 	CASE 2
 		YUKIZURI_RACE = 妖精
 	CASE 3
-		YUKIZURI_RACE = 女仆妖精
+		YUKIZURI_RACE = メイド妖精
 	CASE 4
 		;３日に一度販売員が出没
 		IF ((GETTIME()/1000000000) % 100) % 3 == 1 && !RAND:7
 			YUKIZURI_RACE = 販売員
 		ELSE
-			YUKIZURI_RACE = 因幡
+			YUKIZURI_RACE = イナバ
 		ENDIF
 	CASE 5
-		YUKIZURI_RACE = 僵尸妖精
+		YUKIZURI_RACE = ゾンビフェアリー
 	CASE 6
-		YUKIZURI_RACE '= TEXTR("妖怪狐/妖怪猫")
+		YUKIZURI_RACE '= TEXTR("化け狐/化け猫")
 	CASE 7
 		YUKIZURI_RACE '= TEXTR("山童/河童")
 	CASE 8
@@ -51,20 +51,12 @@ SELECTCASE CAN_NANPA(CFLAG:MASTER:現在位置)
 		IF !RAND:10
 			YUKIZURI_RACE = 鬼
 		ELSE
-			YUKIZURI_RACE = 僵尸妖精
+			YUKIZURI_RACE = ゾンビフェアリー
 		ENDIF
 	CASE 10
 		YUKIZURI_RACE = 玉兎
 	CASE 11
-		YUKIZURI_RACE '= TEXTR("妖怪狸/茨狸")
-	CASE 12
-		IF MORE_RANDOM_CHARACTER == 1
-			YUKIZURI_RACE  = 学生
-			SIF !RAND:50
-				YUKIZURI_RACE = 学生​
-			SIF !RAND:100
-				YUKIZURI_RACE = ​学生​
-		ENDIF
+		YUKIZURI_RACE '= TEXTR("化け狸/茨たぬき")
 ENDSELECT
 
 
@@ -76,11 +68,11 @@ $CHOICE
 CALL CHARA_STATE(RANDOM_CHARANUM)
 IF CSTR:RANDOM_CHARANUM:処女喪失履歴 != ""
 	DRAWLINE
-	CALL COLORMESSAGE(@"处女丧失履历：%CSTR:RANDOM_CHARANUM:処女喪失履歴%",C_PINK,1)
+	CALL COLORMESSAGE(@"処女喪失履歴：%CSTR:RANDOM_CHARANUM:処女喪失履歴%",C_PINK,1)
 	PRINTFORML 
 ENDIF
-DEBUGPRINTFORML %CSTR:RANDOM_CHARANUM:路人子画像文字列_服_通常%
-CALL ASK_M("很中意",1,"寻找别的女孩",1,"寻找之前的女孩", TFLAG:直前路人子Map == CFLAG:MASTER:現在位置 /100,"寻找以前认识的女孩",1,"物色中止",1)
+DEBUGPRINTFORML %CSTR:RANDOM_CHARANUM:モブ子画像文字列_服_通常%
+CALL ASK_M("気になる",1,"別の娘を探す",1,"直前の娘を探す", TFLAG:直前モブ子マップ == CFLAG:MASTER:現在位置 /100,"以前知り合った娘を探す",1,"物色中止",1)
 IF RESULT == 4
 	CFLAG:RANDOM_CHARANUM:現在位置 = SUKIMA()
 	CFLAG:RANDOM_CHARANUM:着替え実行 = 0
@@ -90,28 +82,28 @@ IF RESULT == 4
 	RETURN -1
 ENDIF
 IF RESULT == 1
-	TFLAG:直前路人子Map = CFLAG:MASTER:現在位置 /100
-	SAVECHARA "TEMP_MOB", "刚刚遇到的女孩子", RANDOM_CHARANUM
+	TFLAG:直前モブ子マップ = CFLAG:MASTER:現在位置 /100
+	SAVECHARA "TEMP_MOB", "直前に会った子", RANDOM_CHARANUM
 	GOTO BUSSYOKU
 ELSEIF RESULT == 3
 	CALL LOAD_MOBGIRL(0)
 	IF RESULT == -1
 		;念のためまっさらにしておく
-		CALL 路人子画像リセット(RANDOM_CHARANUM)
+		CALL モブ子画像リセット(RANDOM_CHARANUM)
 		DELCHARA RANDOM_CHARANUM
 		ADDCHARA RANDOM_CHARANUM
 		RETURN -1
 	ENDIF
 	CFLAG:RANDOM_CHARANUM:出禁 = 0
 ELSEIF RESULT == 2
-	CALL 路人子画像リセット(RANDOM_CHARANUM)
+	CALL モブ子画像リセット(RANDOM_CHARANUM)
 	DELCHARA RANDOM_CHARANUM
 	LOADCHARA "TEMP_MOB"
-	TFLAG:直前路人子Map = 0
+	TFLAG:直前モブ子マップ = 0
 	GOTO CHOICE
 ENDIF
 CFLAG:RANDOM_CHARANUM:現在位置 = CFLAG:MASTER:現在位置
-CFLAG:RANDOM_CHARANUM:约会中 = MAIN_MAP
+CFLAG:RANDOM_CHARANUM:デート中 = MAIN_MAP
 
 IF CFLAG:MASTER:現在位置 / 100 == MAIN_MAP
 	;拠点内で時間停止せずに物色した場合は、同行扱い
@@ -136,7 +128,7 @@ ELSE
 	CFLAG:RANDOM_CHARANUM:就寝時間 = 0
 	CFLAG:RANDOM_CHARANUM:起床時間 = 0
 ENDIF
-CFLAG:RANDOM_CHARANUM:延迟 = 30
+CFLAG:RANDOM_CHARANUM:ディレイ = 30
 TARGET = RANDOM_CHARANUM
 SETBIT TFLAG:一日一回, 9
 RETURN 1
@@ -149,8 +141,6 @@ SIF GLOBAL_COMABLE(622)
 SIF !CAN_NANPA(CFLAG:MASTER:現在位置)
 	RETURN 0
 SIF !INRANGE(TIME,540,1140)
-	RETURN 0
-SIF CFLAG:MASTER:诶嘿嘿
 	RETURN 0
 ;SIF !CFLAG:RANDOM_CHARANUM:出禁
 ;	RETURN 0
@@ -189,8 +179,7 @@ SIF ARG == GET_MAP_REPLACEMENT(1003)
 	RETURNF 10
 SIF ARG == GET_MAP_REPLACEMENT(540)
 	RETURNF 11
-SIF MORE_RANDOM_CHARACTER == 1 && ARG == GET_MAP_REPLACEMENT(222)
-	RETURNF 12
+
 RETURNF 0
 
 
@@ -206,13 +195,13 @@ FOR LOCAL,0,MAXMOB
 		PRINTBUTTON @"[%RESULTS:0%]", LOCAL
 		PRINTFORML 
 	ELSE
-		PRINTBUTTON "[无]", LOCAL
+		PRINTBUTTON "[なし]", LOCAL
 		PRINTFORML 
 	ENDIF
 	RESETCOLOR
 NEXT
 DRAWLINE
-PRINTBUTTON "[放弃]", 99
+PRINTBUTTON "[やめる]", 99
 
 @LOAD_MOBGIRL(ARG)
 CALL PRINT_SAVED_GIRL_LIST
@@ -222,107 +211,90 @@ SIF !INRANGE(LOCAL, 0, MAXMOB -1)
 	RETURN -1
 IF !ARG && MOBGIRL_PLACE:LOCAL != CFLAG:MASTER:現在位置 / 100
 	IF MOBGIRL_PLACE:LOCAL == 90
-		PRINTFORMW 在店外是遇不到的…
+		PRINTFORMW 店の外では会ってくれない…
 	ELSE
-		;魔改召唤路人女子
-		;PRINTFORML {MOBGIRL_PLACE:LOCAL}
-		;PRINTFORMW 不在这里吧
-		PRINTFORMW 不在这里吧，是否消耗1000TPS进行召唤传送？
-		PRINTBUTTON "[是]", 0
-		PRINTBUTTON "[否]", 1
-		INPUT
-		IF RESULT == 0 && BASE:MASTER:TSP >= 1000
-			BASE:MASTER:TSP -= 1000
-			CALL 路人子画像リセット(RANDOM_CHARANUM)
-			DELCHARA RANDOM_CHARANUM
-			LOADCHARA TOSTR(LOCAL)
-			PRINTFORML 召唤传送来了%CALLNAME:RANDOM_CHARANUM%。
-			RETURN 1
-		ELSEIF RESULT != 0
-			;非0不执行任何操作
-		ELSE
-			PRINTW TSP不足，传送失败！
-		ENDIF
+		PRINTFORML {MOBGIRL_PLACE:LOCAL}
+		PRINTFORMW ここにはいないだろう
 	ENDIF
 	RETURN -1
 ELSEIF ARG && MOBGIRL_PLACE:LOCAL != 90
-	PRINTFORMW 「哈！？　这样的雌性、我们这里没有呀！」
+	PRINTFORMW 「はぁ！？　しょんなメスっこ、うちにゃーいねーぎゃ！」
 	PRINTFORML 
 	RETURN -1
 ENDIF
 IF FIND_CHARADATA(TOSTR(LOCAL))
-	CALL 路人子画像リセット(RANDOM_CHARANUM)
+	CALL モブ子画像リセット(RANDOM_CHARANUM)
 	DELCHARA RANDOM_CHARANUM
 	LOADCHARA TOSTR(LOCAL)
 	;when loading mobs from older saves, ensure that if new characters have been added in the interim we update the NO for the mob
-	;subsequently save the mob and reload it to ensure all the correct sprites are loaded
-	IF NO:RANDOM_CHARANUM != RANDOM_CHARANUM
-		NO:RANDOM_CHARANUM = RANDOM_CHARANUM
-		SAVECHARA TOSTR(LOCAL), CSTR:RANDOM_CHARANUM:路人子プロフィール１, RANDOM_CHARANUM
-		CALL 路人子画像リセット(RANDOM_CHARANUM)
-		DELCHARA RANDOM_CHARANUM
-		LOADCHARA TOSTR(LOCAL)
+    ;subsequently save the mob and reload it to ensure all the correct sprites are loaded
+    IF NO:RANDOM_CHARANUM != RANDOM_CHARANUM
+        NO:RANDOM_CHARANUM = RANDOM_CHARANUM
+        SAVECHARA TOSTR(LOCAL), CSTR:RANDOM_CHARANUM:モブ子プロフィール１, RANDOM_CHARANUM
+        CALL モブ子画像リセット(RANDOM_CHARANUM)
+        DELCHARA RANDOM_CHARANUM
+        LOADCHARA TOSTR(LOCAL)
     ENDIF
-	PRINTFORML \@ ARG ? 指名了 # 发现了 \@%CALLNAME:RANDOM_CHARANUM%
+	PRINTFORML %CALLNAME:RANDOM_CHARANUM%を\@ ARG ? 指名した # 見つけた \@
 	IF MOBGIRL_FP:LOCAL != ""
-		路人子一人称 = %MOBGIRL_FP:LOCAL%
-		路人子二人称 = %MOBGIRL_SP:LOCAL%
+		モブ子一人称 = %MOBGIRL_FP:LOCAL%
+		モブ子二人称 = %MOBGIRL_SP:LOCAL%
 	ENDIF
-	IF CSTR:RANDOM_CHARANUM:路人子画像文字列_服_通常 == ""
-		PRINTFORML 未设定外表。请选择类型。
-		PRINTBUTTON "[村姑] ", "村姑"
+	IF CSTR:RANDOM_CHARANUM:モブ子画像文字列_服_通常 == ""
+		PRINTFORML 外見が未設定です。タイプを選んでください。
+		PRINTBUTTON "[町娘] ", "町娘"
 		PRINTBUTTON "[人妻] ", "人妻"
 		PRINTBUTTON "[妖精] ", "妖精"
-		PRINTBUTTON "[女仆妖精] ", "女仆妖精"
-		PRINTBUTTON "[僵尸妖精] ", "僵尸妖精"
+		PRINTBUTTON "[メイド妖精] ", "メイド妖精"
+		PRINTBUTTON "[ゾンビフェアリー] ", "ゾンビフェアリー"
 		PRINTBUTTON "[河童] ", "河童"
 		PRINTBUTTON "[白狼天狗] ", "白狼天狗"
-		PRINTBUTTON "[因幡] ", "因幡"
-		PRINTBUTTON "[玉兔] ", "玉兎"
+		PRINTBUTTON "[イナバ] ", "イナバ"
+		PRINTBUTTON "[玉兎] ", "玉兎"
 		PRINTBUTTON "[鬼] ", "鬼"
-		PRINTBUTTON "[妖怪狸] ", "妖怪狸"
-		PRINTBUTTON "[妖怪狐] ", "妖怪狐"
-		PRINTBUTTON "[妖怪猫] ", "妖怪猫"
-		PRINTBUTTON "[随机] ", "随机"
+		PRINTBUTTON "[化け狸] ", "化け狸"
+		PRINTBUTTON "[化け狐] ", "化け狐"
+		PRINTBUTTON "[化け猫] ", "化け猫"
+		PRINTBUTTON "[ランダム] ", "ランダム"
 		INPUTS
 		CALL SET_MOB_IMAGE_STR(RANDOM_CHARANUM, RESULTS)
 	ENDIF
 	;過去に合成されて裸画像の笑顔に[装飾_照れ]が乗ってない場合に追記
-	SIF STRFIND(CSTR:RANDOM_CHARANUM:路人子画像文字列_裸_笑顔, "装飾_照れ") == -1
-		CSTR:RANDOM_CHARANUM:路人子画像文字列_裸_笑顔 += "[装飾9:装飾_照れ][乗色:朱色]"
+	SIF STRFIND(CSTR:RANDOM_CHARANUM:モブ子画像文字列_裸_笑顔, "装飾_照れ") == -1
+		CSTR:RANDOM_CHARANUM:モブ子画像文字列_裸_笑顔 += "[装飾9:装飾_照れ][乗色:朱色]"
 
 	;過去（ver4.760以前）に保存されて種族のTALENT設定が適合しない場合に修正を行う
 	SELECTCASE CAN_NANPA(CFLAG:MASTER:現在位置)
 		;里
 		CASE 1
-			;以前の194 人类が現varでは194 幽霊になっている
+			;以前の194 人間が現varでは194 幽霊になっている
 			IF TALENT:RANDOM_CHARANUM:幽霊
 				TALENT:RANDOM_CHARANUM:幽霊 = 0
-				TALENT:RANDOM_CHARANUM:人类 = 1
+				TALENT:RANDOM_CHARANUM:人間 = 1
 			ENDIF
-		;霧之湖、紅魔館、および地底の妖精たち
+		;霧の湖、紅魔館、および地底の妖精たち
 		CASE 2, 3, 5
-			;以前の190 妖精が現verでは190 人类になっている
-			IF TALENT:RANDOM_CHARANUM:人类
-				TALENT:RANDOM_CHARANUM:人类 = 0
+			;以前の190 妖精が現verでは190 人間になっている
+			IF TALENT:RANDOM_CHARANUM:人間
+				TALENT:RANDOM_CHARANUM:人間 = 0
 				TALENT:RANDOM_CHARANUM:妖精 = 1
 			ENDIF
 		;竹林
 		CASE 4
-			;因幡…妖獣が新設された
+			;イナバ…妖獣が新設された
 			SIF TALENT:RANDOM_CHARANUM:妖怪 != 6
 				TALENT:RANDOM_CHARANUM:妖怪 = 6
 		;冥界
 		CASE 6
-			;妖怪狸、狐、猫…妖獣が新設された
+			;化け狸、狐、猫…妖獣が新設された
 			SIF TALENT:RANDOM_CHARANUM:妖怪 != 6
 				TALENT:RANDOM_CHARANUM:妖怪 = 6
-		;妖怪之山山麓
+		;妖怪の山山麓
 		CASE 7
 			;河童…河童が新設された
 			SIF TALENT:RANDOM_CHARANUM:妖怪 != 4
 				TALENT:RANDOM_CHARANUM:妖怪 = 4
-		;妖怪之山山頂
+		;妖怪の山山頂
 		CASE 8
 			;白狼天狗…以前の197 天狗が現verでは197 追加種族（巫女）になっている
 			IF TALENT:RANDOM_CHARANUM:追加種族
@@ -336,8 +308,8 @@ IF FIND_CHARADATA(TOSTR(LOCAL))
 				TALENT:RANDOM_CHARANUM:付喪神 = 0
 				TALENT:RANDOM_CHARANUM:妖怪 = 2
 			;妖精は同上
-			ELSEIF TALENT:RANDOM_CHARANUM:人类
-				TALENT:RANDOM_CHARANUM:人类 = 0
+			ELSEIF TALENT:RANDOM_CHARANUM:人間
+				TALENT:RANDOM_CHARANUM:人間 = 0
 				TALENT:RANDOM_CHARANUM:妖精 = 1
 			ENDIF
 		;月　一応分けておく
@@ -347,18 +319,18 @@ IF FIND_CHARADATA(TOSTR(LOCAL))
 				TALENT:RANDOM_CHARANUM:妖怪 = 6
 	ENDSELECT
 
-	IF FLAG:70	;時間停止中と風俗嬢は反応無
+	IF FLAG:70	;時間停止中と風俗嬢は反応なし
 	ELSEIF TALENT:RANDOM_CHARANUM:風俗嬢
-	ELSEIF CFLAG:RANDOM_CHARANUM:败犬 && (TALENT:RANDOM_CHARANUM:炮友 || TALENT:RANDOM_CHARANUM:思慕)
-		PRINTFORMW 认出了%CALLNAME:MASTER%的%CALLNAME:RANDOM_CHARANUM%，露出了懊恼又带着期待的表情，扭扭捏捏的…
-	ELSEIF CFLAG:RANDOM_CHARANUM:败犬 && !TALENT:RANDOM_CHARANUM:恋慕 && !TALENT:RANDOM_CHARANUM:思慕 && !TALENT:RANDOM_CHARANUM:愛欲
-		PRINTFORMW 发现了%CALLNAME:MASTER%的%CALLNAME:RANDOM_CHARANUM%带着逞强的表情
+	ELSEIF CFLAG:RANDOM_CHARANUM:負け犬 && (TALENT:RANDOM_CHARANUM:セフレ || TALENT:RANDOM_CHARANUM:思慕)
+		PRINTFORMW %CALLNAME:MASTER%の姿を認めた%CALLNAME:RANDOM_CHARANUM%は悔しげな、それでいて期待するような表情でもじもじしている…
+	ELSEIF CFLAG:RANDOM_CHARANUM:負け犬 && !TALENT:RANDOM_CHARANUM:恋慕 && !TALENT:RANDOM_CHARANUM:思慕 && !TALENT:RANDOM_CHARANUM:愛欲
+		PRINTFORMW %CALLNAME:MASTER%の姿を認めた%CALLNAME:RANDOM_CHARANUM%は表情を強ばらせた
 	ELSEIF TALENT:RANDOM_CHARANUM:恋慕
-		PRINTFORMW 认出了%CALLNAME:MASTER%的%CALLNAME:RANDOM_CHARANUM%很开心地走了过来
+		PRINTFORMW %CALLNAME:MASTER%の姿を認めた%CALLNAME:RANDOM_CHARANUM%は嬉しそうにこちらに駆け寄ってきた
 	ELSEIF TALENT:RANDOM_CHARANUM:愛欲
-		PRINTFORMW 认出了%CALLNAME:MASTER%的%CALLNAME:RANDOM_CHARANUM%一看到你，就立刻过来，身体靠在你的胳膊上…
+		PRINTFORMW %CALLNAME:MASTER%の姿を認めた%CALLNAME:RANDOM_CHARANUM%はこちらにやって来るなり、腕にしなだれかかってきた…
 	ELSEIF ABL:RANDOM_CHARANUM:親密 >= 5
-		PRINTFORMW 发现了%CALLNAME:MASTER%的%CALLNAME:RANDOM_CHARANUM%挥了挥手
+		PRINTFORMW %CALLNAME:MASTER%の姿を認めた%CALLNAME:RANDOM_CHARANUM%は手を振ってきた
 	ENDIF
 ELSE
 	RETURN -1
@@ -382,121 +354,121 @@ IF FIND_CHARADATA(TOSTR(CHOSEN_MOB))
 	STRFIND RESULTS:0, "：" 
 	SUBSTRING RESULTS:0, 0, RESULT
 	MOBNAME = %RESULTS:0%
-	PRINTFORML %MOBNAME%的事忘掉,取而代之的是%CALLNAME:RANDOM_CHARANUM%的事吗？
+	PRINTFORML %MOBNAME%の事を忘れて、代わりに%CALLNAME:RANDOM_CHARANUM%のことを覚えますか？
 	CALL ASK_YN
 	IF !RESULT
-		PRINTFORM %CALLNAME:MASTER%干脆而薄情地忘掉了%MOBNAME%的事
+		PRINTFORM %CALLNAME:MASTER%は薄情にも%MOBNAME%のことを奇麗さっぱり忘れ、
 	ELSE
 		GOTO LOOP
 	ENDIF
 ENDIF
-MOBGIRL_PLACE:CHOSEN_MOB = CFLAG:RANDOM_CHARANUM:經常去的地方
+MOBGIRL_PLACE:CHOSEN_MOB = CFLAG:RANDOM_CHARANUM:よく行く地域
 SIF TALENT:RANDOM_CHARANUM:風俗嬢
 	MOBGIRL_PLACE:CHOSEN_MOB = 90
-TALENT:RANDOM_CHARANUM:路人 = 2
-CFLAG:RANDOM_CHARANUM:路人子セーブスロット = CHOSEN_MOB
-MOBGIRL_FP:CHOSEN_MOB = %路人子一人称%
-MOBGIRL_SP:CHOSEN_MOB = %路人子二人称%
-SAVECHARA TOSTR(CHOSEN_MOB), CSTR:RANDOM_CHARANUM:路人子プロフィール１, RANDOM_CHARANUM
-PRINTFORMW \@ TALENT:RANDOM_CHARANUM:風俗嬢 ? 保持了对%CALLNAME:RANDOM_CHARANUM%的在意 # 记住了%CALLNAME:RANDOM_CHARANUM%的事 \@
+TALENT:RANDOM_CHARANUM:行きずり = 2
+CFLAG:RANDOM_CHARANUM:モブ子セーブスロット = CHOSEN_MOB
+MOBGIRL_FP:CHOSEN_MOB = %モブ子一人称%
+MOBGIRL_SP:CHOSEN_MOB = %モブ子二人称%
+SAVECHARA TOSTR(CHOSEN_MOB), CSTR:RANDOM_CHARANUM:モブ子プロフィール１, RANDOM_CHARANUM
+PRINTFORMW %CALLNAME:RANDOM_CHARANUM%のことを\@ TALENT:RANDOM_CHARANUM:風俗嬢 ? お気にとしてキープした # 覚えた \@
 
 
 ;-------------------------------------------------
-;路人子プロフィール２を更新する
-;败犬でなければ、その日の過ごし方の样子でプロフィール２を追記
-;败犬の場合は、陥落状態に合わせて更新
+;モブ子プロフィール２を更新する
+;負け犬でなければ、その日の過ごし方の様子でプロフィール２を追記
+;負け犬の場合は、陥落状態に合わせて更新
 ;-------------------------------------------------
 @MOBGIRL_PROFILE2()
 #DIM 回数
 
 回数 = EXP:RANDOM_CHARANUM:Ｖ性交経験 + EXP:RANDOM_CHARANUM:Ａ性交経験
 
-;败犬でない場合は、性的関係の進展で文本を構成
-IF CFLAG:RANDOM_CHARANUM:败犬 == 0 
+;負け犬でない場合は、性的関係の進展でテキストを構成
+IF CFLAG:RANDOM_CHARANUM:負け犬 == 0 
 	;出会って日が浅い
-	IF DAY:0 - PRINTDATEF_TO_DAY(CSTR:RANDOM_CHARANUM:路人子プロフィール１) <= 30
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 刚认识的%CALLNAME:MASTER%
+	IF DAY:0 - PRINTDATEF_TO_DAY(CSTR:RANDOM_CHARANUM:モブ子プロフィール１) <= 30
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = 出会ったばかりの%CALLNAME:MASTER%
 	ELSE
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = %CALLNAME:MASTER%
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = %CALLNAME:MASTER%
 	ENDIF
 	;にゅーぷらん
 	IF TALENT:RANDOM_CHARANUM:風俗嬢
 		SIF GROUPMATCH(TALENT:RANDOM_CHARANUM:風俗嬢, 1, 2) && CFLAG:RANDOM_CHARANUM:1001 == 3
 			TALENT:RANDOM_CHARANUM:風俗嬢 += 2
 		IF CFLAG:RANDOM_CHARANUM:1001  > 6
-			LOCALS = 已经完全被情所困、甚至连工作和认真的区别都无法分清
+			LOCALS = にすっかり情が移ってしまい、もはや仕事か本気か区別がつかなくなってしまった
 		ELSEIF CFLAG:RANDOM_CHARANUM:1001  > 3
-			LOCALS = 持有着顾客以上的感情、而且对于能够侍奉这件事感到了喜悦
+			LOCALS = に単なる客以上の感情を持ち、奉仕が出来ることに悦びを覚えている
 		ELSE
-			LOCALS = 因为被一个好顾客多次指名而十分开心
+			LOCALS = を上客と見なしリピートの指名を嬉しく思っている
 		ENDIF
-	;允许无套
-	ELSEIF CFLAG:RANDOM_CHARANUM:允许无套
+	;生解禁
+	ELSEIF CFLAG:RANDOM_CHARANUM:生解禁
 		IF TALENT:RANDOM_CHARANUM:人妻 == 1
-			LOCALS = 沉迷于恋爱、不顾丈夫和家庭、两人关系很亲密
+			LOCALS = に夢中になってしまい、夫や家庭を顧みない、爛れた間柄となっている
 		ELSE
-			LOCALS = 作为雌性、本能地接受阴道内射精、甚至觉得生孩子也可以。
+			LOCALS = を雌として本能的に受け入れ、膣内射精で子を孕んでもいいとすら感じている
 		ENDIF
 	;合意ックス
-	ELSEIF GETBIT(CFLAG:RANDOM_CHARANUM:既成事實 , 1) || TALENT:RANDOM_CHARANUM:合意誤認
+	ELSEIF GETBIT(CFLAG:RANDOM_CHARANUM:既成事実 , 1)
 		IF TALENT:RANDOM_CHARANUM:人妻 == 1
-			LOCALS = 似乎要把多余的情欲发泄出来
+			LOCALS = を持て余した情欲のはけ口にしているようだ
 		ELSE
-			LOCALS = 被吸引住了、原谅了自己的身体
+			LOCALS = に惹かれ、体を許してしまった
 		ENDIF
 	;睡眠姦(一応)
 	ELSEIF EXP:RANDOM_CHARANUM:睡眠姦経験
-		LOCALS = 中计了、在睡眠之中的身体被好好爱护了
-	;合意無ックス
+		LOCALS = の策に嵌り、眠っている間に体を好きにされてしまった
+	;合意なしックス
 	ELSEIF CFLAG:RANDOM_CHARANUM:ヤラせちゃった
 		IF TALENT:RANDOM_CHARANUM:人妻 == 1
-			LOCALS = 似乎无法抗拒丈夫所没有的魅力。
+			LOCALS = の夫にはない魅力に抗えないでいるようだ
 		ELSE
-			LOCALS = 忘乎所以地发生了性行为
+			LOCALS = と流されるがままに淫行に及んでしまった
 		ENDIF
 	;不埒刻印
 	ELSEIF MARK:RANDOM_CHARANUM:不埒刻印
 		IF TALENT:RANDOM_CHARANUM:人妻 == 1
-			LOCALS = 虽然不该这么做但仍然是以性的目光被看待着
+			LOCALS = にいけないと思いながらも性的な目線を向けている
 		ELSE
-			LOCALS = 似乎开始对性方面产生兴趣了。
+			LOCALS = に性的な興味を持ち始めたようだ
 		ENDIF
 	;時姦刻印
 	ELSEIF MARK:RANDOM_CHARANUM:時姦刻印
-		LOCALS = 的注意、在时间停止的时候身体被开发了
+		LOCALS = の目に留まり、止まった時の中で体を開発されてしまった
 	ELSE
-		LOCALS = 的印象还过得去。
+		LOCALS = の印象はまずまずのようだ
 	ENDIF
-	CSTR:RANDOM_CHARANUM:路人子プロフィール２ += LOCALS
+	CSTR:RANDOM_CHARANUM:モブ子プロフィール２ += LOCALS
 
-;败犬の場合は、陥落強度に応じて文本を構成
+;負け犬の場合は、陥落強度に応じてテキストを構成
 ELSE
 	IF TALENT:RANDOM_CHARANUM:恋慕
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 弹幕游戏的胜负无所谓、现在从心底里恋慕着%CALLNAME:MASTER%
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = 弾幕ごっこの勝敗などどうでもよく、今や%CALLNAME:MASTER%に心の底から惚れこんでいるようだ
 	ELSEIF TALENT:RANDOM_CHARANUM:愛欲
 		IF GETBIT(TALENT:MASTER:性別, 1)
 			IF 回数 >= 75
-				CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 身心完全屈服于%CALLNAME:MASTER%的性能力、急切期待着再次被侵犯
+				CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = %CALLNAME:MASTER%ちんぽに完全に屈服し、再び犯されるのを今か今かと心待ちにしている
 			ELSE
-				CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 完全屈服于%CALLNAME:MASTER%、急切等待着再次被疼爱
+				CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = %CALLNAME:MASTER%に完全に屈服し、再び愛されるのを今か今かと心待ちにしている
 			ENDIF
 		ELSE
-			CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 曾经的威风不知到哪里去了、身心都被%CALLNAME:MASTER%的颜色所浸染
+			CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = かつての威勢はどこへやら、心もカラダも%CALLNAME:MASTER%色にどっぷり染められてしまっている
 		ENDIF
 	ELSEIF TALENT:RANDOM_CHARANUM:思慕
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 不仅%CALLNAME:MASTER%的腕力、好像也开始在意别人的态度了
-	ELSEIF TALENT:RANDOM_CHARANUM:炮友
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 被%CALLNAME:MASTER%腾得七零八落、堕落为肉欲的俘虏
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = %CALLNAME:MASTER%の腕っぷしだけでなく、人となりが気になり始めたようだ
+	ELSEIF TALENT:RANDOM_CHARANUM:セフレ
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = %CALLNAME:MASTER%に散々に鳴かされ、肉欲の虜に堕ちてしまっている
 	ELSEIF MARK:RANDOM_CHARANUM:快楽刻印
-		CSTR:RANDOM_CHARANUM:路人子プロフィール２ = 虽然嘴上否定了、但身体却老实地对欲望的快乐作出了反应
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール２ = 口では否定しつつも、体は正直に快楽に反応してしまっているようだ
 	ENDIF
 ENDIF
 
 ;-------------------------------------------------
 ;PRINT_DATE_Fの●年目 ■の★日の文字列を
 ;DAY:0（総日数）と同じ日数に読み替える関数
-;ARGS CSTR:RANDOM_CHARANUM:路人子プロフィール１を
-;代入して、出会った日期を割り出す使用前提
+;ARGS CSTR:RANDOM_CHARANUM:モブ子プロフィール１を
+;代入して、出会った日付を割り出す使用前提
 ;-------------------------------------------------
 @PRINTDATEF_TO_DAY(ARGS)
 #FUNCTION

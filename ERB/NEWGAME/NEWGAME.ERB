@@ -1,5 +1,5 @@
 ﻿;-----------------------------------------------------------
-;初次游玩
+;はじめから
 ;-----------------------------------------------------------
 @NEWGAME
 ゲーム開始処理中 = 1
@@ -7,19 +7,19 @@
 SAVESTR:本体バージョン = %eraTW_Version%
 ;クラス関数初期化
 CALL MAKE_ALL_CLASS_LIST
-;默认オプション
+;デフォルトオプション
 CALL DEFAULT_OPTION
-;筹码初期化
+;カリスマ初期化
 CALL SET_CHARISMA("NEW")
 PBAND = 12
 
-;日期１日目
+;日付１日目
 DAY = 1
 DAY:2 = 1
 DAY:3 = 1
 ;FLAG:酒虫 = 1
-VAR_FERMENT = 普通的水
-;(天候パッチ)冷害発生回数・風害発生回数・水害発生回数・連続降水Counterをリセット
+VAR_FERMENT = ただの水
+;(天候パッチ)冷害発生回数・風害発生回数・水害発生回数・連続降水カウンターをリセット
 IS_COLD_CROP_DAMAGE = 0
 IS_STORM_CROP_DAMAGE = 0
 IS_FLOOD_CROP_DAMAGE = 0
@@ -36,19 +36,19 @@ YEAR_WEATHER_CONTROL = 0
 CALL WEATHER_FORECAST_1TERM
 ;(天候パッチ)1日予報を行う
 CALL WEATHER_FORECAST_1DAY
-FLAG:CHILD_SUPPORT_RELIEF = 1
-FLAG:MOB_PREGNANCY_TYPES = 1
-FLAG:TWINS_CHANCE = 10
-FLAG:TRIPLETS_CHANCE = 2
 ;キャラ生成
 CALL ADD_ALL_CHARACTERS
 ;MASTER生成
 CALL NEWGAME_MAKE
+FLAG:CHILD_SUPPORT_RELIEF = 1
+FLAG:MOB_PREGNANCY_TYPES = 1
+FLAG:TWINS_CHANCE = 10
+FLAG:TRIPLETS_CHANCE = 2
 FOR LOCAL, 1, CHARANUM
-	CALL KOJO_MULTIPLE(LOCAL,1)
+	CALL KOJO_COUNT_CHECK(LOCAL)
 NEXT
 gDialogueUpdateInit = 1
-CALL UPDATE_AND_SELECTION_OF_KOJO_MODDING("SELECTION")
+CALL NEWGAME_DIALOGUE_SELECT
 gDialogueUpdateInit = 0
 ;recolored map or default
 CALL DEFAULT_MAP_COLOR
@@ -57,15 +57,15 @@ CALL SET_MAINHOME
 ;オプション
 CALL NEWGAME_OPTION
 
-;角色設定
+;キャラ設定
 FOR LOCAL,0,CHARANUM
 	;開始位置
 	CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:初期位置
 	;服装
 	CALL SELECT_CLOTHES(LOCAL, "今日の衣装")
-	CALL CTRL_CLOTHES_SET(LOCAL, "現在衣装の変更_便装")
+	CALL CTRL_CLOTHES_SET(LOCAL, "現在衣装の変更_普段着")
 	CALL CLOTHES_SETTING_TRAIN(LOCAL)
-	CALL 内衣確認リセット(LOCAL)
+	CALL 下着確認リセット(LOCAL)
 	CVARSET BASE, GETNUM(BASE, "酒気"), 0
 NEXT
 ;MASTER起床時間セット（7時）
@@ -82,22 +82,22 @@ RETURN 0
 ;ARG		NONE
 ;RETURN		VOID
 ;COMMENT	
-;角色を追加したときにいちいちここをいじる必要の無いように
-;人物数量上限はERHファイルで定義
+;キャラを追加したときにいちいちここをいじる必要の無いように
+;キャラクタ数上限はERHファイルで定義
 ;-----------------------------------------------------------
-@ADD_ALL_CHARACTERS(ARG) ;custom arg to skip muiltiple dialogue choice
-FOR LOCAL,CHARANUM,人物数量上限
+@ADD_ALL_CHARACTERS
+FOR LOCAL,CHARANUM,キャラクタ数上限
 	SIF !EXISTCSV(LOCAL)
 		CONTINUE
 	CALL ADDCHARA_INIT(LOCAL)
 	CALL UPDATE_MAIN_UPDATE_ABL(LOCAL)
 	CALL UPDATE_MAIN_UPDATE_SEX_EXP(LOCAL)
-	IF !EXP:LOCAL:接吻経験
-		TALENT:LOCAL:無接吻経験 = 1
+	CALL PREGNANCY_TYPES_NEWGAME_SET()
+	IF !EXP:LOCAL:キス経験
+		TALENT:LOCAL:キス未経験 = 1
 	ENDIF
 NEXT
-;CALL PREGNANCY_TYPES_NEWGAME_SET()
-CALL 旧生育系统预设
+
 
 ;-----------------------------------------------------------
 ;設定変更
@@ -105,7 +105,7 @@ CALL 旧生育系统预设
 @NEWGAME_OPTION
 #DIMS choices, 100
 ;初期化
-;甲斐性無、農民
+;甲斐性なし、農民
 SETBIT FLAG:1000, 1
 SETBIT FLAG:1000, 2
 ;TINKO
@@ -116,44 +116,44 @@ SIF !CFLAG:MASTER:基本服装セット
 	CALL MASTER_CLOTHES_INIT
 ;
 SIF !ゲーム開始処理中
-	新游戏特典 '= "无"
+	ニューゲーム特典 '= "なし"
 ;選択肢
 VARSET choices
 PRINTL
 PRINTL
-PRINTL 在游戏开始前你可以变更游戏各种的设定。
+PRINTL ゲーム開始前に各種設定を変更することができます。
 DRAWLINE
-;你設定
-SIF !FLAG:扮演
-	choices:0 '= @"%CALLNAME:MASTER%进行自定义角色"
+;あなた設定
+SIF !FLAG:なりきり
+	choices:0 '= @"%CALLNAME:MASTER%をカスタマイズしなおす"
 SIF HAS_PENIS(MASTER)
-	choices:1 '= @"%CALLNAME:MASTER%的男性器为：%TINKO_SIMPLE(MASTER)%"
-choices:2 '= @"%CALLNAME:MASTER%的服装为：%MASTER_CLOTHES_NAME(CFLAG:MASTER:基本服装セット)%"
+	choices:1 '= @"%CALLNAME:MASTER%の男性器は%TINKO_SIMPLE(MASTER)%です"
+choices:2 '= @"%CALLNAME:MASTER%の服装は%MASTER_CLOTHES_NAME(CFLAG:MASTER:基本服装セット)%です"
 IF FLAG:甲斐性無
-	choices:3 '= @"%CALLNAME:MASTER%没有告白的胆量"
+	choices:3 '= @"%CALLNAME:MASTER%には告白をするような度胸はありません"
 ELSE
-	choices:3 '= @"%CALLNAME:MASTER%有告白的胆量"
+	choices:3 '= @"%CALLNAME:MASTER%の度胸はふつうです"
 ENDIF
 IF FLAG:地主
-	choices:4 '= @"%CALLNAME:MASTER%是为%CALLNAME:(FLAG:地主)%劳动的农民"
+	choices:4 '= @"%CALLNAME:MASTER%は%CALLNAME:(FLAG:地主)%の下で働く農民です"
 ELSE
-	choices:4 '= @"%CALLNAME:MASTER%是无债一身轻的自由人"
+	choices:4 '= @"%CALLNAME:MASTER%は身軽な自由人です"
 ENDIF
-choices:5 '= @"%CALLNAME:MASTER%居住在%GET_MAPNAME(MAIN_MAP)%的%STR_TR(默认初期位置 + (MAIN_MAP ? 8000 # 0) )%"
-;幻想乡
-choices:10 '= @"可以进行各角色的处女・非处女变更（＋futa化与否＆形状）"
-choices:11 '= @"可以进行各角色的体型变更"
+choices:5 '= @"%CALLNAME:MASTER%は%GET_MAPNAME(MAIN_MAP)%の%STR:(デフォルト初期位置 + (MAIN_MAP ? 8000 # 0) )%に住みます"
+;幻想郷
+choices:10 '= @"各キャラの処女・非処女を変更できます"
+choices:11 '= @"各キャラの体型を変更できます"
 ;特典
 IF ゲーム開始処理中
 	choices:20 '= NEWGAMEBONUS_TEXT()
-ELSEIF ゲーム继承処理中
+ELSEIF ゲーム引き継ぎ処理中
 	choices:20 '= 周回特典_表示()
 ENDIF
 
-CALL ASK_CHOICES(choices, 100, "完成自定义阶段并开始游戏")
+CALL ASK_CHOICES(choices, 100, "終了して開始する")
 SELECTCASE RESULT
 	CASE 0
-		IF !FLAG:扮演
+		IF !FLAG:なりきり
 			CALL CUSTOM_TERMINAL(MASTER)
 			CALL SET_MAINHOME
 		ENDIF
@@ -163,7 +163,7 @@ SELECTCASE RESULT
 		CALL NEWGAME_BONUS_APPLY
 		CALL SET_APPLY_NOUMIN
 		;CALL 周回特典_適用
-		ITEM:平价食材 = 10
+		ITEM:安物食材 = 10
 		RETURN
 	CASE 1
 		SIF HAS_PENIS(MASTER)
@@ -184,7 +184,7 @@ SELECTCASE RESULT
 	CASE 20
 		IF ゲーム開始処理中
 			CALL NEWGAME_BONUS_SELECT
-		ELSEIF ゲーム继承処理中
+		ELSEIF ゲーム引き継ぎ処理中
 			CALL 周回特典
 		ENDIF
 ENDSELECT
@@ -197,37 +197,27 @@ RESTART
 ;恋人修正済フラグを立てる
 SETBIT FLAG:1000, 3
 SETBIT FLAG:1000, 4
-modding_version = NOW_VERSION
 CALL VERSION_UP
-PRINTW 游戏开始处理完成
-CALL saveManageSaveGame(1000,, "初次游玩")
-PRINTL 已自动保存
-gDialogueUpdateInit = 1;custom code
-CALL UPDATE_MAIN("init")
-gDialogueUpdateInit = 0;custom code
+PRINTW ゲーム開始処理終了
+SAVEDATA 99, "はじめから"
+PRINTL オートセーブしました
 PRINTL
-CALL COLORMESSAGE(@"许多角色都有剧本自定义的设置，可在其能力界面中访问。请务必查看！",C_YELLOW,1)
-PRINTL 要进入蛇版魔改补丁设置界面吗？
-CALL ASK_YN()
-SIF !RESULT
-	CALL OPTION_DLC
-CALL COLORMESSAGE(@"补丁设置在主页面的[400] - OPTION 游戏设置内",C_YELLOW,1)
+PRINTL 基幹アップデート処理を実行中…
+DRAWLINE
+CALL UPDATE_MAIN("init")
 
-;custom code, set all abilities up to date upon the start
 @INIT_STARTINGLV
-PRINTFORML 正在匹配经验与能力等级…
+;#;PRINTFORML 能力値と経験を標準化し、口上CFLAGを設定中...
 SKIPDISP 1
 FOR LOCAL,0,CHARANUM
 	SIF CFLAG:LOCAL:出禁
 		CONTINUE
-	SIF !(GETCHARA(LOCAL) != -1 && EXISTCSV(LOCAL)) ;failsafe before csv checking in following functions
-		CONTINUE
-	
-	CALL SET_MINIMUM_EXP_ALL(LOCAL, 1)
+	CALL UPDATE_MAIN_UPDATE_ABL(LOCAL, 1)
 	CALL SOURCE_ABLUP(LOCAL)
 	
 	SIF EXP:LOCAL:キス経験 == 0 && TALENT:LOCAL:キス未経験 == 0 && CFLAG:LOCAL:ファーストキス喪失対象 != 1 ;set never kissed
 		 TALENT:LOCAL:キス未経験 = 1
+	CALL KOJO_MESSAGE_SEND("FLAGSETTING", 0, LOCAL)
 NEXT
 CALL SHOW_ABLUP_SELECT
 SKIPDISP 0

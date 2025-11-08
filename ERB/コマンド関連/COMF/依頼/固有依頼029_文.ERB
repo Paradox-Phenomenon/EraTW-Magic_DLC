@@ -5,17 +5,17 @@
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE ARG % 1000
-;ID101：請給我酒
+;ID101：お酒をください
 CASE 101
 	SELECTCASE O_DATA
 	CASE "依頼名"
-		CALLF MAKE_STR(V_NAME, "请给我酒")
+		CALLF MAKE_STR(V_NAME, "お酒をください")
 	CASE "依頼内容表示"
-		CALLF MAKE_STR(V_NAME, "提供三瓶以上的酒")
+		CALLF MAKE_STR(V_NAME, "お酒を三つ以上納入する")
 	CASE "依頼報酬表示"
 		CALLF MAKE_STR(V_NAME, @"%金額表示(5000)%")
-	CASE "依頼実行指令名"
-		CALLF MAKE_STR(V_NAME, "送出酒水")
+	CASE "依頼実行コマンド名"
+		CALLF MAKE_STR(V_NAME, "お酒を渡す")
 		
 	;依頼対象が実行時に決定するので
 	;とりあえず作業にしてCLIENTとの同室判定だけさせるよ
@@ -36,7 +36,7 @@ CASE 101
 		CALLF MAKE_INT(V_NAME, 1)
 	CASE "依頼実行可能条件"
 	;実行可能は@COM_ABLE367も確認のこと
-		;SIF MAX(ITEM:51, ITEM:52, ITEM:53) >= 3
+		SIF MAX(ITEM:51, ITEM:52, ITEM:53) >= 3
 			CALLF MAKE_INT(V_NAME, 1)
 	;成功/失敗処理はCARRYOUTで直接書く
 	;SOURCEやITEM入手など、内容が複雑なので
@@ -45,17 +45,17 @@ CASE 101
 		SIF RAND:100 < 30
 			CALLF MAKE_INT(V_NAME, 1)
 	ENDSELECT
-;ID102：街头问卷
+;ID102：街頭アンケート
 CASE 102
 	SELECTCASE O_DATA
 	CASE "依頼名"
-		CALLF MAKE_STR(V_NAME, "街头问卷")
+		CALLF MAKE_STR(V_NAME, "街頭アンケート")
 	CASE "依頼内容表示"
-		CALLF MAKE_STR(V_NAME, "人间之里广场的问卷调查")
+		CALLF MAKE_STR(V_NAME, "人里広場での聞き込み")
 	CASE "依頼報酬表示"
 		CALLF MAKE_STR(V_NAME, @"%金額表示(3000)%")
-	CASE "依頼実行指令名"
-		CALLF MAKE_STR(V_NAME, "街头问卷")
+	CASE "依頼実行コマンド名"
+		CALLF MAKE_STR(V_NAME, "街頭アンケート")
 		
 	CASE "依頼内容"
 		;人里中央広場(202)が対象
@@ -93,7 +93,7 @@ ENDSELECT
 ;固有依頼の設定用
 ;この関数は実行/成功/失敗時の
 ;報酬とペナルティと地の文のみを扱います
-;各角色のメッセージは別所にて
+;各キャラのメッセージは別所にて
 @IRAI_固有29(CHARA, IRAI_ID, SCENE)
 #DIM  CHARA
 #DIM  IRAI_ID
@@ -101,8 +101,8 @@ ENDSELECT
 #DIM  CLIENT_ID
 CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
-;个々の依頼名で分岐
-CASE "请给我酒"
+;個々の依頼名で分岐
+CASE "お酒をください"
 	SELECTCASE SCENE
 	CASE "依頼条件表示"
 	;何か専用の表示情報を設けたい時用
@@ -116,21 +116,19 @@ CASE "请给我酒"
 	CASE "依頼実行時"
 	;このCASEに限り、RESULTが意味を持ちます
 	;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-	;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+	;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
-		PRINTL 要交出什么呢？
+		PRINTL どれを渡そうか？
 		CALL 酒一覧表示(3)
-		;只允许最老的三种酒
-		;IF INRANGE(RESULT, 51, 53)
-		IF IS_ALC(RESULT)
-			PRINTFORML %CALLNAME:MASTER%把酒交给了%CALLNAME:TARGET%
+		IF INRANGE(RESULT, 51, 53)
+			PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%にお酒を渡した
 			;TFLAGに渡した酒番号を保存。報酬などを分岐させたい場合に。
 			TFLAG:194 = RESULT
 			LOCALS = %ITEMNAME:RESULT%
 			CALL LOST_ITEM(LOCALS, 3, 2)
 			RETURN IRAI_CONST_RESULT("実行して成功")
 		ELSE
-			RETURN IRAI_CONST_RESULT("中止")
+			RETURN IRAI_CONST_RESULT("キャンセル")
 		ENDIF
 	CASE "依頼成功時"
 	;成功報告時の報酬など
@@ -139,8 +137,8 @@ CASE "请给我酒"
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, 30)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, 10)
 		CALL GET_MONEY_YEN(5000, 2)
 	CASE "依頼失敗時"
@@ -148,12 +146,12 @@ CASE "请给我酒"
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, -20)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, -10)
 	ENDSELECT
 	
-CASE "街头问卷"
+CASE "街頭アンケート"
 	SELECTCASE SCENE
 	CASE "依頼条件表示"
 	;何か専用の表示情報を設けたい時用
@@ -167,10 +165,10 @@ CASE "街头问卷"
 	CASE "依頼実行時"
 	;このCASEに限り、RESULTが意味を持ちます
 	;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-	;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+	;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 		DOWNBASE:MASTER:気力 += 50
-		PRINTFORMW %CALLNAME:MASTER%拉住在村里步行的人进行着问卷调查
+		PRINTFORMW %CALLNAME:MASTER%は道行く里人たちをつかまえてはアンケート調査を行なった
 		TIME += 120
 		RETURN IRAI_CONST_RESULT("実行して成功")
 	CASE "依頼成功時"
@@ -181,8 +179,8 @@ CASE "街头问卷"
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, 30)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, 15)
 		CALL GET_MONEY_YEN(3000, 2)
 	CASE "依頼失敗時"
@@ -190,8 +188,8 @@ CASE "街头问卷"
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, -20)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, -10)
 	ENDSELECT
 ENDSELECT

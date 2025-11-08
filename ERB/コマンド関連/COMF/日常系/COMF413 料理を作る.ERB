@@ -1,7 +1,7 @@
 ﻿;-------------------------------------------------
-;製作料理
-;日常系指令、レベル1
-;DISH_TYPE_NUM     料理の種別,1=軽食,2=主食,3=甜点,4=練習,LOCAL保存しておく
+;料理を作る
+;日常系コマンド、レベル1
+;DISH_TYPE_NUM     料理の種別,1=軽食,2=主食,3=デザート,4=練習,LOCAL保存しておく
 ;-------------------------------------------------
 @COM413
 #DIM DISH_TYPE_NUM
@@ -23,8 +23,8 @@
 #DIMS DYNAMIC MOUSE_OVER
 
 #DIM nLineCnt_Head
-#DIMS CONST TENKABUTSU, 8 = "", "なし", "栄養強化剤", "莓子酒", "黑朗姆酒", "白兰地VS", "白兰地VSOP", "白兰地XO"
-#DIMS CONST SHIKOMI, 6 = "", "なし", "媚薬", "利尿剤", "催情薬", "睡眠薬",
+#DIMS CONST TENKABUTSU, 8 = "", "なし", "栄養強化剤", "フランボワーズ", "ダークラム", "ブランデーVS", "ブランデーVSOP", "ブランデーXO"
+#DIMS CONST SHIKOMI, 6 = "", "なし", "媚薬", "利尿剤", "惚れ薬", "睡眠薬"
 COOKING_LCOUNT = 0
 
 nLineCnt_Head = LINECOUNT
@@ -74,7 +74,7 @@ SELECTCASE DISH_TYPE_NUM
 		DISH_TYPE = 主食
 		MAXMENU = 100
 	CASE 3
-		DISH_TYPE = 甜点
+		DISH_TYPE = デザート
 		MAXMENU = 50
 	CASE 4
 		練習モード = 1
@@ -83,54 +83,22 @@ SELECTCASE DISH_TYPE_NUM
 		SIF SELECT_MENU - 400 != DISH_ASSI
 			SELECT_MENU = 0
 ENDSELECT
-;;材料修整PLUS
-;IF SELECT_MENU > 0 && (STRLENS(DISH_TYPE) > 0 || DISH_TYPE_NUM == 4)
-;	CALL DISHDATA(SELECT_MENU, DISH_TYPE, 練習モード)
-;	;表示外なら選択リセット
-;	IF !RESULT
-;		SELECT_MENU = 0
-;		SELECT_ING = -1
-;	;作れないなら材料だけリセットして表示する
-;	ELSEIF RESULT < 10
-;		SELECT_ING = -1
-;	;作れるなら材料を設定
-;	ELSEIF RESULT == 10
-;		RESULT = 0
-;		;選択中の材料があったら選択を保持する
-;		FOR LOCAL, 1, 11
-;			IF DISH_ING:LOCAL == SELECT_ING && SELECT_ING >= 0
-;				RESULT = 1
-;				BREAK
-;			ENDIF
-;		NEXT
-;		;選択中の材料がなければ材料を再設定
-;		IF !RESULT
-;			FOR LOCAL, 1, 11
-;				IF ITEM:(DISH_ING:LOCAL) > 0
-;					SELECT_ING = DISH_ING:LOCAL
-;					BREAK
-;				ENDIF
-;			NEXT
-;		ENDIF
-;	ENDIF
-;ENDIF
-
 
 CALL COOKING_UI(DISH_TYPE_NUM, SELECT_MENU, SELECT_ING, SELECT_DRG, SELECT_DRG_2, 練習モード,, SEARCH_INPUT, SEARCH_TYPE)
 
 IF !練習モード
-	PRINTFORML [ 7]随机做一种%TASTE_TR(DISH_TYPE)%
+	PRINTFORML [ 7]おまかせ%DISH_TYPE% を作る
 ELSE
 	PRINTL 
 ENDIF
-PRINTFORML [ 8]确认委托
+PRINTFORML [ 8] 依頼を確認
 
 SIF SHIRAHU(TARGET) == 1 && TARGET != MASTER
-	PRINTFORML [88] \@ DISH_ASSI ? 不让%CALLNAME:DISH_ASSI%帮忙 # 让%CALLNAME:DISH_ASSI%帮忙 \@
+	PRINTFORML [88] \@ DISH_ASSI ? %CALLNAME:DISH_ASSI%に手伝わせない # %CALLNAME:DISH_ASSI%に手伝わせる \@
 
-PRINTFORML [99] 搜索料理标签（菜单）
-PRINTFORML [2000] 搜索料理名（输入）：\@ SEARCH_TYPE == 1? ON # OFF \@
-PRINTFORML [ 0] 放弃
+PRINTFORML [99] 料理を味で検索（メニュー）
+PRINTFORML [2000] 料理名で検索（入力）: \@ SEARCH_TYPE == 1? ON # OFF \@
+PRINTFORML [ 0] やめる
 
 IF SEARCH_TYPE
 	AWAIT 1
@@ -149,7 +117,7 @@ ELSE
 ENDIF
 $INPUT
 IF RESULT == 99
-	CALL Qol_DishTaste
+	CALL TEMP_DishTaste
 	CONTINUE
 ENDIF
 
@@ -232,7 +200,7 @@ ELSEIF RESULT == 7 && !練習モード
 	CALL FISHER_YATES_SHAFFLE(400 + CHARANUM)
 	FOR LOCAL, 1, 400 + CHARANUM + 1
 		CALL DISHDATA(SHAFFLE_ARRAY:LOCAL + 100, DISH_TYPE)
-		SIF STRCOUNT(DISH_TASTE, "过季/")
+		SIF STRCOUNT(DISH_TASTE, "季節外れ/")
 			CONTINUE
 		SIF STRCOUNT(DISH_TASTE, "謎料理/")
 			CONTINUE
@@ -252,7 +220,7 @@ ELSEIF RESULT == 7 && !練習モード
 	IF SELECT_MENU
 		GOTO COOK
 	ELSE
-		PRINTFORMW 没有可制作的%DISH_TYPE%...
+		PRINTFORMW 作れる%DISH_TYPE%が無かった…
 		COOKING_LCOUNT ++
 	ENDIF
 ELSEIF RESULT == 8
@@ -274,7 +242,7 @@ ELSEIF RESULT == 9 && SELECT_MENU && SELECT_ING >= 0 && ITEM:SELECT_ING > 0 && (
 	DISHNAME = %DISH_NAME%
 	FLAG:料理 = SELECT_MENU
 	SELECT_MENU = 0
-	PRINTFORML 使用食材：%ITEMNAME_TR(SELECT_ING)%
+	PRINTFORML 使用食材：%ITEMNAME:SELECT_ING%
 	CALL DISH_COOKING(練習モード)
 	ITEM:SELECT_ING --
 	SIF SELECT_DRG
@@ -288,7 +256,7 @@ ELSEIF RESULT == 9 && SELECT_MENU && SELECT_ING >= 0 && ITEM:SELECT_ING > 0 && (
 		CASE "主食"
 			DOWNBASE:MASTER:体力 = 100
 			DOWNBASE:MASTER:気力 = 100
-		CASE "甜点"
+		CASE "デザート"
 			DOWNBASE:MASTER:体力 = 100
 			DOWNBASE:MASTER:気力 = 100
 	ENDSELECT
@@ -299,9 +267,9 @@ ELSEIF RESULT == 9 && SELECT_MENU && SELECT_ING >= 0 && ITEM:SELECT_ING > 0 && (
 		EXP:MASTER:料理経験 ++
 	STAIN:MASTER:口 = 0
 	STAIN:MASTER:手 = 0
-	CFLAG:MASTER:口内精液 = 0
-	CFLAG:MASTER:脸上精液 = 0
-	CFLAG:MASTER:手上精液 = 0
+	CFLAG:MASTER:口に精液 = 0
+	CFLAG:MASTER:顔に精液 = 0
+	CFLAG:MASTER:手に精液 = 0
 	TIME += DISH_TIME
 	SIF CFLAG:MASTER:同行
 		CFLAG:MASTER:同行 += DISH_TIME
@@ -349,7 +317,7 @@ ELSEIF RESULT == 9 && SELECT_MENU && SELECT_ING >= 0 && ITEM:SELECT_ING > 0 && (
 			CASE "主食"
 				DOWNBASE:DISH_ASSI:体力 = 100
 				DOWNBASE:DISH_ASSI:気力 = 100
-			CASE "甜点"
+			CASE "デザート"
 				DOWNBASE:DISH_ASSI:体力 = 100
 				DOWNBASE:DISH_ASSI:気力 = 100
 		ENDSELECT
@@ -366,21 +334,9 @@ ELSEIF RESULT == 9 && SELECT_MENU && SELECT_ING >= 0 && ITEM:SELECT_ING > 0 && (
 			CFLAG:DISH_ASSI:同行 += DISH_TIME
 		STAIN:DISH_ASSI:口 = 0
 		STAIN:DISH_ASSI:手 = 0
-		CFLAG:DISH_ASSI:口内精液 = 0
-		CFLAG:DISH_ASSI:脸上精液 = 0
-		CFLAG:DISH_ASSI:手上精液 = 0
-	ENDIF
-	;魔改超级幽幽子大人，100%出现模式，无视其它条件必然出现每天一次。
-	IF superYuyukoSamaMode == 2 && superYuyukoSamaIsHungry >= 1
-		CALL superYuyukoSama
-		PRINTW
-		RETURN -1
-	;概率出现模式，superYuyukoSamaIsHungry，开启后每天加一（即每天增加1%概率），关闭后每天重置为0（即0%概率）
-	;!CAN_TAKARI(66)只在正常幽幽子无法出现的时候才能出现
-	ELSEIF (RAND:100 + superYuyukoSamaIsHungry) >= 100 && !CAN_TAKARI(66) && superYuyukoSamaMode > 0
-		CALL superYuyukoSama
-		PRINTW
-		RETURN -1
+		CFLAG:DISH_ASSI:口に精液 = 0
+		CFLAG:DISH_ASSI:顔に精液 = 0
+		CFLAG:DISH_ASSI:手に精液 = 0
 	ENDIF
 	RETURN 1
 ENDIF
@@ -392,7 +348,7 @@ LOOP 1
 ;-------------------------------------------------
 @DISH_COOKING(練習モード)
 #DIM 道具力
-#DIM BONUS点
+#DIM ボーナス点
 #DIM 減点
 #DIM 練習モード
 ;念の為最終チェック
@@ -403,7 +359,7 @@ SIF DISH_TYPE == ""
 SIF !DISH_TIME
 	THROW
 
-PRINTFORMW \@ DISH_ASSI ? 和%CALLNAME:DISH_ASSI%一起 # \@制作了【%DISHNAME_TR()%】
+PRINTFORMW %COND_STR(@"%CALLNAME:DISH_ASSI%と", DISH_ASSI)%【%DISH_NAME%】を作ります
 PRINTFORML ・
 PRINTFORML ・・・
 SIF DISH_TIME > 10
@@ -411,21 +367,20 @@ SIF DISH_TIME > 10
 SIF DISH_TIME > 30
 	PRINTFORML ・・・・・・・・・・・・
 ;たかり
-IF STRCOUNT(DISH_TASTE, "YYK严选/")
-	CALL COOKING_TAKARI([[幽幽子]], 200)
-	;这是什么，我尝一口
-	CALL COOKING_TAKARI([[紫苑]], 20)
-ELSEIF DISH_TYPE == "軽食"
-	CALL COOKING_TAKARI([[幽幽子]], 5)
+;FOR LOCAL,1,CHARANUM
+;NEXT
+
+IF DISH_TYPE == "軽食"
+	CALL COOKING_TAKARI([[幽々子]], 5)
 	CALL COOKING_TAKARI([[紫苑]], 5)
 ELSEIF DISH_TYPE == "主食"
-	CALL COOKING_TAKARI([[幽幽子]], 10)
+	CALL COOKING_TAKARI([[幽々子]], 10)
 	CALL COOKING_TAKARI([[紫苑]], 10)
 ENDIF
 
 ;TASTE設定
-SIF FLAG:扮演
-	CALL DISH_TASTE_FROM_CHARA(FLAG:扮演)
+SIF FLAG:なりきり
+	CALL DISH_TASTE_FROM_CHARA(FLAG:なりきり)
 SIF DISH_ASSI && !練習モード
 	CALL DISH_TASTE_FROM_CHARA(DISH_ASSI)
 DISH_TASTE += "できたて/"
@@ -433,15 +388,15 @@ DISH_TASTE += DISH_NAME + "/"
 DISH_TASTE += DISH_TYPE + "/"
 SIF 練習モード
 	DISH_TASTE += "練習/"
-;[練習]は过季を消す
+;[練習]は季節外れを消す
 SIF STRCOUNT(DISH_TASTE, "練習/")
-	DISH_TASTE '= REPLACE(DISH_TASTE, "过季\/", "")
-;[中立温度]は夏だけ冷（荞麦麺,乌冬麺等）
+	DISH_TASTE '= REPLACE(DISH_TASTE, "季節外れ\/", "")
+;[中立温度]は夏だけ冷たい（そば,うどん等）
 IF STRCOUNT(DISH_TASTE, "中立温度/")
-	IF GET_MONTH() == "夏之月"
-		DISH_TASTE '= REPLACE(DISH_TASTE, "中立温度\/", "冷/")
+	IF GET_MONTH() == "夏の月"
+		DISH_TASTE '= REPLACE(DISH_TASTE, "中立温度\/", "冷たい/")
 	ELSE
-		DISH_TASTE '= REPLACE(DISH_TASTE, "中立温度\/", "温暖/")
+		DISH_TASTE '= REPLACE(DISH_TASTE, "中立温度\/", "温かい/")
 	ENDIF
 ENDIF
 ;鮮度設定,調理時間を追加しておく
@@ -451,113 +406,113 @@ DISH_LIMIT = DISH_MAXLIMIT + DISH_TIME
 EX_DISH_NAME = 
 IF DISH_ASSI
 	IF 練習モード
-		EX_DISH_NAME += CALLNAME:DISH_ASSI + "教的"
+		EX_DISH_NAME += CALLNAME:DISH_ASSI + "に教えてもらった"
 	ELSE
-		EX_DISH_NAME += "和" + CALLNAME:DISH_ASSI + "一起做的"
+		EX_DISH_NAME += CALLNAME:DISH_ASSI + "と作った"
 	ENDIF
 ENDIF
-IF STRCOUNT(DISH_TASTE, "女僕流/")
-	EX_DISH_NAME += "女仆流"
+IF STRCOUNT(DISH_TASTE, "メイド流/")
+	EX_DISH_NAME += "メイド流"
 ELSEIF STRCOUNT(DISH_TASTE, "天狗流/")
 	EX_DISH_NAME += "天狗流"
 ELSEIF STRCOUNT(DISH_TASTE, "冥界風/")
-	EX_DISH_NAME += "冥界风"
+	EX_DISH_NAME += "冥界風"
 ELSEIF STRCOUNT(DISH_TASTE, "天界風/")
-	EX_DISH_NAME += "天界风"
+	EX_DISH_NAME += "天界風"
 ELSEIF STRCOUNT(DISH_TASTE, "地底風/")
-	EX_DISH_NAME += "地底风"
+	EX_DISH_NAME += "地底風"
 ELSEIF STRCOUNT(DISH_TASTE, "地獄風/")
-	EX_DISH_NAME += "地狱风"
+	EX_DISH_NAME += "地獄風"
 ELSEIF STRCOUNT(DISH_TASTE, "畜生流/")
 	EX_DISH_NAME += "畜生流"
 ELSEIF STRCOUNT(DISH_TASTE, "月都風/")
-	EX_DISH_NAME += "月都风"
+	EX_DISH_NAME += "月都風"
 ELSEIF STRCOUNT(DISH_TASTE, "玉兎流/")
-	EX_DISH_NAME += "玉兔流"
+	EX_DISH_NAME += "玉兎流"
 ELSEIF STRCOUNT(DISH_TASTE, "魔界風/")
-	EX_DISH_NAME += "魔界风"
+	EX_DISH_NAME += "魔界風"
 ELSEIF STRCOUNT(DISH_TASTE, "夢幻風/")
-	EX_DISH_NAME += "梦幻风"
+	EX_DISH_NAME += "夢幻風"
 ELSEIF STRCOUNT(DISH_TASTE, "外界風/")
-	EX_DISH_NAME += "外界风"
+	EX_DISH_NAME += "外界風"
 ELSEIF STRCOUNT(DISH_TASTE, "化学的/")
 	EX_DISH_NAME += "化学的"
 ELSEIF STRCOUNT(DISH_TASTE, "小人族秘伝の味/")
-	EX_DISH_NAME += "小人族秘传的"
+	EX_DISH_NAME += "小人族秘伝の"
 ELSEIF STRCOUNT(DISH_TASTE, "稗田家秘伝の味/")
-	EX_DISH_NAME += "稗田家秘传的"
-ELSEIF STRCOUNT(DISH_TASTE, "純化的味道/")
-	EX_DISH_NAME += "纯化的"
+	EX_DISH_NAME += "稗田家秘伝の"
+ELSEIF STRCOUNT(DISH_TASTE, "純化した味/")
+	EX_DISH_NAME += "純化した"
 ELSEIF STRCOUNT(DISH_TASTE, "逆転/")
-	EX_DISH_NAME += "逆转的"
+	EX_DISH_NAME += "逆転した"
 ELSEIF STRCOUNT(DISH_TASTE, "大火力/")
 	EX_DISH_NAME += "大火力"
 ELSEIF STRCOUNT(DISH_TASTE, "氷結/")
-	EX_DISH_NAME += "结冰的"
-ELSEIF STRCOUNT(DISH_TASTE, "心跳味/")
-	EX_DISH_NAME += "惊喜口味"
+	EX_DISH_NAME += "氷結"
+ELSEIF STRCOUNT(DISH_TASTE, "ドッキリ味/")
+	EX_DISH_NAME += "ドッキリ"
 ELSEIF STRCOUNT(DISH_TASTE, "未知の味/")
-	EX_DISH_NAME += "奇妙口味"
-ELSEIF STRCOUNT(DISH_TASTE, "闪耀/")
-	EX_DISH_NAME += "闪光"
+	EX_DISH_NAME += "不思議な"
+ELSEIF STRCOUNT(DISH_TASTE, "きらめき/")
+	EX_DISH_NAME += "きらめく"
 ELSEIF STRCOUNT(DISH_TASTE, "生命力/")
-	EX_DISH_NAME += "妖精的"
+	EX_DISH_NAME += "妖精の"
 ELSEIF STRCOUNT(DISH_TASTE, "仙術/")
-	EX_DISH_NAME += "仙人的"
+	EX_DISH_NAME += "仙人の"
 ELSEIF STRCOUNT(DISH_TASTE, "鬼の魔力/")
-	EX_DISH_NAME += "鬼的"
+	EX_DISH_NAME += "鬼の"
 ELSEIF STRCOUNT(DISH_TASTE, "血の魔力/")
-	EX_DISH_NAME += "吸血鬼的"
+	EX_DISH_NAME += "吸血鬼の"
 ELSEIF STRCOUNT(DISH_TASTE, "魔力/")
-	EX_DISH_NAME += "魔法的"
+	EX_DISH_NAME += "魔法の"
 ELSEIF STRCOUNT(DISH_TASTE, "妖力/")
-	EX_DISH_NAME += "妖气的"
+	EX_DISH_NAME += "妖しい"
 ELSEIF STRCOUNT(DISH_TASTE, "霊障/")
-	EX_DISH_NAME += "灵气的"
+	EX_DISH_NAME += "霊的"
 ELSEIF STRCOUNT(DISH_TASTE, "秘術/")
-	EX_DISH_NAME += "神秘的"
+	EX_DISH_NAME += "ミスティックな"
 ENDIF
-IF STRCOUNT(DISH_TASTE, "去掉蔬菜的/")
-	IF DISH_NAME == "炒蔬菜"
-		EX_DISH_NAME += "去掉蔬菜的炒蔬菜"
-	ELSEIF DISH_NAME == "涼拌菜"
-		EX_DISH_NAME += "没有蔬菜的凉拌菜"
-	ELSEIF DISH_NAME == "漬物大碗飯"
-		EX_DISH_NAME += "大碗饭"
-	ELSEIF DISH_NAME == "奶酪番茄沙拉"
-		EX_DISH_NAME += "就是奶酪"
+IF STRCOUNT(DISH_TASTE, "野菜抜き/")
+	IF DISH_NAME == "野菜炒め"
+		EX_DISH_NAME += "野菜抜き野菜炒め"
+	ELSEIF DISH_NAME == "おひたし"
+		EX_DISH_NAME += "おひたさない"
+	ELSEIF DISH_NAME == "漬物に大盛り飯"
+		EX_DISH_NAME += "大盛り飯"
+	ELSEIF DISH_NAME == "モッツァレラチーズとトマトのサラダ"
+		EX_DISH_NAME += "モッツァレラチーズだけのサラダ"
 	ELSE
-		EX_DISH_NAME += "去掉蔬菜的"
-		EX_DISH_NAME += DISHNAME_TR()
+		EX_DISH_NAME += "野菜抜き"
+		EX_DISH_NAME += DISH_NAME
 	ENDIF
 ELSE
-	EX_DISH_NAME += DISHNAME_TR()
+	EX_DISH_NAME += DISH_NAME
 ENDIF
 PRINTFORML ＜%EX_DISH_NAME%＞
 CALL SHOW_TASTE(DISH_TASTE, "DISH_DATA")
 
 ;基本点数計算
-道具力 = ITEM:银杏案板
-BONUS点 = 0
+道具力 = ITEM:イチョウのまな板
+ボーナス点 = 0
 減点 = 0
 SIF STRCOUNT(DISH_TASTE, "道具の共鳴/")
 	TIMES 道具力, 2.0
 
 SIF STRCOUNT(DISH_TASTE, "旬/")
-	BONUS点 += 2
-SIF STRCOUNT(DISH_TASTE, "玉兎流/") && STRCOUNT(DISH_TASTE, "胡萝卜/")
-	BONUS点 += 2
+	ボーナス点 += 2
+SIF STRCOUNT(DISH_TASTE, "玉兎流/") && STRCOUNT(DISH_TASTE, "ニンジン/")
+	ボーナス点 += 2
 SIF STRCOUNT(DISH_TASTE, "プロの味/")
-	BONUS点 += 2
-SIF STRCOUNT(DISH_TASTE, "闪耀/")
-	BONUS点 += 1
+	ボーナス点 += 2
+SIF STRCOUNT(DISH_TASTE, "きらめき/")
+	ボーナス点 += 1
 ;得意料理や切れ味は該当していない場合消去されているのでこれでOK,得意料理は"/"を外す
 SIF STRCOUNT(DISH_TASTE, "得意料理")
-	BONUS点 += 2
+	ボーナス点 += 2
 SIF STRCOUNT(DISH_TASTE, "切れ味/")
-	BONUS点 += 1
-SIF STRCOUNT(DISH_TASTE, "美味的水/")
-	BONUS点 += 1
+	ボーナス点 += 1
+SIF STRCOUNT(DISH_TASTE, "おいしい水/")
+	ボーナス点 += 1
 ;嫉妬,隠し味の効果は食べる時
 
 SIF DISH_DRG
@@ -565,36 +520,36 @@ SIF DISH_DRG
 IF DISH_DRG_2
 	IF ITEM:DISH_DRG_2 == ITEM:栄養強化剤
 		減点 += 1
-	;(酒造パッチ)洋酒にBONUS点
-	ELSEIF ITEM:DISH_DRG_2 == ITEM:莓子酒 || ITEM:DISH_DRG_2 == ITEM:黑朗姆酒 || ITEM:DISH_DRG_2 == ITEM:白兰地VS
-		BONUS点 += 2
-	ELSEIF ITEM:DISH_DRG_2 == ITEM:白兰地VSOP
-		BONUS点 += 3
-	ELSEIF ITEM:DISH_DRG_2 == ITEM:白兰地XO
-		BONUS点 += 4
+	;(酒造パッチ)洋酒にボーナス点
+	ELSEIF ITEM:DISH_DRG_2 == ITEM:フランボワーズ || ITEM:DISH_DRG_2 == ITEM:ダークラム || ITEM:DISH_DRG_2 == ITEM:ブランデーVS
+		ボーナス点 += 2
+	ELSEIF ITEM:DISH_DRG_2 == ITEM:ブランデーVSOP
+		ボーナス点 += 3
+	ELSEIF ITEM:DISH_DRG_2 == ITEM:ブランデーXO
+		ボーナス点 += 4
 	ENDIF
 ENDIF
 
 ;DISH_ASSIが0ならMASTERだから分岐いらないんだけども一応
 IF DISH_ASSI
-	DISH_BASEPOINT = ABL:MASTER:料理技能 + ABL:DISH_ASSI:料理技能 + DISH_RANK + 道具力 + BONUS点 - 減点
+	DISH_BASEPOINT = ABL:MASTER:料理技能 + ABL:DISH_ASSI:料理技能 + DISH_RANK + 道具力 + ボーナス点 - 減点
 	DISH_BASEPOINT = MIN(300 + (DISH_BASEPOINT * 20), 700)
-	PRINTFORM 成品：
+	PRINTFORM 出来栄え：
 	CALL 出来栄え(DISH_BASEPOINT)
-	PRINTFORML 　／%CALLNAME:MASTER%的技能({ABL:MASTER:料理技能}) + %CALLNAME:DISH_ASSI%的技能({ABL:DISH_ASSI:料理技能}) + 食材的品质({DISH_RANK}) \@ 道具力 ? + 道具的品质({道具力}) # \@ \@ BONUS点 ? + BONUS点({BONUS点}) # \@ \@ 減点 ? - 添加物({減点}) # \@
+	PRINTFORML 　／%CALLNAME:MASTER%の技能({ABL:MASTER:料理技能}) + %CALLNAME:DISH_ASSI%の技能({ABL:DISH_ASSI:料理技能}) + 食材の品質({DISH_RANK})%COND_STR(@" + 道具の品質({道具力})", 道具力)%%COND_STR(@" + ボーナス点({ボーナス点})", ボーナス点)%%COND_STR(@" - 添加物({減点}", 減点)%
 ELSE
-	DISH_BASEPOINT = ABL:MASTER:料理技能 + ABL:MASTER:料理技能 + DISH_RANK + 道具力 + BONUS点 - 減点
+	DISH_BASEPOINT = ABL:MASTER:料理技能 + ABL:MASTER:料理技能 + DISH_RANK + 道具力 + ボーナス点 - 減点
 	DISH_BASEPOINT = MIN(300 + (DISH_BASEPOINT * 20), 700)
-	PRINTFORM 成品：
+	PRINTFORM 出来栄え：
 	CALL 出来栄え(DISH_BASEPOINT)
-	PRINTFORML 　／%CALLNAME:MASTER%的技能 x 2({ABL:MASTER:料理技能 * 2}) + 食材的品质({DISH_RANK}) \@ 道具力 ? + 道具的品质({道具力}) # \@ \@ BONUS点 ? + BONUS点({BONUS点}) # \@ \@ 減点 ? - 添加物({減点}) # \@
+	PRINTFORML 　／%CALLNAME:MASTER%の技能 x 2({MIN(99, ABL:MASTER:料理技能 * 2)}) + 食材の品質({DISH_RANK})%COND_STR(@" + 道具の品質({道具力})", 道具力)%%COND_STR(@" + ボーナス点({ボーナス点})", ボーナス点)%%COND_STR(@" - 添加物({減点})", 減点)%
 ENDIF
 PRINTL 
 
 ;練習結果,初期状態だと4～7回必要。料理技能が上がるにつれ習得速度が上昇していく。
 IF 練習モード
 	LEARNED_MENU:DISH_ASSI += 20 + (TALENT:MASTER:習得速度 * 5) + RAND:(MAX(ABL:MASTER:料理技能 * 25,1))
-	PRINTFORM 　熟练度：
+	PRINTFORM 　習熟度：
 	FOR LOCAL, 1, 10
 		IF LOCAL <= LEARNED_MENU:DISH_ASSI / 10
 			SETCOLOR 0x64FFDC
@@ -610,9 +565,9 @@ IF 練習モード
 		CALL LEARNING_SP_DISH(DISH_ASSI, DISH_NAME)
 ENDIF
 
-IF STRCOUNT(DISH_TASTE, "跳蛋/")
+IF STRCOUNT(DISH_TASTE, "ローター/")
 	TFLAG:194 = 100
-ELSEIF DISH_TYPE == "甜点"
+ELSEIF DISH_TYPE == "デザート"
 	TFLAG:194 = 3
 ELSEIF DISH_TYPE == "主食"
 	TFLAG:194 = 2
@@ -643,13 +598,13 @@ SIF !KITCHEN(CFLAG:MASTER:現在位置)
 ;気力0
 SIF BASE:MASTER:気力 <= 0
 	RETURN 0
-SIF CFLAG:诶嘿嘿
+SIF CFLAG:うふふ
 	RETURN 0
-;陪睡中
-SIF CFLAG:陪睡中
+;添い寝中
+SIF CFLAG:添い寝中
 	RETURN 0
-;恶作剧中
-SIF CFLAG:MASTER:恶作剧
+;イタズラ中
+SIF CFLAG:MASTER:イタズラ
 	RETURN 0
 ;既に料理を作っている
 SIF DISH_NAME != ""

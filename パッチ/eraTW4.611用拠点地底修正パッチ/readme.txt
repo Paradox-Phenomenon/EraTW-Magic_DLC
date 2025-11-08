@@ -1,0 +1,7 @@
+﻿MAP_COMM_09
+ラブホに入れるようにENDSELECTの後にRETURNF 1を追加
+
+MAP_09
+噴水24をMAP_CHIREIDEN_1から削除
+
+JK好き

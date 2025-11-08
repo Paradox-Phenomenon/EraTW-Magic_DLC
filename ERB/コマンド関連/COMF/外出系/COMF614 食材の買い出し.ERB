@@ -1,25 +1,25 @@
-﻿;採購食材
+﻿;食材の買い出し
 @COM614
 #DIM 買うもの
 #DIM 割引
 DRAWLINE
-IF !(FLAG:每日变更事件 % 10)
-	PRINTL 今天是正在打折的特卖日！
+IF !(FLAG:日替わりイベント % 10)
+	PRINTL 今日は特売日でセール中だ！
 	割引 = 60
 ELSE
 	割引 = 30
 ENDIF
 PRINTFORML 所持金:%金額表示(MONEY)%
 DRAWLINE
-CALL ITEM_SHOPPING(GETNUM(ITEM, "平价食材"), "可用于各种料理的临时的食材", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "优质食材"), "提升食物品质稍微好一点的食材", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "高级食材"), "质量高价格也高的小资产阶级食材", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "甜味料"), "可用于制作甜点的甜味食材", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "獣肉"), "可用于所有肉料理的动物肉", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "鳥肉"), "可用于一部分肉料理的禽肉", 割引)
-CALL ITEM_SHOPPING(GETNUM(ITEM, "卵"), "可用于蛋料理的禽蛋", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "安物食材"), "色々な料理に使える間に合わせの食材", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "上質食材"), "食の質をワンランク上げるちょっといい食材", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "高級食材"), "質も高いが値段もお高いブルジョワの食材", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "甘味材"), "デザート料理に使える甘い食材", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "獣肉"), "肉料理全般に使える動物の肉", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "鳥肉"), "一部の肉料理に使える鳥類の肉", 割引)
+CALL ITEM_SHOPPING(GETNUM(ITEM, "卵"), "卵料理に使える鳥類の卵", 割引)
 DRAWLINE
-PRINTL [999] 放弃
+PRINTL [999] やめる
 INPUT
 
 IF RESULT == 999
@@ -39,7 +39,7 @@ ENDIF
 ;購入上限と一日一回は撤廃しました
 
 
-IF CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET > 0
+IF CHK_DATENOW(CFLAG:TARGET:デート中) && TARGET > 0
 	LOCAL = RAND:100
 	LOCAL:1 = 90 + GET_SUCCESS_RATE() / 5
 	SIF LOCAL:1 > 99
@@ -47,8 +47,8 @@ IF CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET > 0
 	IF LOCAL <= 9
 		;10％で大成功
 		EXP:MASTER:会話経験 ++
-		EXP:MASTER:約會経験 ++
-		EXP:TARGET:約會経験 ++
+		EXP:MASTER:デート経験 ++
+		EXP:TARGET:デート経験 ++
 		TFLAG:193 = 1
 	ELSEIF RESULT == 0
 		;買わないと失敗
@@ -106,7 +106,7 @@ IF CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET > 0
 
 
 	SOURCE:受動 = 200 + 100 * ABL:従順
-	SOURCE:征服 = 200 + 100 * ABL:施虐属性
+	SOURCE:征服 = 200 + 100 * ABL:サドっ気
 
 	IF TFLAG:193 == -1
 		TIMES SOURCE:歓楽 , 0.10
@@ -122,8 +122,8 @@ IF CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET > 0
 		TIMES SOURCE:受動 , 2.00
 	ENDIF
 
-	EXP:MASTER:約會経験 ++
-	EXP:TARGET:約會経験 ++
+	EXP:MASTER:デート経験 ++
+	EXP:TARGET:デート経験 ++
 ENDIF
 
 TIME += 30
@@ -132,12 +132,12 @@ RETURN 1
 ;-------------------------------------------------
 ;実行可能判定
 ;-------------------------------------------------
-;採購食材
+;食材の買い出し
 @COM_ABLE614
 ;一括管理
 SIF GLOBAL_COMABLE(614)
 	RETURN RESULT
-;採購できない場所
+;買い出しできない場所
 SIF !KAIDASHI_SHOP(CFLAG:MASTER:現在位置)
 	RETURN 0
 ;もう買ってるか
@@ -156,7 +156,5 @@ RETURN 1
 #FUNCTION
 ;食料品店
 SIF ARG == GET_MAP_REPLACEMENT(216)
-	RETURNF 1
-SIF ARG == GET_MAP_REPLACEMENT(1110)
 	RETURNF 1
 RETURNF 0

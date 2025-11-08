@@ -14,15 +14,15 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	CALLF MAKE_STR(V_NAME, "想要学习料理")
+	CALLF MAKE_STR(V_NAME, "料理上手になりたい")
 CASE "依頼内容表示"
-	CALLF MAKE_STR(V_NAME, @"指导%CALLNAME:ARG%练习料理")
+	CALLF MAKE_STR(V_NAME, @"%CALLNAME:ARG%の料理の練習を指導する")
 CASE "依頼報酬表示"
 	CALLF MAKE_STR(V_NAME, @"%金額表示(500)%")
-CASE "依頼実行指令名"
-	CALLF MAKE_STR(V_NAME, "料理")
+CASE "依頼実行コマンド名"
+	CALLF MAKE_STR(V_NAME, "お料理")
 CASE "依頼備考表示"
-	CALLF MAKE_STR(V_NAME, "先移动到可以做菜的地方吧")
+	CALLF MAKE_STR(V_NAME, "まずは料理できる場所に移動しよう")
 
 CASE "依頼内容"
 	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "作業"))
@@ -74,11 +74,11 @@ CASE "依頼条件表示"
 CASE "依頼実行時"
 ;このCASEに限り、RESULTが意味を持ちます
 ;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 ;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 ;
 ;"依頼実行時"に限っていえば、CHARAはTARGETと同一であり、必ずしもCLIENT_IDと一致するとは限りません
-;个々のケースで確認する必要があります
+;個々のケースで確認する必要があります
 ;この依頼は「作業」扱いであり、CLIENTがTARGETになっている時のみ実行できます
 ;
 ;
@@ -89,7 +89,7 @@ CASE "依頼実行時"
 	DOWNBASE:MASTER:体力 = 50
 	DOWNBASE:MASTER:気力 = 50
 	CALL 一般依頼4_COOKING(TARGET)
-	PRINTFORML %CALLNAME:MASTER%和%CALLNAME:TARGET%一起制作着%DISHNAME_TR()%
+	PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%と一緒に%DISH_NAME%を作った
 	RETURN IRAI_CONST_RESULT("実行して成功")
 CASE "依頼成功時"
 ;成功報告時の報酬など
@@ -97,10 +97,9 @@ CASE "依頼成功時"
 	CALL CHANGE_CFLAG(4, TARGET, 20)
 	EXP:TARGET:料理経験 += 5 * (ABL:MASTER:料理技能 - ABL:TARGET:料理技能)
 	PRINTFORML 
-	;PRINTFORML 「いただきます」
-	PRINTFORML 「我开动了」
-	CALL 吃飯(TARGET)
-	CALL 吃飯(MASTER)
+	PRINTFORML 「いただきます」
+	CALL 食事(TARGET)
+	CALL 食事(MASTER)
 	CALL GET_MONEY_YEN(500, 2)
 	CALL RESET_DISH
 CASE "依頼失敗時"
@@ -116,7 +115,7 @@ ENDSELECT
 #DIM CHARA
 CALL RESET_DISH
 IF !RAND:3 && ABL:MASTER:料理技能 >= 3
-	DISH_TYPE = 甜点
+	DISH_TYPE = デザート
 ELSEIF !RAND:2 && ABL:MASTER:料理技能 >= 2
 	DISH_TYPE = 主食
 ELSE
@@ -125,7 +124,7 @@ ENDIF
 CALL FISHER_YATES_SHAFFLE(400 + CHARANUM)
 FOR LOCAL, 1, 400 + CHARANUM + 1
 	CALL DISHDATA(SHAFFLE_ARRAY:LOCAL + 100, DISH_TYPE)
-	SIF STRCOUNT(DISH_TASTE, "过季/")
+	SIF STRCOUNT(DISH_TASTE, "季節外れ/")
 		CONTINUE
 	SIF STRCOUNT(DISH_TASTE, "謎料理/")
 		CONTINUE

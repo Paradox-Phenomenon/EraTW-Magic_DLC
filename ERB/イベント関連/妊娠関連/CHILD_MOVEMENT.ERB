@@ -1,18 +1,18 @@
 ﻿;-------------------------------------------------
-;ターン毎に兒童の描写をする関数
+;ターン毎に子供の描写をする関数
 ;従来はCOMENDで行っていた処理
 ;-------------------------------------------------
 @CHILD_DESCRIPTION
 #DIM CHILDNUM
-#DIMS 兒童の名前
-#DIM 自立後の兒童描写
+#DIMS 子供の名前
+#DIM 自立後の子供描写
 
 #DIM nCurrentChildCareCount
 #DIM nCurrentCareChild
 #DIM nCurrentChildHunger
 #DIM LAST_CHECK = -1
 #DIM LAST_LOCATION = -1
-SIF !FLAG:兒童描写
+SIF !FLAG:子供描写
 	RETURN
 
 SIF LAST_CHECK == TIME && LAST_LOCATION == CFLAG:MASTER:現在位置 ;only trigger if time passes
@@ -25,36 +25,36 @@ VARSET CHILD_PRINT_DESCRIPTION
 nChildrenPresentCount = 0
 nChildrenAwake = 0
 
-TFLAG:描写中の兒童 = 0
+TFLAG:描写中の子供 = 0
 FOR LOCAL, 1, CHARANUM
-	;自立した兒童の判定
-	IF CFLAG:LOCAL:兒童人数 - CFLAG:LOCAL:育児人数 > 0
+	;自立した子供の判定
+	IF CFLAG:LOCAL:子供人数 - CFLAG:LOCAL:育児人数 > 0
 		CALL CHILD_MOVEMENT_2(LOCAL)
 		IF RESULT
 			;同じ描写はしない
-			IF TFLAG:描写中の兒童 != 自立後の兒童描写
-				CHILDNUM = TFLAG:描写中の兒童 / 1000
-				兒童の名前 = %CHILDNAME:LOCAL:CHILDNUM%
+			IF TFLAG:描写中の子供 != 自立後の子供描写
+				CHILDNUM = TFLAG:描写中の子供 / 1000
+				子供の名前 = %CHILDNAME:LOCAL:CHILDNUM%
 				SELECTCASE CHILD_ACT:LOCAL:CHILDNUM
 					CASE "仕事"
-						PRINTFORMDW 看到了工作中的%兒童の名前%
+						PRINTFORMDW 仕事中の%子供の名前%を見かけた
 					CASE "散歩"
-						PRINTFORMDW 遇到了%兒童の名前%
+						PRINTFORMDW %子供の名前%と出くわした
 				ENDSELECT
 			ENDIF
-			自立後の兒童描写 = TFLAG:描写中の兒童
+			自立後の子供描写 = TFLAG:描写中の子供
 		ELSE
-			自立後の兒童描写 = 0
+			自立後の子供描写 = 0
 		ENDIF
 	ENDIF
-	;育児中の兒童の判定
+	;育児中の子供の判定
 	SIF !TALENT:LOCAL:育児中
 		CONTINUE
 	;欲求不満の抑制
 
 	nCurrentChildCareCount = CFLAG:LOCAL:出産経過日 ;store current value
 	nCurrentCareChild = TALENT:LOCAL:育児中 ;store current value
-	nCurrentChildHunger = TCVAR:LOCAL:兒童空腹度 ;store current value
+	nCurrentChildHunger = TCVAR:LOCAL:子供空腹度 ;store current value
 
 	FOR CHILDNUM, 1, MAXCHILD + 1 ;check all children
 	SIF CHILDNAME:LOCAL:CHILDNUM == ""
@@ -64,32 +64,32 @@ FOR LOCAL, 1, CHARANUM
 
 	TALENT:LOCAL:育児中 = CHILDNUM ;current child
 	CFLAG:LOCAL:出産経過日 = (DAY-CHILD_BIRTHDAY:LOCAL:CHILDNUM)+1 ;current age
-	TCVAR:LOCAL:兒童空腹度 = CHILD_HUNGER:LOCAL:CHILDNUM ;current hunger
+	TCVAR:LOCAL:子供空腹度 = CHILD_HUNGER:LOCAL:CHILDNUM ;current hunger
 
-	;兒童の行動はここで決定
+	;子供の行動はここで決定
 	CALL CHILD_MOVEMENT(LOCAL, TALENT:LOCAL:育児中)
 	;bug fix - cap horniness only when the child is around, according to the hint
     ;added check to see if they're sleeping 
 	IF RESULT:1 ;present
-		IF CHILD_ACT:LOCAL:CHILDNUM != "睡眠"
-			nChildrenAwake++
-			IF CFLAG:LOCAL:溜まってる度 > 300
-				;store lost frustration until child goes to sleep, but only the highest value lost to prevent it from accumulating indefinitely
-				TCVAR:LOCAL:PENT_UP_FRUSTRATION = MAX(CFLAG:LOCAL:溜まってる度 - 300, TCVAR:LOCAL:PENT_UP_FRUSTRATION)
-				CFLAG:LOCAL:溜まってる度 = 300
-			ENDIF
-		ENDIF
-	ENDIF
-	;restore the lost frustration if no children are around
-	IF !nChildrenAwake && (!RESULT:1 || CHILD_ACT:LOCAL:CHILDNUM == "睡眠")
-		CFLAG:LOCAL:溜まってる度 = MIN(TCVAR:LOCAL:PENT_UP_FRUSTRATION + CFLAG:LOCAL:溜まってる度, 1000)
-		TCVAR:LOCAL:PENT_UP_FRUSTRATION = 0
-	ENDIF
+        IF CHILD_ACT:LOCAL:CHILDNUM != "睡眠"
+            nChildrenAwake++
+            IF CFLAG:LOCAL:溜まってる度 > 300
+                ;store lost frustration until child goes to sleep, but only the highest value lost to prevent it from accumulating indefinitely
+                TCVAR:LOCAL:PENT_UP_FRUSTRATION = MAX(CFLAG:LOCAL:溜まってる度 - 300, TCVAR:LOCAL:PENT_UP_FRUSTRATION)
+                CFLAG:LOCAL:溜まってる度 = 300
+            ENDIF
+        ENDIF
+    ENDIF
+    ;restore the lost frustration if no children are around
+    IF !nChildrenAwake && (!RESULT:1 || CHILD_ACT:LOCAL:CHILDNUM == "睡眠")
+        CFLAG:LOCAL:溜まってる度 = MIN(TCVAR:LOCAL:PENT_UP_FRUSTRATION + CFLAG:LOCAL:溜まってる度, 1000)
+        TCVAR:LOCAL:PENT_UP_FRUSTRATION = 0
+    ENDIF
 
 	;描写しない場合はRESULT=0
 	SIF !RESULT
         GOTO CHILDLOOPEND
-	兒童の名前 = %CHILDNAME:LOCAL:CHILDNUM%
+	子供の名前 = %CHILDNAME:LOCAL:CHILDNUM%
 	;幼児期（0日～45日）
 	IF CFLAG:LOCAL:出産経過日 < CHILD_語彙
 		LOCALS = 幼児期
@@ -103,80 +103,80 @@ FOR LOCAL, 1, CHARANUM
 	SELECTCASE CHILD_ACT:LOCAL:CHILDNUM
 		CASE "睡眠"
 			IF LOCALS == "幼児期"
-				PRINTFORMDW %兒童の名前%入睡了……
+				PRINTFORMDW %子供の名前%は眠りはじめた……
 			ELSE
 				IF CFLAG:MASTER:現在位置 == CFLAG:LOCAL:初期位置
-					PRINTFORMDW %兒童の名前%睡着了……
+					PRINTFORMDW %子供の名前%は眠りについた……
 				ELSE
-					PRINTFORMDW %兒童の名前%走去了寝室……
+					PRINTFORMDW %子供の名前%は寝室へと向かっていった……
 				ENDIF
 			ENDIF
 			CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_SLEEPING", LOCALS)
 		CASE "起床"
-			PRINTFORMDW %兒童の名前%睡醒了
+			PRINTFORMDW %子供の名前%は目を覚ました
 		CASE "入浴"
 			CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_BATH", LOCALS)
-		CASE "吃飯"
+		CASE "食事"
 			IF CFLAG:LOCAL:出産経過日 < CHILD_離乳
-				PRINTFORMDW %CALLNAME:LOCAL%正在给%兒童の名前%授乳
-				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_吃飯", "授乳")
+				PRINTFORMDW %CALLNAME:LOCAL%は%子供の名前%に授乳をしている
+				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_食事", "授乳")
 			ELSEIF LOCALS == "幼児期"
-				PRINTFORMDW %CALLNAME:LOCAL%在给%兒童の名前%喂婴儿食品
-				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_吃飯", "離乳食")
+				PRINTFORMDW %CALLNAME:LOCAL%は%子供の名前%に離乳食を与えている
+				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_食事", "離乳食")
 			ELSE
 				SELECTCASE TIME
 				CASE 300 TO 540 
-					PRINTFORMDW %兒童の名前%正在吃早餐
+					PRINTFORMDW %子供の名前%は朝ごはんを食べている
 				CASE 660 TO 900
-					PRINTFORMDW %兒童の名前%正在吃午餐
+					PRINTFORMDW %子供の名前%はお昼ごはんを食べている
 				CASE 1020 TO 1200
-					PRINTFORMDW %兒童の名前%正在吃下午餐
+					PRINTFORMDW %子供の名前%は夕飯を食べている
 				CASE 1200 TO 1440
-					PRINTFORMDW %兒童の名前%正在吃晚餐
+					PRINTFORMDW %子供の名前%は夜ごはんを食べている
 				CASE 0 TO 180
-					PRINTFORMDW %兒童の名前%正在吃夜宵
+					PRINTFORMDW %子供の名前%は夜食を食べている
 				CASEELSE
-					PRINTFORMDW %兒童の名前%正在吃饭
+					PRINTFORMDW %子供の名前%はごはんを食べている
 				ENDSELECT
-				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_吃飯", LOCALS)
+				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_食事", LOCALS)
 			ENDIF
 		CASE "玩具"
 			IF LOCALS == "自立前"
-				PRINTFORMDL %兒童の名前%怀念地看着%CALLNAME:MASTER%制作的木制玩具……
+				PRINTFORMDL %子供の名前%は%CALLNAME:MASTER%に作ってもらった木の玩具を思い出深そうに眺めている……
 			ELSE
-				PRINTFORMDW %兒童の名前%用%CALLNAME:MASTER%制作的玩具开始了玩耍
+				PRINTFORMDW %子供の名前%は%CALLNAME:MASTER%の作った玩具で遊びはじめた
 			ENDIF
 			CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_TOY", LOCALS)
 		CASE "お絵かき"
-			PRINTFORMDW %兒童の名前%开始画画了
-		CASE "玩耍"
-			PRINTFORMDW %兒童の名前%跑来跑去地玩耍着
+			PRINTFORMDW %子供の名前%はお絵かきをはじめた
+		CASE "遊び"
+			PRINTFORMDW %子供の名前%は走り回って遊び始めた
 		CASE "読書"
-			PRINTFORMDW %兒童の名前%开始了读书
+			PRINTFORMDW %子供の名前%は本を読み始めた
 		CASE "料理"
-			PRINTFORMDW %兒童の名前%一个人开始做饭了
+			PRINTFORMDW %子供の名前%は一人で料理を始めた
 		CASE "絵描き"
-			PRINTFORMDW %兒童の名前%开始画画了
+			PRINTFORMDW %子供の名前%は絵を描き始めた
 		CASE "歌唱"
-			PRINTFORMDW %兒童の名前%开始唱了一首歌
+			PRINTFORMDW %子供の名前%は歌を歌い始めた
 		CASE "掃除"
-			PRINTFORMDW %兒童の名前%开始打扫房间了
+			PRINTFORMDW %子供の名前%は部屋の掃除を始めた
 		CASE "支度"
-			PRINTFORMDW %兒童の名前%准备去寺子屋了
+			PRINTFORMDW %子供の名前%は寺子屋へ行く支度をしている
 		CASE "登校"
-			IF (MAIN_MAP != 2 && CFLAG:MASTER:現在位置 == 寺子屋) || (MAIN_MAP == 2 && CFLAG:MASTER:現在位置 == 222)
-				PRINTFORMDW %兒童の名前%到学校了
+			IF (MAIN_MAP != 2 &&CFLAG:MASTER:現在位置 == 寺子屋) || (MAIN_MAP == 2 && CFLAG:MASTER:現在位置 == 222)
+				PRINTFORMDW %子供の名前%が登校して来た
 			ELSE
-				PRINTFORMDW %兒童の名前%前往寺子屋了
+				PRINTFORMDW %子供の名前%は寺子屋に向かった
 				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 0, 0, "CHILD_RAISING_登下校")
 			ENDIF
 		CASE "授業"
-			PRINTFORMDW %兒童の名前%正在上课
+			PRINTFORMDW %子供の名前%が授業を受けている
 		CASE "帰宅"
-			IF (MAIN_MAP != 2 && CFLAG:MASTER:現在位置 == 寺子屋) || (MAIN_MAP == 2 && CFLAG:MASTER:現在位置 == 222)
-				PRINTFORMDW %兒童の名前%上完课离开学校了
+			IF (MAIN_MAP != 2 &&CFLAG:MASTER:現在位置 == 寺子屋) || (MAIN_MAP == 2 && CFLAG:MASTER:現在位置 == 222)
+				PRINTFORMDW %子供の名前%は授業を終えて下校していった
 			ELSE
-				PRINTFORMDW %兒童の名前%从寺子屋回来了
+				PRINTFORMDW %子供の名前%が寺子屋から帰ってきた
 				CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, 1, 0, "CHILD_RAISING_登下校")
 			ENDIF
 		CASEELSE
@@ -187,14 +187,14 @@ FOR LOCAL, 1, CHARANUM
     $CHILDLOOPEND
 	CFLAG:LOCAL:出産経過日 = nCurrentChildCareCount ;restore value
 	TALENT:LOCAL:育児中 = nCurrentCareChild ;restore value
-	TCVAR:LOCAL:兒童空腹度 = nCurrentChildHunger ;restore value
+	TCVAR:LOCAL:子供空腹度 = nCurrentChildHunger ;restore value
 	NEXT
 NEXT
 RESETCOLOR
 
 
 ;-------------------------------------------------
-;兒童の行動を判定する関数
+;子供の行動を判定する関数
 ;RETURN 描写するなら1
 ;-------------------------------------------------
 @CHILD_MOVEMENT(CHARA, CHILDNUM)
@@ -208,7 +208,7 @@ VARSET RESULT
 ;一つ前の行動を保存
 LOCALS = %CHILD_ACT:CHARA:CHILDNUM%
 
-;TIME_PROGRESSが使えないので强行算出
+;TIME_PROGRESSが使えないので無理矢理算出
 
 IF TIMESTAMP_DAY != DAY
 	FOR LOCAL, 1, CHARANUM-1
@@ -221,7 +221,7 @@ TIMESTAMP = CHILD_TIMESTAMP:CHARA:CHILDNUM
 
 経過時間 = 1440 * DAY + TIME - TIMESTAMP
 
-;10分以上経過してたら骰子を振る
+;10分以上経過してたらダイスを振る
 SIF 経過時間 >= 10
 	LOCAL = RAND:100
 
@@ -231,29 +231,29 @@ SIF !GO_SCHOOL(CHARA) && GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "授業", "支度"
 
 ;幼児期（0日～45日）
 IF CFLAG:CHARA:出産経過日 < CHILD_語彙
-	;睡眠中,お腹が空いたら随机で起きる
+	;睡眠中,お腹が空いたらランダムで起きる
 	IF CHILD_ACT:CHARA:CHILDNUM == "睡眠"
-		SIF TCVAR:CHARA:兒童空腹度 >= 180 && LOCAL % 6 == 0
+		SIF TCVAR:CHARA:子供空腹度 >= 180 && LOCAL % 6 == 0
 			CHILD_ACT:CHARA:CHILDNUM = 起床
 	;起きてる時
 	ELSEIF CHILD_ACT:CHARA:CHILDNUM != "睡眠"
 		;お風呂
 		IF BATHROOM(CFLAG:CHARA:現在位置)
 			CHILD_ACT:CHARA:CHILDNUM = 入浴
-		;吃飯中
-		ELSEIF CHILD_ACT:CHARA:CHILDNUM == "吃飯"
+		;食事中
+		ELSEIF CHILD_ACT:CHARA:CHILDNUM == "食事"
 			;満たされたら終了
-			SIF TCVAR:CHARA:兒童空腹度 <= 90
+			SIF TCVAR:CHARA:子供空腹度 <= 90
 				CHILD_ACT:CHARA:CHILDNUM = 
 			;20分で満たされる計算
 			CHILD_HUNGER:CHARA:CHILDNUM -= 経過時間 * 9
 		;食事,離乳後は食事系コマンド実行時も発生
-		ELSEIF TCVAR:CHARA:兒童空腹度 >= 180 || (CFLAG:CHARA:出産経過日 >= CHILD_離乳 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
+		ELSEIF TCVAR:CHARA:子供空腹度 >= 180 || (CFLAG:CHARA:出産経過日 >= CHILD_離乳 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
 			;授乳
 			SIF CFLAG:CHARA:出産経過日 < CHILD_離乳
 				EXP:CHARA:噴乳経験 ++
-			CHILD_ACT:CHARA:CHILDNUM = 吃飯
-		;玩具終了（吃飯と違って必ずしも継続しない）
+			CHILD_ACT:CHARA:CHILDNUM = 食事
+		;玩具終了（食事と違って必ずしも継続しない）
 		ELSEIF CHILD_ACT:CHARA:CHILDNUM == "玩具"
 			SIF LOCAL % 7 == 0
 				CHILD_ACT:CHARA:CHILDNUM = 
@@ -261,14 +261,14 @@ IF CFLAG:CHARA:出産経過日 < CHILD_語彙
 		ELSEIF CFLAG:CHARA:出産経過日 >= CHILD_玩具 && LOCAL % 6 == 0
 			CHILD_ACT:CHARA:CHILDNUM = 玩具
 		;睡眠
-		ELSEIF TCVAR:CHARA:兒童空腹度 < 180 && LOCAL < 5
+		ELSEIF TCVAR:CHARA:子供空腹度 < 180 && LOCAL < 5
 			CHILD_ACT:CHARA:CHILDNUM = 睡眠
 		;お風呂から出る
 		ELSEIF CHILD_ACT:CHARA:CHILDNUM == "入浴" && !BATHROOM(CFLAG:CHARA:現在位置)
 			CHILD_ACT:CHARA:CHILDNUM = 
 		ENDIF
 	ENDIF
-	;幼児期は全部角色依存
+	;幼児期はすべてキャラ依存
 	SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
 		RESULT = 1
 ;通学時（60日～）
@@ -281,7 +281,7 @@ ELSEIF GO_SCHOOL(CHARA) && INRANGE(TIME, 360, 900)
 		CHILD_ACT:CHARA:CHILDNUM = 
 	;6時～7時,朝ごはん
 	ELSEIF INRANGE(TIME, 360, 420)
-		CHILD_ACT:CHARA:CHILDNUM = 吃飯
+		CHILD_ACT:CHARA:CHILDNUM = 食事
 	;7時～7時半,支度
 	ELSEIF INRANGE(TIME, 420, 450)
 		CHILD_ACT:CHARA:CHILDNUM = 支度
@@ -314,7 +314,7 @@ ELSEIF GO_SCHOOL(CHARA) && INRANGE(TIME, 360, 900)
 			SIF 自室自宅判定(CFLAG:MASTER:現在位置, CHARA)
 				RESULT = 1
 		ELSE
-			;拠点角色の場合は拠点内でのみ
+			;拠点キャラの場合は拠点内でのみ
 			IF CFLAG:CHARA:神社在住
 				IF AT_HOME(MASTER)
 					SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
@@ -336,7 +336,7 @@ ELSEIF GO_SCHOOL(CHARA) && INRANGE(TIME, 360, 900)
 		ENDIF
 	;それ以外の描写
 	ELSE
-		;拠点にいる時に角色依存および角色自室
+		;拠点にいる時にキャラ依存およびキャラ自室
 		IF AT_HOME(MASTER)
 			SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
 				RESULT = 1
@@ -347,24 +347,24 @@ ELSEIF GO_SCHOOL(CHARA) && INRANGE(TIME, 360, 900)
 ;幼少期（46日～89日）
 ELSEIF CFLAG:CHARA:出産経過日 < CHILD_自立前
 	;就寝
-	IF 兒童の睡眠時間(CHARA)
+	IF 子供の睡眠時間(CHARA)
 		CHILD_ACT:CHARA:CHILDNUM = 睡眠
 	;起床
-	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "睡眠" && !兒童の睡眠時間(CHARA)
+	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "睡眠" && !子供の睡眠時間(CHARA)
 		CHILD_ACT:CHARA:CHILDNUM = 起床
 	;お風呂
 	ELSEIF BATHROOM(CFLAG:CHARA:現在位置)
 		CHILD_ACT:CHARA:CHILDNUM = 入浴
-	;吃飯中
-	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "吃飯"
+	;食事中
+	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "食事"
 		;満たされたら終了
-		SIF TCVAR:CHARA:兒童空腹度 <= 120
+		SIF TCVAR:CHARA:子供空腹度 <= 120
 			CHILD_ACT:CHARA:CHILDNUM = 
 		;30分で満たされる計算
 		CHILD_HUNGER:CHARA:CHILDNUM -= 経過時間 * 12
 	;食事,キャラ同室中は食事系コマンド実行時も発生
-	ELSEIF TCVAR:CHARA:兒童空腹度 >= 360 || (CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
-		CHILD_ACT:CHARA:CHILDNUM = 吃飯
+	ELSEIF TCVAR:CHARA:子供空腹度 >= 360 || (CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
+		CHILD_ACT:CHARA:CHILDNUM = 食事
 	;行動の終了
 	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "玩具", "お絵かき")
 		SIF LOCAL % 8 == 0
@@ -384,17 +384,17 @@ ELSEIF CFLAG:CHARA:出産経過日 < CHILD_自立前
 			CHILD_ACT:CHARA:CHILDNUM = お絵かき
 		ENDSELECT
 	ENDIF
-	;起床、睡眠は自室で描写する,行動移行したときだけ角色依存でも描写する
+	;起床、睡眠は自室で描写する,行動移行したときだけキャラ依存でも描写する
 	IF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "起床", "睡眠")
 		SIF 自室自宅判定(CFLAG:MASTER:現在位置, CHARA)
 			RESULT = 1
 		SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && CHILD_ACT:CHARA:CHILDNUM != LOCALS
 			RESULT = 1
-	;入浴は角色依存で描写する
+	;入浴はキャラ依存で描写する
 	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "入浴")
 		SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
 			RESULT = 1
-	;それ以外は角色依存と角色自室で描写する,場合によってはワープするのは仕様
+	;それ以外はキャラ依存とキャラ自室で描写する,場合によってはワープするのは仕様
 	ELSE
 		SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
 			RESULT = 1
@@ -404,27 +404,27 @@ ELSEIF CFLAG:CHARA:出産経過日 < CHILD_自立前
 ;自立前（90日～119日）
 ELSE
 	;就寝（自立日を除く）
-	IF 兒童の睡眠時間(CHARA) && CFLAG:CHARA:出産経過日 != CHILD_自立
+	IF 子供の睡眠時間(CHARA) && CFLAG:CHARA:出産経過日 != CHILD_自立
 		CHILD_ACT:CHARA:CHILDNUM = 睡眠
 	;起床
-	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "睡眠" && !兒童の睡眠時間(CHARA)
+	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "睡眠" && !子供の睡眠時間(CHARA)
 		CHILD_ACT:CHARA:CHILDNUM = 起床
-	;吃飯中
-	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "吃飯"
+	;食事中
+	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "食事"
 		;満たされたら終了
-		SIF TCVAR:CHARA:兒童空腹度 <= 0
+		SIF TCVAR:CHARA:子供空腹度 <= 0
 			CHILD_ACT:CHARA:CHILDNUM = 
 		;30分で満たされる計算
 		CHILD_HUNGER:CHARA:CHILDNUM -= 経過時間 * 12
 	;食事,キャラ同室中は食事系コマンド実行時も発生
-	ELSEIF TCVAR:CHARA:兒童空腹度 >= 360 || (CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
-		CHILD_ACT:CHARA:CHILDNUM = 吃飯
+	ELSEIF TCVAR:CHARA:子供空腹度 >= 360 || (CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && GROUPMATCH(SELECTCOM, 414, 415, 610, 615, 617))
+		CHILD_ACT:CHARA:CHILDNUM = 食事
 	;玩具終了
 	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "玩具"
 		SIF LOCAL % 3 == 0
 			CHILD_ACT:CHARA:CHILDNUM = 
 	;行動の終了（ある程度継続する）
-	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "玩遊戲", "勉強", "読書", "料理", "絵描き", "歌唱", "掃除")
+	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "遊ぶ", "勉強", "読書", "料理", "絵描き", "歌唱", "掃除")
 		SIF LOCAL % 8 == 0
 			CHILD_ACT:CHARA:CHILDNUM = 
 	;起床後はすぐ別行動に移る（他の行動がなければ）
@@ -434,7 +434,7 @@ ELSE
 		;行動
 		SELECTCASE LOCAL
 		CASE IS < 6
-			CHILD_ACT:CHARA:CHILDNUM = 玩耍
+			CHILD_ACT:CHARA:CHILDNUM = 遊び
 		CASE IS < 12
 			CHILD_ACT:CHARA:CHILDNUM = 勉強
 		CASE IS < 14
@@ -451,21 +451,21 @@ ELSE
 			CHILD_ACT:CHARA:CHILDNUM = 玩具
 		ENDSELECT
 	ENDIF
-	;起床、睡眠は自室で描写する,行動移行したときだけ角色依存でも描写する
+	;起床、睡眠は自室で描写する,行動移行したときだけキャラ依存でも描写する
 	IF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "起床", "睡眠")
 		SIF 自室自宅判定(CFLAG:MASTER:現在位置, CHARA, 1)
 			RESULT = 1
 		SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置 && CHILD_ACT:CHARA:CHILDNUM != LOCALS
 			RESULT = 1
-	;玩具、絵かき、掃除、勉強は角色自室のみ描写する
+	;玩具、絵かき、掃除、勉強はキャラ自室のみ描写する
 	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "玩具", "絵描き", "掃除", "勉強")
 		SIF 自室自宅判定(CFLAG:MASTER:現在位置, CHARA, 1)
 			RESULT = 1
-	;玩耍と歌唱は訓練できる場所
-	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "玩耍", "歌唱")
+	;遊びと歌唱は訓練できる場所
+	ELSEIF GROUPMATCH(CHILD_ACT:CHARA:CHILDNUM, "遊び", "歌唱")
 		SIF 戦闘訓練可(CFLAG:MASTER:現在位置)
 			RESULT = 1
-	;読書は読書できる場所か角色自室
+	;読書は読書できる場所かキャラ自室
 	ELSEIF CHILD_ACT:CHARA:CHILDNUM == "読書"
 		IF 自室自宅判定(CFLAG:MASTER:現在位置, CHARA, 1)
 			RESULT = 1
@@ -485,7 +485,7 @@ ELSE
 				RESULT = 1
 			ENDIF
 		ENDIF
-	;それ以外は角色依存と角色自室で描写する
+	;それ以外はキャラ依存とキャラ自室で描写する
 	ELSE
 		SIF CFLAG:MASTER:現在位置 == CFLAG:CHARA:現在位置
 			RESULT = 1
@@ -494,8 +494,8 @@ ELSE
 	ENDIF
 ENDIF
 
-;吃飯以外ならお腹が減る
-SIF CHILD_ACT:CHARA:CHILDNUM != "吃飯"
+;食事以外ならお腹が減る
+SIF CHILD_ACT:CHARA:CHILDNUM != "食事"
 	CHILD_HUNGER:CHARA:CHILDNUM += 経過時間
 IF CFLAG:CHARA:出産経過日 < CHILD_語彙
 	CHILD_HUNGER:CHARA:CHILDNUM = MIN(CHILD_HUNGER:CHARA:CHILDNUM, 180)
@@ -508,13 +508,13 @@ TIMESTAMP_DAY = DAY
 ;時間停止中は描写しない
 SIF FLAG:時間停止
 	RESULT = 0
-;诶嘿嘿中は描写しない
-SIF CFLAG:MASTER:诶嘿嘿
+;うふふ中は描写しない
+SIF CFLAG:MASTER:うふふ
 	RESULT = 0
 ;この時点でRESULT=1なら情景描写はする
 ;enable multiple
 IF RESULT
-	TFLAG:描写中の兒童 = CHARA
+	TFLAG:描写中の子供 = CHARA
 	SIF nChildrenPresentCount < 100
 		nChildrenPresent:(nChildrenPresentCount++) = CHILDNUM * 1000 + CHARA
 ENDIF
@@ -527,31 +527,31 @@ SIF CHILD_ACT:CHARA:CHILDNUM == LOCALS
 RETURN RESULT, LOCAL:10
 
 ;-------------------------------------------------
-;兒童の描写を判定する際の自室と自宅の判定
+;子供の描写を判定する際の自室と自宅の判定
 ;ARG    判定地点（主に現在位置）
-;ARG:1  拠点内の默认初期位置を含めるなら1（自立前）
+;ARG:1  拠点内のデフォルト初期位置を含めるなら1（自立前）
 ;RETURN 描写するなら1
 ;-------------------------------------------------
 @自室自宅判定(ARG, CHARA, ARG:1)
 #FUNCTION
 #DIM CHARA
-;拠点角色の場合は自室
+;拠点キャラの場合は自室
 IF CFLAG:CHARA:神社在住
 	SIF ARG == CFLAG:CHARA:初期位置
 		RETURNF 1
-;外の角色の場合は自宅前と待客室,
+;外のキャラの場合は自宅前とお招き部屋,
 ELSE
 	SIF ARG == CFLAG:CHARA:自宅位置
 		RETURNF 1
 	SIF ARG == OMANEKIBEYA() && TARGET == CHARA
 		RETURNF 1
-	SIF ARG:1 && ARG == 默认初期位置
+	SIF ARG:1 && ARG == デフォルト初期位置
 		RETURNF 1
 ENDIF
 RETURNF 0
 
 ;-------------------------------------------------
-;自立後の兒童の行動を判定する関数
+;自立後の子供の行動を判定する関数
 ;RETURN 描写するなら1
 ;-------------------------------------------------
 @CHILD_MOVEMENT_2(CHARA)
@@ -561,7 +561,7 @@ RETURNF 0
 #DIM PREVIOUS_CHILD_COUNT
 PREVIOUS_CHILD_COUNT = nChildrenPresentCount
 VARSET RESULT
-描写数 = MIN(10, CFLAG:CHARA:兒童人数 - CFLAG:CHARA:育児人数) + 1
+描写数 = MIN(10, CFLAG:CHARA:子供人数 - CFLAG:CHARA:育児人数) + 1
 FOR LOCAL, 1, MAXCHILD + 1
 	VARSET RESULT
 	CHILDNUM = LOCAL
@@ -573,7 +573,7 @@ FOR LOCAL, 1, MAXCHILD + 1
 	IF !BETWEENTIME(CFLAG:CHARA:起床時間, CFLAG:CHARA:就寝時間)
 		CHILD_ACT:CHARA:CHILDNUM = 睡眠
 	;8割は表示されない,例外的に末番一致でスキップする（自立先が被った場合の特別処置）
-	ELSEIF FLAG:每日变更事件 < 800 && FLAG:每日变更事件 % 10 != CHARA % 10
+	ELSEIF FLAG:日替わりイベント < 800 && FLAG:日替わりイベント % 10 != CHARA % 10
 		CHILD_ACT:CHARA:CHILDNUM = 
 	;土日祝日はオフ
 	ELSEIF YOUBI_MATCH(DAY, "土日") || FESTIVAL() != ""
@@ -602,7 +602,7 @@ FOR LOCAL, 1, MAXCHILD + 1
 		RESULT = 0
 	;この時点でRESULT=1なら描写する,自立後用の処理
 	IF RESULT ;handle multiple children
-		TFLAG:描写中の兒童 = CHILDNUM * 1000 + CHARA
+		TFLAG:描写中の子供 = CHILDNUM * 1000 + CHARA
 		SIF nChildrenPresentCount < 100
 			nChildrenPresent:(nChildrenPresentCount++) = CHILDNUM * 1000 + CHARA
 	ENDIF

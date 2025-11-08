@@ -1,189 +1,177 @@
 ﻿@EVENTTURNEND
-#DIM 抚养费
-#DIM DYNAMIC CUSTOM_FALL_STATES_ALLOWED ;addition custom code
+#DIM 養育費
+
 CALL SHOP_EVENTTURNEND
 
 ;宴会当日に一日が終わると宴会フラグOFF
-IF TIME + 1440 * DAY >= FLAG:開始時間 + 1440 * FLAG:開始日 && FLAG:宴会開催FLAG
+;IF DAY >= FLAG:34 && FLAG:宴会開催フラグ
+IF TIME + 1440 * DAY >= FLAG:開始時間 + 1440 * FLAG:開始日 && FLAG:宴会開催フラグ
 	CALL ENKAI_END()
 ENDIF
 ;霊廟フラグOFF
 FLAG:17 = 0
-;催眠フラグOFF
-FLAG:催眠強度 = 0
 DRAWLINE
 PRINTFORML 
 ;SETCOLOR C_PINK
 ;FONTBOLD
 FOR LOCAL,0,CHARANUM
-	TALENT:LOCAL:反発抑制 = 0
-	TALENT:LOCAL:合意誤認 = 0
-	
-	;この3つは你も取得可能
-	IF EXP:LOCAL:接吻経験 > 300 && ABL:LOCAL:Ｍ感覚 > 5 && !TALENT:LOCAL:接吻魔
-		PRINTFORML 在多次的接吻中找到了自己灵魂的归宿的%CALLNAME:LOCAL%、一旦停止接吻便会感到不安和焦躁…
-		;陷落素質取得口上,6,接吻魔
+	;この3つはあなたも取得可能
+	IF EXP:LOCAL:キス経験 > 300 && ABL:LOCAL:Ｍ感覚 > 5 && !TALENT:LOCAL:キス魔
+		PRINTFORML 数多のキスを交わして心の拠り所を見出した%CALLNAME:LOCAL%は、キスをしていないと不安でたまらなくなってしまった…
+		;陥落素質取得口上,6,キス魔
 		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 6)
-		PRINTFORMW %CALLNAME:LOCAL%获得了[接吻魔]
-		TALENT:LOCAL:接吻魔 = 1
+		PRINTFORMW %CALLNAME:LOCAL%は[キス魔]を得た
+		TALENT:LOCAL:キス魔 = 1
 	ENDIF
-	IF EXP:LOCAL:調教自慰経験 > 200 && EXP:LOCAL:自慰経験 > 500 && !TALENT:LOCAL:自慰狂
-		PRINTFORML 懂得了如何发泄自己欲望的%CALLNAME:LOCAL%、一天的所有时间里都在想着自慰的事…
-		;陷落素質取得口上,7,自慰狂
+	IF EXP:LOCAL:調教自慰経験 > 200 && EXP:LOCAL:自慰経験 > 500 && !TALENT:LOCAL:自慰狂い
+		PRINTFORML 欲望の吐き出し方を知り尽くした%CALLNAME:LOCAL%は、四六時中自慰の事を考えるようになった…
+		;陥落素質取得口上,7,自慰狂い
 		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 7)
-		PRINTFORMW %CALLNAME:LOCAL%获得了[自慰狂]
-		TALENT:LOCAL:自慰狂 = 1
+		PRINTFORMW %CALLNAME:LOCAL%は[自慰狂い]を得た
+		TALENT:LOCAL:自慰狂い = 1
 	ENDIF
-	IF EXP:LOCAL:子宮口開発経験 > 50 && !TALENT:LOCAL:子宮口性感
-		PRINTFORML 被反复进攻着子宫口的%CALLNAME:LOCAL%、比起痛苦来能感觉到更加强烈的快感…
-		;陷落素質取得口上,8,子宫口性感
+	IF EXP:LOCAL:子宮口開発経験 > 50 && !TALENT:LOCAL:ポルチオ性感
+		PRINTFORML 繰り返し子宮口を攻められた%CALLNAME:LOCAL%は、苦痛よりも快楽を感じるようになってきたようだ…
+		;陥落素質取得口上,8,ポルチオ性感
 		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 8)
-		PRINTFORMW %CALLNAME:LOCAL%获得了[子宫口性感]
-		TALENT:LOCAL:子宮口性感 = 1
+		PRINTFORMW %CALLNAME:LOCAL%は[ポルチオ性感]を得た
+		TALENT:LOCAL:ポルチオ性感 = 1
 	ENDIF
-	IF FLAG:おもらし有効 > 0 && EXP:LOCAL:放尿経験 > 100 * (10 - 2 * TALENT:LOCAL:容易中毒) / 10 && !TALENT:LOCAL:漏尿癖
-		PRINTFORML 绝顶时持续放尿的%CALLNAME:LOCAL%的身体变得非常松弛、以至于现在排尿已经变成了一种习惯…
-		;陷落素質取得口上,9,漏尿癖
-		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 9)
-		PRINTFORMW %CALLNAME:LOCAL%获得了[漏尿癖]
-		TALENT:LOCAL:漏尿癖 = 1
-	ENDIF
-	;以下は你はスキップ
+;	IF FLAG:おもらし有効 > 0 && EXP:LOCAL:放尿経験 > 1000 * (10 - 2 * TALENT:LOCAL:中毒しやすい) / 10 && !TALENT:LOCAL:おもらし癖
+;		PRINTFORML 絶頂時に放尿し続けてきた%CALLNAME:LOCAL%の身体は、今や放尿するのが癖になってしまう程に緩くなってしまった…
+;		;陥落素質取得口上,9,おもらし癖
+;		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 9)
+;		PRINTFORMW %CALLNAME:LOCAL%は[おもらし癖]を得た
+;		TALENT:LOCAL:おもらし癖 = 1
+;	ENDIF
+	;以下はあなたはスキップ
 	SIF LOCAL == MASTER
 		CONTINUE
-	;addition custom code
-	CALL ADD_CHECK_FALL_STATES(LOCAL)
-	CUSTOM_FALL_STATES_ALLOWED = RESULT
 	;恋慕取得
-	IF GETBIT(CUSTOM_FALL_STATES_ALLOWED, 1) ;addition custom code
+	IF 恋慕取得条件(LOCAL)
 		;面霊気は特別あつかい
 		IF LOCAL == 57
-			PRINTFORMW %CALLNAME:LOCAL%在察觉了自己对%CALLNAME:MASTER%的思慕的同时、嘴角翘了起来
-			PRINTFORMW 浮现出自然笑容的%CALLNAME:LOCAL%、好像拥有了表情的样子
-			;陷落素質取得口上,1,恋慕
+			PRINTFORMW %CALLNAME:LOCAL%は%CALLNAME:MASTER%への思いを自覚すると同時、口元を緩めた
+			PRINTFORMW 自然な笑顔を浮かべる%CALLNAME:LOCAL%は、表情を得た様だ
+			;陥落素質取得口上,1,恋慕
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 1)
-			PRINTFORMW %CALLNAME:LOCAL%的\@ TALENT:LOCAL:思慕 ? [思慕] # [爱欲] \@变成了[恋慕]
+			PRINTFORMW %CALLNAME:LOCAL%の\@ TALENT:LOCAL:思慕 ? [思慕] # [愛欲] \@は[恋慕]になった
 			FLAG:10 ++
 		;愛欲の有無で分岐
 		ELSEIF TALENT:LOCAL:愛欲
-			PRINTFORMW %CALLNAME:LOCAL%因为身体与心灵都被%CALLNAME:MASTER%填满而感到了喜悦…
-			PRINTL 即便是从糜烂的关系中催生出的爱意、不也还是一种恋的形式么…
-			;陷落素質取得口上,1,恋慕
+			PRINTFORMW %CALLNAME:LOCAL%は身も心も%CALLNAME:MASTER%に満たされることに悦びを感じている…
+			PRINTL 爛れた関係の果てに実った恋心、それもまた一つの恋のカタチ…
+			;陥落素質取得口上,1,恋慕
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 1)
-			PRINTFORMW %CALLNAME:LOCAL%的[爱欲]变成了[恋慕]
+			PRINTFORMW %CALLNAME:LOCAL%の[愛欲]は[恋慕]になった
 		ELSE
-			PRINTFORML %CALLNAME:LOCAL%因为与%CALLNAME:MASTER%共同渡过的时光而感到很幸福的样子…
-			;陷落素質取得口上,1,恋慕
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%と過ごす時間に幸せを感じているようだ…
+			;陥落素質取得口上,1,恋慕
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 1)
-			PRINTFORMW %CALLNAME:LOCAL%的[思慕]变成了[恋慕]
+			PRINTFORMW %CALLNAME:LOCAL%の[思慕]は[恋慕]になった
 			FLAG:10 ++
 		ENDIF
-		SIF !MARK:LOCAL:時姦刻印 && !TALENT:LOCAL:愛欲 && !CFLAG:LOCAL:睡眠姦 && !CFLAG:LOCAL:烂酔奸
+		SIF !MARK:LOCAL:時姦刻印 && !TALENT:LOCAL:愛欲 && !CFLAG:LOCAL:睡眠姦 && !CFLAG:LOCAL:泥酔姦
 			CFLAG:LOCAL:清い交際 = 1
 		TALENT:LOCAL:恋慕 = 1
 		TALENT:LOCAL:思慕 = 0
 		TALENT:LOCAL:愛欲 = 0
-		TALENT:LOCAL:炮友 = 0
+		TALENT:LOCAL:セフレ = 0
 		
-		;乐谱入手処理
+		;楽譜入手処理
 		PRINTL
-		RESULT = 乐谱入手_陥落(LOCAL)
+		RESULT = 楽譜入手_陥落(LOCAL)
 		SIF RESULT != -1
 			PRINTL
 	;思慕取得
-	;炮友／愛人の取得で分岐
-	ELSEIF GETBIT(CUSTOM_FALL_STATES_ALLOWED, 0) ;addition custom code
-		IF TALENT:LOCAL:炮友
-			PRINTFORML %CALLNAME:LOCAL%对%CALLNAME:MASTER%产生了身体之外的兴趣
+	;セフレ／愛人の取得で分岐
+	ELSEIF 思慕取得条件(LOCAL)
+		IF TALENT:LOCAL:セフレ
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%の身体以外のことにも興味が有るようだ
 			;陥落素質取得口上,2,思慕
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 2)
-			PRINTFORMW %CALLNAME:LOCAL%获得了[思慕]
+			PRINTFORMW %CALLNAME:LOCAL%は[思慕]を得た
 		ELSE
-			PRINTFORML %CALLNAME:LOCAL%变得对%CALLNAME:MASTER%很在意的样子…
-			;陷落素質取得口上,2,思慕
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%のことが気になるようだ…
+			;陥落素質取得口上,2,思慕
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 2)
-			PRINTFORMW %CALLNAME:LOCAL%获得了[思慕]
+			PRINTFORMW %CALLNAME:LOCAL%は[思慕]を得た
 		ENDIF
 		TALENT:LOCAL:思慕 = 1
 	;愛欲取得
 	;奉仕快楽の分岐がまだないので、取得条件に併合
-	ELSEIF GETBIT(CUSTOM_FALL_STATES_ALLOWED, 4) ;addition custom code
+	ELSEIF 愛欲取得条件(LOCAL)
 		;思慕持ち、心より身体を選んだ的な
 		IF TALENT:LOCAL:思慕
-			PRINTFORML %CALLNAME:LOCAL%与%CALLNAME:MASTER%不仅在心灵上也在肉体的羁绊上获得了满足的样子…
-			PRINTFORML 比起肉眼看不见的羁绊更愿意为了看得见的证明而相拥在一起
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%と心以上に体のつながりに満足しているようだ…
+			PRINTFORML 目に見えない絆よりも目に見える証を欲してこれからも身体を重ねるのだろう
 			;陥落素質取得口上,3,愛欲
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 3)
-			PRINTFORMW %CALLNAME:LOCAL%获得了[爱欲]
+			PRINTFORMW %CALLNAME:LOCAL%は[愛欲]を得た
 		ELSE
-			PRINTFORML %CALLNAME:LOCAL%好像沉溺于对%CALLNAME:MASTER%的情欲之中了…
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%との情欲におぼれているようだ…
 			;陥落素質取得口上,3,愛欲
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 3)
-			PRINTFORMW %CALLNAME:LOCAL%获得了[爱欲]
+			PRINTFORMW %CALLNAME:LOCAL%は[愛欲]を得た
 		ENDIF
 			FLAG:10 ++
 			TALENT:LOCAL:愛欲 = 1
 			TALENT:LOCAL:思慕 = 0
 			
-			;乐谱入手処理
+			;楽譜入手処理
 			PRINTL
-			RESULT = 乐谱入手_陥落(LOCAL)
+			RESULT = 楽譜入手_陥落(LOCAL)
 			SIF RESULT != -1
 				PRINTL
-	;炮友／愛人取得
-	;炮友と愛人の違いは思慕の有無
-	ELSEIF GETBIT(CUSTOM_FALL_STATES_ALLOWED, 3) ;addition custom code
-		;思慕取得済＋炮友未取得
-		IF TALENT:LOCAL:思慕 && !TALENT:LOCAL:炮友
-			PRINTFORML %CALLNAME:LOCAL%似乎开始觉得就算这样沉溺在与%CALLNAME:MASTER%的快乐之中也没有什么不好的了…
-			;陷落素質取得口上,4,情人
+	;セフレ／愛人取得
+	;セフレと愛人の違いは思慕の有無
+	ELSEIF セフレ取得条件(LOCAL)
+		;思慕取得済＋セフレ未取得
+		IF TALENT:LOCAL:思慕 && !TALENT:LOCAL:セフレ
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%となら快楽に溺れてもいいと思い始めたようだ…
+			;陥落素質取得口上,4,愛人
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 4)
-			PRINTFORMW %CALLNAME:LOCAL%成为了%CALLNAME:MASTER%的[情人]
-			TALENT:LOCAL:炮友 = 2
-		;思慕取得済＋炮友取得済
-		ELSEIF TALENT:LOCAL:思慕 && TALENT:LOCAL:炮友 == 1
-			PRINTFORML %CALLNAME:LOCAL%好像渴望着与%CALLNAME:MASTER%产生超越单纯的肉体关系之上的羁绊的样子…
-			;陷落素質取得口上,4,情人
+			PRINTFORMW %CALLNAME:LOCAL%は%CALLNAME:MASTER%の[愛人]になった
+			TALENT:LOCAL:セフレ = 2
+		;思慕取得済＋セフレ取得済
+		ELSEIF TALENT:LOCAL:思慕 && TALENT:LOCAL:セフレ == 1
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%に単なる肉体関係以上のものを望んでいるようだ…
+			;陥落素質取得口上,4,愛人
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 4)
-			PRINTFORMW %CALLNAME:LOCAL%成为了[情人]
-			TALENT:LOCAL:炮友 = 2
-		;思慕未取得＋炮友未取得ならまず炮友取得
-		ELSEIF !TALENT:LOCAL:炮友
-			PRINTFORML %CALLNAME:LOCAL%沉溺在%CALLNAME:MASTER%给予的快感之中…
-			;陷落素質取得口上,5,炮友
+			PRINTFORMW %CALLNAME:LOCAL%は[愛人]になった
+			TALENT:LOCAL:セフレ = 2
+		;思慕未取得＋セフレ未取得ならまずセフレ取得
+		ELSEIF !TALENT:LOCAL:セフレ
+			PRINTFORML %CALLNAME:LOCAL%は%CALLNAME:MASTER%から与えられる快楽に溺れつつある…
+			;陥落素質取得口上,5,セフレ
 			CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 5)
-			PRINTFORMW %CALLNAME:LOCAL%成为了%CALLNAME:MASTER%的[炮友]
-			TALENT:LOCAL:炮友 = 1
+			PRINTFORMW %CALLNAME:LOCAL%は%CALLNAME:MASTER%の[セフレ]になってしまった
+			TALENT:LOCAL:セフレ = 1
 		ENDIF
-	;addition custom code
-	ELSEIF GETBIT(CUSTOM_FALL_STATES_ALLOWED, 2)
-		PRINTFORML 共度了如此多时光之后，%CALLNAME:LOCAL%的感情变得更加强烈……
-		CALL KOJO_MESSAGE_SEND("EVENT", 21, LOCAL, 10)
-		PRINTFORMW %CALLNAME:LOCAL%的[恋慕]变成了[爱恋]！
-		TALENT:LOCAL:恋慕 = 2
-		;CALL QoL_Info_Write(LOCAL, Qol_Dates_DeepLove) ;qol custom code
 	ENDIF
 	IF EXP:LOCAL:演奏経験 >= 1000 && ABL:LOCAL:技巧 > 3 && !TALENT:LOCAL:音楽知識
-		PRINTFORMW %CALLNAME:LOCAL%演奏乐器造诣精进了
-		PRINTFORMW %CALLNAME:LOCAL%获得了[乐器知识]
+		PRINTFORMW %CALLNAME:LOCAL%は楽器演奏に造詣が深くなった
+		PRINTFORMW %CALLNAME:LOCAL%は[楽器知識]を得た
+		;PRINTFORMW %CALLNAME:LOCAL%は音楽に造詣深くなった
+		;PRINTFORMW %CALLNAME:LOCAL%は[音楽知識]を得た
 		TALENT:LOCAL:音楽知識 = 1
-		;技能レベルUP口上,7-1,音楽知識
+		;技能レベルアップ口上,7-1,音楽知識
 		CALL KOJO_MESSAGE_SEND("EVENT", 34, LOCAL, 7, 1)
 	ELSEIF EXP:LOCAL:演奏経験 >=5000 && !TALENT:LOCAL:音感
-		PRINTFORMW %CALLNAME:LOCAL%的音感得到了重复锻炼
-		PRINTFORMW %CALLNAME:LOCAL%获得了[相对音感]
+		PRINTFORMW %CALLNAME:LOCAL%の音感はかなり鍛えられてきたようだ
+		PRINTFORMW %CALLNAME:LOCAL%は[相対音感]を得た
 		TALENT:LOCAL:音感 = 1
-		;技能レベルUP口上,7-2,相対音感
+		;技能レベルアップ口上,7-2,相対音感
 		CALL KOJO_MESSAGE_SEND("EVENT", 34, LOCAL, 7, 2)
 	ENDIF
-	IF CFLAG:LOCAL:心情不快
-		CFLAG:LOCAL:心情不快 --
-		IF !CFLAG:LOCAL:心情不快
+	IF CFLAG:LOCAL:不機嫌
+		CFLAG:LOCAL:不機嫌 --
+		IF !CFLAG:LOCAL:不機嫌
 			SIF MARK:LOCAL:反発刻印
-				CFLAG:LOCAL:心情不快 ++
+				CFLAG:LOCAL:不機嫌 ++
 		ENDIF
 	ENDIF
-	;EX角色の恋慕時はメンバー追加イベントフラグを立てる
+	;EXキャラの恋慕時はメンバー追加イベントフラグを立てる
 	IF !CFLAG:LOCAL:神社在住
 		SIF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200
 			FLAG:1 = 3
@@ -191,12 +179,12 @@ FOR LOCAL,0,CHARANUM
 NEXT
 
 IF EXP:MASTER:異常清掃経験 > (500 + 100 * FLAG:850) && ABL:MASTER:清掃技能 > 3 && !TALENT:MASTER:清掃中毒
-	PRINTFORMW %CALLNAME:MASTER%注意到了可怕的事情
-	PRINTFORMW 不管是睡着还是醒着、就连在停止时间时、与少女们肌肤相亲时、
-	PRINTFORMW 都会情不自禁地去留意房间是否整理干净了
-	PRINTFORMW 而且%CALLNAME:MASTER%只要在扫除的时候心情就能平静下来
-	PRINTFORMW %CALLNAME:MASTER%对于扫除的讲究、已经到达了无可挽回的地步
-	PRINTFORMW %CALLNAME:MASTER%获得了[清扫中毒]
+	PRINTFORMW %CALLNAME:MASTER%は恐ろしいことに気付いてしまった
+	PRINTFORMW 寝ても覚めても、時を止めている間も、少女たちと肌を重ねている時ですら、
+	PRINTFORMW 部屋が散らかっていないか気になって仕方がないのだ
+	PRINTFORMW もはや%CALLNAME:MASTER%の心が安らぐのはこうして掃除をしている間のみ
+	PRINTFORMW %CALLNAME:MASTER%の掃除へのこだわりは、取り返しのつかない域に達していた
+	PRINTFORMW %CALLNAME:MASTER%は[清掃中毒]を得た
 	TALENT:MASTER:清掃中毒 = 1
 ENDIF
 ;MASTERを除く全員のプリセット処理
@@ -206,42 +194,42 @@ FOR LOCAL,1,CHARANUM
 
 	LOCAL:1 = MAXBASE:LOCAL:体力 / 3
 
-	;回復快、回復慢
+	;回復早い、回復遅い
 	LOCAL:1 = LOCAL:1 * 3 / (3 - TALENT:LOCAL:回復速度)
 	
 	;添い寝してたら回復速度向上
-	SIF CFLAG:LOCAL:陪睡中
+	SIF CFLAG:LOCAL:添い寝中
 		LOCAL:1 *= 2
 	SIF CFLAG:LOCAL:徹夜
 		LOCAL:1 /= 2
 	CFLAG:LOCAL:徹夜 = 0
 	BASE:LOCAL:体力 = MIN(MAXBASE:LOCAL:体力, BASE:LOCAL:体力 + LOCAL:1)
 
-	;南無三卡片発行者が居たら発行フラグOFF
+	;南無三カード発行者が居たら発行フラグOFF
 	CFLAG:LOCAL:328 = 0
 NEXT
 ;全員のプリセット処理
 FOR LOCAL,1,CHARANUM
 	BASE:LOCAL:精力 = MIN(MAXBASE:LOCAL:精力, BASE:LOCAL:精力 + MAXBASE:LOCAL:精力 * BASE:LOCAL:体力 / MAXBASE:LOCAL:体力)
 	
-	;隠密中の角色が居たらフラグOFF
+	;隠密中のキャラが居たらフラグOFF
 	CALL SET_SNEAK(0,LOCAL,1)
-	CFLAG:LOCAL:隠密中 = 0
+	;CFLAG:LOCAL:隠密中 = 0
 	
-	;恶作剧中の角色が居たらフラグOFF
+	;イタズラ中のキャラが居たらフラグOFF
 	CALL SET_PRANK(0,LOCAL,1)
-	CFLAG:LOCAL:恶作剧 = 0
+	;CFLAG:LOCAL:イタズラ = 0
 	
 NEXT
 
 ;宴会の開催判定
-SIF FLAG:3 && FLAG:宴会開催FLAG == 0
+SIF FLAG:3 && FLAG:宴会開催フラグ == 0
 	CALL ENKAI_SETTING
 
 IF CFLAG:MASTER:育児人数
-	抚养费 = CHILD_SUPPORT_COST()
-	PRINTFORML %CALLNAME:MASTER%支付了%金額表示(抚养费)%的子女抚养费。
-	MONEY -= 抚养费
+	養育費 = CHILD_SUPPORT_COST()
+	PRINTFORML %CALLNAME:MASTER%は子供の養育費として%金額表示(養育費)%支払った。
+	MONEY -= 養育費
 ENDIF
 
 CALL RANK_POINT
@@ -249,14 +237,14 @@ PRINTW
 
 FLAG:0 = 0
 
-;路人子のセーブ
-IF TALENT:RANDOM_CHARANUM:路人 == 1 && GETBIT(TFLAG:一日一回, 9)
+;モブ子のセーブ
+IF TALENT:RANDOM_CHARANUM:行きずり == 1 && GETBIT(TFLAG:一日一回, 9)
 	IF FORGET_MOBGIRL
 		FORGET_MOBGIRL = 0
 		GOTO FORGET_MOB2
 	ENDIF
-	PRINTFORML %CALLNAME:MASTER%对今天刚遇到的%CALLNAME:RANDOM_CHARANUM%的事情……
-	CALL ASK_YN("忘记了","记得很清楚")
+	PRINTFORML %CALLNAME:MASTER%は今日出会った%CALLNAME:RANDOM_CHARANUM%のことを……
+	CALL ASK_YN("忘れる","覚えておく")
 	IF RESULT
 		VARSET TCVAR:RANDOM_CHARANUM:0, 0
 		VARSET EX:RANDOM_CHARANUM:0, 0
@@ -267,56 +255,55 @@ IF TALENT:RANDOM_CHARANUM:路人 == 1 && GETBIT(TFLAG:一日一回, 9)
 		CALL SAVE_MOBGIRL
 		SIF RESULT == -1
 			GOTO FORGET_MOB
-		PRINTFORMW %CALLNAME:MASTER%\@ TALENT:RANDOM_CHARANUM:風俗嬢 ? 感觉以后再去找%CALLNAME:RANDOM_CHARANUM%玩 # 感觉以后再见到%CALLNAME:RANDOM_CHARANUM% \@也不错
+		PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:RANDOM_CHARANUM%\@ TALENT:RANDOM_CHARANUM:風俗嬢 ? でまた遊びたい # にまた会えたらいいな \@と思った
 	ELSE
 		$FORGET_MOB
-		PRINTFORMW %CALLNAME:MASTER%把%CALLNAME:RANDOM_CHARANUM%忘得一干二净
+		PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:RANDOM_CHARANUM%のことを綺麗さっぱり忘れた
 	ENDIF
 ENDIF
 $FORGET_MOB2
-IF TALENT:RANDOM_CHARANUM:路人 == 2 && GETBIT(TFLAG:一日一回, 9)
+IF TALENT:RANDOM_CHARANUM:行きずり == 2 && GETBIT(TFLAG:一日一回, 9)
 	CALL MOBGIRL_PROFILE2()
 	VARSET TCVAR:RANDOM_CHARANUM:0, 0
 	VARSET EX:RANDOM_CHARANUM:0, 0
 	VARSET TEQUIP:RANDOM_CHARANUM:0, 0
 	VARSET PALAM:RANDOM_CHARANUM:0, 0
 	CALL InitializeBeforeTrain(RANDOM_CHARANUM)
-	SAVECHARA TOSTR(CFLAG:RANDOM_CHARANUM:路人子セーブスロット), CSTR:RANDOM_CHARANUM:路人子プロフィール１, RANDOM_CHARANUM
+	SAVECHARA TOSTR(CFLAG:RANDOM_CHARANUM:モブ子セーブスロット), CSTR:RANDOM_CHARANUM:モブ子プロフィール１, RANDOM_CHARANUM
 	[IF DEBUG]
-		PRINTFORMW %CALLNAME:RANDOM_CHARANUM%的情报更新了。
+		PRINTFORMW %CALLNAME:RANDOM_CHARANUM%の情報を更新しました。
 	[ENDIF]
 ENDIF
-;AUTO SAVE
-CALL saveManageSaveGame(1000, 2)
+
 BEGIN SHOP
 
 @RANK_POINT
 VARSET LOCAL
 ;清潔度
-LOCAL:2 = EX:MASTER:今日的掃除回数 / 10
-PRINTFORML 今日扫除的垃圾的量{EX:MASTER:今日的掃除回数}
-PRINTFORML 清扫得到的额外奖励 %金額表示(LOCAL:2)%
+LOCAL:2 = EX:MASTER:今日の掃除回数 / 10
+PRINTFORML 今日掃除したゴミの量{EX:MASTER:今日の掃除回数}
+PRINTFORML 清掃によるボーナス %金額表示(LOCAL:2)%
 IF DAY:2 == 4 && DAY:3 == 31
-	PRINT (x2)  【大扫除额外奖励】
+	PRINT (x2)  【大掃除ボーナス】
 	LOCAL:2 *= 2
 ENDIF
-;拠点の主の好感度と信賴度が上昇
-LOCAL:3 = MIN(10, EX:MASTER:今日的掃除回数 / 2000)
+;拠点の主の好感度と信頼度が上昇
+LOCAL:3 = MIN(10, EX:MASTER:今日の掃除回数 / 2000)
 IF LOCAL:3
-	PRINTFORML 通过努力的扫除、提高了%CALLNAME:拠点_家主%对你的评价
-	CFLAG:拠点_家主:好感度 += LOCAL:3 * 2
-	CFLAG:拠点_家主:信賴度 += LOCAL:3
+	PRINTFORML 掃除を頑張ったことで、%CALLNAME:拠点_大家%からの評価が上がった
+	CFLAG:拠点_大家:好感度 += LOCAL:3 * 2
+	CFLAG:拠点_大家:信頼度 += LOCAL:3
 	IF LOCAL:3 / 3 > 0
-		PRINTFORML 因为努力的扫除、收到了{LOCAL:3 / 3}个平价食材
-		ITEM:平价食材 += LOCAL:3 / 3
+		PRINTFORML 掃除を頑張ったので、さらに安物食材を{LOCAL:3 / 3}個貰った
+		ITEM:安物食材 += LOCAL:3 / 3
 	ENDIF
 ENDIF
 PRINTL  
 ;手伝い報酬
-LOCAL:4 = TCVAR:MASTER:帮忙工作量
+LOCAL:4 = TCVAR:MASTER:手伝った量
 
 SIF LOCAL:4 > 0
-	PRINTFORML 帮忙干活得到的额外奖励 %金額表示(LOCAL:4)%
+	PRINTFORML 仕事手伝いによるボーナス %金額表示(LOCAL:4)%
 
 MONEY += LOCAL:2 + LOCAL:4
 
@@ -324,9 +311,9 @@ MONEY += LOCAL:2 + LOCAL:4
 IF FLAG:12 && MONEY:2 < CM_LIMIT
 	LOCAL:5 = MAX(1,FLAG:12 / 100)
 	LOCAL:5 = MIN(LOCAL:5, CM_LIMIT - MONEY:2)
-	PRINTFORML 好感度上升额外奖励 ＋{LOCAL:5}筹码
+	PRINTFORML 好感度上昇ボーナス ＋{LOCAL:5}カリスマ
 	MONEY:2 += LOCAL:5
-	PRINTFORML 现在的筹码：%三桁区切(MONEY:2)%　筹码保有上限：%三桁区切(CM_LIMIT)%
+	PRINTFORML 現在のカリスマ：%三桁区切(MONEY:2)%　カリスマ保有上限：%三桁区切(CM_LIMIT)%
 ENDIF
 FLAG:12 = 0
 
@@ -338,7 +325,7 @@ SIF TALENT:ARG:恋慕
 	RETURNF 0
 SIF CFLAG:ARG:好感度 < REQUIRED_FAVOR_恋慕
 	RETURNF 0
-SIF CFLAG:ARG:信賴度 < REQUIRED_TRUST_恋慕
+SIF CFLAG:ARG:信頼度 < REQUIRED_TRUST_恋慕
 	RETURNF 0
 SIF ABL:ARG:親密 < REQUIRED_AFFECTION_恋慕
 	RETURNF 0
@@ -358,11 +345,11 @@ SIF TALENT:ARG:思慕
 	RETURNF 0
 SIF CFLAG:ARG:好感度 < REQUIRED_FAVOR_思慕
 	RETURNF 0
-SIF CFLAG:ARG:信賴度 < REQUIRED_TRUST_思慕
+SIF CFLAG:ARG:信頼度 < REQUIRED_TRUST_思慕
 	RETURNF 0
 SIF ABL:ARG:親密 < REQUIRED_AFFECTION_思慕
 	RETURNF 0
-SIF TALENT:ARG:炮友 && !FLAG:陥落路線変化
+SIF TALENT:ARG:セフレ && !FLAG:陥落路線変化
 	RETURNF 0
 RETURNF 1
 
@@ -372,7 +359,7 @@ SIF TALENT:ARG:恋慕
 	RETURNF 0
 SIF TALENT:ARG:愛欲
 	RETURNF 0
-SIF !TALENT:ARG:炮友
+SIF !TALENT:ARG:セフレ
 	RETURNF 0
 SIF CFLAG:ARG:好感度 < REQUIRED_FAVOR_愛欲
 	RETURNF 0
@@ -384,19 +371,19 @@ SIF (ABL:ARG:欲望 - ABL:ARG:親密) < 1
 	RETURNF 0
 RETURNF 1
 
-@炮友取得条件(ARG)
+@セフレ取得条件(ARG)
 #FUNCTION
 SIF TALENT:ARG:恋人
 	RETURNF 0
 SIF TALENT:ARG:恋慕
 	RETURNF 0
-SIF TALENT:ARG:炮友 == 2
+SIF TALENT:ARG:セフレ == 2
 	RETURNF 0
-SIF CFLAG:ARG:好感度 <= REQUIRED_FAVOR_炮友
+SIF CFLAG:ARG:好感度 <= REQUIRED_FAVOR_セフレ
 	RETURNF 0
-SIF ABL:ARG:欲望 < REQUIRED_DESIRE_炮友
+SIF ABL:ARG:欲望 < REQUIRED_DESIRE_セフレ
 	RETURNF 0
-SIF (EXP:ARG:絶頂経験 - EXP:ARG:無自覚絶頂経験) < REQUIRED_ECSTACY_炮友
+SIF (EXP:ARG:絶頂経験 - EXP:ARG:無自覚絶頂経験) < REQUIRED_ECSTACY_セフレ
 	RETURNF 0
 SIF (ABL:ARG:欲望 - ABL:ARG:親密) < 0
 	RETURNF 0

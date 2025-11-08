@@ -12,15 +12,15 @@
 #DIM 経過時間
 経過時間 = Activity_Duration:TARGET
 SELECTCASE O_DATA
-;陪同行動指令の名称
+;自由行動に付き合うコマンドの名称
 CASE "名称"
-	CALLF MAKE_STR(V_NAME, "帮忙做实验")
+	CALLF MAKE_STR(V_NAME, "実験を手伝う")
 CASE "CHAIN"
-;他角色に連鎖しない場合コメントアウトすること
+;他キャラに連鎖しない場合コメントアウトすること
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "経過時間"
-;陪同行動指令での経過時間
-;0だと30分か残り時間全部の小さい方
+;自由行動に付き合うコマンドでの経過時間
+;0だと30分か残り時間すべての小さい方
 	CALLF MAKE_INT(V_NAME, 0)
 ENDSELECT
 
@@ -35,7 +35,7 @@ ENDSELECT
 メッセージ表示 = 現在地 == CFLAG:MASTER:現在位置 ? 1 # 0
 SELECTCASE ARGS
 	CASE "発生"
-		;調合Lv1以上の角色が調合できる場所（主人公私室以外）または自室にいる時
+		;調合Lv1以上のキャラが調合できる場所（あなた私室以外）または自室にいる時
 		SIF TALENT:CHARA:調合Lv < 1
 			RETURN 0
 		SIF BASE:CHARA:気力 <= 500
@@ -46,59 +46,31 @@ SELECTCASE ARGS
 				RETURN 0
 		ENDIF
 		SIF メッセージ表示
-			PRINTFORMW %CALLNAME:CHARA%\@ CHAIN ? 开始给%CALLNAME:CHAIN%的实验帮忙了。# 开始准备做实验了。\@
+			PRINTFORMW %CALLNAME:CHARA%は\@ CHAIN ? %CALLNAME:CHAIN%を手伝い始めた。# 実験の準備を始めた。\@
 		RETURN 60 + RAND:30
 	CASE "行動中"
-	IF メッセージ表示
-			IF 充填率(TARGET,1) >= 10 || 充填率(TARGET,2) >= 10
-				PRINTFORMW %CALLNAME:CHARA%满脸通红的%TEXTR("调节着实验器具/布置着实验道具/记录着实验过程/做着可疑的实验")%。
-			ELSE
-				PRINTFORMW %CALLNAME:CHARA%%TEXTR("调节着实验器具/布置着实验道具/记录着实验过程/做着可疑的实验")%。
-			ENDIF	
-	ENDIF
+		IF メッセージ表示
+			PRINTFORMW %CALLNAME:CHARA%は%TEXTR("実験器具を調節している/実験道具を並べている/実験の記録を付けている/怪しい実験をしている")%。
+		ENDIF
 	CASE "完了"
 		EXP:CHARA:調合経験 += 1
-		IF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%做完实验吐出甜美的喘息。
-		ELSE
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%似乎做完实验了。
-		ENDIF	
-		
+		SIF メッセージ表示
+			PRINTFORMW %CALLNAME:CHARA%は実験を終えたようだ。
 	CASE "中断"
 		EXP:CHARA:調合経験 += 1
-	CASE "交手"
-		;自由行动に付き合ったとき用メッセージ
-		PRINTFORML %CALLNAME:PLAYER%给%CALLNAME:TARGET%的实验帮忙了
-			IF 充填率(CHARA,1) >= 150 || 充填率(CHARA,2) >= 150
-				PRINTFORML %CALLNAME:CHARA%捂着嘴忍耐着体内\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的爱抚…香汗淋漓…
-				PRINTFORML 脸涨得通红并且夹杂着甜美喘息摇着头、
-				PRINTFORML 看来暂时没有余力好好做实验呢❤真可爱
-			ELSEIF 充填率(CHARA,1) >= 100 || 充填率(CHARA,2) >= 100
-				PRINTFORML %CALLNAME:CHARA%正享受着体内满满\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激轻轻娇喘……
-				PRINTFORML 夹杂着甜美的娇喘的实验格外勾人…
-			ELSEIF 充填率(CHARA,1) >= 70 || 充填率(CHARA,2) >= 70
-				PRINTFORML %CALLNAME:CHARA%正感受着体内大量\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激……
-				PRINTFORML 断断续续的实验、时不时夹杂着甜美的娇喘…
-			ELSEIF 充填率(CHARA,1) >= 40 || 充填率(CHARA,2) >= 40
-				PRINTFORML %CALLNAME:CHARA%正被体内许多\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML 红着脸慢慢的做着实验…
-			ELSEIF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-				PRINTFORML %CALLNAME:CHARA%正被体内残存\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML 实验时腰部一扭一扭的…
-			ELSE
-			ENDIF		
+	CASE "付き合う"
+		;自由行動に付き合ったとき用メッセージ
+		PRINTFORML %CALLNAME:PLAYER%は%CALLNAME:TARGET%の実験を手伝った
 		SELECTCASE RAND:3
 		CASE 1
-			PRINTFORML 完全无法理解%CALLNAME:TARGET%在做什么…
+			PRINTFORML %CALLNAME:TARGET%がなにをしたいのかはよく分からない…
 		CASE 2
-			PRINTFORML 因为要处理危险物品、实在很是精疲力尽…
+			PRINTFORML 危険物を取り扱ったため神経がすり減った…
 		CASEELSE
-			PRINTFORML %CALLNAME:TARGET%露出了满意的表情…
+			PRINTFORML %CALLNAME:TARGET%は満足した表情を浮かべている… 
 		ENDSELECT
 	CASE "ソース"
-		;交手指令選択時の入手ソース、時間係数は付き合った時間の1/10
+		;付き合うコマンド選択時の入手ソース、時間係数は付き合った時間の1/10
 		DOWNBASE:MASTER:体力 += 20 * 時間係数
 		DOWNBASE:MASTER:気力 += 40 * 時間係数
 		DOWNBASE:TARGET:体力 += 10 * 時間係数

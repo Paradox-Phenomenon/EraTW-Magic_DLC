@@ -1,4 +1,4 @@
-﻿;斗虫
+﻿;ムシバトル
 @COM483
 #DIM CHARA
 #DIM 同室人数
@@ -8,8 +8,8 @@ VARSET MUSHI_BATTLER
 VARSET MUSHI_TEAM
 VARSET MUSHI_POWER
 ;TARGETがメイン
-IF TCVAR:TARGET:斗虫参加可否 == -1
-	PRINTFORML %CALLNAME:TARGET%的虫子们都很疲惫了。还是不要对战了。
+IF TCVAR:TARGET:ムシバトル参加可否 == -1
+	PRINTFORML %CALLNAME:TARGET%のムシたちは疲れている。バトルはやめておこう。
 	RETURN -1
 ENDIF
 
@@ -25,7 +25,7 @@ FOR LOCAL, 1, 同室人数 + 1
 		CONTINUE
 	SIF BASE:CHARA:気力 < 500 || BASE:CHARA:体力 < 500
 		CONTINUE
-	SIF TCVAR:CHARA:斗虫参加可否 == -1
+	SIF TCVAR:CHARA:ムシバトル参加可否 == -1
 		CONTINUE
 	参加可能人数 ++
 NEXT
@@ -37,8 +37,8 @@ ELSEIF 参加可能人数 == 1
 	;一人の時は確認をとる
 	MUSHI_CHARANUM = 2
 	CHARA = TARGET
-	PRINTFORML 与%CALLNAME:CHARA%对战　\@ CFLAG:CHARA:斗虫直接勝利 ? ★达成直接胜利 # \@
-	PRINTFORM %CALLNAME:CHARA%的斗虫力：
+	PRINTFORML %CALLNAME:CHARA%と対戦します　\@ CFLAG:CHARA:ムシバトル直接勝利 ? ★直接勝利済み # \@
+	PRINTFORM %CALLNAME:CHARA%のムシバトルパワー：
 	CALL COLOR_STAMP(MBP_RANK(CHARA) + 1, 0, "★", RANKCOLOR(MBP_RANK(CHARA) + 1), 1)
 	PRINTL 
 	;＠試合前口上
@@ -46,27 +46,27 @@ ELSEIF 参加可能人数 == 1
 	CALL KOJO_MESSAGE_SEND("MUSHI_BATTLE", 0, CHARA, 0, 0, "試合前")
 	PRINTFORML %RESULTS%
 	RESETCOLOR
-	PRINTL [1] 对战开始！
-	PRINTL [0] 果然还是放弃
+	PRINTL [1] 対戦開始！
+	PRINTL [0] やっぱりやめる
 	INPUT
 	SIF !RESULT
 		RETURN -1
 	;1はMASTER
 	MUSHI_BATTLER:2 = CHARA
-	TCVAR:CHARA:斗虫参加可否 = 2
+	TCVAR:CHARA:ムシバトル参加可否 = 2
 ELSE
 	MUSHI_CHARANUM = 1
 	CALL MUSHIBATTLE_CHARASELECT(同室人数, 参加可能人数)
-	;中止
+	;キャンセル
 	SIF RESULT == -1
 		RETURN -1
 ENDIF
 
-;セットUP１
+;セットアップ１
 CALL MUSHI_BATTLE_SETUP_1
 ;見せ合い＆ムシ選出
 CALL MUSHI_BATTLE_SELECTION
-;セットUP２
+;セットアップ２
 CALL MUSHI_BATTLE_SETUP_2
 ;TARGETを変更しておく
 IF MUSHI_TEAM
@@ -82,34 +82,34 @@ CALL MUSHI_BATTLE_RESULT
 ;ソース獲得
 DOWNBASE:MASTER:気力 += 400
 DOWNBASE:MASTER:体力 += 200
-TFLAG:194 = TCVAR:MASTER:斗虫参加可否 % 10
+TFLAG:194 = TCVAR:MASTER:ムシバトル参加可否 % 10
 FOR LOCAL, 2, MUSHI_CHARANUM + 1
 	CHARA = MUSHI_BATTLER:LOCAL
 	DOWNBASE:CHARA:気力 += 400
 	DOWNBASE:CHARA:体力 += 200
-	順位 = TCVAR:CHARA:斗虫参加可否 % 10
+	順位 = TCVAR:CHARA:ムシバトル参加可否 % 10
 	SELECTCASE TFLAG:193
 	;タイマン
 	CASE 1
 		IF 順位 == 1
 			SOURCE:CHARA:歓楽 = 2000 + ABL:CHARA:親密 * 50
-			SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:施虐属性
+			SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:サドっ気
 		ELSE
 			SOURCE:CHARA:歓楽 = 1000 + ABL:CHARA:親密 * 100
 			SOURCE:CHARA:受動 = 400 + 120 * ABL:CHARA:従順
-			TFLAG:信賴度管理 = 1
+			TFLAG:信頼度管理 = 1
 			;初勝利
-			IF !CFLAG:CHARA:斗虫直接勝利
-				CFLAG:CHARA:斗虫直接勝利 = 1
-				TFLAG:好感度BONUS = 100
-				TFLAG:信賴度管理  += 1
+			IF !CFLAG:CHARA:ムシバトル直接勝利
+				CFLAG:CHARA:ムシバトル直接勝利 = 1
+				TFLAG:好感度ボーナス = 100
+				TFLAG:信頼度管理  += 1
 			ENDIF
 		ENDIF
 	;バトルロイヤル
 	CASE 2
 		IF 順位 == 1
 			SOURCE:CHARA:歓楽 = 2500 + ABL:CHARA:親密 * 60
-			SOURCE:CHARA:征服 = 600 + 150 * ABL:CHARA:施虐属性
+			SOURCE:CHARA:征服 = 600 + 150 * ABL:CHARA:サドっ気
 		ELSEIF 順位 == 2
 			SOURCE:CHARA:歓楽 = 1500 + ABL:CHARA:親密 * 80
 			SOURCE:CHARA:受動 = 200 + 80 * ABL:CHARA:従順
@@ -124,7 +124,7 @@ FOR LOCAL, 2, MUSHI_CHARANUM + 1
 	CASE 3
 		IF 順位 == 1
 			SOURCE:CHARA:歓楽 = 1600 + ABL:CHARA:親密 * 50
-			SOURCE:CHARA:征服 = 200 + 80 * ABL:CHARA:施虐属性
+			SOURCE:CHARA:征服 = 200 + 80 * ABL:CHARA:サドっ気
 		ELSE
 			SOURCE:CHARA:歓楽 = 1200 + ABL:CHARA:親密 * 80
 			SOURCE:CHARA:受動 = 200 + 80 * ABL:CHARA:従順
@@ -133,7 +133,7 @@ FOR LOCAL, 2, MUSHI_CHARANUM + 1
 			TIMES SOURCE:CHARA:歓楽, 2.00
 			TIMES SOURCE:CHARA:受動, 2.00
 			TIMES SOURCE:CHARA:征服, 2.00
-			TFLAG:信賴度管理 = 1
+			TFLAG:信頼度管理 = 1
 		ENDIF
 	ENDSELECT
 NEXT
@@ -141,8 +141,8 @@ NEXT
 ;今日はもう戦えない
 FOR LOCAL, 1, 同室人数 + 1
 	CHARA = TARGET:LOCAL
-	SIF TCVAR:CHARA:斗虫参加可否 > 1
-		TCVAR:CHARA:斗虫参加可否 = -1
+	SIF TCVAR:CHARA:ムシバトル参加可否 > 1
+		TCVAR:CHARA:ムシバトル参加可否 = -1
 NEXT
 
 ;時間経過
@@ -153,7 +153,7 @@ RETURN 1
 ;-------------------------------------------------
 ;実行可能判定
 ;-------------------------------------------------
-;斗虫
+;ムシバトル
 @COM_ABLE483
 ;時間停止中
 SIF FLAG:時間停止
@@ -163,14 +163,14 @@ SIF !TFLAG:100
 ;一括管理
 SIF GLOBAL_COMABLE(483)
 	RETURN RESULT
-;昆虫採集套装がない
-SIF !ITEM:昆虫採集套装
+;昆虫採集セットがない
+SIF !ITEM:昆虫採集セット
 	RETURN 0
 ;昆虫採集できる場所である
 SIF !MUSHITORI_SPOT(CFLAG:MASTER:現在位置)
 	RETURN 0
 ;冬の間はおやすみ
-SIF GET_MONTH() == "冬之月"
+SIF GET_MONTH() == "冬の月"
 	RETURN 0
 ;虫を持ってない
 SIF !MUSHI_CAGE:1
@@ -181,11 +181,11 @@ SIF TARGET <= 0
 ;意識がない
 SIF !SHIRAHU(TARGET)
 	RETURN 0
-;陪睡中
-SIF CFLAG:MASTER:陪睡中
+;添い寝中
+SIF CFLAG:MASTER:添い寝中
 	RETURN 0
-;诶嘿嘿中
-SIF CFLAG:MASTER:诶嘿嘿
+;うふふ中
+SIF CFLAG:MASTER:うふふ
 	RETURN 0
 ;仕事中
 SIF CFLAG:行動 == 5
@@ -199,16 +199,16 @@ SIF BASE:TARGET:気力 < 500 || BASE:TARGET:体力 < 500
 RETURN 1
 
 ;-------------------------------------------------
-;斗虫：角色セレクト関数
+;ムシバトル：キャラクターセレクト関数
 ;ARG 同室人数
-;TCVAR:斗虫参加可否 =-1,参加不可, =1,参加可能, =2～4,参加エントリー
+;TCVAR:ムシバトル参加可否 =-1,参加不可, =1,参加可能, =2～4,参加エントリー
 ;-------------------------------------------------
 @MUSHIBATTLE_CHARASELECT(ARG, 参加可能人数)
 #DIM CHARA
 #DIM 参加可能人数
 #DIM LINE
 LINE = 7
-PRINTFORML ＜＜选择参加者！！（最大%TOFULL(TOSTR(MUSHI_MAXBATTLE))%人）＞＞
+PRINTFORML ＜＜参加者を選べ！！（最大%TOFULL(TOSTR(MUSHI_MAXBATTLE))%人）＞＞
 SETCOLOR C_AQUA
 PRINTPLAINFORM [  0] %CALLNAME:MASTER, 16, LEFT%★？Ｐ１
 PRINTL 
@@ -217,26 +217,26 @@ FOR LOCAL, 1, ARG + 1
 	CHARA = TARGET:LOCAL
 	SIF !SHIRAHU(CHARA)
 		CONTINUE
-	SIF TCVAR:CHARA:斗虫参加可否 == -1
+	SIF TCVAR:CHARA:ムシバトル参加可否 == -1
 		CONTINUE
 	SIF CFLAG:CHARA:行動 == 5
 		CONTINUE
 	SIF BASE:CHARA:気力 < 500 || BASE:CHARA:体力 < 500
 		CONTINUE
-	IF TCVAR:CHARA:斗虫参加可否 > 1
+	IF TCVAR:CHARA:ムシバトル参加可否 > 1
 		SETCOLOR C_AQUA
 		PRINTFORM [{CHARA, 3}] %CALLNAME:CHARA, 16, LEFT%
 		CALL PRINT_MBP_RANK(CHARA)
-		PRINTFORM Ｐ%TOFULL(TOSTR(TCVAR:CHARA:斗虫参加可否))%
-		SIF MUSHI_TEAM && TCVAR:CHARA:斗虫参加可否 == 3
-			PRINTFORM (同伴)
+		PRINTFORM Ｐ%TOFULL(TOSTR(TCVAR:CHARA:ムシバトル参加可否))%
+		SIF MUSHI_TEAM && TCVAR:CHARA:ムシバトル参加可否 == 3
+			PRINTFORM (仲間)
 		;＠試合前口上
 		CALL KOJO_MESSAGE_SEND("MUSHI_BATTLE", 0, CHARA, 0, 0, "口上色")
 		CALL KOJO_MESSAGE_SEND("MUSHI_BATTLE", 0, CHARA, 0, 0, "試合前")
 		PRINTFORML %RESULTS%
 		RESETCOLOR
 	ELSE
-		TCVAR:CHARA:斗虫参加可否 = 1
+		TCVAR:CHARA:ムシバトル参加可否 = 1
 		PRINTFORM [{CHARA, 3}] %CALLNAME:CHARA, 16, LEFT%
 		CALL PRINT_MBP_RANK(CHARA)
 		PRINTL 
@@ -248,29 +248,29 @@ SIF MUSHI_TEAM
 	SETCOLOR C_AQUA
 SIF 参加可能人数 < 3
 	SETCOLOR C_GRAY
-PRINTL [901] 团队战（Ｐ１＆Ｐ３ VS Ｐ２＆Ｐ４）
+PRINTL [901] チーム戦（Ｐ１＆Ｐ３ VS Ｐ２＆Ｐ４）
 RESETCOLOR
 IF MUSHI_BATTLER:2
-	PRINTL [900] 对战开始！
+	PRINTL [900] 対戦開始！
 ELSE
 	PRINTL 
 ENDIF
-PRINTL [999] 果然还是算了
+PRINTL [999] やっぱりやめる
 INPUT
 
-;放弃
+;やめる
 IF RESULT == 999
 	;参加可否をリセットする（-1以外）
 	FOR LOCAL, 1, ARG + 1
 		CHARA = TARGET:LOCAL
-		SIF TCVAR:CHARA:斗虫参加可否 > 0
-			TCVAR:CHARA:斗虫参加可否 = 0
+		SIF TCVAR:CHARA:ムシバトル参加可否 > 0
+			TCVAR:CHARA:ムシバトル参加可否 = 0
 	NEXT
 	RETURN -1
 ;対戦開始
 ELSEIF RESULT == 900
 	IF MUSHI_TEAM && MUSHI_CHARANUM != 4
-		PRINTW 参加者不足４人就无法进行团队战斗！
+		PRINTW 参加者が４人いないとチーム戦はできません！
 		LINE ++
 	ELSE
 		;特殊補正（口上用？,数値は任意）
@@ -283,32 +283,32 @@ ELSEIF RESULT == 900
 ;チーム戦切り替え
 ELSEIF RESULT == 901 && 参加可能人数 > 3
 	MUSHI_TEAM = !MUSHI_TEAM
-;参加中止
-ELSEIF INRANGE(RESULT, 1, CHARANUM) && TCVAR:RESULT:斗虫参加可否 > 1
-	FOR LOCAL, TCVAR:RESULT:斗虫参加可否, MUSHI_MAXBATTLE + 1
-		;参加者は中止する
+;参加キャンセル
+ELSEIF INRANGE(RESULT, 1, CHARANUM) && TCVAR:RESULT:ムシバトル参加可否 > 1
+	FOR LOCAL, TCVAR:RESULT:ムシバトル参加可否, MUSHI_MAXBATTLE + 1
+		;参加者はキャンセルする
 		IF MUSHI_BATTLER:LOCAL == RESULT
 			MUSHI_BATTLER:LOCAL = 0
 		;番号が後の人がいるなら登録番号を一つ下げる
 		ELSEIF MUSHI_BATTLER:LOCAL
-			TCVAR:(MUSHI_BATTLER:LOCAL):斗虫参加可否 --
+			TCVAR:(MUSHI_BATTLER:LOCAL):ムシバトル参加可否 --
 		ENDIF
 	NEXT
 	;その後シフトする
-	FOR LOCAL, TCVAR:RESULT:斗虫参加可否, MUSHI_MAXBATTLE + 1
+	FOR LOCAL, TCVAR:RESULT:ムシバトル参加可否, MUSHI_MAXBATTLE + 1
 		SIF !MUSHI_BATTLER:LOCAL
 			SWAP MUSHI_BATTLER:LOCAL, MUSHI_BATTLER:(LOCAL + 1)
 	NEXT
 	;参加状態を戻す
-	TCVAR:RESULT:斗虫参加可否 = 1
+	TCVAR:RESULT:ムシバトル参加可否 = 1
 	MUSHI_CHARANUM --
 ;参加エントリー
-ELSEIF INRANGE(RESULT, 1, CHARANUM) && TCVAR:RESULT:斗虫参加可否 == 1 && MUSHI_CHARANUM < MUSHI_MAXBATTLE
+ELSEIF INRANGE(RESULT, 1, CHARANUM) && TCVAR:RESULT:ムシバトル参加可否 == 1 && MUSHI_CHARANUM < MUSHI_MAXBATTLE
 	FOR LOCAL, 2, MUSHI_MAXBATTLE + 1
 		;空きに入れる
 		IF !MUSHI_BATTLER:LOCAL
 			MUSHI_BATTLER:LOCAL = RESULT
-			TCVAR:RESULT:斗虫参加可否 = LOCAL
+			TCVAR:RESULT:ムシバトル参加可否 = LOCAL
 			BREAK
 		ENDIF
 	NEXT
@@ -318,7 +318,7 @@ CLEARLINE LINE
 RESTART
 
 ;-------------------------------------------------
-;斗虫：セットUP１：見せ合い前
+;ムシバトル：セットアップ１：見せ合い前
 ;-------------------------------------------------
 @MUSHI_BATTLE_SETUP_1
 #DIM CHARA
@@ -336,14 +336,14 @@ NEXT
 BATTLERNAME:1 '= @"%CALLNAME:MASTER%"
 
 ;-------------------------------------------------
-;斗虫：見せ合い
+;ムシバトル：見せ合い
 ;-------------------------------------------------
 @MUSHI_BATTLE_SELECTION
 #DIM CHARA
 #DIM LPCOUNT
 VARSET MUSHI_SELECT
 VARSET MUSHI_REST
-PRINTFORML ◆对战对手的虫笼◆
+PRINTFORML ◆対戦相手の虫カゴ◆
 FOR LPCOUNT, -2, MUSHI_MAXCAGE + 2
 	FOR LOCAL, 2, MUSHI_CHARANUM + 1
 		CHARA = MUSHI_BATTLER:LOCAL
@@ -367,7 +367,7 @@ FOR LPCOUNT, -2, MUSHI_MAXCAGE + 2
 		ELSEIF LPCOUNT == -1
 			LOCALS = %CALLNAME:CHARA%
 			SIF MUSHI_TEAM && LOCAL == 3
-				LOCALS += "(同伴)"
+				LOCALS += "(仲間)"
 			PRINTFORM %LOCALS, 36, LEFT%
 			CALL PRINT_MBP_RANK(CHARA)
 			PRINTFORM │
@@ -392,10 +392,10 @@ FOR LPCOUNT, -2, MUSHI_MAXCAGE + 2
 NEXT
 ;フィールドタイプ設定
 MUSHI_FIELD:99 = SELECT_RANDOM_MUSHI_FIELD(CFLAG:MASTER:現在位置)
-PRINTFORM ＜场地类型：
+PRINTFORM ＜フィールドタイプ：
 CALL PRINT_FIELDTYPE(MUSHI_FIELD:99)
 PRINTL ＞
-PRINTFORML ◆%CALLNAME:MASTER%的虫笼◆　请选出１～３只虫参与战斗
+PRINTFORML ◆%CALLNAME:MASTER%の虫カゴ◆　バトル参加させるムシを１～３匹選出してください
 DRAWLINE
 ;MASTERの選出に引き渡し
 MUSHI_REST:1 = 0
@@ -403,7 +403,7 @@ MUSHI_MENTAL:1 = 1000
 CALL MUSHI_BATTLE_SELECTION_MASTER
 
 ;-------------------------------------------------
-;斗虫：MASTERのムシ選出
+;ムシバトル：MASTERのムシ選出
 ;-------------------------------------------------
 @MUSHI_BATTLE_SELECTION_MASTER
 #DIM LINE
@@ -432,7 +432,7 @@ FOR LPCOUNT, 1, MUSHI_MAXCAGE + 1
 		PRINTL 
 		RESETCOLOR
 	ELSE
-		PRINTPLAINFORM [{LPCOUNT, 2}] 空
+		PRINTPLAINFORM [{LPCOUNT, 2}] からっぽ
 		PRINTL 
 	ENDIF
 NEXT
@@ -455,10 +455,10 @@ IF RESULT == 99 && MUSHI_SELECT:1
 	RETURN
 ;ムシ選択
 ELSEIF INRANGE(RESULT, 1, MUSHI_MAXCAGE) && MUSHI_CAGE:RESULT
-	;参加中止
+	;参加キャンセル
 	IF MATCH(MUSHI_SELECT, MUSHI_CAGE:RESULT)
 		FOR LOCAL, 1, MUSHI_MAXSELECT + 1
-			;参加を中止する
+			;参加をキャンセルする
 			IF MUSHI_SELECT:LOCAL == MUSHI_CAGE:RESULT
 				MUSHI_SELECT:LOCAL = 0
 				BREAK
@@ -484,7 +484,7 @@ CLEARLINE LINE
 RESTART
 
 ;-------------------------------------------------
-;斗虫：セットUP２：選出後
+;ムシバトル：セットアップ２：選出後
 ;-------------------------------------------------
 @MUSHI_BATTLE_SETUP_2
 #DIM CHARA
@@ -506,12 +506,12 @@ MUSHI_STAND:1 = MUSHI_SELECT:11
 MUSHI_STANDNUM:1 = 11
 GETCOLOR
 MUSHI_COLOR:1 = RESULT
-;角色の選出を決める
+;キャラの選出を決める
 FOR LPCOUNT, 2, MUSHI_CHARANUM + 1
 	CHARA = MUSHI_BATTLER:LPCOUNT
 	SETNUM = LPCOUNT * 10
 	KIRIHUDA = 0
-	;切り札がいるなら切り札は確定（番号は随机）
+	;切り札がいるなら切り札は確定（番号はランダム）
 	RESULT = 0
 	TRYCALLFORM MUSHI_KIRIHUDA_{CHARA}
 	IF RESULT
@@ -522,7 +522,7 @@ FOR LPCOUNT, 2, MUSHI_CHARANUM + 1
 		CALL MUSHI_PALAM(MUSHI_SELECT:(SETNUM + LOCAL), MUSHI_POWER:LPCOUNT)
 		CALL MUSHI_FLAGSETTING(MUSHI_SELECT:(SETNUM + LOCAL), SETNUM + LOCAL)
 	ENDIF
-	;虫カゴから随机で空いてる番号に入れていく,ただし切り札がいるなら1番は除外
+	;虫カゴからランダムで空いてる番号に入れていく,ただし切り札がいるなら1番は除外
 	FOR LOCAL, 1, MUSHI_MAXSELECT + 1
 		IF !MUSHI_SELECT:(SETNUM + LOCAL)
 			WHILE !MUSHI_SELECT:(SETNUM + LOCAL)
@@ -576,23 +576,23 @@ NEXT
 [ENDIF]
 
 ;-------------------------------------------------
-;斗虫：結果発表関数
+;ムシバトル：結果発表関数
 ;-------------------------------------------------
 @MUSHI_BATTLE_RESULT(VSNPC)
 #DIM LPCOUNT
 #DIM CHARA
 #DIM VSNPC
-PRINTFORML ■比试结果■
-;チーム战
+PRINTFORML ■試合結果■
+;チーム戦
 IF MUSHI_TEAM
 	TFLAG:193 = 3
 	PRINTFORML ┌%"─" * 42%┐
 	PRINT │
-	CALL COLORMESSAGE(@"＜人生的胜利组！＞", 0xff7878)
+	CALL COLORMESSAGE(@"＜人生の勝ち組！＞", 0xff7878)
 	PRINTFORML %" " * 66%│
 	FOR LOCAL, 1, MUSHI_CHARANUM / 2 + 1
 		CHARA = MUSHI_BATTLER:(MUSHI_FINISH:LOCAL)
-		TCVAR:CHARA:斗虫参加可否 = 11
+		TCVAR:CHARA:ムシバトル参加可否 = 11
 		PRINTFORM │
 		SIF MUSHI_COLOR:(MUSHI_FINISH:LOCAL) != MUSHI_COLOR:1
 			SETCOLOR MUSHI_COLOR:(MUSHI_FINISH:LOCAL)
@@ -609,12 +609,12 @@ IF MUSHI_TEAM
 	NEXT
 	PRINTFORML ├%"─" * 42%┤
 	PRINT │
-	CALL COLORMESSAGE(@"＜败犬组！＞", 0x6464ff)
+	CALL COLORMESSAGE(@"＜負け組！＞", 0x6464ff)
 	PRINTFORML %" " * 72%│
 	FOR LOCAL, 1, MUSHI_CHARANUM + 1
 		IF !MATCH(MUSHI_FINISH, LOCAL)
 			CHARA = MUSHI_BATTLER:LOCAL
-			TCVAR:CHARA:斗虫参加可否 = 12
+			TCVAR:CHARA:ムシバトル参加可否 = 12
 			PRINTFORM │
 			SIF MUSHI_COLOR:LOCAL != MUSHI_COLOR:1
 				SETCOLOR MUSHI_COLOR:LOCAL
@@ -656,15 +656,15 @@ ELSEIF MUSHI_CHARANUM == 2
 				ENDIF
 			ELSEIF LPCOUNT == -2
 				IF MUSHI_FINISH:1 == LOCAL
-					LOCALS = %BATTLERNAME:LOCAL%＜人生的胜利者！＞
+					LOCALS = %BATTLERNAME:LOCAL%＜人生の勝利者！＞
 					SETCOLOR 0xff7878
 					SIF CHARA != 999
-						TCVAR:CHARA:斗虫参加可否 = 11
+						TCVAR:CHARA:ムシバトル参加可否 = 11
 				ELSE
-					LOCALS = %BATTLERNAME:LOCAL%＜败犬！＞
+					LOCALS = %BATTLERNAME:LOCAL%＜負け犬！＞
 					SETCOLOR 0x6464ff
 					SIF CHARA != 999
-						TCVAR:CHARA:斗虫参加可否 = 12
+						TCVAR:CHARA:ムシバトル参加可否 = 12
 				ENDIF
 				PRINTFORM %LOCALS, 36, LEFT%
 				RESETCOLOR
@@ -709,7 +709,7 @@ ELSEIF MUSHI_CHARANUM == 2
 		PRINTL 
 	NEXT
 	SIF MUSHI_FINISH:1 == 1 && MUSHI_BATTLER:(MUSHI_FINISH:2) != 0 ;don't show for duels
-		CALL COLORMESSAGE(@"☆初次在与%CALLNAME:(MUSHI_BATTLER:(MUSHI_FINISH:2))%的直接对决中胜利！", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"☆%CALLNAME:(MUSHI_BATTLER:(MUSHI_FINISH:2))%に初めて直接対決で勝利した！", C_YELLOW, 1)
 ;バトルロイヤル
 ELSE
 	TFLAG:193 = 2
@@ -718,7 +718,7 @@ ELSE
 		CHARA = MUSHI_BATTLER:(MUSHI_FINISH:LOCAL)
 		PRINT │
 		SIF LOCAL == 1 
-			CALL COLORMESSAGE(@"☆优胜☆", C_YELLOW)
+			CALL COLORMESSAGE(@"☆優勝☆", C_YELLOW)
 		SIF MUSHI_COLOR:(MUSHI_FINISH:LOCAL) != MUSHI_COLOR:1
 			SETCOLOR MUSHI_COLOR:(MUSHI_FINISH:LOCAL)
 		LOCALS = %CALLNAME:CHARA%
@@ -731,7 +731,7 @@ ELSE
 		PRINTFORM %LOCALS, 80, LEFT%
 		RESETCOLOR
 		PRINTL │
-		TCVAR:CHARA:斗虫参加可否 = LOCAL + 10
+		TCVAR:CHARA:ムシバトル参加可否 = LOCAL + 10
 		PRINT │　　　　 ＆ 
 		CALL PRINT_MUSHINAME(MUSHI_NAME:(MUSHI_STANDNUM:(MUSHI_FINISH:LOCAL)), MUSHI_STAND:(MUSHI_FINISH:LOCAL), 76)
 		PRINTL │
@@ -745,7 +745,7 @@ ENDIF
 WAIT
 
 ;-------------------------------------------------
-;斗虫：角色の虫カゴを設定する関数
+;ムシバトル：キャラクターの虫カゴを設定する関数
 ;-------------------------------------------------
 @CHARA_MUSHICAGE_SETTING(CHARA, BATTLE_NUM, VSNPC)
 #DIM CHARA
@@ -881,7 +881,7 @@ FOR LOCAL, MUSHI_NUM, MUSHI_MAXCAGE + 1
 	MUSHI_NAME:(LOCAL + BATTLE_NUM * 10) = %MUSHI_NAME%
 NEXT
 ;-------------------------------------------------
-;斗虫：バトル用の戦闘力を出力する関数
+;ムシバトル：バトル用の戦闘力を出力する関数
 ;Mushi Battle Power
 ;-------------------------------------------------
 @MBP(CHARA)
@@ -949,20 +949,20 @@ CASE 2
 ENDSELECT
 SIF TALENT:CHARA:調合知識
 	TIMES LOCAL, 1.50
-SIF TALENT:CHARA:禁断的知識
+SIF TALENT:CHARA:禁断の知識
 	TIMES LOCAL, 2.50
 SIF TALENT:CHARA:幼稚
 	TIMES LOCAL, 15.00
-IF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人类")) == "天人"
+IF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人間")) == "天人"
 	TIMES LOCAL, 0.30
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人类")) == "仙人"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人間")) == "仙人"
 	TIMES LOCAL, 1.50
 ;地上住みは除く
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人类")) == "月人" && !GROUPMATCH(CHARA, [[輝夜]], [[永琳]])
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人間")) == "月人" && !GROUPMATCH(CHARA, [[輝夜]], [[永琳]])
 	TIMES LOCAL, 0.05
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人类")) == "魔界人"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人間")) == "魔界人"
 	TIMES LOCAL, 1.50
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人类")) == "外界人"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "人間")) == "外界人"
 	TIMES LOCAL, 0.80
 ENDIF
 IF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "鬼"
@@ -973,13 +973,13 @@ ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "河童"
 	TIMES LOCAL, 2.00
 ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "天狗"
 	TIMES LOCAL, 1.50
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖兽"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖獣"
 	TIMES LOCAL, 2.00
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖鸟"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖鳥"
 	TIMES LOCAL, 2.00
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖虫"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "妖蟲"
 	TIMES LOCAL, 25.00
-ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "恶魔"
+ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "悪魔"
 	TIMES LOCAL, 2.50
 ELSEIF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖怪")) == "小人"
 	TIMES LOCAL, 0.05
@@ -991,26 +991,26 @@ ENDIF
 IF GET_TRIBENAME(CHARA, GETNUM(TALENT, "妖精")) == "妖精"
 	TIMES LOCAL, 15.00
 ENDIF
-LOCALS = %GET_STR(, "キャラデータ", CHARA, "料理：喜欢的味道")%
-IF STRCOUNT(LOCALS, "怪诞/") >= 5
+LOCALS = %GET_STR(, "キャラデータ", CHARA, "料理：好きな味")%
+IF STRCOUNT(LOCALS, "グロテスク/") >= 5
 	TIMES LOCAL, 4.00
-ELSEIF STRCOUNT(LOCALS, "怪诞/") >= 3
+ELSEIF STRCOUNT(LOCALS, "グロテスク/") >= 3
 	TIMES LOCAL, 3.00
-ELSEIF STRCOUNT(LOCALS, "怪诞/") >= 1
+ELSEIF STRCOUNT(LOCALS, "グロテスク/") >= 1
 	TIMES LOCAL, 2.00
 ENDIF
-LOCALS = %GET_STR(, "キャラデータ", CHARA, "料理：讨厌的味道")%
-IF STRCOUNT(LOCALS, "怪诞/") >= 5
+LOCALS = %GET_STR(, "キャラデータ", CHARA, "料理：嫌いな味")%
+IF STRCOUNT(LOCALS, "グロテスク/") >= 5
 	TIMES LOCAL, 0.10
-ELSEIF STRCOUNT(LOCALS, "怪诞/") >= 3
+ELSEIF STRCOUNT(LOCALS, "グロテスク/") >= 3
 	TIMES LOCAL, 0.20
-ELSEIF STRCOUNT(LOCALS, "怪诞/") == 1
+ELSEIF STRCOUNT(LOCALS, "グロテスク/") == 1
 	TIMES LOCAL, 0.50
 ENDIF
 RETURNF LOCAL
 
 ;-------------------------------------------------
-;斗虫：斗虫パワーのランク,レアリティ最低値にもなる
+;ムシバトル：ムシバトルパワーのランク,レアリティ最低値にもなる
 ;-------------------------------------------------
 @MBP_RANK(CHARA)
 #FUNCTION
@@ -1051,7 +1051,7 @@ ELSE
 	RETURNF 8
 ENDIF
 ;-------------------------------------------------
-;斗虫：斗虫パワーのランクを★Ｘでプリントする関数
+;ムシバトル：ムシバトルパワーのランクを★Ｘでプリントする関数
 ;-------------------------------------------------
 @PRINT_MBP_RANK(CHARA)
 #DIM CHARA
@@ -1064,7 +1064,7 @@ ELSE
 ENDIF
 
 ;-------------------------------------------------
-;斗虫：残りムシ数を○×でプリントする関数
+;ムシバトル：残りムシ数を○×でプリントする関数
 ;bit,0は使いません
 ;-------------------------------------------------
 @PRINT_RESTMUSHI(ARG)
@@ -1077,7 +1077,7 @@ FOR LOCAL, 1, MUSHI_MAXSELECT + 1
 NEXT
 
 ;-------------------------------------------------
-;斗虫用のフィールドの描写っぽいなにか
+;ムシバトル用のフィールドの描写っぽいなにか
 ;-------------------------------------------------
 @PRINT_FIELD_EFFECT(ARG)
 #DIM 色

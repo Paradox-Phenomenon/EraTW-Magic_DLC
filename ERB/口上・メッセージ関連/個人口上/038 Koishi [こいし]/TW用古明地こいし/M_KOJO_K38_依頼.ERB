@@ -1,8 +1,34 @@
 ﻿;==================================================
+;一般依頼の抑制
+;==================================================
+;ARGは依頼番号
+;この関数が1を返すと、その依頼はこのキャラクターには発生しない
+;依頼の発生を抑制したい場合は、該当するARGを受け取った際に「RETURN 1」とすること
+;ARG = 1,  掃除を手伝って（発生条件：TARGETがメインマップ在住）
+;ARG = 2,  お花に水をあげて（発生条件：TARGETがMASTER侵入可能の自宅住まいかつ、メインマップ在住かつ、親密２以上）
+;ARG = 3,  いっしょにあそぼ（発生条件：TARGETがTALENT:幼稚持ち）
+;ARG = 4,  料理上手になりたい（発生条件：TARGETの料理技能がMASTER未満かつ、MASTERの料理技能が２以上かつ、親密が３以上）
+;ARG = 5,  特訓につきあって（発生条件：TARGETの戦闘能力がMASTER以下かつ、親密が２以上かつ人里以外）
+;ARG = 6,  誰か教えて！（発生条件：TARGETの教養がMASTER以下）
+;ARG = 7,  大掃除が終わらない（発生条件：TARGETがメインマップ在住かつ、冬の15日から31日までかつ、親密が３以上）
+;ARG = 8,  手紙を届けて（発生条件：TARGETの信頼度が30以上かつ、TARGETに文通相手が設定されている（FUNC_IRAI.ERBの965目以降に存在）
+;ARG = 9,  誰かの落とし物（発生条件：TARGETの信頼度が30以上）
+;ARG = 10, どうしてもみつからない(そのまま落ちてる)（発生条件：TARGETの信頼度が30以上）
+;ARG = 11, どうしてもみつからない(誰かが拾ってる)（発生条件：TARGETの信頼度が30以上）
+;ARG = 12, 懲らしめて！（発生条件：TARGETのCSVに戦闘能力が１以上ある場合）
+;ARG = 13, うまい魚が食べたいなぁ（発生条件：わかさぎ姫以外）
+;ARG = 14, 薪を切らしてる（未実装）
+;ARG = 15, あなたに抱かれたい（発生条件：セフレor愛欲かつ溜まってる度700以上 or ヤリマン）
+;ARG = 16, お悩み相談（発生条件：MASTERの話術技能が1以上）
+@M_KOJO_CHECK_K38_IRAI_BLOCKED(ARGS,ARG,ARG:1)
+SIF GROUPMATCH(ARG, 2)
+    RETURN 1
+
+;==================================================
 ;依頼口上・各依頼で共通の口上
 ;==================================================
 @M_KOJO_IRAI_K38(ROLE, SCENE, IRAI_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  IRAI_ID  ;依頼自体のID
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
@@ -33,47 +59,47 @@ CASE "依頼提示時"
 ;【依頼データ表示】
 ;【INPUT（受託するかY/N）】
 	IF TALENT:38:恋慕
-		PRINTFORMW 「你好，%CALLNAME:MASTER%，苦相思许久的我，有个不情之请呢～」
+		PRINTFORMW 「もしもーし、恋焦がれる%CALLNAME:MASTER%にお願いがあるの～」
 	ELSEIF TALENT:38:思慕
-		PRINTFORMW 「你好，我现在，想要拜托%CALLNAME:MASTER%，可以帮我吗？」
+		PRINTFORMW 「もしもーし、いま%CALLNAME:MASTER%にお願いがあるのー」
 	ELSE
-		PRINTFORMW 「你好，我现在，想要拜托你做些什么」
+		PRINTFORMW 「もしもーし、お願いがあるんだけどー」
 	ENDIF
 CASE "依頼非受託時"
 ;●内容だけ見て受託しなかった時
-;【L ［你］は丁重にお断りした】
+;【L ［あなた］は丁重にお断りした】
 ;【◆口上】
 ;【W ［彼女］は残念そうな顔をしている】
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「诶……真是，可惜呢」
+		PRINTFORMW 「えー……もう、残念」
 	CASE 2
-		PRINTFORMW 「是这样啊？ 那还真是可惜呢」
+		PRINTFORMW 「そうなの？ 残念だなぁ」
 	CASEELSE
-		PRINTFORMW 「这样啊？ 那我就拜托别人去了」
+		PRINTFORMW 「そう？ それじゃ別の人に頼んじゃおっと」
 	ENDSELECT
 CASE "依頼受託時"
 ;●依頼を受託した時
-;【W ［你］は［彼女］の依頼を受けた】
+;【W ［あなた］は［彼女］の依頼を受けた】
 ;【◆口上】
-	PRINTFORMW 「成功啦！ 那接下来听听我的请求吧！」
+	PRINTFORMW 「やったー！ それじゃお願いしまーす！」
 CASE "依頼確認時"
 ;●[366]で依頼内容を依頼人に確認した時
 ;【◆口上】
 ;【依頼データ表示】
 ;【INPUT（破棄するかY/N）】
-	PRINTFORML 「那么接下来、关于我想委托的具体内容，是这样的……」
+	PRINTFORML 「それでねそれでね、お願いしたいことなんだけどー……」
 CASE "依頼破棄時"
 ;●受託した依頼を破棄する時
 ;【◆口上】
 ;【W 依頼を破棄しました。】
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「诶……真是，可惜呢」
+		PRINTFORMW 「えー……もう、残念」
 	CASE 2
-		PRINTFORMW 「是这样啊？ 那还真是可惜呢」
+		PRINTFORMW 「そうなの？ 残念だなぁ」
 	CASEELSE
-		PRINTFORMW 「这样啊？ 那我就拜托别人去了」
+		PRINTFORMW 「そう？ それじゃ別の人に頼んじゃおっと」
 	ENDSELECT
 CASE "依頼実行直前"
 ;●[367]で依頼を実行する時、実行処理の前に呼び出される
@@ -105,7 +131,7 @@ CASE "依頼実行直後"
 		;実行後達成
 			
 		CASE 6
-		;実行後失敗（現在「06_誰来告訴我！」のみ）
+		;実行後失敗（現在「06_誰か教えて！」のみ）
 			
 		ENDSELECT
 	ELSEIF ROLE == "TARGET"
@@ -118,7 +144,7 @@ CASE "依頼実行直後"
 		;実行後達成
 			
 		CASE 6
-		;実行後失敗（現在「06_誰来告訴我！」のみ）
+		;実行後失敗（現在「06_誰か教えて！」のみ）
 			
 		ENDSELECT
 	ENDIF
@@ -126,35 +152,35 @@ CASE "成功報告時"
 ;●報告時（成功）
 ;【依頼実行と報告が同時の時：▲上の口上から続き】
 ;【◆口上】
-;【ソースの入手・道具等の報酬獲得】
+;【ソースの入手・アイテム等の報酬獲得】
 	IF TALENT:38:恋慕
-		PRINTFORMW 「谢谢你、%CALLNAME:MASTER%！ 不愧是你呢♪」
+		PRINTFORMW 「ありがとー、%CALLNAME:MASTER%！ さっすがだね♪」
 	ELSEIF TALENT:38:思慕
-		PRINTFORMW 「成功啦！ 谢谢你♪」
+		PRINTFORMW 「やったー！ ありがとー♪」
 	ELSE
-		PRINTFORMW 「做到了呢！」
+		PRINTFORMW 「やったね！」
 	ENDIF
 CASE "失敗報告時"
-;○直接失敗報告は現在「06_誰来告訴我！」のみ
+;○直接失敗報告は現在「06_誰か教えて！」のみ
 ;●報告忘れ・期限切れになった際、遭遇時の最後に呼び出される
-;（遭遇時）【挨拶等】→【心情の良し悪し】→【劣情察知】→【祭日イベント】→【◆ココ！】（尚、依頼失敗判定があると约会のお誘いは発生しません）
+;（遭遇時）【挨拶等】→【機嫌の良し悪し】→【劣情察知】→【祭日イベント】→【◆ココ！】（尚、依頼失敗判定があるとデートのお誘いは発生しません）
 ;【◆口上】
-;○心情の変化や追加のペナルティ等は口上側で処理してください
+;○機嫌の変化や追加のペナルティ等は口上側で処理してください
 	SELECTCASE RAND:3
 	CASE 1
 		;たまに忘れる
-		PRINTFORMW 「啊嘞？ 原来我还做了这种事了吗……？」
-		PRINTFORMW 「在我不注意的时候，我委托你做了什么吗？」
+		PRINTFORMW 「あれ？ そんなことあったかなぁ……？」
+		PRINTFORMW 「無意識の内に何か頼んでたのかしら？」
 	CASE 2
-		PRINTFORMW 「真是的%CALLNAME:MASTER%！ 明明拜托你你也好好答应了的」
+		PRINTFORMW 「もー%CALLNAME:MASTER%！ 折角頼んだのにー」
 	CASEELSE
-		PRINTFORMW 「姆……%CALLNAME:MASTER%你个笨蛋」
+		PRINTFORMW 「むー……%CALLNAME:MASTER%の馬鹿」
 	ENDSELECT
-	TALENT:38:心情 = MIN(TALENT:38:心情, 0)
+	TALENT:38:機嫌 = MIN(TALENT:38:機嫌, 0)
 CASE "依頼報告不要"
-;○一般依頼では現在「02_給花澆水」「09_誰的遗失物」のみ
+;○一般依頼では現在「02_お花に水をあげて」「09_誰かの落とし物」のみ
 ;●起床時、報告不要依頼を達成していた場合に呼ばれる口上
-;（起床時）【起床メッセージ】→【X時間寝た等】→【◆ココ！】→【神簽・補充等】→【一日开始】
+;（起床時）【起床メッセージ】→【X時間寝た等】→【◆ココ！】→【おみくじ・補充等】→【一日開始】
 ;○地の文はありません
 ;○口上主がその場にいなくても表示されます（MASTERが寝る時のイベント口上と同じタイプ）
 	
@@ -162,20 +188,20 @@ ENDSELECT
 RETURN 1
 
 ;==================================================
-;依頼口上・一般依頼01：幫忙做掃除
+;依頼口上・一般依頼01：掃除を手伝って
 ;==================================================
 @M_KOJO_IRAI_1_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
 ;RETURN 0 の部分は共通の口上が表示されます
 ;依頼ごとの口上を表示する部分は RETURN 0 を RETURN 1 にしてください
 ;--------------------------------------------------
-;まだ（住宿以外で）自室ないけど
+;まだ（住み込み以外で）自室ないけど
 SELECTCASE SCENE
 CASE "依頼提示時"
-	PRINTFORMW 「毕竟不能要求我的姐姐来打扫我的屋子……所以呢，想要让你，帮帮我打扫下啊」
+	PRINTFORMW 「お姉ちゃんが掃除しなさいって……だから、手伝ってほしいなー」
 	RETURN 1
 CASE "依頼非受託時"
 	
@@ -194,31 +220,31 @@ CASE "依頼実行直前"
 	IF YOGORE:(GET_CHARAHOME(TARGET)) < 1000
 	;先に掃除してしまっていた場合
 	;【◆口上】
-	;【W ［彼女］的房間は十分にきれいだ】
+	;【W ［彼女］の部屋は十分にきれいだ】
 	;【▼そのまま下の口上へ】
-		PRINTFORMW 「啊呀、我的房间，比我想象中的，要干净呢…？」
-		PRINTFORMW 「是不是我…下意识地打扫了房间呢」
+		PRINTFORMW 「あれ、思いのほかきれいなような…？」
+		PRINTFORMW 「無意識の内に掃除でもしたのかな…私」
 		RETURN 1
 	ELSE
-	;一緒に掃除場合
+	;一緒に掃除する場合
 	;【◆口上】
-	;【W ［你］は［彼女］と協力して部屋の掃除を行なった】
+	;【W ［あなた］は［彼女］と協力して部屋の掃除を行なった】
 	;【▼そのまま下の口上へ】
-		PRINTFORMDL 恋的屋子里很乱，东西到处都是，宠物们正在忙碌的打扫着这个大房间
+		PRINTFORMDL こいしの部屋はあちこちに物が散乱しており、ペットがいそいそと広い部屋を掃除している
 		PRINTW 
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORMW 「那么、我就从那边开始打扫了，这边就拜托你了～」
+			PRINTFORMW 「じゃあ、わたしがあっちの方をするからこっちお願いね～」
 		CASE 2
-			PRINTFORMW 「你好，我现在，在你的身后～」
-			PRINTFORMW 「……诶？ 现在先不要玩了先去扫除，一会我再陪你？」
-			PRINTFORMW 「好~」
+			PRINTFORMW 「もしもーし、今あなたの後ろにいるの～」
+			PRINTFORMW 「……え？ 遊んでないで掃除しなさいって？」
+			PRINTFORMW 「はーい」
 		CASE 3
-			PRINTFORMW 「唔、我所有的事情都弄得乱七八糟……某种意义上来说这也算种才能？」
-			PRINTFORMW 「诶？ 这样的才能才不需要？」
+			PRINTFORMW 「うーん、我が事ながらすさまじい散らかしっぷり……ある意味才能だったり？」
+			PRINTFORMW 「え？ そんな才能はいらない？」
 		CASEELSE
-			PRINTFORMW 「嗯、希望之面要留下来……啊、这件东西也不想扔掉啊…」
-			PRINTFORMW 「啊咧？ 这不什么都没收拾吗」
+			PRINTFORMW 「えーっと、希望の面はいるとして……あ、こっちも捨てたくないなー…」
+			PRINTFORMW 「あれ？ 全然片付かないや」
 		ENDSELECT
 		RETURN 1
 	ENDIF
@@ -234,7 +260,7 @@ CASE "成功報告時"
 ;【▲上の口上から続き】
 ;【◆口上】
 ;【報酬獲得】
-	PRINTFORMW 「唔嗯、这样的话就可以了吧！」
+	PRINTFORMW 「うんうん、これでOKだね！」
 	RETURN 1
 CASE "失敗報告時"
 	
@@ -245,10 +271,10 @@ CASE "失敗報告時"
 ENDSELECT
 ;
 ;;==================================================
-;;依頼口上・一般依頼02：給花澆水
+;;依頼口上・一般依頼02：お花に水をあげて
 ;;==================================================
 ;@M_KOJO_IRAI_2_K38(ROLE, SCENE, CLIENT_ID)
-;#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+;#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 ;#DIMS SCENE    ;セリフの表示されるタイミング
 ;#DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;;--------------------------------------------------
@@ -273,14 +299,14 @@ ENDSELECT
 ;	RETURN 0
 ;CASE "依頼実行直前"
 ;;【◆口上】
-;;【W ［你］は［依頼主］的家の鉢植えや植木に水をあげた】
+;;【W ［あなた］は［依頼主］の家の鉢植えや植木に水をあげた】
 ;;【▼そのまま下の口上へ】
 ;	IF ROLE == "CLIENT"
-;	;澆水した時、依頼主である口上主がTARGETの場合
+;	;水やりした時、依頼主である口上主がTARGETの場合
 ;		
 ;		RETURN 0
 ;	ELSEIF ROLE == "TARGET"
-;	;澆水した時、依頼主ではない口上主がTARGETの場合
+;	;水やりした時、依頼主ではない口上主がTARGETの場合
 ;		
 ;		RETURN 0
 ;	ENDIF
@@ -289,12 +315,12 @@ ENDSELECT
 ;;【▲上の口上から続き】
 ;;【◆口上】
 ;	IF ROLE == "CLIENT"
-;	;澆水した時、依頼主である口上主がTARGETの場合
+;	;水やりした時、依頼主である口上主がTARGETの場合
 ;	;この場合はそのまま下の口上へ続きます
 ;		
 ;		RETURN 0
 ;	ELSEIF ROLE == "TARGET"
-;	;澆水した時、依頼主ではない口上主がTARGETの場合
+;	;水やりした時、依頼主ではない口上主がTARGETの場合
 ;		
 ;		RETURN 0
 ;	ENDIF
@@ -311,11 +337,11 @@ ENDSELECT
 ;ENDSELECT
 ;
 ;;==================================================
-;;依頼口上・一般依頼03：一起玩吧
-;;※この依頼は[幼稚]を持っている角色のみ発生します
+;;依頼口上・一般依頼03：いっしょにあそぼ
+;;※この依頼は[幼稚]を持っているキャラのみ発生します
 ;;==================================================
 ;@M_KOJO_IRAI_3_K38(ROLE, SCENE, CLIENT_ID)
-;#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+;#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 ;#DIMS SCENE    ;セリフの表示されるタイミング
 ;#DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;;--------------------------------------------------
@@ -324,7 +350,7 @@ ENDSELECT
 ;;--------------------------------------------------
 SELECTCASE SCENE
 CASE "依頼提示時"
-	PRINTFORMW 「%CALLNAME:MASTER%，要一起来玩吗？」
+	PRINTFORMW 「ねーねー、一緒に遊ばない？」
 	RETURN 1
 CASE "依頼非受託時"
 	
@@ -341,19 +367,19 @@ CASE "依頼破棄時"
 CASE "依頼実行直前"
 ;○この依頼は依頼主がTARGETです
 ;【◆口上】
-;【W ［你］は［彼女］と遊んだ】
+;【W ［あなた］は［彼女］と遊んだ】
 ;【▼そのまま下の口上へ】
-	PRINTFORMDL 恋在开心地吵闹着
+	PRINTFORMDL こいしは楽しそうにはしゃいでいる
 	PRINTW 
 	SELECTCASE RAND:4
 	CASE 1
-		PRINTFORMW 「啊哈哈、好~高兴~♪」
+		PRINTFORMW 「あははは、たーのしー♪」
 	CASE 2
-		PRINTFORMW 「你好，我现在，想要和%CALLNAME:MASTER%一同开心地玩闹♪」
+		PRINTFORMW 「もしもーし、今あなたと楽しく遊んでいるのー♪」
 	CASE 3
-		PRINTFORMW 「呀啊呀啊♪ 被坏蛋抓住了♪」
+		PRINTFORMW 「きゃーきゃー♪ 悪い人に捕まっちゃったー♪」
 	CASEELSE
-		PRINTFORMW 「我~变！ 啊哈哈、好有趣的脸ー♪」
+		PRINTFORMW 「そーれ！ あははははは、変な顔ー♪」
 	ENDSELECT
 	RETURN 1
 	
@@ -362,14 +388,14 @@ CASE "依頼実行直後"
 ;【▲上の口上から続き】
 ;【◆口上】
 ;【▼そのまま下の口上へ】
-	PRINTFORMW 「呼、満足満足♪」
+	PRINTFORMW 「ふー、満足満足♪」
 	RETURN 1
 
 CASE "成功報告時"
-;報酬：好感度と信賴度のみ（心情が良くなる）
+;報酬：好感度と信頼度のみ（機嫌が良くなる）
 ;【▲上の口上から続き】
 ;【◆口上】
-	PRINTFORMW 「啊、好有趣呢♪」
+	PRINTFORMW 「あー、楽しかった♪」
 	RETURN 1
 ;CASE "失敗報告時"
 ;	
@@ -380,10 +406,10 @@ CASE "成功報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼04：想要学習料理
+;依頼口上・一般依頼04：料理上手になりたい
 ;==================================================
 @M_KOJO_IRAI_4_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -394,11 +420,11 @@ SELECTCASE SCENE
 CASE "依頼提示時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「这次我想给姐姐做一次菜呢♪」
+		PRINTFORMW 「今度お姉ちゃんに料理を振舞いたいと思って♪」
 	CASE 2
-		PRINTFORMW 「拜托了%CALLNAME:MASTER%，想要让你教我怎么做料理啊♪」
+		PRINTFORMW 「ねぇ%CALLNAME:MASTER%、料理教えてほしいなー♪」
 	CASEELSE
-		PRINTFORMW 「我也想学会怎么做饭啊」
+		PRINTFORMW 「私も料理覚えようかなって」
 	ENDSELECT
 	RETURN 1
 CASE "依頼非受託時"
@@ -407,11 +433,11 @@ CASE "依頼非受託時"
 CASE "依頼受託時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「嘿嘿～♪ 学料理♪ 做料理～♪ 好期待～♪」
+		PRINTFORMW 「えへへ～♪ お料理♪ お料理～♪ 楽しみだな～♪」
 	CASE 2
-		PRINTFORMW 「太好了♪」
+		PRINTFORMW 「やったー♪」
 	CASEELSE
-		PRINTFORMW 「真的吗？ 嘿嘿～、真开心啊～♪」
+		PRINTFORMW 「ほんと？ えへへ～、嬉しいな～♪」
 	ENDSELECT
 	RETURN 1
 CASE "依頼確認時"
@@ -423,10 +449,10 @@ CASE "依頼破棄時"
 CASE "依頼実行直前"
 ;○この依頼は依頼主がTARGETです
 ;【◆口上】
-;【L ［你］は［彼女］と一緒に料理をした】
+;【L ［あなた］は［彼女］と一緒に料理をした】
 ;【W ［料理名］を作ります】
 ;【▼そのまま下の口上へ】
-	PRINTFORMW 「那么，就请见证，我做出宛若苦相思十日不见丈夫的妻子所做的料理的时刻吧！」
+	PRINTFORMW 「さぁ、恋焦がれるような料理を作って見せるわ！」
 	RETURN 1
 CASE "依頼実行直後"
 ;○この依頼は必ず実行後達成します
@@ -435,14 +461,14 @@ CASE "依頼実行直後"
 ;【▼そのまま下の口上へ】
 	SELECTCASE RAND:4
 	CASE 1
-		PRINTFORMW 「啊、这个不是砂糖，而是盐呢」
+		PRINTFORMW 「あ、これ砂糖じゃなくてお塩だった」
 	CASE 2
-		PRINTFORMW 「啊咧咧～？ 好像往菜里，无意识地放进去了什么…」
+		PRINTFORMW 「あれれ～？ なんか入れた覚えのないものが入ってるような…」
 	CASE 3
-		PRINTFORMW 「哦哦…炒菜锅里着火了」
+		PRINTFORMW 「おぉ…フライパンが炎上した」
 	CASEELSE
-		PRINTFORML 「这切野菜的方式、看起来有半灵庭师切菜的模样了吗？」
-		PRINTFORMDW ……看着恋切菜的样子，真的让人担心会不会切到手……
+		PRINTFORML 「野菜を切るのって、庭師の亡霊みたいな感じでいいのかな？」
+		PRINTFORMDW ……見ててハラハラする……
 	ENDSELECT
 	RETURN 1
 CASE "成功報告時"
@@ -450,38 +476,38 @@ CASE "成功報告時"
 ;【▲上の口上から続き】
 ;【◆口上】
 ;【報酬獲得】
-;【L できた料理は二人いっしょに頂いた】
-;【吃飯効果（料理打分）】
+;【L できた料理は二人でいっしょに頂いた】
+;【食事効果（料理採点）】
 	;料理口上のコピペ
 	IF ABL:38:料理技能 >= 3
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORML 「嘿嘿♪ 完成啦♪」
-			PRINTFORML 「唔嗯、看起来很好吃的样子～♪」
+			PRINTFORML 「えへへ♪ かんせーい♪」
+			PRINTFORML 「うんうん、おいしそ～♪」
 		CASE 2
-			PRINTFORML 「唔嗯、做出来了好东西呢」
-			PRINTFORML 「怎么样？ 好吃吗？」
+			PRINTFORML 「うんうん、うまく出来たわ」
+			PRINTFORML 「どう？ 美味しい？」
 		CASE 3
-			PRINTFORML 「嘿嘿♪ 我，努力过了哦？」
-			PRINTFORML 「快夸奖我夸奖我～♪」
+			PRINTFORML 「えへへ♪ 私、頑張ったよ？」
+			PRINTFORML 「ほめてほめて～♪」
 		CASEELSE
-			PRINTFORML 「唔嗯、完成了呢♪」
-			PRINTFORML 「即使并非发自意识地去模仿，我也获得进步了呢」
+			PRINTFORML 「うん、完成だね♪」
+			PRINTFORML 「無意識でもちゃんと上達するもんだねー」
 		ENDSELECT
 	ELSE
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORML 「好累啊～……」
-			PRINTFORML 「料理什么的，果然还是很难呢……」
+			PRINTFORML 「疲れた～……」
+			PRINTFORML 「料理ってこんなに大変なんだねー……」
 		CASE 2
-			PRINTFORML 「嗯～？」
-			PRINTFORML 「感觉…就差一点，就完美了呢」
+			PRINTFORML 「ん～？」
+			PRINTFORML 「なんか…イマイチ」
 		CASE 3
-			PRINTFORML 「唔嗯、做完了！」
-			PRINTFORML 「……到底怎么做的……我忘了！」
+			PRINTFORML 「うん、できた！」
+			PRINTFORML 「……なんかよく覚えてないけど！」
 		CASEELSE
-			PRINTFORML 「啊？ 这样就算做完了吗？」
-			PRINTFORML 「为什么不多放些刺激的调味料进去呢？」
+			PRINTFORML 「あれ？ これで完成？」
+			PRINTFORML 「もっと刺激的で陰惨な調味料とか入れてみない？」
 		ENDSELECT
 	ENDIF
 	WAIT
@@ -495,10 +521,10 @@ CASE "失敗報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼05：関于特訓
+;依頼口上・一般依頼05：特訓につきあって
 ;==================================================
 @M_KOJO_IRAI_5_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -509,11 +535,11 @@ SELECTCASE SCENE
 CASE "依頼提示時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「%CALLNAME:MASTER%，让我们一起来玩弹幕游戏吧♪」
+		PRINTFORMW 「ねぇねぇ、一緒に弾幕ごっこしよーよ♪」
 	CASE 2
-		PRINTFORMW 「那个%CALLNAME:MASTER%、可以陪我进行弹幕训练吗♪」
+		PRINTFORMW 「ねぇ%CALLNAME:MASTER%、練習相手になってほしいなー♪」
 	CASEELSE
-		PRINTFORMW 「%CALLNAME:MASTER%，可以一起玩弹幕游戏吗？」
+		PRINTFORMW 「ねぇ%CALLNAME:MASTER%、一緒に弾幕ごっこしない？」
 	ENDSELECT
 	RETURN 1
 CASE "依頼非受託時"
@@ -522,11 +548,11 @@ CASE "依頼非受託時"
 CASE "依頼受託時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「答应啦♪ 一起开心地玩闹吧♪」
+		PRINTFORMW 「やったー♪ 楽しく遊びましょ♪」
 	CASE 2
-		PRINTFORMW 「这样才对嘛♪ 我可不会手下留情♪当然你也是♪」
+		PRINTFORMW 「そう来なくっちゃ♪ 手加減しないよー♪」
 	CASEELSE
-		PRINTFORMW 「你答应啦♪ 没关系的，不会让你意识到痛苦的♪因为只有一瞬」
+		PRINTFORMW 「やったね♪ 大丈夫、痛くしないから♪」
 	ENDSELECT
 	RETURN 1
 CASE "依頼確認時"
@@ -538,15 +564,15 @@ CASE "依頼破棄時"
 CASE "依頼実行直前"
 ;○この依頼は依頼主がTARGETです
 ;【◆口上】
-;【W ［你］は［彼女］と弾幕ごっこの特訓をした】
+;【W ［あなた］は［彼女］と弾幕ごっこの特訓をした】
 ;【▼そのまま下の口上へ】
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「看招！ 無意識『弹幕的墨迹测验』！！」
+		PRINTFORMW 「そ～れ！ 無意識『弾幕のロールシャッハ』！！」
 	CASE 2
-		PRINTFORMW 「那么这个能躲开吗～？ 反応『妖怪测谎仪』！！」
+		PRINTFORMW 「かわせるかなぁ～？ 反応『妖怪ポリフラフ』！！」
 	CASEELSE
-		PRINTFORMW 「要来了哦！ 『地底蔷薇』！！」
+		PRINTFORMW 「いくよ！ 『サブタレイニアンローズ』！！」
 	ENDSELECT
 	RETURN 1
 CASE "依頼実行直後"
@@ -563,11 +589,11 @@ CASE "成功報告時"
 ;【報酬獲得】
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「哈啊♪真开心呢♪」
+		PRINTFORMW 「はぁー♪ 楽しかった♪」
 	CASE 2
-		PRINTFORMW 「嘿嘿♪ 谢谢你能陪我呢，%CALLNAME:MASTER%♪」
+		PRINTFORMW 「えへへ♪ つきあってくれてありがと、%CALLNAME:MASTER%♪」
 	CASEELSE
-		PRINTFORMW 「嗯！ 感觉好好地活动了一次身体呢♪」
+		PRINTFORMW 「んー！ いい運動したー♪」
 	ENDSELECT
 	RETURN 1
 CASE "失敗報告時"
@@ -579,10 +605,10 @@ CASE "失敗報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼06：誰来告訴我！
+;依頼口上・一般依頼06：誰か教えて！
 ;==================================================
 @M_KOJO_IRAI_6_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -593,11 +619,11 @@ SELECTCASE SCENE
 CASE "依頼提示時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「那个，%CALLNAME:MASTER%，我有问题想问你」
+		PRINTFORMW 「ねぇねぇ、聞きたいことがあるんだけどねー」
 	CASE 2
-		PRINTFORMW 「我感觉我忘记了一些东西，%CALLNAME:MASTER%你会知道吗？」
+		PRINTFORMW 「ちょっと忘れちゃったんだけど、%CALLNAME:MASTER%は知ってる？」
 	CASEELSE
-		PRINTFORMW 「那个%CALLNAME:MASTER%，我想让你教我一些东西」
+		PRINTFORMW 「えっとねー、%CALLNAME:MASTER%に教えてほしいことがあるんだけどー」
 	ENDSELECT
 	RETURN 1
 CASE "依頼非受託時"
@@ -614,28 +640,28 @@ CASE "依頼破棄時"
 	RETURN 0
 CASE "依頼実行直前"
 	IF IS_LIBRARY(CFLAG:MASTER:現在位置) && TARGET == CLIENT_ID
-	;［查資料］と［進行解答］が重なっている場合
+	;［しらべもの］と［教えてあげる］が重なっている場合
 	;【◆口上】
-	;【L ［你］は［彼女］の疑问に答えるために［現在地］を訪れた】
+	;【L ［あなた］は［彼女］の疑問に答えるために［現在地］を訪れた】
 	;【L ここなら役に立つ資料が見つかりそうだ】
-	;【INPUT（查資料/進行解答）】
-	;【查資料＞［你］と［彼女］は［現在地］で調べ物をした】
+	;【INPUT（しらべもの/教えてあげる）】
+	;【しらべもの＞［あなた］と［彼女］は［現在地］で調べ物をした】
 	;【▼そのまま下の口上へ】
-	;【進行解答＞［進行解答］へジャンプ】
+	;【教えてあげる＞［教えてあげる］へジャンプ】
 		
 		RETURN 0
 	ELSEIF IS_LIBRARY(CFLAG:MASTER:現在位置)
-	;［查資料］をした時、依頼主ではない口上主がTARGETの場合
+	;［しらべもの］をした時、依頼主ではない口上主がTARGETの場合
 	;【◆口上】
-	;【［你］は［現在地］で調べ物をした】
+	;【［あなた］は［現在地］で調べ物をした】
 	;【▼そのまま下の口上へ】
 		
 		RETURN 0
 	ELSE
-	;［進行解答］時（依頼主がTARGET）
+	;［教えてあげる］時（依頼主がTARGET）
 	;【◆口上】
-	;【L ［你］は［彼女］の疑问に答えた】
-	;【成功：［彼女］の疑问は氷解した！】
+	;【L ［あなた］は［彼女］の疑問に答えた】
+	;【成功：［彼女］の疑問は氷解した！】
 	;【失敗：［彼女］は納得できなかったようだ……】
 	;【▼そのまま下の口上へ】
 		
@@ -646,13 +672,13 @@ CASE "依頼実行直後"
 	;【◆口上】
 	SELECTCASE CFLAG:CLIENT_ID:依頼状況
 	CASE 2
-	;［查資料］をした時
+	;［しらべもの］をした時
 		IF ROLE == "CLIENT"
-		;一緒に［查資料］をした時
+		;一緒に［しらべもの］をした時
 			
 			RETURN 0
 		ELSEIF ROLE == "TARGET"
-		;依頼主ではない口上主の前で［查資料］をした時
+		;依頼主ではない口上主の前で［しらべもの］をした時
 			
 			RETURN 0
 		ENDIF
@@ -661,11 +687,11 @@ CASE "依頼実行直後"
 	;【▼そのまま下の口上へ】
 		SELECTCASE RAND:3
 		CASE 1
-			PRINTFORMW 「原来如此…原来是这样啊！」
+			PRINTFORMW 「ほほう、なるほどなるほど…そういうことだったのね！」
 		CASE 2
-			PRINTFORMW 「原来如此、感觉彻底理解了呢！」
+			PRINTFORMW 「なるほど、完全に理解したわ！」
 		CASEELSE
-			PRINTFORMW 「我明白啦！ 彻底地呢～♪」
+			PRINTFORMW 「わかった！ ばっちりだよ～♪」
 		ENDSELECT
 		RETURN 1
 	CASE 6
@@ -673,12 +699,12 @@ CASE "依頼実行直後"
 	;【▼そのまま失敗報告時の口上へ】
 		SELECTCASE RAND:3
 		CASE 1
-			PRINTFORML 「哇诶……」
-			PRINTFORMW 恋听着%CALLNAME:MASTER%的讲述，一副完全没有理解的样子
+			PRINTFORML 「はへー……」
+			PRINTFORMW こいしは全然わかんないといった表情で%CALLNAME:MASTER%の話を聞いている
 		CASE 2
-			PRINTFORMW 「……是这样啊！ ……咦，是这样吗？」
+			PRINTFORMW 「……なるほど！ ……なるほ、ど？」
 		CASEELSE
-			PRINTFORMW 「唔嗯……就算这么说，我也不明白啊！」
+			PRINTFORMW 「うーん……わかんない！」
 		ENDSELECT
 		RETURN 1
 	ENDSELECT
@@ -686,21 +712,21 @@ CASE "成功報告時"
 ;報酬：\500
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「谢谢你%CALLNAME:MASTER%！ %CALLNAME:MASTER%的讲解相当清晰呢！」
+		PRINTFORMW 「ありがとう！ %CALLNAME:MASTER%のおかげでバッチリだわ！」
 	CASE 2
-		PRINTFORMW 「谢谢你%CALLNAME:MASTER%，没想到你这么博学呢♪」
+		PRINTFORMW 「ありがと、%CALLNAME:MASTER%ってば意外と物知りなのねー♪」
 	CASEELSE
-		PRINTFORMW 「谢谢你♪ %CALLNAME:MASTER%很擅长教别人呢，帮大忙了♪」
+		PRINTFORMW 「ありがとう♪ %CALLNAME:MASTER%が教え上手で助かったわ♪」
 	ENDSELECT
 	RETURN 1
 CASE "失敗報告時"
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「唔嗯……对不起、就算听了你的讲解，我还是不明白呢……」
+		PRINTFORMW 「うーん……ごめん、よくわかんないや……」
 	CASE 2
-		PRINTFORMW 「%CALLNAME:MASTER%你啊、这不是完全不擅长教人嘛？」
+		PRINTFORMW 「%CALLNAME:MASTER%ってさ、教えるのへたっぴだったりする？」
 	CASEELSE
-		PRINTFORMW 「呐呐，难道说%CALLNAME:MASTER%，你也不知道答案吗？」
+		PRINTFORMW 「ねぇねぇ、もしかして%CALLNAME:MASTER%も知らないんじゃないの？」
 	ENDSELECT
 	RETURN 1
 ;CASE "依頼報告不要"
@@ -709,10 +735,10 @@ CASE "失敗報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼07：大掃除還没結束
+;依頼口上・一般依頼07：大掃除が終わらない
 ;==================================================
 @M_KOJO_IRAI_7_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -721,7 +747,7 @@ ENDSELECT
 ;--------------------------------------------------
 SELECTCASE SCENE
 CASE "依頼提示時"
-	PRINTFORMW 「帮帮我！ 一会就要大扫除了，感觉情况相当不妙呢！」
+	PRINTFORMW 「たすけてー！ 今は大掃除でいろいろと大変なのー！」
 	RETURN 1
 CASE "依頼非受託時"
 	
@@ -740,31 +766,31 @@ CASE "依頼実行直前"
 	IF YOGORE:(GET_CHARAHOME(TARGET)) < 1000
 	;先に掃除してしまっていた場合
 	;【◆口上】
-	;【W ［彼女］的房間は十分にきれいだ】
+	;【W ［彼女］の部屋は十分にきれいだ】
 	;【▼そのまま下の口上へ】
-		PRINTFORMW 「啊呀、我的房间，比我想象中的，要干净呢…？」
-		PRINTFORMW 「是不是我…下意识地打扫了房间呢」
+		PRINTFORMW 「あれ、思いのほかきれいなような…？」
+		PRINTFORMW 「無意識の内に掃除でもしたのかな…私」
 		RETURN 1
 	ELSE
-	;一緒に掃除場合
+	;一緒に掃除する場合
 	;【◆口上】
-	;【W ［你］は［彼女］と協力して徹底的に部屋を掃除した】
+	;【W ［あなた］は［彼女］と協力して徹底的に部屋を掃除した】
 	;【▼そのまま下の口上へ】
-		PRINTFORMDL 恋的屋子里很乱，东西到处都是，宠物们正在忙碌的打扫着这个大房间
+		PRINTFORMDL こいしの部屋はあちこちに物が散乱しており、ペットがいそいそと広い部屋を掃除している
 		PRINTW 
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORMW 「那么、我就从那边开始打扫了，这边就拜托你了～」
+			PRINTFORMW 「じゃあ、わたしがあっちの方をするからこっちお願いね～」
 		CASE 2
-			PRINTFORMW 「你好，我现在，在你的身后～」
-			PRINTFORMW 「……诶？ 现在先不要玩了先去扫除，一会我再陪你？」
-			PRINTFORMW 「好~」
+			PRINTFORMW 「もしもーし、今あなたの後ろにいるの～」
+			PRINTFORMW 「……え？ 遊んでないで掃除しなさいって？」
+			PRINTFORMW 「はーい」
 		CASE 3
-			PRINTFORMW 「唔、我所有的事情都弄得乱七八糟……某种意义上来说这也算种才能？」
-			PRINTFORMW 「诶？ 这样的才能才不需要？」
+			PRINTFORMW 「うーん、我が事ながらすさまじい散らかしっぷり……ある意味才能だったり？」
+			PRINTFORMW 「え？ そんな才能はいらない？」
 		CASEELSE
-			PRINTFORMW 「嗯、希望之面要留下来……啊、这件东西也不想扔掉啊…」
-			PRINTFORMW 「啊咧？ 这不什么都没收拾吗」
+			PRINTFORMW 「えーっと、希望の面はいるとして……あ、こっちも捨てたくないなー…」
+			PRINTFORMW 「あれ？ 全然片付かないや」
 		ENDSELECT
 		RETURN 1
 	ENDIF
@@ -780,8 +806,8 @@ CASE "成功報告時"
 ;【▲上の口上から続き】
 ;【◆口上】
 ;【報酬獲得】
-	PRINTFORMW 「唔嗯、这样的话就可以了吧！」
-	PRINTFORMW 「谢谢你呢、真是帮大忙了♪」
+	PRINTFORMW 「うんうん、これでOKだね！」
+	PRINTFORMW 「本当にありがとう、助かったわ♪」
 	RETURN 1
 CASE "失敗報告時"
 	
@@ -792,11 +818,11 @@ CASE "失敗報告時"
 ENDSELECT
 ;
 ;;==================================================
-;;依頼口上・一般依頼08：送信
-;;※この依頼は角色によっては発生しません
+;;依頼口上・一般依頼08：手紙を届けて
+;;※この依頼はキャラによっては発生しません
 ;;==================================================
 ;@M_KOJO_IRAI_8_K38(ROLE, SCENE, CLIENT_ID)
-;#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+;#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 ;#DIMS SCENE    ;セリフの表示されるタイミング
 ;#DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;;--------------------------------------------------
@@ -822,7 +848,7 @@ ENDSELECT
 ;CASE "依頼実行直前"
 ;;○この依頼では手紙を渡される側の口上です
 ;;【◆口上】
-;;【W ［你］は［彼女］に預かっていた手紙を渡した】
+;;【W ［あなた］は［彼女］に預かっていた手紙を渡した】
 ;;【▼そのまま下の口上へ】
 ;	
 ;	RETURN 0
@@ -845,10 +871,10 @@ ENDSELECT
 ;ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼09：誰的遗失物
+;依頼口上・一般依頼09：誰かの落とし物
 ;==================================================
 @M_KOJO_IRAI_9_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -857,29 +883,29 @@ ENDSELECT
 ;--------------------------------------------------
 SELECTCASE SCENE
 CASE "依頼提示時"
-	PRINTFORMW 「%CALLNAME:MASTER%%CALLNAME:MASTER%、我捡到了这个东西，但不知道是谁的呢…」
+	PRINTFORMW 「ねぇねぇ%CALLNAME:MASTER%、こんなのひろってたんだけど…」
 	RETURN 1
 CASE "依頼非受託時"
-	PRINTFORMW 「嗯～！ …唔嗯，那这个东西，就是我的了～」
+	PRINTFORMW 「え～！ …うーん、じゃあ私のにしちゃおっかなー」
 	RETURN 1
 CASE "依頼受託時"
-	PRINTFORMW 「谢谢你！ 那么、拜托你去找它的主人喽♪」
+	PRINTFORMW 「ありがとう！ それじゃ、お願いね♪」
 	RETURN 1
 CASE "依頼確認時"
 	
 	RETURN 0
 CASE "依頼破棄時"
-	PRINTFORMW 「嗯～！ …唔嗯，那这个东西，就是我的了～」
+	PRINTFORMW 「え～！ …うーん、じゃあ私のにしちゃおっかなー」
 	RETURN 1
 CASE "依頼実行直前"
 ;○この依頼では落とし物を渡される側の口上です
 ;【◆口上】
-;【W ［你］は［彼女］に預かっていた落とし物を返した】
+;【W ［あなた］は［彼女］に預かっていた落とし物を返した】
 ;【▼そのまま下の口上へ】
 	IF TALENT:38:思慕 || TALENT:38:恋慕
-		PRINTFORMW 「啊！ %CALLNAME:MASTER%捡到了它，并把它送来了呢♪ 谢谢你♪」
+		PRINTFORMW 「あっ！ %CALLNAME:MASTER%が届けてくれたんだね♪ ありがとう♪」
 	ELSE
-		PRINTFORMW 「啊！那是我无意识间弄丢的东西！」
+		PRINTFORMW 「あっ！ それ私が無意識の内になくしちゃってたやつだ！」
 	ENDIF
 	RETURN 1
 CASE "依頼実行直後"
@@ -890,10 +916,10 @@ CASE "依頼実行直後"
 	RETURN 0
 CASE "成功報告時"
 ;報酬：上級素材
-	PRINTFORMW 「看到了吗？ 唔嗯、那就好♪」
+	PRINTFORMW 「見つかった？ うんうん、良かった良かった♪」
 	RETURN 1
 CASE "失敗報告時"
-	PRINTFORMW 「嗯～？ 这也是～无可奈何的呢～」
+	PRINTFORMW 「ん～？ それじゃ～しょうがないねー」
 	RETURN 1
 CASE "依頼報告不要"
 	
@@ -901,10 +927,10 @@ CASE "依頼報告不要"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼10：怎么也找不到（場所探しパターン）
+;依頼口上・一般依頼10：どうしてもみつからない（場所探しパターン）
 ;==================================================
 @M_KOJO_IRAI_10_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -929,11 +955,11 @@ CASE "依頼破棄時"
 	RETURN 0
 CASE "依頼実行直前"
 ;【◆口上】
-;【W 中奖了を探していた［你］はついに探していた落とし物を発見した】
+;【W あたりを探していた［あなた］はついに探していた落とし物を発見した】
 ;【▼そのまま下の口上へ】
 	IF ROLE == "CLIENT"
 	;依頼主である口上主と一緒に発見した場合
-		PRINTFORMW 「啊在这里啊，找到了呢♪」
+		PRINTFORMW 「あった、見つけたわ♪」
 		RETURN 1
 	ELSEIF ROLE == "TARGET"
 	;発見した時、依頼主ではない口上主がTARGETの場合
@@ -946,7 +972,7 @@ CASE "依頼実行直後"
 ;【◆口上】
 	IF ROLE == "CLIENT"
 	;依頼主である口上主と一緒に発見した場合
-		PRINTFORMW 「唔嗯、太好了！一直担心自己是不是无意识中不小心弄丢了它呢……」
+		PRINTFORMW 「うんうん、良かった良かった！ 無意識の内に落としちゃったのかなぁ……」
 		RETURN 1
 	ELSEIF ROLE == "TARGET"
 	;発見した時、依頼主ではない口上主がTARGETの場合
@@ -966,10 +992,10 @@ CASE "失敗報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼11：怎么也找不到（人物探しパターン）
+;依頼口上・一般依頼11：どうしてもみつからない（人物探しパターン）
 ;==================================================
 @M_KOJO_IRAI_11_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -995,9 +1021,9 @@ CASE "依頼破棄時"
 CASE "依頼実行直前"
 ;○この依頼では失くしもの持っていた側の口上です
 ;【◆口上】
-;【W 聞き込みを続けていた［你］はついに探していた落とし物を発見した】
+;【W 聞き込みを続けていた［あなた］はついに探していた落とし物を発見した】
 ;【▼そのまま下の口上へ】
-	PRINTFORML 「哦哟？ 怎么了吗？」
+	PRINTFORML 「およよ？ どしたの？」
 	RETURN 1
 CASE "依頼実行直後"
 ;○この依頼は必ず実行後達成します
@@ -1005,11 +1031,11 @@ CASE "依頼実行直後"
 ;【◆口上】
 	SELECTCASE RAND:3
 	CASE 1
-		PRINTFORMW 「咦～！ 你捡到了我的东西呢」
+		PRINTFORMW 「え～！ 私が拾ったものなんだけどなー」
 	CASE 2
-		PRINTFORMW 「这样啊、原来捡到的东西是有主人的啊～…残念」
+		PRINTFORMW 「そっかー、持ち主がいたんだね～…残念」
 	CASEELSE
-		PRINTFORMW 「看来是在无意识中捡起来的呢。那就还给你吧♪」
+		PRINTFORMW 「無意識の内に拾ってたの。返すねー♪」
 	ENDSELECT
 	RETURN 1
 CASE "成功報告時"
@@ -1028,7 +1054,7 @@ ENDSELECT
 ;依頼口上・一般依頼12：懲らしめて！
 ;==================================================
 @M_KOJO_IRAI_12_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -1040,16 +1066,16 @@ CASE "依頼提示時"
 	IF TALENT:38:恋慕 || TALENT:38:思慕
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORMW 「唔嗯，没想到我被打倒了呢……」
+			PRINTFORMW 「うーん、やられてしまったわー……」
 		CASE 2
-			PRINTFORMW 「想拜托%CALLNAME:MASTER%你做一件事呢、要听一下吗？」
+			PRINTFORMW 「お願いしたいことがあるんだけど、%CALLNAME:MASTER%、聞いてくれる？」
 		CASE 3
-			PRINTFORMW 「前几天，我被狠狠地揍了一顿，毫无还手之力呢……」
+			PRINTFORMW 「この間コテンパンにやられちゃってねー……」
 		CASEELSE
-			PRINTFORMW 「唔嗯，虽然让别人给我出气有些羞耻」
+			PRINTFORMW 「うーん、ちょっと気は引けるんだけどー」
 		ENDSELECT
 	ELSE
-		PRINTFORMW 「呐呐%CALLNAME:MASTER%，可以稍微出些力帮帮我吗？」
+		PRINTFORMW 「ねぇねぇ%CALLNAME:MASTER%、少し協力してくださらない？」
 	ENDIF
 	RETURN 1
 CASE "依頼非受託時"
@@ -1059,16 +1085,16 @@ CASE "依頼受託時"
 	IF TALENT:38:恋慕 || TALENT:38:思慕
 		SELECTCASE RAND:4
 		CASE 1
-			PRINTFORMW 「拜托你了呢ー」
+			PRINTFORMW 「お願いねー」
 		CASE 2
-			PRINTFORMW 「嘿嘿，谢谢」
+			PRINTFORMW 「えへへ、ありがとう」
 		CASE 3
-			PRINTFORMW 「嘿嘿，加油%CALLNAME:MASTER%♪」
+			PRINTFORMW 「フレーフレー、がんばれー♪」
 		CASEELSE
-			PRINTFORMW 「不要受伤哦」
+			PRINTFORMW 「怪我しないようにねー」
 		ENDSELECT
 	ELSE
-		PRINTFORMW 「如此苦相思的我，期待她遭受悲惨的结末呢～♪」
+		PRINTFORMW 「恋焦がれるような陰惨な結末を待ってるよ～♪」
 	ENDIF
 	RETURN 1
 CASE "依頼確認時"
@@ -1092,7 +1118,7 @@ CASE "依頼実行直前"
 		
 		RETURN 0
 	ELSEIF CANNOT_DANMAKU() == 3
-	;你が疲労中（勝負できない）
+	;あなたが疲労中（勝負できない）
 	;【◆口上】
 	;【W 今は疲れている…】
 		
@@ -1111,15 +1137,15 @@ CASE "依頼実行直前"
 		RETURN 0
 	ELSE
 	;【◆口上】
-	;【W 勝負开始！！】
+	;【W 勝負開始！！】
 	;【以降はそのまま弾幕口上が呼ばれます】
 		IF TALENT:38:恋慕 || TALENT:38:思慕
-			PRINTFORML 「诶！？ 为什么不帮我啊～！！？」
-			PRINTFORMW 「真是的～！！ %CALLNAME:MASTER%你个笨蛋～！！」
+			PRINTFORML 「えぇ！？ なんでなんで～！！？」
+			PRINTFORMW 「も～！！ %CALLNAME:MASTER%の馬鹿ぁ～！！」
 		ELSE
-			PRINTFORML 「啊哈哈♪ ＯＫ、我接受你的挑战♪」
-			PRINTFORMW 「虽然你与我无冤无仇，但我要在这里，赐予你那曝尸荒野的未来吧」
-			PRINTFORMW 「不用担心，尸体我会让猫运走 你就可以永远地住在我家了！」
+			PRINTFORML 「あははは♪ ＯＫ、受けて立つよ♪」
+			PRINTFORMW 「貴方には恨みはないけど、ここで野垂れ死ぬ未来をあげるわ」
+			PRINTFORMW 「大丈夫大丈夫、死体は猫に運ばせるから。一生私の家で暮らせるよ！」
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1128,12 +1154,12 @@ CASE "依頼実行直後"
 ;○この依頼では討伐される側の口上です
 	IF CFLAG:CLIENT_ID:依頼状況 == 2
 		IF CANNOT_DANMAKU() == 0
-			;败犬
+			;負け犬
 			;【▲上の口上から続き】
 			;【L ［彼女］の討伐に失敗した……】
 			;【W ……こうなったら後日出直すしかない】
 			;【◆口上】
-			PRINTFORMW 「你好，我现在，要越过你的尸体，向着我的未来前进♪」
+			PRINTFORMW 「もしもーし、今貴方の屍を越えて未来に向かおうとしているの♪」
 			RETURN 1
 		ELSE
 			;挑めなかった場合
@@ -1147,21 +1173,21 @@ CASE "依頼実行直後"
 	;【W ［彼女］を懲らしめた！】
 	;【◆口上】
 		IF TALENT:38:恋慕 || TALENT:38:思慕
-			PRINTFORML 「诶！？ 为什么不帮我啊～！！？」
-			PRINTFORMW 「真是的～！！ %CALLNAME:MASTER%你个笨蛋～！！」
+			PRINTFORML 「えぇ！？ なんでなんで～！！？」
+			PRINTFORMW 「も～！！ %CALLNAME:MASTER%の馬鹿ぁ～！！」
 		ELSE
-			PRINTFORML 「啊哈哈♪ ＯＫ、我接受你的挑战♪」
-			PRINTFORMW 「虽然你与我无冤无仇，但我要在这里，赐予你那曝尸荒野的未来吧」
-			PRINTFORMW 「不用担心，尸体我会让猫运走 你就可以永远地住在我家了！」
+			PRINTFORML 「あははは♪ ＯＫ、受けて立つよ♪」
+			PRINTFORMW 「貴方には恨みはないけど、ここで野垂れ死ぬ未来をあげるわ」
+			PRINTFORMW 「大丈夫大丈夫、死体は猫に運ばせるから。一生私の家で暮らせるよ！」
 		ENDIF
 		RETURN 1
 	ENDIF
 CASE "成功報告時"
 ;報酬：賞金（時価）
 	IF TALENT:38:恋慕 || TALENT:38:思慕
-		PRINTFORMW 「不愧是%CALLNAME:MASTER%♪ 最爱你了❤」
+		PRINTFORMW 「さすが%CALLNAME:MASTER%♪ 大好き%UNICODE(0x2764)%」
 	ELSE
-		PRINTFORMW 「哦ー！ %CALLNAME:MASTER%真是相当地厉害呢」
+		PRINTFORMW 「おー！ %CALLNAME:MASTER%ってば中々強いんだねー」
 	ENDIF
 	RETURN 1
 CASE "失敗報告時"
@@ -1173,10 +1199,10 @@ CASE "失敗報告時"
 ENDSELECT
 
 ;==================================================
-;依頼口上・一般依頼13：好吃的魚が食べたいなぁ
+;依頼口上・一般依頼13：うまい魚が食べたいなぁ
 ;==================================================
 @M_KOJO_IRAI_13_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -1185,7 +1211,7 @@ ENDSELECT
 ;--------------------------------------------------
 SELECTCASE SCENE
 CASE "依頼提示時"
-	PRINTFORMW 「%CALLNAME:MASTER%，我想吃些美味的鱼♪」
+	PRINTFORMW 「ねぇ%CALLNAME:MASTER%、美味しい魚が食べたい気分なの♪」
 	RETURN 1
 CASE "依頼非受託時"
 	
@@ -1202,22 +1228,22 @@ CASE "依頼破棄時"
 CASE "依頼実行直前"
 ;○この依頼は依頼主がTARGETです
 ;【◆口上】
-;【L ［你］は［彼女］に好吃的魚を渡した】
+;【L ［あなた］は［彼女］にうまい魚を渡した】
 ;【L 何だか生きる希望がわいてきたよ。】
 ;【▼そのまま下の口上へ】
-	PRINTFORMW 「哦哦～…这些鱼，都是%CALLNAME:MASTER%你钓上来的吗？」
-	PRINTFORMW 「没想到%CALLNAME:MASTER%你还会这个呢」
+	PRINTFORMW 「おぉ～…これ%CALLNAME:MASTER%が釣ったの？」
+	PRINTFORMW 「意外な特技を持ってるんだねー」
 	RETURN 1
 CASE "依頼実行直後"
 ;○この依頼は必ず実行後達成します
 ;【▲上の口上から続き】
 ;【◆口上】
 ;【▼そのまま下の口上へ】
-	PRINTFORML 「嘿嘿，谢谢♪」
+	PRINTFORML 「えへへ、ありがとう♪」
 	RETURN 1
 CASE "成功報告時"
-;報酬：白米３个
-	PRINTFORMW 「好的、这是给%CALLNAME:MASTER%你的回礼♪」
+;報酬：白米３個
+	PRINTFORMW 「はーい、こちらお礼になりまーす♪」
 	RETURN 1
 CASE "失敗報告時"
 	
@@ -1229,11 +1255,11 @@ ENDSELECT
 
 ;==================================================
 ;依頼口上・固有依頼101：
-;固有依頼の仕様は角色によって異なりますが依頼番号は101～で共通です
+;固有依頼の仕様はキャラによって異なりますが依頼番号は101～で共通です
 ;"依頼名"部分に依頼名を入れて下さい
 ;==================================================
 @M_KOJO_IRAI_依頼名_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------
@@ -1280,7 +1306,7 @@ ENDSELECT
 ;依頼口上・一般依頼Y：
 ;==================================================
 @M_KOJO_IRAI_Y_K38(ROLE, SCENE, CLIENT_ID)
-#DIMS ROLE     ;角色の立場、依頼者かそうでないか
+#DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
 ;--------------------------------------------------

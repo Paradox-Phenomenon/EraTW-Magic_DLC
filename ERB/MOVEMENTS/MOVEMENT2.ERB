@@ -12,9 +12,9 @@ SIF TIME + DAY * 1440 < ARG
 RETURNF TIME + DAY * 1440 - ARG
 
 ;FileName_MOVEMENT.ERB ----------------------------- Rev1.01
-;角色帰宅処理
+;キャラ帰宅処理
 ;CALL		USER
-;ARG		0:角色NO
+;ARG		0:キャラNO
 ;RETURN		VOID
 ;COMMENT	
 ;-----------------------------------------------------------
@@ -22,16 +22,16 @@ RETURNF TIME + DAY * 1440 - ARG
 #DIMS 帰宅理由
 ;午前3時～午前7時
 IF INRANGE(TIME, 180, 420)
-	帰宅理由 = 天亮了、
+	帰宅理由 = 夜が明けてきたので、
 ;午前7時～午後3時
 ELSEIF INRANGE(TIME, 421, 899)
-	帰宅理由 = 差不多到时间了、
+	帰宅理由 = ちょうどいい時間になったので、
 ;午後3時～午後7時
 ELSEIF INRANGE(TIME, 900, 1140)
-	帰宅理由 = 太阳下山了、
+	帰宅理由 = 日も落ちてきたので、
 ;午後7時～午前3時
 ELSE
-	帰宅理由 = 已经是深夜了、
+	帰宅理由 = 夜ももう更けてきたので、
 ENDIF
 
 IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 && CFLAG:ARG:現在位置 != CFLAG:ARG:初期位置
@@ -39,112 +39,84 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 	SIF CFLAG:ARG:神社在住
 		RETURN
 	IF 睡眠時間(ARG)
-		PRINTFORMW %CALLNAME:ARG%去睡眠了。
-	;约会中
-	ELSEIF CHK_DATENOW(CFLAG:(ARG):约会中)
-		;诶嘿嘿中は非表示
-		SIF !CFLAG:ARG:诶嘿嘿
-			PRINTFORMW %帰宅理由%%CALLNAME:ARG%和你的约会到此为止。
-		;自宅にいる時,待客室にいる時は诶嘿嘿していない時
-		IF CFLAG:ARG:現在位置 == CFLAG:ARG:自宅位置 || (CFLAG:ARG:現在位置 == OMANEKIBEYA() && !CFLAG:ARG:诶嘿嘿)
+		PRINTFORMW %CALLNAME:ARG%は寝床につきました。
+	;デート中
+	ELSEIF CHK_DATENOW(CFLAG:(ARG):デート中)
+		;うふふ中は非表示
+		SIF !CFLAG:ARG:うふふ
+			PRINTFORMW %帰宅理由%%CALLNAME:ARG%とのデートはここまでだ。
+		;自宅にいる時,お招き部屋にいる時はうふふしていない時
+		IF CFLAG:ARG:現在位置 == CFLAG:ARG:自宅位置 || (CFLAG:ARG:現在位置 == OMANEKIBEYA() && !CFLAG:ARG:うふふ)
 			;帰宅口上,3,玄関先で見送り
 			CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 3)
-		;通常の约会中
+		;通常のデート中
 		ELSE
 			;お誘い
-			IF (TALENT:ARG:恋慕 || TALENT:ARG:炮友 == 2) && CFLAG:ARG:积攒度 >= (700 + TALENT:ARG:羞恥心 * 150) && !CFLAG:ARG:神社在住 && !TCVAR:ARG:连住禁止 && CFLAG:(ARG):現在位置 != OMANEKIBEYA()
-				PRINTFORML 被%CALLNAME:ARG%邀请去房间
+			IF (TALENT:ARG:恋慕 || TALENT:ARG:セフレ == 2) && CFLAG:ARG:溜まってる度 >= (700 + TALENT:ARG:羞恥心 * 150) && !CFLAG:ARG:神社在住 && !TCVAR:ARG:連泊禁止 && CFLAG:(ARG):現在位置 != OMANEKIBEYA()
+				PRINTFORML %CALLNAME:ARG%から部屋に来ないかと誘われた
 				;帰宅口上,4,部屋に来ないかと誘う
 				CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 4)
-				CALL ASK_YN("去","不去")
+				CALL ASK_YN("行く","やめとく")
 				IF !RESULT
 					IF CFLAG:ARG:自宅位置
-						PRINTFORML %CALLNAME:ARG%的邀请下、%CALLNAME:MASTER%走向了%CALLNAME:ARG%的房间……
+						PRINTFORML %CALLNAME:ARG%に誘われるまま、%CALLNAME:MASTER%は%CALLNAME:ARG%の部屋へと向かった……
 						PRINTFORMW +{TIME_REQUIRED(CFLAG:ARG:現在位置 / 100, CFLAG:ARG:自宅位置 / 100)}分
 						TIME += TIME_REQUIRED(CFLAG:ARG:現在位置 / 100, CFLAG:ARG:自宅位置 / 100)
 					ELSE
-						PRINTFORML 应%CALLNAME:ARG%的邀请、%CALLNAME:MASTER%走向了不知具体位置的%CALLNAME:ARG%的房间……
+						PRINTFORML %CALLNAME:ARG%に誘われるまま、%CALLNAME:MASTER%は何処とも知れぬ%CALLNAME:ARG%の部屋へと向かった……
 						PRINTFORMW +30分
 						TIME += 30
 					ENDIF
 					;帰宅口上,5,誘われるまま行く
 					CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 5, 0)
 					CALL OMANEKI_ENTER(ARG)
-					CALL TARGETSET_CHECK
+					CALL TARGETSET_CHACK
 				ELSE
-					PRINTFORMW %CALLNAME:ARG%好象很寂寞似的……
-					;帰宅口上,6,誘いを拒绝
+					PRINTFORMW %CALLNAME:ARG%は心なしか寂しそうだ……
+					;帰宅口上,6,誘いを断る
 					CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 6)
-					SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:约会中) && FLAG:约会的对象 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-						CFLAG:MASTER:現在位置 = CFLAG:MASTER:约会中 * 100
+					SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:デート中) && FLAG:デート相手 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+						CFLAG:MASTER:現在位置 = CFLAG:MASTER:デート中 * 100
 				ENDIF
 			ELSE
-				;帰宅口上,2,约会中帰宅
+				;帰宅口上,2,デート中帰宅
 				CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 2)
-				SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:约会中) && FLAG:约会的对象 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-					CFLAG:MASTER:現在位置 = CFLAG:MASTER:约会中 * 100
+				SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:デート中) && FLAG:デート相手 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+					CFLAG:MASTER:現在位置 = CFLAG:MASTER:デート中 * 100
 			ENDIF
 		ENDIF
-		;多人约会 - 目标1回家 继续和目标2约会,同时记录好感度,下面删除了一段判定
-		IF 同行人数() > 1
-		;#;PRINTFORMW 多人约会判定  1 - 开始
-			FOR LOCAL,1,CHARANUM
-				SIF LOCAL == ARG
-					CONTINUE
-				IF CHK_DATENOW(CFLAG:(LOCAL):约会中)
-					FLAG:约会的对象 = LOCAL
-					TFLAG:约会前好感度 = CFLAG:LOCAL:好感度
-					CFLAG:MASTER:约会中 = CFLAG:LOCAL:约会中
-					CFLAG:MASTER:現在位置 = CFLAG:LOCAL:現在位置
-				ENDIF
-			NEXT
-		;#;PRINTFORMW 多人约会判定  1 - 结束
-		ENDIF
-	;神社内にいるか自宅でも待客室でもない場所
+	;神社内にいるか自宅でもお招き部屋でもない場所
 	ELSEIF AT_HOME(ARG) || (CFLAG:(ARG):現在位置 != CFLAG:(ARG):自宅位置 && CFLAG:(ARG):現在位置 != OMANEKIBEYA()) && CFLAG:ARG:行動 != 5
 		;帰宅口上,1,通常帰宅
 		CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 1)
-		PRINTFORMW %帰宅理由%%CALLNAME:ARG%回去了。
+		PRINTFORMW %帰宅理由%%CALLNAME:ARG%は帰って行きました。
 		CALL SET_TOGETHER(0,ARG,1)
-		SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:约会中) && FLAG:约会的对象 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-			CFLAG:MASTER:現在位置 = CFLAG:MASTER:约会中 * 100
+		SIF (CFLAG:MASTER:現在位置 % 100) % 10 && CHK_DATENOW(CFLAG:MASTER:デート中) && FLAG:デート相手 == ARG && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+			CFLAG:MASTER:現在位置 = CFLAG:MASTER:デート中 * 100
 	ENDIF
-	IF CFLAG:(ARG):诶嘿嘿 > 0 || CHK_DATENOW(CFLAG:(ARG):约会中)
-		;修改了大量判定
-		CFLAG:ARG:约会中 = MAIN_MAP
-			SIF CFLAG:MASTER:招待 != ARG && CFLAG:ARG:诶嘿嘿
-				CALL ENDUFUFU(ARG)
-			FLAG:约会的对象 = 0
-			TFLAG:约会前好感度 = 0
-		;招待诶嘿嘿中は継続
-		SIF !CFLAG:MASTER:招待
-			CFLAG:MASTER:诶嘿嘿 = 0
-		CFLAG:MASTER:同行 = 0
-		;多人约会 - 单一目标困了回家bug
-		;#;PRINTFORMW 多人约会判定  2 - 开始
+	IF CFLAG:(ARG):うふふ > 0 || CHK_DATENOW(CFLAG:(ARG):デート中)
 		FOR LOCAL,1,CHARANUM
-			SIF LOCAL == ARG
-				CONTINUE
-			IF CHK_DATENOW(CFLAG:(LOCAL):约会中)
-				FLAG:约会的对象 = LOCAL
-				TFLAG:约会前好感度 = CFLAG:LOCAL:好感度
-				CFLAG:MASTER:约会中 = CFLAG:LOCAL:约会中
-				CFLAG:MASTER:現在位置 = CFLAG:LOCAL:現在位置
-				PRINTFORML 目送%CALLNAME:ARG%远去,%CALLNAME:MASTER%决定继续和%CALLNAME:LOCAL%约会...
-				CFLAG:MASTER:同行 = 180
-				CFLAG:LOCAL:同行 = 180
-			ENDIF
+			;お招き中は継続
+			SIF CFLAG:MASTER:お招き != LOCAL && CFLAG:LOCAL:うふふ
+				CALL ENDUFUFU(LOCAL)
+			;デートは消える
+			CFLAG:LOCAL:デート中 = MAIN_MAP
+			FLAG:デート相手 = 0
+			TFLAG:デート前好感度 = 0
 		NEXT
-		;#;PRINTFORMW 多人约会判定  2 - 结束
+		;お招きうふふ中は継続
+		SIF !CFLAG:MASTER:お招き
+			CFLAG:MASTER:うふふ = 0
+		CFLAG:MASTER:同行 = 0
 	ENDIF
 ENDIF
 CFLAG:ARG:同行 = 0
 
-IF !TCVAR:ARG:休憩中 && !CFLAG:ARG:招待
-	;拠点から返回なら今日はもう来訪しない
+IF !TCVAR:ARG:休憩中 && !CFLAG:ARG:お招き
+	;拠点から帰るなら今日はもう来訪しない
 	SIF IN_HOME(CFLAG:ARG:現在位置) && !CFLAG:MASTER:睡眠
 		CFLAG:ARG:拠点来訪 = 0
-	;活動時間外は自宅が那个ば寝るまで自宅にいる
+	;活動時間外は自宅があれば寝るまで自宅にいる
 	IF CFLAG:ARG:自宅位置 && !IN_HOME(CFLAG:ARG:自宅位置) && !睡眠時間(ARG)
 		CFLAG:ARG:現在位置 = CFLAG:ARG:自宅位置
 	;自宅がないか寝ると消える
@@ -154,7 +126,7 @@ IF !TCVAR:ARG:休憩中 && !CFLAG:ARG:招待
 ENDIF
 
 
-@被从寝室赶了出来(ARG)
+@寝室から追い出し(ARG)
 SIF !AT_HOME(MASTER)
 	RETURN
 SIF !ARG
@@ -175,14 +147,14 @@ SIF 寝室許可(ARG, 1)
 
 ;なんのためのCLEARLINE？
 ;CLEARLINE 1
-PRINTFORMW 被犯困的%CALLNAME:ARG%赶出来了…
-;おやすみ口上,7-1,部屋から逐出て寝た
+PRINTFORMW 眠そうな%CALLNAME:ARG%に追い出された…
+;おやすみ口上,7-1,部屋から追い出して寝た
 CALL KOJO_MESSAGE_SEND("EVENT", 3, ARG, 7, 1)
 ;忍び込みOFF
 CALL SET_SNEAK(0,ARG,2)
-;恶作剧OFF
+;イタズラOFF
 CALL SET_PRANK(0,ARG,2)
-;诶嘿嘿リセット
+;うふふリセット
 CALL ENDUFUFU_ALL
 ;夜這い侵入成功フラグクリア
 CLEARBIT CFLAG:ARG:夜這い, 8
@@ -190,67 +162,67 @@ CLEARBIT CFLAG:ARG:夜這い, 8
 CALL GETOUT(MASTER)
 
 
-@風呂から逐出(ARG)
+@風呂から追い出し(ARG)
 SETCOLOR 150,150,250
-PRINTL 【浴场的闯入者】
+PRINTL 【浴場の闖入者】
 RESETCOLOR
 IF TALENT:ARG:羞恥心 < 0
 	IF ABL:ARG:親密 < 5
-		PRINTFORML 『我现在在里面、请你给我出去』、%CALLNAME:ARG%泰然自若地如此说道。
+		PRINTFORML %CALLNAME:ARG%は平然として、今入ってるから出て行ってよと言った
 		CFLAG:ARG:好感度 -= (20 - ABL:ARG:親密 * 2)
-		CFLAG:ARG:信賴度 -= (20 - ABL:ARG:親密 * 2)
+		CFLAG:ARG:信頼度 -= (20 - ABL:ARG:親密 * 2)
 		SOURCE:ARG:反感 += 300
 		CFLAG:MASTER:現在位置 = KICKOUT()
 	;ELSE
-	;	PRINTFORML %CALLNAME:ARG%坦然的问要不要一起洗
+	;	PRINTFORML %CALLNAME:ARG%は平然として、一緒に入りたいのかと聞いてきた
 	ENDIF
 ELSE
-	PRINTFORML %CALLNAME:ARG%察觉了自己所面对的状况、发出尖叫声飞奔出了浴场
+	PRINTFORML %CALLNAME:ARG%は自分の置かれている状況に気付くと、悲鳴を上げて浴場から飛び出した
 	CFLAG:ARG:好感度 -= (50 - ABL:ARG:親密 * 2)
-	CFLAG:ARG:信賴度 -= (50 - ABL:ARG:親密 * 2)
+	CFLAG:ARG:信頼度 -= (50 - ABL:ARG:親密 * 2)
 	SOURCE:ARG:反感 += 1000
-	BASE:ARG:憤怒 += (1500 - ABL:ARG:親密 * 100)
+	BASE:ARG:怒り += (1500 - ABL:ARG:親密 * 100)
 	CFLAG:ARG:現在位置 = KICKOUT()
-	;角色を動かしたのでTARGET再設定
+	;キャラを動かしたのでTARGET再設定
 ENDIF
 CFLAG:ARG:好感度 = MAX(CFLAG:ARG:好感度,0)
-CFLAG:ARG:信賴度 = MAX(CFLAG:ARG:信賴度,0)
-CALL TARGETSET_CHECK
+CFLAG:ARG:信頼度 = MAX(CFLAG:ARG:信頼度,0)
+CALL TARGETSET_CHACK
 CFLAG:ARG:同室 = 0
 RETURN 1
 
 
-@待客室処理(ARG)
-SIF FLAG:時間停止 || !CFLAG:ARG:招待
+@お招き部屋処理(ARG)
+SIF FLAG:時間停止 || !CFLAG:ARG:お招き
 	RETURN
 
-;待客室から出たら日常に返回
-;泊まる前か後かは连住禁止フラグを参照してます
+;お招き部屋から出たら日常に戻る
+;泊まる前か後かは連泊禁止フラグを参照してます
 IF CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-	CALL 待客室から出る(ARG)
+	CALL お招き部屋から出る(ARG)
 
 ;翌日仕事に行く場合
-ELSEIF 仕事中チェック(ARG) && TCVAR:ARG:连住禁止 && CFLAG:ARG:诶嘿嘿 != 1
+ELSEIF 仕事中チェック(ARG) && TCVAR:ARG:連泊禁止 && CFLAG:ARG:うふふ != 1
 	CFLAG:MASTER:現在位置 = CFLAG:ARG:自宅位置
-	IF CFLAG:ARG:诶嘿嘿
-		PRINTFORMW %CALLNAME:ARG%好像要开始工作了…
+	IF CFLAG:ARG:うふふ
+		PRINTFORMW %CALLNAME:ARG%はこれから仕事があるようだ…
 		CALL ENDUFUFU(LOCAL)
-		PRINTFORMW %CALLNAME:ARG%虽然依依不舍但还是离开了
+		PRINTFORMW %CALLNAME:ARG%は名残惜しそうにしながらも外へ出た
 	ELSE
-		PRINTFORMW %CALLNAME:ARG%因为工作而离开了
+		PRINTFORMW %CALLNAME:ARG%は仕事があるようなので外に出た
 	ENDIF
-	CALL 待客室から出る(ARG)
+	CALL お招き部屋から出る(ARG)
 
-;约会中
-ELSEIF CHK_DATENOW(CFLAG:ARG:约会中)
+;デート中
+ELSEIF CHK_DATENOW(CFLAG:ARG:デート中)
 	IF CFLAG:ARG:神社在住
-		;住宿人物は睡眠時間になったら约会終了
+		;住み込みキャラは睡眠時間になったらデート終了
 		IF 睡眠時間(ARG)
-			CFLAG:ARG:约会中 = MAIN_MAP
-			FLAG:约会的对象 = 0
+			CFLAG:ARG:デート中 = MAIN_MAP
+			FLAG:デート相手 = 0
 		ENDIF
 	ELSE
-		;约会中に返回時間が来たらメッセージ＆约会だけ消す
+		;デート中に帰る時間が来たらメッセージ＆デートだけ消す
 		IF !VISIT(ARG)
 			CALL KITAKU(ARG)
 		ENDIF
@@ -258,45 +230,45 @@ ELSEIF CHK_DATENOW(CFLAG:ARG:约会中)
 ENDIF
 
 
-@待客室から出る(ARG)
-;遭遇フラグを自宅位置に設定（連動してると他の角色が駆けつけてくるのは仕様）
+@お招き部屋から出る(ARG)
+;遭遇フラグを自宅位置に設定（連動してると他のキャラが駆けつけてくるのは仕様）
 CFLAG:ARG:遭遇位置 = CFLAG:ARG:自宅位置
-;初期位置を元に戻す（参道的另一边や0もいるが99でもおｋ）
+;初期位置を元に戻す（参道の向こうや0もいるが99でもおｋ）
 IF CFLAG:ARG:神社在住
 	CFLAG:ARG:初期位置 = CFLAG:ARG:神社在住
 ELSE
 	CFLAG:ARG:初期位置 = SUKIMA()
 ENDIF
-;活動時間ならそのまま约会。住宿人物は起きていれば约会
-;の予定だったが蔷薇ンスブレイカーな気がする＆朝帰りは一人の方が雰囲気でるので住宿人物だけ
-;活動前も配置するようになったので起床時間なら外出ように
+;活動時間ならそのままデート。住み込みキャラは起きていればデート
+;の予定だったがバランスブレイカーな気がする＆朝帰りは一人の方が雰囲気でるので住み込みキャラだけ
+;活動前も配置するようになったので起床時間なら外に出るように
 IF CFLAG:ARG:神社在住
 	CFLAG:ARG:現在位置 = 97 + MAIN_MAP * 100
-	CFLAG:ARG:约会中 = MAIN_MAP
-	FLAG:约会的对象 = 0
-	TFLAG:约会前好感度 = 0
+	CFLAG:ARG:デート中 = MAIN_MAP
+	FLAG:デート相手 = 0
+	TFLAG:デート前好感度 = 0
 ELSE
 	IF !睡眠時間(ARG) && !CFLAG:ARG:睡眠
 		;自宅位置に移動
 		CFLAG:ARG:現在位置 = CFLAG:ARG:遭遇位置
-		;泊まる前or住宿人物なら约会継続,ワープ移動してたらダメ
-		IF !TCVAR:ARG:连住禁止 && CHK_DATENOW(CFLAG:ARG:约会中) && !AT_HOME(MASTER)
-			CFLAG:ARG:约会中 = (CFLAG:ARG:自宅位置) / 100
+		;泊まる前or住み込みキャラならデート継続,ワープ移動してたらダメ
+		IF !TCVAR:ARG:連泊禁止 && CHK_DATENOW(CFLAG:ARG:デート中) && !AT_HOME(MASTER)
+			CFLAG:ARG:デート中 = (CFLAG:ARG:自宅位置) / 100
 			CFLAG:ARG:同行 = 60
 		ENDIF
 	;寝ている場合は見えないところに移動
-	;住宿人物は識別するために現在位置97を使ってるので要注意（MOVEMENT2のSLEEPへ続く）
+	;住み込みキャラは識別するために現在位置97を使ってるので要注意（MOVEMENT2のSLEEPへ続く）
 	ELSE
 		CFLAG:ARG:現在位置 = SUKIMA()
-		CFLAG:ARG:约会中 = MAIN_MAP
-		FLAG:约会的对象 = 0
-		TFLAG:约会前好感度 = 0
+		CFLAG:ARG:デート中 = MAIN_MAP
+		FLAG:デート相手 = 0
+		TFLAG:デート前好感度 = 0
 	ENDIF
 ENDIF
 
-;招待フラグを消して日常に戻す
-CFLAG:ARG:招待 = 0
-CFLAG:MASTER:招待 = 0
+;お招きフラグを消して日常に戻す
+CFLAG:ARG:お招き = 0
+CFLAG:MASTER:お招き = 0
 LOCK:(OMANEKIBEYA()) = 0
 
 
@@ -304,7 +276,7 @@ LOCK:(OMANEKIBEYA()) = 0
 #DIM YANUSHI
 #DIM REQUIRED_DESIRE
 YANUSHI = PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100)
-SIF CFLAG:ARG:积攒度 < 800
+SIF CFLAG:ARG:溜まってる度 < 800
 	RETURN
 SIF CFLAG:ARG:現在位置 != CFLAG:MASTER:現在位置
 	RETURN
@@ -315,38 +287,38 @@ SIF CFLAG:ARG:神社在住
 SIF !AT_HOME(MASTER)
 	RETURN
 REQUIRED_DESIRE = 10
-SIF TALENT:ARG:恋慕 || TALENT:ARG:炮友
+SIF TALENT:ARG:恋慕 || TALENT:ARG:セフレ
 	REQUIRED_DESIRE -= 5
 SIF TALENT:ARG:思慕
 	REQUIRED_DESIRE -= 2
-IF !(CFLAG:ARG:既成事實 & 合意_诶嘿嘿)
-	REQUIRED_DESIRE += TALENT:ARG:難以越過的底線 * 2
+IF !(CFLAG:ARG:既成事実 & 合意_うふふ)
+	REQUIRED_DESIRE += TALENT:ARG:一線越えない * 2
 	REQUIRED_DESIRE += TALENT:ARG:貞操 * 2
 ENDIF
-SIF TALENT:ARG:風騷
+SIF TALENT:ARG:ヤリマン
 	REQUIRED_DESIRE = 0
 SIF ABL:ARG:欲望 < REQUIRED_DESIRE
 	RETURN
 
-PRINTFORML %CALLNAME:ARG%说今天晚上不想回去…
+PRINTFORML %CALLNAME:ARG%は今夜は帰りたくないと言い出した…
 ;帰宅口上,7,今夜は帰りたくない
 CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 7)
-CALL ASK_YN("同意留宿","不同意留宿")
+CALL ASK_YN("泊める","泊めない")
 IF !RESULT
 	IF YANUSHI
-		PRINTFORMW 虽然非常想让对方留下了、但是有点害怕%CALLNAME:YANUSHI%…
+		PRINTFORMW 泊めてあげたいのは山々だが、%CALLNAME:YANUSHI%が怖い…
 		GOTO REFUSAL
 	ENDIF
 	FLAG:一時滞在 = ARG
 	CFLAG:ARG:本来の初期位置 = CFLAG:ARG:初期位置
 	CFLAG:ARG:初期位置 = CFLAG:MASTER:初期位置
 	CFLAG:ARG:神社在住 = CFLAG:ARG:初期位置
-	PRINTFORMW %CALLNAME:ARG%在%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%留宿了
+	PRINTFORMW %CALLNAME:ARG%は%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%に泊まっていくことになりました
 	;帰宅口上,8,泊まっていくことになる
 	CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 8)
 ELSE
 	$REFUSAL
-	PRINTFORMW %CALLNAME:MASTER%郑重地拒绝了
+	PRINTFORMW %CALLNAME:MASTER%は丁重に断った
 	;帰宅口上,9,断った
 	CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 9)
 ENDIF

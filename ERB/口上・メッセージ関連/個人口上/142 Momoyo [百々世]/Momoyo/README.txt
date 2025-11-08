@@ -1,6 +1,6 @@
 ﻿Momoyo Himemushi dialogue by Vinumsabbathi
-v0.1.5
-Latest revision: August 21, 2024
+v0.1.6
+Latest revision: Feburary 27, 2025
 
 =============
 About Momoyo
@@ -71,4 +71,5 @@ SPECIAL THANKS
 - TheGigaBrain, Haze, and Lorem ipsum for feedback and bug testing
 - CRER, for mentioning some custom code that affects foraging in the Rainbow Dragon Cave (which I changed)
 - Sophodot, for giving me the idea for the extra strength energy drink think
+- jxyzer, for finding an infinite favor bug
 If I forgot to mention you, please let me know so I can give you credit

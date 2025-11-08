@@ -11,115 +11,115 @@ ENDIF
 #DIMS PREY
 SPENT = 1
 PREY = %\@ RAND:2 ? 狸 # 狐 \@%
-PAIR = FLAG:约会的对象
+PAIR = FLAG:デート相手
 LUCK = CFLAG:MASTER:今日の運勢 / 100 + TFLAG:幸運補正
 
-PRINTFORML 道中、看到陷入了猎师的陷阱的%PREY%
-IF (GROUPMATCH(PAIR, [[藍]], [[典]]) && PREY == "狐") || (PAIR == [[猯藏]] && PREY == "狸")
-	PRINTFORMW %CALLNAME:PAIR%好像想说些什么似地盯着这边
-	PRINTFORML %CALLNAME:MASTER%解开了陷阱之后、%PREY%向%CALLNAME:PAIR%道谢后逃走了…
+PRINTFORML 道中、猟師の罠にかかった%PREY%を見かけた
+IF (GROUPMATCH(PAIR, [[藍]], [[典]]) && PREY == "狐") || (PAIR == [[マミゾウ]] && PREY == "狸")
+	PRINTFORMW %CALLNAME:PAIR%が何か言いたげにこちらを見つめている
+	PRINTFORML %CALLNAME:MASTER%が罠を外してやると%PREY%は%CALLNAME:PAIR%にお礼を言って逃げていった…
 	PRINTFORMW 
 	RETURN 1
-ELSEIF (GROUPMATCH(PAIR, [[藍]], [[典]]) && PREY == "狸") || (PAIR == [[猯藏]] && PREY == "狐")
-	PRINTFORMW %CALLNAME:PAIR%只是看了陷阱一眼便什么都不做地离开了
-	PRINTFORML %CALLNAME:MASTER%也慌忙地跟了上去…
+ELSEIF (GROUPMATCH(PAIR, [[藍]], [[典]]) && PREY == "狸") || (PAIR == [[マミゾウ]] && PREY == "狐")
+	PRINTFORMW %CALLNAME:PAIR%は罠に一瞥をくれただけでそのまま歩いていく
+	PRINTFORML %CALLNAME:MASTER%も慌てて後を追いかけた…
 	PRINTFORMW 
 	RETURN 1
 ENDIF
-PRINTFORML 这样下去的话肯定会被捕到的…
-CALL ASK_M("不要妨碍诱捕", 1, "救助", 1)
+PRINTFORML このままでは間違いなく捕まるが…
+CALL ASK_M("猟の邪魔はしない", 1, "助けてやる", 1)
 IF !RESULT
-	PRINTFORML 虽然很可怜但也无能为力
+	PRINTFORML かわいそうだがどうすることもできない
 	SIF PAIR
-		PRINTFORM 虽然%CALLNAME:PAIR%有些不情愿、但
-	PRINTFORMDL \@ PAIR ? 二人还是 # %CALLNAME:MASTER% \@什么都不做地踏上了归路
+		PRINTFORM %CALLNAME:PAIR%も後ろ髪を引かれるようだが、
+	PRINTFORMDL そのままにして\@ PAIR ? 二人 # %CALLNAME:MASTER% \@は帰路についた
 	PRINTFORMW
 	RETURN 1
 ENDIF
-PRINTFORML 因为很难可怜所以准备帮助它
-PRINTFORMW 虽然受伤了但简单处理一下应该就可以行走了
+PRINTFORML かわいそうなので助けてやることにした
+PRINTFORMW ケガをしているが簡単な手当てですぐに歩けそうだ
 PRINTDW …………
 PRINTDW ……
 PRINTDW …
 IF LUCK > 4
-	PRINTFORMW 治疗结束后的%PREY%消失在了灌木的阴影中
-	PRINTFORML …然后好像叼着什么回到了%CALLNAME:MASTER%的身边
-	PRINTFORML 一定是作为救助的谢礼
-	;最高級素材を随机
+	PRINTFORMW 手当てが終わると%PREY%は茂みの陰に消えてしまった
+	PRINTFORML …と思ったら何かを咥えて%CALLNAME:MASTER%の元へ戻ってきた
+	PRINTFORML 助けてあげたお礼に違いない
+	;最高級素材をランダム
 	LOCAL:0 = 625, 630, 639, 640, 643, 646
 	CALL GET_ITEM(ITEMNAME:(LOCAL:(RAND:6)), 1, 2)
 	PRINTFORML 
 	IF !(GO_OUT_FLAG_06 || PAIR || GETBIT(TFLAG:一日一回, 9)) && LUCK > 7
 		GO_OUT_FLAG_06 = DAY
 		SETBIT TFLAG:一日一回, 9
-		CALL MAKE_YUKIZURI(RANDOM_CHARANUM, @"妖怪%PREY%")
-		CFLAG:RANDOM_CHARANUM:經常去的地方 = (MAIN_MAP == 5) ? 7 # 5
+		CALL MAKE_YUKIZURI(RANDOM_CHARANUM, @"化け%PREY%")
+		CFLAG:RANDOM_CHARANUM:よく行く地域 = (MAIN_MAP == 5) ? 7 # 5
 		CFLAG:RANDOM_CHARANUM:好感度 = REQUIRED_FAVOR_思慕
-		CFLAG:RANDOM_CHARANUM:信賴度 = REQUIRED_TRUST_思慕
+		CFLAG:RANDOM_CHARANUM:信頼度 = REQUIRED_TRUST_思慕
 		ABL:RANDOM_CHARANUM:親密 = REQUIRED_AFFECTION_思慕
 		ABL:RANDOM_CHARANUM:従順 = REQUIRED_AFFECTION_思慕
-		CSTR:RANDOM_CHARANUM:路人子プロフィール１ = %CALLNAME:RANDOM_CHARANUM%：%PRINT_DATE_F(DAY)%、在从%GET_MAPNAME(CFLAG:MASTER:约会中)%回家的路上救助的妖怪%PREY%
+		CSTR:RANDOM_CHARANUM:モブ子プロフィール１ = %CALLNAME:RANDOM_CHARANUM%：%PRINT_DATE_F(DAY)%に%GET_MAPNAME(CFLAG:MASTER:デート中)%の帰り道で助けた化け%PREY%
 		BASE:RANDOM_CHARANUM:体力 -= 50
-		PRINTFORML …哦呀！？　%PREY%的样子…！
-		PRINTFORMW %PREY%就在面前变成了兽耳少女！
+		PRINTFORML …おや！？　%PREY%の様子が…！
+		PRINTFORMW なんと目の前で%PREY%がケモミミ少女に変化した！
 		CALL CHARA_STATE(RANDOM_CHARANUM)
 		DRAWLINE
-		CALL COLORMESSAGE(@"处女丧失履历：%CSTR:RANDOM_CHARANUM:処女喪失履歴%",C_PINK,1)
+		CALL COLORMESSAGE(@"処女喪失履歴：%CSTR:RANDOM_CHARANUM:処女喪失履歴%",C_PINK,1)
 		PRINTFORMW 
-		PRINTFORML 自称%CALLNAME:RANDOM_CHARANUM%的%PREY%娘向%CALLNAME:MASTER%表述了多次的感谢
+		PRINTFORML %PREY%娘は%CALLNAME:RANDOM_CHARANUM%と名乗り%CALLNAME:MASTER%に何度も感謝を述べている
 		SIF !INRANGE(TIME, 540, 1140)
 			GOTO SKIP
-		PRINTFORML 说是为了道谢希望跟随着回家…
-		CALL ASK_M("今天还是自己回去吧", 1, "请跟我来", 1)
+		PRINTFORML お礼に家までついていくと言っているが…
+		CALL ASK_M("今日はそのまま帰す", 1, "ついてきてもらう", 1)
 		IF RESULT
-			FLAG:约会的对象 = RANDOM_CHARANUM
+			FLAG:デート相手 = RANDOM_CHARANUM
 			CFLAG:RANDOM_CHARANUM:現在位置 = CFLAG:MASTER:現在位置
 			CFLAG:RANDOM_CHARANUM:同行 = 300
 			CFLAG:MASTER:同行 = 300
-			CFLAG:RANDOM_CHARANUM:清醒劑 = 300
+			CFLAG:RANDOM_CHARANUM:眠気覚まし = 300
 			CFLAG:RANDOM_CHARANUM:拠点来訪 = 1
-			PRINTFORML %CALLNAME:MASTER%决定带%CALLNAME:RANDOM_CHARANUM%回去
-			PRINTFORML %CALLNAME:RANDOM_CHARANUM%送来了热情的视线…
+			PRINTFORML %CALLNAME:MASTER%は%CALLNAME:RANDOM_CHARANUM%を連れて帰ることにした
+			PRINTFORML %CALLNAME:RANDOM_CHARANUM%は熱っぽい視線をこちらに送っている…
 			GOTO END_PHASE
 		ENDIF
-		PRINTFORML 因为受了伤所以就这样回去较好
+		PRINTFORML ケガもしているのでそのまま帰すことにした
 		$SKIP
-		PRINTFORMW %CALLNAME:RANDOM_CHARANUM%说下次希望能来\@ CFLAG:RANDOM_CHARANUM:經常去的地方 == 5 ? 魔法之森 # 山的山麓 \@游玩之后便离去了…
-		CALL COLORMESSAGE(@"与%CALLNAME:RANDOM_CHARANUM%结识了",C_YELLOW,2,1)
+		PRINTFORMW %CALLNAME:RANDOM_CHARANUM%は今度\@ CFLAG:RANDOM_CHARANUM:よく行く地域 == 5 ? 魔法の森 # 山の山麓 \@まで遊びに来てほしいと言って去っていった…
+		CALL COLORMESSAGE(@"%CALLNAME:RANDOM_CHARANUM%と知り合いになった",C_YELLOW,2,1)
 		CFLAG:RANDOM_CHARANUM:現在位置 = SUKIMA()
 		GOTO END_PHASE
 	ENDIF
-	PRINTFORML 在被救助的%PREY%的目送下\@ PAIR ? 二人 # %CALLNAME:MASTER% \@踏上了归路
+	PRINTFORML 助けた%PREY%に見送られながら\@ PAIR ? 二人 # %CALLNAME:MASTER% \@は帰路についた
 ELSE
 	IF PAIR
-		PRINTFORML 在处理伤口的时候%PREY%发狂地挠抓着%CALLNAME:MASTER%
+		PRINTFORML 手当てをしている間も%PREY%は暴れて%CALLNAME:MASTER%を引っかきまくった
 		CALL RECOVER(MASTER, -200, "体力")
 		WAIT
-		PRINTFORML 而且在处理结束之后%PREY%便直接冲刺逃走了…真是不知感恩！
+		PRINTFORML おまけに手当てが終わると%PREY%はダッシュで逃げていった…何という恩知らず！
 		PRINTFORM %CALLNAME:PAIR%
 		SELECTCASE CFLAG:PAIR:性格傾向
 			CASE 1
-				PRINTFORMW 担心地看着%CALLNAME:MASTER%…
+				PRINTFORMW が心配そうに%CALLNAME:MASTER%を見ている…
 			CASE 2, 3
-				PRINTFORMW 看着%CALLNAME:MASTER%\@ CFLAG:PAIR:性格傾向 == 2 ? 哈哈大笑 # 哧哧地笑 \@了起来…
+				PRINTFORMW は%CALLNAME:MASTER%を見て\@ CFLAG:PAIR:性格傾向 == 2 ? 大笑いして # くすくすと笑って \@いる…
 			CASE 4
-				PRINTFORMW 露出了难以言喻的微妙表情…
+				PRINTFORMW がなんともいえない微妙な表情をしている…
 			CASE 5
-				PRINTFORMW 用怜悯的眼神看向了%CALLNAME:MASTER%…
+				PRINTFORMW は憐れみの目を%CALLNAME:MASTER%に向けている…
 		ENDSELECT
-		PRINTFORML 一无所获的二人踏上了归路
+		PRINTFORML 特に何も得ることもなく二人は帰路についた
 	ELSE
-		PRINTFORMW 在处理结束之后%PREY%便直接冲刺逃走了…真是不知感恩！
-		PRINTFORML 只好就这样回去了、但身后好像有人
-		PRINTFORMW 回头看去…是一个因为猎物逃跑而愤怒的猎师…！
+		PRINTFORMW 手当てを終えると%PREY%はダッシュで逃げていった…何という恩知らず！
+		PRINTFORML しかたないので帰ろうとするが後ろに誰かいるようだ
+		PRINTFORMW 振り返るとそこには…獲物を逃されてお怒りの猟師がいた…！
 		PRINTFORML 
-		PRINTFORML %CALLNAME:MASTER%的头被打了！
+		PRINTFORML %CALLNAME:MASTER%は頭をはたかれた！
 		CALL RECOVER(MASTER, -100, "体力")
 		WAIT
-		PRINTFORML 被猎师说教了…
+		PRINTFORML 猟師に説教された…
 		CALL RECOVER(MASTER, -300, "気力")
 		WAIT
-		PRINTFORML 倒霉的%CALLNAME:MASTER%跌跌撞撞地踏上了归路
+		PRINTFORML ヒドい目にあった%CALLNAME:MASTER%はトボトボと帰路についた
 		SPENT = 4
 	ENDIF
 ENDIF

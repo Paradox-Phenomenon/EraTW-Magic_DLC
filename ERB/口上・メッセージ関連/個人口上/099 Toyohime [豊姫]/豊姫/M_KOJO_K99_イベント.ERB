@@ -22,7 +22,7 @@
 ;本口上にて使用しているCFLAG・TCVAR等
 ;
 ;TCVAR:99:350 フェムトファイバーの説明で使用
-;TCVAR:99:399 押し倒した時・押し倒し返した時に口上を切り替える为に使用
+;TCVAR:99:399 押し倒した時・押し倒し返した時に口上を切り替える為に使用
 ;CFLAG:99:1000 反感減少スイッチ 初対面の選択肢で『はい』を選ぶとONに
 ;CFLAG:99:1997 遠隔調教イベントに使用
 ;CFLAG:99:1998 口上側の地の文オンオフ制御で使用
@@ -33,8 +33,7 @@
 ;### 口上存在判定 ###################################
 @M_KOJO_K99(ARG)
 ;別人版を作成する際はこのテンプレではなく別人版用口上テンプレをご利用ください
-RESULTS:2 = 初始剧本<br>含有特殊选项（详情查阅Update）<br>内容量适中（有效输出行：5855行）<br>内含争议内容
-;本简介由画蛇添足制作组补充，若原作者想自行补充请联系我们
+
 ;口上存在判定です、けしてコメントアウトしないでください
 ;他の処理は一切行わないように
 RETURN 1
@@ -60,12 +59,12 @@ RETURN 1
 ;CFLAG:X:口上内抱き寄せ判定_通常 = 0
 
 ;押し倒し禁止に1を入れると、自分から押し倒してこなくなります
-;恋慕・炮友・ヤリマンのどれかがあれば押し倒してくる
-IF TALENT:99:恋慕 || TALENT:99:炮友 || TALENT:99:風騷
-	CFLAG:99:推倒禁止 = 0
+;恋慕・セフレ・ヤリマンのどれかがあれば押し倒してくる
+IF TALENT:99:恋慕 || TALENT:99:セフレ || TALENT:99:ヤリマン
+	CFLAG:99:押し倒し禁止 = 0
 ;素質が無い場合は押し倒してこない
 ELSE
-	CFLAG:99:推倒禁止 = 1
+	CFLAG:99:押し倒し禁止 = 1
 ENDIF
 
 ;来訪不能に1を入れると、来訪してこなくなります
@@ -75,9 +74,9 @@ ELSE
 	CFLAG:99:来訪不能 = 0
 ENDIF
 
-;押し倒した時・押し倒し返した時で口上を切り替える为の処理
+;押し倒した時・押し倒し返した時で口上を切り替える為の処理
 ;口上存在判定でやるのはマズい気がするけどこれしか思いつかない…
-IF !CFLAG:诶嘿嘿
+IF !CFLAG:うふふ
 	TCVAR:99:399 = 0
 ENDIF
 
@@ -87,63 +86,47 @@ SIF !TALENT:99:容姿
 
 ;### 口上色判定 ###################################
 @M_KOJO_COLOR_K99
-#LOCALSIZE 1
-#LOCALSSIZE 1
+
 ;ここでSETCOLORすることで口上に色を付けられます
 SETCOLOR 0xD6C6AF
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"UPDATE判定"
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
-;@M_KOJO_UPDATE_K99
+@M_KOJO_UPDATE_K99
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ場合等にどうぞ
 ;UPDATE判定でCFLAG等のキャラ変数を使う場合、キャラ番号の指定が必要になります
+
+RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;Custom dialogue settings, custom code
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;made it as a way to speed up the update process and separate simple flag updates from various customization options
-@KOJO_OPTION_EXIST_K99
-#LOCALSIZE 1
-#LOCALSSIZE 1
 ;note: options start from 1!
 @KOJO_OPTION_K99
-#LOCALSIZE 1
-#LOCALSSIZE 1
-LOCAL = TARGET
-TARGET = 99
-CALL SET_KOJO_COLOR
-
-CALL KOJO_OPTION_ITEM(@"剧本推荐的开局设定", 1, "onetime", !FIRSTTIME("开局设定",1,99), "status:未采纳:采纳", CFLAG:99:1999)
-CALL KOJO_OPTION_ITEM("诶嘿嘿的额外文本", 2, "status:显示:隐藏", CFLAG:99:1998)
-
-TARGET = LOCAL
-RESETCOLOR
+CALL KOJO_OPTION_ITEM("口上推奨素質・経験", 1, "onetime", CFLAG:99:1999)
+CALL KOJO_OPTION_ITEM("豊姫口上の地の文", 2, "status:表示:非表示", CFLAG:99:1998)
 
 ;process the input portion
 @KOJO_OPTION_K99_RESULT_1
-#LOCALSIZE 1
-#LOCALSSIZE 1
 CALL TOYOHIME_SETTINGS
-CALLF FIRSTTIME("开局设定",0,99)
+CFLAG:99:1999 = 1
 
 @KOJO_OPTION_K99_RESULT_2
-#LOCALSIZE 1
-#LOCALSSIZE 1
+PRINTFORMDL セックスの際に表示される豊姫口上の地の文の表示・非表示を変更できます
+PRINTFORMDL 口上では表示を推奨しますが、必要ないと思う方は【表示しない】を選択してください
 PRINTL 
-PRINTFORMDL 可以切换性爱时剧本侧追加的情景描述的显示与否
-PRINTFORMDL 剧本推荐【显示】、但认为剧本侧只要提供台词就好的人请选择【不显示】
-PRINTL 
-CALL ASK_YN("显示","不显示")
+CALL ASK_YN("表示する","表示しない")
 SELECTCASE RESULT
 	CASE 0
 		CFLAG:99:1998 = 0
+		PRINTFORMDW 表示するように変更しました
 	CASE 1
 		CFLAG:99:1998 = 1
+		PRINTFORMDW 表示しないように変更しました
 ENDSELECT
-
-RETURN 1
 
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"ENCOUNTER"系イベント（エクストラ構文）
@@ -157,89 +140,89 @@ RETURN 1
 IF (CFLAG:MASTER:現在位置 / 100) == 10
 	;月に住んでるor依姫と面識あり
 	IF MAIN_MAP == 10 || CFLAG:[[依姫]]:面識
-		PRINTFORMW 「啊、是%CALLNAME:MASTER%、住的还习惯吗？」
-		PRINTFORMDL %CALLNAME:MASTER%连忙向一见面就爽快地打招呼的女性鞠了一躬
-		PRINTFORMDL 她的名字是绵月丰姬
-		PRINTFORMDW 是藏匿了因为被追捕、而迷失在月球上的%CALLNAME:MASTER%的救命恩人
-		PRINTFORMW 「用不着那么严肃、不然的话、我们交流起来会很麻烦吧？」
-		PRINTFORMDL 对于%CALLNAME:MASTER%来说、幸运的是、这个叫绵月丰姬的女性对地面上的人有深刻的理解
-		PRINTFORMDW 『如果我不把你藏起来的话、你一定会被他们处死的』她这样说
-		PRINTFORMW 「说起来、你也是个怪人、竟然不想回到地球上」
-		PRINTFORMW 「像你这样的地上之民、是第二个了」
-		PRINTFORMDW 因为我想报答你对我的帮助。听到这样的话的%CALLNAME:TARGET%愉快地笑了
-		PRINTFORMW 「呵呵……有趣、把你藏起来果然是对的」
-		PRINTFORMW 「我有种感觉、如果是你的话、和我的妹妹、还有兔子们、也能马上融洽相处」
-		PRINTFORMDL 为什么对一个刚见面的人这么亲切呢？
-		PRINTFORMDW %CALLNAME:MASTER%对%CALLNAME:TARGET%、有了一些特别的感情
+		PRINTFORMW 「ああ、%CALLNAME:MASTER%。ここでの生活はもう慣れた？」
+		PRINTFORMDL そう気さくに挨拶してきた女性に%CALLNAME:MASTER%はお辞儀をする
+		PRINTFORMDL 彼女の名前は綿月豊姫[ワタツキノトヨヒメ]
+		PRINTFORMDW 月に迷い込み、追われていた%CALLNAME:MASTER%を匿ってくれた命の恩人だ
+		PRINTFORMW 「そう畏まらなくても良いのよ。その方が、お互い喋りやすいでしょう？」
+		PRINTFORMDL %CALLNAME:MASTER%にとっての幸運は、この綿月豊姫という女性が地上の人間に理解があるということだ
+		PRINTFORMDW 曰く『私に匿われていなかったら貴方は確実に処刑されていた』らしい
+		PRINTFORMW 「それより、貴方も変わった人ね。地上に帰りたくないだなんて」
+		PRINTFORMW 「貴方のような地上の民はこれで二人目よ」
+		PRINTFORMDW 助けてもらった恩を返したいから。そう言うと%CALLNAME:TARGET%はクスクスと笑った
+		PRINTFORMW 「ふふふっ、面白い人。やっぱり貴方を匿って正解だった」
+		PRINTFORMW 「貴方なら妹や兎達ともすぐに打ち解けられそう。そんな気がするの」
+		PRINTFORMDL 会ったばかりの人間に対してどうしてここまで親切にしてくれるのだろう
+		PRINTFORMDW %CALLNAME:MASTER%は%CALLNAME:TARGET%に対して、少し特別な感情を抱き始めていた……
 	;それ以外
 	ELSE
 		;ほぼ儚月抄の初登場シーンまんまな気がする……
 		PRINTFORML 
-		PRINTFORMW 「桃李不言、下自成蹊」
-		PRINTFORMW 「因为桃李能结出美味的果实、所以即使它们无法言语、人们自然也会去接近它们」
-		PRINTFORMW 「还有一点……通向甜美桃子的路就要完成咯……」
+		PRINTFORMW 「――桃李物言わざれども、下自ら蹊を成す」
+		PRINTFORMW 「桃や李はおいしい実を付けるので、何も言わなくても人が集まってくる」
+		PRINTFORMW 「あと少し……あと少しでおいしい桃への道ができるわ……」
 		PRINTFORMW 
-		PRINTFORMDW 『地上人、来绵月亭有何贵干？』
-		PRINTFORMDL 在豪华的宅邸门前、%CALLNAME:MASTER%陷入了困境
-		PRINTFORMDW 发现了一棵桃树、长的桃子看起来很好吃、但是被挡在门外无法进去
-		PRINTFORMDW 『现在立刻离开、这里禁止地上人进入』
-		PRINTFORMDL 理所当然的、吃了这样的闭门羹
-		PRINTFORMDL 有没有可以侵入的地方？
-		PRINTFORMDW %CALLNAME:MASTER%环顾四周、不经意间看到了上面……
+		PRINTFORMDW 『地上の人間風情が綿月様になんの用だ』
+		PRINTFORMDL 豪華なお屋敷の門前で%CALLNAME:MASTER%は困っていた
+		PRINTFORMDW 美味しそうな桃の生っている木を見つけたので中に入れてもらおうとしたのだが……
+		PRINTFORMDW 『今すぐ立ち去れ。ここはお前のような地上の人間が居ていい場所ではない』
+		PRINTFORMDL 当然ながら、こうして門前払いを食らっていた
+		PRINTFORMDL どこか侵入できそうな場所はないか
+		PRINTFORMDW %CALLNAME:MASTER%は辺りを見回しながら、ふと空を見上げてみると……
 		SETCOLOR C_RED
 		FONTBOLD
 		PRINTFORML 
 		PRINTFORML 
-		PRINTFORML 呃啊！————
+		PRINTFORML むぎゅっ
 		PRINTFORML 
 		PRINTFORMW 
 		FONTREGULAR
 		RESETCOLOR
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMDW 『咦咦？%CALLNAME:TARGET%大人！？』
-		PRINTFORMW 「捡桃子、顺便运动一下、听到正门这边好吵、就过来看看」
-		PRINTFORMW 「那么、到底在吵些什么」
-		PRINTFORMDW 『不、是那个……躺在%CALLNAME:TARGET%大人脚边的地上的人、无论如何也要进去……』
-		PRINTFORMW 「地上人……？」
-		PRINTFORMDL %CALLNAME:TARGET%说着把视线转向下方
-		PRINTFORMDW 那里是被踩到的、%CALLNAME:MASTER%的身影……
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMDW 『あ、あれ？ %CALLNAME:TARGET%様！？』
+		PRINTFORMW 「桃を拾いながら運動をしていたら、何やら表門が騒がしかったので見に来たの」
+		PRINTFORMW 「で、なにを揉めていたのかしら」
+		PRINTFORMDW 『いや、その……%CALLNAME:TARGET%様の足元で寝ている地上の人間がどうしても中に入れろと……』
+		PRINTFORMW 「地上の人間……？」
+		PRINTFORMDL そう言われ%CALLNAME:TARGET%が視線を下に向ける
+		PRINTFORMDW そこには踏み付けられ伸びている%CALLNAME:MASTER%の姿があった……
 		PRINTFORMDL 
 		PRINTFORMDL ……………
 		PRINTFORMDL ………
 		PRINTFORMDL …
 		PRINTFORMDW 
-		PRINTFORMW 「对不起、真没想到会有人……」
-		PRINTFORMDL %CALLNAME:MASTER%被邀请到宅邸中与%CALLNAME:TARGET%喝茶
-		PRINTFORMDL 幸运的是、并没有肉眼可见的伤处、腰却有点疼、一定是错觉吧
-		PRINTFORMDW %CALLNAME:MASTER%笑着对%CALLNAME:TARGET%说、自己可取的长处就是身体结实
-		PRINTFORMW 「所以、你说你是从地上来的……」
-		PRINTFORMW 「你是怎么来到这里的？」
-		PRINTFORMDW %CALLNAME:MASTER%一边嚼着桃子一边说明到这里的经过
-		PRINTFORMW 「原来如此……」
-		PRINTFORMW （也可以就这样送回地面……）
-		PRINTFORMW 「也就是说、走到这里、你应该很累了吧？请慢慢歇息一下吧」
-		PRINTFORMW 「而且……我也对你有一些兴趣」
-		PRINTFORMDW 疑惑地询问%CALLNAME:TARGET%、到底是怎么回事
-		PRINTFORMW 「嗯……用这种说法、我的妹妹可能会生气……」
-		PRINTFORMW 「简单地说、我很闲、无事可做」
-		PRINTFORMDW 她满不在乎地那样说
-		PRINTFORMW 「所以、请你告诉我关于你的事吧」
-		PRINTFORMW 「能靠自己走到这里的、一定不是普通人吧？」
-		PRINTFORMW 「……呵呵、不用那么戒备也没关系」
-		PRINTFORMW 「只是和我聊聊天而已」
-		PRINTFORMDL 说罢、%CALLNAME:TARGET%对着%CALLNAME:MASTER%微微一笑
-		PRINTFORMDL %CALLNAME:MASTER%并没有足够用来拒绝的理由、同时也是作为请吃桃子的感谢
-		PRINTFORMDL 而且、和这样的美人对话、也足以令人心情愉快
-		PRINTFORMDW %CALLNAME:MASTER%又拿起一个桃子、对着%CALLNAME:TARGET%重新坐下……
+		PRINTFORMW 「ごめんなさい。まさか人が居るとは思わなくて……」
+		PRINTFORMDL %CALLNAME:MASTER%は屋敷の中に招かれ%CALLNAME:TARGET%とお茶をしている
+		PRINTFORMDL 幸い、目で見える範囲で怪我は無い。少しだけ腰が痛むのはきっと気のせいだろう
+		PRINTFORMDW %CALLNAME:MASTER%は%CALLNAME:TARGET%に丈夫なのが取り柄だと笑って見せた
+		PRINTFORMW 「それで、貴方は地上から来たと言っていたけれど……」
+		PRINTFORMW 「どうやってここまで来たの？」
+		PRINTFORMDW %CALLNAME:MASTER%は桃を齧りながらここに至るまでの経緯を説明した
+		PRINTFORMW 「なるほどねぇ……」
+		PRINTFORMW （このまま地上へと送り返しても良いけど……）
+		PRINTFORMW 「なんにせよ、疲れたでしょう？ ゆっくりしていっていいからね」
+		PRINTFORMW 「それに……私も貴方に興味があるから」
+		PRINTFORMDW どういうことだろうと%CALLNAME:TARGET%に尋ねてみると……
+		PRINTFORMW 「うーん……こういうことを言うと妹に怒られてしまいそうだけど……」
+		PRINTFORMW 「暇なのよね。やることがなくて」
+		PRINTFORMDW 彼女はあっけらかんとそう言った
+		PRINTFORMW 「だから、貴方のことを色々と教えてくれる？」
+		PRINTFORMW 「ここまで自力で来たんだもの。ただの人間じゃないのでしょう？」
+		PRINTFORMW 「……ふふっ、そんなに身構えなくても大丈夫よ」
+		PRINTFORMW 「ただ私とお話してくれるだけでいいから」
+		PRINTFORMDL そう言い、%CALLNAME:TARGET%は%CALLNAME:MASTER%にニッコリと笑い掛ける
+		PRINTFORMDL %CALLNAME:MASTER%としては特に断る理由も無いし、桃をご馳走になった礼もある
+		PRINTFORMDL それに、こんな美人と話せるのなら役得だ
+		PRINTFORMDW %CALLNAME:MASTER%はもう一つ桃を手に取ると、%CALLNAME:TARGET%に向かって座り直した……
 		RESETCOLOR
 	ENDIF
 ;それ以外
 ELSE
-	PRINTFORML 「你好。我叫绵月丰姬。」
-	PRINTFORMW 「今后也请多多关照哦。」
+	PRINTFORML 「こんにちは。綿月豊姫と申します」
+	PRINTFORMW 「今後ともよろしくね」
 ENDIF
-SIF FIRSTTIME("开局设定",0,99)
-	CALL TOYOHIME_SETTINGS
+CFLAG:99:1999 = 1
+CALL TOYOHIME_SETTINGS
 RETURN 1
 
 ;==================================================
@@ -248,38 +231,36 @@ RETURN 1
 @TOYOHIME_SETTINGS
 
 PRINTL 
-PRINTFORMDL 是否将丰姬的资质・经验等修改为剧本推荐设定？
-PRINTFORMDL ※丰姬将不再向您告白（剧本推定是你撬开未亡人的心）
-PRINTFORMDL ※处女的情况下会变为非处女
-PRINTFORMD ※亲吻・处女丧失履历将显示为
-CALL COLORMESSAGE(@"献给了曾经的爱人",C_PINK,0,1)
-PRINTFORMDL 
-PRINTFORMDL ※额外获得「大胃王」素质
-PRINTFORMDL ※【灵舌】的天资将被删除
-PRINTFORMDL ※即使对丰姬进行性骚扰，她也会在一定程度上原谅您
-PRINTFORMDL ※如果未修改，设定与文本可能会出现矛盾
+PRINTFORMDL 豊姫の素質・経験等を口上推奨に変更しますか？
+PRINTFORMDL ※豊姫が告白してこなくなります
+PRINTFORMDL ※処女の場合は非処女になります
+PRINTFORMD ※キス・処女喪失履歴が
+CALL COLORMESSAGE(@"かつて愛した人に捧げた",C_PINK,0,1)
+PRINTFORMDL と表示されます
+PRINTFORMDL ※素質に健啖が追加されます
+PRINTFORMDL ※舌使いの素質が削除されます
+PRINTFORMDL ※豊姫にセクハラをしてもある程度は許してくれるようになります
+PRINTFORMDL ※変更しない場合、口上に齟齬が発生します
 PRINTL 
-CALL ASK_YN("修改","不修改")
+CALL ASK_YN("変更する","変更しない")
 SELECTCASE RESULT
 	CASE 0
-		SETBIT CFLAG:[[豊姫]]:约会後イベントフラグ , 1
+		SETBIT CFLAG:[[豊姫]]:デート後イベントフラグ , 1
 		CFLAG:99:1000 = 1
 		CFLAG:99:処女喪失記念日 = -1
-		CFLAG:99:初吻喪失記念日 = -1
-		CSTR:99:処女喪失履歴 = 献给了曾经的爱人
-		CSTR:99:初吻喪失履歴 = 献给了曾经的爱人
-		TALENT:99:無接吻経験 = 0
-		TALENT:99:大胃王 = 1
-		TALENT:99:舌頭靈活 = 0
-		EXP:99:接吻経験 += 20
+		CFLAG:99:ファーストキス喪失記念日 = -1
+		CSTR:99:処女喪失履歴 = かつて愛した人に捧げた
+		CSTR:99:ファーストキス喪失履歴 = かつて愛した人に捧げた
+		TALENT:99:キス未経験 = 0
+		TALENT:99:健啖 = 1
+		TALENT:99:舌使い = 0
+		EXP:99:キス経験 += 20
 		EXP:99:Ｖ性交経験 += 10
 		SIF TALENT:99:処女 == 1
 			TALENT:99:処女 = 0
-		CFLAG:99:1999 = 1
-		PRINTFORMDW 已修改
+		PRINTFORMDW 変更しました
 	CASE 1
-		CFLAG:99:1999 = 0
-		PRINTFORMDW 未修改
+		PRINTFORMDW 変更しませんでした
 ENDSELECT
 
 @K99_BEFORETRAIN
@@ -316,49 +297,49 @@ LOCAL = 1
 IF LOCAL
 	;好感度3000未満はキスキャンセル
 	IF CFLAG:99:好感度 < 3000
-		TCVAR:中止接吻 = 1
+		TCVAR:キスキャンセル = 1
 	;成功
 	ELSE
 		PRINTFORMDL 
-		PRINTFORMDL 约会回家的路上、感到依依不舍的%CALLNAME:TARGET%叫住了%CALLNAME:MASTER%
-		PRINTFORMDL 将她的身体拉近、夺走了她的嘴唇……
+		PRINTFORMDL デートの帰り道、名残惜しさを感じた%CALLNAME:MASTER%は%CALLNAME:TARGET%を呼び止めると
+		PRINTFORMDL 彼女の躰を引き寄せ、その唇を奪った……
 		PRINTFORMDW 
 		;ズキュウウウン
-		PRINTFORMW 「嗯！？啊……我……」
-		PRINTFORMDL ……可能有点太强硬了
-		PRINTFORMDW 虽然这么想、但%CALLNAME:TARGET%完全没有抵抗
-		PRINTFORMW 「我……啾……咿……嗯……」
-		PRINTFORMDL 不仅如此、她还把嘴唇贴得更近了
-		PRINTFORMDW 简直像在说『我也在忍耐着』一样……
+		PRINTFORMW 「んんっ！？ ぁ……ん……っ」
+		PRINTFORMDL ……少し強引すぎたかもしれない
+		PRINTFORMDW そう思っていたが、%CALLNAME:TARGET%は一切抵抗しなかった
+		PRINTFORMW 「は……ん……ふぅ……ちゅ……っ」
+		PRINTFORMDL それどころか、彼女はより深く唇を重ねてきた
+		PRINTFORMDW まるで『私も我慢していたのよ』と言いたげに……
 		PRINTFORMDW ………
-		PRINTFORMW 「啊啊……呐、%CALLNAME:MASTER%……」
-		PRINTFORMDW 许久才离开%CALLNAME:TARGET%的嘴唇、热情地注视着她
-		PRINTFORMW 「约会……就这样结束了吗……？」
-		PRINTFORMW 「我……我还想和你多待一会儿……」
-		PRINTFORMDL ……这是、那样的事的邀请吗？
-		PRINTFORMDW %CALLNAME:MASTER%慎重起见、向%CALLNAME:TARGET%确认了一下
-		PRINTFORMW 「………呵呵、你打算让我说出来吗？」
-		PRINTFORMDL 咕噜、%CALLNAME:MASTER%咽了下唾沫
+		PRINTFORMW 「はぁっ……ねぇ、%CALLNAME:MASTER%……」
+		PRINTFORMDW ようやく唇を離した%CALLNAME:TARGET%が熱っぽく見つめてくる
+		PRINTFORMW 「デート……もう終わっても良いの……？」
+		PRINTFORMW 「私は……もう少し貴方と一緒に居たいのだけど……」
+		PRINTFORMDL ……これは、そういうお誘いだろうか
+		PRINTFORMDW %CALLNAME:MASTER%は念のため、%CALLNAME:TARGET%に確認してみた
+		PRINTFORMW 「………ふふっ、言わせたいの？」
+		PRINTFORMDL ゴクリ、と%CALLNAME:MASTER%は生唾を飲み込む
 		PRINTFORMDW 
 		;選択肢
-		CALL ASK_YN("要这么做吗？","任凭摆布")
+		CALL ASK_YN("どうしよう","流れに身を任せる")
 		;判定
 		SELECTCASE RESULT
 			;どうしよう
 			CASE 0
-				PRINTFORMW 「………噗哧」
-				PRINTFORMDL 说不出话来……%CALLNAME:TARGET%扑哧一声笑了出来
-				PRINTFORMDW 原来如此……%CALLNAME:MASTER%这才发现自己被开了个玩笑
-				PRINTFORMW 「对、对不起……呵呵呵……」
-				PRINTFORMW 「一开始我并没有揶揄你的意思……啊、好痛！」
-				PRINTFORMDL 与%CALLNAME:TARGET%的初吻、从某种意义上来说、将成为一生的回忆
-				PRINTFORMDW %CALLNAME:MASTER%一边这样想着、一边对她的太阳穴进行了猛烈的钻动……
+				PRINTFORMW 「………ぷ、ふふっ」
+				PRINTFORMDL 言葉に詰まっていると……%CALLNAME:TARGET%がプッと噴き出した
+				PRINTFORMDW それでようやく、%CALLNAME:MASTER%は揶揄われていたのだということに気付いた
+				PRINTFORMW 「ご、ごめんなさい……ふふふっ」
+				PRINTFORMW 「最初は揶揄うつもりなんてなかったんだけど……ぁ、いたたたたっ！」
+				PRINTFORMDL 自らの顔が赤くなっていくのを感じた%CALLNAME:MASTER%は照れ隠しに%CALLNAME:TARGET%のこめかみをグリグリと攻撃する
+				PRINTFORMDW %CALLNAME:TARGET%は痛みに声を上げながらも、どこか楽し気にそれを受け入れていた
 			;流れに身を任せる
 			CASE 1
-				PRINTFORMDL 到了这种地步、也只能往下做了吧……
-				PRINTFORMDW %CALLNAME:MASTER%做好了觉悟、抱紧了丰姬的肩膀
-				PRINTFORMW 「嗯、那么……」
-				CALL HPH_PRINT,@"「从现在开始、享受大人间的约会吧……HPH」","W"
+				PRINTFORMDL ここまで来たら、もう行くしかないだろう……
+				PRINTFORMDW 覚悟を決めた%CALLNAME:MASTER%は寄り添う豊姫の肩を抱いた
+				PRINTFORMW 「くすっ、それじゃあ……」
+				CALL HPH_PRINT,@"「ここからは、大人のデートを楽しみましょうか……HPH」","W"
 				PRINTFORMDL ……………
 				PRINTFORMDL ………
 				PRINTFORMDW …
@@ -371,15 +352,14 @@ IF LOCAL
 					TALENT:MASTER:非童貞 = 1
 				ENDIF
 				PRINTFORML 
-				CALL COLORMESSAGE(@"获得了与丰姬的合意",C_PINK,0,1)
+				CALL COLORMESSAGE(@"豊姫の合意を得た",C_PINK,0,1)
 				PRINTFORMW 
-				SETBIT CFLAG:99:既成事實 , 1
-				EXP:99:接吻経験 += 5
+				SETBIT CFLAG:99:既成事実 , 1
 				EXP:99:絶頂経験 += 1
 				EXP:99:Ｖ性交経験 += 3
-				EXP:MASTER:接吻経験 += 5
 				EXP:MASTER:射精経験 += 1
 				EXP:MASTER:挿入経験 += 3
+				CALL MUTUAL_KISS(TARGET, 5)
 				TIME += 240
 		ENDSELECT
 	ENDIF
@@ -479,16 +459,16 @@ IF LOCAL
 		IF CFLAG:MASTER:初期位置 == CFLAG:99:初期位置
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORML 「很累了吧？」
-					PRINTFORML 「是先吃饭、先洗澡、还是……」
-					PRINTFORMDL %CALLNAME:TARGET%贴近了%CALLNAME:MASTER%、开始服侍他
-					PRINTFORMDW 就像是对丈夫无微不至的妻子一样、%CALLNAME:MASTER%这么想
+					PRINTFORML 「さ、疲れたでしょう？」
+					PRINTFORML 「ご飯にする？ お風呂にする？ それとも……」
+					PRINTFORMDL %CALLNAME:MASTER%に寄り添い、甲斐甲斐しく世話を焼いてくれる%CALLNAME:TARGET%
+					PRINTFORMDW まるで夫に尽くす妻のようだと%CALLNAME:MASTER%は思った
 				CASE 1
-					PRINTFORML 「今天也很开心呢」
-					PRINTFORMW 「下次再一起去吧、%CALLNAME:MASTER%♪」
+					PRINTFORML 「今日も楽しかったわ」
+					PRINTFORMW 「また行きましょうね。%CALLNAME:MASTER%♪」
 				CASE 2
-					PRINTFORML 「那么、一会儿见吧♪」
-					PRINTFORMDW %CALLNAME:TARGET%对%CALLNAME:MASTER%眨了眨眼、先回房间去了
+					PRINTFORML 「それじゃあ、また後でね♪」
+					PRINTFORMDW %CALLNAME:TARGET%は%CALLNAME:MASTER%にウインクすると、先に部屋へと戻っていった
 			ENDSELECT
 		;通常
 		ELSE
@@ -496,79 +476,79 @@ IF LOCAL
 			IF TALENT:恋慕
 				SELECTCASE RAND:3
 					CASE 0
-						PRINTFORML 「随时随地都可以见面、这样的事明明是知道的……」
-						PRINTFORML 「还是很寂寞啊……要和你分开」
-						PRINTFORMDL 对着不愿离去的%CALLNAME:TARGET%、%CALLNAME:MASTER%说……
+						PRINTFORML 「いつでも会える、会いに行ける……分かっているのに」
+						PRINTFORML 「やっぱり寂しいわ。貴方と離れ離れになるなんて」
+						PRINTFORMDL 離れようとしない%CALLNAME:TARGET%に%CALLNAME:MASTER%が掛けた言葉は……
 						;選択肢
-						CALL ASK_M("我也很寂寞", 1, "我很快会来找你的", 1, "快滚", TALENT:MASTER:82)
+						CALL ASK_M("自分も寂しい", 1, "またすぐに会いに来る", 1, "失せろ", TALENT:MASTER:サド)
 						;判定
 						SELECTCASE RESULT
 							;自分も寂しい
 							CASE 0
-								PRINTFORML 「……呵呵、和我一样呢」
-								PRINTFORML 「那就……两个人再待一会儿吧？」
-								PRINTFORMDL 于是二人再度握起了手、慢慢散着步
-								PRINTFORMDW 在路上、%CALLNAME:MASTER%和%CALLNAME:TARGET%又谈论了许许多多的事……
+								PRINTFORML 「……ふふっ、私と一緒ね」
+								PRINTFORML 「もう少しだけ……一緒に居てもいい？」
+								PRINTFORMDL 二人は手を繋ぎ直すと、軽い散歩へと出掛けた
+								PRINTFORMDW その中で、%CALLNAME:MASTER%は%CALLNAME:TARGET%と様々なことを語り合った……
 								;１時間経過
 								TIME += 60
 							;またすぐに会いに来る
 							CASE 1
-								PRINTFORML 「……嗯」
-								PRINTFORML 「我相信你、会一直等着你的」
-								PRINTFORMDW %CALLNAME:MASTER%踏上归途之后、%CALLNAME:TARGET%一直在后面目送着
+								PRINTFORML 「……うん」
+								PRINTFORML 「ずっと待ってるわ。貴方のこと」
+								PRINTFORMDW 帰路に就く%CALLNAME:MASTER%を、%CALLNAME:TARGET%はいつまでも見送っていた
 							;失せろ（ｷﾞﾛｯ
 							CASE 2
-								PRINTFORML 「哎呀、太过分了……怎么这样……」
-								PRINTFORMDW %CALLNAME:TARGET%软绵绵地抗议了一下、倒也并不是太在意的样子
-								;好感度と信賴度が１０下がる
+								PRINTFORML 「ひ、酷いわ……どうしてそんなこと……」
+								PRINTFORMDW %CALLNAME:TARGET%は普通にショックを受けていた
+								;好感度と信頼度が１０下がる
 								CALL CHANGE_CFLAG(2, 99, -10)
 								CALL CHANGE_CFLAG(4, 99, -10)
 						ENDSELECT
 					CASE 1
-						PRINTFORML 「啊……你已经到家了吗」
-						PRINTFORML 「……那个……如果可以的话」
-						PRINTFORMDL 『今天过得很开心』%CALLNAME:MASTER%笑着对%CALLNAME:TARGET%说
-						PRINTFORMDW %CALLNAME:TARGET%咽下了将要说出来的话、也微笑着说「我也是」
+						PRINTFORML 「あっ……もう着いたのね」
+						PRINTFORML 「……ねぇ、もし良かったら」
+						PRINTFORMDL 『今日は楽しかった』%CALLNAME:MASTER%が上機嫌にそう言うと
+						PRINTFORMDW %CALLNAME:TARGET%は出かかった言葉を飲み込んで「私もよ」と微笑を浮かべた
 					CASE 2
-						PRINTFORML 「……我……已经没事了」
-						PRINTFORML 「下次再去约会吧」
-						PRINTFORMDW 与依依不舍的%CALLNAME:TARGET%吻别了
+						PRINTFORML 「……ん…もう大丈夫よ」
+						PRINTFORML 「また、デートに行きましょうね」
+						PRINTFORMDW 名残惜しそうにしている%CALLNAME:TARGET%と口付けを交わしてから別れた
 				ENDSELECT
 			;思慕
 			ELSEIF TALENT:思慕
 				SELECTCASE RAND:3
 					CASE 0
-						PRINTFORML 「谢谢、送到这里就可以了」
-						PRINTFORML 「随时可以再来约我、我等着你哦♪」
-						PRINTFORMDL %CALLNAME:TARGET%看起来很享受的样子
-						PRINTFORMDW %CALLNAME:MASTER%在心里小小地欢呼了一下
+						PRINTFORML 「ありがとう。ここで大丈夫よ」
+						PRINTFORML 「またいつでも誘ってね。待ってるわ♪」
+						PRINTFORMDL どうやら%CALLNAME:TARGET%は楽しんでくれたようだ
+						PRINTFORMDW %CALLNAME:MASTER%は心の中で小さくガッツポーズをした……
 					CASE 1
-						PRINTFORML 「下次什么时候去约会呢？」
-						PRINTFORML 「明天、还是后天……啊、或者说现在就继续吗？」
-						PRINTFORMDW 『今天就这样结束吧』这么一说、%CALLNAME:TARGET%露出了遗憾的表情
+						PRINTFORML 「次はいつデートに行きましょうか」
+						PRINTFORML 「明日でも、明後日でも……あ、今から行く？」
+						PRINTFORMDW 『今日はお開きにしよう』そう言うと%CALLNAME:TARGET%はとても残念そうにしていた
 					CASE 2
-						PRINTFORML 「%CALLNAME:MASTER%、请等一下」
-						PRINTFORML 「……这是……今天的谢礼」
-						PRINTFORMDL 回去的时候、%CALLNAME:TARGET%微红着脸、贴了上来……
-						PRINTFORMDW %CALLNAME:MASTER%用手指划过脸颊、感觉还残留着%CALLNAME:TARGET%的温暖
+						PRINTFORML 「%CALLNAME:MASTER%、待って」
+						PRINTFORML 「……んっ……今日のお礼よ」
+						PRINTFORMDL 帰り際、%CALLNAME:TARGET%が頬っぺたにチューしてくれた
+						PRINTFORMDW %CALLNAME:MASTER%が指で頬をなぞると、まだ%CALLNAME:TARGET%の温もりが残っている気がした……
 				ENDSELECT
 			;それ以外
 			ELSE
 				SELECTCASE RAND:3
 					CASE 0
-						PRINTFORML 「那么、回家时要小心哦」
-						PRINTFORML 「有机会的话、再来约会吧」
-						PRINTFORMDW %CALLNAME:TARGET%与%CALLNAME:MASTER%挥手告别了
+						PRINTFORML 「それじゃあ、気を付けて帰ってね」
+						PRINTFORML 「機会があったら、またデートをしましょう」
+						PRINTFORMDW ヒラヒラと手を振る%CALLNAME:TARGET%に%CALLNAME:MASTER%を手を振り返して別れた
 					CASE 1
-						PRINTFORML 「啊……有点儿晚了」
-						PRINTFORML 「依姬、如果不会生气就好了……」
-						PRINTFORMDL 月之使者的领袖这个立场好像很麻烦
-						PRINTFORMDW %CALLNAME:MASTER%向%CALLNAME:TARGET%说出了自己的想法、“就是这样啊”她为难地笑了
+						PRINTFORML 「はぁ……少し遅くなっちゃった」
+						PRINTFORML 「依姫、怒ってないといいけど……」
+						PRINTFORMDL 月の使者のリーダーという立場は色々と面倒臭そうだ
+						PRINTFORMDW %CALLNAME:MASTER%が思ったことを口にすると、%CALLNAME:TARGET%は「そうなのよねぇ」と困ったように笑った
 					CASE 2
-						PRINTFORML 「今天过得很高兴」
-						PRINTFORML 「下次再叫我去吧」
-						PRINTFORMDL %CALLNAME:TARGET%并没有使用社交辞令、而是真心这样说的
-						PRINTFORMDW ……好像是这样
+						PRINTFORML 「今日は楽しかったわ」
+						PRINTFORML 「また連れて行ってね」
+						PRINTFORMDL %CALLNAME:TARGET%は社交辞令ではなく、本心からそう言っている
+						PRINTFORMDW ……ような気がした
 				ENDSELECT
 			ENDIF
 		ENDIF
@@ -628,58 +608,58 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 1
 		$TOYOHIME_ENCOUNTER
 		;既に会っている場合は非表示
-		IF !TCVAR:99:今天有否见面
+		IF !TCVAR:99:今日会ったか
 			;恋慕
 			IF TALENT:恋慕
 				;TIME:2で朝昼晩を選択
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 「啊、%CALLNAME:MASTER%、早上好」
-						PRINTFORMW 「我们来一起聊聊天吧♪」
+						PRINTFORML 「あら、おはよう。%CALLNAME:MASTER%」
+						PRINTFORMW 「さ、こっち来て。一緒にお話ししましょう♪」
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 「%CALLNAME:MASTER%、这边这边♪」
-						PRINTFORMDW %CALLNAME:TARGET%注意到%CALLNAME:MASTER%后、立刻向这边挥手
+						PRINTFORML 「%CALLNAME:MASTER%、こっちこっち♪」
+						PRINTFORMDW %CALLNAME:TARGET%は%CALLNAME:MASTER%に気付くと、ちょいちょいと手招きしてきた
 					;夜
 					CASE 6,7
-						PRINTFORML 「哦哦、%CALLNAME:MASTER%、你来找我了吗」
-						PRINTFORML 「都这个时间了、我刚刚还在想今天能不能见面呢……」
-						PRINTFORMDW %CALLNAME:MASTER%打了个招呼、%CALLNAME:TARGET%高兴地小跑过来
+						PRINTFORML 「ああ、%CALLNAME:MASTER%。来てくれたのね」
+						PRINTFORML 「もうこんな時間だから、今日は会えないかと思って……」
+						PRINTFORMDW %CALLNAME:MASTER%が挨拶すると、%CALLNAME:TARGET%は嬉しそうに小走りで駆け寄ってきた
 				ENDSELECT
 			;思慕
 			ELSEIF TALENT:思慕
-				PRINTFORM 「嗯、%CALLNAME:MASTER%。
+				PRINTFORM 「ん、%CALLNAME:MASTER%。
 				;TIME:2で朝昼晩を選択
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 今天来得真早啊」
+						PRINTFORML 今日は早いのね」
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 今天怎么样？」
+						PRINTFORML 今日はどうしたの？」
 					;夜
 					CASE 6,7
-						PRINTFORML 吃过晚饭了吗？」
+						PRINTFORML 夕餉はもう済ませた？」
 				ENDSELECT
-				PRINTFORMDW %CALLNAME:TARGET%注意到%CALLNAME:MASTER%后、高兴地笑了
+				PRINTFORMDW %CALLNAME:TARGET%は%CALLNAME:MASTER%に気付くと、嬉しそうに微笑んだ
 			;それ以外
 			ELSE
 				;TIME:2で朝昼晩を選択
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 「早上好、%CALLNAME:MASTER%」
-						PRINTFORML 「今天来得真早啊」
-						PRINTFORMDW %CALLNAME:TARGET%一副困倦的样子、大概是刚刚起床吧
+						PRINTFORML 「おはよう。%CALLNAME:MASTER%」
+						PRINTFORML 「今日は随分と早いのねぇ」
+						PRINTFORMDW %CALLNAME:TARGET%は眠そうにしている。起きたばかりなのだろうか
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 「欸？是%CALLNAME:MASTER%！」
-						PRINTFORMW 「我刚好有空、如果可以的话、可以和我说说话吗？」
+						PRINTFORML 「あら、%CALLNAME:MASTER%」
+						PRINTFORMW 「丁度暇を持て余していたの。良かったら話し相手になってもらえる？」
 					;夜
 					CASE 6,7
-						PRINTFORML 「晚上好、%CALLNAME:MASTER%」
-						PRINTFORMW 「这个时间有什么事吗？」
+						PRINTFORML 「こんばんわ。%CALLNAME:MASTER%」
+						PRINTFORMW 「こんな時間に何か御用かしら？」
 				ENDSELECT
 			ENDIF
 		ENDIF
@@ -692,27 +672,27 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
 		;既に会っている場合は非表示
-		IF !TCVAR:99:今天有否见面
+		IF !TCVAR:99:今日会ったか
 			;恋慕
 			IF TALENT:恋慕
 				;TIME:2で朝昼晩を選択
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 「早上好、%CALLNAME:MASTER%」
-						PRINTFORML 「哎呀哎呀、过来这边」
-						PRINTFORML 「想要好好看看你的脸」
-						PRINTFORMW 「……今天也很帅气哦♪」
+						PRINTFORML 「おはよう。%CALLNAME:MASTER%」
+						PRINTFORML 「さあさあ、もっとこっちに来て」
+						PRINTFORML 「貴方の顔をよーく見せて？」
+						PRINTFORMW 「……うん。今日も格好良いわ♪」
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 「啊！%CALLNAME:MASTER%、终于见到你了」
-						PRINTFORML 「哪里都没有你、所以我很担心、一直在找你」
-						PRINTFORMDW %CALLNAME:TARGET%过度的保护欲、让%CALLNAME:MASTER%无奈地笑了……
+						PRINTFORML 「ああ、%CALLNAME:MASTER%。やっと会えた」
+						PRINTFORML 「どこにも居ないから、心配で探していたの」
+						PRINTFORMDW 度を越した%CALLNAME:TARGET%の過保護ぶりに、%CALLNAME:MASTER%は困ったように笑うしかなかった……
 					;夜
 					CASE 6,7
-						PRINTFORML 「唔……真过分啊、%CALLNAME:MASTER%」
-						PRINTFORML 「我可是一直在等着你哦」
-						PRINTFORMDW 说完、%CALLNAME:TARGET%紧紧抱住了%CALLNAME:MASTER%的手臂
+						PRINTFORML 「もぅ……酷いわ。%CALLNAME:MASTER%ったら」
+						PRINTFORML 「ずっと待っていたのよ？ 貴方のこと」
+						PRINTFORMDW そう言うと、%CALLNAME:TARGET%は%CALLNAME:MASTER%の腕にギュッと抱きついてきた
 				ENDSELECT
 			;思慕
 			ELSEIF TALENT:思慕
@@ -720,18 +700,18 @@ IF LOCAL
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 「早上好、%CALLNAME:MASTER%」
-						PRINTFORML 「嗯？今天起的这么早？呵呵♪」
-						PRINTFORMW 「一想到今天要和你见面、就立刻醒过来了呢」
+						PRINTFORML 「おはよう。%CALLNAME:MASTER%」
+						PRINTFORML 「ん、今日は早いなって？ うふふっ♪」
+						PRINTFORMW 「貴方に会いたいって思ってたら、勝手に目が覚めちゃったの」
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 「啊、是在那里吗、%CALLNAME:MASTER%？」
-						PRINTFORMW 「在做什么呢？请让我也加入吧♪」
+						PRINTFORML 「あら、そこに居るのは%CALLNAME:MASTER%？」
+						PRINTFORMW 「何をしていたの？ 私も混ぜて頂戴な♪」
 					;夜
 					CASE 6,7
-						PRINTFORML 「晚上好、%CALLNAME:MASTER%」
-						PRINTFORML 「这个时间在这种地方见面……」
-						PRINTFORMW 「呵呵、感觉到了某种命运啊♪」
+						PRINTFORML 「こんばんわ。%CALLNAME:MASTER%」
+						PRINTFORML 「こんな時間にこんな所で会うなんて……」
+						PRINTFORMW 「ふふっ、何かの運命を感じるわね♪」
 				ENDSELECT
 			;それ以外
 			ELSE
@@ -739,17 +719,17 @@ IF LOCAL
 				SELECTCASE TIME:2
 					;朝
 					CASE 1,2
-						PRINTFORML 「哦？早上好啊、%CALLNAME:MASTER%♪」
-						PRINTFORMDW %CALLNAME:MASTER%打了个招呼、%CALLNAME:TARGET%也爽快地回了个招呼
+						PRINTFORML 「あら、%CALLNAME:MASTER%。おはよう♪」
+						PRINTFORMDW %CALLNAME:MASTER%が挨拶をすると、%CALLNAME:TARGET%も気さくに挨拶を返してきた
 					;昼～夕
 					CASE 3,4,5
-						PRINTFORML 「你好、%CALLNAME:MASTER%」
-						PRINTFORMW 「在这种地方遇到、真巧啊」
+						PRINTFORML 「こんにちは。%CALLNAME:MASTER%」
+						PRINTFORMW 「こんな所で会うなんて奇遇ね」
 					;夜
 					CASE 6,7
-						PRINTFORML 「哦……啊……哈啊……%CALLNAME:MASTER%」
-						PRINTFORML 「不要熬夜、要好好睡觉哦？」
-						PRINTFORMDW 大口打哈欠的%CALLNAME:TARGET%、实在不像是月之公主的样子……
+						PRINTFORML 「ふぁ～あ……あら、%CALLNAME:MASTER%」
+						PRINTFORML 「夜更かししてないで、ちゃんと寝なきゃダメよ？」
+						PRINTFORMDW 大口を開けて欠伸をする%CALLNAME:TARGET%は、とても月の姫だとは思えない……
 				ENDSELECT
 			ENDIF
 		ENDIF
@@ -763,23 +743,23 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 3
 		;恋慕
 		IF TALENT:恋慕
-			PRINTFORMDL 正在洗头的时候、听到哗啦哗啦的开门声
-			PRINTFORMDL ……莫非有人进来了？
-			PRINTFORMDL 想要确认、却因为泡沫进去了而睁不开眼睛……
-			PRINTFORMDW 『您是哪位？』正想这么说、背上突然贴上来一个软绵绵的东西
-			PRINTFORML 「呵呵……没关系哦、就这样继续吧……」
-			PRINTFORMW 「等到你洗完头之后、就由我来帮你擦背吧」
-			PRINTFORMDL 声音的主人是%CALLNAME:TARGET%、也就是说、现在在背后的是……
-			PRINTFORMDW %CALLNAME:MASTER%感觉到血液在下半身聚集、为了摆脱繁杂的思绪、手上摩擦的动作马上加快了……
+			PRINTFORMDL 頭を洗っていると、ガラガラと戸の開く音が聞こえた
+			PRINTFORMDL ……もしかして誰かが入ってきたのだろうか
+			PRINTFORMDL 確認しようにも、泡が入ってしまうので目を開けることができない……
+			PRINTFORMDW 『どちら様ですか』そう言おうとすると、背中にむにゅんと柔らかいものが当たった
+			PRINTFORML 「ふふっ、いいのよ。そのまま続けて……」
+			PRINTFORMW 「終わったら、私が背中を流してあげるわね」
+			PRINTFORMDL 声の主は%CALLNAME:TARGET%だった。ということは、いま背中に当たっているのは……
+			PRINTFORMDW 下半身に血液が集まっていくのを感じた%CALLNAME:MASTER%は、考えを振り払うようにガシガシと頭を擦った……
 		;それ以外
 		ELSE
-			PRINTFORMDL 听到哗啦哗啦的声音、我吓了一跳、转头看向门的一边……
-			PRINTFORMDW 竟然是%CALLNAME:TARGET%一丝不挂地站在那里
-			PRINTFORML 「是%CALLNAME:MASTER%啊、水温如何呢？」
-			PRINTFORML 「嗯？我进来了所以你要出去？」
-			PRINTFORML 「好了好了、别那么死板」
-			PRINTFORMW 「一起洗澡吧？」
-			PRINTFORMDW %CALLNAME:TARGET%清洗过身体之后、理所当然地在%CALLNAME:MASTER%的旁边坐了下来
+			PRINTFORMDL ガラガラという音にビックリして戸の方を向くと……
+			PRINTFORMDW なんと、一糸まとわぬ姿の%CALLNAME:TARGET%が立っていた
+			PRINTFORML 「あら%CALLNAME:MASTER%。お湯加減はどう？」
+			PRINTFORML 「え？ 今入ってるから出ろって？」
+			PRINTFORML 「まあまあ、固いこと言わないで」
+			PRINTFORMW 「一緒にお風呂に入りましょう？」
+			PRINTFORMDW %CALLNAME:TARGET%は軽く躰を流すと、当たり前のように%CALLNAME:MASTER%の隣に腰を下ろした
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -812,34 +792,34 @@ IF LOCAL
 	ENDIF
 	;-------------------------------------------------
 	;他キャラとデート中に遭遇した
-	;ARG:1に约会的对象
+	;ARG:1にデート相手
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
 		;既に会っている場合は非表示
-		IF !TCVAR:99:今天有否见面
+		IF !TCVAR:99:今日会ったか
 			;永琳とデート
-			IF FLAG:约会的对象 == 72
-				PRINTFORML 「竟然是八意大人……」
-				PRINTFORML 「啊、不不！什么都没有！」
-				PRINTFORML 「那么、请您慢走」
+			IF FLAG:デート相手 == 72
+				PRINTFORML 「……八意様も意外と……」
+				PRINTFORML 「ああ、いえいえっ！ 何でもありません」
+				PRINTFORML 「それでは、行ってらっしゃいませ」
 			;依姫とデート
-			ELSEIF FLAG:约会的对象 == 98
-				PRINTFORML 「诶诶？你怎么缩到角落里了？」
-				PRINTFORML 「呵呵、不要这么害羞嘛」
-				PRINTFORML 「那么、我的妹妹就拜托你了」
+			ELSEIF FLAG:デート相手 == 98
+				PRINTFORML 「あらあら、貴女も隅に置けないのね」
+				PRINTFORML 「ふふふっ、恥ずかしがらなくても良いのよ」
+				PRINTFORML 「では、私の妹をよろしくお願いいたします」
 			;鈴仙orレイセンとデート
-			ELSEIF FLAG:约会的对象 == 52 || FLAG:约会的对象 == 100
-				PRINTFORML 「\@ FLAG:73 == 52 ? 鈴仙 # Reisen \@、不用吓成这个样子」
-				PRINTFORML 「%CALLNAME:MASTER%、如果发生了什么事、一定要保护好她哦」
-				PRINTFORML 「呵呵、我很喜欢你的答复哦、请继续吧」
+			ELSEIF FLAG:デート相手 == 52 || FLAG:デート相手 == 100
+				PRINTFORML 「\@ FLAG:デート相手 == 52 ? 鈴仙 # レイセン \@、粗相のないようにね」
+				PRINTFORML 「何かあったら、貴女が彼を守るのよ？」
+				PRINTFORML 「ふふっ、良い返事ね。それじゃあ行ってらっしゃい」
 			;それ以外
 			ELSE
-				PRINTFORML 「啊、是在约会吗？」
-				PRINTFORML 「呵呵、请好好享受吧」
+				PRINTFORML 「あら、デート？」
+				PRINTFORML 「ふふっ、楽しんできてね」
 			ENDIF
-			PRINTFORMDW %CALLNAME:TARGET%轻轻挥了挥手、目送约会中的两人离去
+			PRINTFORMDW %CALLNAME:TARGET%は小さく手を振ってデート中の二人を見送った
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -855,7 +835,7 @@ IF LOCAL
 	ENDIF
 	;-------------------------------------------------
 	;外出先で一日最初の挨拶
-	;ARG:1に约会的对象、ARG:1が0の場合は非デート
+	;ARG:1にデート相手、ARG:1が0の場合は非デート
 	;注、このあと通常の外出先で遭遇した口上、ARG==6 OR ARG==7に接続します
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 0
@@ -892,7 +872,7 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		;-------------------------------------------------
-		;TARGET私室にMASTERが入っている（恋慕時陪睡中就寝時のみ？
+		;TARGET私室にMASTERが入っている（恋慕時添い寝中就寝時のみ？
 		;記入チェック（=0, 非表示、1, 表示）
 		LOCAL:1 = 1
 		;-------------------------------------------------
@@ -927,33 +907,33 @@ IF LOCAL
 		$TOYOHIME_OHAYO
 		;１５分の１の確率で朝フェラ
 		IF !RAND:15
-			PRINTFORMDL 被瘙痒的感觉弄醒
-			PRINTFORMDW 所见到的、竟然是%CALLNAME:TARGET%埋在%CALLNAME:MASTER%的股间
-			CALL HPH_PRINT,@"「咕噜……嗯嗯……啾……HPH」","L"
-			CALL HPH_PRINT,@"「咻啪……咕……噗噗……HPH」","W"
-			PRINTFORMDL %CALLNAME:TARGET%陶醉地含着肉棒、舔舐吸吮着
-			PRINTFORMDL 无法忍受这种精妙的奉仕、干脆地射精出来
-			PRINTFORMDW %CALLNAME:TARGET%在喉咙里咕嘟咕嘟地吞咽着早上的第一口鲜榨牛奶……
+			PRINTFORMDL ムズムズとした感覚に目を覚ますと……
+			PRINTFORMDW なんと、%CALLNAME:TARGET%が%CALLNAME:MASTER%の股間に顔を埋めていた
+			CALL HPH_PRINT,@"「ぺちゃ……ちゅう……ふぅ……っHPH」","L"
+			CALL HPH_PRINT,@"「ん、ふ……ぐぷ……ぢゅるる……っHPH」","W"
+			PRINTFORMDL %CALLNAME:TARGET%は夢中になってペニスを咥え、舐め、しゃぶっている
+			PRINTFORMDL その巧みな奉仕に我慢できず射精すると、
+			PRINTFORMDW %CALLNAME:TARGET%はコクンッ、コクンッと喉を鳴らして朝の一番搾りを飲み込んでいった……
 			PRINTFORMW 
-			PRINTFORMDL 几十分钟后、%CALLNAME:MASTER%起床时、%CALLNAME:TARGET%就像无事发生过似的、向%CALLNAME:MASTER%打了个招呼
-			PRINTFORMDW 嘴角还粘着掉落的阴毛、%CALLNAME:MASTER%稍微思考了一下、还是没有指出来
+			PRINTFORMDL 数十分後、%CALLNAME:MASTER%が起床すると%CALLNAME:TARGET%は何事もなかったかのように朝の挨拶をしてきた
+			PRINTFORMDW 口の端に陰毛が挟まっているのが見えたが、%CALLNAME:MASTER%はあえて指摘しなかった……
 			BASE:MASTER:精力 -= 50
 		;通常
 		ELSE
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORML 「哦……起来了吗？」
-					PRINTFORML 「呵呵、睡得真香啊」
-					PRINTFORMW 「做了什么美梦吗？」
+					PRINTFORML 「ん……起きた？」
+					PRINTFORML 「ふふっ、よく眠っていたわね」
+					PRINTFORMW 「一体どんな夢を見ていたの？」
 				CASE 1
-					PRINTFORMDL %CALLNAME:MASTER%醒来之后、发现%CALLNAME:TARGET%就躺在自己身边
-					PRINTFORML 「早上好、%CALLNAME:MASTER%」
-					PRINTFORML 「感觉很闷热？呵呵♪应该没什么问题吧♪」
-					PRINTFORMDW 亲热了一会儿后、%CALLNAME:MASTER%从被窝里爬了出来
+					PRINTFORMDL %CALLNAME:MASTER%が目を覚ますと%CALLNAME:TARGET%に添い寝されていた
+					PRINTFORML 「おはよう。%CALLNAME:MASTER%」
+					PRINTFORML 「暑苦しいって？ ふふっ♪ 別にいいじゃない♪」
+					PRINTFORMDW 暫くイチャイチャした後、%CALLNAME:MASTER%は布団から這い出た
 				CASE 2
-					PRINTFORMDL 醒来后、看到%CALLNAME:TARGET%正跨坐在%CALLNAME:MASTER%身上
-					PRINTFORML 「咦……明明再睡一会儿就好了……」
-					PRINTFORMDW 到底打算做什么呢……
+					PRINTFORMDL 目を覚ますと%CALLNAME:TARGET%が%CALLNAME:MASTER%に跨っていた
+					PRINTFORML 「あんっ……もう少し寝てても良かったのに……」
+					PRINTFORMDW 一体何をするつもりだったのだろうか……
 			ENDSELECT
 		ENDIF
 		RETURN 1
@@ -964,14 +944,14 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORML 「呼……呼……」
-		PRINTFORMDL %CALLNAME:MASTER%醒来时、%CALLNAME:TARGET%还在睡觉
-		PRINTFORMDW 为了不吵醒熟睡的她、%CALLNAME:MASTER%悄悄从被窝里爬了出来
+		PRINTFORML 「すぅ……すぅ……」
+		PRINTFORMDL %CALLNAME:MASTER%が目を覚ますと、%CALLNAME:TARGET%はまだ寝ていた
+		PRINTFORMDW 安らかな寝息を立てる彼女を起こさないように、%CALLNAME:MASTER%はそっと布団から這い出た
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;MASTERが起きていて、相手が起きてきた
-	;添い寝時TARGET起床はこちら（TARGET衰弱or陪睡中TARGET睡魔負け後そのままMASTERが起き続けた上で相手が起床した場合限定
+	;添い寝時TARGET起床はこちら（TARGET衰弱or添い寝中TARGET睡魔負け後そのままMASTERが起き続けた上で相手が起床した場合限定
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
@@ -999,42 +979,42 @@ IF LOCAL
 		IF TALENT:恋慕
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORML 「唔……在哪里……」
-					PRINTFORML 「抱枕……好舒服……zzz」
-					PRINTFORMDL %CALLNAME:TARGET%把%CALLNAME:MASTER%拉进被窝、当作抱枕抱在怀里、继续发出鼾声
-					PRINTFORMDW 这就没办法了、%CALLNAME:MASTER%决定让%CALLNAME:TARGET%再睡一会儿……
+					PRINTFORML 「ぁぁ……こんなところに……」
+					PRINTFORML 「丁度良い抱き枕が……zzz」
+					PRINTFORMDL %CALLNAME:TARGET%は%CALLNAME:MASTER%を布団の中に引き込むと、抱き枕代わりにして再び寝息を立て始めた
+					PRINTFORMDW 仕方がないので、%CALLNAME:MASTER%はもう少しだけ%CALLNAME:TARGET%を寝かせてあげることにした……
 					;３０分経過
 					TIME += 30
 				CASE 1
-					PRINTFORMDL %CALLNAME:MASTER%把泡好的茶递给了刚刚醒来的%CALLNAME:TARGET%
-					PRINTFORML 「……谢谢、%CALLNAME:MASTER%」
-					PRINTFORML 「嗯……咕……」
-					PRINTFORMDW 看着慢慢吹气的%CALLNAME:TARGET%的侧脸、%CALLNAME:MASTER%一时之间有些入迷了……
+					PRINTFORMDL %CALLNAME:MASTER%は目を覚ました%CALLNAME:TARGET%にお茶を淹れて差し出した
+					PRINTFORML 「ありがとう。%CALLNAME:MASTER%」
+					PRINTFORML 「んくっ……ふぅ……」
+					PRINTFORMDW ほっと息を吐く%CALLNAME:TARGET%の横顔に、%CALLNAME:MASTER%は思わず見とれてしまった……
 				CASE 2
-					PRINTFORML 「嗯……再睡一会儿……不行吗？」
-					PRINTFORML 「就５分种……１０分后就会起来的……」
-					PRINTFORMDL %CALLNAME:MASTER%把%CALLNAME:TARGET%咕噜噜地从被窝里滚出来、催促她赶紧换衣服
-					PRINTFORML 「哈欠……%CALLNAME:MASTER%最近越来越像依姬了……」
-					PRINTFORMDW %CALLNAME:TARGET%一副不情愿的样子、开始为新一天做准备……
+					PRINTFORML 「ねぇ、もうちょっとだけ……ダメ？」
+					PRINTFORML 「あと５分……１０分したら起きるから……」
+					PRINTFORMDL %CALLNAME:MASTER%はぐずる%CALLNAME:TARGET%の布団を剥ぎ取ると、さっさと着替えるように促した
+					PRINTFORML 「はぁ……%CALLNAME:MASTER%ったら、最近どんどん依姫に似てきて……」
+					PRINTFORMDW %CALLNAME:TARGET%は渋々といった様子で、朝の支度を始めた……
 			ENDSELECT
 		;それ以外
 		ELSE
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORML 「嗯啊……哈……啊啊……」
-					PRINTFORML 「依酱……真是的……」
-					PRINTFORMDL %CALLNAME:TARGET%可能是睡眼惺忪、误以为%CALLNAME:MASTER%是自己的妹妹
-					PRINTFORMDW 帮她换衣服、帮她整理头发……依姬每天早上都做这样的事吗？
+					PRINTFORML 「ふぁ～あ……う～ん……ん～……」
+					PRINTFORML 「よりひめ～……てつだって～……」
+					PRINTFORMDL %CALLNAME:TARGET%は寝ぼけているのか、%CALLNAME:MASTER%のことを妹だと勘違いしていた
+					PRINTFORMDW 着替えを手伝ってあげたり、髪を整えてあげたり……依姫は毎朝こんなことをしているのだろうか
 				CASE 1
-					PRINTFORML 「嗯……嗯嗯～……哦……」
-					PRINTFORML 「啊……早上好……然后……晚安……」
-					PRINTFORMDL %CALLNAME:MASTER%强行叫醒了再次发出鼾声的%CALLNAME:TARGET%
-					PRINTFORMW 「啊……好不容易才在梦的世界享受盛宴……超美味的啊！」
+					PRINTFORML 「ん、んん～……ふぅ……」
+					PRINTFORML 「それじゃあ、おやすみなさい……」
+					PRINTFORMDL 再び寝息を立て始めた%CALLNAME:TARGET%を%CALLNAME:MASTER%は無理矢理叩き起こした
+					PRINTFORMW 「きゃっ……もう、せっかく夢の世界で宴を楽しんでいたのに」
 				CASE 2
-					PRINTFORML 「不行……我还没有心理准备……」
-					PRINTFORML 「啊！求求你、住手啊！」
-					PRINTFORMDL 想要收拾床褥的%CALLNAME:MASTER%、和还想要继续睡的%CALLNAME:TARGET%
-					PRINTFORMDW 两人的攻防战持续了五分钟左右……
+					PRINTFORML 「駄目……まだ心の準備が……」
+					PRINTFORML 「やあっ、お願いっ、やめてっ！」
+					PRINTFORMDL 布団を片付けようとする%CALLNAME:MASTER%と、まだ寝ていたい%CALLNAME:TARGET%
+					PRINTFORMDW 二人の攻防は５分間くらい続いた……
 					;５分経過
 					TIME += 5
 			ENDSELECT
@@ -1068,8 +1048,8 @@ IF LOCAL
 		IF ARG:1
 			;デート中に眠くて帰って寝る（拠点キャラのみ）
 			PRINTFORMW 
-		ELSEIF CFLAG:诶嘿嘿
-			;诶嘿嘿中に眠くて自室に帰って寝る（拠点キャラのみ）
+		ELSEIF CFLAG:うふふ
+			;うふふ中に眠くて自室に帰って寝る（拠点キャラのみ）
 			PRINTFORMW 
 		ELSE
 			PRINTFORMW 
@@ -1095,7 +1075,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
-	;恶作剧中
+	;イタズラ中
 	;記入チェック（=0, 非表示、1, 表示）
 	;LOCAL:1 = 0
 	;-------------------------------------------------
@@ -1104,15 +1084,15 @@ IF LOCAL
 		;RETURN 1
 	;ENDIF
 	;-------------------------------------------------
-	;衰弱して寝る（体力500以下,诶嘿嘿時は诶嘿嘿強制終了）
+	;衰弱して寝る（体力500以下,うふふ時はうふふ強制終了）
 	;（キャラの自室以外：～を【現在地】から【キャラの自室】に運びました）
 	;（キャラの自室　　：～は疲れたと言って、横になりました）
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 5
-		IF CFLAG:诶嘿嘿
-			;诶嘿嘿中にダウン
+		IF CFLAG:うふふ
+			;うふふ中にダウン
 			PRINTFORMW 
 		ELSE
 			PRINTFORMW 
@@ -1167,7 +1147,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			IF CFLAG:前一次的位置 == CFLAG:現在位置
+			IF CFLAG:前ターン位置 == CFLAG:現在位置
 				;前のターンまで一緒に部屋にいた
 				PRINTFORMW 
 			ELSE
@@ -1201,8 +1181,8 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 9
-		IF CFLAG:诶嘿嘿
-			;诶嘿嘿中に寝る
+		IF CFLAG:うふふ
+			;うふふ中に寝る
 			PRINTFORMW 
 		ELSE
 			PRINTFORMW 
@@ -1441,7 +1421,7 @@ IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
-	;诶嘿嘿==2（開始時）
+	;うふふ==2（開始時）
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
@@ -1457,37 +1437,37 @@ IF LOCAL
 			IF TALENT:恋慕
 				SELECTCASE RAND:3
 					CASE 0
-						PRINTFORML 「呼呼……今天就交给我吧……」
-						PRINTFORML 「我会让你感觉很舒服的……♪」
-						PRINTFORMDL 被按倒在地、衣服瞬间被脱得一干二净……
-						PRINTFORMDW 只是恍惚了一下、%CALLNAME:MASTER%就已经回到了刚出生时的姿态
+						PRINTFORML 「ふふっ……今日は私に任せて……」
+						PRINTFORML 「貴方のこと、気持ち良くしてあげるわね……♪」
+						PRINTFORMDL 押し倒され、あっという間に衣服を剥ぎ取られ……
+						PRINTFORMDW 気が付けば、%CALLNAME:MASTER%は生まれたままの姿になっていた
 					CASE 1
-						PRINTFORML 「呐……%CALLNAME:MASTER%……」
-						PRINTFORML 「今天、能让我撒娇吗……？」
-						PRINTFORMDL %CALLNAME:TARGET%用丰满的胸部压在了%CALLNAME:MASTER%的胸上
-						PRINTFORMDW 到了这个地步、%CALLNAME:MASTER%已经没有拒绝的想法了……
+						PRINTFORML 「ねぇ……%CALLNAME:MASTER%……」
+						PRINTFORML 「今日は、貴方に甘えても良いかしら……？」
+						PRINTFORMDL %CALLNAME:TARGET%の豊満な胸が%CALLNAME:MASTER%の胸板に押し当てられる
+						PRINTFORMDW ここまできて断る勇気を、%CALLNAME:MASTER%は持ち合わせていなかった……
 					CASE 2
-						PRINTFORML 「%CALLNAME:MASTER%……最喜欢了……」
-						PRINTFORML 「所以……来做吧……♪」
-						PRINTFORMDW %CALLNAME:TARGET%跨坐在%CALLNAME:MASTER%身上、熟练地解开了衣服……
+						PRINTFORML 「%CALLNAME:MASTER%……大好きよ……」
+						PRINTFORML 「だから……セックスしましょう……♪」
+						PRINTFORMDW %CALLNAME:TARGET%は%CALLNAME:MASTER%に跨ると、慣れた手つきで衣服を脱がし始めた……
 				ENDSELECT
 			;それ以外
 			ELSE
 				SELECTCASE RAND:3
 					CASE 0
-						PRINTFORML 「对不起……我有点亢奋……」
-						PRINTFORML 「所以……让我借用一下你的身体吧……♪」
-						PRINTFORMDW %CALLNAME:TARGET%跨坐在%CALLNAME:MASTER%身上、不容分说地脱起了衣服……
+						PRINTFORML 「ごめんなさい……ちょっと昂っちゃって……」
+						PRINTFORML 「だから……貴方の躰、使わせてもらうわね……♪」
+						PRINTFORMDW %CALLNAME:TARGET%は%CALLNAME:MASTER%に跨ると、有無を言わせず衣服を脱がし始めた……
 					CASE 1
-						PRINTFORML 「嘘……没问题的……」
-						PRINTFORML 「只会让你我……都舒服起来的……♪」
-						PRINTFORMDL %CALLNAME:TARGET%将%CALLNAME:MASTER%按在地上
-						PRINTFORMDW 一边舔着舌头、一边把手放在衣服上……
+						PRINTFORML 「しーっ……大丈夫よ……」
+						PRINTFORML 「ちょーっと、気持ち良くなるだけだから……♪」
+						PRINTFORMDL %CALLNAME:TARGET%は%CALLNAME:MASTER%を押し倒すと
+						PRINTFORMDW 舌なめずりをしながら、衣服に手を掛けていった……
 					CASE 2
-						PRINTFORML 「呼呼……这样没有防备可不行哦……」
-						PRINTFORML 「会被坏姐姐吃掉的……♪」
-						PRINTFORMDL %CALLNAME:TARGET%窃窃私语着、在耳边吹拂着热气
-						PRINTFORMDW 在这种令人浑身酥软的感觉刺激下、%CALLNAME:MASTER%完全失去了抵抗的力量
+						PRINTFORML 「くすくすっ……そんなに無防備だと……」
+						PRINTFORML 「わるーいお姉ちゃんに食べられちゃうわよ……？」
+						PRINTFORMDL そう囁きながら、耳元にふーっと息を吹き掛けてくる%CALLNAME:TARGET%
+						PRINTFORMDW ゾクゾクとした感覚に、%CALLNAME:MASTER%は抵抗する力を全て奪われてしまった
 				ENDSELECT
 			ENDIF
 			PRINTFORMW 
@@ -1810,37 +1790,37 @@ IF LOCAL
 			IF TALENT:恋慕
 				;欲情のパラメーターが１０未満
 				IF PALAM:欲情 < PALAMLV:10
-					CALL HPH_PRINT,@"「我还想要更多……HPH」","L"
-					CALL HPH_PRINT,@"「还不是很想……就这样结束……HPH」","L"
-					PRINTFORMDW %CALLNAME:TARGET%整理好衣服、轻轻地吻了一下%CALLNAME:MASTER%的脸颊
+					CALL HPH_PRINT,@"「もっと繋がっていたいけど……HPH」","L"
+					CALL HPH_PRINT,@"「そういう訳にはいかないものね……HPH」","L"
+					PRINTFORMDW %CALLNAME:TARGET%は衣服を整えると、%CALLNAME:MASTER%の頬にそっとキスをした
 				;欲情のパラメーターが１５未満
 				ELSEIF PALAM:欲情 < PALAMLV:15
-					CALL HPH_PRINT,@"「怎么样、心情有好一些吗……？HPH」","L"
-					CALL HPH_PRINT,@"「……嗯HPH，我也是……%CALLNAME:MASTER%……HPH」","L"
-					PRINTFORMDW 摸了摸靠在旁边的%CALLNAME:TARGET%的脑袋、她便陶醉地将头靠在了我的肩膀上……
+					CALL HPH_PRINT,@"「気持ち良かった……？HPH」","L"
+					CALL HPH_PRINT,@"「……んっHPH 私もよ……%CALLNAME:MASTER%……HPH」","L"
+					PRINTFORMDW 寄り添う%CALLNAME:TARGET%の頭を撫でてやると、彼女はうっとりと肩に頭を預けてきた……
 				;欲情のパラメーターが最大
 				ELSE
-					CALL HPH_PRINT,@"「%CALLNAME:MASTER%……今天也很棒哦……HPH」","L"
-					CALL HPH_PRINT,@"「被灌注了满满的爱……我很幸福……HPH」","L"
-					PRINTFORMDW 身心都得到满足的%CALLNAME:TARGET%、陶醉地依偎着%CALLNAME:MASTER%……
+					CALL HPH_PRINT,@"「%CALLNAME:MASTER%……今日も素敵だった……HPH」","L"
+					CALL HPH_PRINT,@"「いっぱい愛してもらえて……私、幸せよ……HPH」","L"
+					PRINTFORMDW 心も躰も満たされた%CALLNAME:TARGET%は、うっとりと%CALLNAME:MASTER%に寄り添っている……
 				ENDIF
 			;それ以外
 			ELSE
 				;欲情のパラメーターが１０未満
 				IF PALAM:欲情 < PALAMLV:10
-					PRINTFORML 「你这么爱我、我很高兴」
-					PRINTFORML 「……下次再见吧♪」
-					PRINTFORMDW %CALLNAME:TARGET%整理好衣服、对着%CALLNAME:MASTER%耳语一番
+					PRINTFORML 「いっぱい愛してくれて嬉しかった」
+					PRINTFORML 「……また、シましょうね♪」
+					PRINTFORMDW %CALLNAME:TARGET%は衣服を整えると、そう%CALLNAME:MASTER%に耳打ちした
 				;欲情のパラメーターが１５未満
 				ELSEIF PALAM:欲情 < PALAMLV:15
-					PRINTFORML 「唔……腰好疼啊……」
-					PRINTFORML 「你……还真是有精力啊……」
-					PRINTFORMDW %CALLNAME:TARGET%揉着腰、好像有点儿太激烈了……
+					PRINTFORML 「あいたたっ、腰が……」
+					PRINTFORML 「はぁ……貴方は元気なのねぇ……」
+					PRINTFORMDW %CALLNAME:TARGET%は腰を擦っている。少し激しくしすぎたようだ……
 				;欲情のパラメーターが最大
 				ELSE
-					CALL HPH_PRINT,@"「啊……啊……HPH」","L"
-					CALL HPH_PRINT,@"「已经要HPH……好厉害……HPH」","L"
-					PRINTFORMDW %CALLNAME:TARGET%尚且沉浸在余韵中、身体不住地颤抖着……
+					CALL HPH_PRINT,@"「はぁ……はぁ……っHPH」","L"
+					CALL HPH_PRINT,@"「もう……頑張りすぎよ……HPH」","L"
+					PRINTFORMDW %CALLNAME:TARGET%は未だ残る情事の余韻に、時々ピクンと躰を跳ねさせている……
 				ENDIF
 			ENDIF
 		ENDIF
@@ -2046,9 +2026,9 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 9
-		;非処女膣内射精口服避孕薬なし
+		;非処女膣内射精ピルなし
 		IF ARG:1 == 1
-		;非処女膣内射精口服避孕薬あり
+		;非処女膣内射精ピルあり
 		ELSEIF ARG:1 == 2
 		;処女膣内射精
 		ELSEIF ARG:1 == 3
@@ -2176,8 +2156,8 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		IF CFLAG:诶嘿嘿
-			;诶嘿嘿中に眠くて帰る
+		IF CFLAG:うふふ
+			;うふふ中に眠くて帰る
 			PRINTFORMW 
 		ELSE
 			PRINTFORMW 
@@ -2190,12 +2170,12 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		IF CFLAG:诶嘿嘿
+		IF CFLAG:うふふ
 			IF CFLAG:衰弱
-				;诶嘿嘿中に疲れて帰る
+				;うふふ中に疲れて帰る
 				PRINTFORMW 
 			ELSE
-				;诶嘿嘿中に眠くて帰る
+				;うふふ中に眠くて帰る
 				PRINTFORMW 
 			ENDIF
 		ELSE
@@ -2277,8 +2257,8 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 10
-		IF CFLAG:诶嘿嘿
-			;诶嘿嘿中に疲れて帰る
+		IF CFLAG:うふふ
+			;うふふ中に疲れて帰る
 			PRINTFORMW 
 		ELSE
 			PRINTFORMW 
@@ -2292,9 +2272,9 @@ RETURN 1
 ;==================================================
 @M_KOJO_EVENT_K99_21(ARG,ARG:1)
 ;口上主はARG
-;CALL SET_KOJO_COLOR(99)は豊姫
-;CALL SET_KOJO_COLOR(98)は依姫
-;CALL SET_KOJO_COLOR(100)はレイセン
+;CALL M_KOJO_COLOR_K99は豊姫
+;CALL M_KOJO_COLOR_K98は依姫
+;CALL M_KOJO_COLOR_K100はレイセン
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
 LOCAL = 1
@@ -2311,145 +2291,145 @@ IF LOCAL
 		;依姫が恋人
 		IF TALENT:98:恋人
 			PRINTFORMW 「……%CALLNAME:MASTER%……」
-			PRINTFORMDL 在静寂的海滩边,%CALLNAME:TARGET%陷入了沉思
-			PRINTFORMDW %CALLNAME:MASTER%。从那颗蓝色星球而来,是她所爱的人
+			PRINTFORMDL 静かの海の浜辺にて、%CALLNAME:TARGET%は物思いに耽っている
+			PRINTFORMDW %CALLNAME:MASTER%。あの青い星からやって来た、彼女の愛する人
 			PRINTFORMW 「…………」
-			PRINTFORMDL 第一次见到%CALLNAME:MASTER%时,%CALLNAME:TARGET%拼命掩饰着声音的颤抖
-			PRINTFORMDW 她真的以为,曾经离去的他回来了
-			PRINTFORMW 「…………哈」
-			PRINTFORMDL 在与%CALLNAME:MASTER%接触的过程中,%CALLNAME:TARGET%意识到果然是不同的人
-			PRINTFORMDW 但这并不意味着她就失去了兴趣
-			PRINTFORMW 「…………呼」
-			PRINTFORMDL %CALLNAME:TARGET%爱着%CALLNAME:MASTER%
-			PRINTFORMDW 治愈她受伤心灵的,正是%CALLNAME:MASTER%
-			PRINTFORMW 「……不行,呢」
-			PRINTFORMDL 然而,%CALLNAME:MASTER%没有选择%CALLNAME:TARGET%
-			PRINTFORMDW %CALLNAME:MASTER%选择了她的妹妹依姫
-			PRINTFORMW 「我必须坚强……」
-			PRINTFORMDL 自己的幸福和妹妹的幸福,如果要选择其中之一,她会选择后者
-			PRINTFORMDW %CALLNAME:TARGET%决定为了依姫,自己要退出
+			PRINTFORMDL 初めて%CALLNAME:MASTER%を見たとき、%CALLNAME:TARGET%は声の震えを隠すので必死だった
+			PRINTFORMDW かつて居なくなってしまった彼が帰ってきたのだと。%CALLNAME:TARGET%は本当にそう思っていた
+			PRINTFORMW 「…………はぁ」
+			PRINTFORMDL %CALLNAME:MASTER%と接していく内に、やはり違う人なのだと%CALLNAME:TARGET%は気付いた
+			PRINTFORMDW それで興味が失われたかと言われれば、そんなことはなく
+			PRINTFORMW 「…………ふぅ」
+			PRINTFORMDL %CALLNAME:TARGET%は%CALLNAME:MASTER%を愛していた
+			PRINTFORMDW 傷付いた心を、癒してくれたのは%CALLNAME:MASTER%だった
+			PRINTFORMW 「……ダメ、ね」
+			PRINTFORMDL だが、%CALLNAME:MASTER%は%CALLNAME:TARGET%を選ばなかった
+			PRINTFORMDW %CALLNAME:MASTER%は、妹である依姫を選んだのだ
+			PRINTFORMW 「しっかりしないと……」
+			PRINTFORMDL 自らの幸せと妹の幸せ、どちらかを選ぶなら後者を選ぶ
+			PRINTFORMDW %CALLNAME:TARGET%は、依姫のために自らは身を引くことに決めた
 		;それ以外
 		ELSE
 			PRINTFORMDL 
-			PRINTFORMDL ―――静寂之海
+			PRINTFORMDL ―――静かの海
 			PRINTFORMDW 
 			;顔絵を表示（オプションでオンにしていないと表示されない）
 			CALL PRINT_FACE, [[依姫]], "通常", "服", "", ""
-			CALL SET_KOJO_COLOR(98)
-			PRINTFORMW 「姐姐大人,您又来静寂之海了呢」
+			CALL M_KOJO_COLOR_K98
+			PRINTFORMW 「お姉様、また静かの海に来ていたのですね」
 			;顔絵を表示（オプションでオンにしていないと表示されない）
-			CALL PRINT_FACE, [[丰姬]], "通常", "服", "", ""
-			CALL SET_KOJO_COLOR(99)
-			PRINTFORMW 「……嗯,啊啊……依姫……」
-			CALL SET_KOJO_COLOR(98)
-			PRINTFORMW 「到底怎么了?最近您的样子很奇怪……」
+			CALL PRINT_FACE, [[豊姫]], "通常", "服", "", ""
+			CALL M_KOJO_COLOR_K99
+			PRINTFORMW 「……ん、ああ……依姫……」
+			CALL M_KOJO_COLOR_K98
+			PRINTFORMW 「一体どうしたのですか？ 最近、様子がおかしいですが……」
 			;依姫が恋慕
 			IF TALENT:98:恋慕
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「呐,依姫喜欢%CALLNAME:MASTER%吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「————哈?」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「%CALLNAME:MASTER%哦。就是那个从地上迷路过来的人」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「不是,这点我知道……但我对他没那种感情」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「哦……可你不是经常和%CALLNAME:MASTER%聊得很开心吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「……」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「约会,很愉快吧?都到早上才回来」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「您、您怎么知道」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「因为我比你年长啊」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「我觉得这没关系吧……」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「所以,你喜欢%CALLNAME:MASTER%吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「………」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「快说啊,不然我可要把他抢走了哦?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「诶」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「其实呢,我也喜欢他」
-				PRINTFORMW 「如果依姫不要的话,我就收下了哦——」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「不、不行!……啊」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「呵呵呵,果然呢」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「……全都被您看穿了呢」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「因为我比你年长啊」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「说您也喜欢他……」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「那是真的」
-				PRINTFORMW 「但是,我不打算抢走依姫喜欢的人」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「………呼」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「因为我比你年长啊」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「您很中意这句话吗?」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「是的,非常」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「ねぇ、依姫は%CALLNAME:MASTER%のことが好き？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「―――は？」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「%CALLNAME:MASTER%よ。ほら、地上から迷い込んできた」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「いや、それくらいは分かりますけど……別に、彼にそんな感情は」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「へぇ……その割には、%CALLNAME:MASTER%と仲良くお喋りをしていたわね？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「っ………」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「デート、楽しかった？ 朝帰りなんかしちゃって」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「ど、どうしてそれを」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「私の方が年上ですからね」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「関係ないと思いますけど……」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「それで、%CALLNAME:MASTER%のことが好きなの？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「……………」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「ほら、早く言わないと私が彼のことを取っちゃうわよ？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「えっ」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「実はね、私も彼のことが好きなの」
+				PRINTFORMW 「依姫がいらないなら、私が貰っちゃおうかなー」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「だ、ダメです！……ぁっ」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「ふふふっ、やっぱりね」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「……全部、お見通しだったんですね」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「私の方が年上ですからね」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「彼のことが好きだというのは……」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「それは本当」
+				PRINTFORMW 「でも、依姫の好きな人を取るつもりはないわ」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「………ほっ」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「私の方が年上ですからね」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「それ、気に入ったんですか？」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「ええ、かなり」
 				;レイセンが恋慕
 				IF TALENT:100:恋慕
 					PRINTFORMW 
-					CALL SET_KOJO_COLOR(99)
-					PRINTFORMW 「……啊,说起来铃仙好像也说喜欢他来着」
-					PRINTFORMW 「呵呵呵,情敌这么多可就麻烦了♪」
-					CALL SET_KOJO_COLOR(98)
-					PRINTFORMW 「……哈?诶!?」
+					CALL M_KOJO_COLOR_K99
+					PRINTFORMW 「……あ、そういえばレイセンも彼のことが好きって言ってたっけ」
+					PRINTFORMW 「ふふふっ、ライバルが沢山居て大変ね♪」
+					CALL M_KOJO_COLOR_K98
+					PRINTFORMW 「……は？ ええっ！？」
 				ENDIF
 			;それ以外
 			ELSE
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「呐,依姫有喜欢的人吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「————哈?」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「喜欢的人哦。恋人之类的,那种人」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「怎、怎么可能有嘛。第一,我又不像姐姐大人那样有空……」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「我也不是很闲啦。嘛,算了」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「到底怎么了?简直就像……」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「那个时候一样……是吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「………是的」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「别担心。我不会让你一个人的」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「那时您也是这么说的」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「呜」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「姐姐大人」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「……嗯」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「我……不想看到姐姐大人受伤的样子」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「……嗯」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「那个时候,姐姐大人………」
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「啊——,好的好的。我知道了我知道了」
-				PRINTFORMW 「不再交男朋友了。我保证」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「………呼」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「ねぇ、依姫は好きな人いる？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「―――は？」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「好きな人よ。恋人とか、そういうの」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「い、いるわけないじゃないですか。第一、お姉様と違ってそんな暇も……」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「私も暇なわけじゃないんだけどねぇ。まあいいわ」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「本当にどうしたのですか？ まるで……」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「あの時みたい……って？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「………はい」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「大丈夫よ。貴女を一人にはしないから」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「あの時もそう言っていましたね」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「うっ」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「お姉様」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「……はい」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「私は……お姉様が傷付く姿を見たくありません」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「……うん」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「あの時、お姉様は………」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「あー、はいはい。分かりました分かりました」
+				PRINTFORMW 「もう恋人は作らない。約束します」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「………ほっ」
 				PRINTFORMW 
-				CALL SET_KOJO_COLOR(99)
-				PRINTFORMW 「话说回来,依姫有在意的男性吗?」
-				CALL SET_KOJO_COLOR(98)
-				PRINTFORMW 「………真是的!」
+				CALL M_KOJO_COLOR_K99
+				PRINTFORMW 「それはそれとして、依姫は気になる殿方とかいるの？」
+				CALL M_KOJO_COLOR_K98
+				PRINTFORMW 「………もうっ！」
 			ENDIF
 		ENDIF
 		RESETCOLOR
@@ -2464,29 +2444,29 @@ IF LOCAL
 		PRINTFORMDL 
 		PRINTFORMDL ―――綿月亭
 		PRINTFORMDW 
-		CALL SET_KOJO_COLOR(100)
-		PRINTFORMW 「喂喂？……那个……%CALLNAME:TARGET%大人？」
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「……欸？啊、怎么了？%CALLNAME:MASTER%……不对！铃仙」
-		CALL SET_KOJO_COLOR(100)
-		PRINTFORMW 「是、向您报告、您委托我的信已经交给八意大人了」
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「是吗、谢谢、退下吧」
-		PRINTFORMDL 深深地鞠了一躬后，铃仙退出了房间
-		PRINTFORMDL 坏了、这样下去、又要被依姬数落了
-		PRINTFORMDW 这种时候就要补充糖分……于是伸手去拿桃子
-		CALL SET_KOJO_COLOR(98)
-		PRINTFORMW 「失礼了、姐姐，铃仙说姐姐最近很奇怪……」
-		PRINTFORMW 「……啊、原来如此。是这样吗」
-		PRINTFORMW 「恕我冒昧、姐姐最近桃子吃得太多了」
-		PRINTFORMW 「以前也吃得太多了，但最近尤其……」
-		PRINTFORMDW 结果只能听妹妹唠叨了
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「想的事情太多、结果变得这么麻烦……」
-		CALL SET_KOJO_COLOR(98)
-		PRINTFORMW 「……你在听吗？」
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「是的是的、在听哦」
+		CALL M_KOJO_COLOR_K100
+		PRINTFORMW 「あの……あのー……%CALLNAME:TARGET%様？」
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「……え？ あ、どうしたの？ %CALLNAME:MASTER%……じゃなかった。レイセン」
+		CALL M_KOJO_COLOR_K100
+		PRINTFORMW 「は、はい。頼まれていた手紙を八意様へお届けしたのでご報告を……」
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「そう、ありがとう。下がっていいわ」
+		PRINTFORMDL 深々とお辞儀をしてレイセンが退出する
+		PRINTFORMDL いけない。こんなことではまた依姫に小言を言われてしまう
+		PRINTFORMDW こういう時は糖分を……と桃に手を伸ばしたところで
+		CALL M_KOJO_COLOR_K98
+		PRINTFORMW 「失礼します。お姉様、レイセンがお姉様の様子がおかしいと……」
+		PRINTFORMW 「……ああ、なるほど。そういうことですか」
+		PRINTFORMW 「お言葉ですがお姉様、最近桃を食べすぎですよ？」
+		PRINTFORMW 「前も食べすぎでしたけど、この頃は特に……」
+		PRINTFORMDW 結局、妹の小言を聞く羽目になってしまった
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「考えることが多いと、大変ねぇ……」
+		CALL M_KOJO_COLOR_K98
+		PRINTFORMW 「ちょっと、聞いているのですか？」
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「はいはい。聞いてますよー」
 		RESETCOLOR
 		RETURN 1
 	ENDIF
@@ -2497,40 +2477,40 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
 		PRINTFORMDL 
-		PRINTFORMDL ―――这是某一天发生的事
+		PRINTFORMDL ―――ある日の出来事
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「噶咕……HPH 哈啊……咕呜……HPH」","W"
+		CALL HPH_PRINT,@"「ん、く……っHPH ふぅ……んん……っHPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 地上的他，曾经和我所爱的人长得一模一样
-		PRINTFORMDL 即使知道他是另一个人后，和他见面，聊天仍然令人愉快
-		PRINTFORMDL 所以……当他在耳边低语爱意时，我沉醉其中，欣喜若狂
+		PRINTFORMDL 地上の人間である彼は、かつて愛した人と瓜二つだった
+		PRINTFORMDL 違う人間だと分かった後でも、彼と会い、話すことはとても楽しかった
+		PRINTFORMDL だから……私は、耳元で愛を囁かれて舞い上がってしまったのだ
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「那里……摸那里……咕……HPH 啊啊……HPH」","W"
+		CALL HPH_PRINT,@"「そこ……もっと触って……っHPH ぁ、んん……っHPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 不知不觉间、我和他的身体重叠在了一起
-		PRINTFORMDL 就像波浪的起伏，进入这样的关系仿佛是一种自然而然的流动
+		PRINTFORMDL いつしか、私は彼と躰を重ねるようになっていた
+		PRINTFORMDL 波が寄せては返すように、そういった関係になるのはとても自然な流れだった
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「想要被……插进来……啊……HPH 咕噫……HPH」","W"
+		CALL HPH_PRINT,@"「うん……いいよ……挿入れて……HPH ぁ、あぁ……っHPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 又过了一段时间……兔子们之间开始流传起不确定的传闻
-		PRINTFORMDL 绵月丰姬是叛徒、和地上的人勾结起来……
+		PRINTFORMDL それから暫くして……兎達の間で不穏な噂が流れるようになった
+		PRINTFORMDL 綿月豊姫は裏切り者で、地上の人間と内通している……と
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「哈啊……HPH进到……HPH 最里面了……HPH」","W"
+		CALL HPH_PRINT,@"「はっHPH はぁっHPH 奥、届いてる……っHPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 那些散播谣言的兔子一定看到了我和他幽会吧
-		PRINTFORMDL 我心里很着急、但从某一天开始、这个传闻就停止了
+		PRINTFORMDL きっと、噂を流した兎は私と彼が逢引するのを見ていたのだろう
+		PRINTFORMDL 私は内心焦っていたが、ある日を境にその噂はパッタリと止んだ
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「在里面……涨的好大……HPH 啊啊啊啊————HPH」","W"
+		CALL HPH_PRINT,@"「ぁ、ナカ、膨らんで……っHPH んんんっHPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 我去了兔子们的排练场看看情况、大家都像平时一样悠闲地练习着
-		PRINTFORMDL 有几只兔子不见了、询问了之后才知道、她们被认定为是污蔑我的叛徒、已经被驱逐到地上了
-		PRINTFORMDL 做出这个命令的好像是依姬、我因此对她充满了歉意
+		PRINTFORMDL 様子を見に兎達の稽古場に行ったが、皆、普段通り呑気に稽古をしていた
+		PRINTFORMDL 何羽かの兎がいなくなっていた。話を聞いてみると、その兎は裏切り者で、地上に追放されたのだという
+		PRINTFORMDL それを指示したのは依姫らしい。私は彼女に申し訳ない気持ちで一杯になった
 		PRINTFORMDW 
-		CALL HPH_PRINT,@"「哈啊……哈啊……HPH 喜欢……%CALLNAME:MASTER%……HPH」","W"
+		CALL HPH_PRINT,@"「はぁ……はぁ……っHPH 大好きよ……%CALLNAME:MASTER%……HPH」","W"
 		PRINTFORMDL 
-		PRINTFORMDL 现在……我今天也在这样与他相爱
-		PRINTFORMDL 被驱逐的兔子们怎么样了呢？但愿没有被野兽吃掉
-		PRINTFORMDW 在接受他污秽的同时……我茫然地想着那些事情
+		PRINTFORMDL そして今……私は今日もこうして彼と愛し合っている
+		PRINTFORMDL 追放された兎達はどうなったのだろう。獣に食べられていなければ良いのだが
+		PRINTFORMDW 彼の穢れを受け止めながら……ぼんやりと、私はそんなことを考えていた
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2540,34 +2520,34 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
 		PRINTFORMDL 
-		PRINTFORMDL ―――这是某一天发生的事
+		PRINTFORMDL ―――ある日の出来事
 		PRINTFORMDW 
-		PRINTFORMW 「嗯……哦……」
-		PRINTFORMDL 当我醒来的时候、所看见的是陌生的天花板
-		PRINTFORMDW 一边用模糊的头脑整理着状况、一边想要坐起来……
-		PRINTFORMDW 注意到旁边睡着的%CALLNAME:MASTER%
-		PRINTFORMW 「啊……我……」
-		PRINTFORMDL 没错、被他邀请约会、然后……
-		PRINTFORMDW 顺势……做出了那种事
-		PRINTFORMW 「喂、该起床了」
-		PRINTFORMDL 我摇晃着他的身体想把他唤醒、但他没有醒过来的迹象
-		PRINTFORMDW 窥视着他的脸、安心的睡颜简直像婴儿一样
-		PRINTFORMW 「真是……可爱的睡脸啊」
-		PRINTFORMW 「叫醒他真可惜……留个字条吧」
-		PRINTFORMDL 为了不吵醒对方、安静地从被窝里出来并整理好衣服
-		PRINTFORMDW 顺便地、把他脱下来的衣服也整理好、叠放在一边
-		PRINTFORMW 「嗯……约会很开心」
-		PRINTFORMW 「然后……该怎么写才好呢」
-		PRINTFORMDW 考虑了很多……得出了写出真实心情是最好的结论
-		PRINTFORMW 「……下次再一起吧。你的%CALLNAME:TARGET%」
-		PRINTFORMW 「………呵呵」
-		PRINTFORMW 「『你的%CALLNAME:TARGET%』……这简直就像恋人一样」
-		PRINTFORMDL 把字条放在叠好的衣服上、悄悄离开房间
-		PRINTFORMDW 像这样偷偷摸摸地离开、有点儿……寂寞啊
+		PRINTFORMW 「ん、ん……」
+		PRINTFORMDL 目を覚ますと、見知らぬ天井だった
+		PRINTFORMDW ぼんやりとした頭で状況を整理しつつ躰を起こそうとすると……
+		PRINTFORMDW 隣に%CALLNAME:MASTER%が寝ていることに気付いた
+		PRINTFORMW 「ぁ……私……」
+		PRINTFORMDL そうだ。彼にデートに誘われ、そして……
+		PRINTFORMDW 勢いに任せて、行為に及んでしまったのだ
+		PRINTFORMW 「ねぇ、起きて」
+		PRINTFORMDL 彼を起こそうと躰を揺り動かすが、起きる気配はない
+		PRINTFORMDW 顔を覗き込む。安心しきった寝顔はまるで赤ん坊のようだ
+		PRINTFORMW 「……くすっ、可愛い寝顔」
+		PRINTFORMW 「起こすのは可哀想ね……書き置きでも残しておきましょうか」
+		PRINTFORMDL 彼を起こさないよう、静かに布団から出て身支度を整える
+		PRINTFORMDW ついでに、脱ぎ散らかされた彼の衣服も綺麗に畳んでおいた
+		PRINTFORMW 「えっと……デート、楽しかったわ」
+		PRINTFORMW 「また……また、なんて書けばいいのかしら」
+		PRINTFORMDW 色々と考えて……素直な気持ちを書くのが一番だという結論に至った
+		PRINTFORMW 「……また行きましょうね。貴方の%CALLNAME:TARGET%より」
+		PRINTFORMW 「………ふふっ」
+		PRINTFORMW 「『貴方の%CALLNAME:TARGET%より』って、これじゃあまるで恋人みたい」
+		PRINTFORMDL 畳んだ衣服の上に書き置きを置いて、そっと部屋を後にする
+		PRINTFORMDW なんだかコソコソしているみたいで、それが少しだけ寂しかった
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
-	;炮友取得
+	;セフレ取得
 	;記入チェック（=0, 非表示、1, 表示）
 	LOCAL:1 = 1
 	;-------------------------------------------------
@@ -2575,33 +2555,33 @@ IF LOCAL
 		PRINTFORMDL 
 		PRINTFORMDL ―――綿月亭
 		PRINTFORMDW 
-		CALL SET_KOJO_COLOR(98)
-		PRINTFORMW 「姐姐、身体不舒服吗？」
-		PRINTFORMW 「听说、最近连兔子们的练习都没露面……」
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「嗯……的确有一点儿」
-		CALL SET_KOJO_COLOR(98)
-		PRINTFORMW 「……发生什么事了吗？」
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「其实也不是这个意思……」
-		CALL SET_KOJO_COLOR(98)
-		PRINTFORMW 「……那就算了」
-		PRINTFORMW 「兔子们在怀疑某个人的事、我也不知道哦？」
-		PRINTFORMDL 依姬故意叹了口气、离开了房间
-		PRINTFORMDW 她是个认真的人、大概是去看看兔子们有没有偷懒吧
-		CALL SET_KOJO_COLOR(99)
-		PRINTFORMW 「嗯……该怎么解释呢……」
-		PRINTFORMDL 我知道这是不好的行为
-		PRINTFORMDW 身为月之使者领袖的我、竟然和地面上的人……
-		PRINTFORMW 「这种时候、如果八意大人在场的话……」
-		PRINTFORMDW 会叫我当机立断杀了他吗？
-		PRINTFORMDW 想到这里、我摇了摇头
-		PRINTFORMDL 一直依赖八意大人的话、她一定会失望的
-		PRINTFORMDW 接下来该怎么办……必须用自己的头脑思考
-		PRINTFORMW 「……呵呵、确实啊」
-		PRINTFORMW 「被怀疑也没办法」
-		PRINTFORMDW 经过一番思考、我拿起两个桃子……
-		PRINTFORMDW 决定了、今天也依然要去他的身边
+		CALL M_KOJO_COLOR_K98
+		PRINTFORMW 「お姉様、具合でも悪いのですか？」
+		PRINTFORMW 「このところ、兎達の稽古にも顔を出していないとか……」
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「うん……ちょっとね」
+		CALL M_KOJO_COLOR_K98
+		PRINTFORMW 「……何かあったのですか？」
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「そういう訳じゃないんだけど……」
+		CALL M_KOJO_COLOR_K98
+		PRINTFORMW 「……まあいいですけど」
+		PRINTFORMW 「何れ兎達に鼎の軽重を問われても知りませんよ？」
+		PRINTFORMDL わざとらしく溜息を吐いて依姫が部屋を後にする
+		PRINTFORMDW 真面目な彼女のことだ。兎達が怠けていないか様子を見に行くのだろう
+		CALL M_KOJO_COLOR_K99
+		PRINTFORMW 「うーん……何と説明したものかしら……」
+		PRINTFORMDL 良くないことなのは分かっている
+		PRINTFORMDW 月の使者のリーダーである私が、地上の人間に現を抜かしているだなんて……
+		PRINTFORMW 「こういう時、八意様が居てくれたら……」
+		PRINTFORMDW 彼のことを即断で殺せと仰るだろうか
+		PRINTFORMDW そこまで考えて、私は頭を振った
+		PRINTFORMDL いつまでも八意様に頼っていては失望されてしまう
+		PRINTFORMDW これからどうするか……自らの頭で考えなくては
+		PRINTFORMW 「……ふふっ、確かに」
+		PRINTFORMW 「鼎の軽重を問われても仕方ないかもね」
+		PRINTFORMDW 考えた結果、私は桃を二つ手に取ると……
+		PRINTFORMDW 今日も、彼の元へと向かうことに決めた
 		RESETCOLOR
 		RETURN 1
 	ENDIF
@@ -2612,16 +2592,16 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 6
 		;同棲・非同棲で分けようと思ったけど豊姫の能力があれば書き分ける必要もないと思ったので共通
-		PRINTFORMDW 某天深夜、%CALLNAME:MASTER%因呼吸困难而醒来……
-		PRINTFORMDW %CALLNAME:TARGET%竟然正骑在他身上、贪恋着他的嘴唇
-		CALL HPH_PRINT,@"「咕……HPH 啊……把你吵醒了吗……？」","W"
-		CALL HPH_PRINT,@"「对不起……再过一会儿、我就能满足了……HPH」","W"
-		PRINTFORMDL 也不知道这样子持续了多长时间
-		PRINTFORMDW 她的嘴唇周围、被彼此的口水弄得黏糊糊的
-		CALL HPH_PRINT,@"「啊嗯……噢……嗯……HPH」","W"
-		CALL HPH_PRINT,@"「再来一次……一次就好……HPH」","W"
-		PRINTFORMDW 一次又一次、不厌其烦地重叠着嘴唇的%CALLNAME:TARGET%
-		PRINTFORMDW 结果%CALLNAME:MASTER%被释放的时候、夜晚已经过去、天空开始泛白了起来……
+		PRINTFORMDW ある日の深夜、%CALLNAME:MASTER%が息苦しさに目を覚ますと……
+		PRINTFORMDW なんと、%CALLNAME:TARGET%が上に跨り、夢中になって唇を貪っていた
+		CALL HPH_PRINT,@"「ふぅ……HPH ぁ……起こしちゃったかしら……？」","W"
+		CALL HPH_PRINT,@"「ごめんなさい……あとちょっとで満足すると思うから……HPH」","W"
+		PRINTFORMDL いったいどれだけの時間こうしていたのだろう
+		PRINTFORMDW 彼女の口の周りは、お互いの涎でベトベトになっていた
+		CALL HPH_PRINT,@"「ん、む……ちゅ……はぁ……っHPH」","W"
+		CALL HPH_PRINT,@"「もう一回だけ……ん……ちゅ……っHPH」","W"
+		PRINTFORMDW 何度も何度も、飽きることなく唇を重ねてくる%CALLNAME:TARGET%
+		PRINTFORMDW 結局%CALLNAME:MASTER%が解放されたのは、夜も明けかけ、空が白み始めた頃だった……
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2630,22 +2610,22 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
-		CALL HPH_PRINT,@"「嗯……嗯……HPH」","W"
-		PRINTFORMDW 大家都睡着的时候、%CALLNAME:TARGET%像往常一样抚慰着自己的身体。
-		PRINTFORMDW 首先隔着内衣摩擦秘裂
-		PRINTFORMDW 慢慢地、在焦灼的欲念之中、敏感度渐渐提升
-		CALL HPH_PRINT,@"「啊……呜嗯……呀……HPH」","W"
-		PRINTFORMDW 咕唧……哗……淫荡的水声在静谧之中回响
-		PRINTFORMDW 明明很微弱、在%CALLNAME:TARGET%耳中却极响
-		CALL HPH_PRINT,@"「哈啊……哈啊……HPH」","W"
-		PRINTFORMDW 脱下吸饱了爱液、变得沉重的内衣
-		PRINTFORMDW 暴露出来的私密处乱糟糟的、为了寻求更大的刺激而垂涎欲滴
-		PRINTFORMDW 已经准备就绪了啊、那之后就是……
-		CALL HPH_PRINT,@"「啊……完全……忍受不了……HPH」","W"
-		PRINTFORMDW 旁边放着模仿男性生殖器的玩具。长度和粗细都与%CALLNAME:MASTER%的相同
-		PRINTFORMDW %CALLNAME:TARGET%跳过润滑的程序、直接将其拿在手上―――
-		CALL HPH_PRINT,@"「啊啊―――――HPH HPH HPH」","W"
-		PRINTFORMDW 然后、毫不犹豫地、\@ TALENT:78 ? 像是要将子宫洞穿一样， #  \@一直刺到阴道深处……
+		CALL HPH_PRINT,@"「ん……ん……っHPH」","W"
+		PRINTFORMDW 皆が寝静まった頃、%CALLNAME:TARGET%はいつものように自らの躰を慰めていた
+		PRINTFORMDW まずは下着越しに秘裂を擦り上げる
+		PRINTFORMDW ゆっくりと、焦らすようにして感度を高めていく
+		CALL HPH_PRINT,@"「っふ……く、んん……っHPH」","W"
+		PRINTFORMDW ニチッ……クチュッ……と、静かな空間に響く淫らな水音
+		PRINTFORMDW 微かな筈なのに、その音だけがやけに大きく聞こえる
+		CALL HPH_PRINT,@"「ふぅ……ふぅ……っHPH」","W"
+		PRINTFORMDW たっぷりと愛液を吸い、ずっしりと重くなった下着を脱ぎ捨てる
+		PRINTFORMDW 曝け出された秘所はグチャグチャに蕩け、更なる刺激を求め涎を垂れ流している
+		PRINTFORMDW 準備は整った。次は……
+		CALL HPH_PRINT,@"「ぁぁ……駄目、我慢できない……っHPH」","W"
+		PRINTFORMDW 傍らに置いてある男性器を模した玩具。長さも太さも、%CALLNAME:MASTER%と同じ
+		PRINTFORMDW %CALLNAME:TARGET%は手順を飛ばしてそれを手に取ると―――
+		CALL HPH_PRINT,@"「んん―――――ッHPH HPH HPH」","W"
+		PRINTFORMDW 躊躇なく、\@ TALENT:ポルチオ性感 ? 子宮を抉るようにして #  \@膣の奥深くまで突き立てた……
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2654,24 +2634,24 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 8
-		PRINTFORMW 「哈……嗯,唔……」
-		PRINTFORMDW %CALLNAME:TARGET%无法抑制身体的骚动,用手指玩弄着自己的秘处
-		PRINTFORMDW 咕啾……咕啾……像抓挠一样爱抚着阴道浅处
-		PRINTFORMDW 稍早之前,这样就能达到高潮
-		PRINTFORMDW 但是,现在……
-		PRINTFORMW 「不够……这样,不够……」
-		PRINTFORMDW 不够。不够。不够。
-		PRINTFORMDW 为什么这么浅的地方,会有感觉呢
-		CALL HPH_PRINT,@"「再,深一点……啊,这里……HPH」","W"
-		PRINTFORMDW 粗糙的天花板。女性最敏感的地方G点
-		PRINTFORMDW 无视那里……%CALLNAME:TARGET%用指尖轻轻抚摸着一张一合的子宫入口
-		CALL HPH_PRINT,@"「啊,啊啊……HPH 呜,嗯嗯……HPH」","W"
-		PRINTFORMDW 这才是渴求的快感。原来在这里啊
-		PRINTFORMDW 从那之后就停不下来了
-		PRINTFORMDW 流着口水,毫无形象地张开双腿
-		PRINTFORMDW 咕啾咕啾地抽插着手指,不停刺激变成性感带的子宫
-		PRINTFORMDW 黏稠的爱液把内裤、下半身、寝具弄得黏糊糊的
-		PRINTFORMDW 即便如此,%CALLNAME:TARGET%也没有停下
+		PRINTFORMW 「はっ……ん、く……っ」
+		PRINTFORMDW %CALLNAME:TARGET%は躰の疼きを抑えきれず、指で自らの秘所を弄っている
+		PRINTFORMDW クチュッ……クチュリッ……と膣の浅い所を引っ掻くようにして愛撫する
+		PRINTFORMDW 少し前までは、これで達することができた
+		PRINTFORMDW だが、今は……
+		PRINTFORMW 「足りない……これじゃあ、足りないよ……っ」
+		PRINTFORMDW 足りない。足りない。足りない。
+		PRINTFORMDW こんな浅い所で、どうして感じることができるのだろう
+		CALL HPH_PRINT,@"「もっと、深く……ぁ、ここ……っHPH」","W"
+		PRINTFORMDW ザラザラとした天井。女性の最も敏感な場所であるＧスポット
+		PRINTFORMDW そこを無視して……%CALLNAME:TARGET%はパクパクと開閉する子宮の入り口を指先でそっと撫でた
+		CALL HPH_PRINT,@"「あ、あぁ……っHPH くぅ、んん……っHPH」","W"
+		PRINTFORMDW これこそが求めていた快楽だ。こんなところにあったのか
+		PRINTFORMDW そこからはもう止まらなかった
+		PRINTFORMDW 涎を垂らし、だらしなく脚を開きながら
+		PRINTFORMDW グチュグチュと指を抜き差しして、性感帯と化した子宮を刺激し続ける
+		PRINTFORMDW 粘っこい愛液が下着を、下半身を、寝具をべっとりと汚していく
+		PRINTFORMDW それでも、%CALLNAME:TARGET%は止まらなかった
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2705,15 +2685,15 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 1
 		;恋慕
 		IF TALENT:恋慕
-			CALL HPH_PRINT,@"「呜呜……啊……HPH」","L"
-			PRINTFORMDL 想着%CALLNAME:MASTER%的样子,%CALLNAME:TARGET%沉溺在自慰的快感中。
-			CALL HPH_PRINT,@"「%CALLNAME:MASTER%……%CALLNAME:MASTER%……啊HPH」","L"
-			PRINTFORMDW 被放在一旁的情趣用品,大多已经被爱液浸湿发亮……
+			CALL HPH_PRINT,@"「んん……あぁ……っHPH」","L"
+			PRINTFORMDL %CALLNAME:MASTER%のことを想いながら%CALLNAME:TARGET%は自慰に耽る
+			CALL HPH_PRINT,@"「%CALLNAME:MASTER%……%CALLNAME:MASTER%……ぁっHPH」","L"
+			PRINTFORMDW 傍に置かれた淫具は、その殆どが愛液で濡れて光っていた……
 		;それ以外
 		ELSE
-			CALL HPH_PRINT,@"「哈……嗯……HPH」","L"
-			PRINTFORMDL 啾的一声,将手指插入秘处。浅浅抽插着手指,空着的那只手捏弄着乳首。
-			PRINTFORMDW 无论过去多少十年,数百年,这种动作已经通过反复练习完全超越了师父。
+			CALL HPH_PRINT,@"「はぁ……ん……っHPH」","L"
+			PRINTFORMDL ツプリと秘所に指を挿入する。浅く指を抜き差ししながら、空いた手で乳首を捏ねる
+			PRINTFORMDW 何十年、何百年と繰り返したこの動作だけは、教えがなくとも完全に師を超えていた
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -2723,37 +2703,37 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		;あなたが濃厚精液の場合３分の１の確率で肉振動棒にされる
+		;あなたが濃厚精液の場合３分の１の確率で肉バイブにされる
 		IF TALENT:MASTER:濃厚精液 && !RAND:3
-			PRINTFORMDW 一睁开眼,%CALLNAME:TARGET%已经跨坐在腰上摆动着腰肢。
-			CALL HPH_PRINT,@"「哎呀……嘻嘻,终于醒了呢……HPH」","W"
-			PRINTFORMDL 啾咕的水声从相连的部位传来。
-			PRINTFORMDW %CALLNAME:MASTER%被舒服的感觉刺激的呻吟了一声,%CALLNAME:TARGET%就把脸靠近了过来。
-			CALL HPH_PRINT,@"「不行啊……就这么憋着不好吧……HPH」","L"
-			CALL HPH_PRINT,@"「得先去『洗手间』尿尿才可以睡觉嘛……HPH」","W"
-			PRINTFORMDL 说着,%CALLNAME:TARGET%紧紧夹住了阴道。
-			PRINTFORMDW %CALLNAME:MASTER%的肉棒被如此挤压,不知道已经迎来了第几次高潮。
-			CALL HPH_PRINT,@"「看吧……还有这么多呢……HPH」","L"
-			CALL HPH_PRINT,@"「万一漏出来就糟糕了啊……?HPH」","W"
-			PRINTFORMDL 尽管还处在高潮中,%CALLNAME:MASTER%的肉棒还是被%CALLNAME:TARGET%小幅度地摇晃着腰部摩擦着。
-			PRINTFORMDW %CALLNAME:MASTER%的呻吟变成了喘息,%CALLNAME:TARGET%像个魅魔一样嘻嘻笑了。
-			CALL HPH_PRINT,@"「呵呵呵HPH 很可爱呢,%CALLNAME:MASTER%……HPH」","L"
-			CALL HPH_PRINT,@"「来,这次要更猛烈一点吧……?HPH」","W"
-			PRINTFORMDL 说完,%CALLNAME:TARGET%开始用阴道在肉棒上猛烈地磨蹭。
-			PRINTFORMDW 对于刚刚射精过的敏感肉棒来说,这种刺激简直太强了。
-			CALL HPH_PRINT,@"「啊……又射了呢……HPH」","L"
-			CALL HPH_PRINT,@"「就这样,把全部都射出来,不要漏尿哦……HPH」","W"
-			PRINTFORMDL 一边用阴道抚弄着肉棒,%CALLNAME:TARGET%还催促%CALLNAME:MASTER%再次射精。
-			PRINTFORMDW 想说饶了我吧……但嘴被%CALLNAME:TARGET%封住,无法说出。
+			PRINTFORMDW 目を開けると……なんと%CALLNAME:TARGET%が跨って腰を振っていた
+			CALL HPH_PRINT,@"「あら……ふふっ、やっと起きたのね……HPH」","W"
+			PRINTFORMDL ぐちゅり、と繋がった部分から重い水音が鳴る
+			PRINTFORMDW %CALLNAME:MASTER%が気持ち良さに『うっ』と呻くと、%CALLNAME:TARGET%が耳元に顔を近付けてきた
+			CALL HPH_PRINT,@"「ダメじゃない……こんなに溜めたまま寝るなんて……HPH」","L"
+			CALL HPH_PRINT,@"「ちゃーんと『おトイレ』でオシッコしてから寝ないと……HPH」","W"
+			PRINTFORMDL そう言いながら%CALLNAME:TARGET%が膣をキュッと締める
+			PRINTFORMDW 散々絞られた%CALLNAME:MASTER%のペニスは、たったそれだけで何度目か分からない絶頂を迎えた
+			CALL HPH_PRINT,@"「ほら……まだこんなに……HPH」","L"
+			CALL HPH_PRINT,@"「お漏らししちゃったら大変よ……？HPH」","W"
+			PRINTFORMDL まだイッてる途中なのに%CALLNAME:TARGET%は小刻みに腰を揺すり始める
+			PRINTFORMDW %CALLNAME:MASTER%の呻きが喘ぎに変わると、%CALLNAME:TARGET%は淫魔のようにクスリと微笑んだ
+			CALL HPH_PRINT,@"「うふふっHPH 可愛いわ、%CALLNAME:MASTER%……HPH」","L"
+			CALL HPH_PRINT,@"「さあ、今度は激しくいくわよ……？HPH」","W"
+			PRINTFORMDL そう言うと、%CALLNAME:TARGET%はペニスで膣を掻き回すように腰をグラインドさせ始める
+			PRINTFORMDW 射精直後の敏感なペニスには、その刺激はあまりにも強すぎた
+			CALL HPH_PRINT,@"「あんっHPH また射精てるわ……HPH」","L"
+			CALL HPH_PRINT,@"「そのまま、お漏らししないように全部射精し切りなさい……っHPH」","W"
+			PRINTFORMDL グチュグチュと膣全体でペニスを扱きながら、%CALLNAME:TARGET%が%CALLNAME:MASTER%に更なる射精を促す
+			PRINTFORMDW もう許して……そう言おうとしたが、%CALLNAME:TARGET%に唇を塞がれ叶わなかった
 			PRINTFORMDW ……………………
 			PRINTFORMDW …………
 			PRINTFORMDW …
-			PRINTFORMDL 天空开始发白时,%CALLNAME:TARGET%才终于放开了肉棒。
-			PRINTFORMDW %CALLNAME:MASTER%嘴里吐着泡沫,在%CALLNAME:TARGET%身下晕了过去,皮肤上满是水渍……
+			PRINTFORMDL 空が白み始めた頃、ようやく%CALLNAME:TARGET%はペニスを解放した
+			PRINTFORMDW 肌をツヤツヤさせ満足気な%CALLNAME:TARGET%の下で、%CALLNAME:MASTER%は口から泡を吹いて気絶していた……
 			SETCOLOR C_PINK
 			FONTBOLD
-			PRINTFORML 【%CALLNAME:MASTER%体力不足】
-			PRINTFORMW 【经历猛烈性爱的%CALLNAME:MASTER%体力稍有增长】
+			PRINTFORML 【%CALLNAME:MASTER%は寝不足になりました】
+			PRINTFORMW 【激しいセックスを経験した%CALLNAME:MASTER%は体力が少しだけ上昇しました】
 			FONTREGULAR
 			RESETCOLOR
 			PRINTFORMW 
@@ -2770,9 +2750,9 @@ IF LOCAL
 			CFLAG:MASTER:徹夜 = 1
 		;それ以外
 		ELSE
-			CALL HPH_PRINT,@"「呜……嗯……HPH」","L"
-			PRINTFORMDL 睁开眼,%CALLNAME:TARGET%正把秘处按在%CALLNAME:MASTER%的手上自慰。
-			PRINTFORMDW ……还在睡眠中的%CALLNAME:MASTER%装作没有看见,重新闭上了眼睛。
+			CALL HPH_PRINT,@"「っ……ん……HPH」","L"
+			PRINTFORMDL 目を覚ますと、%CALLNAME:TARGET%が%CALLNAME:MASTER%の手に秘所を押し付け自慰をしていた
+			PRINTFORMDW ……眠かった%CALLNAME:MASTER%は見なかったことにして再び目を閉じた
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -2924,9 +2904,9 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML 「抱歉、这次还是不要了」
-		PRINTFORML 「下次再一起进去吧？」
-		PRINTFORMDW 被委婉地拒绝了……
+		PRINTFORML 「うーん、今はごめんなさい」
+		PRINTFORML 「また今度一緒に入りましょう。ね？」
+		PRINTFORMDW やんわりと断られてしまった……
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2939,32 +2919,32 @@ IF LOCAL
 		IF TALENT:恋慕
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORML 「哎呀哎呀……呵呵♪」
-					PRINTFORMDW %CALLNAME:MASTER%的东西因为想象到接下所要发生的事情而勃起、%CALLNAME:TARGET%向其投去了炙热的目光……
+					PRINTFORML 「あらあら……うふふっ♪」
+					PRINTFORMDW これから起こることを想像して勃起している%CALLNAME:MASTER%の一物に、%CALLNAME:TARGET%は熱い視線を送っている……
 				CASE 1
-					PRINTFORML 「来这边、坐下来、坐下来♪」
-					PRINTFORML 「让姐姐我来给你洗头吧♪」
-					PRINTFORMDW %CALLNAME:MASTER%坐到了凳子上、%CALLNAME:TARGET%丰满的胸部旋即压到了背上……
+					PRINTFORML 「さあさあ、座って座って♪」
+					PRINTFORML 「お姉ちゃんが髪を洗ってあげるわ♪」
+					PRINTFORMDW 風呂椅子に座った%CALLNAME:MASTER%の背中に、%CALLNAME:TARGET%の豊満な胸が押し当てられた……
 				CASE 2
-					CALL HPH_PRINT,@"「啊……HPH 现在还不行……HPH」","L"
-					CALL HPH_PRINT,@"「先把衣服脱下来……呵呵HPH」","L"
-					PRINTFORMDW %CALLNAME:MASTER%和%CALLNAME:TARGET%一边嬉戏一边走进浴室……
+					CALL HPH_PRINT,@"「あっHPH こら、ダメよ……HPH」","L"
+					CALL HPH_PRINT,@"「まずは服を脱いでから……んんっHPH」","L"
+					PRINTFORMDW %CALLNAME:MASTER%は%CALLNAME:TARGET%とじゃれ合いながら浴室に入った……
 			ENDSELECT
 		;それ以外
 		ELSE
 			SELECTCASE RAND:3
 				CASE 0
-					PRINTFORMDL %CALLNAME:MASTER%先进入了浴池等着、过了一会儿、门打开了
-					PRINTFORML 「呵呵、久等了」
-					PRINTFORMW 「和我一起洗一次吧♪」
+					PRINTFORMDL %CALLNAME:MASTER%が先に入って待っていると、遅れて風呂の戸が開いた
+					PRINTFORML 「うふふっ、お待たせ」
+					PRINTFORMW 「それじゃあ、洗いっこしましょうか♪」
 				CASE 1
-					PRINTFORML 「啊、想一起洗澡吗？」
-					PRINTFORML 「嗯……偶尔这么做也可以」
-					PRINTFORMDW %CALLNAME:TARGET%决定一起泡澡
+					PRINTFORML 「あら、一緒にお風呂に入りたいの？」
+					PRINTFORML 「うーん……そうね。偶にはいいかしら」
+					PRINTFORMDW %CALLNAME:TARGET%と一緒にお風呂に入ることになった
 				CASE 2
-					PRINTFORML 「有多久没和谁一起进来过了」
-					PRINTFORML 「……哎呀、你要给我洗头吗？那就交给你了」
-					PRINTFORMDW %CALLNAME:TARGET%毫无防备地暴露着她丰满的肢体……
+					PRINTFORML 「誰かとこうして入るのなんていつ以来かしら」
+					PRINTFORML 「――あら、髪を洗ってくれるの？ それじゃあお任せするわね」
+					PRINTFORMDW %CALLNAME:TARGET%はその豊満な肢体を無防備に晒している……
 			ENDSELECT
 		ENDIF
 		RETURN 1
@@ -2992,39 +2972,39 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
 		;妊娠経験済み
-		IF CFLAG:99:兒童人数
-			PRINTFORML 「%CALLNAME:MASTER%八意大人给我检查了……」
-			PRINTFORML 「……呵呵♪ 『恭喜哦』这么说的♪」
-			PRINTFORML 「今晚全家人一起庆祝一下吧♪」
-			PRINTFORMDL 增加了新的家庭成员、没有比这更高兴的事了
-			PRINTFORMDW %CALLNAME:MASTER%抱紧%CALLNAME:TARGET%、温柔地抚摸着孕育着新生命的肚子……
+		IF CFLAG:99:子供人数
+			PRINTFORML 「%CALLNAME:MASTER%。八意様に診ていただいたのだけど……」
+			PRINTFORML 「……うふふっ♪ 『おめでとう』だって♪」
+			PRINTFORML 「今夜は家族みんなでお祝いでもしましょうか♪」
+			PRINTFORMDL 新しい家族が増える。これほど嬉しいことはない
+			PRINTFORMDW %CALLNAME:MASTER%は%CALLNAME:TARGET%を抱き締めると、新しい命の宿ったお腹を優しく撫でた……
 		;初めて妊娠した
 		ELSE
-			PRINTFORMW 「%CALLNAME:MASTER%、来听我说一下吧」
-			PRINTFORMW 「你一直想要的东西终于有了」
-			PRINTFORMW 「……呵呵、你知道是什么吗？」
+			PRINTFORMW 「%CALLNAME:MASTER%、ちょっといいかしら？」
+			PRINTFORMW 「えっとね……貴方の欲しがっていたものがようやくできたの」
+			PRINTFORMW 「……うふふっ、なんだか分かる？」
 			;選択肢
-			CALL ASK_M("孩子", 1, "属于你我的家", 1, "米饭", 1)
+			CALL ASK_M("子供", 1, "マイホーム", 1, "ご飯", 1)
 			;判定
 			SELECTCASE RESULT
 				;子供
 				CASE 0
-					PRINTFORMW 「嗯嗯、是我们的孩子呢」
-					PRINTFORMW 「就在……这里哦……♪」
+					PRINTFORMW 「ええ、そう。私達の子供」
+					PRINTFORMW 「それが、ここにいるのよ……♪」
 				;マイホーム
 				CASE 1
-					PRINTFORMW 「嗯、那个我也想要……」
-					PRINTFORMW 「不过现在、只有这个孩子哦……♪」
+					PRINTFORMW 「うん、それも欲しいけど……」
+					PRINTFORMW 「今は、この子がいるだけで……♪」
 				;ご飯
 				CASE 2
-					PRINTFORMW 「你不是刚吃过吗？」
-					PRINTFORMW 「正确答案是……我们可爱的孩子啊♪」
+					PRINTFORMW 「もう、さっき食べたばかりでしょう？」
+					PRINTFORMW 「正解は……可愛い私達の赤ちゃんよ♪」
 			ENDSELECT
-			PRINTFORMDL %CALLNAME:TARGET%牵起%CALLNAME:MASTER%的手、放在自己的肚子上
-			PRINTFORMDW 得到那种触感的瞬间、才有了自己成为父亲的实感
-			PRINTFORMW 「早点出生吧……爸爸妈妈会让你幸福的……♪」
-			PRINTFORMDL %CALLNAME:TARGET%将自己的手重叠在%CALLNAME:MASTER%的手上、打心眼里露出开心的笑容
-			PRINTFORMDW %CALLNAME:TARGET%和即将出生的孩子、一定要让两个人幸福……%CALLNAME:MASTER%在心中发下坚定的誓言
+			PRINTFORMDL %CALLNAME:TARGET%が%CALLNAME:MASTER%の手を取り、自らのお腹の触らせる
+			PRINTFORMDW それでようやく、自分が父親になったのだという実感が沸いた
+			PRINTFORMW 「早く生まれておいで……お父さんとお母さんが、あなたのことを幸せにしてあげるから……♪」
+			PRINTFORMDL %CALLNAME:MASTER%の手に自らの手を重ねる%CALLNAME:TARGET%は、心の底から嬉しそうな顔をしている
+			PRINTFORMDW %CALLNAME:TARGET%と生まれてくる子供。二人を必ず幸せにしよう……%CALLNAME:MASTER%は心の中で強くそう誓った
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3036,28 +3016,28 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 2
 		$TOYOHIME_PREGNANCY
 		;妊娠経験済み
-		IF CFLAG:99:兒童人数
-			PRINTFORML 「真想快点儿告诉我们的孩子……」
-			PRINTFORML 「这个家庭、又多了一个新成员」
-			PRINTFORMDL %CALLNAME:TARGET%温柔地抚摸着孕育新生命的肚子
-			PRINTFORMDW 那是充满了母性的表情
+		IF CFLAG:99:子供人数
+			PRINTFORML 「早くあの子に教えてあげたいわ……」
+			PRINTFORML 「新しい家族が増えるのよって……」
+			PRINTFORMDL %CALLNAME:TARGET%は新しい命が宿ったお腹を優しく撫でている
+			PRINTFORMDW その表情は、母性に満ち溢れていた
 		;初めて妊娠した
 		ELSE
-			PRINTFORMDL 有一天、正在打扫房间的时候、%CALLNAME:TARGET%找了过来
-			PRINTFORMDW 有什么事？%CALLNAME:MASTER%一边泡茶一边问道
-			PRINTFORMW 「那个……%CALLNAME:MASTER%……」
-			PRINTFORMW 「我……好像有宝宝了……」
-			PRINTFORMDL 突然的告白让%CALLNAME:MASTER%目瞪口呆
-			PRINTFORMDW 自己是父亲了……%CALLNAME:TARGET%的肚子里、有自己的孩子……
-			PRINTFORMW 「……没关系、不是你的错」
-			PRINTFORMW 「这孩子我会好好……啊！？」
-			PRINTFORMDL 突然被紧紧抱住的%CALLNAME:TARGET%、发出惊讶的声音
-			PRINTFORMDW 我很高兴自己有了孩子、%CALLNAME:MASTER%把自己真实的感情传达给了%CALLNAME:TARGET%
-			PRINTFORMW 「……谢谢、%CALLNAME:MASTER%」
-			PRINTFORMW 「我、会生个健健康康的孩子出来的」
+			PRINTFORMDL ある日、部屋を掃除していると%CALLNAME:TARGET%が訪ねてきた
+			PRINTFORMDW 一体どうしたのだろう。%CALLNAME:MASTER%がお茶の用意をしようとすると……
+			PRINTFORMW 「ねぇ……%CALLNAME:MASTER%……」
+			PRINTFORMW 「赤ちゃん、出来ちゃったみたいなの……」
+			PRINTFORMDL いきなりの告白に%CALLNAME:MASTER%は目を丸くしてしまう
+			PRINTFORMDW 自分が父親に……%CALLNAME:TARGET%のお腹に、自分の子供が……
+			PRINTFORMW 「……大丈夫。貴方のせいじゃないわ」
+			PRINTFORMW 「この子は私がちゃんと……あっ！？」
+			PRINTFORMDL 突然ギュッと抱き締められ%CALLNAME:TARGET%が驚いた声を上げる
+			PRINTFORMDW 子供が出来て嬉しい。%CALLNAME:MASTER%は素直な感情を%CALLNAME:TARGET%に伝えた
+			PRINTFORMW 「……ありがとう。%CALLNAME:MASTER%」
+			PRINTFORMW 「私、元気な赤ちゃんを生むわね」
 			PRINTFORMW 
-			PRINTFORMDL 之后、两人进行了小小的庆祝
-			PRINTFORMDW 对即将诞生的新家人充满了期望……
+			PRINTFORMDL ……その後、二人はささやかなお祝いをした
+			PRINTFORMDW これから生まれてくる新しい家族に思いを馳せながら……
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -3105,27 +3085,27 @@ IF LOCAL
 		PRINTFORMDL 
 		;一人目の子供の時は以下の文が流れる
 		IF ARG:1 == 1
-			PRINTFORMDL %CALLNAME:TARGET%临产时、%CALLNAME:MASTER%就在房间外等候
+			PRINTFORMDL %CALLNAME:TARGET%が産気づくと、%CALLNAME:MASTER%は部屋の外に出された
 			PRINTFORMDW 
-			PRINTFORML 不管有什么理由、也不能往里看
-			PRINTFORMW 摒弃掉那种想法、就在外面守护着
+			PRINTFORML 決して中を覗いてはいけない。理由を聞いてもいけない
+			PRINTFORMW 私のことを想うなら、どうかそれを守って欲しい
 			PRINTFORMDL 
-			PRINTFORMDL 虽然也有想要见证孩子出生的心情……现在只能等待
-			PRINTFORMDW 一个小时、两个小时、三个小时……时间就这样过去了
+			PRINTFORMDL 出産に立ち会いたい気持ちもあったが……今はただ待つしかない
+			PRINTFORMDW 一時間、二時間、三時間……と時間が過ぎていく
 			PRINTFORMDW 
-			PRINTFORMDW ……然后、终于……
-			PRINTFORMDW 房间里传来刚出生的婴儿欢快的叫声
+			PRINTFORMDW ……そして、ついに……
+			PRINTFORMDW 部屋の中から、生まれた赤ん坊の元気な鳴き声が聞こえてきた
 			PRINTFORMDL ……………
 			PRINTFORMDL ………
 			PRINTFORMDW …
 		ENDIF
-		PRINTFORMW 「乖……乖……好孩子……」
-		PRINTFORMW 「喝吧、喝吧、快快长大吧……♪」
-		PRINTFORMDL %CALLNAME:TARGET%正在给自己刚出生的孩子喂奶
-		PRINTFORMDW 也不知道继承了谁、孩子的食欲特别旺盛
-		PRINTFORMW 「呐、%CALLNAME:MASTER%、给这孩子想几个名字吧？」
-		PRINTFORMDL 自己决定也可以、但也想听听%CALLNAME:TARGET%的想法
-		PRINTFORMDL %CALLNAME:MASTER%这样说了、%CALLNAME:TARGET%想了想、「那么就是……」列出了几个候补名字
+		PRINTFORMW 「よしよし……良い子ね……」
+		PRINTFORMW 「たーんと飲んで、大きくなるのよ……♪」
+		PRINTFORMDL %CALLNAME:TARGET%は生まれたばかりの我が子に母乳を与えている
+		PRINTFORMDW 誰に似たのか、とても食欲が旺盛だ
+		PRINTFORMW 「ねぇ、%CALLNAME:MASTER%。この子の名前を決めてあげましょう？」
+		PRINTFORMDL 自分が決めても良いが、%CALLNAME:TARGET%の考えも聞いておきたい
+		PRINTFORMDL %CALLNAME:MASTER%がそう言うと、%CALLNAME:TARGET%は「そうねぇ」と少し考えてから、いくつか候補を挙げてきた
 		PRINTFORMDW 
 		RETURN 1
 	ENDIF
@@ -3239,7 +3219,7 @@ ENDIF
 #DIM 補正値
 IF ARGS == "どうぞそのまま"
 
-ELSEIF ARGS == "二人"
+ELSEIF ARGS == "二人で"
 
 ENDIF
 
@@ -3995,12 +3975,12 @@ RETURN 1
 @M_KOJO_EVENT_K99_ONABARE_1(ARG)
 ;-------------------------------------------------
 :口上色を付けるならコメントアウトを外しXをキャラ番号に
-;CALL SET_KOJO_COLOR(99)
+;CALL M_KOJO_COLOR_K99
 
 IF ARG
-	PRINTFORML 玩弄A的情况
+	PRINTFORML A弄ってる場合
 ELSE
-	PRINTFORML 玩弄V的情况
+	PRINTFORML V弄ってる場合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -4015,12 +3995,12 @@ ENDIF
 @M_KOJO_EVENT_K99_ONABARE_2(ARG)
 ;-------------------------------------------------
 :口上色を付けるならコメントアウトを外しXをキャラ番号に
-;CALL SET_KOJO_COLOR(99)
+;CALL M_KOJO_COLOR_K99
 
 IF ARG
-	PRINTFORML 玩弄A的情况
+	PRINTFORML A弄ってる場合
 ELSE
-	PRINTFORML 玩弄V的情况
+	PRINTFORML V弄ってる場合
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -4042,21 +4022,21 @@ ENDIF
 #DIM 回数
 
 :口上色を付けるならコメントアウトを外しXをキャラ番号に
-;CALL SET_KOJO_COLOR(99)
+;CALL M_KOJO_COLOR_K99
 
 SELECTCASE 前戯１
 	CASE 1
-		PRINTFORML 欺负Ｃ
+		PRINTFORML Ｃ責め
 	CASE 2
-		PRINTFORML 欺负Ｂ
+		PRINTFORML Ｂ責め
 	CASE 3
-		PRINTFORML 欺负Ｍ
+		PRINTFORML Ｍ責め
 ENDSELECT
 
 IF 本番はどっちか
-	PRINTFORML A插入
+	PRINTFORML Aで本番
 ELSE
-	PRINTFORML V插入
+	PRINTFORML Vで本番
 ENDIF
 ;-------------------------------------------------
 [SKIPEND]
@@ -4077,7 +4057,7 @@ RETURN 1
 ;CFLAG:口上内抱き寄せ判定_初回がオンになっている場合のみ有効。
 ;初めて押し倒した時、ここでRETURN -1すると押し倒しを強制的にキャンセルします。
 ;RETURN 0なら通常の判定を行い、RETURN 1すると無条件に成功させます。
-;特定のイベント（デート帰りキスなど）を見るまで诶嘿嘿できないようにしたいときなどにどうぞ。
+;特定のイベント（デート帰りキスなど）を見るまでうふふできないようにしたいときなどにどうぞ。
 ;-------------------------------------------------
 @M_KOJO_EVENT_K99_PERMISSION_1
 ;-------------------------------------------------
@@ -4092,7 +4072,7 @@ RETURN 0
 ;CFLAG:口上内抱き寄せ判定_通常がオンになっている場合のみ有効。
 ;合意付きで押し倒した時、ここでRETURN -1すると押し倒しを強制的にキャンセルします。
 ;RETURN 0なら通常通り成功させます。
-;合意があっても何らかの理由で诶嘿嘿できないようにしたいときなどにどうぞ。
+;合意があっても何らかの理由でうふふできないようにしたいときなどにどうぞ。
 ;-------------------------------------------------
 @M_KOJO_EVENT_K99_PERMISSION_2
 ;-------------------------------------------------
@@ -4135,18 +4115,18 @@ RETURN 0
 ;評価点は701～999（渡すキャラ本人の評価）
 ;--------------------------------------------------------------------------------------------------
 IF ARG == 1
-	;PRINTFORMW 「%GIFT_NAME%をあげるから大事に使て」
+	;PRINTFORMW 「%GIFT_NAME%をあげるから大事に使って」
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日貰った贈り物を大事にする（700点以上）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 2
 	;IF STRCOUNT(SENSE, "かわいい/")
-	;	PRINTFORMW 「かわいいプレゼントを貰ちゃた」
+	;	PRINTFORMW 「かわいいプレゼントを貰っちゃった」
 	;ELSEIF 評価点 >= 800
-	;	PRINTFORMW 「とても素敵なプレゼントを貰ちゃた」
+	;	PRINTFORMW 「とっても素敵なプレゼントを貰っちゃった」
 	;ELSE
-	;	PRINTFORMW 「素敵なプレゼントを貰ちゃた」
+	;	PRINTFORMW 「素敵なプレゼントを貰っちゃった」
 	;ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
@@ -4154,16 +4134,16 @@ ELSEIF ARG == 2
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 3
 	;IF STRCOUNT(SENSE, "身につける/")
-	;	PRINTFORMW 「明日からこれを付けて行こうと」
+	;	PRINTFORMW 「明日からこれを付けて行こうっと」
 	;ELSE
-	;	PRINTFORMW 「明日からこれを持て行こうと」
+	;	PRINTFORMW 「明日からこれを持って行こうっと」
 	;ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日貰った贈り物をとりあえず保管する（400～699点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 4
-	;PRINTFORMW 「とりあえず飾ておこう」
+	;PRINTFORMW 「とりあえず飾っておこう」
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日貰った贈り物をこっそり質に入れる（400点未満）
@@ -4345,10 +4325,10 @@ SIF 0
 	SIF YOUBI_MATCH(DAY, "水木") && INRANGE(TIME, 720, 1020) && CFLAG:今日の運勢 % 2 == 0
 		TCVAR:引力点 = P213鈴奈庵
 	;特定の人物が特定の場所にいるとそこへ引っ張られる
-	SIF CFLAG:[[白蓮]]:現在位置 == P103本堂 && !CFLAG:[[白蓮]]:诶嘿嘿 && SHIRAHU([[白蓮]])
+	SIF CFLAG:[[白蓮]]:現在位置 == P103本堂 && !CFLAG:[[白蓮]]:うふふ && SHIRAHU([[白蓮]])
 		TCVAR:引力点 = P103本堂
 	;土日に10分の1の確率で特定の人物にくっついてまわる
-	SIF YOUBI_MATCH(DAY, "土日") && CFLAG:今日の運勢 % 10 == 0 && !CFLAG:[[さとり]]:诶嘿嘿 && SHIRAHU([[さとり]])
+	SIF YOUBI_MATCH(DAY, "土日") && CFLAG:今日の運勢 % 10 == 0 && !CFLAG:[[さとり]]:うふふ && SHIRAHU([[さとり]])
 		TCVAR:引力点 = CFLAG:[[さとり]]:現在位置
 [SKIPEND]
 
@@ -4373,31 +4353,31 @@ IF LOCAL:1
 		;場外に出てあなたがキャラと衝突した際の台詞
 		;文字数制限はありません,汎用台詞もありません
 		;-------------------------------------------------
-		RESULTS = 好痛！喂，很危险啊！
+		RESULTS = いたっ！ ちょっと、危ないじゃないのよ！
 	CASE "そこだ！"
-		RESULTS = %TEXTR("就是那里！/就是现在！")%
+		RESULTS = %TEXTR("そこ！/今！")%
 	CASE "近い"
-		RESULTS = %TEXTR("近了！很近了哦！/快到了哦！/再一点点！")%
+		RESULTS = %TEXTR("近い！近いよ！/近づいてるよ！/あとちょっと！")%
 	CASE "遠い"
-		RESULTS = %TEXTR("还很远哦/还早着呢～")%
+		RESULTS = %TEXTR("まだ遠いよ/まだまだ～")%
 	CASE "かなり遠い"
-		RESULTS = %TEXTR("还远着呢～/还远远的呢～")%
+		RESULTS = %TEXTR("全然遠いよー/まだまだずっと遠いー")%
 	CASE "前"
-		RESULTS = %TEXTR("在前面哦/就这样，就这样/那边那边")%
+		RESULTS = %TEXTR("前にあるよ/そのまま、そのまま/そっちそっち")%
 	CASE "少し前"
-		RESULTS = %TEXTR("就一点点前面！/稍微前面一点/再一步！")%
+		RESULTS = %TEXTR("ちょっとだけ前！/すこーし前/あと一歩！")%
 	CASE "後ろ"
-		RESULTS = %TEXTR("面向后面了！/反了，反了！/不是那边哦～")%
+		RESULTS = %TEXTR("後ろ向いてる！/逆、逆！/そっちじゃないよー")%
 	CASE "少し後ろ"
-		RESULTS = %TEXTR("就在后面哦！/稍微后面一点/一步后面！")%
+		RESULTS = %TEXTR("すぐ後ろだよ！/すこーし後ろ/一歩後ろ！")%
 	CASE "右"
-		RESULTS = %TEXTR("在右边哦/右边，右边/再往右")%
+		RESULTS = %TEXTR("右だよ/右、右/もっと右")%
 	CASE "少し右"
-		RESULTS = %TEXTR("就一点点右边/还是右边吧")%
+		RESULTS = %TEXTR("ちょっとだけ右/まだ右かな")%
 	CASE "左"
-		RESULTS = %TEXTR("在左边哦/左边，左边/再往左")%
+		RESULTS = %TEXTR("左だよ/左、左/もっと左")%
 	CASE "少し左"
-		RESULTS = %TEXTR("就一点点左边/还是左边吧")%
+		RESULTS = %TEXTR("ちょっとだけ左/まだ左かな")%
 	CASE "結果"
 		;-------------------------------------------------
 		;終了後の一言
@@ -4413,13 +4393,13 @@ IF LOCAL:1
 		;-------------------------------------------------
 		SELECTCASE TFLAG:193
 		CASE -1
-			RESULTS = 可惜了～
+			RESULTS = ざんね～ん
 		CASE 0
-			RESULTS = 太好了！
+			RESULTS = やったね！
 		CASE 1
-			RESULTS = 好厉害！
+			RESULTS = すごーい！
 		CASE 2
-			RESULTS = 完美劈开！
+			RESULTS = すごい綺麗に割れた！
 		ENDSELECT
 	ENDSELECT
 ENDIF
@@ -4437,25 +4417,18 @@ ENDIF
 ;	CFLAG:XX:好感度 += 5
 ;	RETURN 1
 
-;炮友契約用
+;セフレ契約用
 ;"補正"でRETURNした数値が理性判定に加算されるので、
-;簡単に炮友にしたいならマイナス、難易度を上げたかったり実質不可能にしたいならプラスすべし
+;簡単にセフレにしたいならマイナス、難易度を上げたかったり実質不可能にしたいならプラスすべし
 @KOJO_SF_CONTRACT_EVENT_K99(ARGS)
 SELECTCASE ARGS
 	CASE "導入"
-		;PRINTFORML 「炮友て、ええー」
+		;PRINTFORML 「セフレって、ええー」
 	CASE "補正"
-		;PRINTFORML （サクとヤりたいなあ）
+		;PRINTFORML （サクッとヤりたいなあ）
 		;RETURN -1000
 	CASE "成功"
 		;PRINTFORML 「いいよー」
 	CASE "失敗"
 		;PRINTFORML 「おことわりだー」
 ENDSELECT
-
-;一般依頼の抑制
-;ARG is request number
-;If this function returns 1, that request will not occur for this character
-@M_KOJO_CHECK_K99_IRAI_BLOCKED(ARGS,ARG,ARG:1)
-; SIF GROUPMATCH(ARG, 2)
-;     RETURN 1

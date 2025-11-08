@@ -1,6 +1,6 @@
 ﻿;*********************************************************************************************
-;Counter指令：Ａ挿入させる
-;ARG = 対象の角色番号
+;カウンターコマンド：Ａ挿入させる
+;ARG = 対象のキャラ番号
 ;*********************************************************************************************
 @CCOMF87(ARG)
 
@@ -34,7 +34,7 @@
 	TCVAR:116 = PLAYER
 	CALL PAIN_CHECK_A(ARG)
 	CALL LOST_VIRGIN(ARG)
-	;射精部位（1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+	;射精箇所（1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
 	CALL 射精対象登録(PLAYER, ARG, 2)
 	TEQUIP:ARG:体位 = 3
 	;強度
@@ -45,33 +45,35 @@
 	EXP:PLAYER:挿入経験 ++
 	EXP:ARG:愛情経験 += TALENT:ARG:恋慕
 	TEQUIP:ARG:51 = MASTER
-	;奉仕FLAG
+	;奉仕フラグ
 	TCVAR:ARG:108 = 1
 	TCVAR:ARG:嗜虐フラグ = 1
 
-	;マスターCounter制御
-	;(ビット立ちで不可 0=摸屁股 1=擁抱 2=接吻 3=胸愛撫 4=肛門愛撫 5=陰蒂愛撫 6=指挿入れ 7=掀裙子)
+	;マスターカウンター制御
+	;(ビット立ちで不可 0=尻を撫でる 1=抱き付く 2=キスする 3=胸愛撫 4=アナル愛撫 5=クリ愛撫 6=指挿入れ 7=スカートめくり)
 	;=============================
-	;CALL Counter挿入され継続中処理(ARG)
+	;CALL カウンター挿入され継続中処理(ARG)
 	SETBIT TCVAR:ARG:26 ,4
 	SETBIT TCVAR:ARG:26 ,7
 
 RETURN 1
 
 ;*********************************************************************************************
-;Counter実行可否出力関数
-;ARG = 対象の角色番号
+;カウンター実行可否出力関数
+;ARG = 対象のキャラ番号
 ;*********************************************************************************************
 @CCOM_ABLE87(ARG)
 
+	SIF GETBIT(FLAG:アナル開発無効, 1)
+		RETURN 0
 	;毒人形だと肛門がついてないのでダメ
 	SIF TALENT:ARG:196 == 99
 		RETURN 0
 	;体格差がある場合は経験がないとダメ
-	SIF 挿入不可(ARG) == 1 && EXP:ARG:Ａ経験 < 50 && !TALENT:MASTER:禁断的知識
+	SIF 挿入不可(ARG) == 1 && EXP:ARG:Ａ経験 < 50 && !TALENT:MASTER:禁断の知識
 		RETURN 0
 	;さらに体格差があると禁断の知識が必要
-	SIF 挿入不可(ARG) == 2 && (EXP:ARG:Ａ経験 < 50 || !TALENT:MASTER:禁断的知識)
+	SIF 挿入不可(ARG) == 2 && (EXP:ARG:Ａ経験 < 50 || !TALENT:MASTER:禁断の知識)
 		RETURN 0
 	SIF 挿入不可(ARG) == 3
 		RETURN 0
@@ -81,7 +83,7 @@ RETURN 1
 		RETURN 0
 	SIF BASE:MASTER:勃起 < 1000
 		RETURN 0
-	SIF TALENT:ARG:妊娠 && (CFLAG:TARGET:903 <= 5 || CFLAG:TARGET:903 >= 25)
+	SIF TALENT:ARG:妊娠 && (CFLAG:ARG:903 <= 30 || CFLAG:ARG:903 >= 71)
 		RETURN 0
 	SIF CFLAG:ARG:育児人数 >= 1 && CFLAG:ARG:育児人数 <= 30
 		RETURN 0
@@ -97,7 +99,7 @@ RETURN 1
 		RETURN 0
 	SIF PALAM:ARG:潤滑 < PALAMLV:3
 		RETURN 0
-	SIF TEQUIP:ARG:肛用振動棒
+	SIF TEQUIP:ARG:アナルバイブ
 		RETURN 0
 	SIF TEQUIP:MASTER:50 >= 0 || TEQUIP:MASTER:51 >= 0
 		RETURN 0
@@ -105,25 +107,25 @@ RETURN 1
 RETURN 1
 
 ;*********************************************************************************************
-;Counter実行判定値算出関数
-;ARG = 対象の角色番号
+;カウンター実行判定値算出関数
+;ARG = 対象のキャラ番号
 ;*********************************************************************************************
-@CCOM_ORDER87(指令番号, ARG, 基本値)
-#DIM 指令番号
+@CCOM_ORDER87(コマンド番号, ARG, 基本値)
+#DIM コマンド番号
 #DIM 基本値
-#DIMS Counterタイプ
+#DIMS カウンタータイプ
 
-	;Counterタイプ設定
+	;カウンタータイプ設定
 	;=============================
-	Counterタイプ = 性交
+	カウンタータイプ = 性交
 
 	;実行判定値算出式
 	;=============================
 	LOCAL = 基本値 + ABL:ARG:Ａ感覚 * 3+ EX:ARG:Ａ寸止め * 10
 
-	;Counterタイプ別計算処理 実質実行判定処理を含む
+	;カウンタータイプ別計算処理 実質実行判定処理を含む
 	;=============================
-	LOCAL = MAX(LOCAL + COUNTER_SIKOU:ARG:指令番号, 1)
-	LOCAL *= COUNTER_TYPE(Counterタイプ, ARG)
+	LOCAL = MAX(LOCAL + COUNTER_SIKOU:ARG:コマンド番号, 1)
+	LOCAL *= COUNTER_TYPE(カウンタータイプ, ARG)
 
 RETURN LOCAL

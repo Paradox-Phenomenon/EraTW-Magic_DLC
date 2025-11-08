@@ -1,6 +1,6 @@
 ﻿;-------------------------------------------------
-;幫忙干活
-;日常系指令　レベル1
+;仕事を手伝う
+;日常系コマンド　レベル1
 ;-------------------------------------------------
 @COM304
 #DIM JOBTYPE
@@ -11,12 +11,10 @@ SIF FLAG:70 && JOBTYPE == JOB_会話
 	RETURN 0
 
 CALL JOB_EFFICIENCY(JOBTYPE)
-SIF TFLAG:192 == -2
-	RETURN 0
 
 IF FLAG:70
-	IF BASE:工作量 <= 0
-		PRINTFORML 已经完成了%CALLNAME:TARGET%交付的工作
+	IF BASE:仕事量 <= 0
+		PRINTFORML もう%CALLNAME:TARGET%の仕事は片付いた
 		BASE:MASTER:TSP -= 10
 		RETURN 0
 	ELSE
@@ -60,9 +58,9 @@ ELSE
 	ELSE
 		SELECTCASE TARGET
 		CASE [[慧音]]
-			;慧音の寺子屋授業善后工作手伝い14時～14時30分まで
-			;慧音の寺子屋授業善后工作手伝い14時10分～14時30分まで
-			;慧音の寺子屋授業善后工作手伝い14時20分～14時30分まで
+			;慧音の寺子屋授業後片付け手伝い14時～14時30分まで
+			;慧音の寺子屋授業後片付け手伝い14時10分～14時30分まで
+			;慧音の寺子屋授業後片付け手伝い14時20分～14時30分まで
 			;順番的に時短処理が機能していなかったので修正
 			IF INRANGE(TIME, CLOCK_TO_TIME(14, 20), CLOCK_TO_TIME(14, 30))
 				TIME += 10
@@ -73,8 +71,8 @@ ELSE
 			ELSE
 				TIME += 60
 			ENDIF
-		;艾伦の呼び込み手伝い
-		CASE [[艾伦]]
+		;エレンの呼び込み手伝い
+		CASE [[エレン]]
 			IF TCVAR:TARGET:354 < 25
 				TIME += 30
 			ELSE
@@ -87,7 +85,7 @@ ELSE
 	DOWNBASE:気力 += 10
 	;信頼
 	TFLAG:98 += 5
-	TFLAG:情緒上昇抑制 = 1
+	TFLAG:ムード上昇抑制 = 1
 	;固定で獲得するソース
 	SOURCE:歓楽 = 300
 	SIF JOBTYPE == 49
@@ -135,14 +133,14 @@ ELSE
 		SOURCE:歓楽 = 0
 
 	SOURCE:受動 = 230 + 80 * ABL:従順
-	SOURCE:征服 = 150 + 200 * ABL:施虐属性
+	SOURCE:征服 = 150 + 200 * ABL:サドっ気
 ENDIF
 
 ;do actual cleaning
 IF GROUPMATCH(JOBTYPE, 40, 50) && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP
 	;cleaning power
     LOCAL:10 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
-	SELECTCASE ITEM:特制竹箒
+	SELECTCASE ITEM:カスタム竹箒
 		CASE 1
 			LOCAL:10 += 2
 		CASE 2
@@ -179,7 +177,7 @@ IF GROUPMATCH(ARG, JOB_清掃, JOB_会話, JOB_戦闘, JOB_教養, JOB_料理, J
 	CASE JOB_採集
 		ABILITY = TALENT:MASTER:採集Lv
 	CASE JOB_釣り
-		ABILITY = TALENT:MASTER:釣魚Lv
+		ABILITY = TALENT:MASTER:釣りLv
 	CASE JOB_調合
 		ABILITY = TALENT:MASTER:調合Lv
 	ENDSELECT
@@ -221,7 +219,7 @@ IF GROUPMATCH(ARG, JOB_清掃, JOB_会話, JOB_戦闘, JOB_教養, JOB_料理, J
 		CASE -1
 			TFLAG:193 = -1
 			TFLAG:98 = -2
-		;指令終了
+		;コマンド終了
 		CASE -2
 			TFLAG:193 = -1
 			RETURN 0
@@ -265,7 +263,7 @@ ELSEIF ARG == JOB_遊び
 		CASE -1
 			TFLAG:193 = -1
 			TFLAG:98 = -2
-		;指令終了
+		;コマンド終了
 		CASE -2
 			TFLAG:193 = -1
 			RETURN 0
@@ -307,8 +305,8 @@ SELECTCASE ARG
 		EXP:MASTER:採集経験 ++
 	CASE JOB_釣り
 		SIF TFLAG:193 == 1
-			EXP:MASTER:釣魚経験 ++
-		EXP:MASTER:釣魚経験 ++
+			EXP:MASTER:釣り経験 ++
+		EXP:MASTER:釣り経験 ++
 	CASE JOB_調合
 		SIF TFLAG:193 == 1
 			EXP:MASTER:調合経験 ++
@@ -326,15 +324,15 @@ SELECTCASE ARG
 ENDSELECT
 
 ;報酬倍率
-LOCAL:4 = TCVAR:TARGET:工资
+LOCAL:4 = TCVAR:TARGET:給料
 
-;働いた分工作量減少
+;働いた分仕事量減少
 LOCAL:3 = (WorkP + RAND:80 + RAND:80 + 10)
 
 ;当然時間停止中は会話系の手伝いはできない
 SIF FLAG:70 && GROUPMATCH(ARG, 41)
 	LOCAL:3 = 0
-SIF TCVAR:TARGET:沒法幫忙 == 2 && FLAG:70
+SIF TCVAR:TARGET:手伝えない == 2 && FLAG:70
 	LOCAL:3 /= 5
 ;調合知識
 IF TARGET == [[鈴仙]] && YOUBI_MATCH(DAY, "木")
@@ -343,36 +341,36 @@ IF TARGET == [[鈴仙]] && YOUBI_MATCH(DAY, "木")
 		EXP:MASTER:調合経験 ++
 ENDIF
 
-;呼び込みは工作量少なめ（艾伦）
-SIF TARGET == [[艾伦]] && CFLAG:職種 == JOB_商売
+;呼び込みは仕事量少なめ（エレン）
+SIF TARGET == [[エレン]] && CFLAG:職種 == JOB_商売
 	LOCAL:3 /= 2
 ;みすちーは料理経験におまけ
-SIF TARGET == [[米斯蒂亜]]
+SIF TARGET == [[ミスティア]]
 	EXP:MASTER:料理経験 ++
 ;half assistance for cleaning due to it taking less time
 SIF GROUPMATCH(ARG, 40, 50)
 	LOCAL:3 /= 2
-;TCVAR:315が2じゃなければ工作量減る
-IF TCVAR:TARGET:沒法幫忙 != 2
-	BASE:工作量 = BASE:工作量 - LOCAL:3
+;TCVAR:315が2じゃなければ仕事量減る
+IF TCVAR:TARGET:手伝えない != 2
+	BASE:仕事量 = BASE:仕事量 - LOCAL:3
 ENDIF
-IF BASE:工作量 < 0 && CFLAG:TARGET:20 > 0
-	BASE:工作量 = 1
-ELSEIF BASE:工作量 < 0
-	BASE:工作量 = 0
+IF BASE:仕事量 < 0 && CFLAG:TARGET:20 > 0
+	BASE:仕事量 = 1
+ELSEIF BASE:仕事量 < 0
+	BASE:仕事量 = 0
 ENDIF
-;働いた分アナタの工作量を増加（報酬に影響）
-TCVAR:MASTER:帮忙工作量 += LOCAL:3 * LOCAL:4
-TCVAR:TARGET:帮忙工作量 += LOCAL:3
+;働いた分アナタの仕事量を増加（報酬に影響）
+TCVAR:MASTER:手伝った量 += LOCAL:3 * LOCAL:4
+TCVAR:TARGET:手伝った量 += LOCAL:3
 IF ARG != 46
-	PRINTFORML 这次帮忙完成的工作量{LOCAL:3}
+	PRINTFORML こなした仕事量{LOCAL:3}
 ENDIF
 
 ;-------------------------------------------------
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE304
-;幫忙干活実行判定
+;仕事を手伝う実行判定
 SIF !TFLAG:100
 	RETURN 0
 ;一括管理
@@ -387,16 +385,16 @@ SIF GROUPMATCH(CFLAG:職種, JOB_宴会参加, JOB_酔いつぶれる)
 SIF TCVAR:315 == 1
 	RETURN 0
 ;仕事が終わってる
-SIF BASE:工作量 <= 0
+SIF BASE:仕事量 <= 0
 	RETURN 0
 ;睡眠中
 SIF CFLAG:睡眠
 	RETURN 0
-;陪睡中
-SIF CFLAG:陪睡中
+;添い寝中
+SIF CFLAG:添い寝中
 	RETURN 0
-;约会中
-SIF CHK_DATENOW(CFLAG:约会中)
+;デート中
+SIF CHK_DATENOW(CFLAG:デート中)
 	RETURN 0
 ;気力0
 SIF BASE:MASTER:気力 <= 0

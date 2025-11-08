@@ -1,202 +1,181 @@
 ﻿;どこにもCALLされてなく惑わしいからコメントアウトしておきます
 [SKIPSTART]
-@PRINT_STATE(選択中角色ID, 選択中页番号, 調教中フラグ)
-#DIM 選択中角色ID
+@PRINT_STATE(選択中キャラID, 選択中ページ番号, 調教中フラグ)
+#DIM 選択中キャラID
 #DIM 調教中フラグ
-#DIM REF 選択中页番号
-#DIM CONST 前一位角色を表示 = 4
-#DIM CONST 下一位角色を表示 = 6
-#DIM CONST 返回よ = 5
+#DIM REF 選択中ページ番号
+#DIM CONST 前のキャラを表示 = 4
+#DIM CONST 次のキャラを表示 = 6
+#DIM CONST 戻るよ = 5
 
 $PRINT_LOOP
 	DRAWLINEFORM ━
 	PRINT ■
-	PRINTS NAME:選択中角色ID
+	PRINTS NAME:選択中キャラID
 	PRINT (好感度:
-	CALL PRINT_RANK(CFLAG:選択中角色ID:2, "MAX_50000")
-	PRINTFORM  {CFLAG:選択中角色ID:2} 信賴度:
-	CALL PRINT_RANK(CFLAG:選択中角色ID:信賴度, "MAX_20000")
-	PRINTFORM  {CFLAG:選択中角色ID:信賴度}) 
+	CALL PRINT_RANK(CFLAG:選択中キャラID:2, "MAX_50000")
+	PRINTFORM  {CFLAG:選択中キャラID:2} 信頼度:
+	CALL PRINT_RANK(CFLAG:選択中キャラID:信頼度, "MAX_20000")
+	PRINTFORM  {CFLAG:選択中キャラID:信頼度}) 
 	;MASTERならば所持金を記載
-	SIF 選択中角色ID == MASTER
+	SIF 選択中キャラID == MASTER
 		PRINTFORM (所持金: %金額表示(MONEY)%)
-	IF NOTICE_CYCLE(選択中角色ID)
+	IF NOTICE_CYCLE(選択中キャラID)
 		IF 調教中フラグ
-			CALL CYCLE_PRINT(選択中角色ID)
+			CALL CYCLE_PRINT(選択中キャラID)
 		ELSE
-			CALL CYCLE_PRINT翌日(選択中角色ID)
+			CALL CYCLE_PRINT翌日(選択中キャラID)
 		ENDIF
 		SETCOLOR C_AQUA
 	ENDIF
-	IF CFLAG:選択中角色ID:允许无套 == 2
-		SETCOLOR C_PINK
-		PRINT 危険日无套Ｈ❤也OK哦
-		RESETCOLOR
-	ELSEIF CFLAG:選択中角色ID:允许无套 == 1
-		SETCOLOR C_AQUA
-		PRINT 无套Ｈ❤也不是不行呢
-		RESETCOLOR
-	ELSEIF GETBIT(CFLAG:選択中角色ID:既成事實,1)
-		SETCOLOR C_YELLOW
-		PRINT Ｈ也是可以的❤
-		RESETCOLOR
+	IF CFLAG:選択中キャラID:生解禁 == 2
+		PRINT 危険日生Ｈ解禁
+	ELSEIF CFLAG:選択中キャラID:生解禁 == 1
+		PRINT 生Ｈ解禁
+	ELSEIF GETBIT(CFLAG:選択中キャラID:既成事実,1)
+		PRINT 合意取得
 	ENDIF
 	RESETCOLOR
 	PRINTL 　
 ;*******************************************
-;1页目
+;1ページ目
 ;*******************************************
-IF 選択中页番号 == 0
+IF 選択中ページ番号 == 0
 	PRINT 体力 
-				CALL PRINT_COLORBAR, BASE:選択中角色ID:0, MAXBASE:選択中角色ID:0, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("赤"), RESULT:1
-				PRINTFORML  ({BASE:選択中角色ID:体力,5}/{MAXBASE:選択中角色ID:体力,5}) 
+				CALL PRINT_COLORBAR, BASE:選択中キャラID:0, MAXBASE:選択中キャラID:0, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("赤"), RESULT:1
+				PRINTFORML  ({BASE:選択中キャラID:体力,5}/{MAXBASE:選択中キャラID:体力,5}) 
 	PRINT 気力 
-				CALL PRINT_COLORBAR, BASE:選択中角色ID:1, MAXBASE:選択中角色ID:1, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("緑"), RESULT:1
-				PRINTFORML  ({BASE:選択中角色ID:気力,5}/{MAXBASE:選択中角色ID:気力,5}) 
-	IF BASE:選択中角色ID:15
+				CALL PRINT_COLORBAR, BASE:選択中キャラID:1, MAXBASE:選択中キャラID:1, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("緑"), RESULT:1
+				PRINTFORML  ({BASE:選択中キャラID:気力,5}/{MAXBASE:選択中キャラID:気力,5}) 
+	IF BASE:選択中キャラID:15
 	PRINT 酒気 
-				CALL PRINT_COLORBAR, BASE:選択中角色ID:15, MAXBASE:選択中角色ID:15, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("青"), RESULT:1
-				PRINTFORML  ({BASE:選択中角色ID:酒気,5}/{MAXBASE:選択中角色ID:酒気,5}) 
+				CALL PRINT_COLORBAR, BASE:選択中キャラID:15, MAXBASE:選択中キャラID:15, 28, UNICODE(0x2585), UNICODE(0x2585), BARCOLORSET("青"), RESULT:1
+				PRINTFORML  ({BASE:選択中キャラID:酒気,5}/{MAXBASE:選択中キャラID:酒気,5}) 
 	ENDIF
-	SELECTCASE CFLAG:選択中角色ID:积攒度
-		CASE 201 TO 499
-			SETCOLOR C_AQUA
-		CASE 500 TO 799
+	SELECTCASE CFLAG:選択中キャラID:溜まってる度
+		CASE 301 TO 500
 			SETCOLOR C_YELLOW
-		CASE 800 TO 999
-			SETCOLOR C_PINK
-		CASE IS >= 1000
+		CASE IS >= 501
 			SETCOLOR C_RED
 	ENDSELECT
-	SIF NOTICE_LUST(選択中角色ID)
-		IF CFLAG:選択中角色ID:积攒度 >=1000
-		PRINTFORML 欲求：{CFLAG:選択中角色ID:积攒度 / 10}％ ❤饥渴❤难耐❤
-		ELSEIF CFLAG:選択中角色ID:积攒度 >=800
-		PRINTFORML 欲求：{CFLAG:選択中角色ID:积攒度 / 10}％ ❤焦躁难忍❤
-		ELSEIF CFLAG:選択中角色ID:积攒度 >=500
-		PRINTFORML 欲求：{CFLAG:選択中角色ID:积攒度 / 10}％ 欲求不满❤
-		ELSEIF CFLAG:選択中角色ID:积攒度 >=200
-		PRINTFORML 欲求：{CFLAG:選択中角色ID:积攒度 / 10}％ 想发泄
-		ELSE
-		PRINTFORML 欲求：{CFLAG:選択中角色ID:积攒度 / 10}％
-		ENDIF
+	SIF NOTICE_LUST(選択中キャラID)
+		PRINTFORML 欲求不満度：{CFLAG:選択中キャラID:溜まってる度 / 10}％
 	RESETCOLOR
-
-	CALL SHOW_SIZE(選択中角色ID)
-	PRINTL [99] 画像切换
+	CALL SHOW_SIZE(選択中キャラID)
+	PRINTL [99] 画像切り替え
 	IF FLAG:画像表示
-		CALL PRINT_STATE_IMAGE(選択中角色ID)
+		CALL PRINT_STATE_IMAGE(選択中キャラID)
 	ENDIF
 
-	CALL PRINT_STATE_CLOTH(選択中角色ID)
-	;道具というか道具だけど他が2文字だしねぇ
-	IF 選択中角色ID == MASTER
+	CALL PRINT_STATE_CLOTH(選択中キャラID)
+	;道具というかアイテムだけど他が2文字だしねぇ
+	IF 選択中キャラID == MASTER
 		PRINT □ 
 		CALL PRINTBUTTON_EX("道具",167,TFLAG:167)
 		PRINTL  □---------------------------------------------------------------------------
 		SIF !TFLAG:道具表示
 			CALL LIST_ITEM("全て")
 	ENDIF
-	CALL PRINT_STATE_ABL(選択中角色ID)
+	CALL PRINT_STATE_ABL(選択中キャラID)
 	PRINTL
-	CALL PRINT_STATE_TALENT(選択中角色ID)
+	CALL PRINT_STATE_TALENT(選択中キャラID)
 	PRINTL
-	IF 選択中角色ID != MASTER
+	IF 選択中キャラID != MASTER
 		PRINTL
 		PRINT □ 
 		CALL PRINTBUTTON_EX("刻印",166,TFLAG:166)
 		PRINTL  □---------------------------------------------------------------------------
-		;PRINT_MARK 選択中角色ID
-		CALL PRINT_刻印(選択中角色ID)
+		;PRINT_MARK 選択中キャラID
+		CALL PRINT_刻印(選択中キャラID)
 	ENDIF
 ;*******************************************
-;2页目
+;2ページ目
 ;*******************************************
-ELSEIF 選択中页番号 == 1
+ELSEIF 選択中ページ番号 == 1
 	PRINTL
-	CALL PRINT_STATE_EXP(選択中角色ID)
+	CALL PRINT_STATE_EXP(選択中キャラID)
 	PRINTL
-	SIF TALENT:選択中角色ID:妊娠 || CFLAG:選択中角色ID:兒童人数 > 0
-		CALL 妊娠関連(選択中角色ID)
-	SIF 選択中角色ID != MASTER && !調教中フラグ
-		CALL PRINT_STATE_JUEL(選択中角色ID)
+	SIF 選択中キャラID != MASTER && ( TALENT:選択中キャラID:妊娠 || CFLAG:選択中キャラID:子供人数 > 0)
+		CALL 妊娠関連(選択中キャラID)
+	SIF 選択中キャラID != MASTER && !調教中フラグ
+		CALL PRINT_STATE_JUEL(選択中キャラID)
 	SIF 調教中フラグ
-		CALL PRINT_STATE_EX(選択中角色ID)
+		CALL PRINT_STATE_EX(選択中キャラID)
 	PRINTL
-	SIF 選択中角色ID
-		CALL 胖次収集状況(選択中角色ID)
+	SIF 選択中キャラID
+		CALL パンツ収集状況(選択中キャラID)
 ;*******************************************
-;3页目
+;3ページ目
 ;*******************************************
-ELSEIF 選択中页番号 == 2
-	CALL PRINT_STATE_PERSONAL(選択中角色ID)
-	CALL 肉体情報(選択中角色ID)
-	CALL SHOW_RELATION(選択中角色ID)
+ELSEIF 選択中ページ番号 == 2
+	CALL PRINT_STATE_PERSONAL(選択中キャラID)
+	CALL 肉体情報(選択中キャラID)
+	CALL SHOW_RELATION(選択中キャラID)
 ;*******************************************
-;4页目
+;4ページ目
 ;*******************************************
-ELSEIF 選択中页番号 == 3
-	CALL PRINT_STATE_PREFERENCE(選択中角色ID)
+ELSEIF 選択中ページ番号 == 3
+	CALL PRINT_STATE_PREFERENCE(選択中キャラID)
 ;*******************************************
-;5页目
+;5ページ目
 ;*******************************************
-ELSEIF 選択中页番号 == 4
-	IF !選択中角色ID
+ELSEIF 選択中ページ番号 == 4
+	IF !選択中キャラID
 		CALL 予定
 	ELSE
-		CALL 陥落条件表示(選択中角色ID)
-		CALL 浮気把握状況(選択中角色ID)
+		CALL 陥落条件表示(選択中キャラID)
+		CALL 浮気把握状況(選択中キャラID)
 	ENDIF
 ENDIF
 IF 調教中フラグ
 	DRAWLINE
-	IF 選択中页番号 > 0
-		PRINTC [0] 察看前一頁
+	IF 選択中ページ番号 > 0
+		PRINTC [0] 前のページ
 	ELSE
 		PRINTC 　
 	ENDIF
 	PRINTC 　
-	IF 選択中页番号 < 詳細能力表示最大页数的番号
-		PRINTC [1] 察看下一頁
+	IF 選択中ページ番号 < 詳細能力表示最大ページ番号
+		PRINTC [1] 次のページ
 	ELSE
 		PRINTC 　
 	ENDIF
 	PRINTL
 		PRINTC  
-		PRINTFORMC [{返回よ}] 返回
+		PRINTFORMC [{戻るよ}] 戻る
 	INPUT
 	SELECTCASE RESULT
 		CASE 0
-		SIF 選択中页番号 > 0
-			選択中页番号 --
+		SIF 選択中ページ番号 > 0
+			選択中ページ番号 --
 			GOTO PRINT_LOOP
 		CASE 1
-			SIF 選択中页番号 < 詳細能力表示最大页数的番号
-				選択中页番号 ++
+			SIF 選択中ページ番号 < 詳細能力表示最大ページ番号
+				選択中ページ番号 ++
 				GOTO PRINT_LOOP
 		CASE 160 TO 167
 			TFLAG:RESULT = !TFLAG:RESULT
 			GOTO PRINT_LOOP
 		;この辺消しちゃってもいいか
-		CASE 前一位角色を表示
+		CASE 前のキャラを表示
 			IF !調教中フラグ
-				選択中角色ID--
+				選択中キャラID--
 			ENDIF
-			IF 選択中角色ID < 0
-				選択中角色ID = CHARANUM - 1
+			IF 選択中キャラID < 0
+				選択中キャラID = CHARANUM - 1
 			ENDIF
 			GOTO PRINT_LOOP
-		CASE 下一位角色を表示
+		CASE 次のキャラを表示
 			IF !調教中フラグ
-				選択中角色ID++
+				選択中キャラID++
 			ENDIF
-			IF 選択中角色ID >= CHARANUM
-				選択中角色ID = 0
+			IF 選択中キャラID >= CHARANUM
+				選択中キャラID = 0
 			ENDIF
 			GOTO PRINT_LOOP
-		CASE 返回よ
+		CASE 戻るよ
 			RETURN 0
-		CASE 画像切换
+		CASE 画像切り替え
 			FLAG:画像表示 = !FLAG:画像表示
 			GOTO PRINT_LOOP
 		CASEELSE
@@ -206,14 +185,10 @@ ENDIF
 [SKIPEND]
 
 @SHOW_ALLITEM
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #DIM LSTART
-CALL QoL_AllItemSort ;qol custom code
-RETURN RESULT
 DRAWLINE
 PRINTL
-CALL PRINTLINE, "所持道具一览"
+CALL PRINTLINE, "所持アイテム一覧"
 LSTART = LINECOUNT
 PRINTL
 CALL LIST_ITEM("全て")
@@ -221,33 +196,29 @@ WHILE 20-(LINECOUNT-LSTART) > 0
 PRINTL
 WEND
 DRAWLINE
-PRINTL [999] 返回
+PRINTL [999] 戻る
 INPUT
 
 @SHOW_ALLITEM_INFO
-#LOCALSIZE 1
-#LOCALSSIZE 1
-CALL QoL_UnlockExtraTraitsInfo(MASTER, MAXWIDTH())
+#DIM LSTART
 PRINTL
-
-;#DIM LSTART
-;PRINTL
-;CALL PRINTLINE, "陷落情报"
-;PRINTL
-;CALL COLORMESSAGE(@"玩家无法获得陷落素质",C_RED,1)
-;PRINTL
-;DRAWLINE
-;CALL PRINTLINE, "所持道具一览"
-;LSTART = LINECOUNT
-;PRINTL
-;CALL LIST_ITEM("全て")
-;WHILE 20-(LINECOUNT-LSTART) > 0
-;PRINTL
-;WEND
+CALL PRINTLINE, "陥落情報"
+PRINTL
+CALL COLORMESSAGE(@"主人公には所得できません",C_RED,1)
+PRINTL
+DRAWLINE
+CALL PRINTLINE, "所持アイテム一覧"
+LSTART = LINECOUNT
+PRINTL
+CALL LIST_ITEM("全て")
+WHILE 20-(LINECOUNT-LSTART) > 0
+PRINTL
+WEND
 
 
-@PRINT_STATE_CLOTH(選択中角色ID)
-#DIM 選択中角色ID
+
+@PRINT_STATE_CLOTH(選択中キャラID)
+#DIM 選択中キャラID
 #DIM 装備部位
 PRINTL
 CALL PRINTBUTTON_EX("服装", 161, TFLAG:161, , , 1)
@@ -255,20 +226,20 @@ IF TFLAG:服装表示
 	PRINTFORML 
 	RETURN
 ENDIF
-IF !EQUIP:選択中角色ID:0 && !TEQUIP:選択中角色ID:下半身着衣状況 && !TEQUIP:選択中角色ID:上半身着衣状況
+IF !EQUIP:選択中キャラID:0 && !TEQUIP:選択中キャラID:下半身着衣状況 && !TEQUIP:選択中キャラID:上半身着衣状況
 	PRINTFORML 　＜全裸＞
-	SIF INROOM(CFLAG:選択中角色ID:現在位置) == 1
+	SIF INROOM(CFLAG:選択中キャラID:現在位置) == 1
 		RETURN
 ENDIF
-SIF CFLAG:選択中角色ID:恶作剧 > 1
-	PRINTFORML ＜衣不蔽体＞
-CALL SHOW_CLOTHES(選択中角色ID, "現在的衣装")
+SIF CFLAG:選択中キャラID:イタズラ > 1
+	PRINTFORML ＜着崩し＞
+CALL SHOW_CLOTHES(選択中キャラID, "現在の衣装")
 
 
 
 
-@PRINT_STATE_ABL(選択中角色ID)
-#DIM 選択中角色ID
+@PRINT_STATE_ABL(選択中キャラID)
+#DIM 選択中キャラID
 #DIM 表示項目数
 CALL PRINTBUTTON_EX("能力", 162, TFLAG:162, , , 1)
 IF !TFLAG:能力表示
@@ -276,20 +247,20 @@ IF !TFLAG:能力表示
 	FOR LOCAL, 0, 50
 		SIF !STRLENS(ABLNAME:LOCAL)
 			CONTINUE
-		SIF LOCAL > 50 && 選択中角色ID != MASTER
+		SIF LOCAL > 50 && 選択中キャラID != MASTER
 			CONTINUE
 		;同性愛関係
-		SIF GROUPMATCH(ABLNAME:LOCAL, "百合属性", "百合中毒") && !GETBIT(TALENT:選択中角色ID:2, 0)
+		SIF GROUPMATCH(ABLNAME:LOCAL, "レズっ気", "レズ中毒") && !GETBIT(TALENT:選択中キャラID:2, 0)
 			CONTINUE
-		SIF GROUPMATCH(ABLNAME:LOCAL, "断袖属性", "断袖中毒") && GETBIT(TALENT:選択中角色ID:2, 0)
+		SIF GROUPMATCH(ABLNAME:LOCAL, "ホモっ気", "ゲイ中毒") && GETBIT(TALENT:選択中キャラID:2, 0)
 			CONTINUE
-		PRINTFORM %ABL_TR(LOCAL),12%:
+		PRINTFORM %ABLNAME:LOCAL,12%:
 		IF LOCAL < 40
-			CALL PRINT_RANK(ABL:選択中角色ID:LOCAL, "MAX_99")
+			CALL PRINT_RANK(ABL:選択中キャラID:LOCAL, "MAX_99")
 		ELSE
-			CALL PRINT_RANK(ABL:選択中角色ID:LOCAL, "MAX_6")
+			CALL PRINT_RANK(ABL:選択中キャラID:LOCAL, "MAX_6")
 		ENDIF
-		PRINTFORM  {ABL:選択中角色ID:LOCAL,5,LEFT} 
+		PRINTFORM  {ABL:選択中キャラID:LOCAL,5,LEFT} 
 		表示項目数 ++
 		SIF 表示項目数 % 4 == 0
 			PRINTL 
@@ -303,11 +274,11 @@ IF !TFLAG:164
 	FOR LOCAL, 50, 60
 		SIF !STRLENS(ABLNAME:LOCAL)
 			CONTINUE
-		SIF !(TALENT:選択中角色ID:2 & 1) && (LOCAL == 52 || LOCAL == 54)
+		SIF !(TALENT:選択中キャラID:2 & 1) && (LOCAL == 52 || LOCAL == 54)
 			CONTINUE
-		PRINTFORM %ABL_TR(LOCAL),12%:
-		CALL PRINT_RANK(ABL:選択中角色ID:LOCAL, "MAX_6")
-		PRINTFORM  {ABL:選択中角色ID:LOCAL,5,LEFT} 
+		PRINTFORM %ABLNAME:LOCAL,12%:
+		CALL PRINT_RANK(ABL:選択中キャラID:LOCAL, "MAX_6")
+		PRINTFORM  {ABL:選択中キャラID:LOCAL,5,LEFT} 
 		表示項目数 ++
 		SIF 表示項目数 % 4 == 0
 			PRINTL 
@@ -316,11 +287,10 @@ ENDIF
 
 
 
-@PRINT_STATE_EXP(選択中角色ID)
-#DIM 選択中角色ID
+@PRINT_STATE_EXP(選択中キャラID)
+#DIM 選択中キャラID
 #DIM 表示項目数
-#DIM 表示項目数1
-CALL PRINTBUTTON_EX("经验",163,TFLAG:163, , , 1)
+CALL PRINTBUTTON_EX("経験",163,TFLAG:163, , , 1)
 表示項目数 = 0
 IF !TFLAG:経験表示
 	FOR LOCAL, 0, 100
@@ -328,63 +298,45 @@ IF !TFLAG:経験表示
 		;SIF !STRLENS(EXPNAME:LOCAL)
 		;	CONTINUE
 		;未経験を表示させない
-		SIF !EXP:選択中角色ID:LOCAL
+		SIF !EXP:選択中キャラID:LOCAL
 			CONTINUE
 		;同性愛関係
-		IF !(TALENT:選択中角色ID:2 & 1) && LOCAL == 51
+		IF !(TALENT:選択中キャラID:2 & 1) && LOCAL == 51
 			CONTINUE
-		ELSEIF TALENT:選択中角色ID:2 & 1 && LOCAL == 52
+		ELSEIF TALENT:選択中キャラID:2 & 1 && LOCAL == 52
 			CONTINUE
 		ENDIF
-		PRINTFORM %EXP_TR(LOCAL),14%:{EXP:選択中角色ID:LOCAL,5,LEFT} 
+		PRINTFORM %EXPNAME:LOCAL,14%:{EXP:選択中キャラID:LOCAL,5,LEFT} 
 		表示項目数 += 1
-		SIF 表示項目数 % 5 == 0
+		SIF 表示項目数 % 4 == 0
 			PRINTL 
 	NEXT
+ENDIF
 PRINTL
-CALL PRINTLINE, "特殊"
-	表示項目数1 = 0
-	FOR LOCAL, 100, 125
-		SIF !EXP:選択中角色ID:LOCAL
-			CONTINUE
-		PRINTFORM %EXP_TR(LOCAL),20%:{EXP:選択中角色ID:LOCAL,5,LEFT} 
-		表示項目数1 += 1
-		SIF 表示項目数1 % 3 == 0
-			PRINTL 
-	NEXT
-ENDIF
-;烙印系统
-IF TATTO_SYSTEM == 1
-	IF STRLENS(st_name:選択中角色ID:0) > 0
-		PRINTFORML 烙印：
-		PRINTFORML %st_name:選択中角色ID:0%
-		PRINTFORML %st_introduce:選択中角色ID:0%
-	ENDIF
-ENDIF
 
 
 
-@PRINT_STATE_TALENT(選択中角色ID)
-#DIM 選択中角色ID
+@PRINT_STATE_TALENT(選択中キャラID)
+#DIM 選択中キャラID
 #DIM TLNT_CNT, 6
 #DIM TLNT_NO, 6, 100
 #DIM CST_CNT, 6
 #DIM CST_NO, 6, 100
 #DIM CAT
 #DIM ENTRY
-#DIMS 種族文本
+#DIMS CONST TALENT_TYPE, 6 = "  種族      :", "　性的特徴  :", "  身体的特徴:", "  精神的特徴:", "  技術的特徴:", "　その他    :"
+#DIMS 種族テキスト
 
 VARSET TLNT_CNT
 VARSET TLNT_NO
 VARSET CST_CNT
 VARSET CST_NO
-CALL PRINT_STATE_TALENT_MOD2(選択中角色ID)
-RETURN
-CALL PRINTBUTTON_EX("素质",165,TFLAG:165, , , 1)
+
+CALL PRINTBUTTON_EX("素質",165,TFLAG:165, , , 1)
 IF !TFLAG:165
-	;TALENT:200(汎用角色)は表示させない
+	;TALENT:200(汎用キャラ)は表示させない
 	FOR LOCAL, 0, 400
-		SIF !STRLENS(GET_TALENTNAME(LOCAL, TALENT:選択中角色ID:LOCAL))
+		SIF !STRLENS(GET_TALENTNAME(LOCAL, TALENT:選択中キャラID:LOCAL))
 			CONTINUE
 		LOCALS = {LOCAL}/
 		IF GROUPMATCH(LOCAL,90,91,164,165,166,189,190,191,192,193,194,195,196,197,198)
@@ -408,18 +360,18 @@ IF !TFLAG:165
 			TLNT_NO:4:(TLNT_CNT:4) = LOCAL
 			TLNT_CNT:4 ++
 		ELSE
-			;其他
+			;その他
 			TLNT_NO:5:(TLNT_CNT:5) = LOCAL
 			TLNT_CNT:5 ++
 		ENDIF
 	NEXT
 	;カスタム素質読み込み
-	CALL KOJO_MESSAGE_SEND("CUSTOM_TALENT", 0, 選択中角色ID)
+	CALL KOJO_MESSAGE_SEND("CUSTOM_TALENT", 0, 選択中キャラID)
 	;カスタム素質特徴振り分け
 	FOR CAT, 0, MAX_CUSTOM_TALENT
-		SIF !CUSTOM_TALENT:選択中角色ID:CAT
+		SIF !CUSTOM_TALENT:選択中キャラID:CAT
 			CONTINUE
-		LOCAL = CUSTOM_TALENT_TYPE:選択中角色ID:CAT
+		LOCAL = CUSTOM_TALENT_TYPE:選択中キャラID:CAT
 		IF INRANGE(LOCAL, 1, 5)
 			LOCAL --
 			CST_NO:LOCAL:(CST_CNT:LOCAL) = CAT
@@ -431,116 +383,102 @@ IF !TFLAG:165
 	NEXT
 	
 	FOR CAT, 0, 6
-		SELECTCASE CAT
-			CASE 0
-				PRINT 　 种族 　：
-			CASE 1
-				PRINT 　性的特征：
-			CASE 2
-				PRINT 身体的特征：
-			CASE 3
-				PRINT 精神的特征：
-			CASE 4
-				PRINT 技术的特征：
-			CASE 5
-				PRINT 　 其他 　：
-		ENDSELECT
+		PRINTFORM %TALENT_TYPE:CAT%
 		LOCALS = ""
 		FOR ENTRY, 0, TLNT_CNT:CAT
 			LOCAL = TLNT_NO:CAT:ENTRY
 			;童貞
-			SIF LOCAL == 1 && !(TALENT:選択中角色ID:性別 & 2)
+			SIF LOCAL == 1 && !(TALENT:選択中キャラID:性別 & 2)
 				CONTINUE
 			;男絶壁
-			IF LOCAL == 105 && (TALENT:選択中角色ID:性別 == 2)
-				SIF (TALENT:選択中角色ID:105 == -2) && (TALENT:選択中角色ID:性別 == 2)
+			IF LOCAL == 105 && (TALENT:選択中キャラID:性別 == 2)
+				SIF (TALENT:選択中キャラID:105 == -2) && (TALENT:選択中キャラID:性別 == 2)
 					CONTINUE
-			ENDIF
-			;男普臀
-			IF LOCAL == 108 && (TALENT:選択中角色ID:性別 == 2)
-				SIF (TALENT:選択中角色ID:108 == 0) && (TALENT:選択中角色ID:性別 == 2)
-					CONTINUE
+				SIF (TALENT:選択中キャラID:105 == 0) && (TALENT:選択中キャラID:性別 == 2)
+					PRINTFORM [普乳]
 			ENDIF
 			;掃除係は住んでる時だけ表示
-			SIF LOCAL == GETNUM(TALENT, "掃除係") && !CFLAG:選択中角色ID:神社在住
+			SIF LOCAL == GETNUM(TALENT, "掃除係") && !CFLAG:選択中キャラID:神社在住
 				CONTINUE
-			LOCALS += GET_TALENTNAME(LOCAL, TALENT:選択中角色ID:LOCAL)
+			LOCALS += GET_TALENTNAME(LOCAL, TALENT:選択中キャラID:LOCAL)
 			IF STRLENS(LOCALS) > 60
 				LOCALS = " "
 				PRINTL
 				PRINT 　　　　　　
 			ENDIF
 			;素質によっては色変え
-			IF GROUPMATCH(LOCAL,0,3,4,6,7,73,74,75,76,77,78,122,142) || (LOCAL == 199 && TALENT:選択中角色ID:LOCAL == 2)
+			IF GROUPMATCH(LOCAL,0,3,4,6,7,73,74,75,76,77,78,122,142) || (LOCAL == 199 && TALENT:選択中キャラID:LOCAL == 2)
 				SETCOLOR 255, 120, 200
 				FONTBOLD
 			ELSEIF GROUPMATCH(LOCAL, 8, 199)
 				SETCOLOR C_PINK
 			ENDIF
-			PRINTFORM [%GET_TALENTNAME(LOCAL,TALENT:選択中角色ID:LOCAL)%]
+			PRINTFORM [%GET_TALENTNAME(LOCAL,TALENT:選択中キャラID:LOCAL)%]
 			RESETCOLOR
 			FONTREGULAR
 			IF CAT == 0
-				種族文本 += @"%GET_TALENTNAME(LOCAL,TALENT:選択中角色ID:LOCAL)%"
+				種族テキスト += @"%GET_TALENTNAME(LOCAL,TALENT:選択中キャラID:LOCAL)%"
 			ELSE
-				種族文本 = 
+				種族テキスト = 
 			ENDIF
 		NEXT
 		;カスタム素質を表示
 		IF CST_CNT:CAT
 			FOR ENTRY, 0, CST_CNT:CAT
 				LOCAL = CST_NO:CAT:ENTRY
-				LOCALS = %LOCALS%%CUSTOM_TALENT_NAME:選択中角色ID:LOCAL%
+				LOCALS = %LOCALS%%CUSTOM_TALENT_NAME:選択中キャラID:LOCAL%
 				IF STRLENS(LOCALS) > 60
 					LOCALS = " "
 					PRINTL
 					PRINT 　　　　　　
 				ENDIF
-				SIF CUSTOM_TALENT_COLOR:選択中角色ID:LOCAL
-					SETCOLOR CUSTOM_TALENT_COLOR:選択中角色ID:LOCAL
-				PRINTFORM [%CUSTOM_TALENT_NAME:選択中角色ID:LOCAL%]
+				IF CUSTOM_TALENT_COLOR:選択中キャラID:LOCAL == 1
+					SETCOLOR C_PINK
+				ELSEIF CUSTOM_TALENT_COLOR:選択中キャラID:LOCAL == 2
+					SETCOLOR 255, 120, 200
+					FONTBOLD
+				ENDIF
+				PRINTFORM [%CUSTOM_TALENT_NAME:選択中キャラID:LOCAL%]
 				RESETCOLOR
 				FONTREGULAR
 			NEXT
 		ENDIF
 		SIF CAT == 0
-			CALL PRINT_種族抽出(選択中角色ID, 種族文本)
+			CALL PRINT_種族抽出(選択中キャラID, 種族テキスト)
 		SIF LOCALS != " "
 			PRINTL 
 	NEXT
-	;口上自定义
-	;CALL showKojoCustomTalent(選択中角色ID)
 ENDIF
 
-@PRINT_種族抽出(選択中角色ID, 種族文本)
-#DIM 選択中角色ID
+@PRINT_種族抽出(選択中キャラID, 種族テキスト)
+#DIM 選択中キャラID
 #DIM TMP_RESULT
 #DIMS STR_LIST, 10
-#DIMS 種族文本
+#DIMS 種族テキスト
 
 VARSET STR_LIST
 TMP_RESULT:0 = RESULT
-LOCALS =  %CSVCSTR(選択中角色ID,10)%
+LOCALS =  %CSVCSTR(選択中キャラID,10)%
 IF STRFIND(LOCALS, "●") > -1
 	SPLIT LOCALS, "●", STR_LIST
 	FOR LOCAL, 0, RESULT
 		IF STRFIND(STR_LIST:LOCAL, "種族：") > -1
 			LOCALS:1 = %REPLACE(STR_LIST:LOCAL, "種族：", "")%
 			LOCALS:1 = %REPLACE(LOCALS:1, "　", "")%
-			SIF STRFIND(種族文本, LOCALS:1) < 0
+			SIF STRFIND(種族テキスト, LOCALS:1) < 0
 				PRINTFORM 〈%LOCALS:1%〉
 			BREAK
 		ENDIF
 	NEXT
-;ELSEIF TALENT:選択中角色ID:路人 とどっちがいいんでしょうね？
-ELSEIF RANDOM_CHARANUM && 選択中角色ID == RANDOM_CHARANUM
-	PRINTFORM [%CSTR:選択中角色ID:路人子種族%]
+;ELSEIF TALENT:選択中キャラID:行きずり とどっちがいいんでしょうね？
+ELSEIF 選択中キャラID == RANDOM_CHARANUM
+	PRINTFORM [%CSTR:選択中キャラID:モブ子種族%]
 ENDIF
 RESULT = TMP_RESULT:0
 
 
-@PRINT_刻印(選択中角色ID)
-#DIM 選択中角色ID
+@PRINT_刻印(選択中キャラID)
+#DIM 選択中キャラID
 IF !TFLAG:166
 	FOR LOCAL, 0, 6
 		SIF !STRLENS(MARKNAME:LOCAL)
@@ -548,10 +486,10 @@ IF !TFLAG:166
 		PRINTFORM 　%MARKNAME:LOCAL,12%:
 		IF LOCAL == 3
 			SETCOLOR C_RED
-			PRINTFORML %"×" * (MARK:選択中角色ID:LOCAL)%
+			PRINTFORML %"×" * (MARK:選択中キャラID:LOCAL)%
 		ELSE
 			SETCOLOR 255, 255, 0
-			PRINTFORML %"★" * (MARK:選択中角色ID:LOCAL)%
+			PRINTFORML %"★" * (MARK:選択中キャラID:LOCAL)%
 		ENDIF
 		RESETCOLOR
 	NEXT
@@ -561,37 +499,37 @@ ENDIF
 
 
 
-@PRINT_字母表顺序評価(選択中角色ID,ARG,表示ステータス番号)
-;ARG(1.好感度 2.信賴度 3.性技及び技能 4.其他ABL)
+@PRINT_アルファベット評価(選択中キャラID,ARG,表示ステータス番号)
+;ARG(1.好感度 2.信頼度 3.性技及び技能 4.その他ABL)
 ;「表示ステータス番号」はARGが3または4のときのみに使用
-#DIM 選択中角色ID
+#DIM 選択中キャラID
 #DIM 表示ステータス番号
 IF ARG == 1
-	IF CFLAG:選択中角色ID:2 >= 50000
-		SETCOLOR C_CREAM
+	IF CFLAG:選択中キャラID:2 >= 50000
+		SETCOLOR C_P_PURPLE
 		PRINT Ex
-	ELSEIF CFLAG:選択中角色ID:2 >= 30000
+	ELSEIF CFLAG:選択中キャラID:2 >= 30000
 		SETCOLOR C_WHITE
 		PRINT SS
-	ELSEIF CFLAG:選択中角色ID:2 >= 10000
-		SETCOLOR C_P_PURPLE
+	ELSEIF CFLAG:選択中キャラID:2 >= 10000
+		SETCOLOR C_WHITE
 		PRINT  S
-	ELSEIF CFLAG:選択中角色ID:2 >= 5000
-		SETCOLOR C_RED
-		PRINT  A
-	ELSEIF CFLAG:選択中角色ID:2 >= 3000
+	ELSEIF CFLAG:選択中キャラID:2 >= 5000
 		SETCOLOR C_PINK
+		PRINT  A
+	ELSEIF CFLAG:選択中キャラID:2 >= 3000
+		SETCOLOR C_RED
 		PRINT  B
-	ELSEIF CFLAG:選択中角色ID:2 >= 1500
+	ELSEIF CFLAG:選択中キャラID:2 >= 1500
 		SETCOLOR C_ORANGE
 		PRINT  C
-	ELSEIF CFLAG:選択中角色ID:2 >= 1000
+	ELSEIF CFLAG:選択中キャラID:2 >= 1000
 		SETCOLOR C_YELLOW
 		PRINT  D
-	ELSEIF CFLAG:選択中角色ID:2 >= 500
+	ELSEIF CFLAG:選択中キャラID:2 >= 500
 		SETCOLOR C_GREEN
 		PRINT  E
-	ELSEIF CFLAG:選択中角色ID:2 >= 100
+	ELSEIF CFLAG:選択中キャラID:2 >= 100
 		SETCOLOR C_AQUA
 		PRINT  F
 	ELSE
@@ -600,32 +538,32 @@ IF ARG == 1
 	ENDIF
 	RESETCOLOR
 	RETURN 0
-	ELSEIF ARG == 2
-	IF CFLAG:選択中角色ID:信賴度 >= 20000
-		SETCOLOR C_CREAM
+ELSEIF ARG == 2
+	IF CFLAG:選択中キャラID:信頼度 >= 20000
+		SETCOLOR C_P_PURPLE
 		PRINT Ex
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 10000
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 10000
 		SETCOLOR C_WHITE
 		PRINT SS
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 3000
-		SETCOLOR C_P_PURPLE
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 3000
+		SETCOLOR C_WHITE
 		PRINT  S
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 1000
-		SETCOLOR C_RED
-		PRINT  A
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 500
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 1000
 		SETCOLOR C_PINK
+		PRINT  A
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 500
+		SETCOLOR C_RED
 		PRINT  B
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 150
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 150
 		SETCOLOR C_ORANGE
 		PRINT  C
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 100
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 100
 		SETCOLOR C_YELLOW
 		PRINT  D
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 50
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 50
 		SETCOLOR C_GREEN
 		PRINT  E
-	ELSEIF CFLAG:選択中角色ID:信賴度 >= 10
+	ELSEIF CFLAG:選択中キャラID:信頼度 >= 10
 		SETCOLOR C_AQUA
 		PRINT  F
 	ELSE
@@ -635,23 +573,23 @@ IF ARG == 1
 	RESETCOLOR
 	RETURN 0
 ELSEIF ARG == 3
-	IF ABL:選択中角色ID:表示ステータス番号 == 6
-		SETCOLOR C_RED
+	IF ABL:選択中キャラID:表示ステータス番号 == 6
+		SETCOLOR C_P_PURPLE
 		PRINT Ex
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 == 5
-		SETCOLOR C_PINK
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 == 5
+		SETCOLOR C_WHITE
 		PRINT  S
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 == 4
-		SETCOLOR C_ORANGE
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 == 4
+		SETCOLOR C_PINK
 		PRINT  A
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 == 3
-		SETCOLOR C_YELLOW
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 == 3
+		SETCOLOR C_RED
 		PRINT  B
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 == 2
-		SETCOLOR C_GREEN
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 == 2
+		SETCOLOR C_ORANGE
 		PRINT  C
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 == 1
-		SETCOLOR C_AQUA
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 == 1
+		SETCOLOR C_YELLOW
 		PRINT  D
 	ELSE
 		SETCOLOR C_GRAY
@@ -660,31 +598,31 @@ ELSEIF ARG == 3
 	RESETCOLOR
 	RETURN 0
 ELSEIF ARG == 4
-	IF ABL:選択中角色ID:表示ステータス番号 == 99
-		SETCOLOR C_CREAM
+	IF ABL:選択中キャラID:表示ステータス番号 == 99
+		SETCOLOR C_P_PURPLE
 		PRINT Ex
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 75
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 75
 		SETCOLOR C_WHITE
 		PRINT SS
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 50
-		SETCOLOR C_P_PURPLE
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 50
+		SETCOLOR C_WHITE
 		PRINT  S
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 20
-		SETCOLOR C_RED
-		PRINT  A
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 10
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 20
 		SETCOLOR C_PINK
+		PRINT  A
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 10
+		SETCOLOR C_RED
 		PRINT  B
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 5
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 5
 		SETCOLOR C_ORANGE
 		PRINT  C
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 3
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 3
 		SETCOLOR C_YELLOW
 		PRINT  D
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 2
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 2
 		SETCOLOR C_GREEN
 		PRINT  E
-	ELSEIF ABL:選択中角色ID:表示ステータス番号 >= 1
+	ELSEIF ABL:選択中キャラID:表示ステータス番号 >= 1
 		SETCOLOR C_AQUA
 		PRINT  F
 	ELSE

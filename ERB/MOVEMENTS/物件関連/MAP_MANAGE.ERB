@@ -12,37 +12,30 @@
 #DIM PREV_REDRAW
 
 ANIMATION_SEED = 0
-;qol custom code, allow for consistent testing
-[IF DEBUG]
-	IF ANIMATERECOLOREDMAPS
-		LOCAL = GETMILLISECOND()
-		ANIMATION_SEED = LOCAL / ANIMATERECOLOREDMAPS % 20
-	ENDIF
-[ENDIF]
 PREV_REDRAW = CURRENTREDRAW()
 
 ;Map Animation Code
 $MAPANIMATION
 LINESTART = LINECOUNT
-SIF ANIMATERECOLOREDMAPS && !FLAG:70 && !MAP_ANIMATION_PAUSE ;qol custom code, allow pausing for debugging
+SIF ANIMATERECOLOREDMAPS && !FLAG:70
 	ANIMATION_SEED ++
 ;
 ;
 ;メンバーの起床時間再設定
 ;
 IF !引っ越し
-	IF ゲーム開始処理中 || ゲーム继承処理中
+	IF ゲーム開始処理中 || ゲーム引き継ぎ処理中
 		MAIN_MAP = 0
 		TRYCALLFORM ROOMSETTING_{MAIN_MAP}
 	ENDIF
 	設定前MAIN_MAP = MAIN_MAP
 	設定前酒虫 = 拠点_酒虫
-	設定前初期位置 = 默认初期位置
-	設定前大家 = 拠点_家主
+	設定前初期位置 = デフォルト初期位置
+	設定前大家 = 拠点_大家
 	引っ越し = 1
 ENDIF
 IF FLAG:一時滞在
-	PRINTFORMW 因为有来这里过夜的角色、所以无法搬家
+	PRINTFORMW お泊り中のキャラがいるので引っ越しできません
 	RETURN
 ENDIF
 DRAWLINE
@@ -55,43 +48,34 @@ ENDIF
 DRAWLINE
 PRINTFORML ■%GET_MAPNAME(MAIN_MAP)%
 CALL 物件データ(MAIN_MAP)
-PRINTFORM 采集点：
+PRINTFORM 採集可能地点：
 CALL ShowGatheringSpots(MAIN_MAP)
 PRINTFORML
 FONTITALIC
-CALLFORM Map紹介_{MAIN_MAP}
+CALLFORM マップ紹介_{MAIN_MAP}
 FONTREGULAR
 PRINTL
 DRAWLINEFORM =
-PRINT 可以设定住处 想住在哪里呢？
-PRINTBUTTON @"[预览图切换({TFLAG:地圖切換})]", 1997
+PRINT 自宅を設定できます。どこにしますか？　
+PRINTBUTTON @"[プレビューマップ切り替え({TFLAG:マップ切り替え})]", 1997
 PRINTL
-;custom code
-LOCAL:1 = 0
-FOR LOCAL, 0, MAXHOME
+FOR LOCAL, 0, 11
 	SIF MAIN_MAP == LOCAL
 		SETCOLOR C_AQUA
-	IF GET_EXISTMAP(LOCAL)
+	SIF GET_EXISTMAP(LOCAL)
 		PRINTFORM [{LOCAL + 2000}] %GET_MAPNAME(LOCAL), 16, LEFT%
-		SIF (++LOCAL:1) % 3 == 0 ;custom code
-			PRINTFORML
-	ENDIF
-	;SIF GROUPMATCH(LOCAL, 4, 9, 11)
-	;	PRINTL
+	SIF GROUPMATCH(LOCAL, 4, 9, 10)
+		PRINTL
 	RESETCOLOR
 NEXT
-SIF LOCAL:1 % 3 > 0
-	PRINTFORML
-;-----------
-PRINT [1999] 决定　　　　　　
-SIF !ゲーム開始処理中 && !ゲーム继承処理中
-	PRINT [1998] 中止
+PRINT [1999] 決定　　　　　　
+SIF !ゲーム開始処理中 && !ゲーム引き継ぎ処理中
+	PRINT [1998] キャンセル
 PRINTL
 ;Map Animation Code
 IF ANIMATERECOLOREDMAPS && !FLAG:70
 	REDRAW PREV_REDRAW
-	;qol custom code, keep synced with actual time
-	TINPUT ANIMATERECOLOREDMAPS - (GETMILLISECOND() % ANIMATERECOLOREDMAPS),99999,0,""
+	TINPUT ANIMATERECOLOREDMAPS,99999,0,""
 ELSE
 	INPUT
 ENDIF
@@ -105,54 +89,34 @@ ELSEIF RESULT >= 2000 && GET_EXISTMAP(RESULT - 2000)
 	MAIN_MAP = RESULT - 2000
 	CALLFORM ROOMSETTING_{MAIN_MAP}
 	CALLFORM DEFAULT_OWNER_{MAIN_MAP}
-	TFLAG:地圖切換 = 1
+	TFLAG:マップ切り替え = 1
 	RESTART
 ;プレビュー切り替え
 ELSEIF RESULT == 1997
-	TFLAG:地圖切換 += 1
-	SIF TFLAG:地圖切換 > MAP_PAGES
-		TFLAG:地圖切換 = 1
+	TFLAG:マップ切り替え += 1
+	SIF TFLAG:マップ切り替え > MAP_PAGES
+		TFLAG:マップ切り替え = 1
 	RESTART
-;中止
-ELSEIF RESULT == 1998 && !ゲーム開始処理中 && !ゲーム继承処理中
+;キャンセル
+ELSEIF RESULT == 1998 && !ゲーム開始処理中 && !ゲーム引き継ぎ処理中
 	引っ越し = 0
 	MAIN_MAP = 設定前MAIN_MAP
 	拠点_酒虫 = 設定前酒虫
-	默认初期位置 = 設定前初期位置
-	拠点_家主 = 設定前大家
-	TFLAG:地圖切換 = 0
-	CALL ROOMSETTING ;bug fix custom code
+	デフォルト初期位置 = 設定前初期位置
+	拠点_大家 = 設定前大家
+	TFLAG:マップ切り替え = 0
+	CALLFORM ROOMSETTING_{MAIN_MAP}
 	RETURN
 ;決定
 ELSEIF RESULT == 1999
 	SIF 設定前MAIN_MAP == MAIN_MAP
 	CALLFORM DEFAULT_OWNER_{MAIN_MAP}
-;qol custom code
-[IF DEBUG]
-ELSEIF RESULT == -1001
-	ANIMATION_SEED--
-	SIF ANIMATION_SEED < 0
-		ANIMATION_SEED = 19
-	MAP_ANIMATION_PAUSE = 1
-	CLEARLINE LINECOUNT - LINESTART
-	GOTO MAPANIMATION
-ELSEIF RESULT == -1002
-	ANIMATION_SEED++
-	MAP_ANIMATION_PAUSE = 1
-	CLEARLINE LINECOUNT - LINESTART
-	GOTO MAPANIMATION
-ELSEIF RESULT == -1003
-	MAP_ANIMATION_PAUSE = !MAP_ANIMATION_PAUSE
-	CLEARLINE LINECOUNT - LINESTART
-	GOTO MAPANIMATION
-[ENDIF]
 ELSE
 	RESTART
 ENDIF
 ;決定後
-FLAG:神簽契約 = 0
-;CALL Qol_MoveIn_Omikuji ;qol custom code
-TFLAG:地圖切換 = 0
+FLAG:おみくじ契約 = 0
+TFLAG:マップ切り替え = 0
 CALL SET_ENKAI_LOCATIONDISPLAY
 CALL MAP_DEFAULTRESIDENT(MAIN_MAP)
 ;施錠
@@ -170,17 +134,15 @@ FOR LOCAL,1,100
 		CHK_GARDENING = 1
 NEXT
 SIF !CHK_TRAINING
-	CALL COLORMESSAGE(@"这个地图无法进行[战斗训练]",C_YELLOW,2)
+	CALL COLORMESSAGE(@"このマップでは[戦闘訓練]ができません",C_YELLOW,2)
 SIF !CHK_GARDENING
-	CALL COLORMESSAGE(@"这个地图无法进行[家庭菜园]",C_YELLOW,2)
+	CALL COLORMESSAGE(@"このマップでは[家庭菜園]ができません",C_YELLOW,2)
 SIF !SUMIKOMI_ROOM
-	CALL COLORMESSAGE(@"这个地图不会发生角色搬入事件。",C_YELLOW,2)
-SIF FLAG:扮演 && CFLAG:(FLAG:扮演):出禁 && MAIN_MAP == GET_MAPID(CSVCFLAG(FLAG:扮演,311)) && CSVCFLAG(FLAG:扮演,311) != SUKIMA() ;ATW Note: When using Dev Quicktest as a character with no home, going to the Hakurei Shrine will take you to the gap space, hence for a SUKIMA() check
-	CFLAG:MASTER:初期位置 = CSVCFLAG(FLAG:扮演,311)
+	CALL COLORMESSAGE(@"このマップでは住み込みイベントが発生しません",C_YELLOW,2)
+SIF FLAG:なりきり && CFLAG:(FLAG:なりきり):出禁 && MAIN_MAP == GET_MAPID(CSVCFLAG(FLAG:なりきり,311))
+	CFLAG:MASTER:初期位置 = CSVCFLAG(FLAG:なりきり,311)
 ;罠ポイントの張替え
 CALL TRAP_MOVING
-
-;CALL WIFE_MOVE_IN() ;marriage custom code
 
 @HAS_DUPLICATE_KEY, ARG
 #FUNCTION
@@ -191,18 +153,18 @@ FOR LOCAL, 1, CHARANUM
 	ENDIF
 NEXT
 
-@MAP_DEFAULTRESIDENT(ARG, UPDATE)
-#DIM UPDATE
-;ARG=Map番号
-SIF !UPDATE
-	FLAG:住宿人物 = 0
+@MAP_DEFAULTRESIDENT(ARG, アップデート中)
+#DIM アップデート中
+;ARG=マップ番号
+SIF !アップデート中
+	FLAG:住み込みキャラ = 0
 MAIN_MAP = ARG
 FOR LOCAL, 1, CHARANUM
 	IF MAP_住人(MAIN_MAP, LOCAL)
 		CFLAG:LOCAL:初期位置 = CSVCFLAG (LOCAL, GETNUM(CFLAG, "初期位置"))
 		CFLAG:LOCAL:神社在住 = CFLAG:LOCAL:初期位置
-		SIF !UPDATE
-			DEBUGPRINTFORML 在%CALLNAME:LOCAL%住下来了
+		SIF !アップデート中
+			DEBUGPRINTFORML %CALLNAME:LOCAL%が拠点に住みます
 	ELSE
 		PRIVATEROOM:(CFLAG:LOCAL:初期位置 % 100) = 0
 		CFLAG:LOCAL:初期位置 = SUKIMA()
@@ -210,20 +172,17 @@ FOR LOCAL, 1, CHARANUM
 	ENDIF
 	CFLAG:LOCAL:自宅位置 = CSVCFLAG (LOCAL, GETNUM(CFLAG, "自宅位置"))
 	CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:初期位置
-	CFLAG:LOCAL:约会中 = MAIN_MAP
+	CFLAG:LOCAL:デート中 = MAIN_MAP
 NEXT
-SIF !UPDATE
-	PRINTFORMW %GET_MAPNAME(ARG)%设定完毕
+SIF !アップデート中
+	PRINTFORMW %GET_MAPNAME(ARG)%に設定しました
 CALL ROOMSETTING
-IF !UPDATE
-	CFLAG:MASTER:初期位置 = 默认初期位置
+IF !アップデート中
+	CFLAG:MASTER:初期位置 = デフォルト初期位置
 	CFLAG:MASTER:現在位置 = CFLAG:MASTER:初期位置
 	引っ越し = 0
 ENDIF
 
-;PRIVATEROOM有一个问题，它保证据点地图的每一个有主的私室有主人，但不保证每一个有住所的居民分配到私室；在共用寝室的情况以及空间折叠技术的后宫别墅里，只有编号最大的角色成为该地点的家主，而其他角色无法通过PRIVATEROOM的检定
-;如：PRIVATEROOM:(CFLAG:MASTER:現在位置 % 100) && PRIVATEROOM:(CFLAG:MASTER:現在位置 % 100) != TARGET可能会有问题，
-;现已启用新检测：@PRIVATEROOM_CHECK(ARG,mode = 1)
 @ROOMSETTING
 #DIM R_ID
 #DIM 私室候補
@@ -234,16 +193,16 @@ SUMIKOMI_ROOM = 0
 VARSET PRIVATEROOM
 FOR LOCAL, 1, CHARANUM
 	IF CFLAG:LOCAL:神社在住 && !CFLAG:LOCAL:出禁
-		;PRIVATEROOM变量，注意，最终编号大的角色会成为共用寝室的家主，如秋姐妹里的穰子，典龙中的龙
-		PRIVATEROOM:(CFLAG:LOCAL:本来の初期位置 ? CFLAG:LOCAL:本来の初期位置 % 100 # CFLAG:LOCAL:初期位置 % 100) = LOCAL ;bug fix, choose original starting position if the character was staying in
+		;PRIVATEROOM変数に、そこの家主の番号を保存
+		PRIVATEROOM:(CFLAG:LOCAL:初期位置 % 100) = LOCAL
 	 	SIF CFLAG:LOCAL:大家候補
 			私室候補 ++
 	ENDIF
 NEXT
 TRYCCALLFORM ROOMSETTING_{MAIN_MAP}
-	PRINTFORMW %GET_MAPNAME(MAIN_MAP)%的房间情报设定完毕
-	;住宿人物用のワンルーム
-	IF FLAG:住宿人物 && SUMIKOMI_ROOM
+	PRINTFORMW %GET_MAPNAME(MAIN_MAP)%の部屋情報を設定しました
+	;住み込みキャラ用のワンルーム
+	IF FLAG:住み込みキャラ && SUMIKOMI_ROOM
 		R_ID = SUMIKOMI_ROOM % 100
 		ROOMDATA:R_ID |= 場所_ワンルーム
 	ENDIF
@@ -251,25 +210,25 @@ TRYCCALLFORM ROOMSETTING_{MAIN_MAP}
 		;補完設定
 		;MASTERの初期位置は最低限の機能を備える,飲食はできなくなる
 		IF CFLAG:MASTER:初期位置 % 100 == LOCAL
-			ROOMDATA:LOCAL |= 場所_被窝
-			ROOMDATA:LOCAL |= 場所_学习
+			ROOMDATA:LOCAL |= 場所_布団
+			ROOMDATA:LOCAL |= 場所_勉強
 			ROOMDATA:LOCAL |= 場所_プライベート
 			ROOMDATA:LOCAL &= ~場所_飲食
 		ENDIF
 		;ワンルーム
 		IF ROOMDATA:LOCAL & 場所_ワンルーム
-			ROOMDATA:LOCAL |= 場所_被窝
+			ROOMDATA:LOCAL |= 場所_布団
 			ROOMDATA:LOCAL |= 場所_屋内
 			ROOMDATA:LOCAL |= 場所_厨房
-			ROOMDATA:LOCAL |= 場所_学习
+			ROOMDATA:LOCAL |= 場所_勉強
 			ROOMDATA:LOCAL |= 場所_休憩
 			ROOMDATA:LOCAL |= 場所_飲食
 			ROOMDATA:LOCAL |= 場所_プライベート
 			ROOMDATA:LOCAL |= 場所_炬燵
 			ROOMDATA:LOCAL &= ~場所_過疎
 		ENDIF
-		;被窝
-		IF ROOMDATA:LOCAL & 場所_被窝
+		;布団
+		IF ROOMDATA:LOCAL & 場所_布団
 			ROOMDATA:LOCAL |= 場所_休憩
 		ENDIF
 		;洋室
@@ -286,22 +245,22 @@ TRYCCALLFORM ROOMSETTING_{MAIN_MAP}
 			LOCK:R_ID = 0
 	NEXT
 CATCH
-	PRINTFORMW 房间情报的设定失败了
+	PRINTFORMW 部屋情報の設定に失敗しました
 ENDCATCH
-IF (ゲーム開始処理中 || ゲーム继承処理中) || !默认初期位置 || 引っ越し
+IF (ゲーム開始処理中 || ゲーム引き継ぎ処理中) || !デフォルト初期位置 || 引っ越し
 	IF 私室候補
 		CALL 引っ越し初期位置設定
 	ELSE
-		CALL 默认引っ越し
+		CALL デフォルト引っ越し
 	ENDIF
 ENDIF
 
-@默认引っ越し
+@デフォルト引っ越し
 TRYCCALLFORM DEFAULT_OWNER_{MAIN_MAP}
 CATCH
-	PRINTFORMW 房间情报的设定失败了
+	PRINTFORMW 部屋情報の設定に失敗しました
 ENDCATCH
-PRINTFORMW 将%NAME_FROM_PLACE(默认初期位置)%设定为了%CALLNAME:MASTER%的私室
+PRINTFORMW %NAME_FROM_PLACE(デフォルト初期位置)%は%CALLNAME:MASTER%の私室になった
 
 @引っ越し初期位置設定
 #DIM CHARA
@@ -322,44 +281,31 @@ ELSE
 	CALL DRAW_MAP("HIKKOSHI")
 ENDIF
 DRAWLINE
-PRINTFORML %PRINT_COLOR("这个地图有多个", C_WHITE) + PRINT_COLOR("私室候补", C_ORANGE) + PRINT_COLOR("。", C_WHITE)%
+PRINTFORML %PRINT_COLOR("このマップには", C_WHITE) + PRINT_COLOR("私室候補", C_ORANGE) + PRINT_COLOR("が複数あります。", C_WHITE)%
 SIF DAY <= 1
-	PRINTFORML 第一天限定选项：无视必要信赖选择住的地点。
-PRINTBUTTON @"[预览图切换({TFLAG:地圖切換})]", 1997
+	PRINTFORML 初日限定で、必要信頼度にかかわらず部屋を選択できます。
+PRINTBUTTON @"[プレビューマップ切り替え({TFLAG:マップ切り替え})]", 1997
 PRINTL
 FOR CHARA, 1, CHARANUM
 	IF CFLAG:CHARA:神社在住 && CFLAG:CHARA:大家候補
-		SIF CFLAG:CHARA:居住必要信賴度 > CFLAG:CHARA:信賴度 && DAY > 1
+		SIF CFLAG:CHARA:住み込み必要信頼度 > CFLAG:CHARA:信頼度 && DAY > 1
 			SETCOLOR C_L_GRAY
-		PRINTBUTTON @"[{CFLAG:CHARA:大家候補 % 100, 3}] - %NAME_FROM_PLACE(CFLAG:CHARA:大家候補), 20, LEFT%　家主:%CALLNAME:CHARA, 15, LEFT%　必要信赖度:{CFLAG:CHARA:居住必要信賴度}", CHARA
+		PRINTBUTTON @"[{CFLAG:CHARA:大家候補 % 100, 3}] - %NAME_FROM_PLACE(CFLAG:CHARA:大家候補), 20, LEFT%　大家:%CALLNAME:CHARA, 15, LEFT%　必要信頼度:{CFLAG:CHARA:住み込み必要信頼度}", CHARA
 		PRINTL
 		RESETCOLOR
 	ENDIF
 NEXT
-
-;魔改功能
-IF FamilyHotel&&默认初期位置 % 100 == 53
-	PRINTFORM [ 58] - (58)大别墅的主卧　
-FONTSTYLE 5
-SETCOLOR C_GRAY
-PRINTFORML (魔改功能)
-FONTSTYLE 0
-RESETCOLOR
-ENDIF
-
-PRINTFORML [  0] - ({默认初期位置 % 100, 2})%NAME_FROM_PLACE(默认初期位置)%（默认设定）
-
+PRINTFORML [  0] - ({デフォルト初期位置 % 100, 2})%NAME_FROM_PLACE(デフォルト初期位置)%（デフォルト設定）
 ;Map Animation Code
 IF ANIMATERECOLOREDMAPS && !FLAG:70
 	REDRAW PREV_REDRAW
-	;qol custom code, keep synced with actual time
-	TINPUT ANIMATERECOLOREDMAPS - (GETMILLISECOND() % ANIMATERECOLOREDMAPS),1234,0,""
+	TINPUT ANIMATERECOLOREDMAPS,1234,0,""
 ELSE
 	INPUT
 ENDIF
 
 IF RESULT == 0
-	CALL 默认引っ越し
+	CALL デフォルト引っ越し
 ELSEIF RESULT == 1234
 	PREV_REDRAW = CURRENTREDRAW()
 	REDRAW 0
@@ -367,26 +313,22 @@ ELSEIF RESULT == 1234
 	GOTO MAPANIMATION
 ELSEIF RESULT < CHARANUM && CFLAG:RESULT:神社在住 && CFLAG:RESULT:大家候補
 	CHARA = RESULT
-	IF CHARA != 0 && CFLAG:CHARA:居住必要信賴度 > CFLAG:CHARA:信賴度 && DAY > 1
-		PRINTFORMW %CALLNAME:CHARA%还没有信赖%CALLNAME:MASTER%到这种程度…
+	IF CHARA != 0 && CFLAG:CHARA:住み込み必要信頼度 > CFLAG:CHARA:信頼度 && DAY > 1
+		PRINTFORMW %CALLNAME:CHARA%はそこまで%CALLNAME:MASTER%を信頼していない…
 		RESTART
 	ELSE
-		拠点_家主 = CHARA
-		默认初期位置 = CFLAG:CHARA:大家候補
-		ROOMDATA:(默认初期位置 % 100) |= 場所_被窝
-		ROOMDATA:(默认初期位置 % 100) |= 場所_プライベート
-		PRINTFORMW 将%NAME_FROM_PLACE(CFLAG:CHARA:大家候補)%设定为了%CALLNAME:MASTER%的私室
+		拠点_大家 = CHARA
+		デフォルト初期位置 = CFLAG:CHARA:大家候補
+		ROOMDATA:(デフォルト初期位置 % 100) |= 場所_布団
+		ROOMDATA:(デフォルト初期位置 % 100) |= 場所_プライベート
+		PRINTFORMW %NAME_FROM_PLACE(CFLAG:CHARA:大家候補)%は%CALLNAME:MASTER%の私室になった
 	ENDIF
 ;プレビュー切り替え
 ELSEIF RESULT == 1997
-	TFLAG:地圖切換 += 1
-	SIF TFLAG:地圖切換 > MAP_PAGES
-		TFLAG:地圖切換 = 1
+	TFLAG:マップ切り替え += 1
+	SIF TFLAG:マップ切り替え > MAP_PAGES
+		TFLAG:マップ切り替え = 1
 	RESTART
-ELSEIF FamilyHotel&&RESULT == 58
-	拠点_家主 = 1
-	默认初期位置 = 58
-	PRINTFORMW 将大别墅主卧设定为了%CALLNAME:MASTER%的私室
 ELSE
 	RESTART
 ENDIF
@@ -399,8 +341,8 @@ ENDIF
 #DIM MAPDATA
 VARSET MAPDATA
 VARSET LOCAL
-PRINT 设施：
-;Mapデータの参照
+PRINT 施設：
+;マップデータの参照
 FOR LOCAL, 1, 100
 	SIF (ROOMDATA:LOCAL & 場所_風呂) != 0
 		MAPDATA |= 場所_風呂
@@ -408,27 +350,24 @@ FOR LOCAL, 1, 100
 		MAPDATA |= 場所_厨房
 	SIF (ROOMDATA:LOCAL & 場所_訓練) != 0
 		MAPDATA |= 場所_訓練
-	SIF (ROOMDATA:LOCAL & 場所_学习) != 0
-		MAPDATA |= 場所_学习
+	SIF (ROOMDATA:LOCAL & 場所_勉強) != 0
+		MAPDATA |= 場所_勉強
 	SIF (ROOMDATA:LOCAL & 場所_菜園) != 0
 		MAPDATA |= 場所_菜園
-	SIF (ROOMDATA:LOCAL & 場所_天之声) != 0
-		MAPDATA |= 場所_天之声
+	SIF (ROOMDATA:LOCAL & 場所_天の声) != 0
+		MAPDATA |= 場所_天の声
 NEXT
 FONTBOLD
-CALL COLORMESSAGE(@"【澡堂】", (MAPDATA & 場所_風呂) ? C_WHITE # C_GRAY, 0)
+CALL COLORMESSAGE(@"【風呂】", (MAPDATA & 場所_風呂) ? C_WHITE # C_GRAY, 0)
 CALL COLORMESSAGE(@"【厨房】", (MAPDATA & 場所_厨房) ? C_WHITE # C_GRAY, 0)
-CALL COLORMESSAGE(@"【训练】", (MAPDATA & 場所_訓練) ? C_WHITE # C_GRAY, 0)
-CALL COLORMESSAGE(@"【学习】", (MAPDATA & 場所_学习) ? C_WHITE # C_GRAY, 0)
-CALL COLORMESSAGE(@"【菜园】", (MAPDATA & 場所_菜園) ? C_WHITE # C_GRAY, 0)
-CALL COLORMESSAGE(@"【天之声】", (MAPDATA & 場所_天之声) ? C_WHITE # C_GRAY, 0)
+CALL COLORMESSAGE(@"【訓練】", (MAPDATA & 場所_訓練) ? C_WHITE # C_GRAY, 0)
+CALL COLORMESSAGE(@"【勉強】", (MAPDATA & 場所_勉強) ? C_WHITE # C_GRAY, 0)
+CALL COLORMESSAGE(@"【菜園】", (MAPDATA & 場所_菜園) ? C_WHITE # C_GRAY, 0)
+CALL COLORMESSAGE(@"【天の声】", (MAPDATA & 場所_天の声) ? C_WHITE # C_GRAY, 0)
 FONTREGULAR
 
 ;地点の参照
 FOR LOCAL, MINROOM(), MAXROOM
-	SIF 伐採可能(LOCAL) ;logging custom code
-		LOCAL:19 = 1
-
 	SIF FISHING_SPOT(LOCAL)
 		LOCAL:1 = 1
 	SIF IS_LIBRARY(LOCAL, 1)
@@ -465,50 +404,45 @@ NEXT
 FOR LOCAL, 1, 20
 	IF LOCAL:LOCAL
 		SELECTCASE LOCAL
-		CASE 19 ;logging custom code
-			PRINTFORM 【采伐】
-		
 		CASE 1
-			PRINTFORM 【钓鱼】
+			PRINTFORM 【釣り】
 		CASE 2
-			PRINTFORM 【读书】
+			PRINTFORM 【読書】
 		CASE 3
-			PRINTFORM 【采集】
+			PRINTFORM 【採集】
 		CASE 4
-			PRINTFORM 【调合】
+			PRINTFORM 【調合】
 		CASE 5
-			PRINTFORM 【摆摊】
+			PRINTFORM 【露店】
 		CASE 6
-			PRINTFORM 【浴场】
+			PRINTFORM 【銭湯】
 		CASE 7
-			PRINTFORM 【神签】
+			PRINTFORM 【おみくじ】
 		CASE 8
-			PRINTFORM 【守矢神签】
+			PRINTFORM 【守矢くじ】
 		CASE 9
-			PRINTFORM 【杂货店】
+			PRINTFORM 【食料品店】
 		CASE 10
 			PRINTFORM 【花屋】
 		CASE 11
 			PRINTFORM 【酒屋】
 		CASE 12
-			PRINTFORM 【借书屋】
+			PRINTFORM 【貸本屋】
 		CASE 13
-			PRINTFORM 【蔬菜店】
+			PRINTFORM 【八百屋】
 		CASE 14
-			PRINTFORM 【赌场】
+			PRINTFORM 【カジノ】
 		CASE 15
-			PRINTFORM 【诱捕】
+			PRINTFORM 【罠猟】
 		CASE 16
-			PRINTFORM 【住处】
+			PRINTFORM 【住み込み】
 		ENDSELECT
 	ENDIF
 NEXT
 PRINTL
-PRINT 居民：
-;角色表示
+PRINT 住人：
+;キャラクター表示
 FOR LOCAL, 1, CHARANUM
-	SIF CFLAG:LOCAL:出禁 ;addition custom code, hide disabled characters
-		CONTINUE
 	IF MAP_住人(MAIN_MAP, LOCAL)
 		SIF LOCAL:21
 			PRINTFORM 、
@@ -520,7 +454,7 @@ FOR LOCAL, 1, CHARANUM
 NEXT
 PRINTL
 
-;Map内の採集可能地点を表示する関数
+;マップ内の採集可能地点を表示する関数
 @ShowGatheringSpots(ARG)
 #DIM cStart
 #DIM cEnd
@@ -551,11 +485,12 @@ FOR LOCAL, cStart, cEND
 	ENDIF
 NEXT
 SIF !pCount
-	PRINT 无
+	PRINT なし
 PRINTFORML
 
 @KOURINDOU_IS_WORKING_HOURS()
 #FUNCTION
+
 ;香霖堂,10時～18時
 SIF INRANGE(TIME, 600, 1080)
 	RETURNF 1

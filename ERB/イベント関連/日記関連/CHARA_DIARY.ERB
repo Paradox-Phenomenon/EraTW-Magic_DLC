@@ -6,10 +6,10 @@
 RESULT = 0
 PAGENUM = 0
 CLOSE = 0
-;指令で呼び出されたとき
+;コマンドで呼び出されたとき
 CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, 0, 0, "EXIST")
 IF !RESULT
-	PRINTFORMW 然而好像还什么都没有写…
+	PRINTFORMW まだ何も書かれていないようだ…
 	RETURN
 ENDIF
 
@@ -18,19 +18,19 @@ FOR DCOUNT, 1, MAX_DIARY_PAGE:C_ID:0 + 1
 		PAGENUM ++
 NEXT
 IF PAGENUM == 0
-	PRINTFORMW 然而好像还什么都没有写…
+	PRINTFORMW まだ何も書かれていないようだ…
 	RETURN
 ENDIF
 FOR DCOUNT, 1, MAX_DIARY_PAGE:C_ID:0 + 1
 	SIF !PAGESET:C_ID:DCOUNT
 		BREAK
-	CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "指令")
+	CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "コマンド")
 	DRAWLINE
 	;未読(3)だったら既読(1)にする
 	SIF DIARY:C_ID:(PAGESET:C_ID:DCOUNT) == 3
 		DIARY:C_ID:(PAGESET:C_ID:DCOUNT) = 1
 	IF PAGENUM > 1
-		CALL ASK_M("下一页 ", 1, " 向前翻5页", DCOUNT + 5 <= PAGENUM, "向前翻10页", DCOUNT + 10 <= PAGENUM, "上一页", DCOUNT > 1, "合上日记", 1)
+		CALL ASK_M("次のページ ", 1, " 5ページ先", DCOUNT + 5 <= PAGENUM, "10ページ先", DCOUNT + 10 <= PAGENUM, "前のページ", DCOUNT > 1, "日記を閉じる", 1)
 		IF RESULT == 0
 			CONTINUE
 		ELSEIF RESULT == 1
@@ -46,9 +46,9 @@ FOR DCOUNT, 1, MAX_DIARY_PAGE:C_ID:0 + 1
 	ENDIF
 NEXT
 IF !CLOSE
-	PRINTFORMW 日记到这里就结束了…
+	PRINTFORMW 日記はここで終わっている… 
 ELSE
-	PRINTFORMW %CALLNAME:MASTER%停止了阅读
+	PRINTFORMW %CALLNAME:MASTER%は読むのを止めた
 ENDIF
 
 @CHARA_DIARY_AFTERTRAIN
@@ -61,14 +61,14 @@ FOR CHARA, 1, CHARANUM
 	CALL KOJO_MESSAGE_SEND("DIARY", 0, CHARA, 0, 0, "EXIST")
 	SIF !RESULT
 		CONTINUE
-	;PRINTFORML %CALLNAME:CHARA%的日记を確認
+	;PRINTFORML %CALLNAME:CHARA%の日記を確認
 	TARGET = CHARA
 	;日記の書き込み判定
 	CALL KOJO_MESSAGE_SEND("DIARY", 0, CHARA, 0, 0, "BEFORE_CHECK")
 	FOR DCOUNT, 1, MAX_DIARY_PAGE:CHARA:0 + 1
 		;最初にヒットした未読(2)を表示
 		IF DIARY:CHARA:DCOUNT == 2
-			;页セットしてから口上色を付けて表示
+			;ページセットしてから口上色を付けて表示
 			CALL CHARA_DIARY_PAGESETTING(CHARA, DCOUNT)
 			PAGECOUNT = RESULT
 			CALL KOJO_MESSAGE_SEND("DIARY", 0, CHARA, PAGESET:CHARA:PAGECOUNT, PAGECOUNT, "TEXT", "デイリー")
@@ -109,9 +109,9 @@ FOR LOCAL,0,行数
 NEXT
 RESETCOLOR
 PRINTL
-PRINTBUTTON "[98] - 删除上一行", "98"
+PRINTBUTTON "[98] - 前の行を削除する", "98"
 PRINT 　　
-PRINTBUTTON "[99] - 完成日记", "99"
+PRINTBUTTON "[99] - 日記を仕上げる", "99"
 PRINTL
 
 INPUTS
@@ -137,7 +137,7 @@ ELSEIF RESULTS == "99"
 	RETURN
 ELSEIF 行数 == 39
 	SETCOLOR C_YELLOW
-	PRINTFORMW 行数已达到上限
+	PRINTFORMW ライン数はすでに上限に
 	RESETCOLOR
 	SIF RESULTS != ""
 		CLEARLINE 1
@@ -165,7 +165,7 @@ IF STRCOUNT(SAVESTR:1,"//") >= 100
 		SAVESTR:1 = %LOCALS:LOCAL%%SAVESTR:1%
 	NEXT
 ENDIF
-SAVESTR:1 = ・ %GET_MONTH()% {DAY:3,2,RIGHT}日 （%GET_DAY_CN()%） %時刻表示(TIME)%_L_%内容%//%SAVESTR:1%
+SAVESTR:1 = ・ %GET_MONTH()% {DAY:3,2,RIGHT}日 （%GET_DAY()%） %時刻表示(TIME)%_L_%内容%//%SAVESTR:1%
 
 @READ_MASTER_DIARY
 #DIMS 表示内容,100
@@ -178,7 +178,7 @@ FOR LOCAL,0,100
 		PAGE ++
 NEXT
 
-PRINTFORML ---| %CALLNAME:MASTER%的日记 |-------------------------------------------------------------------------------------
+PRINTFORML ---| %CALLNAME:MASTER%の日記 |-------------------------------------------------------------------------------------
 FOR LOCAL,0,100
 	IF 表示内容:LOCAL != ""
 		SPLIT 表示内容:LOCAL,"_L_",内容
@@ -189,7 +189,7 @@ FOR LOCAL,0,100
 		PRINTL
 		IF PAGE > 1
 			PRINTL --------------------------------------------------------------------------------------------------------------------
-			CALL ASK_YN("查看下一页 ","合上日记")
+			CALL ASK_YN("次のページ ","日記を閉じる")
 			IF RESULT
 				BREAK
 			ENDIF
@@ -197,7 +197,7 @@ FOR LOCAL,0,100
 		ENDIF
 	ENDIF
 NEXT
-PRINTFORMW 日记到这里就结束了…
+PRINTFORMW 日記はここで終わっている… 
 
 
 @SHARE_MASTER_DIARY
@@ -216,11 +216,11 @@ SIF PAGE >= 1
 	READPAGE = RAND:PAGE
 
 IF PAGE == 0
-	CALL SPTALK,TARGET,,,@"「这不是什么都没有写吗……」//%CALLNAME:TARGET%闭上了日记本。"
+	CALL SPTALK,TARGET,,,@"「何も書かれてないじゃない……」//%CALLNAME:TARGET%は日記帳を閉じた。"
 	RETURN 0
 ENDIF
 
-PRINTFORML %CALLNAME:TARGET%随便翻了一页开始读…
+PRINTFORML %CALLNAME:TARGET%はページを適当にめくって読み始めた…
 PRINTL
 CALL PRINT_FACE,TARGET
 
@@ -235,8 +235,8 @@ IF 表示内容:READPAGE != ""
 ENDIF
 ;===========================================================================
 ;日記に書き込む処理
-;指定されたCHARAのDIARY番号(PAGENUM)を最後の空白页にセット
-;何页に書いたかを返り値にする
+;指定されたCHARAのDIARY番号(PAGENUM)を最後の空白ページにセット
+;何ページに書いたかを返り値にする
 ;===========================================================================
 @CHARA_DIARY_PAGESETTING(CHARA, PAGENUM)
 #DIM CHARA
@@ -261,16 +261,16 @@ FOR LOCAL,0,20
 	LOADTEXT (1700+LOCAL)
 	
 	IF RESULTS != ""
-		PRINTBUTTON @"日记本[{LOCAL}]", LOCAL
+		PRINTBUTTON @"日記帳[{LOCAL}]", LOCAL
 		PRINTFORML 
 	ELSE
-		PRINTBUTTON "[无]", LOCAL
+		PRINTBUTTON "[なし]", LOCAL
 		PRINTFORML 
 	ENDIF
 	RESETCOLOR
 NEXT
 DRAWLINE
-PRINTBUTTON "[放弃]", 99
+PRINTBUTTON "[やめる]", 99
 
 $INPUT_LOOP_DIARY_FILE
 INPUT
@@ -287,7 +287,7 @@ RESULT = LOCAL
 
 SAVETEXT SAVESTR:1, (1700+RESULT)
 SIF !RESULT
-	CALL COLORMESSAGE("保存失败",C_YELLOW,2,1)
+	CALL COLORMESSAGE("保存に失敗する",C_YELLOW,2,1)
 
 
 @READ_MASTER_DIARY_FILE
@@ -296,16 +296,16 @@ FOR LOCAL,0,20
 	LOADTEXT (1700+LOCAL)
 	
 	IF RESULTS != ""
-		PRINTBUTTON @"日记本[{LOCAL}]", LOCAL
+		PRINTBUTTON @"日記帳[{LOCAL}]", LOCAL
 		PRINTFORML 
 	ELSE
-		PRINTBUTTON "[无]", -1
+		PRINTBUTTON "[なし]", -1
 		PRINTFORML 
 	ENDIF
 	RESETCOLOR
 NEXT
 DRAWLINE
-PRINTBUTTON "[放弃]", 99
+PRINTBUTTON "[やめる]", 99
 
 $INPUT_LOOP_DIARY_FILE
 INPUT
@@ -322,7 +322,7 @@ LOADTEXT (1700+RESULT)
 SAVESTR:1 = %RESULTS%
 
 @ASK_DIARY(ARGS)
-PRINTFORML 要把这件事记录在日记里吗？
+PRINTFORML この出来事を日記に残しますか？
 CALL ASK_YN
 IF !RESULT
 	CALL MASTER_DIARY_WRITE, @"%ARGS%"

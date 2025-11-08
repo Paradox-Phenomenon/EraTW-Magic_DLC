@@ -25,7 +25,7 @@
 IF ARG:2 == MASTER && ARGS == "MUSHI_BATTLE"
 	RESULTS = 
 	RETURN -1
-ELSEIF ARG:2 == MASTER && !GROUPMATCH(ARGS, "COMMAND", "COM", "IMAGE", "IMAGE_EX")
+ELSEIF ARG:2 == MASTER && !GROUPMATCH(ARGS, "COMMAND", "COM")
 	RETURN -1
 ELSEIF GROUPMATCH(ARGS, "IMAGE", "IMAGE_EX")
 	ARRAYCOPY "RESULTS", "RESULTS_TEMP"
@@ -43,7 +43,7 @@ SELECTCASE ARGS
 ;ファーストインプレッション系KOJO出力処理（俗に言うエクストラ構文）
 ;------------------------------------------------------------
 	CASE "ENCOUNTER"
-		;TARGETに発言者設定（現在的TARGETはLOCALへ退避）
+		;TARGETに発言者設定（現在のTARGETはLOCALへ退避）
 		LOCAL = TARGET
 		TARGET = ARG:2
 		;口上の存在判定 and RESULTSに文字列代入
@@ -54,7 +54,7 @@ SELECTCASE ARGS
 			RETURN 0
 		ENDIF
 		;口上表示設定なら表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			SIF FLAG:口上色
 				TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
 			TRYCALLFORM M_KOJO%RESULTS%_ENCOUNTER_K{NO:TARGET}
@@ -65,7 +65,7 @@ SELECTCASE ARGS
 ;SPイベント系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "SP_EVENT"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+		SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 			RETURN -1
 
 		;TARGETに発言者設定（現在のTARGETはLOCALへ退避）
@@ -73,7 +73,7 @@ SELECTCASE ARGS
 		TARGET = ARG:2
 
 		;テキスト設定
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 		ELSE
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			KOJO_VALID = RESULT
@@ -85,7 +85,7 @@ SELECTCASE ARGS
 			SKIP_KOJO = GETBIT(RESULT, 1)
 		ENDIF
 
-		SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+		SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 			TRYCALLFORM SPEVENT_MESSAGE_{ARG:1}(ARG:3,ARG:4)
 
 		RESULT = 0
@@ -100,60 +100,14 @@ SELECTCASE ARGS
 		RESETCOLOR
 		RETURN KOJO_RESULT
 ;------------------------------------------------------------
-;自定义指令系统新增的事件的KOJO输出处理
-;------------------------------------------------------------
-	CASE "CUSTOM_EVENT"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
-			RETURN -1
-		;设定TARGET
-		LOCAL = TARGET
-		TARGET = ARG:2
-		;文本设定
-		IF FLAG:口上文本設定 <= 0
-		ELSE
-			CALL KOJO_ACTIVE_INFO(TARGET)
-			KOJO_VALID = RESULT
-			KOJO_NAME '= RESULTS				
-			RESULT = 0
-			IF ARGS:1 != ""
-				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_MESSAGECHECK_K{NO:TARGET}_%ARGS:1%
-			ELSE
-				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_MESSAGECHECK_K{NO:TARGET}_{ARG:1}
-			ENDIF
-			SKIP_MESSAGE = GETBIT(RESULT, 0)
-			SKIP_KOJO = GETBIT(RESULT, 1)
-		ENDIF
-		IF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
-			IF ARGS:1 != ""
-				TRYCALLFORM CUSTOM_EVENT_MESSAGE_%ARGS:1%(ARGS:2,ARG:3,ARG:4,ARG:5,ARG:6)
-			ELSE
-				TRYCALLFORM CUSTOM_EVENT_MESSAGE_{ARG:1}(ARG:3,ARG:4,ARG:5,ARG:6)
-			ENDIF
-		ENDIF
-		RESULT = 0
-		IF KOJO_VALID && !SKIP_KOJO
-			SIF FLAG:口上色
-				TRYCALLFORM M_KOJO%KOJO_NAME%_COLOR_K{NO:TARGET}
-			RESULT = 0
-			IF ARGS:1 != ""
-				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENT_K{NO:TARGET}_%ARGS:1%(ARGS:2,ARG:3,ARG:4,ARG:5,ARG:6)
-			ELSE
-				TRYCALLFORM M_KOJO%KOJO_NAME%_CUSTOM_EVENTT_K{NO:TARGET}_{ARG:1}(ARG:3,ARG:4,ARG:5,ARG:6)
-			ENDIF
-		ENDIF
-		KOJO_RESULT = RESULT
-		TARGET = LOCAL
-		RESETCOLOR
-		RETURN KOJO_RESULT
-;------------------------------------------------------------
-;イベント系KOJO出力处理
+;イベント系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "EVENT"
-		;TARGETに発言者設定（現在的TARGETはLOCALへ退避）
+		;TARGETに発言者設定（現在のTARGETはLOCALへ退避）
 		LOCAL = TARGET
 		TARGET = ARG:2
 		;口上未表示なら共通口上へ
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 			;共通口上出力
 			TRYCALLFORM M_KOJO_EVENT_{ARG:1}(ARG:3,ARG:4)
 			TARGET = LOCAL
@@ -165,9 +119,9 @@ SELECTCASE ARGS
 		;口上の存在判定 and RESULTSに文字列代入
 		CALL KOJO_ACTIVE_INFO(TARGET)
 		;口上が存在しないなら共通口上へ
-		IF !RESULT || (FLAG:70 && !CFLAG:(NO:TARGET):時間停止口上有) || (FLAG:扮演 && !CFLAG:(NO:TARGET):扮演口上有)
+		IF !RESULT || (FLAG:70 && !CFLAG:(NO:TARGET):時間停止口上有) || (FLAG:なりきり && !CFLAG:(NO:TARGET):なりきり口上有)
 			;口上表示設定なら共通表示
-			IF FLAG:口上文本設定 > 0
+			IF FLAG:口上テキスト設定 > 0
 				;共通口上出力
 				TRYCALLFORM M_KOJO_EVENT_{ARG:1}(ARG:3,ARG:4)
 				TARGET = LOCAL
@@ -175,7 +129,7 @@ SELECTCASE ARGS
 			ENDIF
 		ENDIF
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			;TARGET口上出力
 			SIF FLAG:口上色
 				TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
@@ -190,16 +144,16 @@ SELECTCASE ARGS
 		RESETCOLOR
 		RETURN KOJO_RESULT
 ;------------------------------------------------------------
-;指令系KOJO出力処理
+;コマンド系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "COMMAND"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+		SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 			RETURN -1
 
 		;テキスト設定
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 		ELSEIF TEQUIP:(ARG:2):20 && SELECTCOM != 107
-		ELSEIF (FLAG:70 && !CFLAG:(ARG:2):時間停止口上有) || (CFLAG:(ARG:2):恶作剧 >= 1 && !CFLAG:(ARG:2):眠姦口上有) || (FLAG:扮演 && !CFLAG:(ARG:2):扮演口上有)
+		ELSEIF (FLAG:70 && !CFLAG:(ARG:2):時間停止口上有) || (CFLAG:(ARG:2):イタズラ >= 1 && !CFLAG:(ARG:2):眠姦口上有) || (FLAG:なりきり && !CFLAG:(ARG:2):なりきり口上有)
 		ELSE
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			KOJO_VALID = RESULT
@@ -212,15 +166,7 @@ SELECTCASE ARGS
 				ELSE
 					LOCAL = SELECTCOM
 					LOCALS = COM
-				ENDIF
-				;addition custom code, custom command message handling
-				IF TFLAG:50 && TFLAG:50 == ADD_CUSTOM_SCOM
-					LOCAL = ADD_SELECTED_SCOM
-					LOCALS = CUSTOM_SCOM
-				ELSEIF SELECTCOM == ADD_CUSTOM_COM
-					LOCAL = ADD_SELECTCUSTOMCOM
-					LOCALS = CUSTOM_COM
-				ENDIF
+				ENDIF				
 				RESULT = 0
 				TRYCALLFORM M_KOJO%KOJO_NAME%_MESSAGE_MESSAGECHECK_%LOCALS%_K{NO:TARGET}_{LOCAL}
 				SKIP_MESSAGE = GETBIT(RESULT, 0)
@@ -229,7 +175,7 @@ SELECTCASE ARGS
 		ENDIF
 		CALL DISPLAY_COM_IMAGE(SELECTCOM)
 
-		SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+		SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 			CALL TRAIN_MESSAGE
 
 		RESULT = 0
@@ -246,13 +192,13 @@ SELECTCASE ARGS
 		ENDIF
 		KOJO_RESULT = RESULT
 
-		SIF !KOJO_RESULT && CFLAG:TARGET:自動喘息
+		SIF !KOJO_RESULT && CFLAG:TARGET:オート喘ぎ
 			CALL AUTO_AEGI(TARGET)
 
 		RESETCOLOR
 		RETURN KOJO_RESULT
 ;------------------------------------------------------------
-;Counter系KOJO出力処理
+;カウンター系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "COUNTER"
 		CALL KOJO_MESSAGE_SEND_COUNTER(ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2, ARG:5, ARG:6)
@@ -261,7 +207,7 @@ SELECTCASE ARGS
 ;パラメータ系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "PALAM"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+		SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 			RETURN -1
 
 		SELECTCASE ARG:1
@@ -277,13 +223,13 @@ SELECTCASE ARGS
 					SIF LOCAL > 0 && TARGET:LOCAL == TARGET
 						CONTINUE
 					;口上出力用のフラグがないと飛ばす
-					SIF !TCVAR:(TARGET:LOCAL):口上出力用射精部位
+					SIF !TCVAR:(TARGET:LOCAL):口上出力用射精箇所
 						CONTINUE
 					LOCAL:1 = TARGET
 					TARGET = TARGET:LOCAL
 					CALL KOJO_MESSAGE_PALAMCNG_A2(LOCAL)
 					TARGET = LOCAL:1
-					;避孕套口上は対象一人のみ
+					;コンドーム口上は対象一人のみ
 					SIF GETBIT(TFLAG:1,0)
 						BREAK
 				NEXT
@@ -296,16 +242,16 @@ SELECTCASE ARGS
 				TARGET = ARG:2
 
 				;テキスト設定
-				IF FLAG:口上文本設定 <= 0
+				IF FLAG:口上テキスト設定 <= 0
 				ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-				ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+				ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 				ELSE
 					CALL KOJO_ACTIVE_INFO(TARGET)
 					KOJO_VALID = RESULT
 					KOJO_NAME '= RESULTS
 						
 					RESULT = 0
-					IF CFLAG:恶作剧
+					IF CFLAG:イタズラ
 						TRYCALLFORM M_KOJO%KOJO_NAME%_MESSAGE_PALAMCNG_MESSAGECHECK_B2_K{NO:TARGET}
 					ELSE
 						TRYCALLFORM M_KOJO%KOJO_NAME%_MESSAGE_PALAMCNG_MESSAGECHECK_B_K{NO:TARGET}
@@ -314,7 +260,7 @@ SELECTCASE ARGS
 					SKIP_KOJO = GETBIT(RESULT, 1)
 				ENDIF
 
-				SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+				SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 					CALL PALAM_MESSAGE_B
 
 				RESULT = 0
@@ -322,7 +268,7 @@ SELECTCASE ARGS
 					SIF FLAG:口上色
 						TRYCALLFORM M_KOJO%KOJO_NAME%_COLOR_K{NO:TARGET}
 					RESULT = 0
-					IF CFLAG:恶作剧
+					IF CFLAG:イタズラ
 						TRYCALLFORM M_KOJO%KOJO_NAME%_MESSAGE_PALAMCNG_B2_K{NO:TARGET}
 					ELSE
 						TRYCALLFORM M_KOJO%KOJO_NAME%_MESSAGE_PALAMCNG_B_K{NO:TARGET}
@@ -339,9 +285,9 @@ SELECTCASE ARGS
 				TARGET = ARG:2
 
 				;テキスト設定
-				IF FLAG:口上文本設定 <= 0
+				IF FLAG:口上テキスト設定 <= 0
 				ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-				ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+				ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 				ELSE
 					CALL KOJO_ACTIVE_INFO(TARGET)
 					KOJO_VALID = RESULT
@@ -352,7 +298,7 @@ SELECTCASE ARGS
 					SKIP_KOJO = GETBIT(RESULT, 1)
 				ENDIF
 
-				SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+				SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 					CALL PALAM_MESSAGE_C
 
 				RESULT = 0
@@ -372,9 +318,9 @@ SELECTCASE ARGS
 				TARGET = ARG:2
 
 				;テキスト設定
-				IF FLAG:口上文本設定 <= 0
+				IF FLAG:口上テキスト設定 <= 0
 				ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-				ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+				ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 				ELSE
 					CALL KOJO_ACTIVE_INFO(TARGET)
 					KOJO_VALID = RESULT
@@ -386,7 +332,7 @@ SELECTCASE ARGS
 					SKIP_KOJO = GETBIT(RESULT, 1)
 				ENDIF
 
-				SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+				SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 					CALL PALAM_MESSAGE_D
 
 				RESULT = 0
@@ -406,9 +352,9 @@ SELECTCASE ARGS
 				TARGET = ARG:2
 
 				;テキスト設定
-				IF FLAG:口上文本設定 <= 0
+				IF FLAG:口上テキスト設定 <= 0
 				ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-				ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+				ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 				ELSE
 					CALL KOJO_ACTIVE_INFO(TARGET)
 					KOJO_VALID = RESULT
@@ -420,7 +366,7 @@ SELECTCASE ARGS
 					SKIP_KOJO = GETBIT(RESULT, 1)
 				ENDIF
 
-				SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+				SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 					CALL PALAM_MESSAGE_E
 
 				RESULT = 0
@@ -440,9 +386,9 @@ SELECTCASE ARGS
 				TARGET = ARG:2
 
 				;テキスト設定
-				IF FLAG:口上文本設定 <= 0
+				IF FLAG:口上テキスト設定 <= 0
 				ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-				ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+				ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 				ELSE
 					CALL KOJO_ACTIVE_INFO(TARGET)
 					KOJO_VALID = RESULT
@@ -454,7 +400,7 @@ SELECTCASE ARGS
 					SKIP_KOJO = GETBIT(RESULT, 1)
 				ENDIF
 
-				SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+				SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 					CALL PALAM_MESSAGE_F
 
 				RESULT = 0
@@ -471,14 +417,14 @@ SELECTCASE ARGS
 		ENDSELECT
 ;	;刻印系KOJO出力処理
 	CASE "MARK"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+		SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 			RETURN -1
 
 		LOCAL = TARGET
 		TARGET = ARG:2
 
 		;テキスト設定
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 		ELSE
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			KOJO_VALID = RESULT
@@ -491,7 +437,7 @@ SELECTCASE ARGS
 			SKIP_KOJO = GETBIT(RESULT, 1)
 		ENDIF
 
-		SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+		SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 			CALL MARK_MESSAGE
 
 		RESULT = 0
@@ -509,15 +455,15 @@ SELECTCASE ARGS
 	CASE "DIRECT"
 		SELECTCASE ARG:1
 			CASE 351
-				;口球
-				IF TEQUIP:(ARG:2):20 && SELECTCOM != 107 && FLAG:情景文本設定 > 0
+				;ボールギャグ
+				IF TEQUIP:(ARG:2):20 && SELECTCOM != 107 && FLAG:情景テキスト設定 > 0
 					RETURN 1
 				ELSE
 					RESULT = 0
 					RESULTS =
 					;口上の存在判定 and RESULTSに文字列代入
 					CALL KOJO_ACTIVE_INFO(TARGET)
-					IF FLAG:口上文本設定 > 0
+					IF FLAG:口上テキスト設定 > 0
 						IF FLAG:口上色
 							TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
 						ELSE
@@ -535,7 +481,7 @@ SELECTCASE ARGS
 	CASE "EXTRASOURCE"
 		RESULTS = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			IF TFLAG:50
 				LOCAL = TFLAG:50
@@ -549,7 +495,7 @@ SELECTCASE ARGS
 				TRYCALLFORM M_KOJO%RESULTS%_EXTRASOURCE_%LOCALS%_K{NO:TARGET}_GENERAL
 			ENDCATCH
 		ENDIF
-
+		
 	;基本フラグ設定
 	CASE "FLAGSETTING"
 		LOCAL = TARGET
@@ -558,20 +504,20 @@ SELECTCASE ARGS
 		RESULTS = 
 		RESULTS:1 = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			IF RESULT
 				CFLAG:TARGET:眠姦口上有 = 0
 				CFLAG:TARGET:時間停止口上有 = 0
-				CFLAG:TARGET:扮演口上有 = 0
-				CFLAG:TARGET:破瓜中止口上有 = 0
+				CFLAG:TARGET:なりきり口上有 = 0
+				CFLAG:TARGET:破瓜キャンセル口上有 = 0
 				CFLAG:TARGET:口上内抱き寄せ判定_初回 = 0
 				CFLAG:TARGET:口上内抱き寄せ判定_通常 = 0
-				CFLAG:TARGET:推倒禁止 = 0
+				CFLAG:TARGET:押し倒し禁止 = 0
 				CFLAG:TARGET:来訪不能 = 0
 				TRYCCALLFORM M_KOJO%RESULTS%_FLAGSETTING_K{NO:TARGET}
 				CATCH
-					PRINTFORMW ※警告：(%CALLNAME:TARGET%\@ RESULTS:1 != "" ? _ # \@%RESULTS:1%剧本)的基本标志未设定
+					PRINTFORMW ※Warning: Failed to load dialogue flag setting function (%CALLNAME:TARGET%\@ RESULTS:1 != "" ? _ # \@%RESULTS:1%)
 				ENDCATCH
 			ENDIF
 		ELSE
@@ -587,7 +533,7 @@ SELECTCASE ARGS
 		RESULT = 0
 		RESULTS = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -614,7 +560,7 @@ SELECTCASE ARGS
 		TARGET = LOCAL
 		RETURN RESULT
 
-	;指令成否口上制御
+	;コマンド成否口上制御
 	CASE "SUCCESS"
 		RESULT = 0
 		RESULTS =
@@ -638,14 +584,13 @@ SELECTCASE ARGS
 				TFLAG:192 = 0
 			ENDCATCH
 		ENDCATCH
-		RETURN RESULT
-	;推倒成否口上制御,破瓜中止口上制御
+	;押し倒し成否口上制御,破瓜キャンセル口上制御
 	CASE "PERMISSION", "LOST_VIRGIN_STOP"
 		LOCAL = TARGET
 		TARGET = ARG:2
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -668,7 +613,7 @@ SELECTCASE ARGS
 		RESULT = 0
 		RESULTS = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			SIF FLAG:口上色
 				TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
@@ -701,28 +646,27 @@ SELECTCASE ARGS
 		LOCAL = TARGET
 		TARGET = ARG:2
 		RESULT = 0
-		;エンカウント路人子用口上表示
-		IF ARG:3 == 1 && FLAG:口上文本設定 > 0
+		;エンカウントモブ子用口上表示
+		IF ARG:3 == 1 && FLAG:口上テキスト設定 > 0
 			CALL TALK_MOBGIRL(ARGS:1, ARG:1)
 			RESETCOLOR
 		;口上表示
-		ELSEIF FLAG:口上文本設定 > 0
+		ELSEIF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
 				TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
-			TRYCALLFORM M_KOJO%RESULTS%_MESSAGE_COM_K{NO:TARGET}_DANMAKU(ARGS:1, ARG:1, ARG:4)
+			TRYCALLFORM M_KOJO%RESULTS%_MESSAGE_COM_K{NO:TARGET}_DANMAKU(ARGS:1, ARG:1)
 			RESETCOLOR
 		ENDIF
 		TARGET = LOCAL
-		RETURN RESULT
 	;依頼
 	CASE "IRAI"
 		LOCAL = TARGET
 		TARGET = ARG:1
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -738,7 +682,7 @@ SELECTCASE ARGS
 		LOCAL = TARGET
 		TARGET = ARG:2
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -749,14 +693,14 @@ SELECTCASE ARGS
 		TARGET = LOCAL
 	;デイリーイベント,DIARYと綴り間違えなように
 	CASE "DAILY"
-		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+		SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 			RETURN -1
 
 		LOCAL = TARGET
 		TARGET = ARG:2
 
 		;テキスト設定
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 		ELSE
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			KOJO_VALID = RESULT
@@ -768,7 +712,7 @@ SELECTCASE ARGS
 			SKIP_KOJO = GETBIT(RESULT, 1)
 		ENDIF
 
-		SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+		SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 			CALLFORM DAILY_MESSAGE_{ARG:1}(ARG:2, ARG:3, ARG:4, ARG:5, ARG:6, ARGS:1, ARGS:2)
 
 		RESULT = 0
@@ -789,7 +733,7 @@ SELECTCASE ARGS
 		RESULT = 0
 		RESULTS = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;日記の存在判定
 			RESULT = 0
@@ -813,7 +757,7 @@ SELECTCASE ARGS
 		ENDIF
 		TARGET = LOCAL
 		RETURN RESULT
-	;斗虫
+	;ムシバトル
 	CASE "MUSHI_BATTLE"
 		LOCAL = TARGET
 		TARGET = ARG:2
@@ -821,9 +765,9 @@ SELECTCASE ARGS
 		RESULTS = 
 		RESULTS:1 = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
-			;RESULTSを使用ので退避してリセットしておく
+			;RESULTSを使うので退避してリセットしておく
 			RESULTS:1 = %RESULTS%
 			RESULTS = 
 			MUSHI_NAME = %MUSHI_NAME:(MUSHI_STANDNUM:(ARG:3))%
@@ -847,13 +791,13 @@ SELECTCASE ARGS
 		TARGET = ARG:2
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			TRYCALLFORM M_KOJO%RESULTS%_EVENT_K{NO:TARGET}_GRAVITY(ARG:1)
 		ENDIF
 		TARGET = LOCAL
-
-	;打西瓜
+		
+	;スイカ割り
 	CASE "SUIKA"
 		LOCAL = TARGET
 		TARGET = ARG:2
@@ -861,9 +805,9 @@ SELECTCASE ARGS
 		RESULTS = 
 		RESULTS:1 = 
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
-			;RESULTSを使用ので退避してリセットしておく
+			;RESULTSを使うので退避してリセットしておく
 			RESULTS:1 = %RESULTS%
 			RESULTS = 
 			SIF GROUPMATCH(ARGS:1, "衝突", "結果")
@@ -877,7 +821,7 @@ SELECTCASE ARGS
 		TARGET = ARG:2
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -886,13 +830,13 @@ SELECTCASE ARGS
 			RESETCOLOR
 		ENDIF
 		TARGET = LOCAL
-	;炮友契約
+	;セフレ契約
 	CASE "SEX_FRIEND"
 		LOCAL = TARGET
 		TARGET = ARG:2
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -907,7 +851,7 @@ SELECTCASE ARGS
 		LOCAL = TARGET
 		TARGET = ARG:2
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -922,7 +866,7 @@ SELECTCASE ARGS
 		TARGET = ARG:2
 		RESULT = 0
 		;口上表示
-		IF FLAG:口上文本設定 > 0
+		IF FLAG:口上テキスト設定 > 0
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			;TARGET口上出力
 			SIF FLAG:口上色
@@ -940,7 +884,7 @@ SELECTCASE ARGS
 		TARGET = LOCAL
 		RETURN RESULT
 
-	;いつか来る終わりの为に
+	;いつか来る終わりの為に
 	CASE "ENDING"
 		;custom code, fixed to work
 		LOCAL = TARGET
@@ -951,7 +895,7 @@ SELECTCASE ARGS
 			TRYCALLFORM M_KOJO%RESULTS%_COLOR_K{NO:TARGET}
 		TRYCALLFORM M_KOJO%RESULTS%_MESSAGE_ENDING_K{NO:TARGET}
 		RESETCOLOR
-		TARGET = LOCAL
+		TARGET = LOCAL ;custom code
 		
 	;カスタム素質
 	CASE "CUSTOM_TALENT"
@@ -962,8 +906,8 @@ SELECTCASE ARGS
 		TRYCALLFORM KOJO%RESULTS%_CUSTOM_TALENT_SET_K{NO:TARGET}
 		TARGET = OriginTarget
 
-	;自定义SHOP指令条件
-	CASE "SHOP_BUTTON_CONDITION"
+	;custom shop button appear condition
+	CASE "SHOP_BUTOON_CONDITION"
 		RESULTS =
 		;TARGET退让
 		OriginTarget = TARGET
@@ -976,8 +920,9 @@ SELECTCASE ARGS
 			TARGET = OriginTarget
 			RETURN 0
 		ENDCATCH
-	;自定义SHOP指令执行
-	CASE "SHOP_BUTTON"
+
+	;execute custon shop button 
+	CASE "SHOP_BUTOON"
 		RESULTS =
 		;TARGET退让
 		OriginTarget = TARGET
@@ -985,7 +930,9 @@ SELECTCASE ARGS
 		CALL KOJO_ACTIVE_INFO(TARGET)
 		TRYCALLFORM KOJO%RESULTS%_CUSTOM_BUTTON_K{NO:TARGET}_{ARG:1}
 		TARGET = OriginTarget
-	;口上更新
+
+	;kojo update
+	;copy from ckr
 	CASE "KOJO_VERSION"
 		OriginTarget = TARGET
 		TARGET = ARG:2
@@ -1004,14 +951,14 @@ SELECTCASE ARGS
 		ENDCATCH
 		TARGET = OriginTarget
 ;------------------------------------------------------------
-;口上自定义COM
+;kojo custom button
 ;------------------------------------------------------------
 	CASE "COM"
 		SIF TARGET < 0 || TARGET >= CHARANUM
 			RETURN 0
 		CALL KOJO_ACTIVE_INFO(TARGET)
 		SELECTCASE ARG:1
-		;==== COM名称 ===========
+		;==== COM info ===========
 			CASE 0
 				TRYCALLFORM KOJO%RESULTS%_COM_NAME_K{NO:TARGET}_{ARG:3}
 		;==== COM_ABLE ===========
@@ -1020,33 +967,27 @@ SELECTCASE ARGS
 				CATCH
 					RETURN 0
 				ENDCATCH
-		;==== COM本体 ===========
+		;==== COM body ===========
 			CASE 2
 				TRYCJUMPFORM KOJO%RESULTS%_COM_K{NO:TARGET}_{ARG:3}
 				CATCH
-					THROW [口上COM ERROR](%CALLNAME:TARGET%\@ RESULTS:1 != "" ? _ # \@%RESULTS:1%口上)的{ARG:3}号自定义COM函数找不到
+					THROW [KOJO COM ERROR]can't find "KOJO%RESULTS%_COM_K{NO:TARGET}_{ARG:3}"
 				ENDCATCH
-		;==== CAN_COM ===========
+		;==== CAN_COM ============
 			CASE 3
 				TRYCJUMPFORM KOJO%RESULTS%_CAN_COM_K{NO:TARGET}_{ARG:3}(ARG:4)
 				CATCH
 					RETURN -1
 				ENDCATCH
-		;==== Counter不発 ===========
-			CASE 4
-				TRYCJUMPFORM KOJO%RESULTS%_COM_Counter不发_K{NO:TARGET}_{ARG:3}
-				CATCH
-					RETURN 0
-				ENDCATCH
 		ENDSELECT
 	CASE "COMMAND_ASSISTANT"
 		;テキスト設定
-		IF FLAG:口上文本設定 <= 0
+		IF FLAG:口上テキスト設定 <= 0
 			RETURN 0
 		ENDIF
 		;ボールギャグ時
 		IF TEQUIP:(ARG:2):20 && SELECTCOM != 107
-		ELSEIF (FLAG:70 && !CFLAG:(ARG:2):時間停止口上有) || (CFLAG:(ARG:2):恶作剧 >= 1 && !CFLAG:(ARG:2):眠姦口上有) || (FLAG:扮演 && !CFLAG:(ARG:2):扮演口上有)
+		ELSEIF (FLAG:70 && !CFLAG:(ARG:2):時間停止口上有) || (CFLAG:(ARG:2):イタズラ >= 1 && !CFLAG:(ARG:2):眠姦口上有) || (FLAG:なりきり && !CFLAG:(ARG:2):なりきり口上有)
 		ELSE
 			LOCAL:10 = TARGET
 			TARGET = ARG:2
@@ -1075,7 +1016,7 @@ SELECTCASE ARGS
 			RESETCOLOR
 		ENDIF
 	CASE "CHECK"
-		SIF FLAG:口上文本設定 <= 0
+		SIF FLAG:口上テキスト設定 <= 0
 			RETURN 0
 			
 		LOCAL = TARGET
@@ -1092,7 +1033,7 @@ SELECTCASE ARGS
 			TRYCALLFORM M_KOJO%KOJO_NAME%_COLOR_K{NO:TARGET}
 		KOJO_RESULT = 0
 		RESULT = 0
-		SIF FLAG:口上文本設定 > 0
+		SIF FLAG:口上テキスト設定 > 0
 			TRYCALLFORM M_KOJO%KOJO_NAME%_CHECK_K{NO:TARGET}_%ARGS:1%(ARGS:2,ARG:3,ARG:4)
 		KOJO_RESULT = RESULT
 		SETCOLOR LOCAL:1
@@ -1128,16 +1069,16 @@ ENDSELECT
 #DIM  DYNAMIC SKIP_KOJO
 #DIM  DYNAMIC KOJO_RESULT
 
-SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
+SIF FLAG:情景テキスト設定 <= 0 && FLAG:口上テキスト設定 <= 0
 	RETURN -1
 
 LOCAL = TARGET
 TARGET = ARG:2
 
 ;テキスト設定
-IF FLAG:口上文本設定 <= 0
-ELSEIF TEQUIP:TARGET:口球
-ELSEIF FLAG:扮演 && !CFLAG:TARGET:扮演口上有
+IF FLAG:口上テキスト設定 <= 0
+ELSEIF TEQUIP:TARGET:ボールギャグ
+ELSEIF FLAG:なりきり && !CFLAG:TARGET:なりきり口上有
 ELSE
 	CALL KOJO_ACTIVE_INFO(TARGET)
 	KOJO_VALID = RESULT
@@ -1149,7 +1090,7 @@ ELSE
 	SKIP_KOJO = GETBIT(RESULT, 1)
 ENDIF
 
-SIF !SKIP_MESSAGE && FLAG:情景文本設定 > 0
+SIF !SKIP_MESSAGE && FLAG:情景テキスト設定 > 0
 	CALL EVENT_COUNTER_MESSAGE
 
 RESULT = 0
@@ -1164,44 +1105,11 @@ TARGET = LOCAL
 RESETCOLOR
 RETURN KOJO_RESULT
 
-;qol custom code, IMAGE has been split from the others because it is called in SPEVENT4-7, which would lead to the local variables being overwritten in KOJO_MESSAGE_SEND
-@KOJO_MESSAGE_SEND_IMAGE(ARGS, ARG:1, ARG:2, ARG:3, ARG:4, ARGS:1, ARGS:2, ARG:5, ARG:6, OVERRIDE_TARGET = -1)
-#DIM  OVERRIDE_TARGET
-#DIM  DYNAMIC KOJO_VALID
-#DIMS DYNAMIC KOJO_NAME
-#DIMS DYNAMIC RESULTS_TEMP, 2
-#DIM  DYNAMIC KOJO_RESULT
-
-SIF FLAG:口上テキスト設定 <= 0
-	RETURN 0
-;SIF cBannedDialogue:(ARG:2):0
-;	RETURN -1
-
-ARRAYCOPY "RESULTS", "RESULTS_TEMP"
-SIF OVERRIDE_TARGET == -1
-	OVERRIDE_TARGET = ARG:2
-
-LOCAL = TARGET
-TARGET = OVERRIDE_TARGET
-CALL KOJO_ACTIVE_INFO(ARG:2)
-IF !RESULT
-	TARGET = LOCAL
-	RETURN 0
-ENDIF
-KOJO_VALID = RESULT
-KOJO_NAME '= RESULTS
-KOJO_RESULT = 0
-RESULT = 0
-ARRAYCOPY "RESULTS_TEMP", "RESULTS"
-TRYCALLFORM M_KOJO%KOJO_NAME%_%ARGS%_K{NO:(ARG:2)}_%ARGS:1%(ARGS:2,ARG:3,ARG:4)
-KOJO_RESULT = RESULT
-TARGET = LOCAL
-RETURN KOJO_RESULT
 
 @KOJO_MESSAGE_PALAMCNG_CHECK(ARG, ARGS, ARGS:1, ARGS:2)
 ;if a MESSAGECHECK exists, we assume that the matching dialogue function exists, too
 TRYCCALLFORM M_KOJO%ARGS%_MESSAGE_PALAMCNG_MESSAGECHECK_%ARGS:1%_K{NO:TARGET}_%ARGS:2%
-    SIF !RESULT && FLAG:情景文本設定 > 0 && !ARG
+    SIF !RESULT && FLAG:情景テキスト設定 > 0 && !ARG
         CALL PALAM_MESSAGE_A
 
     SIF FLAG:口上色
@@ -1233,202 +1141,188 @@ KOJO_VALID = RESULT
 KOJO_NAME '= RESULTS
 
 IF !KOJO_VALID
-ELSEIF FLAG:口上文本設定 <= 0
+ELSEIF FLAG:口上テキスト設定 <= 0
 ELSEIF FLAG:70 && !CFLAG:時間停止口上有
-ELSEIF FLAG:扮演 && !CFLAG:扮演口上有
+ELSEIF FLAG:なりきり && !CFLAG:なりきり口上有
 ELSE
-	;-------------------------------------------------
-	;射精対象が非ターゲットかつ非複数角色SCOMF射精
-	;-------------------------------------------------
-	IF MASTER_POSE(0,SET_P) != TARGET && !ARG
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "00")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "00")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;避孕套
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,0)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "0")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "0")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;授乳PLAY
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,26)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "26")
-		SIF RESULT
-		RETURN
-	ENDIF
-	;魔改内容（但这个算少了个接口吧，这原版有问题啊）
-	;-------------------------------------------------
-	;子宮口責め
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,24)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "24")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "24")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;魔改完成
-	;-------------------------------------------------
-	;深喉插入
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,23)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "23")
-		ELSE
+    ;-------------------------------------------------
+    ;射精対象が非ターゲットかつ非複数キャラSCOMF射精
+    ;-------------------------------------------------
+    IF MASTER_POSE(0,SET_P) != TARGET && !ARG
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "00")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "00")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;コンドーム
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,0)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "0")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "0")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;授乳プレイ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,26)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "26")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;イラマチオ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,23)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "23")
+        ELSE
             CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "23")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;六九式
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,22)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "22")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;乳夾口交
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,21)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "21")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;手淫口交
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,20)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "20")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;肛門奉仕
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,9)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "9")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;泡泡浴
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,8)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "8")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;足交
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,7)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "7")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "7")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;素股
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,6)
-		CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "6")
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;乳交
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,5)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "5")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "5")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;口交
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,4)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "4")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "4")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;手淫
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,3)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "3")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "3")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;肛門
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,2)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "2")
-		ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "2")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
-	;-------------------------------------------------
-	;膣内
-	;-------------------------------------------------
-	IF GETBIT(TCVAR:50,1)
-		IF CFLAG:恶作剧 
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "1")
-			ELSE
-			CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "1")
-		ENDIF
-		SIF RESULT
-			RETURN
-	ENDIF
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;シックスナイン
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,22)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "22")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;パイズリフェラ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,21)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "21")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;手淫フェラ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,20)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "20")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;アナル奉仕
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,9)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "9")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;泡踊り
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,8)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "8")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;足コキ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,7)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "7")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "7")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;素股
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,6)
+        CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "6")
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;パイズリ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,5)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "5")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "5")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;フェラチオ
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,4)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "4")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "4")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;手淫
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,3)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "3")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "3")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;アナル
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,2)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "2")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "2")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
+    ;-------------------------------------------------
+    ;膣内
+    ;-------------------------------------------------
+    IF GETBIT(TCVAR:50,1)
+        IF CFLAG:イタズラ
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A2", "1")
+        ELSE
+            CALL KOJO_MESSAGE_PALAMCNG_CHECK(ARG, KOJO_NAME, "A", "1")
+        ENDIF
+        SIF RESULT
+            RETURN
+    ENDIF
 ENDIF
 
 ;nothing found, show normal description
-SIF FLAG:情景文本設定 > 0 && !ARG
+SIF FLAG:情景テキスト設定 > 0 && !ARG
     CALL PALAM_MESSAGE_A
 
 @SILENCE_TSTOP(ARG)
 #FUNCTION
-;時間停止中には喋らない角色を指定
+;時間停止中には喋らないキャラを指定
 SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 	RETURNF 1
-[SKIPSTART]
 
-;展示口上自定义变量
+[SKIPSTART]
+;show custom talent
 @showKojoCustomTalent(chara)
 	#DIM chara
 	#DIM index
@@ -1438,7 +1332,7 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 		IF custom_talent:chara:index
 			;初个
 			IF !titlePrint
-				PRINT 　 剧本 　：
+				PRINT 　 口上 　：
 				titlePrint = 1
 			ENDIF
 			IF length > 60
@@ -1466,7 +1360,7 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 	FOR chara, 0, CHARANUM
 		;judge the chara if have custom shop button kojo
 		FOR index, 0, 10
-			CALL KOJO_MESSAGE_SEND("SHOP_BUTTON_CONDITION", index, chara)
+			CALL KOJO_MESSAGE_SEND("SHOP_BUTOON_CONDITION", index, chara)
 			IF RESULT == 1
 				ShopButtonTargetList:ShopButtonTargetNum = chara
 				ShopButtonTargetNum ++
@@ -1474,28 +1368,28 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 			ENDIF
 		NEXT
 	NEXT
-	;没有
+	;don't have
 	SIF ShopButtonTargetNum == 0
 		RETURN
 	ShopButtonTargetId = FINDELEMENT(ShopButtonTargetList, ShopButtonTarget)
-	;默认选第一个
+	;defaul the first chara
 	IF ShopButtonTargetId == -1 || ShopButtonTargetId >= ShopButtonTargetNum
 		ShopButtonTargetId = 0
 		ShopButtonTarget = ShopButtonTargetList:ShopButtonTargetId
 	ENDIF
 
-;展示口上自定义shop指令
+;show the ui of kojo button
 @showKojoShopButton
 	#DIM index
 	#DIMS DYNAMIC buttonList, 10
 	#DIM DYNAMIC buttonIndex
 	#DIM DYNAMIC printNum
-	;没有
+	;no
 	SIF ShopButtonTargetNum == 0
 		RETURN
+	PRINTL
 	SETCOLOR 103,228,126
-	PRINT 【MOD菜单】
-	;上个角色
+	PRINT 【口上のメニュー】
 	IF ShopButtonTargetId <= 0
 		SETCOLOR 0x747474
 		PRINTPLAIN 【＜】
@@ -1517,7 +1411,7 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 	RESETCOLOR
 	;统计可用的button
 	FOR index, 0, 10
-		CALL KOJO_MESSAGE_SEND("SHOP_BUTTON_CONDITION", index, ShopButtonTarget)
+		CALL KOJO_MESSAGE_SEND("SHOP_BUTOON_CONDITION", index, ShopButtonTarget)
 		IF RESULT
 			SIF printNum % 3 == 0
 				PRINTL
@@ -1531,9 +1425,9 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 @useKojoShopButton, comId
 	#DIM comId
 	;PRINTFORML comid {comId} ShopButtonTarget{ShopButtonTarget}
-	CALL KOJO_MESSAGE_SEND("SHOP_BUTTON_CONDITION", comId, ShopButtonTarget)
+	CALL KOJO_MESSAGE_SEND("SHOP_BUTOON_CONDITION", comId, ShopButtonTarget)
 	SIF RESULT
-		CALL KOJO_MESSAGE_SEND("SHOP_BUTTON", comId, ShopButtonTarget)
+		CALL KOJO_MESSAGE_SEND("SHOP_BUTOON", comId, ShopButtonTarget)
 	WAIT
 ;check the chara who have the custon button
 @choiceButtonTarget
@@ -1547,20 +1441,22 @@ SIF GROUPMATCH(ARG,39,41,54,86,87,88)
 	line = LINECOUNT
 	WHILE 1
 		DRAWLINE
-		PRINTFORML 拥有菜单的角色剧本 ＜page.{page + 1}/{maxPage}＞
+		;need to translate
+		;PRINTFORML the chara whose kojo have custom shop button＜page.{page + 1}/{maxPage}＞
+		PRINTFORML カスタムSHOPボタン対応口上＜page.{page + 1}/{maxPage}＞
 		DRAWLINE
 		FOR index, page * 20, MIN(page * 20 + 20, ShopButtonTargetNum)
 			CALL CHARA_BUTTON(index, ShopButtonTargetList:index)
 		NEXT
 		DRAWLINE
 		IF page > 0
-			PRINTLC [4444] 上一页
+			PRINTLC [4444] 前のキャラ
 		ELSE
 			PRINTLC 　
 		ENDIF
-		PRINTLC [5555] 返回
+		PRINTLC [5555] もどる
 		IF page + 1 < maxPage
-			PRINTLC [6666] 下一页
+			PRINTLC [6666] 次のキャラ
 		ELSE
 			PRINTLC 　
 		ENDIF

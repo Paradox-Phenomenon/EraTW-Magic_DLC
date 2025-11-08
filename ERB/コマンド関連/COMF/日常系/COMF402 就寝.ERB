@@ -1,31 +1,28 @@
 ﻿;-------------------------------------------------
 ;就寝
-;日常系指令、レベル1
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 @COM402
 #DIM 労働量
 #DIM 収益
 
-;魔改睡前自动扫地
-CALL AUTO_SWEEP_BEFORE_SLEEP_ASK
-
 IF FLAG:内職 && BASE:MASTER:気力 > 300 && BASE:MASTER:TSP > 0
-	PRINTFORML %CALLNAME:MASTER%在睡觉之前使用剩余的TSP做了些副业
+	PRINTFORML %CALLNAME:MASTER%は寝る前に残ったTSPを使って内職をした
 	労働量 = MIN(BASE:MASTER:気力, BASE:MASTER:TSP /2)
 	収益 = 労働量 * (5 + RAND:5) / 10
 	MONEY += 収益
-	PRINTFORMW 挣了%金額表示(収益)%
+	PRINTFORMW %金額表示(収益)%稼いだ
 ENDIF
-IF FLAG:自動縁結び && !FLAG:祈願内容 && !CFLAG:陪睡中
-	PRINTFORM 睡觉前
+IF FLAG:自動縁結び && !FLAG:願掛け内容 && !CFLAG:添い寝中
+	PRINTFORM 寝る前に
 	IF MONEY >= 1000
 		CALL GANKAKE_0(FLAG:自動縁結び)
 		MONEY -= 1000
-		PRINTFORMW %CALLNAME:MASTER%向神祈祷能和%CALLNAME:(FLAG:自動縁結び)%变得更亲近
-		SIF FLAG:祈願内容 < 0
-			PRINTFORMW ……但这个愿望被一股不思议的力量抹去了…
+		PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:(FLAG:自動縁結び)%と親しくなれるよう神に祈った
+		SIF FLAG:願掛け内容 < 0
+			PRINTFORMW ……しかし願いは不思議な力にかき消された…
 	ELSE
-		PRINTFORMW %CALLNAME:MASTER%向神祈祷能和%CALLNAME:(FLAG:自動縁結び)%成为好友、但是没有香火钱
+		PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:(FLAG:自動縁結び)%と親しくなれるよう神に祈ろうとしたが賽銭がなかった
 	ENDIF
 ENDIF
 
@@ -41,11 +38,11 @@ FOR LOCAL, 1, MAXCHILD + 1
 		LOCAL:10 ++
 NEXT
 
-IF 兒童の睡眠時間(TARGET) && LOCAL:10 && FLAG:兒童描写 && !INRANGE(TIME, 540, 840)
+IF 子供の睡眠時間(TARGET) && LOCAL:10 && FLAG:子供描写 && !INRANGE(TIME, 540, 840)
 	IF LOCAL:10 == 1
-		PRINTFORMDL 决定一家三口睡成川字形…
+		PRINTFORMDL 家族三人で川の字になって寝る事にした…
 	ELSE
-		PRINTFORMDL 决定一家人一起睡觉…
+		PRINTFORMDL 親子そろって寝る事にした…
 	ENDIF
 	CALL KOJO_MESSAGE_SEND("EVENT", 0, TARGET, 0, 0, "CHILD_RAISING_OYASUMI")
 	TFLAG:193 = 1
@@ -68,13 +65,13 @@ SIF GLOBAL_COMABLE(402)
 SIF FLAG:70 == 1
 	RETURN 0
 ;私室設定
-SIF CFLAG:MASTER:現在位置 != CFLAG:MASTER:311 && CFLAG:MASTER:現在位置 != OMANEKIBEYA() && CFLAG:陪睡中 == 0
+SIF CFLAG:MASTER:現在位置 != CFLAG:MASTER:311 && CFLAG:MASTER:現在位置 != OMANEKIBEYA() && CFLAG:添い寝中 == 0
 	RETURN 0
 ;起床後12時間以上経過してないとダメ（デバッグ中）
 IF FLAG:1005 == 0
 SIF NEMUKE() < 720
 	RETURN 0
-SIF CFLAG:诶嘿嘿 == 2
+SIF CFLAG:うふふ == 2
 	RETURN 0
 ENDIF
 RETURN 1
@@ -82,9 +79,9 @@ RETURN 1
 @OYASUMI
 IF TARGET > 0
 	CFLAG:同行 = 0
-	CFLAG:陪睡中 = 0
+	CFLAG:添い寝中 = 0
 	CFLAG:MASTER:同行 = 0
-	CFLAG:MASTER:陪睡中 = 0
+	CFLAG:MASTER:添い寝中 = 0
 ENDIF
 
 IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:311

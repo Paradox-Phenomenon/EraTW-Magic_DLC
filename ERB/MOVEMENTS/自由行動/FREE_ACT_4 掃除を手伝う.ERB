@@ -1,4 +1,4 @@
-﻿;幫忙掃除
+﻿;掃除を手伝う
 @EXIST_FreeAct4
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -14,12 +14,12 @@
 経過時間 = Activity_Duration:TARGET
 SELECTCASE O_DATA
 CASE "名称"
-	CALLF MAKE_STR(V_NAME, "帮忙扫除")
+	CALLF MAKE_STR(V_NAME, "掃除を手伝う")
 CASE "CHAIN"
-;他角色に連鎖する場合コメントアウト外すこと
+;他キャラに連鎖する場合コメントアウト外すこと
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "経過時間"
-;陪同行動指令での経過時間
+;自由行動に付き合うコマンドでの経過時間
 ;未入力だと最大30分
 	;CALLF MAKE_INT(V_NAME, 経過時間)
 ENDSELECT
@@ -35,7 +35,7 @@ ENDSELECT
 メッセージ表示 = 現在地 == CFLAG:MASTER:現在位置 ? 1 # 0
 SELECTCASE ARGS
 	CASE "発生"
-		;个室にいる時
+		;個室にいる時
 		SIF !BEDROOM(現在地)
 			RETURN 0
 		SIF BASE:CHARA:気力 <= 500
@@ -52,56 +52,28 @@ SELECTCASE ARGS
 				RETURN 0
 		ENDIF
 		SIF メッセージ表示
-			PRINTFORMW %CALLNAME:CHARA%\@ CHAIN ? 决定帮%CALLNAME:CHAIN%一起扫除了。# 似乎在意房间脏污、决定打扫除了。\@
+			PRINTFORMW %CALLNAME:CHARA%は\@ CHAIN ? %CALLNAME:CHAIN%を手伝い始めた。# 汚れが気になり掃除を始めた。\@
 		RETURN 30 + RAND:20
 	CASE "行動中"
-		;実際に掃除
+		;実際に掃除する
 		YOGORE:(現在地) = MAX(YOGORE:(現在地) - 250 * TIME_PROGRESS(TIME:1) / 5, 0)
 		IF メッセージ表示
-			IF 充填率(TARGET,1) >= 10 || 充填率(TARGET,2) >= 10
-				PRINTFORMW %CALLNAME:CHARA%满脸通红的%TEXTR("清扫着垃圾/整理和服品/打扫着灰尘/收拾着房间")%。
-			ELSE
-				PRINTFORMW %CALLNAME:CHARA%%TEXTR("清扫着垃圾/整理和服品/打扫着灰尘/在手脚利落地收拾着房间")%。
-			ENDIF	
+			PRINTFORMW %CALLNAME:CHARA%は%TEXTR("ゴミをまとめている/整理整頓をしている/埃を払っている/テキパキと部屋の掃除をしている")%。
 		ENDIF
 	CASE "完了"
 		;清掃経験が入る
 		EXP:CHARA:清掃経験 += 3
-		IF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%吐着甜美的喘息扫除完毕了。
-		ELSE
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%似乎扫除完毕了。
-		ENDIF		
-			
+		SIF メッセージ表示
+			PRINTFORMW %CALLNAME:CHARA%は掃除を終えたようだ。
 	CASE "中断"
 		;中断されても清掃経験は入る
 		EXP:CHARA:清掃経験 += 1
-	CASE "交手"
-		IF 充填率(CHARA,1) >= 150 || 充填率(CHARA,2) >= 150
-				PRINTFORML %CALLNAME:CHARA%捂着嘴忍耐着体内\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的爱抚…香汗淋漓…
-				PRINTFORML 脸涨得通红并且夹杂着甜美的喘息%TEXTR("整理垃圾/擦灰尘/打扫")%中
-				PRINTFORML 经过的地方地上有奇怪的水迹……
-			ELSEIF 充填率(CHARA,1) >= 100 || 充填率(CHARA,2) >= 100
-				PRINTFORML %CALLNAME:CHARA%正享受着体内满满\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激轻轻娇喘……
-				PRINTFORML 欣赏着一边娇喘一边%TEXTR("整理垃圾/擦灰尘/打扫")%的%CALLNAME:TARGET%…
-			ELSEIF 充填率(CHARA,1) >= 70 || 充填率(CHARA,2) >= 70
-				PRINTFORML %CALLNAME:CHARA%正感受着体内大量\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激……
-				PRINTFORML 断断续续打扫并时不时夹杂着甜美娇喘的%CALLNAME:TARGET%%TEXTR("整理垃圾的动作慢了下来/用抹布擦灰尘的动作慢了下来/打扫的动作慢了下来")%…
-			ELSEIF 充填率(CHARA,1) >= 40 || 充填率(CHARA,2) >= 40
-				PRINTFORML %CALLNAME:CHARA%正被体内许多\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML 红着脸的%CALLNAME:TARGET%%TEXTR("整理垃圾的动作慢了下来/用抹布擦灰尘的动作慢了下来/打扫的动作慢了下来")%
-			ELSEIF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-				PRINTFORML %CALLNAME:CHARA%正被体内残存\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML %CALLNAME:PLAYER%帮助红着脸的%CALLNAME:TARGET%%TEXTR("将整理好的垃圾一起拿出去扔掉了/将占满灰尘的地方一起用抹布擦干净了/一起把一个人伸手够不到的地方打扫干净了")%
-			ELSE
-				PRINTFORML %CALLNAME:PLAYER%帮助%CALLNAME:TARGET%%TEXTR("将整理好的垃圾一起拿出去扔掉了/将占满灰尘的地方一起用抹布擦干净了/一起把一个人伸手够不到的地方打扫干净了")%
-			ENDIF		
+	CASE "付き合う"
+		PRINTFORML %CALLNAME:PLAYER%は%CALLNAME:TARGET%%TEXTR("の集めたゴミを片付けたり/がはたいた場所を雑巾で拭き取ったり/の手の届かない場所の掃除をしたり")%して手伝った
 	CASE "ソース"
 		LOCAL = YOGORE:(CFLAG:MASTER:現在位置)
 		YOGORE:(CFLAG:MASTER:現在位置) = MAX(YOGORE:(CFLAG:MASTER:現在位置) -100 * 経過時間 / 5, 0)
-		EX:MASTER:今日的掃除回数 += LOCAL - YOGORE:(CFLAG:MASTER:現在位置)
+		EX:MASTER:今日の掃除回数 += LOCAL - YOGORE:(CFLAG:MASTER:現在位置)
 		DOWNBASE:MASTER:体力 += 20 * 時間係数
 		DOWNBASE:MASTER:気力 += 40 * 時間係数
 		DOWNBASE:TARGET:体力 += 10 * 時間係数

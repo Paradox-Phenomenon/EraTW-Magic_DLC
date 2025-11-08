@@ -26,7 +26,7 @@ RETURNF LOCAL
 RETURNF MAIN_MAP * 100 + 1
 
 ;-----------------------------------------------------------
-;どこにもいない角色が送られる場所
+;どこにもいないキャラが送られる場所
 ;RETURNF        隙間空間
 ;-----------------------------------------------------------
 @SUKIMA()
@@ -34,17 +34,17 @@ RETURNF MAIN_MAP * 100 + 1
 RETURNF 99 + MAIN_MAP * 100
 
 ;-----------------------------------------------------------
-;待客室
-;RETURNF        待客室
+;お招き部屋
+;RETURNF        お招き部屋
 ;-----------------------------------------------------------
 @OMANEKIBEYA()
 #FUNCTION
 RETURNF 98 + MAIN_MAP * 100
 
 ;-----------------------------------------------------------
-;约会道中
+;デート道中
 ;ARG            MAPID
-;RETURNF        约会道中
+;RETURNF        デート道中
 ;-----------------------------------------------------------
 @ROAD_TO(ARG)
 #FUNCTION
@@ -54,7 +54,7 @@ RETURNF 97 + ARG * 100
 ;室内判定
 ;RETURNF 1=室内（和室）,2=室内（洋室）,0=室外
 ;厳密な使い分けはされていないが、屋外だけど屋根のある場所はINROOMにもOUTROOFにも引っかからない
-;現状、靴を脱掉かどうかのためだけに洋室判定がある
+;現状、靴を脱ぐかどうかのためだけに洋室判定がある
 ;-----------------------------------------------------------
 @INROOM(ARG)
 #FUNCTION
@@ -104,13 +104,13 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;開阔处の良い場所
-;RETURNF	1=广阔室内,2=广阔野外,0=広くない
+;見通しの良い場所
+;RETURNF	1=広い室内,2=広い野外,0=広くない
 ;-----------------------------------------------------------
 @OPENPLACE(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	IF ROOMDATA:(ARG % 100) & 場所_广阔
+	IF ROOMDATA:(ARG % 100) & 場所_広い
 		IF INROOM(ARG)
 			RETURNF 1
 		ELSE
@@ -122,7 +122,7 @@ ELSEIF ARG == OMANEKIBEYA()
 ELSEIF ARG == ROAD_TO(GET_MAPID(ARG))
 	RETURNF 1
 ELSE
-	IF ODEKAKEMAP_SETTING(ARG, "广阔")
+	IF ODEKAKEMAP_SETTING(ARG, "広い")
 		IF INROOM(ARG)
 			RETURNF 1
 		ELSE
@@ -133,25 +133,24 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;赏月ポイント
+;月見ポイント
 ;RETURNF	1=月が見える,0=月が見えない
 ;実質空が見えるかどうかの判定
 ;-----------------------------------------------------------
 @MOON_WATCH_POINT(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_赏月
+	SIF ROOMDATA:(ARG % 100) & 場所_月見
 		RETURNF 1
 	SIF OUTROOF(ARG)
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA() || ARG == ROAD_TO(GET_MAPID(ARG))
-	;地底、月都和魔界无法赏月
-	;SIF GROUPMATCH(GET_MAPID(ARG), 9, 10)
-	SIF IS_UNDERWORLD(VISITOR_LOCATION(ARG)) || GROUPMATCH(GET_MAPID(ARG), 10, 11)
+	;地底と月はダメ
+	SIF GROUPMATCH(GET_MAPID(ARG), 9, 10)
 		RETURNF 0
 	RETURNF 1
 ELSE
-	SIF ODEKAKEMAP_SETTING(ARG, "赏月")
+	SIF ODEKAKEMAP_SETTING(ARG, "月見")
 		RETURNF 1
 	SIF OUTROOF(ARG)
 		RETURNF 1
@@ -159,27 +158,27 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;被窝がある部屋
+;布団がある部屋
 ;ARGが無くても機能する
-;RETURNF	1=被窝がある,0=被窝がない
+;RETURNF	1=布団がある,0=布団がない
 ;-----------------------------------------------------------
 @BEDROOM(ARG)
 #FUNCTION
 SIF !ARG
 	ARG = CFLAG:MASTER:現在位置
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_被窝
+	SIF ROOMDATA:(ARG % 100) & 場所_布団
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA()
 	RETURNF 1
 ELSE
-	SIF ODEKAKEMAP_SETTING(ARG, "被窝")
+	SIF ODEKAKEMAP_SETTING(ARG, "布団")
 		RETURNF 1
 ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;休憩できる場所（指令の休憩）
+;休憩できる場所（コマンドの休憩）
 ;RETURNF	1=休憩できる,0=休憩できない
 ;-----------------------------------------------------------
 @休憩可(ARG)
@@ -214,7 +213,7 @@ RETURNF 0
 
 ;-----------------------------------------------------------
 ;なぜか２つあるお風呂関数
-;引数ARGが無くても機能する,というかそれでしか使ってない样子
+;引数ARGが無くても機能する,というかそれでしか使ってない様子
 ;こっちは拠点内の風呂だけ
 ;-----------------------------------------------------------
 @BATHROOM(ARG)
@@ -226,13 +225,13 @@ SIF !IN_HOME(ARG)
 RETURNF BATHCHECK(ARG)
 
 ;-----------------------------------------------------------
-;廁所がある部屋
-;RETURNF	1=廁所,0=廁所じゃない
+;トイレがある部屋
+;RETURNF	1=トイレ,0=トイレじゃない
 ;-----------------------------------------------------------
 @IN_TOILET(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_廁所
+	SIF ROOMDATA:(ARG % 100) & 場所_トイレ
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA()
 	RETURNF 0
@@ -283,7 +282,7 @@ RETURNF 0
 @勉強可(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_学习
+	SIF ROOMDATA:(ARG % 100) & 場所_勉強
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA()
 	RETURNF 1
@@ -294,20 +293,20 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;天之声が聞こえる場所
-;RETURNF	1=天之声が聞こえる,0=天之声が聞こえない
+;天の声が聞こえる場所
+;RETURNF	1=天の声が聞こえる,0=天の声が聞こえない
 ;-----------------------------------------------------------
-@天之声可(ARG)
+@天の声可(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_天之声
+	SIF ROOMDATA:(ARG % 100) & 場所_天の声
 		RETURNF 1
 	SIF ITEM:祭壇 && ARG == CFLAG:MASTER:初期位置
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA()
 	RETURNF 0
 ELSE
-	SIF ODEKAKEMAP_SETTING(ARG, "天之声")
+	SIF ODEKAKEMAP_SETTING(ARG, "天の声")
 		RETURNF 1
 ENDIF
 RETURNF 0
@@ -346,18 +345,18 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;打水ができる場所
-;RETURNF	1=打水できる,0=打水できない
+;水汲みができる場所
+;RETURNF	1=水汲みできる,0=水汲みできない
 ;-----------------------------------------------------------
-@打水可(ARG)
+@水汲み可(ARG)
 #FUNCTION
 IF IN_HOME(ARG)
-	SIF ROOMDATA:(ARG % 100) & 場所_打水
+	SIF ROOMDATA:(ARG % 100) & 場所_水汲み
 		RETURNF 1
 ELSEIF ARG == OMANEKIBEYA()
 	RETURNF 0
 ELSE
-	SIF ODEKAKEMAP_SETTING(ARG, "打水")
+	SIF ODEKAKEMAP_SETTING(ARG, "水汲み")
 		RETURNF 1
 ENDIF
 RETURNF 0
@@ -382,8 +381,8 @@ RETURNF 0
 ;-----------------------------------------------------------
 ;憩いスペース
 ;RETURNF	1=飲食できる,0=飲食できない
-;自由行動の吃飯や晩酌等で使用
-;居間・生活間・走廊・休憩所等
+;自由行動の食事や晩酌等で使う
+;居間・リビング・縁側・休憩所等
 ;-----------------------------------------------------------
 @憩いスペース(ARG)
 #FUNCTION
@@ -401,7 +400,7 @@ RETURNF 0
 ;つまみ食いスポット
 ;RETURNF	1=つまみ食いできる,0=つまみ食いできない
 ;自由行動のつまみ食いのためだけにある
-;廚房・食料庫・畑等
+;台所・食料庫・畑等
 ;-----------------------------------------------------------
 @つまみ食いスポット(ARG)
 #FUNCTION
@@ -418,8 +417,8 @@ RETURNF 0
 ;-----------------------------------------------------------
 ;炬燵のある場所
 ;RETURNF	1=炬燵がある,0=炬燵がない
-;自由行動で使用
-;憩いスペースからさらに居間・生活間に限定したもの
+;自由行動で使う
+;憩いスペースからさらに居間・リビングに限定したもの
 ;-----------------------------------------------------------
 @炬燵のある場所(ARG)
 #FUNCTION
@@ -434,28 +433,27 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
-;風呂から追い出された時の逐出先
+;風呂から追い出された時の追い出し先
 ;-----------------------------------------------------------
 @KICKOUT(ARG)
 #FUNCTION
-FLAG:自室施錠 = 0 ;custom code, unlocks door
 SIF !ARG
 	ARG = CFLAG:MASTER:現在位置
 FOR LOCAL, MINROOM(), MAXROOM
 	SIF CAN_MOVE(ARG, LOCAL) & 1
 		RETURNF LOCAL
 NEXT
-RETURNF CFLAG:MASTER:前一次的位置
+RETURNF CFLAG:MASTER:前ターン位置
 
 ;-----------------------------------------------------------
-;角色ARGの現在位置の名称を返す関数
-;ARG  角色ID
+;キャラARGの現在位置の名称を返す関数
+;ARG  キャラID
 ;-----------------------------------------------------------
 @PLACE_NAME(ARG)
 #FUNCTIONS
 IF !IN_HOME(CFLAG:ARG:現在位置) && CFLAG:ARG:現在位置 != OMANEKIBEYA()
 	LOCALS = %DATENAME_SPOT()%
-ELSEIF CHK_DATENOW(CFLAG:MASTER:约会中) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+ELSEIF CHK_DATENOW(CFLAG:MASTER:デート中) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 	LOCALS = %DATENAME_PLACE()%の%DATENAME_SPOT()%
 ELSE
 	LOCALS = %NAME_FROM_PLACE(CFLAG:ARG:現在位置)%
@@ -465,7 +463,7 @@ RETURNF LOCALS
 ;-----------------------------------------------------------
 ;拠点の住人かをチェックする関数
 ;ARG    MAPID
-;CHARA  判定する角色
+;CHARA  判定するキャラ
 ;-----------------------------------------------------------
 @MAP_住人(ARG, CHARA)
 #FUNCTION
@@ -478,8 +476,8 @@ SIF LOCAL / 100 == ARG
 	RETURNF 1
 
 ;-----------------------------------------------------------
-;角色ARGが你から見える位置にいるか
-;ARG  角色ID
+;キャラARGがあなたから見える位置にいるか
+;ARG  キャラID
 ;-----------------------------------------------------------
 @CAN_SEE(ARG)
 #FUNCTION

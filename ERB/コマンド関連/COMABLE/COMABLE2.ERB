@@ -1,7 +1,7 @@
 ﻿;COMABLE一括管理
 @GLOBAL_COMABLE(ARG)
 #FUNCTION
-;指令过滤器
+;コマンドフィルタ
 LOCALS = /{ARG}/
 IF STRCOUNT(SAVESTR:0,LOCALS)
 	RESULT = 0
@@ -9,58 +9,32 @@ IF STRCOUNT(SAVESTR:0,LOCALS)
 ENDIF
 ;一括管理
 SELECTCASE ARG
-	;魔改内容，口上自定义命令，不用此处进行一括执行管理
-	;CASE 270 TO 299
-	;	RETURNF 0
 	;ウフフ
-	CASE IS < 270
+	CASE IS < 300
 		IF TFLAG:102 != 2 || !TARGET
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-	;依頼実行と和孩子互动はTARGET無で実行できるように例外扱い
+	;依頼実行と子供とふれあうはTARGETなしで実行できるように例外扱い
 	CASE 367, 337
 		IF GROUPMATCH(TFLAG:102, 2, 3)
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-	;日常指令，新增357约炮契约、358他者变身
-	CASE 300 TO 303, 305, 331 TO 336, 351 , 352 , 357 , 358 , 363 TO 380, 382 TO 399
+	;日常コマンド
+	CASE 300 TO 303, 305, 331 TO 336, 351 , 352 , 363 TO 399
 		IF TFLAG:102 != 1 || !TARGET
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		;潜伏模式禁用大部分指令，不能再有这边啪啪啪那边还能对话接吻战斗练习的情况了
-		IF FLAG:潜伏
-			IF ARG == 300
-				;为对话模式启用
-				IF GETBIT(FLAG:潜伏,2) && TFLAG:102 == 1
-					RETURNF 0
-				ELSE
-					RESULT = 0
-					RETURNF 1
-				ENDIF
-			ELSE
-				RESULT = 0
-				RETURNF 1
-			ENDIF
-		ENDIF
-	;抱住模式
+	;抱きつきモード
 	CASE 306 TO 309
-		IF !TFLAG:抱住模式 && (TFLAG:102 > 1 || !TARGET)
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF GETBIT(FLAG:潜伏,3) && CFLAG:TARGET:344 == 0
+		IF !TFLAG:抱きつきモード && (TFLAG:102 > 1 || !TARGET)
 			RESULT = 0
 			RETURNF 1
 		ENDIF
 	CASE 310, 311
 		IF TARGET == 0
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏 && TFLAG:102 < 2
 			RESULT = 0
 			RETURNF 1
 		ENDIF
@@ -74,42 +48,29 @@ SELECTCASE ARG
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		IF FLAG:潜伏 && TFLAG:102 < 2
-			RESULT = 0
-			RETURNF 1
-		ENDIF
 		IF TFLAG:102 == 2
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		IF TFLAG:抱住模式 && ARG != 350 && ARG != 360 && ARG != 361
+		IF TFLAG:抱きつきモード && ARG != 350 && ARG != 360 && ARG != 361
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		;禁止共浴时进行接吻等亲昵指令
-		;IF BATHCHECK(CFLAG:MASTER:現在位置) && CFLAG:诶嘿嘿 != 2
-		;	IF ARG != 350 && ARG != 351
-		;		RESULT = 0
-		;		RETURNF 1
-		;	ENDIF
-		;ENDIF
+		;お風呂場ではガチエロになるので
+		IF BATHCHECK(CFLAG:MASTER:現在位置) && CFLAG:うふふ != 2
+			IF ARG != 350 && ARG != 351
+				RESULT = 0
+				RETURNF 1
+			ENDIF
+		ENDIF
 	CASE 355
-		IF FLAG:70 && CFLAG:TARGET:344 == 0 || CFLAG:MASTER:恶作剧 || CFLAG:诶嘿嘿 == 2
+		IF FLAG:70 && CFLAG:TARGET:344 == 0 || CFLAG:MASTER:イタズラ || CFLAG:うふふ == 2
 			RESULT = 0
 			RETURNF 1
 		ENDIF
 	CASE 400 TO 499
-	;单体实行可能指令
+	;単体実行可能コマンド
 		IF TFLAG:102 == 2 && ARG != 410 && ARG != 490
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏 && ARG == 490
-			IF TFLAG:102 < 2
-				RESULT = 0
-				RETURNF 1
-			ENDIF
-		ELSEIF FLAG:潜伏
 			RESULT = 0
 			RETURNF 1
 		ENDIF
@@ -126,37 +87,33 @@ SELECTCASE ARG
 			RETURNF 1
 		ENDIF
 	CASE 580 TO 699
-	;约会
+	;デート
 		IF !TFLAG:100
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		IF TFLAG:102 == 2 || TFLAG:102 == 3
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏
+		IF TFLAG:102 == 2
 			RESULT = 0
 			RETURNF 1
 		ENDIF
 	CASE 700 TO 799
-	;自慰専用指令
+	;自慰専用コマンド
 	;	IF TFLAG:102 != 2
 	;		RESULT = 0
 	;		RETURNF 1
 	;	ENDIF
-	;	IF ARG == 751 && (!CFLAG:PLAYER:现在忙得抽不出手)
+	;	IF ARG == 751 && (!CFLAG:PLAYER:今忙しくて手が離せない)
 	;		RESULT = 0
 	;		RETURNF 1
-	;	ELSEIF ARG != 751 && ((CFLAG:现在忙得抽不出手 != 1) || (TARGET > 0 && CFLAG:现在忙得抽不出手 != 1 && !FLAG:時間停止))
-	IF !CFLAG:PLAYER:现在忙得抽不出手
+	;	ELSEIF ARG != 751 && ((CFLAG:今忙しくて手が離せない != 1) || (TARGET > 0 && CFLAG:今忙しくて手が離せない != 1 && !FLAG:時間停止))
+	IF !CFLAG:PLAYER:今忙しくて手が離せない
 			RESULT = 0
 			RETURNF 1
 		ENDIF
 ENDSELECT
 
-;ビデオ処理（固定照相机ならば制限無）
-;撮影者が調教中、ビデオ片手で是ろいろ制限される
+;ビデオ処理（固定カメラならば制限なし）
+;撮影者が調教中、ビデオ片手ではいろいろ制限される
 IF (TFLAG:105 == 1 && !ASSIPLAY) || (TFLAG:105 == 2 && ASSIPLAY)
 	IF ARG == 0 || ARG == 3 || ARG == 5 || ARG == 6 || ARG == 7 || ARG == 8 || ARG == 9 || ARG == 21 || (ARG >= 40 && ARG <= 48) || ARG == 65 || ARG == 66 || (ARG >= 80 && ARG <= 87) || (ARG >= 100 && ARG <= 105) || (ARG >= 122 && ARG <= 125) || (ARG >= 140 && ARG <= 148 && ARG != 143) || (ARG >= 180 && ARG <= 189) || ARG == 503 || ARG == 504 || ARG == 510 || ARG == 511
 		RETURNF 0
@@ -178,72 +135,42 @@ ELSEIF TFLAG:105 == 2 && !ASSIPLAY
 	ENDIF
 ENDIF
 
-;游泳相关限制
-IF TEQUIP:MASTER:SWIMMING
-	IF GROUPMATCH(ARG, 351, 410, 411, 416, 419, 445, 447, 480, 615, 621, 622, 624, 633)
-		RESULT = 0
-		RETURNF 1
-	ENDIF
-ENDIF
 
 ;COMABLE一括管理
 @GLOBAL_COMABLE2(ARG)
 #FUNCTION
-;指令过滤器
+;コマンドフィルタ
 LOCALS = /{ARG}/
 SIF STRCOUNT(SAVESTR:0,LOCALS)
 	RETURNF 1
 
 ;一括管理
 SELECTCASE ARG
-	;魔改内容，口上自定义命令，不用此处进行一括显示管理
-	;CASE 270 TO 299
-	;	RETURNF 0
+	;kojo custom button
+	CASE 270 TO 299
+		RETURNF 0
 	;ウフフ
-	CASE IS < 270
+	CASE IS < 300
 		SIF TFLAG:102 != 2 || !TARGET
 			RETURNF 1
-	;依頼実行と和孩子互动はTARGET無で実行できるように例外扱い
+	;依頼実行と子供とふれあうはTARGETなしで実行できるように例外扱い
 	CASE 367, 337
 		IF GROUPMATCH(TFLAG:102, 2, 3)
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-	;日常指令，新增357约炮契约、358他者变身
-	CASE 300 TO 303, 305, 331 TO 336, 351 , 352 , 357 , 358 , 363 TO 380, 382 TO 399
+	;日常コマンド
+	CASE 300 TO 303, 305, 331 TO 336, 351 , 352 , 363 TO 399
 		SIF TFLAG:102 != 1 || !TARGET
 			RETURNF 1
-		;潜伏模式禁用大部分指令，不能再有这边啪啪啪那边还能对话接吻战斗练习的情况了
-		IF FLAG:潜伏
-			IF ARG == 300
-				;为对话模式启用
-				IF GETBIT(FLAG:潜伏,2) && TFLAG:102 == 1
-					RETURNF 0
-				ELSE
-					RESULT = 0
-					RETURNF 1
-				ENDIF
-			ELSE
-				RESULT = 0
-				RETURNF 1
-			ENDIF
-		ENDIF
-	;抱住模式
+	;抱きつきモード
 	CASE 306 TO 309
-		IF !TFLAG:抱住模式 && (TFLAG:102 > 1 || !TARGET)
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏 && TFLAG:102 < 2
+		IF !TFLAG:抱きつきモード && (TFLAG:102 > 1 || !TARGET)
 			RESULT = 0
 			RETURNF 1
 		ENDIF
 	CASE 310, 311
 		IF TARGET == 0
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏 && TFLAG:102 < 2
 			RESULT = 0
 			RETURNF 1
 		ENDIF
@@ -255,39 +182,26 @@ SELECTCASE ARG
 		IF TFLAG:102 != 1 && FLAG:70 == 1 && CFLAG:TARGET:344 == 0
 			RETURNF 1
 		ENDIF
-		IF FLAG:潜伏 && TFLAG:102 < 2
-			RESULT = 0
-			RETURNF 1
-		ENDIF
 		IF TFLAG:102 == 2
 			RETURNF 1
 		ENDIF
-		IF TFLAG:抱住模式 && ARG != 350 && ARG != 360 && ARG != 361
+		IF TFLAG:抱きつきモード && ARG != 350 && ARG != 360 && ARG != 361
 			RESULT = 0
 			RETURNF 1
 		ENDIF
-		;禁止共浴时进行接吻等亲昵指令
-		;IF BATHCHECK(CFLAG:MASTER:現在位置) && CFLAG:诶嘿嘿 != 2
-		;	IF ARG != 350 && ARG != 351
-		;		RETURNF 1
-		;	ENDIF
-		;ENDIF
+		;お風呂場ではガチエロになるので
+		IF BATHCHECK(CFLAG:MASTER:現在位置) && CFLAG:うふふ != 2
+			IF ARG != 350 && ARG != 351
+				RETURNF 1
+			ENDIF
+		ENDIF
 	CASE 355
-		IF FLAG:70 && CFLAG:TARGET:344 == 0 || CFLAG:MASTER:恶作剧 || CFLAG:诶嘿嘿 == 2
+		IF FLAG:70 && CFLAG:TARGET:344 == 0 || CFLAG:MASTER:イタズラ || CFLAG:うふふ == 2
 			RETURNF 1
 		ENDIF
 	CASE 400 TO 499
-	;单体实行可能指令
+	;単体実行可能コマンド
 		IF TFLAG:102 == 2 && ARG != 410 && ARG != 490
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏 && ARG == 490
-			IF TFLAG:102 < 2
-				RESULT = 0
-				RETURNF 1
-			ENDIF
-		ELSEIF FLAG:潜伏
-			RESULT = 0
 			RETURNF 1
 		ENDIF
 	CASE 501 TO 559
@@ -301,23 +215,11 @@ SELECTCASE ARG
 			RETURNF 1
 		ENDIF
 	CASE 580 TO 699
-	;约会
+	;デート
 		IF !TFLAG:100
 			RETURNF 1
 		ENDIF
-		IF TFLAG:102 == 2 || TFLAG:102 == 3
-			RESULT = 0
-			RETURNF 1
-		ENDIF
-		IF FLAG:潜伏
-			RESULT = 0
+		IF TFLAG:102 == 2
 			RETURNF 1
 		ENDIF
 ENDSELECT
-;游泳相关限制
-IF TEQUIP:MASTER:SWIMMING
-	IF GROUPMATCH(ARG, 351, 410, 411, 416, 419, 445, 447, 480, 615, 621, 622, 624, 633)
-		RESULT = 0
-		RETURNF 1
-	ENDIF
-ENDIF

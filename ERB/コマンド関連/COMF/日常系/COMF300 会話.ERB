@@ -1,15 +1,15 @@
 ﻿;-------------------------------------------------
 ;会話
-;日常系指令　レベル1
+;日常系コマンド　レベル1
 ;-------------------------------------------------
 @COM300
 
 ;会話累積値が閾値を超えると失敗
 IF TCVAR:302 && !TALENT:恋慕
-	PRINTFORML 虽然想向%CALLNAME:TARGET%搭话可是不知道该说些什么
-	PRINTW 四周弥漫着尴尬的气氛…
+	PRINTFORML %CALLNAME:TARGET%に話しかけようとしたが言葉が見つからない
+	PRINTW あたりに気まずい空気が流れた…
 	TIME += 10
-	IF CHK_DATENOW(CFLAG:TARGET:约会中)
+	IF CHK_DATENOW(CFLAG:TARGET:デート中)
 		DOWNBASE:気力 += 50
 		DOWNBASE:MASTER:気力 += 50
 		TFLAG:193 = -1
@@ -21,7 +21,7 @@ IF TCVAR:302 && !TALENT:恋慕
 	RETURN 1
 ENDIF
 IF MARK:反発刻印 >= 3
-	PRINTFORML %CALLNAME:TARGET%似乎不想理睬%CALLNAME:MASTER%的样子
+	PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%とは口も利きたくないようだ
 	SOURCE:反感 = 300
 	BASE:MASTER:気力 -= 100
 	RETURN -1
@@ -33,17 +33,17 @@ SELECTCASE TFLAG:192
 	CASE 0
 		LOCAL = RAND:100
 		LOCAL:1 = MIN(90 + GET_SUCCESS_RATE() / 5, 99)
-		;相手が烂醉中だと大成功にも失敗にもならない
-		SIF TCVAR:烂醉
+		;相手が泥酔中だと大成功にも失敗にもならない
+		SIF TCVAR:泥酔
 			LOCAL = 50
 		IF LOCAL < 5
 			;7％で大成功
 			TFLAG:193 = 1
 			TFLAG:98 = 1
 			EXP:MASTER:会話経験 ++
-			IF CHK_DATENOW(CFLAG:TARGET:约会中)
-				EXP:MASTER:約會経験 ++
-				EXP:TARGET:約會経験 ++
+			IF CHK_DATENOW(CFLAG:TARGET:デート中)
+				EXP:MASTER:デート経験 ++
+				EXP:TARGET:デート経験 ++
 			ENDIF
 		ELSEIF LOCAL >= LOCAL:1
 			;10～1％で失敗
@@ -60,9 +60,9 @@ SELECTCASE TFLAG:192
 			TFLAG:193 = 1
 			TFLAG:98 = 1
 			EXP:MASTER:会話経験 ++
-			IF CHK_DATENOW(CFLAG:TARGET:约会中)
-				EXP:MASTER:約會経験 ++
-				EXP:TARGET:約會経験 ++
+			IF CHK_DATENOW(CFLAG:TARGET:デート中)
+				EXP:MASTER:デート経験 ++
+				EXP:TARGET:デート経験 ++
 			ENDIF
 		ELSE
 			TFLAG:193 = 0
@@ -72,7 +72,7 @@ SELECTCASE TFLAG:192
 	CASE -1
 		TFLAG:193 = -1
 		TFLAG:98 = -1
-	;指令終了
+	;コマンド終了
 	CASE -2
 		TFLAG:193 = -1
 		RETURN 0
@@ -81,7 +81,7 @@ ENDSELECT
 ;先制発生時は失敗しない
 SIF TCVAR:20
 	TFLAG:193 = MAX(TFLAG:193,0)
-IF CFLAG:TARGET:陪睡中
+IF CFLAG:TARGET:添い寝中
 	DOWNBASE:MASTER:気力 += 10
 	SOURCE:情愛 = 200
 ELSE
@@ -89,7 +89,7 @@ ELSE
 	DOWNBASE:MASTER:気力 += 20
 ENDIF
 
-SIF ABL:教養 > ABL:MASTER:教養 + 3 && FLAG:催眠強度 <= 50
+SIF ABL:教養 > ABL:MASTER:教養 + 3
 	TFLAG:193 = -2
 
 ;固定で獲得するソース
@@ -115,7 +115,7 @@ SOURCE:歓楽 = LIMIT(SOURCE:歓楽,0,5000)
 
 
 SOURCE:受動 = 100 + 100 * ABL:従順
-SOURCE:征服 = 100 + 100 * ABL:施虐属性
+SOURCE:征服 = 100 + 100 * ABL:サドっ気
 
 IF TFLAG:193 == -1 || TFLAG:193 == -2
 	TIMES SOURCE:歓楽 , 0.10
@@ -159,33 +159,25 @@ SELECTCASE ABL:MASTER:話術技能
 ENDSELECT
 
 ;会話累積値
-IF CHK_DATENOW(CFLAG:TARGET:约会中)
-;	TCVAR:301 += 150 / (4 + ABL:MASTER:話術技能)
-	TCVAR:301 += 150 / (4 + MIN(ABL:MASTER:話術技能 + (FLAG:催眠強度 > 25) + (FLAG:催眠強度 > 50) + (FLAG:催眠強度 > 75), 6))
+IF CHK_DATENOW(CFLAG:TARGET:デート中)
+	TCVAR:301 += 150 / (4 + ABL:MASTER:話術技能)
 ELSE
-;	TCVAR:301 += 300 / (4 + ABL:MASTER:話術技能)
-	TCVAR:301 += 300 / (4 + MIN(ABL:MASTER:話術技能 + (FLAG:催眠強度 > 25) + (FLAG:催眠強度 > 50) + (FLAG:催眠強度 > 75), 6))
+	TCVAR:301 += 300 / (4 + ABL:MASTER:話術技能)
 ENDIF
-IF TCVAR:301>100
-	SETCOLOR C_RED
-	PRINTFORML 会話累積値={TCVAR:301}
-	RESETCOLOR
-ELSE
-	PRINTFORML 会話累積値={TCVAR:301}
-ENDIF
+
 TIME += 10
 ;IF TARGET == 110
-;	PRINTFORML 筆談したので稍微時間がかかった…
+;	PRINTFORML 筆談したのでちょっと時間がかかった…
 ;	TIME += 15
 ;ENDIF
 EXP:MASTER:会話経験 ++
-IF CHK_DATENOW(CFLAG:TARGET:约会中)
-	EXP:MASTER:約會経験 ++
-	EXP:TARGET:約會経験 ++
+IF CHK_DATENOW(CFLAG:TARGET:デート中)
+	EXP:MASTER:デート経験 ++
+	EXP:TARGET:デート経験 ++
 ENDIF
 
-;相手が烂醉中だと効果大幅低減
-IF TCVAR:烂醉
+;相手が泥酔中だと効果大幅低減
+IF TCVAR:泥酔
 	TIMES SOURCE:歓楽 , 0.10
 	TIMES SOURCE:征服 , 0.10
 	TIMES SOURCE:受動 , 0.10
@@ -203,7 +195,7 @@ SIF !TFLAG:100
 SIF GLOBAL_COMABLE(300)
 	RETURN RESULT
 ;睡眠中
-SIF CFLAG:睡眠 && !CFLAG:陪睡中
+SIF CFLAG:睡眠 && !CFLAG:添い寝中
 	RETURN 0
 ;気力0
 SIF BASE:MASTER:気力 <= 0

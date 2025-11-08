@@ -1,20 +1,20 @@
-﻿;设下罠／罠の样子を見る
-;角色の技能や経験依存ではなく、プレイヤーの眼力で獲物がいそうかどうかを判定する感じのデザイン。
-;昆虫诱捕装置と兼用
+﻿;罠を仕掛ける／罠の様子を見る
+;キャラクターの技能や経験依存ではなく、プレイヤーの眼力で獲物がいそうかどうかを判定する感じのデザイン。
+;虫トラップと兼用
 @COM448
 ;どっちも可能なら選択
-IF HUNTING_SPOT(CFLAG:MASTER:現在位置) && MUSHITORI_SPOT(CFLAG:MASTER:現在位置) && ITEM:昆虫採集套装 && (!MUSHI_TRAP || GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所")))
+IF HUNTING_SPOT(CFLAG:MASTER:現在位置) && MUSHITORI_SPOT(CFLAG:MASTER:現在位置) && ITEM:昆虫採集セット && (!MUSHI_TRAP || GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所")))
 	IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:3)
-		PRINTL 　[ 1] 看看狩猎陷阱的样子
+		PRINTL 　[ 1] 狩猟罠の様子を見る
 	ELSE
-		PRINTL 　[ 1] 设置狩猎陷阱
+		PRINTL 　[ 1] 狩猟罠を仕掛ける
 	ENDIF
 	IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
-		PRINTL 　[ 2] 看看昆虫诱捕装置的样子
+		PRINTL 　[ 2] 虫トラップの様子を見る
 	ELSE
-		PRINTL 　[ 2] 设置昆虫诱捕装置
+		PRINTL 　[ 2] 虫トラップを仕掛ける
 	ENDIF
-	PRINTL 　[ 0] 中止
+	PRINTL 　[ 0] キャンセル
 	INPUT
 	IF RESULT == 1
 		CALL TRAP_HUNTING
@@ -45,62 +45,62 @@ RETURN RESULT
 獲物 = 0
 探索回数 = 0
 
-;夕方～夜の狩猟は放弃
+;夕方～夜の狩猟はやめる
 IF TIME:2 >= 5 && !FLAG:70
 	DRAWLINE
-	PRINTFORML 这个时间开始狩猎的话很快就会天黑了…
+	PRINTFORML この時間からでは猟をしているうちに真っ暗になってしまう…
 	RETURN -1
 ENDIF
-;大雨、吹雪のときは放弃(天候パッチ)強風時も放弃
+;大雨、吹雪のときはやめる(天候パッチ)強風時もやめる
 IF GROUPMATCH(天候, 5, 9) || GROUPMATCH(FLAG:異常気象, 9, 10) || WIND_VELOCITY >= 1
 	DRAWLINE
-	PRINTFORML 在这种天候下诱捕太危险了
+	PRINTFORML この天候での罠猟は危険だろう
 	RETURN -1
 ENDIF
-;あからさまな人の敷地での密猟は放弃
+;あからさまな人の敷地での密猟はやめる
 SELECTCASE CFLAG:MASTER:現在位置
 	CASE 25, 50
 		IF ABL:[[霊夢]]:親密 < 5
 			DRAWLINE
-			PRINTFORML 在这里偷偷捕猎不太好
+			PRINTFORML ここで密猟をするのはマズい気がする
 			RETURN -1
 		ENDIF
-	CASE 斜角的竹林, 433
-		IF ABL:[[妹紅]]:親密 < 5 && ABL:[[帝]]:親密 < 5 && ABL:[[輝夜]]:親密 < 5 && ABL:[[永琳]]:親密 < 5
+	CASE 斜角の竹林, 433
+		IF ABL:[[妹紅]]:親密 < 5 && ABL:[[てゐ]]:親密 < 5 && ABL:[[輝夜]]:親密 < 5 && ABL:[[永琳]]:親密 < 5
 			DRAWLINE
-			PRINTFORML 在这里偷偷捕猎不太好
+			PRINTFORML ここで密猟をするのはマズい気がする
 			RETURN -1
 		ENDIF
-	CASE 絶景之丘, 805
-		IF ABL:[[文]]:親密 < 5 && ABL:[[果]]:親密 < 5 && ABL:[[龍]]:親密 < 5
+	CASE 絶景の丘, 805
+		IF ABL:[[文]]:親密 < 5 && ABL:[[はたて]]:親密 < 5 && ABL:[[龍]]:親密 < 5
 			DRAWLINE
-			PRINTFORML 在这里偷偷捕猎不太好
+			PRINTFORML ここで密猟をするのはマズい気がする
 			RETURN -1
 		ENDIF
 ENDSELECT
 
 ;参加者判定
-IF FLAG:约会的对象 && (!FLAG:70 || CFLAG:TARGET:344 == 1)
-	CHARA = FLAG:约会的对象
+IF FLAG:デート相手 && !FLAG:70
+	CHARA = FLAG:デート相手
 ELSEIF TARGET && ABL:TARGET:親密 >= 5 && SHIRAHU(TARGET) && CFLAG:TARGET:行動 != 5
 	CHARA = TARGET
 ELSE
 	CHARA = 0
 ENDIF
 
-TFLAG:情緒上昇抑制 = 1
+TFLAG:ムード上昇抑制 = 1
 
-;◆罠を仕掛けてある場合は样子を見る
+;◆罠を仕掛けてある場合は様子を見る
 IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:3)
 	;①罠が破損している場合
 	IF TRAP_DURABILITY:(TP_TO_PLACE()) == 0
-		PRINTFORML 陷阱坏掉了…
+		PRINTFORML 罠が壊れてしまっている…
 		IF DAY:0 - TRAP_CAPTUREDATA:(TP_TO_PLACE()) >= 30
-			PRINTFORMW 似乎已经被猎物触发过、但时间经过太久了…
+			PRINTFORMW 獲物はかかっていたようだが、時間が経ちすぎてしまったようだ…
 		ELSEIF TRAP_CAPTUREDATA:(TP_TO_PLACE())
-			PRINTFORMW 似乎已经被猎物触发过、然后被逃掉了…
+			PRINTFORMW 獲物はかかっていたようだが、逃げられてしまったようだ…
 		ELSE
-			PRINTFORMW 如果没有机会的话、或许将其回收并重新设置会比较好
+			PRINTFORMW 見込みがなさそうなら、回収してセットしなおしたほうが良かったかもしれない
 		ENDIF
 		;変数をリセット
 		CALL TRAP_V_RESET(TP_TO_PLACE())
@@ -114,24 +114,24 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:
 		CALL CRITTER_DATA(獲物)
 		PRINTL 
 		PRINTFORMW ………！
-		PRINTFORMW 猎物被抓住了！
+		PRINTFORMW 獲物がかかっていた！
 		PRINTL 
 		DRAWLINE
-		PRINTFORML 　【被捕获的猎物】
+		PRINTFORML 　【かかっていた獲物】
 		PRINTFORM 　　
 		CALL SPOIL_TEXT(SPOIL_ENHANCEMENT(獲物), 0, 1)
 		PRINTFORML 　　%CritterIntro%
 		DRAWLINE
 		PRINTW 
 		
-		;一部角色だと逃がしてあげようよ、に
+		;一部キャラだと逃がしてあげようよ、に
 		IF SPOIL_RELEASE(CHARA, 獲物) == 1 && !FLAG:70
-			PRINTFORML %CALLNAME:CHARA%的眼睛看向这边、似乎想要说些什么…
-			PRINTFORM 这样下去可不行、%CALLNAME:MASTER%将
+			PRINTFORML %CALLNAME:CHARA%が何か言いたげな目でこちらを見つめてくる…
+			PRINTFORM いたたまれなくなって、%CALLNAME:MASTER%は
 
 			$RELEASE
 			CALL SPOIL_TEXT(SPOIL_ENHANCEMENT(獲物), 2, 0)
-			PRINTFORML 放走了
+			PRINTFORML を逃がしてやった
 			
 			LOCALS = %ITEMNAME:(TRAP_TYPE:TP_TO_PLACE())%
 			CALL GET_ITEM(LOCALS, 1, 2)
@@ -139,27 +139,27 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:
 			;変数をリセット
 			CALL TRAP_V_RESET(TP_TO_PLACE())
 		ELSE
-			PRINTFORML 要将猎物解体吗？
+			PRINTFORML この獲物を解体しますか？
 			CALL EGG_POSSIBLE_DATA(獲物)
 			LOCAL = RESULT
 			;飼育可能なら選択肢を追加
 			IF LOCAL && FLAG:70 == 0
-				CALL ASK_M("解体",1, "放走",1,"饲养",1)
+				CALL ASK_M("解体する",1, "逃がしてやる",1,"飼育する",1)
 			ELSE
-				CALL ASK_YN("解体", "放走")
+				CALL ASK_YN("解体する", "逃がしてやる")
 			ENDIF
 			IF RESULT == 0
 				$MEAT
 				CLEARLINE 4
-			IF FLAG:70
-				PRINTFORMW %CALLNAME:MASTER%用时间停止将猎物固定・并解体了…
-			ELSEIF CHARA
-				PRINTFORMW %CALLNAME:MASTER%和%CALLNAME:CHARA%协力、将猎物固定住・进行了解体…
-			ELSE
-				PRINTFORMW %CALLNAME:MASTER%将猎物固定住・进行了解体…
-			ENDIF
-			LOCALS = %ITEMNAME:(TRAP_TYPE:TP_TO_PLACE())%
-			CALL GET_ITEM(LOCALS, 1, 1)
+				IF FLAG:70
+					PRINTFORMW %CALLNAME:MASTER%は時間停止して獲物の止めさし・解体に勤しんだ…
+				ELSEIF CHARA
+					PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%と協力して、獲物の止めさし・解体を進めた…
+				ELSE
+					PRINTFORMW %CALLNAME:MASTER%は獲物の止めさし・解体を進めた…
+				ENDIF
+				LOCALS = %ITEMNAME:(TRAP_TYPE:TP_TO_PLACE())%
+				CALL GET_ITEM(LOCALS, 1, 1)
 			ELSEIF RESULT == 2
 				;COMF499へ,
 				CALL EGGCAGE_CAPTURE(獲物)
@@ -178,24 +178,24 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:
 		ENDIF
 	;③まだ何もかかっていないよ
 	ELSE
-		PRINTFORML 设下的陷阱好像还没有被触发
+		PRINTFORML 仕掛けた罠にはまだ何もかかっていないようだ
 		IF TRAP_DURABILITY:(TP_TO_PLACE()) < 21
-			PRINTFORML 检查陷阱的时候、零件出现了稍微的松动…
+			PRINTFORML 罠を検めてみたところ、部品に少し緩みが出ている…
 		ELSEIF TRAP_DURABILITY:(TP_TO_PLACE()) < 11
-			PRINTFORML 检查陷阱的时候、发现已经损坏很多了…
+			PRINTFORML 罠を検めてみたところ、だいぶ傷みが見られる…
 		ENDIF
-		PRINTFORML 要回收陷阱吗？
+		PRINTFORML 罠を回収しますか？
 		PRINTL 
 		$INPUT_LOOP02
-		PRINTFORML 　[0]保持原样
-		PRINTFORML 　[1]将陷阱回收
+		PRINTFORML 　[0]そのままにする
+		PRINTFORML 　[1]罠を回収する
 		INPUT
 		SELECTCASE RESULT
 			CASE 0
 				RETURN -1
 			CASE 1
-				PRINTFORML 决定将陷阱回收
-				;罠を道具に戻す
+				PRINTFORML 罠を回収することにした
+				;罠をアイテムに戻す
 				LOCALS = %ITEMNAME:(TRAP_TYPE:TP_TO_PLACE())%
 				CALL GET_ITEM(LOCALS, 1, 2)
 				;変数をリセット
@@ -205,17 +205,17 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, TRAP_POINT:1, TRAP_POINT:2, TRAP_POINT:
 				GOTO INPUT_LOOP02
 		ENDSELECT
 	ENDIF
-;◆设下罠
+;◆罠を仕掛ける
 ELSE
 	;罠を持っていなければリターン
 	IF !ITEM:罠猟用品【小型】 && !ITEM:罠猟用品【中型】 && !ITEM:罠猟用品【大型】
 		DRAWLINE
-		PRINTFORML 需要准备好陷阱才行
+		PRINTFORML 罠を用意しなくては
 		RETURN -1
 	;３ポイントに仕掛けてある
 	ELSEIF TRAP_POINT:1 && TRAP_POINT:2 && TRAP_POINT:3
 		DRAWLINE
-		PRINTFORML 已经在３个地方设置好陷阱了、已经足够了
+		PRINTFORML 罠を３か所に渡って仕掛けているので、これ以上はいいだろう
 		RETURN -1
 	ELSE
 		;①先に各種係数を算出
@@ -224,7 +224,7 @@ ELSE
 
 		;参加者がいる場合は狩猟パワー追加　２人のほうが単純に目が２倍なので、良い結果を引きやすい
 		SIF CHARA && !FLAG:70
-		Hunt_Power += MAX((ABL:CHARA:教養 * 2) + (ABL:CHARA:戦闘能力 * 2) + (FLAG:每日变更事件 / 20), 1)
+		Hunt_Power += MAX((ABL:CHARA:教養 * 2) + (ABL:CHARA:戦闘能力 * 2) + (FLAG:日替わりイベント / 20), 1)
 
 		$LOOP_SELECT
 	
@@ -235,16 +235,16 @@ ELSE
 		
 		;②探索回数が10回を超えた場合は無限ループ除けのためにリターンする
 		IF 探索回数 >= 10
-			PRINTFORMW ……太投入的话可能会迷路、这次就到此为止吧
+			PRINTFORMW ……あんまり熱中してると迷いそうなので、今回はこれくらいにしておこう
 			GOTO AFTER
 		ENDIF
 
 		REPEAT 5
-			REUSELASTLINE  \@ CHARA ? 和%CALLNAME:CHARA% #  \@捜索野兽痕迹中.%"." * COUNT%
-			TWAIT 30, 1
+			REUSELASTLINE  \@ CHARA ? %CALLNAME:CHARA%と一緒に #  \@獣の痕跡を捜索中.%"." * COUNT%
+			TWAIT 150, 1
 		REND
 
-		;③狩猟パワーからサーチ値を固定・生息密度をセットし、フィールドサインの文本（ヒント）を流す
+		;③狩猟パワーからサーチ値を固定・生息密度をセットし、フィールドサインのテキスト（ヒント）を流す
 		Serch = RAND:Hunt_Power
 		IF Serch
 			生息密度 = Serch / 10
@@ -252,12 +252,12 @@ ELSE
 			生息密度 = 0
 		ENDIF
 		PRINTL 
-		PRINTFORML ◇現在所在地的情况◇
+		PRINTFORML ◇現在地の様子◇
 		PRINT 　
 		CALL FIELDSIGN(Serch)
 		DRAWLINE
-		;④どの设下罠か選択
-		PRINTFORML 在这里设置陷阱吗？
+		;④どの罠を仕掛けるか選択
+		PRINTFORML ここに罠を仕掛けますか？
 		PRINTL 
 		$INPUT_LOOP01
 		削除行数 = 0
@@ -265,25 +265,25 @@ ELSE
 			削除行数 ++
 			IF ITEM:LOCAL == 0
 				SETCOLOR C_GRAY
-				PRINTPLAINFORM 　[{LOCAL}]%ITEMNAME_TR(LOCAL)%
+				PRINTPLAINFORM 　[{LOCAL}]%ITEMNAME:LOCAL%
 			ELSE
-				PRINTFORM 　[{LOCAL}]%ITEMNAME_TR(LOCAL)%
+				PRINTFORM 　[{LOCAL}]%ITEMNAME:LOCAL%
 			ENDIF
 			SELECTCASE LOCAL
 				CASE 132
-					PRINTFORML …入门者向的廉价品、耐久度低。用于捕获小型～中型兽
+					PRINTFORML …入門者向けの廉価品、耐久度は低め。小型～中型獣を捕獲できる
 				CASE 133
-					PRINTFORML …从入门者到专家、耐久度一般。小型～大型兽都能捕获
+					PRINTFORML …入門者からベテランまで、耐久度はそこそこ。小型～大型獣まで幅広く捕獲できる
 				CASE 134
-					PRINTFORML …面向目标远大的熟练猎师、优秀的耐久性。用于捕获中型～大型兽
+					PRINTFORML …大物狙いの熟練猟師向け、耐久面も万全。中型～大型獣を捕獲できる
 				CASEELSE
 					PRINTFORML 
 			ENDSELECT
 			RESETCOLOR
 		NEXT
 		PRINTL 
-		PRINTFORML 　[998]继续探索
-		PRINTFORML 　[999]停止诱捕
+		PRINTFORML 　[998]探索を続ける
+		PRINTFORML 　[999]罠猟をやめる
 		削除行数 += 3
 		
 		INPUT
@@ -294,10 +294,10 @@ ELSE
 				IF ITEM:リザルト == 0
 					CLEARLINE 削除行数 + 1
 					GOTO INPUT_LOOP01
-				;⑤设下罠処理
+				;⑤罠を仕掛ける処理
 				ELSE
 					CALL TRAP_FLAVORTEXT(リザルト)
-					PRINTFORML 设置了%ITEMNAME_TR(リザルト)%　过段时间再来看看样子吧
+					PRINTFORML %ITEMNAME:リザルト%を仕掛けた　しばらくして様子を見に来よう
 					TFLAG:193 = 0
 					ITEM:リザルト -= 1
 					FOR LOCAL, 1, 4
@@ -386,13 +386,13 @@ ELSE
 	ENDIF
 ENDIF
 
-;約會経験
-IF CHK_DATENOW(CFLAG:CHARA:约会中) && CHARA > 0
-	EXP:MASTER:約會経験 ++
-	EXP:CHARA:約會経験 ++
+;デート経験
+IF CHK_DATENOW(CFLAG:CHARA:デート中) && CHARA > 0
+	EXP:MASTER:デート経験 ++
+	EXP:CHARA:デート経験 ++
 ENDIF
 
-;道具入手処理
+;アイテム入手処理
 IF 獲物
 	TFLAG:193 = 1
 	TFLAG:194 = 獲物
@@ -429,17 +429,17 @@ IF CHARA > 0
 		SOURCE:CHARA:歓楽 += 1600 + (ABL:従順 * 30)
 		SOURCE:CHARA:情愛 += 1000 + (ABL:親密 * 20)
 	ENDIF
-	SIF CHARA != FLAG:约会的对象 
+	SIF CHARA != FLAG:デート相手 
 		SOURCE:CHARA:情愛 = 0
 	
 	;好感度はみない
 	
 	SOURCE:CHARA:受動 = 200 + 100 * ABL:従順
-	SOURCE:CHARA:征服 = 200 + 100 * ABL:施虐属性
+	SOURCE:CHARA:征服 = 200 + 100 * ABL:サドっ気
 	
 	;獲物をみる
 	IF 獲物
-		;死亡蠕虫。達成感はあるが、食べるのこれ？
+		;デスワーム。達成感はあるが、食べるのこれ？
 		IF 獲物 == 23
 			TIMES SOURCE:CHARA:歓楽 , 0.70
 			TIMES SOURCE:CHARA:受動 , 0.70
@@ -450,7 +450,7 @@ IF CHARA > 0
 			TIMES SOURCE:CHARA:受動 , 2.25
 			TIMES SOURCE:CHARA:征服 , 2.00
 			SOURCE:CHARA:達成 = 350
-		;亚洲黑熊。ショウブあった！
+		;ツキノワグマ。ショウブあった！
 		ELSEIF 獲物 == 19
 			TIMES SOURCE:CHARA:歓楽 , 2.00
 			TIMES SOURCE:CHARA:受動 , 2.00
@@ -492,7 +492,7 @@ IF CHARA > 0
 		TIMES SOURCE:CHARA:征服 , 1.05
 		SOURCE:CHARA:達成 = 110
 	ENDIF
-	;獲物の角色に応じた固有反応（上書き）
+	;獲物のキャラに応じた固有反応（上書き）
 
 	;獣関連の変数をリセット
 	CALL CRITTER_V_RESET
@@ -502,28 +502,28 @@ RETURN 1
 ;-------------------------------------------------
 ;実行可能判定
 ;-------------------------------------------------
-;设下罠
+;罠を仕掛ける
 @COM_ABLE448
 SIF !TFLAG:100
 	RETURN 0
 ;一括管理
 SIF GLOBAL_COMABLE(448)
 	RETURN RESULT
-SIF CFLAG:诶嘿嘿
+SIF CFLAG:うふふ
 	RETURN 0
 ;罠猟可能な場所or昆虫採集可能な場所でのみ
 SIF !HUNTING_SPOT(CFLAG:MASTER:現在位置) && !MUSHITORI_SPOT(CFLAG:MASTER:現在位置)
 	RETURN 0
 IF MUSHITORI_SPOT(CFLAG:MASTER:現在位置) && !HUNTING_SPOT(CFLAG:MASTER:現在位置)
-	;昆虫诱捕装置は昆虫採集套装がないとダメ
-	SIF !ITEM:昆虫採集套装
+	;虫トラップは昆虫採集セットがないとダメ
+	SIF !ITEM:昆虫採集セット
 		RETURN 0
-	;昆虫诱捕装置を仕掛けてたら仕掛けた場所でしかダメ
+	;虫トラップを仕掛けてたら仕掛けた場所でしかダメ
 	SIF MUSHI_TRAP && CFLAG:MASTER:現在位置 != GET_MUSHIDATA(MUSHI_TRAP, "場所")
 		RETURN 0
 ENDIF
-;约会中は约会的对象とだけ
-SIF FLAG:约会的对象 && TARGET != FLAG:约会的对象
+;デート中はデート相手とだけ
+SIF FLAG:デート相手 && TARGET != FLAG:デート相手
 	RETURN 0
 ;睡眠中
 SIF CFLAG:MASTER:睡眠
@@ -544,30 +544,30 @@ IF !IN_HOME(ARG)
 	SELECTCASE ARG
 		CASE 50
 			RETURNF 1
-		CASE 斜角的竹林
+		CASE 斜角の竹林
 			RETURNF 2
-		CASE 森林的入口
+		CASE 森の入り口
 			RETURNF 3
-		CASE 山麓樹海
+		CASE 麓の樹海
 			RETURNF 4
-		CASE 絶景之丘
+		CASE 絶景の丘
 			RETURNF 5
 		CASE 幻想風穴
 			RETURNF 6
 	ENDSELECT
 ELSE
 	SELECTCASE ARG
-		CASE P25鎮守之森
+		CASE P25鎮守の森
 			RETURNF 1
-		CASE P433斜角的竹林
+		CASE P433斜角の竹林
 			RETURNF 2
-		CASE P507菌菇群生地
+		CASE P507キノコ群生地
 			RETURNF 3
-		CASE P702山道・通往沼澤之道
+		CASE P702山道・沢へ続く道
 			RETURNF 4
 		CASE P805頂上
 			RETURNF 5
-		CASE P948縦穴底部
+		CASE P948縦穴の底
 			RETURNF 6
 	ENDSELECT
 ENDIF
@@ -582,34 +582,34 @@ RETURNF 0
 IF !IN_HOME(ARG)
 	SELECTCASE ARG
 		CASE 50
-			LOCALS = 博丽神社的【妖精的大树】周边
-		CASE 斜角的竹林
-			LOCALS = 永远亭的【斜角的竹林】周边
-		CASE 森林的入口
-			LOCALS = 魔法之森的【森林的入口】周边
-		CASE 山麓樹海
-			LOCALS = 妖怪之山・麓的【山麓树海】周边
-		CASE 絶景之丘
-			LOCALS = 妖怪之山・顶的【绝景之丘】周边
+			LOCALS = 博麗神社の【妖精の大樹】周辺
+		CASE 斜角の竹林
+			LOCALS = 永遠亭の【斜角の竹林】周辺
+		CASE 森の入り口
+			LOCALS = 魔法の森の【森の入り口】周辺
+		CASE 麓の樹海
+			LOCALS = 妖怪の山・山麓の【麓の樹海】周辺
+		CASE 絶景の丘
+			LOCALS = 妖怪の山・山頂の【絶景の丘】周辺
 		CASE 幻想風穴
-			LOCALS = 地底的【幻想风穴】周边
+			LOCALS = 地底の【幻想風穴】周辺
 		CASEELSE
 			LOCALS = エラーサブ
 	ENDSELECT
 ELSE
 	SELECTCASE ARG
-		CASE P25鎮守之森
-			LOCALS = 据点的【镇守之森】周边
-		CASE P433斜角的竹林
-			LOCALS = 据点的【斜角的竹林】周边
-		CASE P507菌菇群生地
-			LOCALS = 据点的【菌菇群生地】周边
-		CASE P702山道・通往沼澤之道
-			LOCALS = 据点的【山道・通往沼泽之道】周边
+		CASE P25鎮守の森
+			LOCALS = 拠点の【鎮守の森】周辺
+		CASE P433斜角の竹林
+			LOCALS = 拠点の【斜角の竹林】周辺
+		CASE P507キノコ群生地
+			LOCALS = 拠点の【キノコ群生地】周辺
+		CASE P702山道・沢へ続く道
+			LOCALS = 拠点の【山道・沢へ続く道】周辺
 		CASE P805頂上
-			LOCALS = 据点的【山顶】周边
-		CASE P948縦穴底部
-			LOCALS = 据点的【竖井底部】周边
+			LOCALS = 拠点の【山頂】周辺
+		CASE P948縦穴の底
+			LOCALS = 拠点の【縦穴の底】周辺
 		CASEELSE
 			LOCALS = エラーメイン
 	ENDSELECT
@@ -618,7 +618,7 @@ RETURNF LOCALS
 ;-----------------------------------------------------------
 ;罠猟スポットに生息する獣を割り出す関数
 ;ARG:0 HUNTING_SPOT
-;ARG:1 罠道具番号 132小 133中 134大
+;ARG:1 罠アイテム番号 132小 133中 134大
 ;-----------------------------------------------------------
 @CRITTER_SPECIES(HUNTING_SPOT, 罠番号)
 #DIM C_ID
@@ -638,7 +638,7 @@ C_ID = 1 + RAND:60
 CALL CRITTER_V_RESET
 CALL CRITTER_DATA(C_ID)
 ;無名（未登録）ならリターン
-SIF !STRLENS(CritterName)
+SIF CritterName == ""
 	GOTO LOOP
 ;タグ上の無登録はリターン
 SIF !STRCOUNT(CritterTribe, "獣/") && !STRCOUNT(CritterTribe, "鳥/")
@@ -672,24 +672,24 @@ SELECTCASE 罠番号
 			GOTO LOOP
 ENDSELECT
 SELECTCASE HUNTING_SPOT
-	CASE 1;鎮守之森、妖精的大樹…普通の山の獣と山鳥たち ユニークは槌之子、矢部大角鹿、ニホンオオカミ
+	CASE 1;鎮守の森、妖精の大樹…普通の山の獣と山鳥たち ユニークはツチノコ、ヤベオオツノジカ、ニホンオオカミ
 		SIF STRCOUNT(CritterTribe, "博/")
 			RETURN C_ID
-	CASE 2;斜角的竹林…兔祭り。大型獣は少ない ユニークは槌之子
+	CASE 2;斜角の竹林…ノウサギ祭り。大型獣は少ない ユニークはツチノコ
 		SIF RAND:3 == 0
 			RETURN 13
 		SIF STRCOUNT(CritterTribe, "竹/")
 			RETURN C_ID
-	CASE 3;魔法之森…多様、ゲテモノも少々 ユニークは玛坦戈
+	CASE 3;魔法の森…多様、ゲテモノも少々 ユニークはマタンゴ
 		SIF STRCOUNT(CritterTribe, "魔/")
 			RETURN C_ID
-	CASE 4;山麓樹海…多様、ユニークはニホンオオカミ、ニホンカワウソ
+	CASE 4;麓の樹海…多様、ユニークはニホンオオカミ、ニホンカワウソ
 		SIF STRCOUNT(CritterTribe, "沢/")
 			RETURN C_ID
-	CASE 5;絶景之丘…小型獣が少し減る、ユニークは花泉盛牛
+	CASE 5;絶景の丘…小型獣が少し減る、ユニークはハナイズミモリウシ
 		SIF STRCOUNT(CritterTribe, "山/")
 			RETURN C_ID
-	CASE 6;幻想風穴、縦穴底部…ゲテモノが取れる ユニークは死亡蠕虫
+	CASE 6;幻想風穴、縦穴の底…ゲテモノが取れる ユニークはデスワーム
 		SIF STRCOUNT(CritterTribe, "底/")
 			RETURN C_ID
 	CASEELSE
@@ -701,8 +701,8 @@ CALL CRITTER_V_RESET
 GOTO LOOP
 
 ;-----------------------------------------------------------
-;フィールドサインの文本を返す関数
-;季節、罠猟スポットを参照し文本を変える
+;フィールドサインのテキストを返す関数
+;季節、罠猟スポットを参照しテキストを変える
 ;-----------------------------------------------------------
 @FIELDSIGN(Serch)
 #DIM Serch
@@ -720,147 +720,147 @@ SELECTCASE Serch
 		;地底だけ特殊
 		IF HUNTING_SPOT(CFLAG:MASTER:現在位置) == 6
 			PRINTDATAL
-				DATAFORM 没有找到什么特别的线索…
-				DATAFORM 在一条不起眼的踏痕上继续前进着…
-				DATAFORM 从岩石表面渗出的水形成了一条细细支流…
-				DATAFORM 干燥的粪便零星地散布着…
-				DATAFORM 少见的土壤之上、生长着苔藓
-				DATAFORM 缓慢地爬过一堵没有生命迹象的岩壁…
-				DATAFORM 鲜有光亮的世界、情景没有什么变化…
+				DATAFORM 特に手がかりとなるものは見当たらない…
+				DATAFORM なんの変哲もない踏み跡が続いている…
+				DATAFORM 岩肌から染み出した水が細い流れを作っている…
+				DATAFORM 乾ききったフンが点々と転がっている…
+				DATAFORM 僅かな土の上には、コケが生えている
+				DATAFORM 生き物の気配のない岩石の壁を、ゆっくりと超えていく…
+				DATAFORM 光の少ない世界は、情景にあまり変わるところがない…
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM 没有找到什么特别的线索…
-				DATAFORM 在一条不起眼的小道上继续前进着…
-				DATAFORM \@ 季節 == 4 ? 绮丽的雪原绵延着… # 适宜步行的草原绵延着… \@
-				DATAFORM \@ 季節 == 4 ? 透过没有叶子的树枝的间隙可以看见天空… # 被枝叶遮挡住、什么景色都看不见… \@
-				DATAFORM 一条小溪泽流过…
-				DATAFORM \@ 季節 == 4 ? 被雪覆盖的树林延续着… # 长满青苔的森林延续着… \@
-				DATAFORM 干燥的粪便零星地散布着…
-				DATAFORM 碎掉的落叶覆盖了些许足迹…
-				DATAFORM \@ 季節 == 4 ? 在雪上隐约看见了足迹形状的凹陷… # 似乎发现了掩埋在枝叶下足迹… \@
-				DATAFORM \@ 季節 == 4 ? 在光滑的雪面上发现了不自然的凹痕… # 地面有被翻开的痕迹、但已经干了… \@
-				DATAFORM 隐约看到了被擦蹭在树木上的毛发…
-				DATAFORM \@ 季節 == 3 ? 被啃过的蘑菇四散在周围… # 一些被啃掉枝叶的灌木正在枯萎着… \@
-				DATAFORM \@ 季節 == 4 ? 冷风吹拂、叩打着肌肤… # 树间吹来的风、揺动着树梢呼啸而过… \@
-				DATAFORM 开始起雾了…迷失了方向…
+				DATAFORM 特に手がかりとなるものは見当たらない…
+				DATAFORM なんの変哲もない小道が続いている…
+				DATAFORM \@ 季節 == 4 ? 綺麗な雪原が続いている… # 歩きやすい草原が続いている… \@
+				DATAFORM \@ 季節 == 4 ? 葉を落とした枝の隙間から空が見える… # 枝葉に遮られて景色が見えない… \@
+				DATAFORM 小さな沢が流れている…
+				DATAFORM \@ 季節 == 4 ? 雪に包まれた林が続いている… # 苔むした森が続いている… \@
+				DATAFORM 乾ききったフンが点々と転がっている…
+				DATAFORM 崩れた落ち葉に覆い隠されたような足跡がある…
+				DATAFORM \@ 季節 == 4 ? 雪の上に不明瞭な足跡のような凹みが見える… # 枝葉に埋もれた足跡らしきものを見つけた… \@
+				DATAFORM \@ 季節 == 4 ? 滑らかな雪面に不自然な凹みが見つかった… # 地面をほじくり返した跡があるが、もう乾いている… \@
+				DATAFORM 木に擦りつけられた毛のようなものがかすかに目についた…
+				DATAFORM \@ 季節 == 3 ? かじられたキノコが四散している… # 枝葉をかじられ、枯れきった低木がある… \@
+				DATAFORM \@ 季節 == 4 ? 冷たい風が吹きつけ、肌に叩きつけてくる… # 樹間を渡る風が、梢を揺らして駆け抜けていく… \@
+				DATAFORM 霧が出始めたな…道を見失いそうだ…
 			ENDDATA
 		ENDIF
 	CASE 20 TO 39
 		SETCOLOR 0x5EE555
 		IF HUNTING_SPOT(CFLAG:MASTER:現在位置) == 6
 			PRINTDATAL
-				DATAFORM 落下的粪便…非常干燥且不成形状
-				DATAFORM 岩石上、有干燥的泥土足迹…
-				DATAFORM 少量的水聚集在一起、形成了像水洼样的存在…
-				DATAFORM 岩石上、看起来像是有什么已经干涸的东西粘在了表面
-				DATAFORM 有一些被啃食过的苔藓的痕迹
-				DATAFORM 隐约看到岩石上有被摩擦下的毛发的痕迹…
-				DATAFORM 被啃过的蘑菇？四散着…
-				DATAFORM 巨大的岩盘挡住了去路…爬上去会很费力
+				DATAFORM フンが落ちている…だいぶ乾いて形が崩れている
+				DATAFORM 岩石の上に、乾ききった土の足跡がついている…
+				DATAFORM わずかな水が集い、水たまりのようなものができている…
+				DATAFORM 岩の上に、何かがへばりついて乾いたあとのようなものがある
+				DATAFORM わずかにコケを食んだあとがある
+				DATAFORM 岩に擦りつけられた毛のようなものがかすかに目についた…
+				DATAFORM かじられたキノコ？が四散している…
+				DATAFORM 大きな岩盤が行く手を遮っている…上るのは一苦労だ
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM 落下的粪便…非常干燥且不成形状
-				DATAFORM 和周围相比、稀薄草木上的踏迹断断续续地延续着…
-				DATAFORM \@ 季節 == 4 ? 追踪者和被追踪者、在雪上留下了二重的足迹… # 发现了脚印和里面被踩碎的落叶… \@
-				DATAFORM \@ 季節 == 4 ? 可以零星看到树皮被啃食、剥离的痕迹… # 藪丛中有泥坑的痕迹…似乎已经干了 \@
-				DATAFORM \@ 季節 == 4 ? 发现了风化的雪上足迹… # 发现了轮廓十分模糊的足迹… \@
-				DATAFORM \@ 季節 == 4 ? 也许是被深雪困住了、有一处积雪凹陷的地方 # 地面是有零星的被挖开的迹象… \@
-				DATAFORM \@ 季節 == 3 ? 有一些被咬过的蘑菇、但看起来已经坏掉了… # 灌木的叶子被吃得散落一地。咬痕开始枯萎了… \@
-				DATAFORM 石头上的苔藓、星星点点地开始剥落枯萎…
-				DATAFORM 依靠着一个小小的立足点、爬上了难以通过的陡峭斜坡…
-				DATAFORM 树枝被折断并固定在了一起…是人为的吗？还是？
-				DATAFORM 被草丛中的隐秘的凹陷绊住了、差点摔倒…
+				DATAFORM フンが落ちている…だいぶ乾いて形が崩れている
+				DATAFORM 周囲と比べて、草木が薄い踏み跡がとぎれとぎれに続いている…
+				DATAFORM \@ 季節 == 4 ? 追うもの追われるもの、二重の足跡が雪上に残っている… # 砕けた落ち葉が入った足跡を見つけた… \@
+				DATAFORM \@ 季節 == 4 ? 枝の皮を食み、剥がした跡が点々と見られる… # 藪の中に泥場の跡がある…もう乾いているようだ \@
+				DATAFORM \@ 季節 == 4 ? 風化しかかった、雪上の足跡を見つけた… # だいぶ輪郭の崩れた足跡を見つけた… \@
+				DATAFORM \@ 季節 == 4 ? 深雪にはまったのか、雪がへこんだ場所がある # 点々と、地面をほじくり返した跡がある… \@
+				DATAFORM \@ 季節 == 3 ? かじられたキノコがあるが、だいぶ傷んでいるようだ… # 低木の葉を食み散らした跡がある。噛み跡は枯れ始めている… \@
+				DATAFORM 石についたコケが、点々と剥げて枯れ落ちている…
+				DATAFORM わずかな足掛かりを頼りに、人が通るには厳しい斜面を上り詰めていく…
+				DATAFORM 木々の枝が折れて固まっているところがある…人為的なものだろうか、それとも？
+				DATAFORM 下草に隠された凹みに足を取られて、危うく転倒しかけた…
 			ENDDATA
 		ENDIF
 	CASE 40 TO 59
 		SETCOLOR 0xA3F030
 		IF HUNTING_SPOT(CFLAG:MASTER:現在位置) == 6
 			PRINTDATAL
-				DATAFORM 落在地上的粪便…已经开始有些干燥了、但还保持着形状
-				DATAFORM 岩石上、泥土足迹还有些粘稠…好像是交通要道
-				DATAFORM 是清澈的泉水…这真是太好了
-				DATAFORM 岩石上、有什么粘稠的东西被移动过
-				DATAFORM 苔藓已经被剥落了…感觉还没有枯死太久
-				DATAFORM 岩石和岩石的间隙、有一个像洞穴一样的空间…
-				DATAFORM 有一些被咬过的蘑菇、但看起来已经坏掉了…
-				DATAFORM 从下面看、高耸的岩石使得登攀十分困难…
+				DATAFORM フンが落ちている…少しだけ乾き始めているが、形は保っている
+				DATAFORM 岩石の上に、土の足跡がべたべたとついている…行き交いがあるようだ
+				DATAFORM 清らかな湧水がある…これはありがたい
+				DATAFORM 岩の上に、何か粘性のあるものが動いたあとがある
+				DATAFORM コケが剥がされたあとがある…まだ枯れてそんなに経っていない感じだ
+				DATAFORM 岩と岩の隙間に、穴倉のような空間が広がっている…
+				DATAFORM かじられたキノコがあるが、だいぶ傷んでいるようだ…
+				DATAFORM 下から見ると、そり立つように見える岩々が登攀を困難にしている…
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM 落在地上的粪便…已经开始有些干燥了、但还保持着形状
-				DATAFORM 和周围相比、少许落叶和草木上的踏迹断断续续地延续着…
-				DATAFORM \@ 季節 == 4 ? 雪上的为弱的足迹、朝向山脊稜线延续着… # 发现了积水的足迹… \@
-				DATAFORM \@ 季節 == 4 ? 见到了残剩的枝叶被啃食的痕迹… # 残留着泥浊的水坑…似乎被当作泥坑使用了 \@
-				DATAFORM \@ 季節 == 4 ? 雪地上残留着看起来是躺下的痕迹… # 残留着踏过草木的弯曲的痕迹… \@
-				DATAFORM \@ 季節 == 4 ? 仿佛两只兽在嬉戏一样的、混乱的雪地 # 地面有被翻开的痕迹、许多蚂蚁慌慌张张地跑来跑去… \@
-				DATAFORM 石头上的苔藓有被剥落的痕迹…被剥落的地方快要干枯了
-				DATAFORM 爬上承认兽影的岩石、俯瞰下面的场景…真可怕
-				DATAFORM 不知是何者的远吠、在山野间回荡着…
+				DATAFORM フンが落ちている…少しだけ乾き始めているが、形は保っている
+				DATAFORM 周囲と比べて、少し落ち葉や草木がはけた踏み跡が続いている…
+				DATAFORM \@ 季節 == 4 ? 雪上のかすかな足跡が、稜線へ向けて続いている… # 水がたまった足跡を見つけた… \@
+				DATAFORM \@ 季節 == 4 ? わずかに残った枝葉をかじった跡が見える… # 泥で濁った水たまりが残っている…泥場として使われていたようだ \@
+				DATAFORM \@ 季節 == 4 ? 雪の上に寝そべったような跡が残っている… # 草木を踏みつけて曲げた跡が残っている… \@
+				DATAFORM \@ 季節 == 4 ? 二体の獣がはしゃいだような、雪の荒れた面がある # 地面をほじくり返した跡を、たくさんの蟻が大慌てで駆けずり回っている… \@
+				DATAFORM 石についたコケが削げた跡がある…剥がれたものが枯れかかっている
+				DATAFORM 獣の影を認めた岩場へ登り、眼下の光景を見下ろしてみる…こわい
+				DATAFORM 何者かの遠吠えが、山野に木霊した…
 			ENDDATA
 		ENDIF
 	CASE 60 TO 79
 		SETCOLOR 0xE7FB0C
 		IF HUNTING_SPOT(CFLAG:MASTER:現在位置) == 6
 			PRINTDATAL
-				DATAFORM 落在地上的粪便…看起来比较新鲜
-				DATAFORM 岩石之上、有着无数的泥土足迹
-				DATAFORM 岩盘上呈带状广散着白色物质…像岩塩一样
-				DATAFORM 岩石上、像是残留着是那么东西的黏液一样
-				DATAFORM 苔藓园被不自然地啃食掉了…是最近发生的
-				DATAFORM 从某处传来了石头碰撞的声音…
-				DATAFORM 被咬成虫食状的蘑菇、保留着原有的形状被折断了…
-				DATAFORM 大概距离地上很近吧、有一点光射了进来…
-				DATAFORM 咯吱咯吱的烦人的刮擦黑板声从头上响来…
+				DATAFORM フンが落ちている…割と新しいもののようだ
+				DATAFORM 岩石の上に、土の足跡が無数についている
+				DATAFORM 岩盤に白っぽいものが帯状に広がっている…岩塩のようだ
+				DATAFORM 岩の上に、何かがのたくったような粘液が残っている
+				DATAFORM コケの園が不自然にかじり取られている…まだ新しい
+				DATAFORM どこからか、かつん、と石が跳ねてぶつかる音がした…
+				DATAFORM 虫食い状にかじられたキノコが、原形をとどめたまま折れ残っている…
+				DATAFORM だいぶ地上に近いのか、光がわずかに差し込んでいる…
+				DATAFORM きぃきぃ、と黒板を引っ掻いたような耳障りな音が頭上から響いてくる…
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM 落在地上的粪便…看起来比较新鲜
-				DATAFORM 仿佛闻到了和枝叶摩擦的沙沙声…
-				DATAFORM \@ 季節 == 4 ? 雪上的足迹、向树林延伸…好像往复了好几次 # 可以清晰地见到足迹通向了藪丛中… \@
-				DATAFORM \@ 季節 == 4 ? 风突然停止了…这个地形似乎提供了良好的避风港 # 藪丛中形成了一个泥场…而且还没有被废弃 \@
-				DATAFORM \@ 季節 == 4 ? 找到了轮廓清晰的、雪上的足迹… # 发现了较为明显的足迹… \@
-				DATAFORM \@ 季節 == 4 ? 发现了就像推着雪行走一样的、崭新的雪面凹痕… # 见到了地面上到处都是崭新的被挖掘的痕迹… \@
-				DATAFORM 石头上的苔藓有被剥落的痕迹……由于仍然是绿色的、所以看起来还没过多久
-				DATAFORM 感觉到有视线于是转过身去、\@ 季節 == 4 ? 结果只是被雪的反射光刺痛了眼睛… # 结果只看到了密密麻麻的树梢和覆盖其上的树叶… \@
-				DATAFORM 清晰细密尖锐的鸣叫声、就像彼此交替呼唤着一样响了起来…
-				DATAFORM 抬头和回头都只是山和树木…似乎已经进入了人迹未踏的原生林
-				DATAFORM 绕到了一颗参天大树的旁边……树干上的空洞、大到足够可以吞込一个人
-				DATAFORM 完全没有声音、一条瀑布被秘密地饮込了潭中…
+				DATAFORM フンが落ちている…割と新しいもののようだ
+				DATAFORM ガサリと枝葉の擦れた音が聞こえた気がする…
+				DATAFORM \@ 季節 == 4 ? 雪上の足跡が、木立に向かって続いている…何度か往復したようだ # 足跡が藪の中に続いていくのがよく見える… \@
+				DATAFORM \@ 季節 == 4 ? 吹き付ける風が急に収まった…地形柄、うまい具合に風よけになっているようだ # 藪の中に泥場ができている…現役のものだろう \@
+				DATAFORM \@ 季節 == 4 ? くっきりとした輪郭の、雪上の足跡を見つけた… # わりとはっきりとした足跡を見つけた… \@
+				DATAFORM \@ 季節 == 4 ? 雪を押しのけて通ったような、新しめの雪面の凹みが見つかった… # 地面をほじくり返した真新しい跡がそこら中に見られる… \@
+				DATAFORM 石についたコケが削げた跡がある……まだ緑っぽいので、わりと新しめのもののようだ
+				DATAFORM なんだか視線を感じる気がして振り返るも、\@ 季節 == 4 ? 雪の反射光が目に痛いだけだった… # 覆いかぶさる鬱蒼とした梢と葉が見えるだけだった… \@
+				DATAFORM 良く通る細く鋭い鳴き声が、交互に呼び交わされるように響いている…
+				DATAFORM 見上げても振り返っても山と木々…人跡未踏にも思える原生林を進んでいく
+				DATAFORM 天を衝くような大樹の脇へ回りこんだ……幹に穿たれたうろは、人ひとりをゆうに呑み込むほど大きい
+				DATAFORM 音を立てるでもなく、密やかな一条の滝が滝つぼに飲み込まれている…
 			ENDDATA
 		ENDIF
 	CASEELSE
 		SETCOLOR C_YELLOW
 		IF HUNTING_SPOT(CFLAG:MASTER:現在位置) == 6
 			PRINTDATAL
-				DATAFORM 落在地上的粪便粪便呈固体状…似乎很新鲜
-				DATAFORM 岩石之上、泥土足迹清晰地残留着…看起来是新的
-				DATAFORM 少见的土壤之上、足迹清晰地残留着…
-				DATAFORM 岩石上、一层厚厚的黏液覆盖着…似乎是嚼碎的苔藓之类的
-				DATAFORM 沿着墙壁、来到了一个有类似树根的东西密密麻麻地降下的空间…感觉相当的不妙
-				DATAFORM 嘎啦一声、岩石从头上掉落下去了…危险、危险
-				DATAFORM 有被吃得散落的蘑菇的残骸…还是崭新的
-				DATAFORM 通过岩石的裂缝、来到了一个地表光透入的不思议的空间…一点点的绿意盎然
-				DATAFORM 听到了地鸣一样的、低沉悠长的咆哮…或者说感觉到了
-				DATAFORM 岩石的缝隙中、吱吱作响的摩擦声到处都能闻到
+				DATAFORM フンが固まって落ちている…かなり最近のもののようだ
+				DATAFORM 岩石の上に、泥の足跡がくっきり残っている…まだ新しいようだ
+				DATAFORM 僅かな土の上に、くっきりと足跡が残っている…
+				DATAFORM 岩の上に、べったりと粘液がへばりついている…コケか何かを齧ったあとらしい
+				DATAFORM 壁を伝って、木の根と思われるものがびっしりと降りてきている空間に出た…なかなか気色悪い
+				DATAFORM がら、と岩石が頭上から落ちてきた…危ない、危ない
+				DATAFORM キノコが食い散らかされたあとが残っている…まだ新しい
+				DATAFORM 岩石の裂け目から、地表の光が挿し込む不思議な空間に出た…わずかだか緑が息吹いている
+				DATAFORM 地鳴りのような、低く長い唸りが聴こえた…気がした
+				DATAFORM ぎしぎし、と何かが擦れるような音が岩の隙間のそこかしこから聞こえる
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM 落在地上的粪便粪便呈固体状…似乎很新鲜
-				DATAFORM 树林的中间、可以见到清晰的兽道
-				DATAFORM 枝叶摩擦的沙沙声从各个角度都能闻到…
-				DATAFORM 有被铺置好的常青藤和草的痕迹…
-				DATAFORM 地面有被平整成圆圈状的痕迹…
-				DATAFORM \@ 季節 == 4 ? 发现了可能是兽群行动而产生的、雪地上的多重足迹… # 多次发现了有清晰轮廓的足迹… \@
-				DATAFORM \@ 季節 == 4 ? 雪很薄、足迹集中在容易通过的场所… # 藪丛中有泥场…从泥的拨撒方式来看、刚刚还被使用过 \@
-				DATAFORM \@ 季節 == 4 ? 见到了树皮被剥下后的样子…还是崭新的 # 有绿色的枝叶被咬断的痕迹…还是崭新的 \@
-				DATAFORM \@ 季節 == 4 ? 这里的雪被挖空、地面露出来了… # 有地面被挖开的痕迹…还是潮湿的。好像是刚刚挖掘的 \@
-				DATAFORM 石头上的苔藓、被剥落下来了…还是绿色的、是最近才被剥下的
-				DATAFORM \@ 季節 == 4 ? 在洼地一样的地方、雪静静地吹着…奇妙的平静 # 在茂密的森林中、有一片异常开阔的、平静的草坪… \@
-				DATAFORM 空气中弥漫着山中的寂静气息、有点害怕、汗毛竖起来了…
-				DATAFORM 闻到了有谁在说悄悄话的「声音」…在这样的深山中？　不会吧…
-				DATAFORM 从云层之间、从谷底、都听到了与风的声音明显不同的、呻吟般的「呼喊声」…
+				DATAFORM フンが固まって落ちている…かなり最近のもののようだ
+				DATAFORM 樹林のただなかに、はっきりとした獣道が見て取れる
+				DATAFORM ガサガサ、とそこらじゅうから枝葉の擦れた音が聞こえてくる…
+				DATAFORM ツタや草が敷き詰められたような痕跡がある…
+				DATAFORM 地面がサークル状にならされた跡がある…
+				DATAFORM \@ 季節 == 4 ? 群れが動いたものか、幾重にも重なる雪上の足跡が見られる… # くっきりとした輪郭の足跡が、幾重にも見つかった… \@
+				DATAFORM \@ 季節 == 4 ? わりと雪が薄く、通りやすい場所に足跡が集中している… # 藪の中に泥場がある…今さっきまで使われていたような泥の撥ね方だ \@
+				DATAFORM \@ 季節 == 4 ? 枝の皮を剥いだ後が見られる…まだ新しい # 緑の枝葉がかじりとられた跡がある…まだ新しい \@
+				DATAFORM \@ 季節 == 4 ? 雪がほじくり返され、地面が露出している… # 地面をほじくり返した跡がある…まだ湿っている。掘られたばかりのようだ \@
+				DATAFORM 石についていたコケが、剥がれて落ちている…まだ緑色をしている、最近はがれたもののようだ
+				DATAFORM \@ 季節 == 4 ? 窪地のようなところで、雪が吹き黙っている…妙に穏やかだ # 鬱蒼とした森林の只中に、妙に開けた、穏やかな芝地が広がっている… \@
+				DATAFORM 森閑とした山中の気配に中てられたものか、ぞわり、と肌が粟立った…
+				DATAFORM 何者かがひそひそ話をしているような「声」が聞こえる…こんな深山で？　まさか…
+				DATAFORM 雲の切れ間から、谷の底から、風の音とは明確に異なる、呻き声のような「呼び声」が聴こえる…
 			ENDDATA
 		ENDIF
 ENDSELECT
@@ -868,7 +868,7 @@ RESETCOLOR
 PRINTL 
 
 ;-----------------------------------------------------------
-;罠紹介のフレーバー文本を流す
+;罠紹介のフレーバーテキストを流す
 ;紹介は６行で固定
 ;-----------------------------------------------------------
 @TRAP_FLAVORTEXT(リザルト)
@@ -879,10 +879,10 @@ SELECTCASE リザルト
 		PRINTDATAL
 			DATALIST
 				DATAFORM 　　┌───────────────────────┐
-				DATAFORM 　　│■箱陷阱　　　　　　　　　　　　　　　　　　　│
-				DATAFORM 　　│　诱使猎物进入箱中、进入之后　　　　　　　　　│
-				DATAFORM 　　│　侵入口的扉便会关闭、将猎物困住　　　　　　　│
-				DATAFORM 　　│　体积小易于携带、易于设置　　　　　　　　　　│
+				DATAFORM 　　│■箱罠　　　　　　　　　　　　　　　　　　　　│
+				DATAFORM 　　│　箱の中に獲物を誘い込み、入り込むと　　　　　│
+				DATAFORM 　　│　侵入口の扉が閉まって獲物を閉じ込める　　　　│
+				DATAFORM 　　│　小型で量を携帯しやすく、仕掛けやすい　　　　│
 				DATAFORM 　　└───────────────────────┘
 			ENDLIST
 		ENDDATA
@@ -890,18 +890,18 @@ SELECTCASE リザルト
 		PRINTDATAL
 			DATALIST
 				DATAFORM 　　┌───────────────────────┐
-				DATAFORM 　　│■套索陷阱　　　　　　　　　　　　　　　　　　│
-				DATAFORM 　　│　金属丝的一端捆绑在树木或其他物体上　　　　　│
-				DATAFORM 　　│　另一端是一个环、　　　　　　　　　　　　　　│
-				DATAFORM 　　│　当猎物的腿进入环内时、便会收缩并将其拘束　　│
+				DATAFORM 　　│■くくり罠　　　　　　　　　　　　　　　　　　│
+				DATAFORM 　　│　ワイヤーの一端を樹木などに括り付ける　　　　│
+				DATAFORM 　　│　もう一端には輪がしつらえられており、　　　　│
+				DATAFORM 　　│　輪に獲物の足が入ると締まって拘束される　　　│
 				DATAFORM 　　└───────────────────────┘
 			ENDLIST
 			DATALIST
 				DATAFORM 　　┌───────────────────────┐
-				DATAFORM 　　│■户板落下　　　　　　　　　　　　　　　　　　│
-				DATAFORM 　　│　户板的一侧放置于地面、另一侧则搭起支柱　　　│
-				DATAFORM 　　│　在户板下方撒诱饵来引诱猎物　　　　　　　　　│
-				DATAFORM 　　│　被饵引诱的猎物、会被户板压住而被捕获　　　　│
+				DATAFORM 　　│■戸板落とし　　　　　　　　　　　　　　　　　│
+				DATAFORM 　　│　戸板の一方を地面に、一方に支柱を建て浮かし　│
+				DATAFORM 　　│　戸板の下に餌などを撒いて獲物を誘引する　　　│
+				DATAFORM 　　│　餌に誘われた獲物を、戸板で潰し捕獲する　　　│
 				DATAFORM 　　└───────────────────────┘
 			ENDLIST
 		ENDDATA
@@ -909,18 +909,18 @@ SELECTCASE リザルト
 		PRINTDATAL
 			DATALIST
 				DATAFORM 　　┌───────────────────────┐
-				DATAFORM 　　│■捕兽夹　　　　　　　　　　　　　　　　　　　│
-				DATAFORM 　　│　当脚踩中陷阱的中央的踏板时、金属板会　　　　│
-				DATAFORM 　　│　弹起并用力夹住脚部的陷阱　　　　　　　　　　│
-				DATAFORM 　　│　在现代日本是被禁止使用的　　　　　　　　　　│
+				DATAFORM 　　│■トラバサミ　　　　　　　　　　　　　　　　　│
+				DATAFORM 　　│　罠の中央の板に脚が乗ると、金属板が　　　　　│
+				DATAFORM 　　│　跳ね上がり脚を強く挟み込む罠　　　　　　　　│
+				DATAFORM 　　│　現代日本では使用が禁止されている　　　　　　│
 				DATAFORM 　　└───────────────────────┘
 			ENDLIST
 			DATALIST
 				DATAFORM 　　┌───────────────────────┐
-				DATAFORM 　　│■机关弩　　　　　　　　　　　　　　　　　　　│
-				DATAFORM 　　│　放置好的石弓的扳机上系着一条线、绑在　　　　│
-				DATAFORM 　　│　附近的树木上　当路过的　　　　　　　　　　　│
-				DATAFORM 　　│　猎物触碰到张力线时、自动发射箭矢　　　　　　│
+				DATAFORM 　　│■アマッポ　　　　　　　　　　　　　　　　　　│
+				DATAFORM 　　│　仕掛けた石弓の引き金に糸をかけ、近くの　　　│
+				DATAFORM 　　│　樹木等にその糸を張っておく　通りかかった　　│
+				DATAFORM 　　│　獲物が張り糸に触れると、自動で矢を放つ　　　│
 				DATAFORM 　　└───────────────────────┘
 			ENDLIST
 		ENDDATA
@@ -946,10 +946,10 @@ SIF GatheringSeason
 
 ;旬のものを先に判定
 SELECTCASE ARG
-	CASE 16, 17, 19, 27;鹿、髭羚、亚洲黑熊、矢部大角鹿は秋
+	CASE 16, 17, 19, 27;シカ、カモシカ、ツキノワグマ、ヤベオオツノジカは秋
 		SIF 季節 == 3
 			RETURNF 3
-	CASE 15;野猪は冬
+	CASE 15;イノシシは冬
 		SIF 季節 == 4
 			RETURNF 3
 ENDSELECT
@@ -965,10 +965,10 @@ SELECTCASE MAX(RAND:100 + (TFLAG:幸運補正 * 10), 0)
 ENDSELECT
 
 ;-----------------------------------------------------------
-;かかった獲物名を補正文本とともに描写
+;かかった獲物名を補正テキストとともに描写
 ;上の関数を利用
 ;STYLE =  0,L  = 1,W =  =2, 改行無し
-;FONT = 0,無 = 1,太字
+;FONT = 0,なし = 1,太字
 ;-----------------------------------------------------------
 @SPOIL_TEXT(獲物, STYLE = 0, FONT = 0)
 #DIM 獲物
@@ -979,11 +979,11 @@ SELECTCASE SPOIL_ENHANCEMENT(TRAP_CAPTURE:TP_TO_PLACE())
 	CASE 0
 		LOCALS = %CritterName%
 	CASE 1
-		LOCALS = 大%CritterName%
+		LOCALS = 大きな%CritterName%
 	CASE 2
-		LOCALS = 有些肥的%CritterName%
+		LOCALS = まるまる太った%CritterName%
 	CASE 3
-		LOCALS = 非常肥的%CritterName%
+		LOCALS = よく肥えている%CritterName%
 	CASEELSE
 		LOCALS = %CritterName%
 ENDSELECT
@@ -1005,8 +1005,8 @@ FONTREGULAR
 RESETCOLOR
 
 ;-----------------------------------------------------------
-;かかった獲物と同行角色から、強制莉莉スの判定をする関数
-;RETURNF 1　で強制莉莉ス
+;かかった獲物と同行キャラから、強制リリースの判定をする関数
+;RETURNF 1　で強制リリース
 ;-----------------------------------------------------------
 @SPOIL_RELEASE(CHARA, 獲物)
 #FUNCTION
@@ -1014,35 +1014,35 @@ RESETCOLOR
 #DIM 獲物
 
 SELECTCASE CHARA
-	CASE [[蕾米莉亜]], [[芙兰]]
-		SIF 獲物 == 21;狐蝠
+	CASE [[レミリア]], [[フラン]]
+		SIF 獲物 == 21;オオコウモリ
 			RETURNF 1
-	CASE [[橙]], [[阿燐]], [[星]], [[三花]]
-		SIF 獲物 == 12;野猫
+	CASE [[橙]], [[お燐]], [[星]], [[ミケ]]
+		SIF 獲物 == 12;ノネコ
 			RETURNF 1
 	CASE [[藍]], [[典]]
-		SIF 獲物 == 10;狐
+		SIF 獲物 == 10;キツネ
 			RETURNF 1
-	CASE [[莉格露]], [[山女]], [[拉尔瓦]], [[百百世]]
-		SIF 獲物 == 23;死亡蠕虫
+	CASE [[リグル]], [[ヤマメ]], [[ラルバ]], [[百々世]]
+		SIF 獲物 == 23;デスワーム
 			RETURNF 1
-	CASE [[米斯蒂亜]]
+	CASE [[ミスティア]]
 		SIF 獲物 == 50 || 獲物 == 51 || 獲物 == 52 || 獲物 == 53 || 獲物 == 54;鳥類
 			RETURNF 1
-	CASE [[納茲琳]]
-		SIF 獲物 == 1 || 獲物 == 5 || 獲物 == 14;老鼠、松鼠、海狸鼠
+	CASE [[ナズーリン]]
+		SIF 獲物 == 1 || 獲物 == 5 || 獲物 == 14;ネズミ、リス、ヌートリア
 			RETURNF 1
-	CASE [[鈴仙]], [[帝]], [[鈴仙二號]], [[清蘭]], [[鈴瑚]]
-		SIF 獲物 == 13;兔
+	CASE [[鈴仙]], [[てゐ]], [[レイセン]], [[清蘭]], [[鈴瑚]]
+		SIF 獲物 == 13;ノウサギ
 			RETURNF 1
 	CASE [[影狼]], [[椛]]
-		SIF 獲物 == 11 || 獲物 == 29;野狗、ニホンオオカミ
+		SIF 獲物 == 11 || 獲物 == 29;ノイヌ、ニホンオオカミ
 			RETURNF 1
-	CASE [[猯藏]]
-		SIF 獲物 == 7;貉
+	CASE [[マミゾウ]]
+		SIF 獲物 == 7;タヌキ
 			RETURNF 1
 	CASE [[潤美]]
-		SIF 獲物 == 28;花泉盛牛
+		SIF 獲物 == 28;ハナイズミモリウシ
 			RETURNF 1
 	CASE [[早鬼]]
 		SIF 獲物 == 29;ニホンオオカミ
@@ -1114,7 +1114,7 @@ VARSET CritterTribe
 #DIM トラップ番号
 
 FOR トラップ番号, 1, 4
-	;メイン→サブMapへの張替え
+	;メイン→サブマップへの張替え
 	SELECTCASE TRAP_POINT:トラップ番号
 		CASE 25
 			SIF MAIN_MAP != 0
@@ -1134,7 +1134,7 @@ FOR トラップ番号, 1, 4
 		CASE 948
 			SIF MAIN_MAP != 9
 				TRAP_POINT:トラップ番号 = 910
-	;サブ→メインMapへの張替え
+	;サブ→メインマップへの張替え
 		CASE 50
 			SIF MAIN_MAP == 0
 				TRAP_POINT:トラップ番号 = 25
@@ -1156,17 +1156,17 @@ FOR トラップ番号, 1, 4
 	ENDSELECT
 NEXT
 
-;昆虫诱捕装置
+;虫トラップ
 ;設置した場所に引っ越した
 IF MAIN_MAP == GET_MUSHIDATA(MUSHI_TRAP, "場所") / 100
 	SELECTCASE GET_MUSHIDATA(MUSHI_TRAP, "場所")
-	;桜花道的鳥居,境内
+	;桜並木の鳥居,境内
 	CASE 10, 20
 		CALL MUSHI_TRAP_MOVING(2)
-	;妖精的大樹
+	;妖精の大樹
 	CASE 50
 		CALL MUSHI_TRAP_MOVING(25)
-	CASE 倒垂的柳樹下, 命蓮寺境内
+	CASE 枝垂れ柳の下, 命蓮寺境内
 		CALL MUSHI_TRAP_MOVING(102)
 	CASE 墓地
 		CALL MUSHI_TRAP_MOVING(121)
@@ -1174,61 +1174,61 @@ IF MAIN_MAP == GET_MUSHIDATA(MUSHI_TRAP, "場所") / 100
 		CALL MUSHI_TRAP_MOVING(202)
 	CASE 長屋街
 		CALL MUSHI_TRAP_MOVING(201)
-	CASE 霧之湖
+	CASE 霧の湖
 		CALL MUSHI_TRAP_MOVING(347)
 	CASE 廃洋館
 		CALL MUSHI_TRAP_MOVING(343)
 	CASE 正門
 		CALL MUSHI_TRAP_MOVING(302)
-	CASE 竹林入口
+	CASE 竹林入り口
 		CALL MUSHI_TRAP_MOVING(433)
-	CASE 迷失的小道
+	CASE 迷いの小道
 		CALL MUSHI_TRAP_MOVING(434)
-	CASE 斜角的竹林
+	CASE 斜角の竹林
 		CALL MUSHI_TRAP_MOVING(434)
-	CASE 兎的洞穴
+	CASE 兎の洞穴
 		CALL MUSHI_TRAP_MOVING(431)
-	CASE 無名之丘
+	CASE 無名の丘
 		CALL MUSHI_TRAP_MOVING(436)
-	CASE 太陽花田
+	CASE 太陽の畑
 		CALL MUSHI_TRAP_MOVING(438)
-	CASE 森林的入口
+	CASE 森の入り口
 		CALL MUSHI_TRAP_MOVING(501)
-	CASE 古木的大樹
+	CASE 古木の大樹
 		CALL MUSHI_TRAP_MOVING(540)
-	CASE 再思之道
+	CASE 再思の道
 		CALL MUSHI_TRAP_MOVING(509)
 	CASE 無縁塚
 		CALL MUSHI_TRAP_MOVING(506)
-	CASE 中有之道
+	CASE 中有の道
 		CALL MUSHI_TRAP_MOVING(601)
-	CASE 三途之川
+	CASE 三途の川
 		CALL MUSHI_TRAP_MOVING(602)
 	CASE 彼岸, 地獄
 		CALL MUSHI_TRAP_MOVING(604)
 	CASE 白玉楼庭
 		CALL MUSHI_TRAP_MOVING(621)
-	CASE 山麓樹海
+	CASE 麓の樹海
 		CALL MUSHI_TRAP_MOVING(701)
-	CASE 玄武之澤
+	CASE 玄武の沢
 		CALL MUSHI_TRAP_MOVING(703)
-	CASE 大蛤蟆之池
+	CASE 大蝦蟇の池
 		CALL MUSHI_TRAP_MOVING(708)
-	CASE 絶景之丘
+	CASE 絶景の丘
 		CALL MUSHI_TRAP_MOVING(805)
-	CASE 山之湖
+	CASE 山の湖
 		CALL MUSHI_TRAP_MOVING(814)
 	CASE 守矢神社境内
 		CALL MUSHI_TRAP_MOVING(811)
 	CASE 幻想風穴
 		CALL MUSHI_TRAP_MOVING(948)
-	CASE 地獄的深道
+	CASE 地獄の深道
 		CALL MUSHI_TRAP_MOVING(945)
 	CASE 旧地獄街道
 		CALL MUSHI_TRAP_MOVING(939)
 	CASE 地霊殿
 		CALL MUSHI_TRAP_MOVING(901)
-	CASE 寧靜海
+	CASE 静かの海
 		CALL MUSHI_TRAP_MOVING(916)
 	ENDSELECT
 ;設置した場所から引っ越した
@@ -1262,7 +1262,7 @@ FOR トラップ番号, 1, 4
 				ENDIF
 			NEXT
 		ENDIF
-		;時間経過に伴う罠の警戒度の変動　一日中奖了－２
+		;時間経過に伴う罠の警戒度の変動　一日あたり－２
 		IF TRAP_ALERTNESS:トラップ番号
 			TRAP_ALERTNESS:トラップ番号 = MAX(TRAP_ALERTNESS:トラップ番号 - 2, 0)
 			
@@ -1298,20 +1298,20 @@ NEXT
 
 
 ;-------------------------------------------------
-;昆虫诱捕装置
+;虫トラップ
 ;-------------------------------------------------
 @MUSHI_TRAP
-;昆虫诱捕装置はMASTERの一人作業なので約會経験やTARGETへのソースは無い
-;昆虫诱捕装置の样子を見る
+;虫トラップはMASTERの一人作業なのでデート経験やTARGETへのソースは無い
+;虫トラップの様子を見る
 IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
 	IF !GET_MUSHIDATA(MUSHI_TRAP, "ムシ番号")
-		PRINTFORML 　设置的诱饵：%ITEMNAME_TR((GET_MUSHIDATA(MUSHI_TRAP, "エサ番号")))%
-		PRINTFORML 　　诱饵质量：%"☆" * MUSHI_ESA_DATA(GET_MUSHIDATA(MUSHI_TRAP, "エサ番号"))%
-		PRINTFORML 　　诱饵类型：%RESULTS:10%
+		PRINTFORML 仕掛けたエサ：%ITEMNAME:(GET_MUSHIDATA(MUSHI_TRAP, "エサ番号"))%
+		PRINTFORML 　　エサの質：%"☆" * MUSHI_ESA_DATA(GET_MUSHIDATA(MUSHI_TRAP, "エサ番号"))%
+		PRINTFORML 　エサタイプ：%RESULTS:10%
 		DRAWLINE
-		PRINTFORML 好像还没有虫子来
-		PRINTFORML 　[ 0]保持原样
-		PRINTFORML 　[ 1]破弃陷阱
+		PRINTFORML まだムシはかかっていないようだ
+		PRINTFORML 　[ 0]そのままにする
+		PRINTFORML 　[ 1]トラップを破棄する
 		INPUT
 		IF RESULT
 			MUSHI_TRAP = 0
@@ -1327,12 +1327,12 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
 	ELSE
 		PRINTL 
 		PRINTFORMW ………！
-		PRINTFORMW 上面覆盖了昆虫！
+		PRINTFORMW ムシがかかっていた！
 		PRINTL 
 		MUSHI_TRAP += DAY * 1000000000000 
 		CALL SHOW_MUSHI_DATA(MUSHI_TRAP)
 		DRAWLINE
-		PRINTFORML 用昆虫诱捕装置捕获了%MUSHI_NAME%！
+		PRINTFORML 虫トラップで%MUSHI_NAME%を捕まえた！
 		CALL MUSHI_CAPTURE(MUSHI_TRAP)
 		MUSHI_TRAP = 0
 		TFLAG:193 = 12
@@ -1343,9 +1343,9 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
 			TIME += 5
 		ENDIF
 	ENDIF
-;昆虫诱捕装置を仕掛ける
+;虫トラップを仕掛ける
 ELSE
-	PRINTL ◆请为昆虫诱捕装置选择诱饵（消耗）
+	PRINTL ◆虫トラップに使うエサを選んでください（消費します）
 	DRAWLINE
 	FOR LOCAL, 0, 800
 		SIF ITEMNAME:LOCAL == ""
@@ -1353,11 +1353,11 @@ ELSE
 		SIF !ITEM:LOCAL
 			CONTINUE
 		SIF MUSHI_ESA_DATA(LOCAL)
-			PRINTFORMC %ITEMNAME_TR(LOCAL)%({ITEM:LOCAL})[{LOCAL, 3}]
+			PRINTFORMC %ITEMNAME:LOCAL%({ITEM:LOCAL})[{LOCAL, 3}]
 	NEXT
 	PRINTL 
 	DRAWLINE
-	PRINTC 果然还是放弃[999]
+	PRINTC やっぱりやめる[999]
 	INPUT
 	IF INRANGE(RESULT, 0, 800) && ITEM:RESULT
 		ITEM:RESULT --
@@ -1377,7 +1377,7 @@ ENDIF
 RETURN 1
 
 ;-------------------------------------------------
-;昆虫诱捕装置でムシを捕まえる関数
+;虫トラップでムシを捕まえる関数
 ;@MUSHITORIを参考に
 ;-------------------------------------------------
 @MUSHI_TRAP_PROGRESS
@@ -1406,9 +1406,9 @@ IF MUSHI_TRAP && !GET_MUSHIDATA(MUSHI_TRAP, "ムシ番号")
 		WHILE レアリティ指定 >= 0
 			;1回目は特定好物で優先的に拾う
 			IF LOCAL == 1
-				CALL DRAW_MUSHI("昆虫诱捕装置特定好物", GET_MUSHIDATA(MUSHI_TRAP, "場所"), レアリティ指定)
+				CALL DRAW_MUSHI("虫トラップ特定好物", GET_MUSHIDATA(MUSHI_TRAP, "場所"), レアリティ指定)
 			ELSE
-				CALL DRAW_MUSHI("昆虫诱捕装置", GET_MUSHIDATA(MUSHI_TRAP, "場所"), レアリティ指定)
+				CALL DRAW_MUSHI("虫トラップ", GET_MUSHIDATA(MUSHI_TRAP, "場所"), レアリティ指定)
 			ENDIF
 			IF RESULT
 				捕まえたムシ = RESULT
@@ -1419,7 +1419,7 @@ IF MUSHI_TRAP && !GET_MUSHIDATA(MUSHI_TRAP, "ムシ番号")
 					Ｇ型 = 1
 				SIF RAND:100 < (パワー / 2)
 					Ｘ型 = 1
-				;ID設定,日期は実際に捕まえた時
+				;ID設定,日付は実際に捕まえた時
 				MUSHI_ID = MUSHI_CAPTURE * 1000000000000 + GET_MUSHIDATA(MUSHI_TRAP, "場所") * 100000000 + ランク * 10000 + MUSHI_RARE * 1000 + 捕まえたムシ
 				SIF Ｇ型
 					MUSHI_ID += 1000000
@@ -1435,7 +1435,7 @@ IF MUSHI_TRAP && !GET_MUSHIDATA(MUSHI_TRAP, "ムシ番号")
 ENDIF
 
 ;-------------------------------------------------
-;昆虫诱捕装置を引っ越す関数
+;虫トラップを引っ越す関数
 ;ARGが引越し先
 ;-------------------------------------------------
 @MUSHI_TRAP_MOVING(ARG)

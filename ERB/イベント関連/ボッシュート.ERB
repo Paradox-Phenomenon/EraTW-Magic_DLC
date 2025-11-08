@@ -1,9 +1,9 @@
 ﻿@ボッシュート
-;胖次没収、収集
+;パンツ没収、収集
 
-;SIF !CFLAG:TARGET:胖次2 && STRLENS(CSTR:MASTER:12)
-SIF !CFLAG:TARGET:获得胖次 && FLAG:胖次輸送 && FLAG:催眠強度 <= 25
-	CALL 胖次没収(TARGET)
+;SIF !CFLAG:TARGET:パンツ2 && STRLENS(CSTR:MASTER:12)
+SIF !CFLAG:TARGET:パンツ2 && FLAG:パンツ輸送
+	CALL パンツ没収(TARGET)
 ;料理持ってたら食われる
 IF  DISH_NAME != ""
 	SIF DISH_ASSI == TARGET
@@ -11,74 +11,55 @@ IF  DISH_NAME != ""
 	SIF CFLAG:TARGET:同行
 		RETURN 0
 	LOCAL:1 = 0
-	IF DISH_TYPE == "甜点"
-		SIF TIME_PROGRESS(TCVAR:甜点空腹時刻)
+	IF DISH_TYPE == "デザート"
+		SIF TIME_PROGRESS(TCVAR:デザート空腹時刻)
 			LOCAL:1 = 1
 	ELSE
 		SIF TIME_PROGRESS(TCVAR:TARGET:空腹時刻)
 			LOCAL:1 = 1
 	ENDIF
-	IF LOCAL:1 && RAND:( ITEM:保温ジャー && GETBIT(nThermalJarMods, ThermalJar_StealProtectionUpgrade) ? 10 # 5 ) == 0 && !GROUPMATCH(SELECTCOM, 413, 484) ;addition custom code
-		CALL Add_PreventFoodTheft ;addition custom code
-		SIF RESULT == 1
-			RETURN
-		;----------------------------------------------
+	IF LOCAL:1 && RAND:5 == 0 && !GROUPMATCH(SELECTCOM, 413, 484)
 		PRINTL 
-		PRINTFORMW %CALLNAME:TARGET%看到了%CALLNAME:MASTER%带着的＜%EX_DISH_NAME%＞
-		IF RESULT == 2 ;if codepad is installed on the thermal jar
-			CALL Add_ThermalJarCodePad
-			SIF RESULT
-				RETURN
-		ENDIF
-		CALL KOJO_CHECK(TARGET, "MEALBLOCK", , 3) ;custom code ATW
-		SIF RESULT
-			RETURN
+		PRINTFORMW %CALLNAME:TARGET%は%CALLNAME:MASTER%の持っていた＜%EX_DISH_NAME%＞を見つけた
 		PRINTFORMW ！
-		PRINTFORMW ……！！！
+		PRINTFORMW ・・・！！！
 		CALL KOJO_MESSAGE_SEND("EVENT",14,TARGET,-1,-1)
 		;抑制フラグ入ってたら抜ける
 		SIF TCVAR:TARGET:盗み食い抑制
-			RETURN
-		CALL Com_Food_Check(TARGET, 1) ;com custom code
-		SIF RESULT
-			RETURN
-		;attack snatch food chara plugin
-		CALL attackSnatchFoodChara()
-		SIF RESULT
 			RETURN
 		IF DISH_DRG
 			CALL MESSAGE_EAT_DISH_DRG(TARGET)
 			WAIT
 		ELSE
-			PRINTFORMW 作好的料理被吃掉了
+			PRINTFORMW 作った料理を食べられてしまった
 		ENDIF
-		CALL 吃飯(TARGET)
+		CALL 食事(TARGET)
 		CALL RESET_DISH
 	ENDIF
 ENDIF
 
-@胖次没収(ARG)
-;胖次没収、収集
+@パンツ没収(ARG)
+;パンツ没収、収集
 LOCAL:1 = RAND:2
-SIF FLAG:祈願内容 == 202
+SIF FLAG:願掛け内容 == 202
 	LOCAL:1 = RAND:3
-IF  !LOCAL:1 && CFLAG:ARG:没穿内裤 != 2
+IF  !LOCAL:1 && CFLAG:ARG:ノーパン != 2
 	PRINTL  
-	PRINTFORMW 被%CALLNAME:ARG%盘问并做了身体检查…
+	PRINTFORMW %CALLNAME:ARG%に見とがめられ身体検査をされた…
 	PRINTFORMW 
 	PRINTFORMW 
 	PRINTFORMW 
-	IF TALENT:MASTER:内裤走私者 && RAND:10
-		PRINTFORMW 但是%CALLNAME:MASTER%巧妙地骗过了%CALLNAME:ARG%的眼睛
+	IF TALENT:MASTER:ぱんつ密輸 && RAND:10
+		PRINTFORMW しかし%CALLNAME:MASTER%は巧みに%CALLNAME:ARG%の目を欺いた
 	ELSE
-		PRINTFORMW 随身携带的内裤被没收了
-		SIF !CFLAG:掌握把柄
-			PRINTFORMW 被%CALLNAME:ARG%掌握住了把柄
-			CFLAG:ARG:掌握把柄 += 5
+		PRINTFORMW くすねたパンティを没収された
+		SIF !CFLAG:弱み握り
+			PRINTFORMW %CALLNAME:ARG%に弱みを握られた
+			CFLAG:ARG:弱み握り += 5
 		CALL KOJO_MESSAGE_SEND("EVENT",9,ARG,0,1)
 		;CSTR:MASTER:12 =
 		;VARSET PANTS_TEMP
-		;FLAG:胖次輸送 = 0
+		;FLAG:パンツ輸送 = 0
 		CALL CLEAR_HAVE_COLLECTION()
 	ENDIF
 ENDIF

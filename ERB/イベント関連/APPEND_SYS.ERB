@@ -7,7 +7,7 @@
 ;-----------------------------------------------------------
 ;EVENT_NO_LIST ============================== FLAG:1
 ;FLAG:1=1 霊廟メンバー出現イベント
-;FLAG:1=2 猯藏来訪イベント
+;FLAG:1=2 マミゾウ来訪イベント
 ;FLAG:1=3 命蓮寺メンバー追加イベント
 ;FLAG:1=4 
 ;FLAG:1=5 
@@ -18,14 +18,8 @@
 ;--- イベント実行ブロック ---
 
 ;	;自宅にSUMIKOMI_ROOMが設定されている
-	IF HOUGONG
-		IF FLAG:住宿人物 >= 0 && !FLAG:住宿事件 && SUMIKOMI_ROOM && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-			CALL NEWMEMBER_ADD
-		ENDIF
-	ELSE
-		IF FLAG:住宿人物== 0 && !FLAG:住宿事件 && SUMIKOMI_ROOM && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
-			CALL NEWMEMBER_ADD
-		ENDIF
+	IF FLAG:住み込みキャラ== 0 && !FLAG:住み込みイベント && SUMIKOMI_ROOM && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+		CALL NEWMEMBER_ADD
 	ENDIF
 ;ENDIF
 
@@ -33,7 +27,7 @@
 
 ;以下、各イベント関数 ===============================
 
-;住宿EX角色決定イベント
+;住み込みEXキャラ決定イベント
 @NEWMEMBER_ADD
 #DIM 人数
 #DIM ROOM_N
@@ -44,101 +38,59 @@ FOR LOCAL,1,CHARANUM
 	;既に住んでいるメンバーは除く
 	SIF CFLAG:LOCAL:神社在住 > 0
 		CONTINUE
-	SIF TALENT:LOCAL:路人
+	SIF TALENT:LOCAL:行きずり
 		CONTINUE
-	IF HOUGONG
-		IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 20
-			人数 ++
-			LOCAL:LOCAL = 1
-			LOCALS = %CALLNAME:LOCAL%
-		ENDIF
-		IF TALENT:LOCAL:愛欲
-			人数 ++
-			LOCAL:LOCAL = 1
-			LOCALS = %CALLNAME:LOCAL%
-		ENDIF
-	ELSE
-		IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200 
-			人数 ++
-			LOCAL:LOCAL = 1
-			LOCALS = %CALLNAME:LOCAL%
-		ENDIF
+	IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200 
+		人数 ++
+		LOCAL:LOCAL = 1
+		LOCALS = %CALLNAME:LOCAL%
 	ENDIF
 NEXT
-IF HOUGONG
-	SIF !人数
-		RETURN
-ELSE
-	SIF !人数 || (DAY:3 != 1)
-		RETURN
-ENDIF
+SIF !人数 || (DAY:3 != 1)
+	RETURN
 PRINTL
 DRAWLINE
-PRINTFORML 早上起床后、出现了来找%CALLNAME:MASTER%的来访者
+PRINTFORML 朝、目覚めた%CALLNAME:MASTER%のもとに来訪者が現れた
 
-PRINTFORML %LOCALS%\@ 人数 > 1 ? 她们 # \@告诉%CALLNAME:MASTER%想在%GET_MAPNAME(MAIN_MAP)%定居生活
+PRINTFORML %LOCALS%\@ 人数 > 1 ? 達 # \@は%CALLNAME:MASTER%に%GET_MAPNAME(MAIN_MAP)%で暮らしたいと告げた
 PRINTL
-IF HOUGONG
-	PRINTFORML 同意→入住后宫别墅
-ELSEIF MAIN_MAP == 2
-	PRINTFORML 因为长屋里面有空房间、所以搬家应该很容易吧
-	IF TALENT:NameToID(LOCALS):人类
-		PRINTFORMW %CALLNAME:拠点_家主%好像也没有什么特殊的拒绝理由
+IF MAIN_MAP == 2
+	PRINTFORML 長屋に空き部屋があるので、引っ越すことは簡単に出来るだろう
+	IF TALENT:NameToID(LOCALS):人間
+		PRINTFORMW %CALLNAME:拠点_大家%にも特に断る理由はなさそうだ
 	ELSE
-		PRINTFORMW %LOCALS%说只要对%CALLNAME:拠点_家主%隐瞒真实身份就可以了
+		PRINTFORMW %CALLNAME:拠点_大家%には正体を隠せば良いと%LOCALS%は言っている
 	ENDIF
 ELSE
-	PRINTFORML 如果重新装修%NAME_FROM_PLACE(SUMIKOMI_ROOM)%的话，就可以一个人住了吧
-	PRINTFORMW %CALLNAME:拠点_家主%好好说的话，会欢迎的
+	PRINTFORML %NAME_FROM_PLACE(SUMIKOMI_ROOM)%を改装すれば、一人くらい暮らすことは出来るだろう
+	PRINTFORMW %CALLNAME:拠点_大家%たちはしっかりと説明すれば歓迎してくれそうだ
 ENDIF
-PRINTFORML %CALLNAME:MASTER%也同意…
+PRINTFORML %CALLNAME:MASTER%は…
 C_ID = 1
 FOR LOCAL,1,CHARANUM
 	;既に住んでいるメンバーは除く
 	SIF CFLAG:LOCAL:神社在住 > 0
 		CONTINUE
-	IF HOUGONG
-		IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 20
-			C_ID = LOCAL
-			PRINTFORML [{LOCAL}] - 同意%CALLNAME:LOCAL%入住神社
-		ENDIF
-		IF TALENT:LOCAL:愛欲
-			C_ID = LOCAL
-			PRINTFORML [{LOCAL}] - 同意%CALLNAME:LOCAL%入住神社
-		ENDIF
-	ELSE
-		IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200
-			C_ID = LOCAL
-			PRINTFORML [{LOCAL}] - 同意%CALLNAME:LOCAL%搬家
-		ENDIF
+	IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200
+		C_ID = LOCAL
+		PRINTFORML [{LOCAL}] - %CALLNAME:LOCAL%の引っ越しを認める
 	ENDIF
 NEXT
-PRINTFORML [999] - 拒绝
+PRINTFORML [999] - 認めない
 $INPUT_LOOP
 INPUT
 IF RESULT == 999
-	PRINTFORMW %CALLNAME:MASTER%摇了摇头拒绝、%LOCALS%\@ 人数 > 1 ? 她们 # \@很遗憾的离开了%CALLNAME:MASTER%的房间
+	PRINTFORMW %CALLNAME:MASTER%が首を振ると%LOCALS%\@ 人数 > 1 ? 達 # \@は残念そうにうつむき%CALLNAME:MASTER%の部屋を後にした…
 	;このやり方だと一人しか口上を呼べないんだが良い方法はないものか
-	;とりあえず多数の場合にそれぞれの角色の口上を呼び出せるようにしてみる、ただし実際に出来るかどうかはテスト出来てないので自信は無い
+	;とりあえず多数の場合にそれぞれのキャラの口上を呼び出せるようにしてみる、ただし実際に出来るかどうかはテスト出来てないので自信は無い
 	IF 人数 > 1
 		FOR LOCAL,1,CHARANUM
 			;既に住んでいるメンバーは除く
 			SIF CFLAG:LOCAL:神社在住 > 0
 				CONTINUE
-			IF HOUGONG
-				IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 20
-					CALL KOJO_MESSAGE_SEND("EVENT",19,LOCAL,2,0)
-					PRINTL 
-				ENDIF
-				IF TALENT:LOCAL:愛欲
-					CALL KOJO_MESSAGE_SEND("EVENT",19,LOCAL,2,0)
-					PRINTL 
-				ENDIF
-			ELSE
-				IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200
-					CALL KOJO_MESSAGE_SEND("EVENT",19,LOCAL,2,0)
-					PRINTL 
-				ENDIF
+			IF TALENT:LOCAL:恋慕 && EXP:LOCAL:愛情経験 >= 200
+				CALL KOJO_MESSAGE_SEND("EVENT",19,LOCAL,2,0)
+				PRINTL 
 			ENDIF
 		NEXT
 	ELSE
@@ -152,14 +104,14 @@ ELSEIF !LOCAL:RESULT
 	CLEARLINE 1
 	GOTO INPUT_LOOP
 ENDIF
-PRINTFORML 拉起%CALLNAME:RESULT%的手、告诉她要去拜托%CALLNAME:拠点_家主%,%CALLNAME:RESULT%高兴地微笑着
-PRINTFORMW 马上去%CALLNAME:拠点_家主%那里拜托、她很快就答应了…
+PRINTFORML %CALLNAME:RESULT%の手を取り、%CALLNAME:拠点_大家%に頼んでみる事を告げると%CALLNAME:RESULT%は嬉しそうに微笑んでいる
+PRINTFORMW その足で%CALLNAME:拠点_大家%の元へ頼み込みに行くと快く承諾してくれた…
 PRINTL
-PRINTFORMW - %CALLNAME:RESULT%成为了%GET_MAPNAME(MAIN_MAP)%的一员 -
+PRINTFORMW - %CALLNAME:RESULT%が新たに%GET_MAPNAME(MAIN_MAP)%の仲間として加わりました -
 PRINTL
-FLAG:住宿人物= RESULT
-CFLAG:(FLAG:住宿人物):311 = SUMIKOMI_ROOM
-CFLAG:(FLAG:住宿人物):神社在住 = SUMIKOMI_ROOM
+FLAG:住み込みキャラ= RESULT
+CFLAG:(FLAG:住み込みキャラ):311 = SUMIKOMI_ROOM
+CFLAG:(FLAG:住み込みキャラ):神社在住 = SUMIKOMI_ROOM
 
 CALL KOJO_MESSAGE_SEND("EVENT",19,RESULT,1,0)
 

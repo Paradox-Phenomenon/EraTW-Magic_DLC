@@ -1,7 +1,7 @@
 ﻿;--------------------------------------------------
 ;地点名変更関数
 ;--------------------------------------------------
-@MAP_PLACENAME_8(ARG,ARG:1)
+@MAP_PLACENAME_8(ARG)
 #FUNCTIONS
 IF GET_MAPID(ARG) == MAIN_MAP
 	SELECTCASE ARG
@@ -9,33 +9,33 @@ IF GET_MAPID(ARG) == MAIN_MAP
 			IF CFLAG:MASTER:初期位置 == ARG
 				RETURNF CALLNAME:MASTER + "私室"
 			ELSE
-				RETURNF "空屋"
+				RETURNF "空室"
 			ENDIF
 		CASE SUMIKOMI_ROOM
-			;※このMapでは未実装
-			IF FLAG:住宿人物
-				RETURNF CALLNAME:(FLAG:住宿人物) + "的房间"
+			;※このマップでは未実装
+			IF FLAG:住み込みキャラ
+				RETURNF CALLNAME:(FLAG:住み込みキャラ) + "の部屋"
 			ELSE
-				RETURNF "空的房间"
+				RETURNF "空き部屋"
 			ENDIF
 		CASE MINROOM() TO (MAXROOM - 1)
-			RETURNF ARG:1 ? STR:(ARG + 8000) # STR_TR(ARG + 8000) ;custom code
+			RETURNF STR:(ARG + 8000)
 		CASE OMANEKIBEYA()
 			RETURNF OMANEKI_PLACE()
 		CASE SUKIMA()
-			RETURNF "隙间空间"
+			RETURNF "スキマ空間"
 		CASE MAXROOM
-			RETURNF "山麓"
+			RETURNF "山の麓"
 		CASEELSE
 			RETURNF "不明"
 	ENDSELECT
 ELSE
-	RETURNF "山顶之外"
+	RETURNF "山頂の外"
 ENDIF
 
 ;--------------------------------------------------
 ;場所ARGがどのエリアにあるか
-;表示するMapの番号と連動（TFLAG:地圖切換）
+;表示するマップの番号と連動（TFLAG:マップ切り替え）
 ;ARG     場所ID
 ;--------------------------------------------------
 @MAP_AREASELECT_8(ARG)
@@ -48,16 +48,16 @@ SELECTCASE ARG
 	CASE P811境内 TO P826廊下
 		RETURNF 2
 	;比那名居邸
-	CASE P831比那名居邸前, P834比那名居邸土間 TO P842比那名居邸庫房
+	CASE P831比那名居邸前, P834比那名居邸土間 TO P842比那名居邸物置
 		RETURNF 4
-	;妖怪之山・山頂
+	;妖怪の山・山頂
 	CASEELSE
 		RETURNF 1
 ENDSELECT
 
 ;--------------------------------------------------
 ;内部構造がある場所の内部の判定
-;TFLAG:地圖切換  内部察知が必要なMap番号
+;TFLAG:マップ切り替え  内部察知が必要なマップ番号
 ;                P_ID  表示ボタンの場所ID
 ;                Q_ID  判定する内部の場所ID,必ずP_IDと一致した数値も含める
 ;--------------------------------------------------
@@ -65,12 +65,12 @@ ENDSELECT
 #FUNCTION
 #DIM P_ID
 #DIM Q_ID
-IF TFLAG:地圖切換 == 1
+IF TFLAG:マップ切り替え == 1
 	SELECTCASE P_ID
 		;天界
 		CASE P830玄雲海
 			SELECTCASE Q_ID
-			CASE P830玄雲海 TO P842比那名居邸庫房
+			CASE P830玄雲海 TO P842比那名居邸物置
 				RETURNF 1
 			ENDSELECT
 		;守矢神社
@@ -80,12 +80,12 @@ IF TFLAG:地圖切換 == 1
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
-ELSEIF TFLAG:地圖切換 == 3
+ELSEIF TFLAG:マップ切り替え == 3
 	SELECTCASE P_ID
 		;比那名居邸
 		CASE P831比那名居邸前
 			SELECTCASE Q_ID
-			CASE P831比那名居邸前, P834比那名居邸土間 TO P842比那名居邸庫房
+			CASE P831比那名居邸前, P834比那名居邸土間 TO P842比那名居邸物置
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
@@ -95,7 +95,7 @@ RETURNF 0
 ;--------------------------------------------------
 ;移動制限設定
 ;ARG    場所ID
-;CHARA  移動する角色ID
+;CHARA  移動するキャラID
 ;RETURNF 1=移動できる,0=移動できない
 ;TFLAG:移動不能メッセージ   ↓の@MAP_CANNOT_WORD用の設定
 ;--------------------------------------------------
@@ -119,7 +119,7 @@ RETURNF 1
 RETURN
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
-		PRINTFORMW ※在这里输入消息。执行行数+1的CLEARLINE
+		PRINTFORMW ※ここにメッセージを入れる。行数+1のCLEARLINEをする
 		CLEARLINE 2
 ENDSELECT
 REUSELASTLINE
@@ -133,36 +133,36 @@ IF WITH_MOB()
 	RETURN 1
 ELSE
 	SELECTCASE CFLAG:MASTER:現在位置
-		;索道站
-		CASE P803索道站
+		;索道駅
+		CASE P803索道駅
 			IF INRANGE(TIME, 540, 1020)
-				PRINTFORML 能看到充满干劲的河童在接待索道的业务
+				PRINTFORML 見るからにやる気のなさそうな河童が索道の受付をしている
 			ELSE
-				PRINTFORML 索道站关门了
+				PRINTFORML 索道駅は閉まっている
 			ENDIF
 	ENDSELECT
 ENDIF
 RETURN 1
 
 ;-----------------------------------------
-;拠点の場所IDをお出かけMap上の場所IDに置換する関数
-;ARG      対象の場所ID（拠点Map）
-;RETURNF  差し替え場所ID（お出かけMap）
+;拠点の場所IDをお出かけマップ上の場所IDに置換する関数
+;ARG      対象の場所ID（拠点マップ）
+;RETURNF  差し替え場所ID（お出かけマップ）
 ;-----------------------------------------
 @MAP_SEARCH_REPLACEMENT_8(ARG)
 #FUNCTION
 SELECTCASE ARG
-	CASE P830玄雲海 TO P842比那名居邸庫房
+	CASE P830玄雲海 TO P842比那名居邸物置
 		RETURNF 天界
-	CASE P801山頂入口, P802橋, P803索道站, P806瀑布背面 TO P809果宅
-		RETURNF 九天瀑布
+	CASE P801山頂入り口, P802橋, P803索道駅, P806滝の裏 TO P809はたて宅
+		RETURNF 九天の滝
 	CASE P805頂上, P851久侘歌の小屋 TO P854龍宅
-		RETURNF 絶景之丘
+		RETURNF 絶景の丘
 	CASE P814湖畔
-		RETURNF 山之湖
+		RETURNF 山の湖
 	CASE P804守矢神社鳥居, P811境内, P813社務所, P815庭
 		RETURNF 守矢神社境内
-	CASE P855虹龍洞, P856百百世の住処
+	CASE P855虹龍洞, P856百々世の住処
 		RETURNF 虹龍洞
 	CASEELSE
 		RETURNF 守矢神社本殿
@@ -170,12 +170,12 @@ ENDSELECT
 RETURNF 0
 
 ;--------------------------------------------------
-;Mapの紹介文
+;マップの紹介文
 ;--------------------------------------------------
-@Map紹介_8
+@マップ紹介_8
 ;とりあえず5行
-PRINTFORML 以守矢神社为中心、包括天狗的住居和天界在内的地图。
-PRINTFORML 虽然离大地图的中心有点远、但是可以通过索道直接到人间之里、所以交通状况其实还不错。
-PRINTFORML 守矢神签里虽然可以抽中有用的道具和约会权、但在概率上来讲需要做好大量破财的觉悟。
-PRINTFORML 有多个采集点、若有在磨炼采集技能的话、到了对应季节应该能获得多样的素材。
-PRINTFORML 这里也有一定数量的钓鱼或由山湖水酿酒方面的工作。也有不知不觉就过了一天的情况
+PRINTFORML 守矢神社を中心に天狗の住居や天界までを含むマップ。
+PRINTFORML 全体マップの中心からはかなり外れているが索道で人里まで行けるのでそこまでアクセスは悪くない。
+PRINTFORML 守矢くじは有用なアイテムやデート権が当たることもあるが、確率上相当な散財を覚悟しなければならない。
+PRINTFORML 採集ポイントが複数あり、採集技能を磨いていれば季節によっては有用な素材が多種入手できる。
+PRINTFORML 釣りや山の湖の水による酒造に加え仕事の手伝い先もそこそこ多く、１日があっという間に過ぎるときも。

@@ -1,7 +1,7 @@
 ﻿
-;### 心形のみ別の色でPRINTするための関数 ##################
+;### ハートのみ別の色でPRINTするための関数 ##################
 ;ew6様のコードを参考にさせていただきました
-;文字列中に含まれる"HPH"をホット粉色色のハートとしてPRINTし、それ以外の文字列は通常の色で普通にPRINTする
+;文字列中に含まれる"HPH"をホットピンク色のハートとしてPRINTし、それ以外の文字列は通常の色で普通にPRINTする
 ;ARGS "W"=PRINTSWで表示。"L"=PRINTSLで表示。"W"でも"L"でもなければPRINTSで表示
 @K2_HPH_PRINT,対象文字列,行書式
 #DIMS 対象文字列
@@ -22,7 +22,7 @@ DO
 	ELSEIF HPHインデクス値 == 0
 		LOCAL = GETCOLOR()
 		SETCOLOR 0xFF69B4
-		PRINTFORM ❤
+		PRINTFORM %UNICODE(0x2764)%
 		SETCOLOR LOCAL
 		出力文字数 = 3
 	;対象文字列中にもはやHPHが含まれない場合
@@ -45,9 +45,9 @@ DO
 LOOP 1
 
 
-;### 行为を容認してくれるか判定用式中関数 ################
-;意識のある状態で行为を怒らず受け入れていれば１を返す。そうでなければ０
-;ARG=角色番号
+;### 行為を容認してくれるか判定用式中関数 ################
+;意識のある状態で行為を怒らず受け入れていれば１を返す。そうでなければ０
+;ARG=キャラ番号
 @K2_CONSCIOUS_AND_TOLERANT(ARG)
 #FUNCTION
 #DIM 反発系パラメータ上昇値
@@ -55,7 +55,7 @@ LOOP 1
 SIF ARG == 0
 	ARG = TARGET
 	
-SIF !SHIRAHU(ARG) || CFLAG:ARG:ブチギレ || TCVAR:ARG:强行
+SIF !SHIRAHU(ARG) || CFLAG:ARG:ブチギレ || TCVAR:ARG:無理矢理
 	RETURNF 0
 	
 反発系パラメータ上昇値 = CUP:ARG:反感 + CUP:ARG:不快
@@ -73,9 +73,9 @@ RETURNF 1
 
 
 ;### 大きな体格差の有無判定用式中関数 ################
-;対象角色と主人との体型差によって返り値が決まる
+;対象キャラと主人との体型差によって返り値が決まる
 ;比較して主人が大きすぎると１、主人が非常に大きすぎると２、主人が小さすぎると－１、主人が非常に小さすぎると－２
-;ARG=角色番号
+;ARG=キャラ番号
 @K2_EXCESSIVE_STATURE_GAP(ARG)
 #FUNCTION
 
@@ -108,9 +108,9 @@ CASEELSE
 ENDSELECT
 
 
-;### 诶嘿嘿時基本状態判定用式中関数 ################
+;### うふふ時基本状態判定用式中関数 ################
 ;K2_CONSCIOUS_AND_TOLERANTに無知とK2_EXCESSIVE_STATURE_GAPの条件を加えたもの
-;ARG=角色番号
+;ARG=キャラ番号
 @K2_BASIC_CONDITION_IN_MATING(ARG)
 #FUNCTION
 
@@ -131,14 +131,14 @@ RETURNF 1
 
 ;### 快感に積極的か判定用式中間数 ################
 ;返り値１は積極的、０は消極的
-;ARG=角色番号
+;ARG=キャラ番号
 @K2_SEXUAL_FRANKNESS(ARG)
 #FUNCTION
 
 SIF ARG == 0
 	ARG = TARGET
 
-IF MARK:ARG:快楽刻印 >= 3 || TALENT:ARG:快感応答 >= 0 || TALENT:ARG:風騷
+IF MARK:ARG:快楽刻印 >= 3 || TALENT:ARG:快感応答 >= 0 || TALENT:ARG:ヤリマン
 	RETURNF 1
 ELSE
 	RETURNF 0
@@ -152,19 +152,19 @@ ENDIF
 VARSET LOCALS
 
 IF ARGS == "SPERM"
-	LOCALS = %TEXTR("白浊液/精液/精液/子种汁")%
+	LOCALS = %TEXTR("白濁液/ザーメン/精液/子種汁")%
 
 ELSEIF ARGS == "VULVA"
-	LOCALS = %TEXTR("秘处/秘裂/阴门/女阴")%
+	LOCALS = %TEXTR("秘処/秘裂/陰門/女陰")%
 
 ELSEIF ARGS == "ANUS"
-	LOCALS = %TEXTR("尻穴/肛门/菊门")%
+	LOCALS = %TEXTR("尻の穴/肛門/アヌス")%
 
 ELSEIF ARGS == "CROTCH"
-	LOCALS = %TEXTR("股间/臀沟/股沟")%
+	LOCALS = %TEXTR("股間/局部/股")%
 
 ELSEIF ARGS == "PENIS"
-	LOCALS = %TEXTR("肉棒/肉棒/肉棒/肉棒")%
+	LOCALS = %TEXTR("ペニス/陰茎/肉棒/イチモツ")%
 
 ELSE
 	LOCALS = ※K2_EXPRESSION_VARIATION()の文字列引数が不正※
@@ -175,36 +175,36 @@ RETURNF LOCALS
 
 
 ;### 乳房描写用式中関数 ################
-;ARG=角色番号
+;ARG=キャラ番号
 @K2_BREASTS_DESCRIPTION(ARG)
 #FUNCTIONS
 
 SIF ARG == 0
 	ARG = TARGET
 
-SELECTCASE TALENT:ARG:胸圍
+SELECTCASE TALENT:ARG:バストサイズ
 CASE IS >= ( TALENT:ARG:体型 == -2 ?3 #2 )
-	LOCALS = %TEXTR("快要装不下的/令人瞠目结舌的大小的/沉甸甸很有重量感的/丰满的/非常巨大的/DuangDuang的/大得下流的")%
+	LOCALS = %TEXTR("はちきれんばかりの/目を見張る大きさの/どっしりと重量感のある/ボリューミーな/とびきり大きな/バインバインの/下品なほど大きい")%
 CASE TALENT:ARG:体型 == -2 ?2 #1
-	LOCALS = %TEXTR("丰满的/比较大的/丰腴的/圆润的")%
+	LOCALS = %TEXTR("豊満な/大きめの/豊かな/ふくよかな")%
 CASE TALENT:ARG:体型 == -2 ?1 #0
-	LOCALS = %TEXTR("柔软的/有女性魅力的隆起的/水灵灵的")%
+	LOCALS = %TEXTR("やわらかな/女らしい膨らみのある/みずみずしい/＿")%
 CASE TALENT:ARG:体型 == -2 ?0 #-1
-	LOCALS = %TEXTR("适中的/小不点/比较小的")%
+	LOCALS = %TEXTR("ひかえめな/小ぶりな/小さめの")%
 CASEELSE
-	LOCALS = %TEXTR("单薄的/平缓的/没肉的")%
+	LOCALS = %TEXTR("薄い/なだらかな/肉のついていない")%
 ENDSELECT
-SELECTCASE TALENT:ARG:胸圍
+SELECTCASE TALENT:ARG:バストサイズ
 CASE IS >= ( TALENT:ARG:体型 == -2 ?3 #2 )
-	LOCALS += @"%TEXTR("乳房/胸部/爆乳")%"
+	LOCALS += @"%TEXTR("乳/乳房/おっぱい/爆乳")%"
 CASE TALENT:ARG:体型 == -2 ?2 #1
-	LOCALS += @"%TEXTR("乳房/胸部")%"
+	LOCALS += @"%TEXTR("乳/乳房/おっぱい")%"
 CASE TALENT:ARG:体型 == -2 ?1 #0
-	LOCALS += @"%TEXTR("乳房/胸部")%"
+	LOCALS += @"%TEXTR("乳/乳房/おっぱい")%"
 CASE TALENT:ARG:体型 == -2 ?0 #-1
-	LOCALS += @"%TEXTR("胸部")%"
+	LOCALS += @"%TEXTR("胸/乳/おっぱい")%"
 CASEELSE
-	LOCALS += @"%TEXTR("胸部")%"
+	LOCALS += @"%TEXTR("胸/胸部")%"
 ENDSELECT
 
 RETURNF LOCALS

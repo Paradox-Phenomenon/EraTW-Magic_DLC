@@ -14,13 +14,13 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	CALLF MAKE_STR(V_NAME, "想要制裁TA！")
+	CALLF MAKE_STR(V_NAME, "懲らしめて！")
 CASE "依頼内容表示"
-	CALLF MAKE_STR(V_NAME, @"用弹幕胜负打败讨伐对象")
+	CALLF MAKE_STR(V_NAME, @"討伐対象を弾幕勝負で負かす")
 CASE "依頼報酬表示"
-	CALLF MAKE_STR(V_NAME, @"赏金（时价）")
-CASE "依頼実行指令名"
-	CALLF MAKE_STR(V_NAME, "制裁")
+	CALLF MAKE_STR(V_NAME, @"賞金（時価）")
+CASE "依頼実行コマンド名"
+	CALLF MAKE_STR(V_NAME, "懲らしめる")
 CASE "依頼内容"
 	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(RAND_HANTING(ARG), "討伐"))
 CASE "依頼サブ"
@@ -35,7 +35,7 @@ CASE "依頼発生条件"
 	SIF CSVABL(ARG, GETNUM(ABL, "戦闘能力")) >= 1
 		CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼受託可能条件"
-;你の戦闘能力が1以上
+;あなたの戦闘能力が1以上
 	SIF ABL:MASTER:戦闘能力 >= 1
 		CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼実行可能条件"
@@ -57,7 +57,6 @@ ENDSELECT
 #DIM  CLIENT_ID
 #DIM  CHK_SLOT
 #DIM  OPPONENT_REMAIN
-#DIM  MASTER_REMAIN
 CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 CHK_SLOT  = SEARCH_IRAI_SLOT(IRAI_ID)
 SELECTCASE SCENE
@@ -73,41 +72,40 @@ CASE "依頼条件表示"
 CASE "依頼実行時"
 ;このCASEに限り、RESULTが意味を持ちます
 ;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 ;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 ;
 ;
 	;実行できないパターン
 	;拠点では屋内だとダメ（原作だとめっちゃやってるけど）
 	IF CANNOT_DANMAKU() == 1
-		PRINTFORMW 到室外再说…
+		PRINTFORMW 屋外で挑もう…
 		RETURN IRAI_CONST_RESULT("実行して未解決")
 	;仕事中はダメ
 	ELSEIF CANNOT_DANMAKU() == 2
-		PRINTFORMW 对方正忙着呢…
+		PRINTFORMW お取り込み中だ…
 		RETURN IRAI_CONST_RESULT("実行して未解決")
-	;你が疲労
+	;あなたが疲労
 	ELSEIF CANNOT_DANMAKU() == 3
-		PRINTFORMW 今天已经很累了…
+		PRINTFORMW 今は疲れている…
 		RETURN IRAI_CONST_RESULT("実行して未解決")
 	;対象が疲労
 	ELSEIF CANNOT_DANMAKU() == 4
-		PRINTFORMW 现在挑战不公平……
+		PRINTFORMW 今挑むのはフェアじゃない…
 		RETURN IRAI_CONST_RESULT("実行して未解決")
 	;既に挑んでる
 	ELSEIF CANNOT_DANMAKU() == 5
-		PRINTFORMW 今天已经不能挑战了…
+		PRINTFORMW 今日はもう挑めない…
 		RETURN IRAI_CONST_RESULT("実行して未解決")
 	ELSE
 		;ほぼ弾幕勝負のコピペ
 		SETCOLOR C_GREEN
-		PRINTFORML ＜讨伐战＞
+		PRINTFORML ＜討伐戦＞
 		RESETCOLOR
-		PRINTFORMW 胜负开始！！
+		PRINTFORMW 勝負開始！！
 		CALL DANMAKU_BATTLE(TARGET)
 		OPPONENT_REMAIN = RESULT
-		MASTER_REMAIN = RESULT:1
-		CALL KOJO_MESSAGE_SEND("DANMAKU", OPPONENT_REMAIN, TARGET, -1, MASTER_REMAIN, "戦闘後")
+		CALL KOJO_MESSAGE_SEND("DANMAKU", OPPONENT_REMAIN, TARGET, -1, -1, "戦闘後")
 		PRINTL 
 		TCVAR:TARGET:弾幕勝負不能 = 1
 		SIF OPPONENT_REMAIN == 0
@@ -117,29 +115,25 @@ CASE "依頼実行時"
 		DOWNBASE:体力 += 500
 		DOWNBASE:MASTER:体力 += 500
 		SOURCE:歓楽 += (3000 + ABL:親密 * 100) / (OPPONENT_REMAIN + 1)
-		TFLAG:好感度BONUS = 1600 / (OPPONENT_REMAIN + 1)
-		TFLAG:信賴度管理 = 3 - LOCAL
+		TFLAG:好感度ボーナス = 1600 / (OPPONENT_REMAIN + 1)
+		TFLAG:信頼度管理 = 3 - LOCAL
 
 		EXP:MASTER:戦闘経験 += 3
 
-		IF !BATTLEDLC
-		    TIME += 60
-		ELSE
-		    TIME += 15
-		ENDIF
+		TIME += 60
 
 		SIF AT_HOME(MASTER)
 			YOGORE:(CFLAG:MASTER:現在位置) = LIMIT(YOGORE:(CFLAG:MASTER:現在位置) + 3000, 0, 6000)
 		IF OPPONENT_REMAIN == 0
 			PRINTL 
 			SETCOLOR C_YELLOW
-			PRINTFORMW 成功惩罚%CALLNAME:TARGET%了！
+			PRINTFORMW %CALLNAME:TARGET%を懲らしめた！
 			RESETCOLOR
 			RETURN IRAI_CONST_RESULT("実行して成功")
 		ELSE
 			SETCOLOR C_GREEN
-			PRINTFORML %CALLNAME:TARGET%的讨伐失败了……
-			PRINTFORMW ……这样的话就只能改天再来了
+			PRINTFORML %CALLNAME:TARGET%の討伐に失敗した……
+			PRINTFORMW ……こうなったら後日出直すしかない
 			RESETCOLOR
 			RETURN IRAI_CONST_RESULT("実行して未解決")
 		ENDIF
@@ -195,7 +189,7 @@ IF AT_HOME(MASTER) && !OUTROOF(CFLAG:MASTER:現在位置) && !戦闘訓練可(CF
 ;仕事中はダメ
 ELSEIF CFLAG:TARGET:行動 == 5
 	RETURNF 2
-;你が疲労
+;あなたが疲労
 ELSEIF BASE:MASTER:気力 < 500 || BASE:MASTER:体力 < 500
 	RETURNF 3
 ;対象が疲労

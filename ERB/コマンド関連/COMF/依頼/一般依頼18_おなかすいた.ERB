@@ -14,20 +14,20 @@
 #DIMS V_NAME
 SELECTCASE O_DATA
 CASE "依頼名"
-	CALLF MAKE_STR(V_NAME, "有谁能帮我做一下吗！")
+	CALLF MAKE_STR(V_NAME, "誰か作ってくれないかなー！")
 CASE "依頼内容表示"
-	CALLF MAKE_STR(V_NAME, @"接受点单并送达")
+	CALLF MAKE_STR(V_NAME, @"注文された料理を作って届ける")
 CASE "依頼報酬表示"
-	CALLF MAKE_STR(V_NAME, @"%金額表示(2000)%＋奖金")
-CASE "依頼実行指令名"
+	CALLF MAKE_STR(V_NAME, @"%金額表示(2000)%＋おまけ")
+CASE "依頼実行コマンド名"
 	;何か問題があったら変えてください
 	IF TALENT:MASTER:性別 == 2
-		CALLF MAKE_STR(V_NAME, "您好，外卖到了")
+		CALLF MAKE_STR(V_NAME, "出前漢です")
 	ELSE 
-		CALLF MAKE_STR(V_NAME, "您好，UmanEats外送")
+		CALLF MAKE_STR(V_NAME, "UmanEatsです")
 	ENDIF
 CASE "依頼内容"
-	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "其他"))
+	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "その他"))
 CASE "依頼サブ"
 	;これは乱数シード
 	CALLF MAKE_INT(V_NAME, RAND:1000000)
@@ -85,6 +85,8 @@ CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 CHK_SLOT  = SEARCH_IRAI_SLOT(IRAI_ID)
 
 
+
+;**********依頼料理生成部**********
 IF REQUEST_DISHNAME:CHARA:0 == ""
 	;料理の定義関数が通常関数で@一般依頼18から呼べないので乱数シードを固定して同じ料理名を出す
 	;ユニーク料理の売り込み機能を捨てればERHとこの煩雑な実装を除去できる(受託後、期限内に連れ出し可能になると結果が変わってしまうため変数に入れる必要がある)
@@ -123,30 +125,30 @@ IF REQUEST_DISHNAME:CHARA:0 == ""
 		;あくまで料理の基本要素として加わっているものだけ。プレイヤーがあとから足せるものは除去不能
 
 		;くたかとミスティアは鳥肉と卵を除去する
-		IF GROUPMATCH(CHARA, [[米斯蒂亜]] , [[久侘歌]])
+		IF GROUPMATCH(CHARA, [[ミスティア]] , [[久侘歌]])
 			SIF STR_MULTI_COUNT(DISH_TASTE , "鳥肉/卵")
 				DISH_NAME = 
 		ENDIF
 
 		;リグル、ラルバは虫肉を除去する
-		IF GROUPMATCH(CHARA, [[莉格露]] , [[拉尔瓦]])
+		IF GROUPMATCH(CHARA, [[リグル]] , [[ラルバ]])
 			SIF STR_MULTI_COUNT(DISH_TASTE , "虫肉")
 				DISH_NAME = 
 		ENDIF
 
 		;諏訪子はカエルを除去する
 		IF GROUPMATCH(CHARA, [[諏訪子]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "青蛙")
+			SIF STR_MULTI_COUNT(DISH_TASTE , "カエル")
 				DISH_NAME = 
 		ENDIF
 
 		;わかさぎ姫は魚orうまい魚を除去する
-		IF GROUPMATCH(CHARA, [[若鷺姫]])
-			SIF STR_MULTI_COUNT(DISH_TASTE , "魚/好吃的魚")
+		IF GROUPMATCH(CHARA, [[わかさぎ姫]])
+			SIF STR_MULTI_COUNT(DISH_TASTE , "魚/うまい魚")
 				DISH_NAME = 
 		ENDIF
 		;************************
-	LOOP DISH_NAME == "" || STRCOUNT(DISH_NAME , "跳蛋") > 0
+	LOOP DISH_NAME == "" || STRCOUNT(DISH_NAME , "ローター") > 0
 
 	REQUEST_DISHNAME:CHARA:0 = %DISH_NAME%%SPLITTER%{RANDOM}
 
@@ -173,11 +175,9 @@ CASE "依頼条件表示"
 	;ここ以外の表示項目は
 	;PRINTFORML 　　　　　：
 	;となっているのでスペースを揃えたほうが見栄えが良いです
-	; PRINTFORM 欲しい料理：%DISH_REQUEST%
-	PRINTFORM 想要的菜肴：%TASTE_TR(DISH_REQUEST)%
+	PRINTFORM 欲しい料理：%DISH_REQUEST%
 	IF RANDOM >= 400
-		; PRINTFORML ……%CALLNAME:CHARA%の得意料理じゃないか？
-		PRINTFORML ……这是%CALLNAME:CHARA%的拿手菜来着？
+		PRINTFORML ……%CALLNAME:CHARA%の得意料理じゃないか？
 	ELSE
 		PRINTL 
 	ENDIF
@@ -187,10 +187,8 @@ CASE "依頼実行時"
 	;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 	VARSET おまけ
-	; PRINTFORML 「ご注文の%DISH_NAME%になりまーす」
-	PRINTFORML 「这是您点的%DISHNAME_TR()%」
-	; PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISHNAME_TR()%>を届けた
-	PRINTFORMW %CALLNAME:MASTER%将%CALLNAME:CHARA%点的<%DISHNAME_TR()%>交给了%CALLNAME:CHARA%
+	PRINTFORML 「ご注文の%DISH_NAME%になりまーす」
+	PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISH_NAME%>を届けた
 
 	;ローカル変数にグローバル変数をコピーしたのち消去する
 	DISH_DELIVER = %DISH_NAME%
@@ -226,15 +224,12 @@ CASE "依頼実行時"
 			PRINTL -->
 			IF 一致評価 == 0
 				;注文違い
-				; PRINTFORML %CALLNAME:CHARA%は注文と違う料理が届いて困惑している
-				PRINTFORML %CALLNAME:CHARA%看着手上与要求不一样的菜肴，陷入了困惑
+				PRINTFORML %CALLNAME:CHARA%は注文と違う料理が届いて困惑している
 			ELSE
 				;ここに来ると言うことは料理の出来がよほど悪い
-				; PRINTFORML 料理のできばえを見た%CALLNAME:CHARA%は引きつった表情をしている
-				PRINTFORML 看着眼前所谓制作完成的菜品，%CALLNAME:CHARA%表情僵硬
+				PRINTFORML 料理のできばえを見た%CALLNAME:CHARA%は引きつった表情をしている
 			ENDIF
-			; PRINTFORMW 依頼に応えられなかった……
-			PRINTFORMW 没能完成委托……
+			PRINTFORMW 依頼に応えられなかった……
 			PRINTL 
 			RETURN IRAI_CONST_RESULT("実行して失敗")
 		CASE IS < 評価基準:1
@@ -245,11 +240,9 @@ CASE "依頼実行時"
 			SETCOLOR SAVECLR
 			PRINTL -->
 			IF 一致評価 == 0
-				; PRINTFORMW 依頼した料理とは違うが%CALLNAME:CHARA%はまあまあ納得してくれた
-				PRINTFORMW 虽然与点的不太一样，但%CALLNAME:CHARA%觉得还可以接受
+				PRINTFORMW 依頼した料理とは違うが%CALLNAME:CHARA%はまあまあ納得してくれた
 			ELSE
-				; PRINTFORMW 依頼した料理が届いて%CALLNAME:CHARA%は喜んでいる
-				PRINTFORMW 拿到了所委托的料理的%CALLNAME:CHARA%看上去很开心
+				PRINTFORMW 依頼した料理が届いて%CALLNAME:CHARA%は喜んでいる
 			ENDIF
 			PRINTL 
 			SOURCE:CHARA:歓楽 += 300
@@ -262,11 +255,9 @@ CASE "依頼実行時"
 			SETCOLOR SAVECLR
 			PRINTL -->
 			IF 一致評価 == 0
-				; PRINTFORMW %CALLNAME:CHARA%の依頼とは違ったが、これはこれで好印象のようだ！
-				PRINTFORMW 虽然和%CALLNAME:CHARA%的委托内容不一样，但好像还是给对方留下了好印象！
+				PRINTFORMW %CALLNAME:CHARA%の依頼とは違ったが、これはこれで好印象のようだ！
 			ELSE
-				; PRINTFORMW %CALLNAME:CHARA%は依頼通りのおいしそうな料理が届いてご満悦だ！
-				PRINTFORMW %CALLNAME:CHARA%收到了所委托的好吃的菜肴而十分满足！
+				PRINTFORMW %CALLNAME:CHARA%は依頼通りのおいしそうな料理が届いてご満悦だ！
 			ENDIF
 			PRINTL 
 			SOURCE:CHARA:歓楽 += 1000
@@ -279,17 +270,14 @@ CASE "依頼成功時"
 	CALL CHANGE_CFLAG(4, CHARA, 20)
 	CALL GET_MONEY_YEN(2000, 2)
 	IF おまけ
-		; PRINTFORML %CALLNAME:CHARA%はさらにボーナスをくれた！
-		PRINTFORML %CALLNAME:CHARA%追加了打赏！
+		PRINTFORML %CALLNAME:CHARA%はさらにボーナスをくれた！
 		CALL CHANGE_CFLAG(2, CHARA, 20)
 		CALL CHANGE_CFLAG(4, CHARA, 20)
 		CALL GET_MONEY_YEN(1000, 2)
 	ENDIF
-	CALL RESET_DISH
 CASE "依頼失敗時"
 ;失敗報告時の処理
 	CALL CHANGE_CFLAG(2, CHARA, -5)
 	CALL CHANGE_CFLAG(4, CHARA, -5)
-	CALL RESET_DISH
 ENDSELECT
 

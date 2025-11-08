@@ -1,13 +1,13 @@
-﻿;摆脱
+﻿;抜け出す
 @COM850
 #DIM なだめ判定
 #DIM 抜け出せない
 なだめ判定 = 0
 抜け出せない = 0
-IF GETBIT(TCVAR:随便,0)
-	PRINTFORMW %CALLNAME:MASTER%手忙脚乱的挣扎着
-	IF RAND:100 < RAND:(50 + ABL:施虐属性 * 20 + ABL:戦闘能力 * 20) 
-		PRINTFORMW 但是徒劳告终
+IF TCVAR:好きにして
+	PRINTFORMW %CALLNAME:MASTER%はじたばたともがいた
+	IF RAND:100 < RAND:(50 + ABL:サドっ気 * 20 + ABL:戦闘能力 * 20) 
+		PRINTFORMW しかし徒労に終わった
 		CALL KOJO_MESSAGE_SEND("EVENT",10,TARGET,3,1)
 		DOWNBASE:MASTER:気力 += 50
 		DOWNBASE:MASTER:体力 += 50
@@ -18,51 +18,51 @@ IF GETBIT(TCVAR:随便,0)
 	ENDIF
 ELSEIF TFLAG:泡風呂
 	CALL 泡風呂終了判定("攻守交代時終了")
-ELSEIF TFLAG:抱住模式
-	PRINTFORML %CALLNAME:MASTER%推开了%CALLNAME:TARGET%
-	;其他
-	IF CFLAG:TARGET:性格傾向 == 5 || !FLAG:Counter地文控制
-		PRINTFORML %CALLNAME:TARGET%非常不满…
-	;气弱系
+ELSEIF TFLAG:抱きつきモード
+	PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%を振り払った
+	;その他
+	IF CFLAG:TARGET:性格傾向 == 5 || !FLAG:カウンター地の文制御
+		PRINTFORML %CALLNAME:TARGET%は不満そうにしている…
+	;気弱系
 	ELSEIF CFLAG:TARGET:性格傾向 == 1
-		PRINTFORML %CALLNAME:TARGET%看上去有些难过…
-	;强气系
+		PRINTFORML %CALLNAME:TARGET%はちょっぴり悲しそうにしている…
+	;強気系
 	ELSEIF CFLAG:TARGET:性格傾向 == 2
-		PRINTFORML %CALLNAME:TARGET%发出了冷笑…
-	;坦率系
+		PRINTFORML %CALLNAME:TARGET%はつれないわねと言って笑った…
+	;素直系
 	ELSEIF CFLAG:TARGET:性格傾向 == 3
-		PRINTFORML %CALLNAME:TARGET%很高兴%CALLNAME:MASTER%的反应…
+		PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%の反応を楽しんでいるようだ…
 	;真面目系
 	ELSEIF CFLAG:TARGET:性格傾向 == 4
-		PRINTFORML %CALLNAME:TARGET%向%CALLNAME:MASTER%说着对不起…
+		PRINTFORML %CALLNAME:TARGET%は%CALLNAME:MASTER%に、調子に乗ってすまないと謝った…
 	ENDIF
 ELSE
 	FOR LOCAL,1,CHARANUM
-		IF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置 && CFLAG:LOCAL:积攒度 >= 500
+		IF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置 && CFLAG:LOCAL:溜まってる度 >= 500
 			なだめ判定 = LOCAL
 			BREAK
 		ENDIF
 	NEXT
 	IF !なだめ判定
-		PRINTFORML %CALLNAME:MASTER%一边抚慰着%CALLNAME:TARGET%\@ GET_TARGETNUM() > 1 ? 她们 # \@一边拔了出来
+		PRINTFORML %CALLNAME:MASTER%は%CALLNAME:TARGET%\@ GET_TARGETNUM() > 1 ? 達 # \@をなだめて抜け出した
 	ELSE
-		IF (TALENT:MASTER:性別 & 1) && (TALENT:性別 & 1) && TIME_PROGRESS(TFLAG:被逆推開始時間) >= 360
-			PRINTFORMW %CALLNAME:なだめ判定%尽管还是有些不满足但还是放过了%CALLNAME:MASTER%
-			TFLAG:抱住模式 = 0
-			TCVAR:抱きつき禁止時間 = 70 + MAX(10 - ABL:欲望, 0) * 3 - MAX((CFLAG:積極性 + CFLAG:害羞) * 5, 30)
+		IF (TALENT:MASTER:性別 & 1) && (TALENT:性別 & 1) && TIME_PROGRESS(TFLAG:押し倒され開始時間) >= 360
+			PRINTFORMW %CALLNAME:なだめ判定%は少し物足りなさそうにしながらも%CALLNAME:MASTER%を解放した
+			TFLAG:抱きつきモード = 0
+			TCVAR:抱きつき禁止時間 = 70 + MAX(10 - ABL:欲望, 0) * 3 - MAX((CFLAG:積極性 + CFLAG:恥じらい) * 5, 30)
 		ELSEIF !TALENT:MASTER:非童貞 && TALENT:MASTER:2 & 2
-			PRINTFORMW %CALLNAME:なだめ判定%苦苦哀求着答应
-			PRINTFORMW %CALLNAME:なだめ判定%无论如何都想要%CALLNAME:MASTER%的第一次
-			CFLAG:なだめ判定:积攒度 += 50
+			PRINTFORMW %CALLNAME:なだめ判定%に拝み倒された
+			PRINTFORMW %CALLNAME:なだめ判定%はどうしても%CALLNAME:MASTER%の初めてが欲しいようだ
+			CFLAG:なだめ判定:溜まってる度 += 50
 			BASE:なだめ判定:気力 -= 200
 			TIME += 5
 			RETURN 1
 		ELSEIF TALENT:MASTER:処女 || TALENT:なだめ判定:処女
-			PRINTFORMW %CALLNAME:なだめ判定%有些难为情的放过了%CALLNAME:MASTER%
+			PRINTFORMW %CALLNAME:なだめ判定%は気まずそうに%CALLNAME:MASTER%を解放した
 			BASE:なだめ判定:気力 -= 100
-			BASE:なだめ判定:情緒 = 0
+			BASE:なだめ判定:ムード = 0
 		ELSE
-			PRINTFORMW %CALLNAME:なだめ判定%还没有打算放过%CALLNAME:MASTER%的样子
+			PRINTFORMW %CALLNAME:なだめ判定%はまだ%CALLNAME:MASTER%を解放するつもりはないようだ
 			CALL KOJO_MESSAGE_SEND("EVENT",10,なだめ判定,3,2)
 			DOWNBASE:MASTER:気力 += 100
 			DOWNBASE:MASTER:体力 += 50
@@ -72,31 +72,31 @@ ELSE
 	ENDIF
 ENDIF
 
-CALL 被逆推終了
+CALL 押し倒され終了
 
-@被逆推終了(ARGS)
+@押し倒され終了(ARGS)
 
 FOR LOCAL,0,CHARANUM
-	IF CFLAG:LOCAL:诶嘿嘿 == 2 || LOCAL == TARGET
+	IF CFLAG:LOCAL:うふふ == 2 || LOCAL == TARGET
 		IF ARGS == "満足"
 			CALL KOJO_MESSAGE_SEND("EVENT",30,LOCAL,2)
-		ELSEIF ARGS == "疲惫"
+		ELSEIF ARGS == "疲れた"
 			CALL KOJO_MESSAGE_SEND("EVENT",30,LOCAL,1)
-		;被逆推モード終了
-		ELSEIF CFLAG:LOCAL:诶嘿嘿 == 2 && LOCAL != 0 && !TFLAG:抱住模式 && CFLAG:MASTER:現在位置 == CFLAG:LOCAL:現在位置
+		;押し倒されモード終了
+		ELSEIF CFLAG:LOCAL:うふふ == 2 && LOCAL != 0 && !TFLAG:抱きつきモード && CFLAG:MASTER:現在位置 == CFLAG:LOCAL:現在位置
 			CALL KOJO_MESSAGE_SEND("EVENT",10,LOCAL,2,0)
-		;抱住模式満足終了
-		ELSEIF TFLAG:抱住模式 && TARGET == LOCAL
+		;抱きつきモード満足終了
+		ELSEIF TFLAG:抱きつきモード && TARGET == LOCAL
 			CALL KOJO_MESSAGE_SEND("EVENT",10,LOCAL,2,1)
-		;抱住模式強制終了
+		;抱きつきモード強制終了
 		ELSEIF TFLAG:102 == 1 && TARGET == LOCAL
 			CALL KOJO_MESSAGE_SEND("EVENT",10,LOCAL,2,2)
 		ENDIF
-		SIF CFLAG:LOCAL:诶嘿嘿 == 2
+		SIF CFLAG:LOCAL:うふふ == 2
 			CALL SET_DERAY(5,LOCAL)
-		BASE:LOCAL:情緒 = BASE:LOCAL:情緒 / 2
+		BASE:LOCAL:ムード = BASE:LOCAL:ムード / 2
 		BASE:LOCAL:理性 = MIN(BASE:LOCAL:理性 + 300, MAXBASE:LOCAL:理性)
-		CFLAG:LOCAL:诶嘿嘿 = 0
+		CFLAG:LOCAL:うふふ = 0
 		;ウフフ時系装備リセット
 		CALL ENDUFUFU(LOCAL)
 	ENDIF
@@ -108,11 +108,11 @@ CALL TOUCH_SET(0,0,0,1)
 [SKIPSTART]
 ;はだけフラグをオフ
 TEQUIP:2 = 0
-TEQUIP:上半身裸露状態 = 0
-;角色全員の服再セッティング
+TEQUIP:上半身はだけ状態 = 0
+;キャラ全員の服再セッティング
 FOR LOCAL,0,CHARANUM
 	CALL CLOTHES_SETTING_TRAIN(LOCAL)
-	;上衣脱衣完毕フラグをオフ
+	;上着脱衣済みフラグをオフ
 	TEQUIP:LOCAL:5 = 0
 NEXT
 [SKIPEND]

@@ -12,37 +12,29 @@
 #LOCALSSIZE 1
 #DIMS O_DATA
 #DIMS V_NAME
+
 SELECTCASE O_DATA
 CASE "依頼名"
 	;「名前忘れたけどこんな感じの料理あったよね」とは別に「こんな料理があったら食べてみたいね」みたいな形式もアリなのかな
 	;やっぱり同じ依頼の名前が複数あるの好ましくないかな？
 	;IF RAND:2
-		;CALLF MAKE_STR(V_NAME, "あれが食べたい！……なんて名前だっけ")
-		CALLF MAKE_STR(V_NAME, "我想吃那个！那个叫什么来着？")
+		CALLF MAKE_STR(V_NAME, "あれが食べたい！……なんて名前だっけ")
 	;ELSE
 	;	CALLF MAKE_STR(V_NAME, "こんな料理あったらいいね")
-	;	CALLF MAKE_STR(V_NAME, "如果有这样的料理就好了")
 	;ENDIF
 CASE "依頼内容表示"
-	;CALLF MAKE_STR(V_NAME, @"あいまいな記憶を頼りに料理を作って届ける")
-	CALLF MAKE_STR(V_NAME, @"凭借模糊的记忆做出并送上料理")
+	CALLF MAKE_STR(V_NAME, @"あいまいな記憶を頼りに料理を作って届ける")
 CASE "依頼報酬表示"
-	;CALLF MAKE_STR(V_NAME, @"\\2500＋おまけ")
-	CALLF MAKE_STR(V_NAME, @"%金額表示(2500)%＋奖金")
-CASE "依頼実行指令名"
+	CALLF MAKE_STR(V_NAME, @"%金額表示(2500)%＋おまけ")
+CASE "依頼実行コマンド名"
 	;何か問題があったら変えてください
-	;IF TALENT:MASTER:性別 == 2
-	;	CALLF MAKE_STR(V_NAME, "出前漢です")
-	;ELSE 
-	;	CALLF MAKE_STR(V_NAME, "UmanEatsです")
-	;ENDIF
 	IF TALENT:MASTER:性別 == 2
-		CALLF MAKE_STR(V_NAME, "您好，外卖到了")
+		CALLF MAKE_STR(V_NAME, "出前漢です")
 	ELSE 
-		CALLF MAKE_STR(V_NAME, "您好，UmanEats外送")
+		CALLF MAKE_STR(V_NAME, "UmanEatsです")
 	ENDIF
 CASE "依頼内容"
-	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "其他"))
+	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "その他"))
 CASE "依頼サブ"
 	;これは乱数シード
 	CALLF MAKE_INT(V_NAME, RAND:1000000)
@@ -58,7 +50,7 @@ CASE "依頼発生条件"
 CASE "依頼受託可能条件"
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "依頼実行可能条件"
-	SIF DISH_NAME != "" && TARGET == ARG && SHIRAHU(ARG) && !FLAG:70
+	SIF DISH_NAME != "" && TARGET == ARG && !FLAG:70
 		CALLF MAKE_INT(V_NAME, 1)
 ;成功/失敗処理はCARRYOUTで直接書く
 ;SOURCEやITEM入手、消費が煩雑になるので
@@ -102,18 +94,15 @@ CASE "依頼条件表示"
 	;ここ以外の表示項目は
 	;PRINTFORML 　　　　　：
 	;となっているのでスペースを揃えたほうが見栄えが良いです
-	;PRINTFORML 要求する味：%味要求%
-	PRINTFORML 要求的味道：%味要求%
+	PRINTFORML 要求する味：%味要求%
 CASE "依頼実行時"
 	;このCASEに限り、RESULTが意味を持ちます
 	;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
 	;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 	VARSET おまけ
-	;PRINTFORML 「ご注文の%DISH_NAME%になりまーす」
-	PRINTFORML 「这是您点的%DISHNAME_TR()%」
-	;PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISH_NAME%>を届けた
-	PRINTFORMW %CALLNAME:MASTER%将%CALLNAME:CHARA%点的<%DISHNAME_TR()%>交给了%CALLNAME:CHARA%
+	PRINTFORML 「ご注文の%DISH_NAME%になりまーす」
+	PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:CHARA%に<%DISH_NAME%>を届けた
 	CALL REVIEW_DISH(CHARA , DISH_TASTE)
 	DISH_NAME = 
 
@@ -155,15 +144,12 @@ CASE "依頼実行時"
 			PRINTL -->
 			IF 評価基礎 < (評価基礎 + タグ評価) / 2
 				;出来が悪い
-				;PRINTFORML %CALLNAME:CHARA%はものすごく渋い顔をしている
-				PRINTFORML %CALLNAME:CHARA%的表情有些不自然
+				PRINTFORML %CALLNAME:CHARA%はものすごく渋い顔をしている
 			ELSE
 				;思ってたのと違う
-				; PRINTFORML %CALLNAME:CHARA%は想像とかけ離れた料理を前に、困惑している
-				PRINTFORML %CALLNAME:CHARA%面对着与想象相差甚远的料理，有些不知所措
+				PRINTFORML %CALLNAME:CHARA%は想像とかけ離れた料理を前に、困惑している
 			ENDIF
-			; PRINTFORMW 要求に応えられなかった……
-			PRINTFORMW 没有达成%CALLNAME:CHARA%的要求……
+			PRINTFORMW 要求に応えられなかった……
 			PRINTL 
 			RETURN IRAI_CONST_RESULT("実行して失敗")
 		CASE IS < 評価基準:1
@@ -173,8 +159,7 @@ CASE "依頼実行時"
 			PRINT GOOD!
 			SETCOLOR SAVECLR
 			PRINTL -->
-			; PRINTFORMW %CALLNAME:CHARA%はまあまあ納得してくれたようだ
-			PRINTFORMW %CALLNAME:CHARA%好像勉强接受了
+			PRINTFORMW %CALLNAME:CHARA%はまあまあ納得してくれたようだ
 			PRINTL 
 			SOURCE:CHARA:歓楽 += 500
 			RETURN IRAI_CONST_RESULT("実行して成功")
@@ -185,8 +170,7 @@ CASE "依頼実行時"
 			PRINT EXCELLENT!!
 			SETCOLOR SAVECLR
 			PRINTL -->
-			; PRINTFORMW %CALLNAME:CHARA%は注文通りの料理が届いて満足している！
-			PRINTFORMW %CALLNAME:CHARA%很高兴地接受了符合自己要求的菜肴！
+			PRINTFORMW %CALLNAME:CHARA%は注文通りの料理が届いて満足している！
 			PRINTL 
 			SOURCE:CHARA:歓楽 += 2000
 			おまけ = 1
@@ -198,18 +182,15 @@ CASE "依頼成功時"
 	CALL CHANGE_CFLAG(4, CHARA, 25)
 	CALL GET_MONEY_YEN(2500, 2)
 	IF おまけ
-		; PRINTFORML %CALLNAME:CHARA%はさらにボーナスをくれた！
-		PRINTFORML %CALLNAME:CHARA%支付了奖金！
+		PRINTFORML %CALLNAME:CHARA%はさらにボーナスをくれた！
 		CALL CHANGE_CFLAG(2, CHARA, 15)
 		CALL CHANGE_CFLAG(4, CHARA, 15)
 		CALL GET_MONEY_YEN(1000, 2)
 	ENDIF
-	CALL RESET_DISH
 CASE "依頼失敗時"
 ;失敗報告時の処理
 	CALL CHANGE_CFLAG(2, CHARA, -5)
 	CALL CHANGE_CFLAG(4, CHARA, -5)
-	CALL RESET_DISH
 ENDSELECT
 
 
@@ -244,7 +225,7 @@ ENDIF
 ;50%で料理のジャンルが付く
 ;これらを併せ持つ料理もあるけど大まかな分類ってことで排他に
 IF RAND:2
-	;LOCALS = %TEXTR("肉料理/魚料理/麺類/鍋物/汁物/ケーキ/パイ/おつまみ/揚げ物/煮物/謎料理")% += "/
+	;LOCALS = %TEXTR("肉料理/魚料理/麺類/鍋物/汁物/ケーキ/パイ/おつまみ/揚げ物/煮物/謎料理")% += "/"
 	SELECTCASE RAND:11
 		CASE 0
 			TASTE += "肉料理/"
@@ -257,13 +238,13 @@ IF RAND:2
 		CASE 4
 			TASTE += "汁物/"
 		CASE 5
-			TASTE += "蛋糕/"
+			TASTE += "ケーキ/"
 		CASE 6
-			TASTE += "派/"
+			TASTE += "パイ/"
 		CASE 7
-			TASTE += "開胃/"
+			TASTE += "おつまみ/"
 		CASE 8
-			TASTE += "油炸食品/"
+			TASTE += "揚げ物/"
 		CASE 9
 			TASTE += "煮物/"
 		CASE 10
@@ -271,24 +252,24 @@ IF RAND:2
 	ENDSELECT
 ENDIF
 
-;雑多なタグから3～7个選んで付与。DISHDATA眺めながらピックアップしたけど数え落としや重複あったらごめんね
+;雑多なタグから3～7個選んで付与。DISHDATA眺めながらピックアップしたけど数え落としや重複あったらごめんね
 ;キャラごとの固有タグっぽいのは勘案しない
 ;矛盾するタグを消去することも考えたが、「なんだそりゃ？」みたいな注文も生成された方が面白いんじゃないか
 {
 TASTETAG_ORI = 
-甜/
-咸/
-辣/
-酸/
-简易/
-丰盛/
-健康/
-垃圾/
+甘い/
+しょっぱい/
+辛い/
+すっぱい/
+あっさり/
+ガッツリ/
+ヘルシー/
+ジャンキー/
 濃厚/
-淡白/
+淡泊/
 
-冷/
-温暖/
+冷たい/
+温かい/
 中立温度/
 
 豪華/
@@ -302,48 +283,48 @@ TASTETAG_ORI =
 豆/
 野菜/
 葉物/
-面包/
-乳酪/
+パン/
+チーズ/
 卵/
-好吃的魚/
+うまい魚/
 果物/
 虫肉/
 鳥肉/
 獣肉/
-青蛙/
-芥末/
-牛奶/
-香料/
+カエル/
+わさび/
+ミルク/
+スパイス/
 
-甜味料/
+甘味材/
 
-卷心菜/
-草莓/
-芜菁/
-黄瓜/
-番茄/
-洋葱/
-西瓜/
-茄子/
-马铃薯/
-南瓜/
-白菜/
-胡萝卜/
-葱/
+キャベツ/
+イチゴ/
+カブ/
+キュウリ/
+トマト/
+タマネギ/
+スイカ/
+ナス/
+イモ/
+カボチャ/
+ハクサイ/
+ニンジン/
+ネギ/
 
 仙桃/
-树莓/
-山葡萄/
+キイチゴ/
+ヤマブドウ/
 
-黏稠/
-扑鼻/
-软绵绵/
-松脆/
-软糯的/
+とろとろ/
+ぷるぷる/
+ふわふわ/
+サクサク/
+もちもち/
 
-新鲜/
+鮮やか/
 芸術的/
-怪诞/
+グロテスク/
 質素/
 野趣/
 
@@ -353,14 +334,14 @@ TASTETAG_ORI =
 冬物/
 
 精力/
-魔性/
-银吉獣/
+エンチャント/
+ギンギー/
 }
 ;ローター/はなしで
 
 ;うまい魚は2/3で魚に化ける
-IF STRCOUNT(TASTETAG_ORI , "好吃的魚/") && RAND:3
-	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "好吃的魚/" , "魚/")%
+IF STRCOUNT(TASTETAG_ORI , "うまい魚/") && RAND:3
+	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "うまい魚/" , "魚/")%
 ENDIF
 
 ;連結表記を用いると改行が半角スペースに置き換わるので除去
@@ -372,31 +353,31 @@ TASTETAG_ORI = %REPLACE(TASTETAG_ORI , " " , "")%
 ;明確な理由はないので必要とあらばいじってほしい
 
 ;くたかとミスティアは鳥肉と卵を除去する
-IF GROUPMATCH(CHR, [[米斯蒂亜]] , [[久侘歌]])
+IF GROUPMATCH(CHR, [[ミスティア]] , [[久侘歌]])
 	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "鳥肉/" , "")%
 	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "卵/" , "")%
 ENDIF
 
 ;リグル、ラルバは虫肉を除去する
-IF GROUPMATCH(CHR, [[莉格露]] , [[拉尔瓦]])
+IF GROUPMATCH(CHR, [[リグル]] , [[ラルバ]])
 	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "虫肉/" , "")%
 ENDIF
 
 ;諏訪子はカエルを除去する
 IF GROUPMATCH(CHR, [[諏訪子]])
-	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "青蛙/" , "")%
+	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "カエル/" , "")%
 ENDIF
 
 ;わかさぎ姫は魚orうまい魚を除去する
-IF GROUPMATCH(CHR, [[若鷺姫]])
+IF GROUPMATCH(CHR, [[わかさぎ姫]])
 	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "魚/" , "")%
-	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "好吃的魚/" , "")%
+	TASTETAG_ORI = %REPLACE(TASTETAG_ORI , "うまい魚/" , "")%
 ENDIF
 ;うさぎ勢やきつね勢やねこ勢やたぬきなどは獣肉を消すべきなんだろうか。獣肉ってすごいざっくりだよね
 ;迷ったがやらない
 ;******************************
 
-;タグ一覧からタグを指定个抜き出す作業
+;タグ一覧からタグを指定個抜き出す作業
 VARSET TASTETAG
 SPLIT TASTETAG_ORI, "/", TASTETAG
 
@@ -420,7 +401,7 @@ IF RAND:10 == 0
 	IF RAND:3
 		TASTE += "縁起物/"
 	ELSE
-		TASTE += "过季/"
+		TASTE += "季節外れ/"
 	ENDIF
 ENDIF
 

@@ -1,9 +1,9 @@
-﻿;@EVENTLOAD
-;#LATER
-;;should not be retained across saves
-;BREWING_LIST_CHECKED = 0
-;
-;CALL BREWING_GUIDE_CHECK_EXISTING
+﻿@EVENTLOAD
+#LATER
+;should not be retained across saves
+BREWING_LIST_CHECKED = 0
+
+CALL BREWING_GUIDE_CHECK_EXISTING
 
 @BREWING_GUIDE_CHECK_EXISTING
 #DIMS DRINKS_TO_CHECK, OBJ_ID_LAST
@@ -149,13 +149,11 @@ IF !BREWING_LIST_CHECKED
     BREWING_LIST_CHECKED = 1
 ENDIF
 
-;brewing todo translation
-PRINTFORMDL 酿造指南:
+PRINTFORMDL 醸造レシピ:
 FOR LOCAL, 0, INDEX
     CALL AUTOMATIC_HTML_LINEBREAK(@"{LOCAL, 2, RIGHT}. %LOCALS:LOCAL%", MAXWIDTH() - 40, "`", "    ")
 NEXT
-;brewing todo translation
-PRINTDL ※(？？？)尚未获得
+PRINTFORMDL *まだ取得していません
 
 @BREWING_GUIDE_WALK_ALL_PATHS(DESTINATION_DRINK, BREWING_PATHS)
 #DIMS DESTINATION_DRINK
@@ -215,8 +213,7 @@ DO
     ENDIF
 
     IF ANY_WATER
-        ;brewing todo translation (任何净水)
-        BREW_CHAIN:(DEPTH+1) = MIXING：任何净水：%ANY_WATER_INGREDIENTS%
+        BREW_CHAIN:(DEPTH+1) = MIXING：水：%ANY_WATER_INGREDIENTS%
     ELSEIF BREWING_OPTIONS_CHECKED:DEPTH < BREWING_OPTION_COUNTS:DEPTH
         ;increase depth
         LOCAL = BREWING_OPTIONS_CHECKED:DEPTH
@@ -231,7 +228,7 @@ DO
             CURRENT_DRINK '= BREWSTR:1
             BREW_CHAIN:(DEPTH+1) '= LOCALS
         ELSE
-            THROW %BREWSTR:0% is not a valid option.
+            THROW %BREWSTR:0%は不正な入力です
         ENDIF
         DEPTH++
         CONTINUE
@@ -262,17 +259,17 @@ RETURN LOCAL >= 0 ? LOCAL # VARSIZE("BREWING_PATHS") - 1
 @BREWING_GUIDE_IS_BASIC_SAKE(DRINK_NAME)
 #FUNCTION
 #DIMS DRINK_NAME
-RETURNF GROUPMATCH(DRINK_NAME, "清酒", "鬼杀酒", "神酒", "浊酒")
+RETURNF GROUPMATCH(DRINK_NAME, "清酒", "鬼殺し", "お神酒", "どぶろく")
 
 @BREWING_GUIDE_IS_WATER(DRINK_NAME)
 #FUNCTION
 #DIMS DRINK_NAME
-RETURNF GROUPMATCH(DRINK_NAME, "普通的水", "雾之湖的水", "地狱温泉的水", "奇迹之水")
+RETURNF GROUPMATCH(DRINK_NAME, "ただの水", "霧の湖の水", "地獄温泉の水", "奇跡の水")
 
 @BREWING_GUIDE_IS_ALL_WATERS(PREVSTAGES)
 #FUNCTION
 #DIMS REF PREVSTAGES
-#DIMS CONST WATERS = "普通的水", "雾之湖的水", "地狱温泉的水", "奇迹之水"
+#DIMS CONST WATERS = "ただの水", "霧の湖の水", "地獄温泉の水", "奇跡の水"
 
 FOR LOCAL, 0, 4
     SIF !STRING_STARTS_IN(PREVSTAGES:LOCAL, WATERS:LOCAL)
@@ -294,8 +291,7 @@ FOR LOCAL, VARSIZE("BREW_CHAIN") - 1, -1, -1
 
     SPLIT BREW_CHAIN:LOCAL, "：", BREWPARTS
 
-    ;brewing todo translation
-    IF BREWPARTS:1 == "任何净水"
+    IF BREWPARTS:1 == "水"
         DRINK_ID = 1
     ELSE
         DRINK_ID = ALC_ID(BREWPARTS:1)
@@ -307,8 +303,7 @@ FOR LOCAL, VARSIZE("BREW_CHAIN") - 1, -1, -1
             LOCALS:1 = \@ IS_KNOWN ? %BREWING_GUIDE_COLOR_DRINK(BREWPARTS:1)% # %HTML_TEXT("？？？", GRAYED_COLOR)% \@
         CASE "FERMENT"
             IF IS_KNOWN
-                ;brewing todo translation (days)
-                LOCALS:1 = %BREWING_GUIDE_COLOR_DRINK(BREWPARTS:1)% (%HTML_TEXT(@"{BREWING_GUIDE_FERMENT_TIME(BREWPARTS:1)}天", C_TEAL)%)-->%" "%
+                LOCALS:1 = %BREWING_GUIDE_COLOR_DRINK(BREWPARTS:1)% (%HTML_TEXT(@"{BREWING_GUIDE_FERMENT_TIME(BREWPARTS:1)}日", C_TEAL)%)-->%" "%
             ELSE
                 LOCALS:1 = %HTML_TEXT("？？？", GRAYED_COLOR)% (%HTML_TEXT("？？？", GRAYED_COLOR)%)-->%" "%
             ENDIF
@@ -330,8 +325,7 @@ RETURNF LOCALS
 #DIM COLOR
 #DIM DRINKABLE
 DRINKABLE = BREWING_GUIDE_CAN_DRINK(DRINK)
-;brewing todo translation (任何净水)
-IF VAR_FERMENT == DRINK || (BREWING_GUIDE_IS_WATER(VAR_FERMENT) && DRINK == "任何净水")
+IF VAR_FERMENT == DRINK || (BREWING_GUIDE_IS_WATER(VAR_FERMENT) && DRINK == "水")
     COLOR = C_GREEN
 ELSEIF !BREWING_GUIDE_CAN_RETRIEVE(DRINK)
     COLOR = C_WHITE
@@ -416,21 +410,19 @@ SIF LOCAL > 0
 #DIMS EXTRA_ITEM
 #DIM EXTRA_ITEM_QUANTITY
 #DIMS SPEED_INCREASE
-PRINTBUTTON @"-1[什么也不做]", -1
+PRINTBUTTON @"-1[何もしない]", -1
 PRINTL
 
 DRINK_ID = ALC_ID(VAR_FERMENT)
 ADDITIONS '= GET_STR(0, "酒データ", DRINK_ID, @"ADDITIONS")
 SPLIT ADDITIONS, "／", OPTIONS
 OPTION_COUNT = RESULT
-SIF ADDITIONS == ""
-    GOTO SELECTOPTION
 FOR LOCAL, 0, OPTION_COUNT
     LOCALS =
 
     OPTION_VALID:LOCAL = 1
     ;check if allowed at all
-    SIF GROUPMATCH(VAR_FERMENT, "普通的水", "雾之湖的水", "地狱温泉的水", "奇迹之水") && !CAN_FERMENT()
+    SIF GROUPMATCH(VAR_FERMENT, "ただの水", "霧の湖の水", "地獄温泉の水", "奇跡の水") && !CAN_FERMENT()
         OPTION_VALID:LOCAL = 0
 
     SPLIT OPTIONS:LOCAL, "＋", INGREDIENTS
@@ -444,8 +436,7 @@ FOR LOCAL, 0, OPTION_COUNT
 
         SPEED_INCREASE '= GET_STR(0, "酒データ", DRINK_ID, @"SPEED：%INGREDIENT%")
         SIF SPEED_INCREASE != ""
-            ;brewing todo translation
-            LOCALS += @"（缩短%SPEED_INCREASE%天时间）"
+            LOCALS += @"（%SPEED_INCREASE%日短縮）"
 
         SIF ITEM:(INGREDIENT_ID) < INGREDIENT_REQ
             OPTION_VALID:LOCAL = 0
@@ -491,17 +482,14 @@ ELSEIF INRANGE(SELECTED_OPTION, 0, OPTION_COUNT)
 
 		CALL BREWING_GUIDE_MAKE_KNOWN(VAR_FERMENT)
     ELSE
-        IF GROUPMATCH(VAR_FERMENT, "普通的水", "雾之湖的水", "地狱温泉的水", "奇迹之水") && !CAN_FERMENT()
-            ;brewing todo translation
-            REUSELASTLINE 发酵过头了
+        IF GROUPMATCH(VAR_FERMENT, "ただの水", "霧の湖の水", "地獄温泉の水", "奇跡の水") && !CAN_FERMENT()
+            REUSELASTLINE 醸しすぎだ
         ELSE
-            ;brewing todo translation
-            REUSELASTLINE 材料不足
+            REUSELASTLINE 材料が不足しています
         ENDIF
         GOTO SELECTOPTION
     ENDIF
 ELSE
-    ;brewing todo translation
-    REUSELASTLINE 无效输入
+    REUSELASTLINE 不正な入力です
     GOTO SELECTOPTION
 ENDIF

@@ -1,0 +1,126 @@
+﻿;==================================================
+;弾幕勝負
+;==================================================
+;
+@M_KOJO_EN01_MESSAGE_COM_K27_DANMAKU(ARGS, 相手残機)
+#DIM 相手残機
+;全体の流れ
+;①【戦闘前】→②ダイスロールとプレイヤー選択肢、ハンデをつけた場合は【ハンデ口上】→③対応スキルが発動した場合【スキル口上】→④被弾判定、キャラが被弾したなら【被弾口上】→
+;どちらかの残機が0になっていなければ②に戻る→⑤【戦闘後口上】
+
+;--------------------------------------------------
+;記入チェック（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SIF FLAG:口上色
+		TRYCALLFORM M_KOJO_EN01_COLOR_K{NO:TARGET}
+	;-------------------------------------------------
+	;小分岐
+	;-------------------------------------------------
+	;戦闘前
+	HANDICAP_FIXED = 0
+	HANDICAP_RAND = 0
+	;ハンデをつけることができ、数値が大きいほどあなたが不利になる　数値が負ならあなたが有利に
+	;キャラの能力に関わらずクッソ強くしたり弱くしたりできる
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARGS == "戦闘前"
+		PRINTFORMW 「Oh? You wish to challenge the great %NAME:[[リグル]]%?」
+		PRINTFORMW 「...Okay, gimme a sec. Close your eyes...」
+		IF FIRSTTIME("WrigglesDramaticEntrance")
+			PRINTFORMDW You do as %HE_SHE([[リグル]])% says.
+			PRINTFORMW 「Okay, you can open 'em now!」
+			PRINTFORMDW You open your eyes. A second later, Wriggle dives down to the ground, landing on a knee and both hands.
+			PRINTFORMDW %HE_SHE([[リグル]],1)% gets up and tosses %HIS_HER([[リグル]])% cape back over %HIS_HER([[リグル]])% back.
+			PRINTFORMW （Stupid thing...）
+			PRINTFORMDW Wriggle clears %HIS_HER([[リグル]])% throat and strikes a pose.
+			PRINTFORMW 「You've got some guts, challenging me!」
+			PRINTFORMW 「I hope you've got the determination to match that!」
+		ELSE
+			PRINTFORMDW Wriggle does %HIS_HER([[リグル]])% dramatic entrance again.
+			PRINTFORMDW Is %HE_SHE([[リグル]])% going to do this every time?
+		ENDIF
+		IF ABL:MASTER:戦闘能力 - ABL:TARGET:戦闘能力 > 2
+			IF FIRSTTIME("WriggleIsIntimidated")
+				PRINTFORMDL 
+				PRINTFORMDW Wriggle gulps.
+				PRINTFORMW （S-Such power! There's no way that can be right...）
+				PRINTFORMW （But a true hero never backs down from a fight, no matter how overwhelming the odds!）
+				PRINTFORMW （Just look at fleas! They bite humans way bigger than them without worrying about how dangerous it is!）
+				PRINTFORMW （Besides, as long as you believe in your justice, you can never lose!）
+				PRINTFORMW （I think...）
+				PRINTFORMDL 
+			ELSE
+				PRINTFORMW 「C-Crap! I think %HES_SHES(MASTER)% even stronger now...」
+				PRINTFORMW 「But that just means I'll have to go beyond the impossible and fight as hard as I can!」
+			ENDIF
+		ENDIF
+		PRINTFORMW 「Lamp Sign 『Firefly Phenomenon』!」
+		RETURN 0
+	ENDIF
+
+	;-------------------------------------------------
+	;戦闘中TARGET被弾時口上
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARGS == "被弾" 
+		;別に一律で「やられたー」だけでもいいよ
+		SELECTCASE 相手残機
+			;残り残機3が表示されるのは【洽覧深識】持ちのみ
+			CASE 2
+				PRINTFORMW 「Fu fu fu... not bad!」
+				PRINTFORMW 「How about this, then?!」
+				PRINTDATAW
+					DATAFORM 「Wriggle Sign 『Night Bug Storm』!」
+					DATAFORM 「Hidden Bug 『Endless Night Seclusion』!」
+					DATAFORM 「Firefly Sign 『Fixed Stars on Earth』!」
+				ENDDATA
+			CASE 1
+				PRINTFORMW 「I-Impossible!」
+				PRINTFORMDW Wriggle grits %HIS_HER([[リグル]])% teeth.
+				PRINTFORMW 「But you haven't won yet! Time to use all of my power!」
+				PRINTFORMW 「『Unseasonal Butterfly Storm』!!」
+			CASE 0
+				PRINTFORML 「No! This cannot be!」
+				PRINTFORMW 「Ungaahhhh!」
+				PRINTFORMDW Wriggle topples forward dramatically and collapses in a heap on the ground.
+				PRINTFORMDW A few moments later, %HE_SHE([[リグル]])% picks %HIMSELF_HERSELF([[リグル]])% up and bows to you.
+		ENDSELECT
+	ENDIF
+	;-------------------------------------------------
+	;戦闘後
+	;記入チェック（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARGS == "戦闘後" 
+		PRINTFORML 
+		;残り残機4が表示されうるのは【洽覧深識】持ちのみ
+		;残機が1以上ならあなたの負け、0の場合はあなたの勝利
+		SELECTCASE 相手残機
+			CASE 3
+				PRINTFORML 「Fu fu fu...」
+				PRINTFORMDW Wriggle smirks and strikes a pose.
+				PRINTFORMW 「You're 10,000 years too early to challenge me!」
+			CASE 2
+				PRINTFORMW 「Impressive! You managed to get past my defenses... once.」
+				PRINTFORMW 「But you're still a thousand years too early to challenge me!」
+			CASE 1
+				PRINTFORMW 「Darn... I almost lost that one.」
+				PRINTFORMW 「But "almost" isn't good enough! You're still a hundred years too early to challenge me!」
+			CASE 0
+				PRINTFORML 「Darn... you squashed me like a bug...」
+				IF TALENT:[[リグル]]:恋人
+					PRINTFORMW 「Guess I got distracted by how cute you are.」
+				ENDIF
+				PRINTFORMW 「But this isn't over!」
+				PRINTFORMDW Wriggle grins and strikes another pose.
+				PRINTFORMW 「I'm gonna train my butt off until I'm strong enough to beat you!」
+		ENDSELECT
+	ENDIF
+	RESETCOLOR
+ENDIF
+RETURN 1
+

@@ -38,7 +38,7 @@ SIF K15_LUST(750)
 	RETURNF 1
 	
 		;private room 	+ bathroom 			+ love hotel
-RETURNF K15_BED_ROOM() + BATHROOM() + CFLAG:15:現在位置 == 情人旅館
+RETURNF K15_BED_ROOM() + BATHROOM() + CFLAG:15:現在位置 == ラブホ
 
 ;==================================================
 ;number of people in location
@@ -74,7 +74,7 @@ RETURNF 0
 
 @K15_LUST(ARG)
 #FUNCTION
-RETURNF CFLAG:15:积攒度 >= ARG + TCVAR:15:媚薬 + TCVAR:15:発情
+RETURNF CFLAG:15:溜まってる度 >= ARG + TCVAR:15:媚薬 + TCVAR:15:発情
 
 ;==================================================
 ;same location as
@@ -102,7 +102,7 @@ RETURNF TALENT:16:恋人
 ;==================================================
 @K15_LIKES_PLAYER(ARG)
 #FUNCTION
-;Desire + intimacy >= 10 && favorability > 1500 OR has yearning or love
+;Desire + intimacy >= 10 && Favor > 1500 OR has yearning or love
 SIF TALENT:恋慕 || TALENT:思慕
 	RETURNF 1
 
@@ -140,7 +140,7 @@ RETURNF K15_HATE() + K15_ANGER()
 	SIF K15_FALLEN()
 		RETURNF 0
 		
-RETURNF CFLAG:心情不快 && TALENT:心情 == -1 && !TALENT:恋慕
+RETURNF CFLAG:不機嫌 && TALENT:機嫌 == -1 && !TALENT:恋慕
 
 ;==================================================
 ;HATE
@@ -174,16 +174,17 @@ RETURNF (MARK:快楽刻印 + MARK:苦痛刻印 + MARK:不埒刻印 + MARK:時姦
 	SELECTCASE TIME:2
 	CASE 1,2
 		;iGreeting = Good morning
-		iGreeting = 早安
+		iGreeting = おはよう
 	CASE 3,4
 		;iGreeting = Good afternoon
-		iGreeting = 午安
+		iGreeting = こんにちは
 	CASE 5,6,7
 		;iGreeting = Good evening
-		iGreeting = 晚安
+		iGreeting = こんばんは
 	CASEELSE
 		;iGreeting = Greetings
-		iGreeting = 日安
+		iGreeting = ごきげんよう
+			;よくわからない。訳さない方がよかったかも 29/01/2023
 	ENDSELECT
 RETURNF iGreeting
 
@@ -216,7 +217,7 @@ RETURNF %CALLNAME:PLAYER%
 #DIM iPants_Type
 #DIM iPants_Num
 
-SIF !FLAG:胖次輸送
+SIF !FLAG:パンツ輸送
 	RETURNF 0
 
 iPants_Num = 0
@@ -236,33 +237,33 @@ RETURNF iPants_Num
 #DIM DYNAMIC nCleanPrice = 3000, 10
 #DIM DYNAMIC nWaterPrice = 15000, 70
 #DIM DYNAMIC rService = 0
-CALL SET_KOJO_COLOR() ;custom code
+CALL SET_KOJO_COLOR()
 IF K15_HATE_ANGER()
-	LOCALS '= @"「唉呀呀，瞧瞧这可真是...有只臭虫爬进来了。而且还想求我些什么呢」/"
-	LOCALS += "「是杀虫服务吗？若是如此我很乐意效劳喔」"
-	CALL SPTALK, [[咲夜]], "憤怒", 0 , LOCALS, 1
+	LOCALS '= @"「My my, would you look at that... a wild bug has appeared. And it even wants something from me.」/"
+	LOCALS += "「Is it pest control? I would gladly do so if that is the case.」"
+	CALL SPTALK, [[咲夜]], "怒り", 0 , LOCALS, 1
 	;PRINTFORML 「Ara-ara, would you look at that... a wild bug has appeared. And it even wants something from me.」
 	;PRINTFORML 「Is it pest control? I would gladly do so if that is the case.」
 ELSE
-	CALL SPTALK, [[咲夜]], "笑顔", 0 , @"「哎呀，有什么事吗？」", 1
+	CALL SPTALK, [[咲夜]], "笑顔", 0 , @"「Oh, is something the matter?」", 1
 	;PRINTFORML 「Ara, is something the matter?」
 ENDIF
 PRINTFORML 
-CALL ASK_M("别问了", 1, "打扫服务", !TFLAG:上门清扫, "浇水服务", ITEM:150)
+CALL ASK_M("Don't ask", 1, "Cleaning services", !TFLAG:出張お掃除, "Watering services", ITEM:150)
 rService = RESULT
 IF RESULT > 0
 	IF K15_HATE_ANGER()
-		LOCALS '= @"「哼，原来如此。没想到从你这种人口中说得出这种话呢」/"
-		LOCALS += "「本店的服务可是最高品质的。而优质服务理应得到相应回报」/"
-		LOCALS += "「亲爱的客人...您付得起吗？」"
+		LOCALS '= @"「Hm, I see. I didn't expect that coming from the likes of you.」/"
+		LOCALS += "「Our services are of the highest quality. And I believe a good service must be repaid accordingly.」/"
+		LOCALS += "「Can our dear customer afford them I wonder?」"
 		CALL SPTALK, [[咲夜]], "笑顔", 0 , LOCALS, 1
 		nCleanPrice:0 *= 10
 		nCleanPrice:1 *= 10
 		nWaterPrice:0 *= 10
 		nWaterPrice:1 *= 10
 	ELSEIF K15_LOVER_LOVE()
-		LOCALS '= @"「只要是%CALLNAME:MASTER%的要求，我们都很乐意效劳哟♪」/"
-		LOCALS += "「当然也会给您特别优惠价...不过这是秘密喔，呵呵」"
+		LOCALS '= @"「We'll gladly do anything for you, %CALLNAME:MASTER%♪」/"
+		LOCALS += "「I'm sure you will enjoy my special price too... But don't tell anyone, fufu.」"
 		CALL SPTALK, [[咲夜]], "笑顔", 0 , LOCALS, 1
 		WAIT
 		nCleanPrice:0 /= 2
@@ -270,8 +271,8 @@ IF RESULT > 0
 		nWaterPrice:0 /= 2
 		nWaterPrice:1 /= 2
 	ELSEIF K15_LIKES_PLAYER()
-		LOCALS '= @"「哎呀，这样呀%CALLNAME:MASTER%？」/"
-		LOCALS += "「很高兴您选择我们的服务。要不要给您打个小折扣呢？这是我个人的心意喔」"
+		LOCALS '= @"「Oh, is that so, %CALLNAME:MASTER%?」/"
+		LOCALS += "「'm glad you decided to use our services. How about a little discount? Just from me personally.」"
 		CALL SPTALK, [[咲夜]], "笑顔", 0 , LOCALS, 1
 		nCleanPrice:0 = DIVIDE(nCleanPrice:0, 135)
 		nCleanPrice:1 = DIVIDE(nCleanPrice:1, 135)
@@ -282,15 +283,15 @@ ENDIF
 SELECTCASE rService
 CASE 0
 	IF K15_HATE_ANGER()
-		CALL SPTALK, [[咲夜]], "憤怒", 0 , @"「简直浪费时间。像你这种虫子就该被碾碎」", 1
+		CALL SPTALK, [[咲夜]], "怒り", 0 , @"「You are a waste of time then. A bug like you must be squashed.」", 1
 		CALL K15_KNIFEATTACK_STEALTH
 	ELSE
-		CALL SPTALK, [[咲夜]], "通常", 0 , @"「那还真是遗憾。那么，祝您有美好的一天」", 1
+		CALL SPTALK, [[咲夜]], "通常", 0 , @"「Oh, 'tis a shame. Well then, good day to you.」", 1
 		;PRINTFORMW 「Oh, 'tis a shame. Well then, good day to you.」
 	ENDIF
  	RETURN -1
 CASE 1
-	PRINTFORMDL 要委托哥布林打扫%GET_MAPNAME(MAIN_MAP)%吗？
+	PRINTFORMDL Request hobgoblins to clean %GET_MAPNAME(MAIN_MAP)%?
 	CALL PAY_YEN_OR_CM(nCleanPrice:0, nCleanPrice:1)
 	IF !RESULT
 		IF K15_HATE_ANGER()
@@ -299,10 +300,10 @@ CASE 1
 			GOTO CANCEL_NICE
 		ENDIF
 	ENDIF
-	PRINTFORMDL 已申请打扫服务。
- 	TFLAG:上门清扫 = 1
+	PRINTFORMDL Cleaning services have been requested.
+ 	TFLAG:出張お掃除 = 1
 CASE 2
-	PRINTFORMDL 要委托哥布林为厨房菜园进行本月浇水吗？
+	PRINTFORMDL Request hobgoblins to water the kitchen garden for this month?
 	CALL PAY_YEN_OR_CM(nWaterPrice:0, nWaterPrice:1)
 	IF !RESULT
 		IF K15_HATE_ANGER()
@@ -311,32 +312,32 @@ CASE 2
 			GOTO CANCEL_NICE
 		ENDIF
 	ENDIF
-	PRINTFORMDL 已申请浇水服务。
- 	FLAG:澆水代行 = 1
+	PRINTFORMDL Requested watering services.
+ 	FLAG:水やり代行 = 1
 ENDSELECT
 
 IF K15_HATE_ANGER()
-	LOCALS '= @"「居然真的付了...明明只是开玩笑羞辱你才开的天价」/"
-	LOCALS += "「哼。别以为这样就能改变什么。不过是显现你的愚蠢罢了」/"
-	LOCALS += "「服务...会如约提供的。现在快滚吧」"
-	CALL SPTALK, [[咲夜]], "憤怒", 0 , LOCALS, 1
+	LOCALS '= @"「You actually did it... You paid the ridiculous amount I've requested, even though I was merely jesting and making fun of you.」/"
+	LOCALS += "「Hmph. Don't think it makes any difference whatsoever. It only shows how vain you are.」/"
+	LOCALS += "「You will... receive your services though. Now leave me be.」"
+	CALL SPTALK, [[咲夜]], "怒り", 0 , LOCALS, 1
 ELSE
-	LOCALS '= @"「感谢惠顾。工作很快就会完成」/"
-	LOCALS += "「祝您有美好的一天」"
+	LOCALS '= @"「Thank you for your patronage. The job will be done shortly.」/"
+	LOCALS += "「Have a nice day.」"
 	CALL SPTALK, [[咲夜]], "通常", 0 , LOCALS, 1
 ENDIF
 RETURN 1
  
 $CANCEL
-	LOCALS '= @"「果然如此。你很享受浪费我的时间吧」/"
-	LOCALS += "「这就给你些回礼」"
-	CALL SPTALK, [[咲夜]], "憤怒", 0 , LOCALS, 1
+	LOCALS '= @"「I thought so. I'm sure you enjoyed wasting my time.」/"
+	LOCALS += "「Here's some payback.」"
+	CALL SPTALK, [[咲夜]], "怒り", 0 , LOCALS, 1
 	CALL K15_KNIFEATTACK_STEALTH
 RETURN -1
 
 $CANCEL_NICE
-	LOCALS '= @"「哎呀，这样呀？」/"
-	LOCALS += "「若改变心意欢迎随时再来，本店会一直为您保留服务的」"
+	LOCALS '= @"「Oh, is that so?」/"
+	LOCALS += "「Please come again if you change your mind, the services are always available for you.」"
 	CALL SPTALK, [[咲夜]], "通常", 0 , LOCALS, 1
 RETURN -1
 

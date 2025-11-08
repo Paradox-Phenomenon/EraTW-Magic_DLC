@@ -1,21 +1,18 @@
 ﻿;-------------------------------------------------
-;訪問房間
+;部屋を訪ねる
 ;-------------------------------------------------
 @COM697
 #DIM 家主
 #DIM 嫉妬
 #DIM 浮気
-#DIM 部屋的污垢
+#DIM 部屋の汚れ
 FOR LOCAL,1,CHARANUM
 	IF CFLAG:LOCAL:自宅位置 == CFLAG:MASTER:現在位置
 		SIF CFLAG:LOCAL:出禁
 			CONTINUE
 		SIF LOCAL == TARGET
 			CONTINUE
-;修正住别墅的妹纸 错误的出现在原住地
-		SIF CFLAG:LOCAL:神社在住
-			CONTINUE
-		SIF CFLAG:LOCAL:被掌握把柄
+		SIF CFLAG:LOCAL:弱み握られ
 			SETCOLOR C_AQUA
 		SIF CFLAG:LOCAL:現在位置 != SUKIMA() || !VISIT(LOCAL) || CFLAG:LOCAL:拠点来訪 || BASE:LOCAL:体力 < 1000
 			SETCOLOR C_GRAY
@@ -24,7 +21,7 @@ FOR LOCAL,1,CHARANUM
 	ENDIF
 NEXT
 DRAWLINE
-PRINTL [999] 放弃
+PRINTL [999] やめる
 INPUT
 SIF RESULT == 999
 	RETURN -1
@@ -33,9 +30,9 @@ SIF CFLAG:RESULT:自宅位置 != CFLAG:MASTER:現在位置
 
 家主 = RESULT
 
-;別の子と约会中
-IF FLAG:约会的对象
-	PRINTFORMW 虽然想进入%OMANEKI_PLACE(家主)%、却被%CALLNAME:(FLAG:约会的对象)%死死地用眼神睨视着
+;別の子とデート中
+IF FLAG:デート相手
+	PRINTFORMW %OMANEKI_PLACE(家主)%に入ろうとしたが、%CALLNAME:(FLAG:デート相手)%に思いっきり睨まれた
 	RETURN -1
 ENDIF
 
@@ -43,27 +40,27 @@ ENDIF
 浮気 = 0
 嫉妬 = 0
 FOR LOCAL,1,CHARANUM
-	IF LOCAL != 家主 && CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置 && !TALENT:MASTER:左拥右抱
+	IF LOCAL != 家主 && CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置 && !TALENT:MASTER:ポリアモリー
 		SIF LOCAL == 60
 			嫉妬 = 60
-		SIF TALENT:LOCAL:恋慕 && CFLAG:LOCAL:信賴度 < 1000
+		SIF TALENT:LOCAL:恋慕 && CFLAG:LOCAL:信頼度 < 1000
 			浮気 = LOCAL
 	ENDIF
 NEXT
-;帕露西が出現し4人も住んでいる地霊殿はかなり難易度が高い
-;連動角色も駆けつけてくるので二股してると大変
+;パルスィが出現し4人も住んでいる地霊殿はかなり難易度が高い
+;連動キャラも駆けつけてくるので二股してると大変
 IF 嫉妬 || 浮気
-	PRINTFORM 虽然想进入%OMANEKI_PLACE(家主)%、
+	PRINTFORM %OMANEKI_PLACE(家主)%に入ろうとしたが、
 	IF 嫉妬
-		PRINTFORMW 却被面露恶鬼般表情的%CALLNAME:嫉妬%给干涉了
+		PRINTFORMW 鬼のような形相の%CALLNAME:嫉妬%に邪魔された
 	ELSE
-		PRINTFORMW 却被面露惊讶之色的%CALLNAME:浮気%给叫住了
+		PRINTFORMW 怪訝な顔をした%CALLNAME:浮気%に呼び止められた
 	ENDIF
 	RETURN -1
 ENDIF
 
-IF TCVAR:家主:到家訪問
-	PRINTFORML 今天还是算了吧
+IF TCVAR:家主:お宅訪問
+	PRINTFORML 今日はもうやめておこう
 	RETURN -1
 ENDIF
 
@@ -74,7 +71,7 @@ SELECTCASE RAND:10
 	;多忙
 		TFLAG:193 = 2
 	CASE 5,6,7
-	;稍微だけ
+	;ちょっとだけ
 		TFLAG:193 = 3
 	CASE 8,9
 	;上げてもらえる
@@ -86,8 +83,8 @@ SIF !TALENT:家主:恋慕 && !TALENT:家主:思慕 && TFLAG:193 > 2
 SIF CFLAG:家主:現在位置 != SUKIMA() || !VISIT(家主) || CFLAG:家主:拠点来訪 || BASE:家主:体力 < 1000
 	TFLAG:193 = 1
 
-PRINTFORMW %CALLNAME:MASTER%拜访了%OMANEKI_PLACE(家主)%
-TCVAR:家主:到家訪問 = 1
+PRINTFORMW %CALLNAME:MASTER%は%OMANEKI_PLACE(家主)%を訪ねた
+TCVAR:家主:お宅訪問 = 1
 [IF_DEBUG]
 IF FLAG:テストプレイ用オナバレ強制発生
 	CALL ONABARE(家主)
@@ -102,42 +99,42 @@ SIF RESULT
 
 IF DAY:2 == 3 && (DAY:3 == 13 || DAY:3 == 15) && TFLAG:193 > 1
 	CFLAG:家主:最後に会った日 = DAY
-	PRINTFORML %CALLNAME:家主%出来了
-    PRINTFORMW 「保佑保佑，三角麦田里荞麦丰收！」%CALLNAME:MASTER%祈祷着丰收。
-    IF ABL:家主:教養 >= 5 || 家主 == 77 || 家主 == 78
-        PRINTFORML %CALLNAME:家主%给了我点心！
-        ;现状实装されている点心を随机に
-        SELECTCASE RAND:5
-            CASE 0
-                ITEM:120 ++
-            CASE 1
-                ITEM:212 ++
-            CASE 2
-                ITEM:213 ++
-            CASE 3
-                ITEM:216 ++
-            CASEELSE
-                ITEM:376 ++
-        ENDSELECT
-    ELSE
-    PRINTFORML %CALLNAME:家主%露出了疑惑的表情……看来她不知道这种仪式呢。
-    PRINTFORML %CALLNAME:家主%默默地关上了门。
-    PRINTFORML %CALLNAME:MASTER%感到悲伤。
+	PRINTFORML %CALLNAME:家主%が出てきた
+	PRINTFORMW 「ぼうじぼ当たれ、三角ばたけにソバ当たれ！」%CALLNAME:MASTER%は豊作を祈った
+	IF ABL:家主:教養 >= 5 || 家主 == 77 || 家主 == 78
+		PRINTFORML %CALLNAME:家主%はお菓子をくれた！
+		;現状実装されているお菓子をランダムに
+		SELECTCASE RAND:5
+			CASE 0
+				ITEM:120 ++
+			CASE 1
+				ITEM:212 ++
+			CASE 2
+				ITEM:213 ++
+			CASE 3
+				ITEM:216 ++
+			CASEELSE
+				ITEM:376 ++
+		ENDSELECT
+	ELSE
+		PRINTFORML %CALLNAME:家主%は怪訝な顔をしている…どうやら「ぼうじぼ」を知らないようだ
+		PRINTFORML %CALLNAME:家主%は黙って扉を閉めてしまった
+		PRINTFORML %CALLNAME:MASTER%は悲しくなった
 	ENDIF
 	TIME += 10
 	RETURN 1
 ENDIF
 
-IF TFLAG:193 > 1 && CFLAG:家主:积攒度 > 300
-	IF RAND:(CFLAG:家主:积攒度 + TFLAG:幸運補正 * 50) >= RAND:700
+IF TFLAG:193 > 1 && CFLAG:家主:溜まってる度 > 300
+	IF RAND:(CFLAG:家主:溜まってる度 + TFLAG:幸運補正 * 50) >= RAND:700
 		CALL ONABARE(家主)
 		GOTO OWARI
 	ELSEIF ITEM:兎符「開運大紋」
-		PRINTL 咦、开运大纹的样子…？
-		CALL ASK_YN("取出","置之不理")
+		PRINTL おや、開運大紋の様子が…？
+		CALL ASK_YN("取り出す","放っておく")
 		IF !RESULT
 			ITEM:兎符「開運大紋」 --
-			CALL COLORMESSAGE(@"兔符「开运大纹」发动！",C_YELLOW,2)
+			CALL COLORMESSAGE(@"兎符「開運大紋」が発動！",C_YELLOW,2)
 			CALL ONABARE(家主)
 			GOTO OWARI
 		ENDIF
@@ -146,80 +143,79 @@ ENDIF
 SELECTCASE TFLAG:193
 	CASE 1
 		IF CFLAG:MASTER:現在位置 == CFLAG:家主:現在位置
-			PRINTFORMW 被眼前的%CALLNAME:家主%、说道不要擅自进来
+			PRINTFORMW 目の前にいる%CALLNAME:家主%から、勝手に入るなと言われた
 		ELSE
-			PRINTFORMW 没有回应…　出门了或者在睡觉吧
+			PRINTFORMW 返事がない…　留守か寝ているのだろう
 		ENDIF
 	CASE 2
 		CFLAG:家主:最後に会った日 = DAY
-		PRINTFORMW %CALLNAME:家主%出来了
+		PRINTFORMW %CALLNAME:家主%が出てきた
 		IF !TALENT:家主:恋慕 && !TALENT:家主:思慕
-			PRINTFORM %CALLNAME:家主%有些为难、
+			PRINTFORM %CALLNAME:家主%は迷惑そうに、
 		ELSE
-			PRINTFORM %CALLNAME:家主%感到有些抱歉、
+			PRINTFORM %CALLNAME:家主%は申し訳なさそうに、
 		ENDIF
-		PRINTFORMW 说道今天没有时间请下次再说
-		PRINTFORM 试着问了问明天能否见面、
+		PRINTFORMW 今日は時間がないからまた今度と言った
+		PRINTFORM 明日会えるか聞いてみると、
 		IF !RAND:2 && !GETBIT (TFLAG:一日一回,5)
-			PRINTFORMW 被告知明天打算要去%GET_MAPNAME(MAIN_MAP)%
+			PRINTFORMW 明日は%GET_MAPNAME(MAIN_MAP)%に行くつもりとのことだ
 			CFLAG:家主:翌日来訪 = 1
 			SETBIT TFLAG:一日一回,5
 		ELSE
-			PRINTFORMW 被告知还不能确定下来
+			PRINTFORMW ちょっとわからない、と言われた
 		ENDIF
 		CALL COM697_1(家主)
 		TARGET = 家主
 		TIME += 5
 		RETURN 1
-
 	CASE 3
 		CFLAG:家主:最後に会った日 = DAY
-		PRINTFORML %CALLNAME:家主%出来了
-		PRINTFORML 对%CALLNAME:家主%说因为想见她所以来了、哪怕只是一会儿也好
+		PRINTFORML %CALLNAME:家主%が出てきた
+		PRINTFORML %CALLNAME:家主%に会いたくなったから来たと言うと、少しだけならと上げてもらえた
 		PRINTFORMW …
 		PRINTFORMW ……
 		PRINTFORMW ………
-		PRINTFORMW 和%CALLNAME:家主%谈笑了一段时间
-		PRINTFORMW 离开的时候、问了问明天能不能见面
+		PRINTFORMW %CALLNAME:家主%としばらく談笑した
+		PRINTFORMW 別れ際、明日会えるか聞いてみた
 		IF !RAND:2 && !GETBIT (TFLAG:一日一回,5)
-			PRINTFORMW 被告知明天打算要去%GET_MAPNAME(MAIN_MAP)%
+			PRINTFORMW 明日は%GET_MAPNAME(MAIN_MAP)%に行くつもりとのことだ
 			CFLAG:家主:翌日来訪 = 1
 			SETBIT TFLAG:一日一回,5
 		ELSE
-			PRINTFORMW 被告知还不能确定下来
+			PRINTFORMW ちょっとわからない、と言われた
 		ENDIF
 		CALL COM697_1(家主)
 		TARGET = 家主
 		TIME += 30
 		RETURN 1
-
 	CASE 4
 		CFLAG:家主:最後に会った日 = DAY
-		PRINTFORMW %CALLNAME:家主%出来了
-		PRINTFORMW %CALLNAME:家主%好像很开心的样子…
-		CALL ASK_YN("邀请约会","打扰了")
+		PRINTFORMW %CALLNAME:家主%が出てきた
+		PRINTFORMW %CALLNAME:家主%は嬉しそうだ…
+		CALL ASK_YN("デートに誘う","お邪魔する")
 		IF !RESULT || !TALENT:家主:恋慕
 			IF !RESULT
-				PRINTFORMW 邀请%CALLNAME:家主%去约会了
+				PRINTFORMW %CALLNAME:家主%をデートに誘った
 			ELSE
-				PRINTFORML 虽然%CALLNAME:MASTER%提出希望能来打扰，但是被拒绝了
-				PRINTFORMW 取而代之的是%CALLNAME:家主%提议约会，%CALLNAME:MASTER%毫不犹豫地点了点头
+				PRINTFORML お邪魔させて欲しいと願ったが、拒否されてしまった
+				PRINTFORMW 代わりにデートならと提案され、%CALLNAME:MASTER%は一も二も無くうなずいた
 			ENDIF
 			CFLAG:MASTER:同行 = 60
 			CFLAG:家主:同行 = 60
 			CFLAG:家主:現在位置 = CFLAG:MASTER:現在位置
-			CFLAG:家主:约会中 = CFLAG:MASTER:現在位置 / 100
+			CFLAG:家主:デート中 = CFLAG:MASTER:現在位置 / 100
 			CFLAG:家主:拠点来訪 = 1
-			FLAG:约会的对象 = 家主
-			TFLAG:约会前好感度 = CFLAG:家主:2
+			FLAG:デート相手 = 家主
+			TFLAG:デート前好感度 = CFLAG:家主:2
 		ELSE
-			;约会処理入れてないのに约会中だけ入れるのはバグの元になりかねないので一旦オミット
-			;CFLAG:家主:约会中 = CFLAG:MASTER:現在位置 / 100
+			;デート処理入れてないのにデート中だけ入れるのはバグの元になりかねないので一旦オミット
+			;CFLAG:家主:デート中 = CFLAG:MASTER:現在位置 / 100
 			CALL OMANEKI_ENTER(家主)
 		ENDIF
 ENDSELECT
 
 $OWARI
+TIME += 3
 TFLAG:102 = 0
 RETURN 0
 
@@ -262,7 +258,7 @@ SIF 歓楽UP < 0
 
 
 受動UP = 100 + 100 * ABL:ARG:従順
-征服UP = 100 + 100 * ABL:ARG:施虐属性
+征服UP = 100 + 100 * ABL:ARG:サドっ気
 
 SELECTCASE ABL:MASTER:話術技能
 	CASE 0
@@ -295,7 +291,7 @@ IF TFLAG:193 == 3
 	TIMES 歓楽UP , 3.50
 	TIMES 征服UP , 3.50
 	TIMES 受動UP , 3.50
-	TFLAG:好感度BONUS = 200
+	TFLAG:好感度ボーナス = 200
 ENDIF
 SOURCE:ARG:歓楽 = 歓楽UP
 SOURCE:ARG:征服 = 征服UP
@@ -303,19 +299,17 @@ SOURCE:ARG:受動 = 受動UP
 
 CALL FAVOR_CALC(ARG)
 CALL TRUST_CALC(ARG)
-TFLAG:好感度BONUS = 0
+TFLAG:好感度ボーナス = 0
 
 ;-------------------------------------------------
 ;実行可能判定
 ;-------------------------------------------------
-;訪問房間
+;部屋を訪ねる
 @COM_ABLE697
 ;一括管理
 SIF GLOBAL_COMABLE(697)
 	RETURN RESULT
 SIF AT_HOME(MASTER)
-	RETURN 0
-SIF CFLAG:MASTER:诶嘿嘿
 	RETURN 0
 ;時間停止中
 SIF FLAG:70

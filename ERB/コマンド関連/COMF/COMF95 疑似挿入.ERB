@@ -1,6 +1,6 @@
 ﻿;-------------------------------------------------
 ;疑似挿入
-;性交系指令、レベル1
+;セックス系コマンド、レベル1
 ;-------------------------------------------------
 @COM95
 ;-------------------------------------------------
@@ -16,13 +16,13 @@ TCVAR:116 = PLAYER
 TCVAR:PLAYER:108 = 1
 
 CSTR:PLAYER:10 += @"{TARGET}/"
-;TCVAR:2 射精部位フラグ（-1=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
 TCVAR:PLAYER:2 = 8
 ;強度
 TCVAR:PLAYER:4 = 500
 
 CSTR:TARGET:10 += @"{PLAYER}/"
-;TCVAR:2 射精部位フラグ（-1=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
 TCVAR:TARGET:2 = 13
 ;強度
 TCVAR:TARGET:4 = 300
@@ -30,7 +30,7 @@ TCVAR:TARGET:4 = 300
 DOWNBASE:PLAYER:体力 += 10
 DOWNBASE:PLAYER:気力 += 20
 
-;ベッドがないOR浴室ルームで塑料地墊がないと立位に
+;ベッドがないORバスルームでプレイマットがないと立位に
 SIF !BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)
 	TFLAG:193 = 1
 
@@ -40,7 +40,7 @@ TFLAG:2 = 1
 ;ソース追加処理
 ;-------------------------------------------------
 ;消費体力、気力
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 	BASE:MASTER:TSP -= 100
 	SOURCE:PLAYER:快Ｃ = 120
 	SOURCE:快Ｖ = 100
@@ -54,8 +54,6 @@ ELSE
 	SOURCE:快Ｖ = 100
 	SOURCE:情愛 = 150
 	SOURCE:苦痛 = 500
-	SIF !TALENT:処女
-		SOURCE:苦痛 -= 500
 	SOURCE:露出 = 50
 	SOURCE:逸脱 = 20
 	SOURCE:反感 = 20
@@ -87,15 +85,15 @@ CALL STAIN_膣内Ｐ挿入
 ;-------------------------------------------------
 EXP:Ｖ経験 ++
 ;同性愛　レズなら戻り値1ゲイなら戻り値2
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0) || CFLAG:恶作剧
+IF FLAG:70 == 1 || CFLAG:イタズラ
 	IF HETEROSEX(TARGET,PLAYER)
 		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 3
 	ENDIF
-	IF CFLAG:PLAYER:恶作剧 == 2
+	IF CFLAG:PLAYER:イタズラ == 2
 		EXP:PLAYER:睡眠姦経験 += 1
 		EXP:TARGET:睡眠姦経験 += 1
 	ENDIF
-	SIF !CFLAG:恶作剧
+	SIF !CFLAG:イタズラ
 	EXP:PLAYER:時姦経験 += 1
 ELSE
 	IF HETEROSEX(TARGET,PLAYER)
@@ -110,7 +108,7 @@ RETURN 1
 ;-------------------------------------------------
 ;実行判定処理
 ;-------------------------------------------------
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0) || CFLAG:恶作剧
+IF FLAG:70 == 1 || CFLAG:イタズラ
 	SKIPDISP ARG
 
 ELSE
@@ -129,13 +127,13 @@ SIF !TFLAG:100
 ;一括管理
 SIF GLOBAL_COMABLE(95)
 	RETURN RESULT
-;調教者が男人、扶她の場合はある程度勃起てないとダメ
+;調教者がオトコ、ふたなりの場合はある程度勃起してないとダメ
 SIF (TALENT:PLAYER:2 & 2) && BASE:PLAYER:勃起 < 1000
 	RETURN 0
-;振動棒挿入中はダメ
+;バイブ挿入中はダメ
 SIF TEQUIP:13
 	RETURN 0
-;男人だとダメ
+;オトコだとダメ
 SIF !(TALENT:2 & 1)
 	RETURN 0
 
@@ -143,12 +141,12 @@ SIF !(TALENT:2 & 1)
 SIF TCVAR:100 == PLAYER && TARGET == TFLAG:103
 	RETURN 0
 
-;調教者が男人、半人半妖、扶她、もしくは穿戴式假陰茎がないとダメ
+;調教者がオトコ、半人半妖、ふたなり、もしくはペニスバンドがないとダメ
 SIF !(TALENT:PLAYER:2 & 2) && ITEM:PBAND == 0
 	RETURN 0
 
 ;時間停止中はスキップ
-IF !FLAG:70 || CFLAG:TARGET:344 == 1
+IF FLAG:70 != 1
 	;処女かつ潤滑不足はだめ
 	SIF PALAM:潤滑 < PALAMLV:2 && TALENT:処女 && TALENT:処女 != -1
 		RETURN 0
@@ -157,7 +155,7 @@ ENDIF
 ;下半身着衣
 SIF TEQUIP:0 & 4
 	RETURN 0
-;浴室PLAY中は塑料地墊が無いとダメ
+;お風呂場プレイ中はプレイマットが無いとダメ
 IF TEQUIP:31
 	SIF ITEM:20 == 0 && NOITEM == 0
 		RETURN 0

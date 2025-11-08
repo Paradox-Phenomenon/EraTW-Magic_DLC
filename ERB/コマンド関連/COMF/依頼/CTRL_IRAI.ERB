@@ -34,28 +34,28 @@ CALL SET_IRAI_PROGRESS(CHARA, SCENE)
 
 ;----------------------------------------------------------------------------------------------------
 ;依頼発生処理
-;随意10角色見繕って依頼を作るよ
+;適当に10キャラ見繕って依頼を作るよ
 ;----------------------------------------------------------------------------------------------------
 @IRAI_HAPPEN
 #DIM CHARA_ID, 10
 #DIM CONST NEW_IRAI_NUM = 10
 
 [IF_DEBUG]
-	;#;PRINTFORMW 依頼生成処理（全角色実行、ログをデバッグウインドウに表示）
+	;#;PRINTFORMW 依頼生成処理（全キャラ実行、ログをデバッグウインドウに表示）
 	;#;DEBUGCLEAR
-	FOR LOCAL:0, 1, 人物数量上限
+	FOR LOCAL:0, 1, キャラクタ数上限
 		SIF !CAN_MEET(LOCAL:0)
 			CONTINUE
 		SIF CFLAG:(LOCAL:0):依頼状況
 			CONTINUE
 		CALL SET_NEW_IRAI(LOCAL:0)
 	NEXT
-	;#;PRINTFORML 委托生成完了、デバッグ文を削除します
+	;#;PRINTFORML 依頼生成完了、デバッグ文を削除します
 	;#;FORCEWAIT
 	;#;DEBUGCLEAR
 	RETURN
 [ENDIF]
-CALL ARRAY_RAND(CHARA_ID, NEW_IRAI_NUM, 1, 人物数量上限)
+CALL ARRAY_RAND(CHARA_ID, NEW_IRAI_NUM, 1, キャラクタ数上限)
 FOR LOCAL:0, 0, NEW_IRAI_NUM
 	SIF !CAN_MEET(CHARA_ID:(LOCAL:0))
 		CONTINUE
@@ -67,8 +67,8 @@ NEXT
 
 
 ;----------------------------------------------------------------------------------------------------
-;各角色の依頼発生処理
-;依頼無/一般依頼/固有依頼
+;各キャラの依頼発生処理
+;依頼なし/一般依頼/固有依頼
 ;----------------------------------------------------------------------------------------------------
 @SET_NEW_IRAI(CHARA)
 #DIM CHARA
@@ -99,7 +99,7 @@ CFLAG:CHARA:依頼内容 = MAKE_IRAI_ID(CHARA, LOCAL)
 #DIM  CHARA
 #DIMS TYPE
 #DIM CONST LAST_COMMON = 99 ;一般依頼IDの末端
-#DIM       LAST_UNIQUE      ;その角色に実装されている固有依頼IDの末端
+#DIM       LAST_UNIQUE      ;そのキャラに実装されている固有依頼IDの末端
 #DIM       HIT_LIST, 100    ;抽選確率配列
 #DIM       ID_LIST,  100    ;抽選を対象依頼IDの一覧
 #DIM       CNT_LIST         ;抽選対象となる依頼の数
@@ -107,7 +107,7 @@ DEBUGPRINTFORML ＞IRAI_HIT{CHARA}　%TYPE%
 SELECTCASE TYPE
 CASE "HAPPEN"
 ;依頼発生抽選
-	HIT_LIST:0 = GET_INT(0, "キャラデータ", CHARA, "没有依頼発生率")
+	HIT_LIST:0 = GET_INT(0, "キャラデータ", CHARA, "依頼なし発生率")
 	HIT_LIST:1 = GET_INT(0, "キャラデータ", CHARA, "一般依頼発生率")
 	HIT_LIST:2 = GET_INT(0, "キャラデータ", CHARA, "固有依頼発生率")
 	SIF !SUMARRAY(HIT_LIST, 0, 3)
@@ -158,17 +158,17 @@ ENDSELECT
 
 ;----------------------------------------------------------------------------------------------------
 ;依頼消滅処理
-;全角色が対象となり大規模化した
+;全キャラが対象となり大規模化した
 ;----------------------------------------------------------------------------------------------------
 @IRAI_VANISH
 #DIM CHK_SLOT
 #DIM CHARA
-;PRINTFORMW 委托经过处理（所有角色执行，日志显示在调试窗口）
-;DEBUGCLEAR
-;全角色対象、受託前の/既に報告の終わった依頼の処理
+;#;PRINTFORMW 依頼経時処理（全キャラ実行、ログをデバッグウインドウに表示）
+;#;DEBUGCLEAR
+;全キャラ対象、受託前の/既に報告の終わった依頼の処理
 FOR CHARA, 1, CHARANUM
 	SELECTCASE IRAI_CHARA_TO_PROGRESS(CHARA)
-	;これらはまだ委托接口に入っていない
+	;これらはまだ依頼スロットに入っていない
 	CASE "依頼発生直後"
 		CALL SET_IRAI_PROGRESS(CHARA, "依頼未受託")
 		
@@ -176,10 +176,10 @@ FOR CHARA, 1, CHARANUM
 		SIF INT_DATA_IRAI(CFLAG:CHARA:依頼内容, "依頼消滅条件", CHARA)
 			CALL SET_IRAI_PROGRESS(CHARA, "依頼消滅")
 	[SKIPSTART]
-	依頼中のケースは委托接口見たほうがはやい
+	依頼中のケースは依頼スロット見たほうがはやい
 	CASE "依頼中"
 	
-	基本的にこの4段階は未報告状態、依頼主のリアクション待ちです（報告必须）
+	基本的にこの4段階は未報告状態、依頼主のリアクション待ちです（報告必須）
 	CASE "依頼達成"
 	CASE "期限切れ"
 	CASE "報告忘れ"
@@ -190,14 +190,14 @@ FOR CHARA, 1, CHARANUM
 		CALL SET_IRAI_PROGRESS(CHARA, "依頼消滅")
 	ENDSELECT
 NEXT
-;PRINTFORML 委托经过处理完成，删除调试语句
-;FORCEWAIT
-;DEBUGCLEAR
+;#;PRINTFORML 依頼経時処理完了、デバッグ文を削除します
+;#;FORCEWAIT
+;#;DEBUGCLEAR
 
 SIF !COUNT_IRAI_SLOT()
 	RETURN
 
-;PRINTFORMW 委托期限处理（全角色执行，日志显示在调试窗口）
+;#;PRINTFORMW 依頼期限処理（全キャラ実行、ログをデバッグウインドウに表示）
 ;依頼の期限判定
 ;スロットは空けないことにした（依頼主への報告を強制させる）
 ;依頼報告不要時にスロットを空ける処理が必要になった
@@ -221,9 +221,9 @@ FOR CHK_SLOT, COUNT_IRAI_SLOT(), 0, -1
 		ENDIF
 	ENDSELECT
 NEXT
-;PRINTFORML 委托期限处理完成，删除调试语句
-;FORCEWAIT
-;DEBUGCLEAR
+;#;PRINTFORML 依頼期限処理完了、デバッグ文を削除します
+;#;FORCEWAIT
+;#;DEBUGCLEAR
 
 
 ;----------------------------------------------------------------------------------------------------
@@ -238,22 +238,22 @@ RESULT = 0
 IF IS_COMMON_IRAI(IRAI_ID)
 	TRYCCALLFORM IRAI_一般{IRAI_ID % 1000}(CHARA, IRAI_ID, SCENE)
 	CATCH
-		PRINTFORML ＊发生错误＊
+		PRINTFORML ＊エラー発生＊
 		PRINTFORML 　CHARA:{CHARA}　SCENE:%SCENE%　IRAI_ID:{IRAI_ID}
-		PRINTFORML 　指定的函数 @IRAI_一般{IRAI_ID % 1000}不存在
-		PRINTFORML 　请复制粘贴错误日志并报告
+		PRINTFORML 　指定の関数 @IRAI_一般{IRAI_ID % 1000}は存在しません
+		PRINTFORML 　エラーログをコピペして報告して下さい
 		PRINTFORML 
-		PRINTFORMW 　等待输入
+		PRINTFORMW 　入力待機中
 	ENDCATCH
 ELSE
 	TRYCCALLFORM IRAI_固有{IRAI_ID_TO_CLIENT(IRAI_ID)}(CHARA, IRAI_ID, SCENE)
 	CATCH
-		PRINTFORML ＊发生错误＊
+		PRINTFORML ＊エラー発生＊
 		PRINTFORML 　CHARA:{CHARA}　SCENE:%SCENE%　IRAI_ID:{IRAI_ID}
-		PRINTFORML 　指定的函数 @IRAI_固有{IRAI_ID_TO_CLIENT(IRAI_ID)}不存在
-		PRINTFORML 　请复制粘贴错误日志并报告
+		PRINTFORML 　指定の関数 @IRAI_固有{IRAI_ID_TO_CLIENT(IRAI_ID)}は存在しません
+		PRINTFORML 　エラーログをコピペして報告して下さい
 		PRINTFORML 
-		PRINTFORMW 　等待输入
+		PRINTFORMW 　入力待機中
 	ENDCATCH
 ENDIF
 RETURN RESULT
@@ -272,9 +272,6 @@ FOR CHK_SLOT, 1, IRAI_NUM + 1
 	CALL SHOW_IRAI_DATA(IRAI_SLOT:CHK_SLOT, CHK_SLOT)
 	PRINTFORML 
 NEXT
-;魔改功能，诱导逆推
-SIF 诱导逆推_开关
-	CALL 诱导逆推_人物界面显示
 
 
 
@@ -285,7 +282,7 @@ SIF 诱导逆推_开关
 ;----------------------------------------------------------------------------------------------------
 @SHOW_IRAI_DATA(IRAI_ID, CHK_SLOT)
 #DIM IRAI_ID   ;対象の依頼ID（依頼人情報含む）
-#DIM CHK_SLOT  ;判定対象とする委托接口、未受託の状態では0で読んで下さい
+#DIM CHK_SLOT  ;判定対象とする依頼スロット、未受託の状態では0で読んで下さい
 #DIM CLIENT_ID ;依頼人ID
 #DIM CHK_ID    ;依頼自体のID
 #DIM DEAD_LINE ;期限日数
@@ -293,85 +290,74 @@ CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 CHK_ID    = IRAI_ID % 1000
 DEAD_LINE = INT_DATA_IRAI(IRAI_ID, "依頼期限", CLIENT_ID)
 SIF CHK_SLOT
-	PRINTFORML 委托%TOFULL(TOSTR(CHK_SLOT))%
+	PRINTFORML 依頼%TOFULL(TOSTR(CHK_SLOT))%
 PRINTFORML 　＜%STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)%＞
-PRINTFORML 　　委托者：%NAME:CLIENT_ID%    -    %NAME_FROM_PLACE(CFLAG:CLIENT_ID:現在位置)%
-PRINTFORML 　委托内容：%STR_DATA_IRAI(IRAI_ID, "依頼内容表示", CLIENT_ID)%
-PRINTFORML 　　　报酬：%STR_DATA_IRAI(IRAI_ID, "依頼報酬表示", CLIENT_ID)%
+PRINTFORML 　　依頼者：%NAME:CLIENT_ID%
+PRINTFORML 　依頼内容：%STR_DATA_IRAI(IRAI_ID, "依頼内容表示", CLIENT_ID)%
+PRINTFORML 　　　報酬：%STR_DATA_IRAI(IRAI_ID, "依頼報酬表示", CLIENT_ID)%
 SIF STRLENS(STR_DATA_IRAI(IRAI_ID, "依頼報告不要", CLIENT_ID))
-	PRINTFORML 　　　报告：%STR_DATA_IRAI(IRAI_ID, "依頼報告不要", CLIENT_ID)%
+	PRINTFORML 　　　報告：%STR_DATA_IRAI(IRAI_ID, "依頼報告不要", CLIENT_ID)%
 SIF STRLENS(STR_DATA_IRAI(IRAI_ID, "依頼備考表示", CLIENT_ID))
-	PRINTFORML 　　　备注：%STR_DATA_IRAI(IRAI_ID, "依頼備考表示", CLIENT_ID)%
+	PRINTFORML 　　　備考：%STR_DATA_IRAI(IRAI_ID, "依頼備考表示", CLIENT_ID)%
 ;#;PRINTFORML 　　依頼ID：{IRAI_ID}　CLIENT_ID{CLIENT_ID}
 
 ;未受託の場合は期限のみ表示しておしまい
 IF !CHK_SLOT
 	IF !DEAD_LINE
-		PRINTFORML 　　　期限：今日内
+		PRINTFORML 　　　期限：今日中
 	ELSE
 		PRINTFORML 　　　期限：{DEAD_LINE}日以内
 	ENDIF
 	RETURN
 ELSE
-	PRINTFORML 　　　期限：还有{IRAI_DEADLINE:CHK_SLOT - DAY}日
+	PRINTFORML 　　　期限：あと{IRAI_DEADLINE:CHK_SLOT - DAY}日
 ENDIF
 
 ;ここから受託済み、業種別の表示
 SELECTCASE IRAI_SLOT_TO_TASKNAME(CHK_SLOT)
 CASE "調達"
-	PRINTFORML 　　要求品：%ITEMNAME_TR((IRAI_SLOT_TO_ITEM(CHK_SLOT)))%×{IRAI_SUB:CHK_SLOT}
-	SIF ITEMNAME:IRAI_SLOT_TO_ITEM(CHK_SLOT) == "好吃的魚"
-		PRINTFORML 　　　　　（虹鳟・鲑鱼・西太公鱼・八目鳗・雷鱼）
+	PRINTFORML 　　要求品：%ITEMNAME:(IRAI_SLOT_TO_ITEM(CHK_SLOT))%×{IRAI_SUB:CHK_SLOT}
+	SIF ITEMNAME:IRAI_SLOT_TO_ITEM(CHK_SLOT) == "うまい魚"
+		PRINTFORML 　　　　　（ニジマス・サケ・ワカサギ・ヤツメウナギ・カムルチー）
 CASE "伝令（人物）"
-	PRINTFORML 　目标人物：%NAME:(IRAI_SLOT_TO_PERSON(CHK_SLOT))%    -    %NAME_FROM_PLACE(CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):現在位置)%
-	;PRINTFORML 　現在位置：%NAME_FROM_PLACE(CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):現在位置)% 
-	PRINTFORML 　作息时间：{CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):就寝時間 / 60,2,RIGHT}～{CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):起床時間 / 60,2,RIGHT}时
-
+	PRINTFORML 　目標人物：%NAME:(IRAI_SLOT_TO_PERSON(CHK_SLOT))%
 CASE "伝令（場所）"
 	PRINTFORML 　　目的地：%COND_STR(@"%GET_MAPNAME(GET_MAPID(IRAI_SLOT_TO_PLACE(CHK_SLOT)))% - ", !IN_HOME(IRAI_SLOT_TO_PLACE(CHK_SLOT)))%%GET_PLACENAME(IRAI_SLOT_TO_PLACE(CHK_SLOT))%
-;納茲琳に聞いても忘れる你(わたし)へ
+;ナズーリンに聞いても忘れるあなた(わたし)へ
 CASE "捜索（人物）"
 	IF IRAI_EX:CHK_SLOT
-		PRINTFORML 　参考人物：%CALLNAME:(IRAI_EX:CHK_SLOT)%    -    %NAME_FROM_PLACE(CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):現在位置)%
-		;PRINTFORML 　現在位置：%NAME_FROM_PLACE(CFLAG:(IRAI_EX:CHK_SLOT):現在位置)% 
-		PRINTFORML 　作息时间：{CFLAG:(IRAI_EX:CHK_SLOT):就寝時間 / 60,2,RIGHT}～{CFLAG:(IRAI_EX:CHK_SLOT):起床時間 / 60,2,RIGHT}时
+		PRINTFORML 　参考人物：%CALLNAME:(IRAI_SLOT_TO_PERSON(CHK_SLOT))%
 	ELSE
-		PRINTFORM 　线索：
+		PRINTFORM 　手がかり：
 		CALL SHOW_IRAI_HINT("捜索（人物）", IRAI_SLOT_TO_PERSON(CHK_SLOT), IRAI_SUB:CHK_SLOT)
 	ENDIF
 CASE "捜索（場所）"
 	IF IRAI_EX:CHK_SLOT > 5000
-		PRINTFORML 　　推定地：%STR_TR(5000 + GET_MAPID(IRAI_EX:CHK_SLOT-5000))%
+		PRINTFORML 　　推定地：%STR:(5000 + GET_MAPID(IRAI_EX:CHK_SLOT-5000))%
 	ELSEIF IRAI_EX:CHK_SLOT
-		PRINTFORML 　　推定地：%STR_TR(5000 + GET_MAPID(IRAI_EX:CHK_SLOT))%的%GET_PLACENAME(IRAI_EX:CHK_SLOT)%
+		PRINTFORML 　　推定地：%STR:(5000 + GET_MAPID(IRAI_EX:CHK_SLOT))%の%GET_PLACENAME(IRAI_EX:CHK_SLOT)%
 	ELSE
-		PRINTFORM 　线索：
+		PRINTFORM 　手がかり：
 		CALL SHOW_IRAI_HINT("捜索（場所）", IRAI_SLOT_TO_PLACE(CHK_SLOT), IRAI_SUB:CHK_SLOT)
 	ENDIF
 CASE "討伐"
-	PRINTFORML 　讨伐对象：%NAME:(IRAI_SLOT_TO_PERSON(CHK_SLOT))%    -    %NAME_FROM_PLACE(CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):現在位置)%
-	PRINTFORM 　战力指数：
-	CALL PRINT_RANK(ABL:IRAI_SLOT_TO_PERSON(CHK_SLOT):戦闘能力, "MAX_6")
-	PRINTL
-	;PRINTFORML 　現在位置：%NAME_FROM_PLACE(CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):現在位置)% 
-	;PRINTFORML 　就寝時間：{CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):就寝時間 / 60,2,RIGHT}時 
-	PRINTFORML 　作息时间：{CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):就寝時間 / 60,2,RIGHT}～{CFLAG:(IRAI_SLOT_TO_PERSON(CHK_SLOT)):起床時間 / 60,2,RIGHT}时
+	PRINTFORML 　討伐対象：%NAME:(IRAI_SLOT_TO_PERSON(CHK_SLOT))%
 ENDSELECT
 CALL IRAI_CARRYOUT(CLIENT_ID, IRAI_ID, "依頼条件表示")
 
 ;確定してる場合はその旨を表示しておしまい
 IF GROUPMATCH(IRAI_CHARA_TO_PROGRESS(CLIENT_ID), "期限切れ", "報告忘れ", "依頼失敗")
-	PRINTFORML 　达成状况：失败
+	PRINTFORML 　達成状況：失敗
 	RETURN
 ELSEIF GROUPMATCH(IRAI_CHARA_TO_PROGRESS(CLIENT_ID), "依頼達成")
-	PRINTFORML 　达成状况：已达成（未报告）
+	PRINTFORML 　達成状況：達成済み（未報告）
 ENDIF
 IF DAY == IRAI_DEADLINE:CHK_SLOT || IRAI_DEADLINE:CHK_SLOT - DAY <= 0
-	PRINTFORML 　　　期限：今日内
+	PRINTFORML 　　　期限：今日中
 ELSEIF IRAI_DEADLINE:CHK_SLOT > DAY
-	PRINTFORML 　　　期限：还剩{IRAI_DEADLINE:CHK_SLOT - DAY}日
+	PRINTFORML 　　　期限：残り{IRAI_DEADLINE:CHK_SLOT - DAY}日
 ELSE
-	PRINTFORML 　　　期限：今日内
+	PRINTFORML 　　　期限：今日中
 ENDIF
 
 ;----------------------------------------------------------------------------------------------------
@@ -384,11 +370,11 @@ ENDIF
 #DIM PLACE
 #DIM パターン
 #DIM 洞察力
-#DIMS DYNAMIC LIST, 100 ;列表
-#DIM  DYNAMIC CNT,  100 ;列表各要素の重複个数
+#DIMS DYNAMIC LIST, 100 ;リスト
+#DIM  DYNAMIC CNT,  100 ;リスト各要素の重複個数
 #DIM  DYNAMIC NUM       ;種類の総数
 ;◆洞察力に関して
-;元々はEXP:依頼達成経験とABL:依頼こ無レベルを設定して、依頼をこなすほど洞察力(=依頼レベル)が増えるという風にしようと思っていた
+;元々はEXP:依頼達成経験とABL:依頼こなしレベルを設定して、依頼をこなすほど洞察力(=依頼レベル)が増えるという風にしようと思っていた
 ;が、わざわざ作らなくてもプレイヤー側のリアル洞察力の方が必要なので凍結させました。
 LOCALS = 
 ;持ち主を推定する,現状パターンは1～3,パターン0は場所の方へ
@@ -400,146 +386,146 @@ IF TASKNAME == "捜索（人物）" && パターン > 0
 	FOR LOCAL, 0, NUM
 		SELECTCASE LIST:LOCAL
 		CASE "神力"
-				LOCALS += "蕴含着神力。"
+				LOCALS += "神力が込められている。"
 		CASE "妖力"
-				LOCALS += "飘散着淡淡的妖気。"
+				LOCALS += "仄かに妖気が漂っている。"
 		CASE "霊障"
-				LOCALS += "感受到灵的力量。"
+				LOCALS += "霊的な力を感じる。"
 		CASE "魔力"
-				LOCALS += "蕴含着魔力。"
+				LOCALS += "魔力が込められている。"
 		CASE "生命力"
-				LOCALS += "蕴藏着自然的力量。"
+				LOCALS += "自然の力が宿っている。"
 		CASE "仙術", "秘術"
-				LOCALS += "感受到神秘的能量。"
+				LOCALS += "神秘的なエネルギーを感じる。"
 		CASE "鬼の魔力", "血の魔力"
-				LOCALS += "散放着暴力的魔力。"
-		CASE "女僕流"
-				LOCALS += "女仆的道具。"
+				LOCALS += "暴力的な魔力を放っている。"
+		CASE "メイド流"
+				LOCALS += "メイドさんの道具だ。"
 		CASE "天狗流"
-				LOCALS += "写着天狗文字。"
+				LOCALS += "天狗文字が書かれている。"
 		CASE "冥界風"
-				LOCALS += "是冥界使用的东西。"
+				LOCALS += "冥界で使われているものだ。"
 		CASE "天界風"
-				LOCALS += "天界的产物。"
+				LOCALS += "天界の品だ。"
 		CASE "地底風"
-				LOCALS += "在地底有类似的。"
+				LOCALS += "地底にあるものだ。"
 		CASE "地獄風"
-				LOCALS += "沾上了地獄的砂。"
+				LOCALS += "地獄の砂が付いている。"
 		CASE "畜生流"
-				LOCALS += "这是畜生界常见的道具。"
+				LOCALS += "畜生界で見かける道具だ。"
 		CASE "月都風"
-				LOCALS += "只有在月之都才有的东西。"
+				LOCALS += "月の都にしかないものだ。"
 		CASE "玉兎流"
-				LOCALS += "有兔子的印章。"
+				LOCALS += "うさぎのマークが付いている。"
 		CASE "魔界風"
-				LOCALS += "使用魔界的石头。"
+				LOCALS += "魔界の石が使われている。"
 		CASE "夢幻風"
-				LOCALS += "感受到梦幻世界的妖气。"
+				LOCALS += "夢幻世界の妖気を感じる。"
 		CASE "外界風"
-				LOCALS += "外面的世界的东西。"
+				LOCALS += "外の世界のものだ。"
 		CASE "化学的"
-				LOCALS += "精密的制作品。"
+				LOCALS += "精密な作りをしている。"
 		CASE "小人族秘伝の味"
-				LOCALS += "是小人的工具。"
+				LOCALS += "小人の道具だ。"
 		CASE "稗田家秘伝の味"
-				LOCALS += "有稗田家的紋章。"
-		CASE "母亲的味道"
-				LOCALS += "是家常的工具 。"
+				LOCALS += "稗田家の紋章が付いている。"
+		CASE "おふくろの味"
+				LOCALS += "家庭的な道具だ。"
 ;		CASE "プロの味"
 ;				LOCALS += ""
 		;天候と時間によってきらきらしなくなったりもする
-		CASE "闪耀"
-				LOCALS += "闪闪发光。"
-		CASE "純化的味道"
-				LOCALS += "一丝浑浊都没有。"
+		CASE "きらめき"
+				LOCALS += "きらきらしている。"
+		CASE "純化した味"
+				LOCALS += "一切の濁りもない。"
 		CASE "薬効"
-				LOCALS += "似乎是医疗道具。"
-		CASE "魔性"
-				LOCALS += "被施加了强化魔法。"
+				LOCALS += "医療道具のようだ。"
+		CASE "エンチャント"
+				LOCALS += "強化魔法がかけられている。"
 		CASE "奇跡", "幸運"
-				LOCALS += "有好事要发生的预感。"
+				LOCALS += "良い事が起こりそうな予感がする。"
 		CASE "加護", "豊穣"
-				LOCALS += "似乎很灵验的样子。"
+				LOCALS += "御利益がありそうだ。"
 		CASE "嫉妬"
-				LOCALS += "感到了执念…。"
+				LOCALS += "執念を感じる…。"
 		CASE "道具の共鳴"
-				LOCALS += "是付丧神的同伴。"
-;		CASE "浓郁"
+				LOCALS += "付喪神の仲間だ。"
+;		CASE "濃い味"
 ;				LOCALS += ""
 ;		CASE "薄味"
 ;				LOCALS += ""
 ;		CASE "隠し味"
 ;				LOCALS += ""
-		CASE "心跳味"
-				LOCALS += "似乎有隐藏的装置机关。"
+		CASE "ドッキリ味"
+				LOCALS += "隠された仕掛けが施されている。"
 		CASE "未知の味"
-				LOCALS += "不可思议的东西。"
+				LOCALS += "不思議な品だ。"
 		CASE "氷結"
-				LOCALS += "寒冷。"
+				LOCALS += "冷たい。"
 		CASE "大火力"
-				LOCALS += "很温暖。"
+				LOCALS += "温かい。"
 		CASE "彩り"
-				LOCALS += "有七彩色的光辉。"
+				LOCALS += "七色に彩られている。"
 		CASE "絢爛"
-				LOCALS += "非常浮华。"
+				LOCALS += "とても派手だ。"
 		CASE "貧乏飯"
-				LOCALS += "破烂的。"
+				LOCALS += "ボロい。"
 		CASE "切れ味"
-				LOCALS += "像武器一样。"
-		CASE "美味的水"
-				LOCALS += "是防水的。"
+				LOCALS += "武器のようだ。"
+		CASE "おいしい水"
+				LOCALS += "防水仕様だ。"
 		CASE "刺激的"
-				LOCALS += "有一个骷髅标记…。"
+				LOCALS += "ドクロのマークがある…。"
 		ENDSELECT
 	NEXT
 	SELECTCASE パターン
 	CASE 1
-		IF TALENT:CHARA:擅長用針
-			LOCALS += "尖尖的。"
+		IF TALENT:CHARA:針さばき
+			LOCALS += "鋭く尖っている。"
 		ELSEIF TALENT:CHARA:日光浴
-			LOCALS += "有太阳的标志。"
+			LOCALS += "太陽のマークがある。"
 		ELSEIF TALENT:CHARA:月光浴
-			LOCALS += "有月亮的标志。"
+			LOCALS += "月のマークがある。"
 		ELSEIF TALENT:CHARA:幼稚
-			LOCALS += "像玩具一样。"
+			LOCALS += "おもちゃのようだ。"
 		ENDIF
 	CASE 2
 		IF ABL:CHARA:音楽技能 >= 2 && ABL:MASTER:音楽技能 >= 1
-			LOCALS += "关于乐器。"
-		ELSEIF TALENT:CHARA:釣魚Lv >= 2 && TALENT:MASTER:釣魚Lv >= 1
-			LOCALS += "是钓鱼的工具。"
+			LOCALS += "楽器に関するものだ。"
+		ELSEIF TALENT:CHARA:釣りLv >= 2 && TALENT:MASTER:釣りLv >= 1
+			LOCALS += "釣りに使う道具だ。"
 		ELSEIF ABL:CHARA:料理技能 >= 1 && ABL:MASTER:料理技能 >= 1
-			LOCALS += "做饭用的工具。"
+			LOCALS += "料理に使う道具だ。"
 		ELSEIF ABL:CHARA:教養 >= 4 && ABL:MASTER:教養 >= 3
-			LOCALS += "很难理解的书。"
+			LOCALS += "難しい本だ。"
 		ENDIF
 	CASEELSE
-		SIF TALENT:CHARA:胆量 < 0
-			LOCALS += "像护身符一样。"
-		SIF TALENT:CHARA:開朗／阴郁 < 0
-			LOCALS += "暗色调。"
-		SIF TALENT:CHARA:開朗／阴郁 > 0
-			LOCALS += "明亮的色调。"
-		SIF TALENT:CHARA:喜歡引人注目
-			LOCALS += "自信。"
+		SIF TALENT:CHARA:度胸 < 0
+			LOCALS += "お守りのようだ。"
+		SIF TALENT:CHARA:陽気／陰気 < 0
+			LOCALS += "暗い色合いだ。"
+		SIF TALENT:CHARA:陽気／陰気 > 0
+			LOCALS += "明るい色合いだ。"
+		SIF TALENT:CHARA:目立ちたがり
+			LOCALS += "主張が激しい。"
 		SIF TALENT:CHARA:汚臭耐性 < 0
-			LOCALS += "被擦得很干净。"
+			LOCALS += "キレイに磨かれている。"
 		SIF TALENT:CHARA:汚臭耐性 > 0
-			LOCALS += "污垢明显。"
+			LOCALS += "汚れが目立つ。"
 		SIF TALENT:CHARA:狐 || TALENT:CHARA:妖狐
-			LOCALS += "带有动物毛。"
+			LOCALS += "動物の毛が付いている。"
 		SIF TALENT:CHARA:吸血鬼
-			LOCALS += "有一个模仿蝙蝠的印章。"
+			LOCALS += "蝙蝠を象った印章がしてある。"
 		SIF TALENT:CHARA:水棲
-			LOCALS += "湿漉的。"
+			LOCALS += "濡れている。"
 	ENDSELECT
 	;ある程度まで行くと断定できる
 	IF ABL:CHARA:親密 >= 20 || TALENT:CHARA:恋人
-		LOCALS = 这是%CALLNAME:CHARA%的东西。
+		LOCALS = %CALLNAME:CHARA%のものだ。
 	ELSEIF ABL:CHARA:親密 >= 10
-		LOCALS += "就像那个孩子曾有的一样…。"
+		LOCALS += "あの子が持っていたような…。"
 	ELSEIF ABL:CHARA:親密 >= 5
-		LOCALS += "我好像在某人那里看过…。"
+		LOCALS += "どこかで見たことがある…。"
 	ENDIF
 ELSEIF TASKNAME == "捜索（場所）" || (TASKNAME == "捜索（人物）" && !パターン)
 	;落とした場所を推定する,現状パターンは1～2
@@ -551,7 +537,7 @@ ELSEIF TASKNAME == "捜索（場所）" || (TASKNAME == "捜索（人物）" && 
 		IF CFLAG:ARG:自宅位置
 			PLACE = CFLAG:ARG:自宅位置
 		ELSE
-			PRINTFORML 找不到任何线索…。
+			PRINTFORML 手がかりは得られない…。
 			RETURN
 		ENDIF
 	ENDIF
@@ -559,134 +545,134 @@ ELSEIF TASKNAME == "捜索（場所）" || (TASKNAME == "捜索（人物）" && 
 	SELECTCASE GET_MAPID(PLACE)
 	CASE 0
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在博丽神社附近丢了。"
+			LOCALS += "博麗神社の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 3
 ;			LOCALS += "博麗神社に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 1
 			IF パターン == 1
-				LOCALS += "我去参观的那天丢了。"
+				LOCALS += "参拝に行った日に失くしたらしい。"
 			ELSE
-				LOCALS += "好像是宴会的那天丢了。"
+				LOCALS += "宴会をした日に失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 1
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像我在命莲寺附近丢了。"
+			LOCALS += "命蓮寺の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 3
 ;			LOCALS += "命蓮寺に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 1
 			IF パターン == 1
-				LOCALS += "我去参观的那天丢了。"
+				LOCALS += "参拝に行った日に失くしたらしい。"
 			ELSE
-				LOCALS += "好像在人群中丢了。"
+				LOCALS += "人混みの中で失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 2
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像我在人间之里附近丢了。"
+			LOCALS += "人里の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 3
 ;			LOCALS += "人里に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 1
 			IF パターン == 1
-				LOCALS += "好像是宴会的那天丢了。"
+				LOCALS += "宴会をした日に失くしたらしい。"
 			ELSE
-				LOCALS += "好像在人群中丢了。"
+				LOCALS += "人混みの中で失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 3
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在红魔馆附近丢了。"
+			LOCALS += "紅魔館の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 4
 ;			LOCALS += "紅魔館に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 2
 			IF パターン == 1
-				LOCALS += "好像是宴会的那天丢了。"
+				LOCALS += "宴会をした日に失くしたらしい。"
 			ELSE
-				LOCALS += "好像在去钓鱼的那天丢了。"
+				LOCALS += "釣りに行った日に失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 4
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在永远亭附近丢了。"
+			LOCALS += "永遠亭の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 5
 ;			LOCALS += "永遠亭に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 3
 			IF パターン == 1
-				LOCALS += "好象在黑暗中丢了。"
+				LOCALS += "暗がりで失くしたらしい。"
 			ELSE
-				LOCALS += "好象在迷路的时候丢了。"
+				LOCALS += "迷ったときに失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 5
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在魔法之森丢了。"
+			LOCALS += "魔法の森で失くしたらしい。"
 ;		ELSEIF 洞察力>= 5
-;			LOCALS += "魔法之森に行った日に失くしたらしい。"
+;			LOCALS += "魔法の森に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 3
 			IF パターン == 1
-				LOCALS += "好象在黑暗中丢了。"
+				LOCALS += "暗がりで失くしたらしい。"
 			ELSE
-				LOCALS += "好象在迷路的时候丢了。"
+				LOCALS += "迷ったときに失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 6
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在冥界那里丢了。"
+			LOCALS += "冥界方面で失くしたらしい。"
 ;		ELSEIF 洞察力>= 6
 ;			LOCALS += "冥界方面に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 4
-			LOCALS += "意识到的时候好像已经丢了。"
+			LOCALS += "気づいた時には失くなっていたらしい。"
 		ENDIF
 	CASE 7
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在山麓那里丢了。"
+			LOCALS += "山麓で失くしたらしい。"
 ;		ELSEIF 洞察力>= 4
-;			LOCALS += "好像在山麓那里丢了。"
+;			LOCALS += "山麓で失くしたらしい。"
 		ELSEIF 洞察力 >= 2
 			IF パターン == 1
-				LOCALS += "好象在妖怪的山上丢了。"
+				LOCALS += "妖怪の山で失くしたらしい。"
 			ELSE
-				LOCALS += "好像在去钓鱼的那天丢了。"
+				LOCALS += "釣りに行った日に失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 8
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好象在山顶附近丢了。"
+			LOCALS += "山頂付近で失くしたらしい。"
 ;		ELSEIF 洞察力>= 4
-;			LOCALS += "好象在山顶附近丢了。"
+;			LOCALS += "山頂付近で失くしたらしい。"
 		ELSEIF 洞察力 >= 2
 			IF パターン == 1
-				LOCALS += "好象在妖怪的山上丢了。"
+				LOCALS += "妖怪の山で失くしたらしい。"
 			ELSE
-				LOCALS += "我去参观的那天丢了。"
+				LOCALS += "参拝に行った日に失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 9
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好像在地底那里丢了。"
+			LOCALS += "地底で失くしたらしい。"
 ;		ELSEIF 洞察力>= 6
-;			LOCALS += "好像在地底那里丢了。"
+;			LOCALS += "地底で失くしたらしい。"
 		ELSEIF 洞察力 >= 4
 			IF パターン == 1
-				LOCALS += "好象在黑暗中丢了。"
+				LOCALS += "暗がりで失くしたらしい。"
 			ELSE
-				LOCALS += "好像在去钓鱼的那天丢了。"
+				LOCALS += "釣りに行った日に失くしたらしい。"
 			ENDIF
 		ENDIF
 	CASE 10
 		IF GET_MAPID(PLACE) == MAIN_MAP
-			LOCALS += "好象在月之都附近丢了。"
+			LOCALS += "月の都の近くで失くしたらしい。"
 ;		ELSEIF 洞察力>= 6
-;			LOCALS += "月之都に行った日に失くしたらしい。"
+;			LOCALS += "月の都に行った日に失くしたらしい。"
 		ELSEIF 洞察力 >= 4
-			LOCALS += "意识到的时候好像已经丢了。"
+			LOCALS += "気づいた時には失くなっていたらしい。"
 		ENDIF
 	ENDSELECT
 	SIF 洞察力 >= 2 && TASKNAME == "捜索（人物）" && !パターン
-		LOCALS += "因为是显眼的东西、很有可能已经被人捡到了。"
+		LOCALS += "目立つ物なので既に誰かに拾われている可能性が高い。"
 ENDIF
 SIF LOCALS == ""
-	LOCALS = 找不到任何线索…。
+	LOCALS = 手がかりは得られない…。
 PRINTFORML %LOCALS%
 
 ;----------------------------------------------------------------------------------------------------
@@ -714,12 +700,12 @@ RESETCOLOR
 ;依頼関連変数の全初期化
 ;----------------------------------------------------------------------------------------------------
 @IRAI_RESET
-PRINTFORML 重置所有的委托。
-PRINTFORML 可以吗？
+PRINTFORML すべての依頼をリセットします。
+PRINTFORML よろしいですか？
 CALL ASK_YN
 IF !RESULT
 	CALL IRAI_RESET_PROCESS
-	PRINTFORMW 已经重置。
+	PRINTFORMW リセットしました。
 ENDIF
 
 @IRAI_RESET_PROCESS
@@ -739,18 +725,18 @@ VARSET IRAI_EX
 @MEMO_IRAI_DEADLINE
 #DIM CLIENT
 ;受託済み依頼の期限の処理
-FOR LOCAL,1, 10
+FOR LOCAL,1, 6
 	SIF !IRAI_SLOT:LOCAL
 		CONTINUE
 	CLIENT = IRAI_SLOT_TO_CLIENT(LOCAL)
 	SIF GROUPMATCH(IRAI_CHARA_TO_PROGRESS(CLIENT), "依頼中", "依頼達成", "依頼失敗")
-		PRINTFORML %CALLNAME:CLIENT%的委托的期限还有{IRAI_DEADLINE:LOCAL - DAY}天
+		PRINTFORML %CALLNAME:CLIENT%の依頼の期限はあと{IRAI_DEADLINE:LOCAL - DAY}日だ
 NEXT
 
 
 
 ;----------------------------------------------------------------------------------------------------
-;「訪問房間」での依頼関連のアクション
+;「部屋を訪ねる」での依頼関連のアクション
 ;----------------------------------------------------------------------------------------------------
 @IRAI_VISIT_HOME(CHARA)
 #DIM PREV_TARGET     ;TARGET退避
@@ -776,7 +762,7 @@ FOR CHK_SLOT, IRAI_NUM, 0, -1
 	SIF !CAN_IRAI_VISIT_HOME_CLIENT(CHARA, CHK_SLOT)
 		CONTINUE
 	PRINTFORML ＜%STR_DATA_IRAI(IRAI_SLOT:CHK_SLOT, "依頼名", CHARA)%＞
-	PRINTFORMW 　→报告委托
+	PRINTFORMW 　→依頼報告
 	CALL IRAI_REPORT(CHARA)
 	SIF RESULT > 0
 		CNT_DO ++

@@ -16,7 +16,6 @@
 ;ARG:11 グラデーション変化の頻度　数値が大きいほど変化が緩やかになる
 ;ARGS:1 ゲージに使用する文字
 ;ARGS:2 ゲージの背景文字
-
 @COLOR_BAR(ARG:1,ARG:2,ARG:3=20,ARG:4=160,ARG:5=160,ARG:6=160,ARG:7=-80,ARG:8,ARG:9,ARG:10,ARG:11=1,ARGS:1=UNICODE(0x2582),ARGS:2=UNICODE(0x2581))
 VARSET LOCAL
 LOCAL:1 = ARG:1 * ARG:3 / ARG:2
@@ -60,15 +59,13 @@ FOR LOCAL,0,ARG:3
 			SETCOLOR ARG:4,ARG:5,ARG:6
 			LOCAL:100 = 0
 		ENDIF
-		;4.972修复，适配原版制表
-		CALL MSG_CODE,ARGS:1
+		PRINTFORM %ARGS:1%
 	ELSE
 		IF !LOCAL:101
 			SETCOLOR LOCAL:4,LOCAL:5,LOCAL:6
 			LOCAL:101 = 1
 		ENDIF
-		;4.972修复，适配原版制表
-		CALL MSG_CODE,ARGS:2
+		PRINTFORM %ARGS:2%
 	ENDIF
 NEXT
 RESETCOLOR
@@ -95,7 +92,7 @@ ARG:4 = 109
 ARG:5 = 225
 ARG:6 = 255
 PRINTFORM Lv{ARG:2}
-CALL COLOR_BAR(ARG,ARG:1,20,ARG:4,ARG:5,ARG:6,-160,10,18,6,2,UNICODE(0x2585),UNICODE(0x2585))
+CALL COLOR_BAR(ARG,ARG:1,20,ARG:4,ARG:5,ARG:6,-160,10,18,6,2,UNICODE(0x25AE),UNICODE(0x25AE))
 PRINTFORM Lv{ARG:3}
 
 ;-------------------------------------------------
@@ -361,13 +358,12 @@ PRINTSL CENTER("─"* (MAXWIDTH()/2-4), MAXWIDTH())
 SETCOLOR LOCAL
 
 ;-------------------------------------------------
-;Draw a line between the text 已改造
+;Draw a line between the text
 ;-------------------------------------------------
-@LINECENTER, ARGS, ARGS:1 = "-", ARG = 32
+@LINECENTER, ARGS, ARGS:1 = "-"
 LOCAL = STRLENS(ARGS)
-LOCAL:1 = MAX(ARG, LOCAL)
-LOCALS = %ARGS:1*((LOCAL:1 - LOCAL)/2/STRLENS(ARGS:1))%%ARGS%%ARGS:1*((LOCAL:1 - LOCAL)/2/STRLENS(ARGS:1))%
-PRINTFORML %SUBSTRING(LOCALS, 0, LOCAL:1)%
+LOCALS = %ARGS:1*(16-LOCAL/2)%%ARGS%%ARGS:1*(16-LOCAL/2)%
+PRINTFORML %SUBSTRING(LOCALS, 0, 32)%
 
 
 ; @DRAWLINES, ARGS, ARGS:1, ARG
@@ -603,37 +599,34 @@ ENDSELECT
 ;						&0x0001	: 改行あり
 ;--------------------------------------------------
 @ANIMATION_BGCOLOR_TRANSITION( nFirstBgColor, nLastBgColor, nWaitCount, nWaitTime, nChangeWaitTime, nExtraFlag )
-#DIM nFirstBgColor
-#DIM nLastBgColor
-#DIM nWaitCount
-#DIM nWaitTime
-#DIM nChangeWaitTime
-#DIM nExtraFlag
+	#DIM nFirstBgColor
+	#DIM nLastBgColor
+	#DIM nWaitCount
+	#DIM nWaitTime
+	#DIM nChangeWaitTime
+	#DIM nExtraFlag
 
-#DIM colorFirst_RGB, 3
-#DIM colorLast_RGB, 3
-#DIM nLoop
+	#DIM colorFirst_RGB, 3
+	#DIM colorLast_RGB, 3
+	#DIM nLoop
 
-SIF GETBIT(GLOBAL, 52) ;cancel if bg color change is disabled
-	RETURN
+	colorFirst_RGB:0 = nFirstBgColor / 256 / 256
+	colorFirst_RGB:1 = nFirstBgColor / 256 % 256
+	colorFirst_RGB:2 = nFirstBgColor % 256
+	colorLast_RGB:0 = nLastBgColor / 256 / 256
+	colorLast_RGB:1 = nLastBgColor / 256 % 256
+	colorLast_RGB:2 = nLastBgColor % 256
 
-colorFirst_RGB:0 = nFirstBgColor / 256 / 256
-colorFirst_RGB:1 = nFirstBgColor / 256 % 256
-colorFirst_RGB:2 = nFirstBgColor % 256
-colorLast_RGB:0 = nLastBgColor / 256 / 256
-colorLast_RGB:1 = nLastBgColor / 256 % 256
-colorLast_RGB:2 = nLastBgColor % 256
-
-FOR nLoop, 0, nWaitCount
-	LOCAL:1 = LIMIT( colorFirst_RGB:0 + (colorLast_RGB:0 - colorFirst_RGB:0) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-	LOCAL:2 = LIMIT( colorFirst_RGB:1 + (colorLast_RGB:1 - colorFirst_RGB:1) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-	LOCAL:3 = LIMIT( colorFirst_RGB:2 + (colorLast_RGB:2 - colorFirst_RGB:2) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
-	SETBGCOLOR ((LOCAL:1 * 256 * 256) + (LOCAL:2 * 256) + (LOCAL:3))
-	LOCAL = LIMIT( nWaitTime + (nLoop * nChangeWaitTime), 50, 1000 )
-	TWAIT LOCAL, (nLoop == 0)
-	SIF nExtraFlag & 0x0001
-		PRINTL
-NEXT
+	FOR nLoop, 0, nWaitCount
+		LOCAL:1 = LIMIT( colorFirst_RGB:0 + (colorLast_RGB:0 - colorFirst_RGB:0) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		LOCAL:2 = LIMIT( colorFirst_RGB:1 + (colorLast_RGB:1 - colorFirst_RGB:1) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		LOCAL:3 = LIMIT( colorFirst_RGB:2 + (colorLast_RGB:2 - colorFirst_RGB:2) * nLoop / MAX( 1, nWaitCount - 1 ), 0, 0xFF )
+		SETBGCOLOR ((LOCAL:1 * 256 * 256) + (LOCAL:2 * 256) + (LOCAL:3))
+		LOCAL = LIMIT( nWaitTime + (nLoop * nChangeWaitTime), 50, 1000 )
+		TWAIT LOCAL, (nLoop == 0)
+		SIF nExtraFlag & 0x0001
+			PRINTL
+	NEXT
 
 ;================================================================
 ; 数値を、ある一定の範囲で振動する値に変換する
@@ -682,19 +675,19 @@ NEXT
 ;					0 = クロール表示（指定した文字列を左から右へロール表示する）
 ;					1 = テレタイプ表示（指定した文字列を先頭から１文字ずつ表示していく）
 ;================================================================
-@ANIMATION_ROLL_TEXT( strText, nPrintType ,ARG = 50)
+@ANIMATION_ROLL_TEXT( strText, nPrintType )
 	#DIMS strText
 	#DIM nPrintType
 	#DIM nTextLen
 	#DIMS strTextBuf
 	#DIM nLineCount
-	LOCAL:1 = CURRENTREDRAW()
+
 	SIF LINEISEMPTY() == 0
 		PRINTL 
 
 	STRLENFORMU %strText%
 	nTextLen = RESULT
-	;SETCOLOR C_YELLOW ;set a notif color
+	SETCOLOR C_YELLOW ;set a notif color
 	;IF CHECK_DIRECTION_ANIMATION() == 0
 		;アニメーション演出オフの場合
 	;	PRINTFORM %strText%
@@ -719,7 +712,7 @@ NEXT
 					CLEARLINE LINECOUNT - nLineCount
 					PRINTFORM %strTextBuf%
 					REDRAW 1
-					TWAIT (LOCAL + 1 < nTextLen ? ARG # 400), 0
+					TWAIT (LOCAL + 1 < nTextLen ? 100 # 500), 0
 					REDRAW 0
 					LOCAL += 1
 				LOOP LOCAL < nTextLen
@@ -735,7 +728,7 @@ NEXT
 					CLEARLINE LINECOUNT - nLineCount
 					PRINTFORM %strTextBuf%
 					REDRAW 1
-					TWAIT (LOCAL + 1 < nTextLen ? ARG # 400), 0
+					TWAIT (LOCAL + 1 < nTextLen ? 100 # 500), 0
 					REDRAW 0
 					LOCAL += 1
 				LOOP LOCAL < nTextLen
@@ -743,6 +736,5 @@ NEXT
 		ENDSELECT
 		REDRAW 1
 	ENDIF
-	;RESETCOLOR
-	REDRAW LOCAL:1
+	RESETCOLOR
 	RETURN

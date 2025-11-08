@@ -1,62 +1,62 @@
 ﻿;--------------------------------------------------
 ;地点名変更関数
 ;--------------------------------------------------
-@MAP_PLACENAME_3(ARG,ARG:1)
+@MAP_PLACENAME_3(ARG)
 #FUNCTIONS
 IF GET_MAPID(ARG) == MAIN_MAP
 	SELECTCASE ARG
-		CASE P304空的小屋
+		CASE P304空き小屋
 			IF CFLAG:MASTER:初期位置 == ARG
-				RETURNF CALLNAME:MASTER + "的小屋"
+				RETURNF CALLNAME:MASTER + "の小屋"
 			ELSE
-				RETURNF "空的小屋"
+				RETURNF "空き小屋"
 			ENDIF
 		CASE SUMIKOMI_ROOM
-			IF FLAG:住宿人物
-				RETURNF CALLNAME:(FLAG:住宿人物) + "的房间"
+			IF FLAG:住み込みキャラ
+				RETURNF CALLNAME:(FLAG:住み込みキャラ) + "の部屋"
 			ELSE
-				RETURNF "空的房间"
+				RETURNF "空き部屋"
 			ENDIF
 		CASE MINROOM() TO (MAXROOM - 1)
-			RETURNF ARG:1 ? STR:(ARG + 8000) # STR_TR(ARG + 8000) ;custom code
+			RETURNF STR:(ARG + 8000)
 		CASE OMANEKIBEYA()
 			RETURNF OMANEKI_PLACE()
 		CASE SUKIMA()
-			RETURNF "隙间空间"
+			RETURNF "スキマ空間"
 		CASE MAXROOM
-			RETURNF "雾之湖的另一边"
+			RETURNF "霧の向こう"
 		CASEELSE
 			RETURNF "不明"
 	ENDSELECT
 ELSE
-	RETURNF "湖外"
+	RETURNF "湖の外"
 ENDIF
 
 ;--------------------------------------------------
 ;場所ARGがどのエリアにあるか
-;表示するMapの番号と連動（TFLAG:地圖切換）
+;表示するマップの番号と連動（TFLAG:マップ切り替え）
 ;ARG     場所ID
 ;--------------------------------------------------
 @MAP_AREASELECT_3(ARG)
 #FUNCTION
 SELECTCASE ARG
 	;紅魔館・一階＆地下
-	CASE P301正門 TO P316一層廁所, P328地下走廊 TO P333大浴場
+	CASE P301正門 TO P316一階トイレ, P328地下廊下 TO P333大浴場
 		RETURNF 2
 	;紅魔館・二階＆三階
-	CASE P319二階廊下 TO P327小露台
+	CASE P319二階廊下 TO P327小バルコニー
 		RETURNF 3
 	;廃洋館
-	CASE P334廃洋館・入口 TO P342莉莉卡私室
+	CASE P334廃洋館・入り口 TO P342リリカ私室
 		RETURNF 4
-	;霧之湖
+	;霧の湖
 	CASEELSE
 		RETURNF 1
 ENDSELECT
 
 ;--------------------------------------------------
 ;内部構造がある場所の内部の判定
-;TFLAG:地圖切換  内部察知が必要なMap番号
+;TFLAG:マップ切り替え  内部察知が必要なマップ番号
 ;                P_ID  表示ボタンの場所ID
 ;                Q_ID  判定する内部の場所ID,必ずP_IDと一致した数値も含める
 ;--------------------------------------------------
@@ -64,7 +64,7 @@ ENDSELECT
 #FUNCTION
 #DIM P_ID
 #DIM Q_ID
-IF TFLAG:地圖切換 == 1
+IF TFLAG:マップ切り替え == 1
 	SELECTCASE P_ID
 		;紅魔館
 		CASE P301正門
@@ -73,27 +73,27 @@ IF TFLAG:地圖切換 == 1
 				RETURNF 1
 			ENDSELECT
 		;廃洋館
-		CASE P334廃洋館・入口
+		CASE P334廃洋館・入り口
 			SELECTCASE Q_ID
-			CASE P334廃洋館・入口 TO P342莉莉卡私室
+			CASE P334廃洋館・入り口 TO P342リリカ私室
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
-ELSEIF TFLAG:地圖切換 == 2
+ELSEIF TFLAG:マップ切り替え == 2
 	SELECTCASE P_ID
 		;紅魔館・二階＆三階
 		CASE P319二階廊下
 			SELECTCASE Q_ID
-			CASE P319二階廊下 TO P327小露台
+			CASE P319二階廊下 TO P327小バルコニー
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
-ELSEIF TFLAG:地圖切換 == 3
+ELSEIF TFLAG:マップ切り替え == 3
 	SELECTCASE P_ID
 		;紅魔館・一階＆地下
-		CASE P309大廳
+		CASE P309広間
 			SELECTCASE Q_ID
-			CASE P309大廳 TO P316一層廁所, P328地下走廊 TO P333大浴場
+			CASE P309広間 TO P316一階トイレ, P328地下廊下 TO P333大浴場
 				RETURNF 1
 			ENDSELECT
 	ENDSELECT
@@ -103,7 +103,7 @@ RETURNF 0
 ;--------------------------------------------------
 ;移動制限設定
 ;ARG    場所ID
-;CHARA  移動する角色ID
+;CHARA  移動するキャラID
 ;RETURNF 1=移動できる,0=移動できない
 ;TFLAG:移動不能メッセージ   ↓の@MAP_CANNOT_WORD用の設定
 ;--------------------------------------------------
@@ -112,14 +112,14 @@ RETURNF 0
 #DIM CHARA
 SELECTCASE ARG
 	;湖底
-	CASE P348霧之湖・湖底
+	CASE P348霧の湖・湖底
 		;水棲でないと入れない
 		IF !TALENT:CHARA:水棲 && !ITEM:避水の玉
 			TFLAG:移動不能メッセージ = 1
 			RETURNF 0
 		ENDIF
 	;誰かが住んでないと入れない
-	CASE P304空的小屋, P321空的部屋
+	CASE P304空き小屋, P321空き部屋
 		IF !PRIVATEROOM:(ARG % 100) && CFLAG:MASTER:初期位置 != ARG
 			TFLAG:移動不能メッセージ = 999
 			RETURNF 0
@@ -133,8 +133,7 @@ RETURNF 1
 @MAP_CANNOT_WORD_3(ARG)
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
-		;PRINTFORMW 溺れてしまう…
-		PRINTFORMW 会淹死的…
+		PRINTFORMW 溺れてしまう…
 		CLEARLINE 2
 ENDSELECT
 REUSELASTLINE
@@ -149,45 +148,45 @@ IF WITH_MOB()
 	RETURN 1
 ELSEIF !FLAG:時間停止
 	IF CFLAG:MASTER:現在位置 == P329倉庫
-		PRINTFORML 这里有猫咪
+		PRINTFORML ねこさんがいる
 		RETURN 1
 	ENDIF
 ENDIF
 
 ;-----------------------------------------
-;拠点の場所IDをお出かけMap上の場所IDに置換する関数
-;ARG      対象の場所ID（拠点Map）
-;RETURNF  差し替え場所ID（お出かけMap）
+;拠点の場所IDをお出かけマップ上の場所IDに置換する関数
+;ARG      対象の場所ID（拠点マップ）
+;RETURNF  差し替え場所ID（お出かけマップ）
 ;-----------------------------------------
 @MAP_SEARCH_REPLACEMENT_3(ARG)
 #FUNCTION
 SELECTCASE ARG
-	CASE P343湖畔, P346大妖精の棲家 TO P348霧之湖・湖底
-		RETURNF 霧之湖
-	CASE P344蕾蒂的冰屋, P345琪露諾的冰屋
-		RETURNF 冰造的小雪屋
-	CASE P334廃洋館・入口 TO P342莉莉卡私室
+	CASE P343湖畔, P346大妖精の棲家 TO P348霧の湖・湖底
+		RETURNF 霧の湖
+	CASE P344レティのかまくら, P345チルノのかまくら
+		RETURNF 氷のかまくら
+	CASE P334廃洋館・入り口 TO P342リリカ私室
 		RETURNF 廃洋館
-	CASE P301正門 TO P308西陽台
+	CASE P301正門 TO P308西テラス
 		RETURNF 正門
 	CASE P313厨房, P314食堂
 		RETURNF 食堂
 	CASE P310図書館 TO P312小悪魔私室
 		RETURNF 大図書館
-	CASE P328地下走廊 TO P333大浴場
+	CASE P328地下廊下 TO P333大浴場
 		RETURNF 地下室
 	CASEELSE
-		RETURNF 大廳
+		RETURNF 広間
 ENDSELECT
 RETURNF 0
 
 ;--------------------------------------------------
-;Mapの紹介文
+;マップの紹介文
 ;--------------------------------------------------
-@Map紹介_3
+@マップ紹介_3
 ;とりあえず5行
-PRINTFORML 以红魔馆・雾湖为中心、包含了普利兹姆利巴三姐妹所住的废弃洋馆的地区。
-PRINTFORML 最大的特征是仅此一家的赌场。
-PRINTFORML 雾湖除了其湖水在酿酒上能派上用场之外、也能在此钓鱼、算是很便利的据点。
-PRINTFORML 就跟从来的吸血鬼洋馆一样、这里的住人都是到了晚上才开始活动。或许要根据需求来调整一下的生活节奏。
-PRINTFORML 据点内可帮忙的工作虽然不缺、但因为有人负责清扫的关系、或许很难看到红魔馆内会累积污垢。
+PRINTFORML 紅魔館・霧の湖を中心に、プリズムリバー三姉妹の住む廃洋館までを含んだエリア。
+PRINTFORML 最大の特徴はここにしか存在しないカジノ。
+PRINTFORML 湖の水は酒造に役立つほか釣りもでき、なかなか利便性の高い拠点。
+PRINTFORML 吸血鬼の館らしく一部の住人は夜になってから活動を始めるため、必要に応じ起床時間をずらすことも必要だろう。
+PRINTFORML 拠点内での仕事の手伝い先にも事欠かないが、こまめに清掃が行われるためか紅魔館の中は案外汚れない。

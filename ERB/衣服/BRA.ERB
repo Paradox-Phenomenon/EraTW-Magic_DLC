@@ -1,16 +1,16 @@
-﻿;今日の胖次には便装用と睡衣用の二種類があるので、直接P_IDを渡すように改変
-@今日の文胸(C_ID, P_ID)
+﻿;今日のパンツには普段着用とパジャマ用の二種類があるので、直接P_IDを渡すように改変
+@今日のブラジャー(C_ID, P_ID)
 #FUNCTION
 #LOCALSIZE 2
 #LOCALSSIZE 1
 #DIM RAND_BRA, MAXBRA
 #DIM B_TABLE
 
-#DIM C_ID		;対象角色
-#DIM P_ID		;コーディネートされた胖次
+#DIM C_ID		;対象キャラ
+#DIM P_ID		;コーディネートされたおぱんつ
 #DIM B_ID = 0	;ブラの種類
 
-B_ID = GET_INT(C_ID, "下半身内衣_ずらし可能", P_ID, "関連内衣")
+B_ID = GET_INT(C_ID, "下半身下着_ずらし可能", P_ID, "関連下着")
 
 IF B_ID == 0 && !(P_ID == 0 || P_ID == 18)
 	VARSET RAND_BRA , 0
@@ -23,7 +23,7 @@ IF B_ID == 0 && !(P_ID == 0 || P_ID == 18)
 	NEXT
 	
 	FOR B_TABLE, 0, MAXBRA
-		IF GET_INT(C_ID, "上半身内衣_はだけ不可", RAND_BRA:B_TABLE, "つける")
+		IF GET_INT(C_ID, "上半身下着_はだけ不可", RAND_BRA:B_TABLE, "つける")
 			B_ID = RAND_BRA:B_TABLE
 			BREAK
 		ELSE
@@ -38,14 +38,14 @@ SIF DECIDE_NOBRA(C_ID)
 	B_ID = 0
 RETURNF B_ID
 
-;PRINTFORML %CALLNAME:C_ID%:下半身内衣２:{P_ID}:%PANTSNAME(P_ID)%　上半身内衣１:{EQUIP:C_ID:上半身内衣１}:%CLOTHNAME(7, EQUIP:C_ID:7)%
+;PRINTFORML %CALLNAME:C_ID%:下半身下着２:{P_ID}:%PANTSNAME(P_ID)%　上半身下着１:{EQUIP:C_ID:上半身下着１}:%CLOTHNAME(7, EQUIP:C_ID:7)%
 
 @DECIDE_NOBRA(ARG)
 #FUNCTION
 #DIM DYNAMIC NOBRA_RATE
-SIF (TALENT:ARG:風騷 || TALENT:ARG:小悪魔 || TALENT:ARG:炮友 || ABL:ARG:露出癖 >= 4) && !RAND:5
+SIF (TALENT:ARG:ヤリマン || TALENT:ARG:小悪魔 || TALENT:ARG:セフレ || ABL:ARG:露出癖 >= 4) && !RAND:5
 	RETURNF 1
-SIF TALENT:ARG:母乳体質 && !(TALENT:ARG:炮友 || TALENT:ARG:愛欲 || ABL:ARG:露出癖 >= 4)
+SIF TALENT:ARG:母乳体質 && !(TALENT:ARG:セフレ || TALENT:ARG:愛欲 || ABL:ARG:露出癖 >= 4)
 	RETURNF 0
 ;DAY:2 季節（1=春 2=夏 3=秋 4=冬）
 SELECTCASE DAY:2
@@ -65,25 +65,22 @@ SIF TALENT:ARG:倒錯的
 	TIMES NOBRA_RATE, 1.20
 SIF TALENT:ARG:小悪魔
 	TIMES NOBRA_RATE, 1.20
-SIF TALENT:ARG:受虐狂
+SIF TALENT:ARG:マゾ
 	TIMES NOBRA_RATE, 1.80
-SIF TALENT:ARG:風騷
+SIF TALENT:ARG:ヤリマン
 	TIMES NOBRA_RATE, 2.00
 
 {
 	NOBRA_RATE = NOBRA_RATE * 
-				(10 + TALENT:ARG:性的兴趣 + TALENT:ARG:自己愛 + TALENT:ARG:快感応答 
-					- TALENT:ARG:Ｂ感度 - TALENT:ARG:貞操 - TALENT:ARG:羞恥心 - TALENT:ARG:胸圍 ) / 10
+				(10 + TALENT:ARG:性的興味 + TALENT:ARG:自己愛 + TALENT:ARG:快感応答 
+					- TALENT:ARG:Ｂ感度 - TALENT:ARG:貞操 - TALENT:ARG:羞恥心 - TALENT:ARG:バストサイズ ) / 10
 }
 
-SIF TALENT:ARG:無接吻経験
+SIF TALENT:ARG:キス未経験
 	TIMES NOBRA_RATE, 0.30
-;失心疯了，在这里搞字符串比对
-;SIF GET_TALENTNAME(GETNUM(TALENT, "胆量"), TALENT:ARG:胆量) == "膽怯"
-SIF TALENT:ARG:胆量 == -1 ;膽怯
+SIF GET_TALENTNAME(GETNUM(TALENT, "度胸"), TALENT:ARG:度胸) == "臆病"
 	TIMES NOBRA_RATE, 0.50
-;SIF GET_TALENTNAME(GETNUM(TALENT, "自尊心"), TALENT:ARG:自尊心) == "自尊心高"
-SIF TALENT:ARG:自尊心 == 1 ;自尊心高
+SIF GET_TALENTNAME(GETNUM(TALENT, "プライド"), TALENT:ARG:プライド) == "プライド高い"
 	TIMES NOBRA_RATE, 0.50
 
 RETURNF RAND:100 <= NOBRA_RATE
@@ -92,5 +89,5 @@ RETURNF RAND:100 <= NOBRA_RATE
 #FUNCTIONS
 #DIM CHARA
 
-CALLF 上半身内衣チェック(ARG)
-RETURNF CLOTHES_TR(GET_STR(CHARA, CLOTHES_PARTS_TO_CATEGORY("上半身内衣１"), ARG, "名前"))
+CALLF 上半身下着チェック(ARG)
+RETURNF GET_STR(CHARA, CLOTHES_PARTS_TO_CATEGORY("上半身下着１"), ARG, "名前")

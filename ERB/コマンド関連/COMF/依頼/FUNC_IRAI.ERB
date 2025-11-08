@@ -29,7 +29,7 @@ RETURNF GET_STR(IRAI_ID, "キャラデータ", CHARA, TYPE)
 
 ;----------------------------------------------------------------------------------------------------
 ;固有依頼に関するキャラデータ取得
-;直接使用するのではなく@INT/STR_DATA_IRAIを使用こと
+;直接使用するのではなく@INT/STR_DATA_IRAIを使うこと
 ;----------------------------------------------------------------------------------------------------
 @INT_UNIQUE_IRAI(CHARA, TYPE, IRAI_ID)
 #FUNCTION
@@ -49,7 +49,7 @@ RETURNF GET_STR(IRAI_ID, "キャラデータ", CHARA, TYPE)
 
 ;----------------------------------------------------------------------------------------------------
 ;一般依頼情報取得
-;直接使用するのではなく@INT/STR_DATA_IRAIを使用こと
+;直接使用するのではなく@INT/STR_DATA_IRAIを使うこと
 ;----------------------------------------------------------------------------------------------------
 @INT_COMMON_IRAI(CHARA, TYPE, IRAI_ID)
 #FUNCTION
@@ -68,7 +68,7 @@ RETURNF GET_STR(CHARA, "一般依頼", IRAI_ID, TYPE)
 
 
 ;----------------------------------------------------------------------------------------------------
-;依頼実行時の指令表示用
+;依頼実行時のコマンド表示用
 ;----------------------------------------------------------------------------------------------------
 @NAME_IRAI_ACT()
 #FUNCTIONS
@@ -77,12 +77,12 @@ CHK_SLOT = SEARCH_ACTIVE_IRAI_SLOT()
 RETURNF IRAI_SLOT_TO_ACTNAME(CHK_SLOT)
 
 ;----------------------------------------------------------------------------------------------------
-;依頼実行時の指令表示用、SLOT指定でいけるように
+;依頼実行時のコマンド表示用、SLOT指定でいけるように
 ;----------------------------------------------------------------------------------------------------
 @IRAI_SLOT_TO_ACTNAME(CHK_SLOT)
 #FUNCTIONS
 #DIM CHK_SLOT
-RETURNF STR_DATA_IRAI(IRAI_SLOT:CHK_SLOT, "依頼実行指令名", IRAI_SLOT_TO_CLIENT(CHK_SLOT))
+RETURNF STR_DATA_IRAI(IRAI_SLOT:CHK_SLOT, "依頼実行コマンド名", IRAI_SLOT_TO_CLIENT(CHK_SLOT))
 
 
 
@@ -146,14 +146,14 @@ RETURNF MAX(0, FINDELEMENT(IRAI_SLOT, IRAI_ID, 1))
 #FUNCTION
 LOCAL = SEARCH_IRAI_EMPTY()
 SIF !LOCAL
-	RETURNF 9
+	RETURNF 5
 RETURNF LOCAL - 1
 
 
 ;----------------------------------------------------------------------------------------------------
 ;遭遇用の依頼受託可否判定
-;苦し紛れで强行解決
-;通常の366指令と挙動を変えたくないのでCALL COM_ABLE366
+;苦し紛れで無理矢理解決
+;通常の366コマンドと挙動を変えたくないのでCALL COM_ABLE366
 ;CALLするのでFUNCTIONにはできない
 ;TFLAG:100が原因でRESULTが0になっていたのでTFLAGを一時退避して判定させた
 ;----------------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ SIF GROUPMATCH(IRAI_SLOT_TO_TASKNAME(CHK_SLOT), "伝令（場所）", "捜索（
 
 
 ;----------------------------------------------------------------------------------------------------
-;ある角色が依頼で連れ出せるかどうか
+;あるキャラが依頼で連れ出せるかどうか
 ;----------------------------------------------------------------------------------------------------
 @CAN_IRAI_CHARA_GO_TOGATHER(CHARA)
 #FUNCTION
@@ -238,8 +238,8 @@ RETURNF 0
 
 
 ;----------------------------------------------------------------------------------------------------
-;ある角色が依頼で連れ出せるかどうか
-;个々の委托接口の判定
+;あるキャラが依頼で連れ出せるかどうか
+;個々の依頼スロットの判定
 ;----------------------------------------------------------------------------------------------------
 @CAN_IRAI_SLOT_GO_TOGATHER(CHARA, CHK_SLOT)
 #FUNCTION
@@ -258,7 +258,7 @@ RETURNF 0
 
 
 ;----------------------------------------------------------------------------------------------------
-;[697]訪問房間　指令の機能拡張
+;[697]部屋を訪ねる　コマンドの機能拡張
 ;----------------------------------------------------------------------------------------------------
 ;CHARAがCHK_SLOTの依頼者として報告対象になるか
 ;----------------------------------------------------------------------------------------------------
@@ -292,7 +292,7 @@ RETURNF 1
 
 
 ;----------------------------------------------------------------------------------------------------
-;現在実行可能な委托接口を返す
+;現在実行可能な依頼スロットを返す
 ;----------------------------------------------------------------------------------------------------
 @SEARCH_ACTIVE_IRAI_SLOT()
 #FUNCTION
@@ -308,7 +308,7 @@ NEXT
 
 
 ;----------------------------------------------------------------------------------------------------
-;各委托接口の実行可否判定
+;各依頼スロットの実行可否判定
 ;----------------------------------------------------------------------------------------------------
 @CAN_IRAI_SLOT_DO(CHK_SLOT)
 #FUNCTION
@@ -330,7 +330,7 @@ CASE "伝令（人物）", "捜索（人物）", "討伐"
 		RETURNF 0
 	SIF TARGET != IRAI_SLOT_TO_PERSON(CHK_SLOT)
 		RETURNF 0
-	;時間停止/睡眠/添い寝/诶嘿嘿中は不可
+	;時間停止/睡眠/添い寝/うふふ中は不可
 	SIF SHIRAHU(TARGET) != 1
 		RETURNF 0
 CASE "伝令（場所）", "捜索（場所）"
@@ -362,10 +362,10 @@ RETURNF 1
 #DIM  CONST 依頼結果_実行して未解決 = 3
 #DIM  CONST 依頼結果_実行して失敗   = 2
 #DIM  CONST 依頼結果_実行して成功   = 1
-#DIM  CONST 依頼結果_中止     = -1
+#DIM  CONST 依頼結果_キャンセル     = -1
 SELECTCASE TYPE
-CASE "中止"
-	RETURNF 依頼結果_中止
+CASE "キャンセル"
+	RETURNF 依頼結果_キャンセル
 CASE "実行して成功"
 	RETURNF 依頼結果_実行して成功
 CASE "実行して失敗"
@@ -373,13 +373,13 @@ CASE "実行して失敗"
 CASE "実行して未解決"
 	RETURNF 依頼結果_実行して未解決
 CASEELSE
-	THROW 错误的文字列です%TYPE%
+	THROW 不正な文字列です%TYPE%
 ENDSELECT
 
 
 
 ;----------------------------------------------------------------------------------------------------
-;各角色の依頼状況文字列
+;各キャラの依頼状況文字列
 ;----------------------------------------------------------------------------------------------------
 @IRAI_CHARA_TO_PROGRESS(CHARA)
 #FUNCTIONS
@@ -424,7 +424,7 @@ RETURNF IRAI_CHARA_TO_PROGRESS(CLIENT_ID)
 
 
 ;----------------------------------------------------------------------------------------------------
-;文字列各を利用して各角色の依頼状況を設定
+;文字列各を利用して各キャラの依頼状況を設定
 ;----------------------------------------------------------------------------------------------------
 @SET_IRAI_PROGRESS(CHARA, TYPE)
 #DIM  CHARA
@@ -477,8 +477,7 @@ ENDSELECT
 #DIM CHK_SLOT
 SELECTCASE IRAI_DATA:CHK_SLOT % 1000
 CASE 0
-	;THROW 错误的業種{IRAI_DATA:CHK_SLOT}
-	PRINTFORM 错误的業種{IRAI_DATA:CHK_SLOT}
+	THROW 不正な業種{IRAI_DATA:CHK_SLOT}
 CASE 1
 	RETURNF "作業"
 ;達成困難な依頼としてオミット
@@ -497,7 +496,7 @@ CASE 7
 CASE 8
 	RETURNF "討伐"
 CASE 99
-	RETURNF "其他"
+	RETURNF "その他"
 ENDSELECT
 
 
@@ -524,17 +523,17 @@ CASE "捜索（場所）"
 	RETURNF 7
 CASE "討伐"
 	RETURNF 8
-CASE "其他"
+CASE "その他"
 	RETURNF 99
 ENDSELECT
 
 
 
 ;----------------------------------------------------------------------------------------------------
-;場所の随机選抜関数
+;場所のランダム選抜関数
 ;落とし物の場所抽選に使ってる
-;書き方もう稍微どうにかなんねぇのか感が自己もあるがとりあえずで実装
-;何が問題って番号直打ちなもんだからMapの仕様が変わるとバグる
+;書き方もうちょっとどうにかなんねぇのか感が自分でもあるがとりあえずで実装
+;何が問題って番号直打ちなもんだからマップの仕様が変わるとバグる
 ;----------------------------------------------------------------------------------------------------
 @RAND_PLACE(ARG, TYPE)
 #FUNCTION
@@ -542,10 +541,10 @@ ENDSELECT
 #DIM  RESULT_MAP
 #DIM  RESULT_PLACE
 #DIMS TYPE
-#DIMS CONST LOCAL_MAPNAME = "博麗神社", "命蓮寺", "人間之里", "霧之湖～紅魔館", "迷途竹林", "魔法之森", "三途之川～冥界", "妖怪之山 (山麓)", "妖怪之山 (山頂)", "地底", "夢之世界～月"
+#DIMS CONST LOCAL_MAPNAME = "博麗神社", "命蓮寺", "人間の里", "霧の湖～紅魔館", "迷いの竹林", "魔法の森", "三途の川～冥界", "妖怪の山 (山麓)", "妖怪の山 (山頂)", "地底", "夢の世界～月"
 SELECTCASE TYPE
 CASE "LOST_ITEM"
-	;ARG = 落とし物をした角色の登録番号
+	;ARG = 落とし物をしたキャラの登録番号
 	NG_MAP = GET_MAPID(GET_CHARAHOME(ARG))
 	DO
 		RESULT_MAP = RAND:11
@@ -569,7 +568,7 @@ CASE "LOST_ITEM"
 		;5,手水舎
 			RESULT_PLACE = 5
 		CASE 4
-		;20,本殿内部
+		;20,本殿の裏
 			RESULT_PLACE = 20
 		CASE 5
 		;21,守矢神社分社
@@ -584,7 +583,7 @@ CASE "LOST_ITEM"
 		;24,温泉
 			RESULT_PLACE = 24
 		CASE 9
-		;25,鎮守之森
+		;25,鎮守の森
 			RESULT_PLACE = 25
 		CASE 10
 		;36,夢幻遺跡前
@@ -611,25 +610,25 @@ CASE "LOST_ITEM"
 		;8124,霊廟広場
 			RESULT_PLACE = 124
 		ENDSELECT
-	CASE "人間之里"
+	CASE "人間の里"
 		SELECTCASE RAND:17
 		CASE 0
-		;8201,人里的門
+		;8201,人里の門
 			RESULT_PLACE = 201
 		CASE 1
 		;8202,中央広場
 			RESULT_PLACE = 202
 		CASE 2
-		;8203,南大街
+		;8203,南通り
 			RESULT_PLACE = 203
 		CASE 3
-		;8204,東大街
+		;8204,東通り
 			RESULT_PLACE = 204
 		CASE 4
-		;8205,北大街
+		;8205,北通り
 			RESULT_PLACE = 205
 		CASE 5
-		;8206,西大街
+		;8206,西通り
 			RESULT_PLACE = 206
 		CASE 6
 		;8207,龍神像
@@ -638,7 +637,7 @@ CASE "LOST_ITEM"
 		;8211,酒屋
 			RESULT_PLACE = 211
 		CASE 8
-		;8212,咖啡館
+		;8212,カフェ
 			RESULT_PLACE = 212
 		CASE 9
 		;8213,鈴奈庵
@@ -653,7 +652,7 @@ CASE "LOST_ITEM"
 		;8216,食料品店
 			RESULT_PLACE = 216
 		CASE 13
-		;8217,甜品店
+		;8217,甘味所
 			RESULT_PLACE = 217
 		CASE 14
 		;8218,小料理屋
@@ -665,7 +664,7 @@ CASE "LOST_ITEM"
 		;8222,寺子屋
 			RESULT_PLACE = 222
 		ENDSELECT
-	CASE "霧之湖～紅魔館"
+	CASE "霧の湖～紅魔館"
 		SELECTCASE RAND:6
 		CASE 0
 		;8301,正門
@@ -674,19 +673,19 @@ CASE "LOST_ITEM"
 		;8302,庭
 			RESULT_PLACE = 302
 		CASE 2
-		;8306,後院
+		;8306,裏庭
 			RESULT_PLACE = 306
 		CASE 3
-		;8309,大廳
+		;8309,広間
 			RESULT_PLACE = 309
 		CASE 4
-		;8334,廃洋館・入口
+		;8334,廃洋館・入り口
 			RESULT_PLACE = 334
 		CASE 5
 		;8343,湖畔
 			RESULT_PLACE = 343
 		ENDSELECT
-	CASE "迷途竹林"
+	CASE "迷いの竹林"
 		SELECTCASE RAND:8
 		CASE 0
 		;8401,永遠亭入口
@@ -698,67 +697,67 @@ CASE "LOST_ITEM"
 		;8403,待合室
 			RESULT_PLACE = 403
 		CASE 3
-		;8433,斜角的竹林
+		;8433,斜角の竹林
 			RESULT_PLACE = 433
 		CASE 4
-		;8434,迷失的小道
+		;8434,迷いの小道
 			RESULT_PLACE = 434
 		CASE 5
-		;8436,無名之丘
+		;8436,無名の丘
 			RESULT_PLACE = 436
 		CASE 6
-		;8438,太陽花田
+		;8438,太陽の畑
 			RESULT_PLACE = 438
 		CASE 7
 		;8447,竹林入口
 			RESULT_PLACE = 447
 		ENDSELECT
-	CASE "魔法之森"
+	CASE "魔法の森"
 		SELECTCASE RAND:11
 		CASE 0
-		;8501,魔法之森入口
+		;8501,魔法の森入り口
 			RESULT_PLACE = 501
 		CASE 1
 		;8502,香霖堂
 			RESULT_PLACE = 502
 		CASE 2
-		;8503,岔道
+		;8503,分かれ道
 			RESULT_PLACE = 503
 		CASE 3
 		;8506,無縁塚
 			RESULT_PLACE = 506
 		CASE 4
-		;8507,菌菇群生地
+		;8507,キノコ群生地
 			RESULT_PLACE = 507
 		CASE 5
-		;8508,魔法之広場
+		;8508,魔法の広場
 			RESULT_PLACE = 508
 		CASE 6
-		;8509,再思之道
+		;8509,再思の道
 			RESULT_PLACE = 509
 		CASE 7
 		;8510,霧雨魔法店
 			RESULT_PLACE = 510
 		CASE 8
-		;8520,人偶洋館前
+		;8520,人形の館前
 			RESULT_PLACE = 520
 		CASE 9
-		;8534,轻飘飘的艾伦魔法商店
+		;8534,ふわふわエレン魔法の店
 			RESULT_PLACE = 534
 		CASE 10
-		;8540,古木的大樹
+		;8540,古木の大樹
 			RESULT_PLACE = 540
 		ENDSELECT
-	CASE "三途之川～冥界"
+	CASE "三途の川～冥界"
 		SELECTCASE RAND:9
 		CASE 0
-		;6061,中有之道
+		;6061,中有の道
 			RESULT_PLACE = 610
 		CASE 1
-		;6062,三途之川
+		;6062,三途の川
 			RESULT_PLACE = 620
 		CASE 2
-		;6063,迷途之家
+		;6063,マヨヒガ
 			RESULT_PLACE = 630
 		CASE 3
 		;6064,彼岸
@@ -779,16 +778,16 @@ CASE "LOST_ITEM"
 		;6069,霊長園
 			RESULT_PLACE = 690
 		ENDSELECT
-	CASE "妖怪之山 (山麓)"
+	CASE "妖怪の山 (山麓)"
 		SELECTCASE RAND:8
 		CASE 0
-		;8701,樹海道入口
+		;8701,樹海道入り口
 			RESULT_PLACE = 701
 		CASE 1
-		;8702,山道・通往沼澤之道
+		;8702,山道・沢へ続く道
 			RESULT_PLACE = 702
 		CASE 2
-		;8703,玄武之澤
+		;8703,玄武の沢
 			RESULT_PLACE = 703
 		CASE 3
 		;8705,山道・中腹
@@ -797,25 +796,25 @@ CASE "LOST_ITEM"
 		;8707,山道・分岐点
 			RESULT_PLACE = 707
 		CASE 5
-		;8708,大蛤蟆之池
+		;8708,大蝦蟇の池
 			RESULT_PLACE = 708
 		CASE 6
 		;8711,休憩所
 			RESULT_PLACE = 711
 		CASE 7
-		;8732,通向山頂的路
+		;8732,山頂への道
 			RESULT_PLACE = 732
 		ENDSELECT
-	CASE "妖怪之山 (山頂)"
+	CASE "妖怪の山 (山頂)"
 		SELECTCASE RAND:12
 		CASE 0
-		;8801,山頂入口
+		;8801,山頂入り口
 			RESULT_PLACE = 801
 		CASE 1
 		;8802,橋
 			RESULT_PLACE = 802
 		CASE 2
-		;8803,索道站
+		;8803,索道駅
 			RESULT_PLACE = 803
 		CASE 3
 		;8804,守矢神社鳥居
@@ -824,7 +823,7 @@ CASE "LOST_ITEM"
 		;8805,頂上
 			RESULT_PLACE = 805
 		CASE 5
-		;8806,瀑布背面
+		;8806,滝の裏
 			RESULT_PLACE = 806
 		CASE 6
 		;8811,境内
@@ -851,25 +850,25 @@ CASE "LOST_ITEM"
 		;8901,地霊殿前
 			RESULT_PLACE = 901
 		CASE 1
-		;8902,入口
+		;8902,エントランス
 			RESULT_PLACE = 902
 		CASE 2
 		;8926,中庭
 			RESULT_PLACE = 926
 		CASE 3
-		;8931,大街
+		;8931,大通り
 			RESULT_PLACE = 931
 		CASE 4
-		;8932,後街
+		;8932,裏通り
 			RESULT_PLACE = 932
 		CASE 5
 		;8933,酒場
 			RESULT_PLACE = 933
 		CASE 6
-		;8939,小胡同
+		;8939,路地裏
 			RESULT_PLACE = 939
 		CASE 7
-		;8944,街道
+		;8944,通り
 			RESULT_PLACE = 944
 		CASE 8
 		;8945,川岸
@@ -878,25 +877,25 @@ CASE "LOST_ITEM"
 		;8946,橋
 			RESULT_PLACE = 946
 		CASE 10
-		;8948,縦穴底部
+		;8948,縦穴の底
 			RESULT_PLACE = 948
 		ENDSELECT
-	CASE "夢之世界～月"
+	CASE "夢の世界～月"
 		SELECTCASE RAND:5
 		CASE 0
 		;6101,槐安通路
 			RESULT_PLACE = 1010
 		CASE 1
-		;6105,月之都
+		;6105,月の都
 			RESULT_PLACE = 1050
 		CASE 2
-		;6107,玉兎之街
+		;6107,玉兎の街
 			RESULT_PLACE = 1070
 		CASE 3
 		;6108,桃林～砂浜
 			RESULT_PLACE = 1080
 		CASE 4
-		;6109,寧靜海
+		;6109,静かの海
 			RESULT_PLACE = 1090
 		ENDSELECT
 	CASEELSE
@@ -913,7 +912,7 @@ RETURNF RESULT_PLACE
 
 ;----------------------------------------------------------------------------------------------------
 ;文通可否関数
-;扮演你は考慮外
+;なりきりあなたは考慮外
 ;----------------------------------------------------------------------------------------------------
 ;文通相手が一人でも登録されていればTRUE
 ;----------------------------------------------------------------------------------------------------
@@ -923,7 +922,7 @@ RETURNF RESULT_PLACE
 RETURNF STOCK_LETTER_TO("IS_LETTER_CHARA", CHARA)
 
 ;----------------------------------------------------------------------------------------------------
-;登録上で2角色が文通可能であるならTRUE
+;登録上で2キャラが文通可能であるならTRUE
 ;----------------------------------------------------------------------------------------------------
 @IS_PEN_FRIEND(CHARA_A, CHARA_B)
 #FUNCTION
@@ -935,7 +934,7 @@ RETURNF STOCK_LETTER_TO("IS_PEN_FRIEND", CHARA_A, CHARA_B)
 ;文通相手の抽選
 ;CAN_MEETも考慮する
 ;宛先登録とCAN_MEETを見た上でCHARAが手紙を出せる相手がいないなら0
-;相手がいるなら随机な相手を取得
+;相手がいるならランダムな相手を取得
 ;依頼発生時と受託時で出禁設定を変更したりするとバグる
 ;そこら辺は限界である
 ;----------------------------------------------------------------------------------------------------
@@ -948,10 +947,10 @@ RETURNF STOCK_LETTER_TO("WHO_LETTER_TO", CHARA)
 
 ;----------------------------------------------------------------------------------------------------
 ;文通宛先設定関数
-;角色知識が全然無いのであまり出来はよろしくない
+;キャラ知識が全然無いのであまり出来はよろしくない
 ;直接あったことないんです＞＜くらいの関係でも文通なら不自然にはならん、かも？
 ;これは一方的なものではなく、差出人設定すれば相手から手紙が返される可能性が出ます
-;番号の若い順に登録してるので後一位角色ほど設定は少なくて済むはず
+;番号の若い順に登録してるので後のキャラほど設定は少なくて済むはず
 ;
 ;以下、この奇怪なコードに至った経緯
 ;処理の効率化等はまるっきり考慮してないです
@@ -959,111 +958,111 @@ RETURNF STOCK_LETTER_TO("WHO_LETTER_TO", CHARA)
 ;・CHARA_AからCHARA_Bの登録とCHARA_Bからの登録を何度もやるのが面倒くさいので双方が同時に登録されるようにしたい
 ;・HOGE:CHARA:Xの多次元配列で管理する案
 ;→多次元配列にFINDELEMENTが使えないので重複を弾く検索処理が面倒くさい、FOR-NEXTは論外（コードが長くなる的な意味で）
-;・各角色の宛先配列の保存用関数を別个に用意して各々のプライベート変数で管理、登録と参照は別関数から行う案
-;→配列を管理したいがためだけに関数100个も作ってられねぇ
-;・文字列に突っ込んで强行解決することにした
+;・各キャラの宛先配列の保存用関数を別個に用意して各々のプライベート変数で管理、登録と参照は別関数から行う案
+;→配列を管理したいがためだけに関数100個も作ってられねぇ
+;・文字列に突っ込んで無理矢理解決することにした
 ;----------------------------------------------------------------------------------------------------
 @SETUP_ALL_LETTERS
-#DIM LETTER_TO, 人物数量上限
+#DIM LETTER_TO, キャラクタ数上限
 SIF LOCAL
 	RETURN
-;配列の要素0が手紙の差出人、其他の要素が受取人
+;配列の要素0が手紙の差出人、その他の要素が受取人
 ;使用する要素数を指定して渡す
 ;霊夢
 VARSET LETTER_TO
-LETTER_TO = [[魔理沙]], [[琪露諾]], [[咲夜]], [[蕾米莉亜]], [[愛麗絲]], [[妖夢]], [[藍]], [[紫]], [[早苗]], [[天子]], [[華扇]], [[覚]], [[鈴仙]], [[白蓮]], [[神子]], [[慧音]], [[幽香]], [[小鈴]], [[阿求]], [[哆来咪]], [[成美]], [[紫苑]]
+LETTER_TO = [[魔理沙]], [[チルノ]], [[咲夜]], [[レミリア]], [[アリス]], [[妖夢]], [[藍]], [[紫]], [[早苗]], [[天子]], [[華扇]], [[さとり]], [[鈴仙]], [[白蓮]], [[神子]], [[慧音]], [[幽香]], [[小鈴]], [[阿求]], [[ドレミー]], [[成美]], [[紫苑]]
 CALL SET_LETTER_TO([[霊夢]], LETTER_TO)
 ;魅魔
 VARSET LETTER_TO
-LETTER_TO = [[夢美]], [[魔理沙]], [[愛麗絲]], [[紫]], [[神綺]]
+LETTER_TO = [[夢美]], [[魔理沙]], [[アリス]], [[紫]], [[神綺]]
 CALL SET_LETTER_TO([[魅魔]], LETTER_TO)
-;桑尼, 露娜, 斯塔
+;サニー, ルナ, スター
 VARSET LETTER_TO
-LETTER_TO = [[魔理沙]], [[琪露諾]], [[大妖精]], [[皮絲]] 
-CALL SET_LETTER_TO([[桑尼]], LETTER_TO)
-CALL SET_LETTER_TO([[露娜]], LETTER_TO)
-CALL SET_LETTER_TO([[斯塔]], LETTER_TO)
+LETTER_TO = [[魔理沙]], [[チルノ]], [[大妖精]], [[クラウンピース]] 
+CALL SET_LETTER_TO([[サニー]], LETTER_TO)
+CALL SET_LETTER_TO([[ルナ]], LETTER_TO)
+CALL SET_LETTER_TO([[スター]], LETTER_TO)
 ;萃香
 VARSET LETTER_TO
 LETTER_TO = [[紫]], [[文]], [[天子]], [[衣玖]], [[勇儀]]
 CALL SET_LETTER_TO([[萃香]], LETTER_TO)
 ;魔理沙
 VARSET LETTER_TO
-LETTER_TO = [[琪露諾]], [[大妖精]], [[咲夜]], [[愛麗絲]], [[妖夢]], [[藍]], [[文]], [[早苗]], [[芙兰]], [[鈴仙]], [[慧音]], [[幽香]], [[哆来咪]], [[成美]]
+LETTER_TO = [[チルノ]], [[大妖精]], [[咲夜]], [[アリス]], [[妖夢]], [[藍]], [[文]], [[早苗]], [[フラン]], [[鈴仙]], [[慧音]], [[幽香]], [[ドレミー]], [[成美]]
 CALL SET_LETTER_TO([[魔理沙]], LETTER_TO)
 ;大妖精
 VARSET LETTER_TO
-LETTER_TO = [[莉莉白]], [[莉莉黑]], [[小悪魔]]
+LETTER_TO = [[リリーＷ]], [[リリーＢ]], [[小悪魔]]
 CALL SET_LETTER_TO([[大妖精]], LETTER_TO)
 ;咲夜
 VARSET LETTER_TO
-LETTER_TO = [[愛麗絲]], [[妖夢]], [[藍]], [[鵺]], [[荷取]], [[鈴仙]]
+LETTER_TO = [[アリス]], [[妖夢]], [[藍]], [[ぬえ]], [[にとり]], [[鈴仙]]
 CALL SET_LETTER_TO([[咲夜]], LETTER_TO)
-;蕾米莉亜
-;随意大物感を
+;レミリア
+;適当に大物感を
 VARSET LETTER_TO
 LETTER_TO = [[紫]], [[阿求]]
-CALL SET_LETTER_TO([[蕾米莉亜]], LETTER_TO)
-;愛麗絲
+CALL SET_LETTER_TO([[レミリア]], LETTER_TO)
+;アリス
 ;TWでは人里公演やってるのでプリリバと多少は交流があっても
 ;三月精と面識あるんだっけ？
 VARSET LETTER_TO
-LETTER_TO = [[莉莉卡]], [[梅露蘭]], [[露娜薩]], [[帕秋莉]], [[梅蒂欣]]
-CALL SET_LETTER_TO([[愛麗絲]], LETTER_TO)
-;莉莉卡, 梅露蘭, 露娜薩
+LETTER_TO = [[リリカ]], [[メルラン]], [[ルナサ]], [[パチュリー]], [[メディスン]]
+CALL SET_LETTER_TO([[アリス]], LETTER_TO)
+;リリカ, メルラン, ルナサ
 ;音楽、芸能関連特化
 VARSET LETTER_TO
-LETTER_TO = [[米斯蒂亜]], [[響子]], [[弁弁]], [[八橋]], [[雷鼓]]
-CALL SET_LETTER_TO([[莉莉卡]], LETTER_TO)
-CALL SET_LETTER_TO([[梅露蘭]], LETTER_TO)
-CALL SET_LETTER_TO([[露娜薩]], LETTER_TO)
+LETTER_TO = [[ミスティア]], [[響子]], [[弁々]], [[八橋]], [[雷鼓]]
+CALL SET_LETTER_TO([[リリカ]], LETTER_TO)
+CALL SET_LETTER_TO([[メルラン]], LETTER_TO)
+CALL SET_LETTER_TO([[ルナサ]], LETTER_TO)
 ;妖夢
 VARSET LETTER_TO
 LETTER_TO = [[藍]], [[鈴仙]]
 CALL SET_LETTER_TO([[妖夢]], LETTER_TO)
 ;橙
-;ぜんぜんわからなかったので随意ケモケモしく
+;ぜんぜんわからなかったので適当にケモケモしく
 VARSET LETTER_TO
-LETTER_TO = [[阿燐]], [[影狼]], [[椛]], [[慧音]], [[阿吽]]
+LETTER_TO = [[お燐]], [[影狼]], [[椛]], [[慧音]], [[あうん]]
 CALL SET_LETTER_TO([[橙]], LETTER_TO)
 ;藍
 ;独立して動いてそうなやや大物感のある日本の連中
 VARSET LETTER_TO
-LETTER_TO = [[文]], [[鵺]]
+LETTER_TO = [[文]], [[ぬえ]]
 CALL SET_LETTER_TO([[藍]], LETTER_TO)
 ;紫
 VARSET LETTER_TO
-LETTER_TO = [[神奈子]], [[諏訪子]], [[天子]], [[衣玖]], [[華扇]], [[覚]], [[白蓮]], [[神子]], [[輝夜]], [[勇儀]], [[幽幽子]], [[慧音]], [[猯藏]], [[小鈴]], [[永琳]], [[阿求]], [[依姫]], [[豊姫]], [[神綺]], [[哆来咪]], [[隠岐奈]]
+LETTER_TO = [[神奈子]], [[諏訪子]], [[天子]], [[衣玖]], [[華扇]], [[さとり]], [[白蓮]], [[神子]], [[輝夜]], [[勇儀]], [[幽々子]], [[慧音]], [[マミゾウ]], [[小鈴]], [[永琳]], [[阿求]], [[依姫]], [[豊姫]], [[神綺]], [[ドレミー]], [[隠岐奈]]
 CALL SET_LETTER_TO([[紫]], LETTER_TO)
-;米斯蒂亜
+;ミスティア
 VARSET LETTER_TO
-LETTER_TO = [[響子]], [[弁弁]], [[八橋]], [[雷鼓]]
-CALL SET_LETTER_TO([[米斯蒂亜]], LETTER_TO)
+LETTER_TO = [[響子]], [[弁々]], [[八橋]], [[雷鼓]]
+CALL SET_LETTER_TO([[ミスティア]], LETTER_TO)
 ;映姫
 VARSET LETTER_TO
-LETTER_TO = [[覚]], [[赫卡提亚]]
+LETTER_TO = [[さとり]], [[ヘカーティア]]
 CALL SET_LETTER_TO([[映姫]], LETTER_TO)
 ;早苗
 VARSET LETTER_TO
-LETTER_TO = [[華扇]], [[阿吽]]
+LETTER_TO = [[華扇]], [[あうん]]
 CALL SET_LETTER_TO([[早苗]], LETTER_TO)
 ;天子
 VARSET LETTER_TO
-LETTER_TO = [[哆来咪]], [[紫苑]]
+LETTER_TO = [[ドレミー]], [[紫苑]]
 CALL SET_LETTER_TO([[天子]], LETTER_TO)
-;鵺
+;ぬえ
 ;寺以外との交遊関係は不明だが
-;TWでは仕事で紅魔館に出入りするので随意
+;TWでは仕事で紅魔館に出入りするので適当に
 VARSET LETTER_TO
 LETTER_TO = [[美鈴]], [[小悪魔]]
-CALL SET_LETTER_TO([[鵺]], LETTER_TO)
+CALL SET_LETTER_TO([[ぬえ]], LETTER_TO)
 ;華扇
 VARSET LETTER_TO
-LETTER_TO = [[神子]], [[哆来咪]]
+LETTER_TO = [[神子]], [[ドレミー]]
 CALL SET_LETTER_TO([[華扇]], LETTER_TO)
 ;鈴仙
 VARSET LETTER_TO
-LETTER_TO = [[依姫]], [[豊姫]], [[鈴仙二號]], [[清蘭]], [[鈴瑚]], [[純狐]]
+LETTER_TO = [[依姫]], [[豊姫]], [[レイセン]], [[清蘭]], [[鈴瑚]], [[純狐]]
 CALL SET_LETTER_TO([[鈴仙]], LETTER_TO)
 ;白蓮
 VARSET LETTER_TO
@@ -1082,11 +1081,11 @@ CALL SET_LETTER_TO([[小悪魔]], LETTER_TO)
 ;二次ではよくみるので入れとけ
 ;影狼
 VARSET LETTER_TO
-LETTER_TO = [[蛮奇]], [[若鷺姫]]
+LETTER_TO = [[蛮奇]], [[わかさぎ姫]]
 CALL SET_LETTER_TO([[影狼]], LETTER_TO)
 ;赤蛮奇
 VARSET LETTER_TO
-LETTER_TO = [[若鷺姫]]
+LETTER_TO = [[わかさぎ姫]]
 CALL SET_LETTER_TO([[蛮奇]], LETTER_TO)
 
 ;永琳
@@ -1099,7 +1098,7 @@ LOCAL ++
 
 
 ;----------------------------------------------------------------------------------------------------
-;各角色の宛先登録関数
+;各キャラの宛先登録関数
 ;----------------------------------------------------------------------------------------------------
 
 @SET_LETTER_TO(LETTER_FROM, LETTER_TO)
@@ -1120,16 +1119,16 @@ NEXT
 @STOCK_LETTER_TO(COMMAND, CHARA_A, CHARA_B)
 #FUNCTION
 #DIMS COMMAND
-#DIMS LETTER_TO, 人物数量上限
+#DIMS LETTER_TO, キャラクタ数上限
 #DIM  CHARA_A
 #DIM  CHARA_B
-#DIMS TMP_LETTER, 人物数量上限
+#DIMS TMP_LETTER, キャラクタ数上限
 #DIM  TMP_ID
 #DIM  L_RESULT   ;RESULT退避用
 #DIM  CNT_CHARA  ;登録されていた宛先の数
 SELECTCASE COMMAND
 CASE "SET"
-;SETはCHARA_AとCHARA_Bの両方が必须、戻り値無
+;SETはCHARA_AとCHARA_Bの両方が必須、戻り値なし
 	IF CHARA_A == CHARA_B || CHARA_A <= 0 || CHARA_B <= 0
 		DEBUGPRINTFORML 無効な登録　{CHARA_A}, {CHARA_B}
 		RETURNF 0
@@ -1144,12 +1143,12 @@ CASE "IS_LETTER_CHARA"
 		RETURNF 0
 	RETURNF 1
 CASE "IS_PEN_FRIEND"
-;2角色が文通可能であるならTRUE
+;2キャラが文通可能であるならTRUE
 	SIF !STRCOUNT(LETTER_TO:CHARA_A, @"{CHARA_B}/")
 		RETURNF 0
 	RETURNF 1
 CASE "WHO_LETTER_TO"
-;随机な宛先を返す
+;ランダムな宛先を返す
 ;CHARA_Aだけ指定、戻り値あり
 	;SIF !STRLENS(LETTER_TO:CHARA_A)
 	;	RETURNF RAND_PERSON(CHARA_A)
@@ -1167,10 +1166,10 @@ ENDSELECT
 
 
 ;----------------------------------------------------------------------------------------------------
-;随机宛先関数
-;シャッフルを利用して随机に角色を選択する
+;ランダム宛先関数
+;シャッフルを利用してランダムにキャラを選択する
 ;DO-LOOP＋RANDだと挙動が怪しくなりそう
-;なおかつ、宛先の少ない角色だと出禁で容易に無限ループに陥るので
+;なおかつ、宛先の少ないキャラだと出禁で容易に無限ループに陥るので
 ;シャッフルアルゴリズムを使用する
 ;構文がちょいと複雑化した
 ;----------------------------------------------------------------------------------------------------
@@ -1178,7 +1177,7 @@ ENDSELECT
 #FUNCTION
 #DIMS REF TMP_LETTER
 #DIM  CNT_CHARA
-#DIM  LETTER_ID, 人物数量上限
+#DIM  LETTER_ID, キャラクタ数上限
 #DIM  CHK_ID
 #DIM  ELE_SHAFFLE
 SIF !LETTER_STOP(TMP_LETTER, 0, CNT_CHARA)
@@ -1226,7 +1225,7 @@ ELSE
 ENDIF
 
 ;----------------------------------------------------------------------------------------------------
-;討伐対象として敵対関係にある角色を選出する関数
+;討伐対象として敵対関係にあるキャラを選出する関数
 ;----------------------------------------------------------------------------------------------------
 @RAND_HANTING(ARG)
 #FUNCTION
@@ -1234,7 +1233,7 @@ ENDIF
 #DIM LPCOUNT
 LPCOUNT = 0
 RESULT = 0
-;相性が悪い角色を優先する
+;相性が悪いキャラを優先する
 WHILE !RESULT
 	CHARA = RAND:CHARANUM
 	LPCOUNT ++
@@ -1242,8 +1241,8 @@ WHILE !RESULT
 	;依頼人
 	SIF CHARA == ARG
 		CONTINUE
-	;MASTER,出禁,路人子
-	SIF CHARA == MASTER || CFLAG:CHARA:出禁 || TALENT:CHARA:路人
+	;MASTER,出禁,モブ子
+	SIF CHARA == MASTER || CFLAG:CHARA:出禁 || TALENT:CHARA:行きずり
 		CONTINUE
 	;非戦闘員
 	SIF CSVABL(CHARA, GETNUM(ABL, "戦闘能力")) == 0
@@ -1267,7 +1266,7 @@ WHILE !RESULT
 	LPCOUNT ++
 	;無限ループ防止
 	IF LPCOUNT > 1000
-		IF TALENT:ARG:人类
+		IF TALENT:ARG:人間
 			IF !RAND:2
 				RESULT = [[紫]]
 			ELSE
@@ -1291,8 +1290,8 @@ WHILE !RESULT
 	;依頼人
 	SIF CHARA == ARG
 		CONTINUE
-	;MASTER,出禁,路人子
-	SIF CHARA == MASTER || CFLAG:CHARA:出禁 || TALENT:CHARA:路人
+	;MASTER,出禁,モブ子
+	SIF CHARA == MASTER || CFLAG:CHARA:出禁 || TALENT:CHARA:行きずり
 		CONTINUE
 	;非戦闘員
 	SIF CSVABL(CHARA, GETNUM(ABL, "戦闘能力")) == 0
@@ -1321,8 +1320,8 @@ WHILE !RESULT
 		ELSEIF CHECK_CHARA(CHARA, "幽霊")
 			RESULT = CHARA
 		ENDIF
-	;人类＞妖精・妖怪・幽霊
-	ELSEIF CHECK_CHARA(ARG, "人类")
+	;人間＞妖精・妖怪・幽霊
+	ELSEIF CHECK_CHARA(ARG, "人間")
 		IF CHECK_CHARA(CHARA, "妖精")
 			RESULT = CHARA
 		ELSEIF CHECK_CHARA(CHARA, "妖怪")
@@ -1330,9 +1329,9 @@ WHILE !RESULT
 		ELSEIF CHECK_CHARA(CHARA, "幽霊")
 			RESULT = CHARA
 		ENDIF
-	;妖精＞人类・妖怪・付喪神・人形
+	;妖精＞人間・妖怪・付喪神・人形
 	ELSEIF CHECK_CHARA(ARG, "妖精")
-		IF CHECK_CHARA(CHARA, "人类")
+		IF CHECK_CHARA(CHARA, "人間")
 			RESULT = CHARA
 		ELSEIF CHECK_CHARA(CHARA, "妖怪")
 			RESULT = CHARA
@@ -1341,14 +1340,14 @@ WHILE !RESULT
 		ELSEIF CHECK_CHARA(CHARA, "人形")
 			RESULT = CHARA
 		ENDIF
-	;妖怪・幽霊＞人类・人形
+	;妖怪・幽霊＞人間・人形
 	ELSEIF CHECK_CHARA(ARG, "妖怪") || CHECK_CHARA(ARG, "幽霊")
-		IF CHECK_CHARA(CHARA, "人类")
+		IF CHECK_CHARA(CHARA, "人間")
 			RESULT = CHARA
 		ELSEIF CHECK_CHARA(CHARA, "人形")
 			RESULT = CHARA
 		ENDIF
-	;其他（付喪神・人形）＞妖怪・妖精
+	;その他（付喪神・人形）＞妖怪・妖精
 	ELSE
 		IF CHECK_CHARA(CHARA, "妖精")
 			RESULT = CHARA
@@ -1365,8 +1364,8 @@ WEND
 RETURNF RESULT
 
 ;----------------------------------------------------------------------------------------------------
-;（依頼用に）随机な素材を選出する関数
-;季節道具の扱いに困って未完成
+;（依頼用に）ランダムな素材を選出する関数
+;季節アイテムの扱いに困って未完成
 ;----------------------------------------------------------------------------------------------------
 @RAND_MATERIAL
 #FUNCTION
@@ -1395,7 +1394,7 @@ WHILE !RESULT
 	LPCOUNT ++
 	;無限ループ防止
 	IF LPCOUNT > 1000
-		RESULT = GETNUM(ITEM, "普通的菌菇")
+		RESULT = GETNUM(ITEM, "普通のキノコ")
 		BREAK
 	ENDIF
 	SIF ITEMNAME:MATER == ""

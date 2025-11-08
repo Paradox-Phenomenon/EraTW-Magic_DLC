@@ -13,19 +13,19 @@
 ・華扇の屋敷の裏山に果樹（栗、柿、梅など）
 なんとなくイメージでありそう
 いろいろ曖昧すぎるのでとりあえず保留
-・哆来咪さんが砂糖を生産
-とにかく蘇伊特なものをと思った
-サトウキビか甜菜だがなんだかシュールなので保留
+・ドレミーさんが砂糖を生産
+とにかくスイートなものをと思った
+サトウキビかテンサイだがなんだかシュールなので保留
 養蜂農家で蜂蜜を作る手もあるか
-後に甜菜は琪露諾の作物となった
+後にテンサイはチルノの作物となった
 ・妹紅or輝夜で竹林でタケノコ農家
 タケノコは採れそうだがこの２人が作物を徴収しに来るイメージがしない
 地主という形で他人と関わり合いになるだろうか？？？と思ってやめ
 ・蓮子の蓮根畑、鈴湖の林檎園
-梅莉とせーらんの作物を思いつかなかった
+メリーとせーらんの作物を思いつかなかった
 かたっぽだけ地主設定してると違和感
 ・正邪でミラクルフルーツ畑
-苦味＆酸味を甜と感じさせる＝ひっくり返す
+苦味＆酸味を甘いと感じさせる＝ひっくり返す
 大量生産するようなもんでもないようなと思ってやめ
 ・純狐さんの生姜畑
 すごい形相で叫びながら齧ったりするの？あまりにも一発ネタすぎるので却下
@@ -38,7 +38,7 @@
 
 
 2018/05/19
-・各種拠点Mapの実装に伴ってバグってた番号を修正
+・各種拠点マップの実装に伴ってバグってた番号を修正
 ・農民系のデータの記述は各地主のキャラデータ関数側に移動させました
 　小作人パッチの構想段階でキャラデータ関数的な技術は考えてましたが
 　関数群が中々に巨大なので小作人パッチだけのために実装するのはなぁと思ってやめてました
@@ -46,7 +46,7 @@
 ・@STR_NOUMIN()の仕様変更
 　１．STR_NOUMIN/INT_NOUMINの二種類に分けてTOINTの必要を無くした
 　２．キャラデータ関数で管理するようになったので第一引数で渡す内容をCALLNAMEから登録番号に変更
-　３．STR/INT_NOUMINの第二引数は従来街道、STR_NOUMIN(1, "説明")等で動きます
+　３．STR/INT_NOUMINの第二引数は従来通り、STR_NOUMIN(1, "説明")等で動きます
 　４．キャラデータ関数側の記述で使ってる"農民："の部分はSTR/INT_NOUMINで勝手に付与します
 
 [SKIPEND]
@@ -79,9 +79,9 @@ RETURNF GET_STR(, "キャラデータ", C_ID, "農民：" + TYPE)
 #DIM LIST_COUNT
 #DIM PAGE
 #DIMS NAME_地主
-PRINTFORML 你是农民吗？
-PRINTFORML [1] - 是
-PRINTFORML [0] - 不是
+PRINTFORML あなたは農民ですか？
+PRINTFORML [1] - はい
+PRINTFORML [0] - いいえ
 DO
 	INPUT
 	SELECTCASE RESULT
@@ -89,7 +89,7 @@ DO
 		RETURN
 	CASE 1
 	CASEELSE
-		REUSELASTLINE 无效输入
+		REUSELASTLINE 無効な入力です
 		CONTINUE
 	ENDSELECT
 	BREAK
@@ -99,7 +99,7 @@ PAGE = 0
 CHARA_COUNT = 0
 ;地主一覧の取得
 FOR C_ID, 1, CHARANUM
-	SIF C_ID == FLAG:扮演
+	SIF C_ID == FLAG:なりきり
 		CONTINUE
 	SIF !STRLENS(STR_NOUMIN(C_ID, "説明"))
 		CONTINUE
@@ -108,7 +108,7 @@ FOR C_ID, 1, CHARANUM
 NEXT
 
 FLAG:地主 = 0
-FLAG:田地工作的成果 = 0
+FLAG:畑仕事の成果 = 0
 FLAG:返済延滞回数 = 0
 FLAG:収穫納入回数 = 0
 FLAG:累積収穫評価 = 0
@@ -117,42 +117,39 @@ FLAG:前回収穫評価 = 0
 
 DO
 	LIST_COUNT = 0
-	PRINTFORML 请选择雇用你的地主
+	PRINTFORML あなたを雇っている地主を選択して下さい
 	PRINTFORML 
 	FOR LIST_ID, (PAGE * 20), CHARA_COUNT
 		C_ID = LOCAL:LIST_ID
 		PRINTFORM [{C_ID ,3}] - 地主：%CALLNAME:C_ID, 10%　　
 		PRINTFORM %STR_NOUMIN(C_ID, "説明"), 14%　　
-		PRINTFORML %STR_NOUMIN(C_ID, "田的种类")%的位置在%STR_NOUMIN(C_ID, "畑の所在地")%的附近
+		PRINTFORML %STR_NOUMIN(C_ID, "畑の種類")%の位置は%STR_NOUMIN(C_ID, "畑のマップ")%の近辺
 		LIST_COUNT ++
 		SIF LIST_COUNT > 19
 			BREAK
 	NEXT
 	PRINTFORML 
-	PRINTFORML [901] - 上一页
-	PRINTFORML [902] - 下一页
-	PRINTFORML [  0] - 还是算了
+	PRINTFORML [901] - 前のページ
+	PRINTFORML [902] - 次のページ
+	PRINTFORML [  0] - やっぱりやめる
 	DO
 		INPUT
 		SELECTCASE RESULT
 		CASE 0
 			RETURN
-		;qol custom code, allow looping
-		CASE 901, 902
-			PAGE = PAGE_HANDLE(RESULT, 901, PAGE, 0, 20 / CHARA_COUNT + 1)
-		; CASE 901
-		; 	SIF PAGE > 0
-		; 		PAGE --
-		; CASE 902
-		; 	SIF (PAGE + 1) * 20 < CHARA_COUNT
-		; 		PAGE ++
+		CASE 901
+			SIF PAGE > 0
+				PAGE --
+		CASE 902
+			SIF (PAGE + 1) * 20 < CHARA_COUNT
+				PAGE ++
 		CASE 1 TO CHARANUM - 1
 			SIF !STRLENS(STR_NOUMIN(RESULT, "説明"))
 				GOTO RETRY
 			FLAG:地主 = RESULT
 		CASEELSE
 			$RETRY
-			REUSELASTLINE 无效输入
+			REUSELASTLINE 無効な入力です
 			CONTINUE
 		ENDSELECT
 		BREAK
@@ -161,9 +158,9 @@ LOOP !(FLAG:地主)
 
 NAME_地主 = %CALLNAME:(FLAG:地主)%
 PRINTFORML 
-PRINTFORML 你成为了为%NAME_地主%种植%STR_NOUMIN(FLAG:地主, "作物")%的佃户
-PRINTFORML 你租借的%STR_NOUMIN(FLAG:地主, "田的种类")%是在%STR_NOUMIN(FLAG:地主, "畑の所在地")%的附近
-PRINTFORMW 请不要偷懒每天都照料它吧
+PRINTFORML あなたは%NAME_地主%の元で%STR_NOUMIN(FLAG:地主, "作物")%を作っている小作人になりました
+PRINTFORML あなたが借りている%STR_NOUMIN(FLAG:地主, "畑の種類")%は%STR_NOUMIN(FLAG:地主, "畑のマップ")%の近辺にあります
+PRINTFORMW 毎日サボらず手入れをしましょう
 
 CALL MODE_NOUMIN
 CALL LOAN_NOUMIN
@@ -184,34 +181,34 @@ CALL LOAN_NOUMIN
 #LOCALSSIZE 1
 #DIMS NAME_地主
 NAME_地主 = %CALLNAME:(FLAG:地主)%
-PRINTFORML 请设定农民生活的难易度
-PRINTFORML （根据选择的不同可能会导致角色形象的崩坏）
+PRINTFORML 農民生活の難易度を設定して下さい
+PRINTFORML （選択肢によってはキャラのイメージが崩壊するおそれがあります）
 PRINTFORML 
-PRINTFORML [1] - 普通农民　    　　　　%NAME_地主%是个好心的地主
-PRINTFORML [2] - 硬核农民　      　　　%NAME_地主%是个贪婪的地主
-PRINTFORML [3] - 极限农民          　　%NAME_地主%是个施行暴政的蛮横地主
+PRINTFORML [1] - ノーマル農民　　　　　%NAME_地主%はとても親切な地主です
+PRINTFORML [2] - ハードコア農民　　　　%NAME_地主%はふつうに強欲な地主です
+PRINTFORML [3] - エクストリーム農民　　%NAME_地主%は圧政を敷く横暴な地主です
 DO
 	INPUT
 	IF INRANGE(RESULT, 1, 3)
 		FLAG:農民難易度 = RESULT
 		BREAK
 	ELSE
-		REUSELASTLINE 无效输入
+		REUSELASTLINE 無効な入力です
 		CONTINUE
 	ENDIF
 LOOP 1
 SELECTCASE FLAG:農民難易度
 CASE 1
-	PRINTFORML 你的地主是个非常善良的好人
+	PRINTFORML あなたの地主はとても親切ないい人です
 	FLAG:畑拡張 = 1
 CASE 2
-	PRINTFORML 你成为了受地主压迫的农民
+	PRINTFORML あなたは地主に虐げられている農民になりました
 	FLAG:畑拡張 = 2
 CASE 3
-	PRINTFORML 你成为了一个被地主彻底剥削的农民
+	PRINTFORML あなたは地主に徹底的に搾取されている農民になりました
 	FLAG:畑拡張 = 3
 ENDSELECT
-PRINTFORMW （农民难易度可以在设置里变更）
+PRINTFORMW （農民難易度はコンフィグから変更可能です）
 SETBIT FLAG:1000, 2
 
 
@@ -222,27 +219,27 @@ SETBIT FLAG:1000, 2
 #DIMS NAME_地主
 NAME_地主 = %CALLNAME:(FLAG:地主)%
 LOCAL = INT_NOUMIN(FLAG:地主, "報酬") * 1000
-PRINTFORML 开始农业的%CALLNAME:MASTER%收到了初期投资费用和%金额表示(LOCAL)%的借入金
+PRINTFORML 農業をはじめた%CALLNAME:MASTER%に初期投資費用として%金額表示(LOCAL)%の借入金が発生した
 FLAG:地主貸付金 = LOCAL
 FLAG:年始貸付金 = LOCAL
 SELECTCASE FLAG:農民難易度
 CASE 1
-	PRINTFORML %NAME_地主%说这是无息借款所以耐心地还就好
+	PRINTFORML %NAME_地主%は無利子で貸すから気長に返せばいいと言ってくれている
 	IF !ITEM:園芸用品一式
-		PRINTFORML %NAME_地主%还建议先去人间之里的花店买些必要的园艺用品
-		PRINTFORML 看来地主不会承担购买农具的费用
+		PRINTFORML さらに%NAME_地主%はまずは人里の花屋で園芸用品を買い揃えるようにと助言をしてくれた
+		PRINTFORML 農具の購入費用までは負担してはくれないらしい
 	ENDIF
 CASE 2, 3
-	PRINTFORML 这笔贷款好好像有{INT_NOUMIN(FLAG:地主, "金利")}％的利息
-	PRINTFORML %NAME_地主%还提出了借出农具
-	PRINTFORML ……好像没有拒绝的权利
+	PRINTFORML この借入金には{INT_NOUMIN(FLAG:地主, "金利")}％の金利が発生するようだ
+	PRINTFORML さらに%NAME_地主%は農具の貸出を提案してきた
+	PRINTFORML ……どうやら断る権利は無いようだ
 	;たぶんこの他に現地に無駄に色々な道具が山ほどある
 ENDSELECT
 WAIT
 
 @RESET_NOUMIN
 FLAG:地主 = 0
-FLAG:田地工作的成果 = 0
+FLAG:畑仕事の成果 = 0
 FLAG:返済延滞回数 = 0
 FLAG:収穫納入回数 = 0
 FLAG:累積収穫評価 = 0
@@ -267,22 +264,22 @@ HATAKE = INT_NOUMIN(FLAG:地主, "場所ID")
 SIF GET_MAPID(HATAKE) != MAIN_MAP
 	HATAKE = 6000 + (GET_MAP_REPLACEMENT(HATAKE) / 10)
 
-PRINTFORML %NAME_地主%的佃户（在%STR_NOUMIN(FLAG:地主, "説明")%种植%STR_NOUMIN(FLAG:地主, "作物")%）
-PRINTFORML %STR_NOUMIN(FLAG:地主, "田的种类")%在%STR_NOUMIN(FLAG:地主, "畑の所在地")%的%NAME_FROM_PLACE(HATAKE)%附近
+PRINTFORML %NAME_地主%の小作人（%STR_NOUMIN(FLAG:地主, "作物")%を作っている%STR_NOUMIN(FLAG:地主, "説明")%）
+PRINTFORML %STR_NOUMIN(FLAG:地主, "畑の種類")%は%STR_NOUMIN(FLAG:地主, "畑のマップ")%の%NAME_FROM_PLACE(HATAKE)%の近辺にある
 ;いいひとでも作物は全部もらいます
 SELECTCASE FLAG:農民難易度
 CASE 1
-	PRINTFORML 地主是个非常亲切的人
+	PRINTFORML 地主はとても親切ないい人だ
 	SIF FLAG:地主貸付金
-		PRINTFORML 借了%金额表示(FLAG:地主貸付金)%无息借款
+		PRINTFORML %金額表示(FLAG:地主貸付金)%を無利子で借りている
 CASE 2
-	PRINTFORML 被地主欺压
+	PRINTFORML 地主に虐げられている
 	SIF FLAG:地主貸付金
-		PRINTFORML %金額表示(FLAG:地主貸付金)%借款的利率是{INT_NOUMIN(FLAG:地主, "金利")}％（年利）
+		PRINTFORML %金額表示(FLAG:地主貸付金)%を借りていて金利は{INT_NOUMIN(FLAG:地主, "金利")}％（年利）だ
 CASE 3
-	PRINTFORML 被地主彻底压榨
+	PRINTFORML 地主に徹底的に搾取されている
 	SIF FLAG:地主貸付金
-		PRINTFORML %金額表示(FLAG:地主貸付金)%借款的利率是{INT_NOUMIN(FLAG:地主, "金利")}％（月利）
+		PRINTFORML %金額表示(FLAG:地主貸付金)%を借りていて金利は{INT_NOUMIN(FLAG:地主, "金利")}％（月利）だ
 ENDSELECT
 PRINTFORML 
 
@@ -294,12 +291,12 @@ PRINTFORML
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM 年貢の評価
-PRINTFORML %CALLNAME:(FLAG:地主)%来征收本月的成果
-PRINTFORMW （今月的收获量：{FLAG:田地工作的成果}）
-年貢の評価 = FLAG:田地工作的成果 / 20
+PRINTFORML %CALLNAME:(FLAG:地主)%が今月分の成果を徴収しにやってきた
+PRINTFORMW （今月の収穫量：{FLAG:畑仕事の成果}）
+年貢の評価 = FLAG:畑仕事の成果 / 20
 LOCAL = (年貢の評価 - 3) * 5
 SIF LOCAL < 0
-	LOCAL = LOCAL - SQRT(MAX(1, CFLAG:(FLAG:地主):信賴度))
+	LOCAL = LOCAL - SQRT(MAX(1, CFLAG:(FLAG:地主):信頼度))
 ;(天候パッチ)寒気による作物被害が20を超えたら20毎に冷害判定
 SIF AMOUNT_COLD_CROP_DAMAGE >= 20
 	IS_COLD_CROP_DAMAGE ++
@@ -311,53 +308,53 @@ SELECTCASE 年貢の評価
 	;(天候パッチ)冷害・風害発生時は態度が軟化
 	CASE IS <= 0
 		IF IS_COLD_CROP_DAMAGE > 0 || IS_STORM_CROP_DAMAGE > 0 || IS_FLOOD_CROP_DAMAGE > 0
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获量几乎为零
-			PRINTFORML %CALLNAME:(FLAG:地主)%看着恶劣天候所造成的破坏惊呆了
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はほぼゼロだ
+			PRINTFORML 天候不順によるあまりの被害に%CALLNAME:(FLAG:地主)%は呆然としている
 		ELSE
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获量几乎为零
-			PRINTFORML %CALLNAME:(FLAG:地主)%用可怕的表情瞪着这边
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はほぼゼロだ
+			PRINTFORML %CALLNAME:(FLAG:地主)%はこちらを険しい顔で睨んでいる
 		ENDIF
 	CASE 1
 		IF IS_COLD_CROP_DAMAGE > 0 || IS_STORM_CROP_DAMAGE > 0 || IS_FLOOD_CROP_DAMAGE > 0
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获相当少
-			PRINTFORML 由于恶劣天气所造成的损害、%CALLNAME:(FLAG:地主)%垂头丧气的样子
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はかなり少ない
+			PRINTFORML 天候不順による被害に%CALLNAME:(FLAG:地主)%は肩を落としている
 		ELSE
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获相当少
-			PRINTFORML %CALLNAME:(FLAG:地主)%因为收获量太少而明显失望的样子
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はかなり少ない
+			PRINTFORML %CALLNAME:(FLAG:地主)%は収穫量のあまりの少なさにあからさまにがっかりした様子だ
 		ENDIF
 	CASE 2
 		IF IS_COLD_CROP_DAMAGE > 0 || IS_STORM_CROP_DAMAGE > 0 || IS_FLOOD_CROP_DAMAGE > 0
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获比较少
-			PRINTFORML 由于恶劣天气所造成的损害、%CALLNAME:(FLAG:地主)%一脸失望的样子
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量は少なめだ
+			PRINTFORML 天候不順による被害に%CALLNAME:(FLAG:地主)%は残念そうにしている
 		ELSE
-			PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获比较少
-			PRINTFORML %CALLNAME:(FLAG:地主)%因为收获量少而不满意的样子
+			PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量は少なめだ
+			PRINTFORML %CALLNAME:(FLAG:地主)%は収穫量の少なさに不満気な様子だ
 		ENDIF
 	CASE 3
-		PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获不够多
-		PRINTFORML %CALLNAME:(FLAG:地主)%对收获量多多少少感到不满
+		PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はやや少なめだ
+		PRINTFORML %CALLNAME:(FLAG:地主)%は収穫量に多少の物足りなさを感じているようだ
 	CASE 4
-		PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获还行
-		PRINTFORML %CALLNAME:(FLAG:地主)%对收获量感到满意
+		PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はふつうといったところだ
+		PRINTFORML %CALLNAME:(FLAG:地主)%は収穫量に満足してくれたようだ
 	CASE 5
-		PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获比较多
-		PRINTFORML %CALLNAME:(FLAG:地主)%的多出的收获量很高兴的样子
+		PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はやや多めだ
+		PRINTFORML %CALLNAME:(FLAG:地主)%は収穫量の多さにご機嫌なご様子だ
 	CASE 6
-		PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获相当多
-		PRINTFORML %CALLNAME:(FLAG:地主)%因为预期以上的收获量露出了微笑
+		PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はかなり多い
+		PRINTFORML %CALLNAME:(FLAG:地主)%は予想以上の収穫量に笑みを浮かべている
 	CASEELSE
-		PRINTFORML 这个月的%STR_NOUMIN(FLAG:地主, "作物")%的收获多的吓人！
-		PRINTFORML %CALLNAME:(FLAG:地主)%因为超乎想象的收获量折服了
+		PRINTFORML 今月分の%STR_NOUMIN(FLAG:地主, "作物")%の収穫量はおびただしい量だ！
+		PRINTFORML %CALLNAME:(FLAG:地主)%は想像を絶する収穫量に圧倒されている
 ENDSELECT
 WAIT
 
 ;(天候パッチ)冷害・風害発生時は怒らない
 IF LOCAL < 0 && IS_COLD_CROP_DAMAGE <= 0 && IS_STORM_CROP_DAMAGE <= 0 && IS_FLOOD_CROP_DAMAGE <= 0
-	PRINTFORMW %CALLNAME:(FLAG:地主)%对你抱着不信任感
-	CFLAG:(FLAG:地主):信賴度 = MAX(0, CFLAG:(FLAG:地主):信賴度 + LOCAL)
+	PRINTFORMW %CALLNAME:(FLAG:地主)%はあなたに不信感を抱いている
+	CFLAG:(FLAG:地主):信頼度 = MAX(0, CFLAG:(FLAG:地主):信頼度 + LOCAL)
 	IF 年貢の評価 <= 0
-		PRINTFORMW ……好像把%CALLNAME:(FLAG:地主)%惹火了
-		CFLAG:(FLAG:地主):心情不快 = 1
+		PRINTFORMW ……%CALLNAME:(FLAG:地主)%を怒らせてしまったようだ
+		CFLAG:(FLAG:地主):不機嫌 = 1
 		CFLAG:(FLAG:地主):ブチギレ = 1
 		SIF MARK:(FLAG:地主):反発刻印 < 3
 			MARK:(FLAG:地主):反発刻印 ++
@@ -365,20 +362,20 @@ IF LOCAL < 0 && IS_COLD_CROP_DAMAGE <= 0 && IS_STORM_CROP_DAMAGE <= 0 && IS_FLOO
 ELSEIF LOCAL > 0
 	;(天候パッチ)冷害・風害発生時はより評価される
 	IF IS_COLD_CROP_DAMAGE > 0 || IS_STORM_CROP_DAMAGE > 0 || IS_FLOOD_CROP_DAMAGE > 0
-		PRINTFORM 尽管天气不顺但仍是丰收
-		PRINTFORMW %CALLNAME:(FLAG:地主)%的信赖度大幅上升了
+		PRINTFORM 天候不順にもかかわらず豊作になったので
+		PRINTFORMW %CALLNAME:(FLAG:地主)%からの信頼度がとても上がった
 		LOCAL += ((IS_COLD_CROP_DAMAGE + IS_STORM_CROP_DAMAGE + (IS_FLOOD_CROP_DAMAGE * 4)) * 2)
 	ELSE
-		PRINTFORMW %CALLNAME:(FLAG:地主)%的信赖度上升了
+		PRINTFORMW %CALLNAME:(FLAG:地主)%からの信頼度が上がった
 	ENDIF
-	CFLAG:(FLAG:地主):信賴度 += LOCAL
+	CFLAG:(FLAG:地主):信頼度 += LOCAL
 	IF !MARK:(FLAG:地主):反発刻印
 		LOCAL = 年貢の評価 * INT_NOUMIN(FLAG:地主, "報酬")
-		PRINTFORMW %CALLNAME:(FLAG:地主)%给了%金额表示(LOCAL)%的零用钱
+		PRINTFORMW %CALLNAME:(FLAG:地主)%は%金額表示(LOCAL)%のおこづかいをくれた
 		MONEY += LOCAL
 	ENDIF
 ENDIF
-FLAG:田地工作的成果 = 0
+FLAG:畑仕事の成果 = 0
 FLAG:年貢 = 0
 FLAG:収穫納入回数 ++
 FLAG:累積収穫評価 += 年貢の評価
@@ -413,98 +410,98 @@ CASE 3
 ENDSELECT
 MIN_HENSAI = MIN(MIN_HENSAI, FLAG:地主貸付金)
 
-PRINTFORML %NAME_地主%要求偿还债务
-PRINTFORM 要还多少钱？（借金额：
-PRINTBUTTON 金额表示(FLAG:地主貸付金), FLAG:地主貸付金
+PRINTFORML %NAME_地主%は借金の返済を要求している
+PRINTFORM いくら払いますか？（借金額：
+PRINTBUTTON 金額表示(FLAG:地主貸付金), FLAG:地主貸付金
 PRINTFORM 、所持金：
-PRINTBUTTON 金额表示(MONEY), MONEY
-PRINTFORM 、返済额在
-PRINTBUTTON 金额表示(MIN_HENSAI), MIN_HENSAI
-PRINTFORML 以下时延期还款）
+PRINTBUTTON 金額表示(MONEY), MONEY
+PRINTFORM 、返済額が
+PRINTBUTTON 金額表示(MIN_HENSAI), MIN_HENSAI
+PRINTFORML 未満だと延滞判定）
 DO
 	INPUT
 	HENSAI = MIN(RESULT, FLAG:地主貸付金)
 	SELECTCASE HENSAI
 	CASE IS < MIN_HENSAI
-		PRINTFORML %CALLNAME:MASTER%拜托%NAME_地主%可以延期还款
+		PRINTFORML %CALLNAME:MASTER%はどうか返済を待って欲しいと%NAME_地主%に頼み込んだ
 		IF FLAG:農民難易度 == 1
 			IF MONEY < MIN_HENSAI
 			;本気で金が無い時
 				PRINTDATAL
-					DATAFORM %NAME_地主%对这边的生活情况真心的担忧
-					DATAFORM %NAME_地主%对这边的生活情况真心的担忧
-					DATAFORM %NAME_地主%鼓励着%CALLNAME:MASTER%鼓励着
-					DATAFORM %NAME_地主%安慰着%CALLNAME:MASTER%安慰起来
-					DATAFORM %NAME_地主%不知道该说什么的样子
-					DATAFORM %NAME_地主%那怜悯的视线扎了过来
-					DATAFORM %NAME_地主%的表情阴沉
-					DATAFORM %NAME_地主%感到为难
+					DATAFORM %NAME_地主%はこちらの生活状況を本気で心配している
+					DATAFORM %NAME_地主%はこちらの生活状況を本気で心配している
+					DATAFORM %NAME_地主%は%CALLNAME:MASTER%を励ましている
+					DATAFORM %NAME_地主%は%CALLNAME:MASTER%を慰めている
+					DATAFORM %NAME_地主%はかける言葉が見つからない様子だ
+					DATAFORM %NAME_地主%の憐れみの視線が突き刺さる
+					DATAFORM %NAME_地主%の表情が曇った
+					DATAFORM %NAME_地主%は困っている
 				ENDDATA
 			ELSE
-			;等一下！
+			;ちょっとまって！
 				PRINTDATAL
-					DATAFORM %NAME_地主%深深叹了口气
-					DATAFORM %NAME_地主%揉着太阳穴
-					DATAFORM %NAME_地主%用蔑视的眼神盯着
-					DATAFORM %NAME_地主%抱着胳膊绷紧了脸
-					DATAFORM %NAME_地主%那怜悯的视线扎了过来
-					DATAFORM %NAME_地主%脸色僵硬
-					DATAFORM %NAME_地主%皱起了眉头
-					DATAFORM %NAME_地主%的表情阴沉
-					DATAFORM %NAME_地主%感到为难
+					DATAFORM %NAME_地主%は深いため息をついている
+					DATAFORM %NAME_地主%はこめかみをおさえている
+					DATAFORM %NAME_地主%はジト目でこちらを見つめている
+					DATAFORM %NAME_地主%は腕組みをして渋い顔をしている
+					DATAFORM %NAME_地主%の憐れみの視線が突き刺さる
+					DATAFORM %NAME_地主%の顔が引きつっている
+					DATAFORM %NAME_地主%の眉間にシワがよった
+					DATAFORM %NAME_地主%の表情が曇った
+					DATAFORM %NAME_地主%は困っている
 				ENDDATA
 				PRINTFORML 
-				PRINTFORML ……看来总算是同意了
+				PRINTFORML ……どうにか納得してくれたようだ
 			ENDIF
 			FLAG:返済延滞回数 ++
 		ELSEIF MONEY >= MIN_HENSAI
-			PRINTFORML %NAME_地主%打断了%CALLNAME:MASTER%的话从钱包中强行夺走了%金额表示(MIN_HENSAI)%
+			PRINTFORML %NAME_地主%は%CALLNAME:MASTER%の言葉を遮ると財布から無理矢理%金額表示(MIN_HENSAI)%を強奪した
 			MONEY -= MIN_HENSAI
 		ELSE
-			PRINTFORML %NAME_地主%砸了砸嘴用冷漠的眼神瞪视这边
+			PRINTFORML %NAME_地主%は舌打ちをしこちらを冷ややかな目で睨んでいる
 			FLAG:返済延滞回数 ++
 		ENDIF
 	CASE IS > MONEY
 		$RETRY
-		REUSELASTLINE 无效输入
+		REUSELASTLINE 無効な入力です
 		CONTINUE
 	CASEELSE
-		PRINTFORML %CALLNAME:MASTER%偿还了%金额表示(HENSAI)%的借款
+		PRINTFORML %CALLNAME:MASTER%は借金のうちの%金額表示(HENSAI)%を返済した
 		MONEY -= HENSAI
 		FLAG:返済延滞回数 = 0
 		FLAG:地主貸付金 -= HENSAI
 		IF !FLAG:地主貸付金
 			IF FLAG:農民難易度 == 1
-				PRINTFORML %CALLNAME:MASTER%终于还清了债
-				PRINTFORML %NAME_地主%也一起感到高兴
+				PRINTFORML %CALLNAME:MASTER%はついに借金を完済した
+				PRINTFORML %NAME_地主%もいっしょに喜んでくれている
 			ELSE
-				PRINTFORML %CALLNAME:MASTER%还清了债
-				PRINTFORML ……虽然很快就被以其他的理由强行借了钱
+				PRINTFORML %CALLNAME:MASTER%は借金を完済した
+				PRINTFORML ……といってもまたすぐに何かと理由をつけて金をむしり取られるのだが
 			ENDIF
 		ELSE
-			PRINTFORML 剩下的借款还有%金额表示(FLAG:地主貸付金)%……
+			PRINTFORML 残りの借金は%金額表示(FLAG:地主貸付金)%sだ……
 		ENDIF
 		$KANRYOU
 		PRINTFORML 
 		IF FLAG:農民難易度 == 1
 			PRINTDATAL
-				DATAFORM 在%NAME_地主%的关照下越说越投机
-				DATAFORM %NAME_地主%津津有味的听着田地工作的报告
-				DATAFORM %NAME_地主%有些担心是不是有感到困扰的事
-				DATAFORM 一边吃着%NAME_地主%带来的点心一边畅谈
-				DATAFORM %NAME_地主%认真倾听着农田改造的请求
-				DATAFORM %NAME_地主%用温和的视线看着这边
-				DATAFORM %NAME_地主%的笑容很耀眼
+				DATAFORM %NAME_地主%との世話話に花が咲いた
+				DATAFORM %NAME_地主%は畑仕事の報告を興味深そうに聞いている
+				DATAFORM %NAME_地主%は困ったことがないか気にかけてくれている
+				DATAFORM %NAME_地主%が持ってきてくれた菓子をつまみながら歓談した
+				DATAFORM %NAME_地主%は農地の改善の要望に真剣に耳を傾けている
+				DATAFORM %NAME_地主%は穏やかな視線をこちらに向けている
+				DATAFORM %NAME_地主%の笑顔が眩しい
 			ENDDATA
 		ELSE
 			PRINTDATAL
-				DATAFORM %NAME_地主%只有找到空隙就向着%CALLNAME:MASTER%强行推销
-				DATAFORM %NAME_地主%敷衍的听着田地工作的报告
-				DATAFORM %NAME_地主%在寻找着有没有为钱所困的人
-				DATAFORM %NAME_地主%以改善农田为名建议投资设备……没有那些钱
-				DATAFORM %NAME_地主%的视线里可以察觉到不好的气息
-				DATAFORM %NAME_地主%的笑容里好像藏着什么
-				DATAFORM %NAME_地主%的笑容不知为何看着心里发怂
+				DATAFORM %NAME_地主%は隙あらば%CALLNAME:MASTER%に物を売りつけようとしてくる
+				DATAFORM %NAME_地主%は畑仕事の報告を適当に聞き流している
+				DATAFORM %NAME_地主%は金に困っている者はいないか探りを入れてきた
+				DATAFORM %NAME_地主%は農地の改善案と称して設備投資の提案をしてきた……そんな金は無い
+				DATAFORM %NAME_地主%の視線には悪だくみの気配が垣間見える
+				DATAFORM %NAME_地主%の笑顔にはなにか裏があるようにしか見えない
+				DATAFORM %NAME_地主%の笑顔を見てもなぜか心は休まらない
 			ENDDATA
 		ENDIF
 	ENDSELECT
@@ -513,10 +510,10 @@ LOOP 1
 
 IF FLAG:返済延滞回数
 	LOCAL = POWER(FLAG:返済延滞回数, FLAG:農民難易度 + 1)
-	LOCAL = MIN(LOCAL, CFLAG:(FLAG:地主):信賴度)
+	LOCAL = MIN(LOCAL, CFLAG:(FLAG:地主):信頼度)
 	IF LOCAL
-		PRINTFORMW %CALLNAME:(FLAG:地主)%对你抱着不信任感
-		CFLAG:(FLAG:地主):信賴度 -= LOCAL
+		PRINTFORMW %CALLNAME:(FLAG:地主)%はあなたに不信感を抱いている
+		CFLAG:(FLAG:地主):信頼度 -= LOCAL
 	ENDIF
 ENDIF
 
@@ -536,7 +533,7 @@ NAME_地主 = %CALLNAME:(FLAG:地主)%
 COST_RATE = INT_NOUMIN(FLAG:地主, "報酬")
 LOCAL:0 = 0
 LOCAL:8 = 0
-PRINTFORML 根据本月份的如下各种经费追加了借款
+PRINTFORML 今月分の諸経費として以下の料金が借金に上乗せされた
 
 
 ;金利計算
@@ -561,11 +558,11 @@ ENDSELECT
 ;固定値が大半なんで毎回再計算する必要はあまりない
 ;地主の切り替わり（と、再起動）のタイミングで判定するように
 IF NAME_地主 != PREV_地主
-	LOCALS:0 = 经费总额
-	LOCALS:1 = 利息
-	LOCALS:2 = 欠款滞纳金
-	LOCALS:3 = 农具租赁费
-	LOCALS:8 = 借款总额
+	LOCALS:0 = 経費総額
+	LOCALS:1 = 利子
+	LOCALS:2 = 返済延滞費
+	LOCALS:3 = 農具利用費
+	LOCALS:8 = 借入金総額
 	SELECTCASE FLAG:農民難易度
 	CASE 2
 		LOCAL:3 = COST_RATE * 5
@@ -573,7 +570,7 @@ IF NAME_地主 != PREV_地主
 		LOCAL:3 = COST_RATE * 10
 	ENDSELECT
 
-	LOCALS:4 = 肥料费
+	LOCALS:4 = 肥料購入費
 	SELECTCASE FLAG:農民難易度
 	CASE 2
 		LOCAL:4 = COST_RATE * 5
@@ -581,7 +578,7 @@ IF NAME_地主 != PREV_地主
 		LOCAL:4 = COST_RATE * 10
 	ENDSELECT
 
-	LOCALS:5 = 作物销售费
+	LOCALS:5 = 作物出荷費
 	SELECTCASE FLAG:農民難易度
 	CASE 2
 		LOCAL:5 = COST_RATE * 5
@@ -589,7 +586,7 @@ IF NAME_地主 != PREV_地主
 		LOCAL:5 = COST_RATE * 15
 	ENDSELECT
 
-	LOCALS:6 = 灌溉费
+	LOCALS:6 = 水場利用費
 	SELECTCASE FLAG:農民難易度
 	CASE 2
 		LOCAL:6 = COST_RATE * 5
@@ -597,10 +594,10 @@ IF NAME_地主 != PREV_地主
 		LOCAL:6 = COST_RATE * 20
 	ENDSELECT
 
-	IF STR_NOUMIN(FLAG:地主, "作物") == "蚕丝"
-		LOCALS:7 = 下季度蚕种费
+	IF STR_NOUMIN(FLAG:地主, "作物") == "生糸"
+		LOCALS:7 = 次期卵費
 	ELSE
-		LOCALS:7 = 下季度种子费
+		LOCALS:7 = 次期種籾費
 	ENDIF
 	
 	SELECTCASE FLAG:農民難易度
@@ -616,7 +613,7 @@ LOCAL:0 = SUMARRAY(LOCAL)
 LOCAL:8 = LIMIT(FLAG:地主貸付金 + LOCAL:0,  0, 10000000)
 FLAG:地主貸付金 = LOCAL:8
 PRINTFORML ――――――――――――――――――――――――――――――――
-PRINTFORML 　诸経费
+PRINTFORML 　諸経費
 PRINTFORML ――――――――――――――――――――――――――――――――
 FOR LCOUNT, 1, 8
 	SIF LOCAL:LCOUNT
@@ -637,7 +634,7 @@ PRINTFORMW ―――――――――――――――――――――――
 ;CONFIGからの農民再設定（試作）
 @RESTART_NOUMIN
 #DIM LOCAL_地主
-#DIM LOCAL_田地工作的成果
+#DIM LOCAL_畑仕事の成果
 #DIM LOCAL_返済延滞回数
 #DIM LOCAL_収穫納入回数
 #DIM LOCAL_累積収穫評価
@@ -652,7 +649,7 @@ PRINTFORMW ―――――――――――――――――――――――
 #DIMS LOCALS_新難易度
 
 LOCAL_地主 = FLAG:地主
-LOCAL_田地工作的成果 = FLAG:田地工作的成果
+LOCAL_畑仕事の成果 = FLAG:畑仕事の成果
 LOCAL_返済延滞回数 = FLAG:返済延滞回数
 LOCAL_収穫納入回数 = FLAG:収穫納入回数
 LOCAL_累積収穫評価 = FLAG:累積収穫評価
@@ -664,24 +661,24 @@ LOCAL_年始貸付金 = FLAG:年始貸付金
 LOCALS_元地主 = %CALLNAME:(FLAG:地主)%
 
 IF FLAG:地主
-	PRINTFORML %CALLNAME:MASTER%是%LOCALS_元地主%手下的打工农民
+	PRINTFORML %CALLNAME:MASTER%は%LOCALS_元地主%の下で働く農民です
 	SIF FLAG:地主貸付金 > 0
-		PRINTFORML 残余的欠款是%金額表示(FLAG:地主貸付金)%
+		PRINTFORML 残りの借金は%金額表示(FLAG:地主貸付金)%だ
 	SELECTCASE FLAG:農民難易度
 	CASE 1
-		LOCALS_元難易度 = 普通
+		LOCALS_元難易度 = ノーマル
 	CASE 2
-		LOCALS_元難易度 = 硬核
+		LOCALS_元難易度 = ハードコア
 	CASE 3
-		LOCALS_元難易度 = 极限
+		LOCALS_元難易度 = エクストリーム
 	ENDSELECT
 ELSE
-	PRINTFORML %CALLNAME:MASTER%是无债一身轻的自由人
+	PRINTFORML %CALLNAME:MASTER%は身軽な自由人です
 ENDIF
 
-PRINTFORML 要变更农家的设定吗？
-PRINTFORML [1] - 是
-PRINTFORML [0] - 不是
+PRINTFORML 農家の設定を変更しますか？
+PRINTFORML [1] - はい
+PRINTFORML [0] - いいえ
 DO
 	INPUT
 	SELECTCASE RESULT
@@ -690,7 +687,7 @@ DO
 		RETURN
 	CASE 1
 	CASEELSE
-		REUSELASTLINE 无效输入
+		REUSELASTLINE 無効な入力です
 		CONTINUE
 	ENDSELECT
 	BREAK
@@ -703,21 +700,21 @@ DO
 
 	LOCALS_新地主 = %CALLNAME:(FLAG:地主)%
 	IF LOCAL_地主 && FLAG:地主 && LOCAL_地主 != FLAG:地主
-		PRINTFORML %CALLNAME:MASTER%从%LOCALS_元地主%手下离开了、今后在%LOCALS_新地主%手下打工
+		PRINTFORML %CALLNAME:MASTER%は%LOCALS_元地主%の下を離れ、今後は%LOCALS_新地主%の下で働くことになります
 		IF LOCAL_地主貸付金 > 0
-			PRINTFORML %LOCALS_元地主%的借款%金額表示(LOCAL_地主貸付金)%被%LOCALS_新地主%接管了
+			PRINTFORML %LOCALS_元地主%への借金%金額表示(LOCAL_地主貸付金)%は%LOCALS_新地主%が肩代わりするため
 			FLAG:地主貸付金 += LOCAL_地主貸付金
 		ENDIF
-		PRINTFORML 向%LOCALS_新地主%借款合计为%金額表示(LOCAL_地主貸付金)%
+		PRINTFORML %LOCALS_新地主%への借入金は合計%金額表示(LOCAL_地主貸付金)%となります
 
 	ELSEIF LOCAL_地主 && FLAG:地主 && LOCAL_地主 == FLAG:地主
 		; 雇い主の変更がないので元に戻す
 		SETCOLOR C_YELLOW
-		PRINTFORML 因为雇主没有变更、上述借款没有发生
+		PRINTFORML 雇い主に変更が無い為、上記の借入金は発生しません
 		SIF LOCAL_地主貸付金 > 0
-			PRINTFORML %LOCALS_新地主%的借款现在仍是%金額表示(LOCAL_地主貸付金)%
+			PRINTFORML %LOCALS_新地主%への借入金は今のまま%金額表示(LOCAL_地主貸付金)%となります
 		RESETCOLOR
-		FLAG:田地工作的成果 = LOCAL_田地工作的成果
+		FLAG:畑仕事の成果 = LOCAL_畑仕事の成果
 		FLAG:返済延滞回数 = LOCAL_返済延滞回数
 		FLAG:収穫納入回数 = LOCAL_収穫納入回数
 		FLAG:累積収穫評価 = LOCAL_累積収穫評価
@@ -729,38 +726,38 @@ DO
 		IF LOCAL_農民難易度 != FLAG:農民難易度
 			SELECTCASE FLAG:農民難易度
 			CASE 1
-				LOCALS_新難易度 = 普通
+				LOCALS_新難易度 = ノーマル
 			CASE 2
-				LOCALS_新難易度 = 硬核
+				LOCALS_新難易度 = ハードコア
 			CASE 3
-				LOCALS_新難易度 = 极限
+				LOCALS_新難易度 = エクストリーム
 			ENDSELECT
-			PRINTFORML 难易度从[%LOCALS_元難易度%]变更为了[%LOCALS_新難易度%]
+			PRINTFORML 難易度を[%LOCALS_元難易度%]から[%LOCALS_新難易度%]に変更します
 		ELSE
-			PRINTFORML 难易度的设定没有变更
+			PRINTFORML 難易度の設定に変更ありません
 		ENDIF
 
 	ELSEIF !LOCAL_地主 && !FLAG:地主
-		PRINTFORML 设定保持不变
+		PRINTFORML 設定に変わりはありません
 	ELSEIF LOCAL_地主 && !FLAG:地主
 		IF LOCAL_地主貸付金 > 0
-			PRINTFORML 没有还清债务的时候不能辞掉农民的工作
+			PRINTFORML 借金が残っている間は農民を辞める事はできない
 			CONTINUE
 		ENDIF
-		PRINTFORML 辞去农民的工作变成了自由人
+		PRINTFORML 農民を辞め自由人になります
 	ENDIF
 
 	PRINTFORML 
-	PRINTFORML 是否更改设定？
-	PRINTFORML [1] - 是
-	PRINTFORML [2] - 重新决定
-	PRINTFORML [0] - 不更改
+	PRINTFORML 設定を変更しますか？
+	PRINTFORML [1] - はい
+	PRINTFORML [2] - もう一度決めなおす
+	PRINTFORML [0] - 変更しない
 	DO
 		INPUT
 		SELECTCASE RESULT
 		CASE 0
 			FLAG:地主 = LOCAL_地主
-			FLAG:田地工作的成果 = LOCAL_田地工作的成果
+			FLAG:畑仕事の成果 = LOCAL_畑仕事の成果
 			FLAG:返済延滞回数 = LOCAL_返済延滞回数
 			FLAG:収穫納入回数 = LOCAL_収穫納入回数
 			FLAG:累積収穫評価 = LOCAL_累積収穫評価
@@ -769,16 +766,16 @@ DO
 			FLAG:畑拡張 = LOCAL_畑拡張
 			FLAG:地主貸付金 = LOCAL_地主貸付金
 			FLAG:年始貸付金 = LOCAL_年始貸付金
-			PRINTFORML 取消更改设定
+			PRINTFORML 設定変更を中止しました
 			PRINTFORML 
 			RETURN
 		CASE 1
-			PRINTFORML 設定已更改
+			PRINTFORML 設定を変更しました
 			PRINTFORML 
 			RETURN
 		CASE 2
 		CASEELSE
-			REUSELASTLINE 无效输入
+			REUSELASTLINE 無効な入力です
 			CONTINUE
 		ENDSELECT
 		BREAK

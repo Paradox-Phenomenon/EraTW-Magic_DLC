@@ -1,7 +1,5 @@
 ﻿;挿入継続の処理
 @EQUIP_INCERT_V(ARG)
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #DIM 竿役
 
 竿役 = TEQUIP:ARG:50
@@ -9,19 +7,19 @@
 ;行為者
 ;-------------------------------------------------
 TCVAR:ARG:116 = 竿役
-;TCVAR:2 射精部位フラグ（-1=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
 ;TCVAR:4 射精快感強度
 
 CSTR:竿役:10 = @"/{ARG}/"
-TCVAR:竿役:射精部位 = 1
+TCVAR:竿役:射精箇所 = 1
 
 CSTR:ARG:10 += @"{TEQUIP:ARG:50}/"
-SIF TCVAR:ARG:射精部位 == 0 || TCVAR:ARG:射精部位 >= 8
-	TCVAR:ARG:射精部位 = 13
+SIF TCVAR:ARG:射精箇所 == 0 || TCVAR:ARG:射精箇所 >= 8
+	TCVAR:ARG:射精箇所 = 13
 
 
 IF ARG == MASTER
-	PRINTFORML ＜%CALLNAME:竿役%插入Ｖ中＞
+	PRINTFORML ＜%CALLNAME:竿役%からＶインサート＞
 
 	TCVAR:竿役:射精快感強度 = 850 + TEQUIP:ARG:子宮 * 100
 	TCVAR:ARG:射精快感強度 = 500 + (100 * ABL:ARG:Ｖ感覚)
@@ -39,14 +37,14 @@ IF ARG == MASTER
 	SOURCE:竿役:逸脱 += 50
 
 ELSE
-	PRINTFORML ＜%CALLNAME:ARG%Ｖ被插入中＞
+	PRINTFORML ＜%CALLNAME:ARG%にＶインサート＞
 
 	TCVAR:竿役:射精快感強度 = 700 + TEQUIP:ARG:子宮 * 100
 	TCVAR:ARG:射精快感強度 = 750
 	DOWNBASE:竿役:体力 += 15
 	DOWNBASE:竿役:気力 += 20
-	;时间停止中
-	IF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
+	;時間停止中
+	IF FLAG:70
 		SOURCE:ARG:快Ｖ += 150
 		CALL 挿入継続Ｖ苦痛処理(ARG)
 
@@ -60,17 +58,17 @@ ELSE
 		SOURCE:ARG:快Ｖ += 150
 		SOURCE:ARG:情愛 += 75
 		SOURCE:ARG:露出 += 25
-		SIF TCVAR:ARG:强行
+		SIF TCVAR:ARG:無理矢理
 			SOURCE:ARG:反感 += 1000
-		;体位BONUS
-		IF TEQUIP:ARG:体位 == CFLAG:ARG:喜欢的体位
+		;体位ボーナス
+		IF TEQUIP:ARG:体位 == CFLAG:ARG:好きな体位
 			SOURCE:ARG:情愛 += 100
 			SOURCE:ARG:恭順 += 50
 		ENDIF
 		CALL 挿入継続Ｖ苦痛処理(ARG)
 	ENDIF
 
-	IF CFLAG:ARG:诶嘿嘿 == 2
+	IF CFLAG:ARG:うふふ == 2
 		SOURCE:ARG:快Ｖ += 150
 		SOURCE:ARG:情愛 += 100
 		TCVAR:竿役:射精快感強度 += 150
@@ -82,13 +80,13 @@ ENDIF
 ;-------------------------------------------------
 EXP:竿役:挿入経験 ++
 EXP:ARG:Ｖ経験 ++
-SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
+SIF !FLAG:70 && !CFLAG:ARG:イタズラ
 EXP:ARG:Ｖ性交経験 ++
 SIF TEQUIP:ARG:体位 == 6
 	EXP:ARG:Ｖ拡張経験 ++
-SIF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
+SIF FLAG:70 == 1
 	EXP:MASTER:時姦経験 += 1
-IF CFLAG:MASTER:恶作剧 == 2
+IF CFLAG:MASTER:イタズラ == 2
 	EXP:MASTER:睡眠姦経験 += 1
 	EXP:ARG:睡眠姦経験 += 1
 ENDIF
@@ -96,8 +94,6 @@ RETURN 1
 
 
 @EQUIP_INCERT_A(ARG)
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #DIM 竿役
 
 竿役 = TEQUIP:ARG:51
@@ -105,21 +101,21 @@ RETURN 1
 ;行為者
 ;-------------------------------------------------
 TCVAR:ARG:116 = 竿役
-;TCVAR:0 射精対象フラグ（ビット0=TARGET 1=PLAYER 2=MASTER 3=ASSI 4=触手 5=其他）
+;TCVAR:0 射精対象フラグ（ビット0=TARGET 1=PLAYER 2=MASTER 3=ASSI 4=触手 5=その他）
 ;TCVAR:1 予備射精対象フラグ（ビットを使いたくない人用、CFLAG:100に翻訳されます）
-;	（1=TARGET 2=PLAYER 3=MASTER 4=ASSI 5=TARGET+ASSI 6=MASTER+ASSI -1=触手 -2=其他）
-;TCVAR:2 射精部位フラグ（-1=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+;	（1=TARGET 2=PLAYER 3=MASTER 4=ASSI 5=TARGET+ASSI 6=MASTER+ASSI -1=触手 -2=その他）
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
 ;TCVAR:4 射精快感強度
 CSTR:竿役:10 = @"/{ARG}/"
-TCVAR:竿役:射精部位 = 2
+TCVAR:竿役:射精箇所 = 2
 
 CSTR:ARG:10 += @"{TEQUIP:ARG:51}/"
-SIF TCVAR:ARG:射精部位 == 0 || TCVAR:ARG:射精部位 >= 8
-	TCVAR:ARG:射精部位 = 12
+SIF TCVAR:ARG:射精箇所 == 0 || TCVAR:ARG:射精箇所 >= 8
+	TCVAR:ARG:射精箇所 = 12
 
 
 IF ARG == MASTER
-	PRINTFORML ＜%CALLNAME:竿役%插入Ａ中＞
+	PRINTFORML ＜%CALLNAME:竿役%からＡインサート＞
 
 	TCVAR:竿役:射精快感強度 = 850
 	TCVAR:ARG:射精快感強度 = 500 + (100 * ABL:ARG:Ａ感覚)
@@ -137,13 +133,13 @@ IF ARG == MASTER
 	SOURCE:竿役:逸脱 += 50
 
 ELSE
-	PRINTFORML ＜%CALLNAME:ARG%Ａ被插入中＞
+	PRINTFORML ＜%CALLNAME:ARG%にＡインサート＞
 	TCVAR:竿役:射精快感強度 = 900
 	TCVAR:ARG:射精快感強度 = 750
 	DOWNBASE:竿役:体力 += 15
 	DOWNBASE:竿役:気力 += 20
-	;时间停止中
-	IF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
+	;時間停止中
+	IF FLAG:70
 		SOURCE:ARG:快Ａ += 200
 		CALL 挿入継続Ａ苦痛処理(ARG)
 
@@ -158,15 +154,15 @@ ELSE
 		SOURCE:ARG:逸脱 += 100
 		SIF TEQUIP:ARG:体位 == 6
 			SOURCE:ARG:苦痛 += 300
-		;体位BONUS
-		IF TEQUIP:ARG:体位 == CFLAG:ARG:喜欢的体位 - 5
+		;体位ボーナス
+		IF TEQUIP:ARG:体位 == CFLAG:ARG:好きな体位 - 5
 			SOURCE:ARG:情愛 += 100
 			SOURCE:ARG:恭順 += 50
 		ENDIF
 		CALL 挿入継続Ａ苦痛処理(ARG)
 	ENDIF
 
-	IF CFLAG:ARG:诶嘿嘿 == 2
+	IF CFLAG:ARG:うふふ == 2
 		SOURCE:ARG:快Ａ += 150
 		SOURCE:ARG:情愛 += 100
 		TCVAR:竿役:射精快感強度 += 150
@@ -177,7 +173,7 @@ ENDIF
 ;-------------------------------------------------
 EXP:竿役:挿入経験 ++
 EXP:ARG:Ａ経験 ++
-SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
+SIF !FLAG:70 && !CFLAG:ARG:イタズラ
 	EXP:ARG:Ａ性交経験 ++
 SIF TEQUIP:ARG:体位 == 6
 	EXP:ARG:Ａ拡張経験 ++
@@ -185,8 +181,6 @@ RETURN 1
 
 
 @挿入継続Ｖ苦痛処理(ARG)
-#LOCALSIZE 2
-#LOCALSSIZE 1
 ;EXP:Ｖ経験をみる（処女はありえない）
 LOCAL = 200
 LOCAL:1 = 150
@@ -226,13 +220,11 @@ ENDIF
 
 SOURCE:ARG:苦痛 += LOCAL
 
-SIF (!FLAG:70 || CFLAG:ARG:344 == 1)
+SIF !FLAG:70
 	SOURCE:ARG:反感 += LOCAL:1
 
 
 @挿入継続Ａ苦痛処理(ARG)
-#LOCALSIZE 2
-#LOCALSSIZE 1
 LOCAL = 400
 LOCAL:1 = 250
 
@@ -278,21 +270,35 @@ ENDIF
 
 SOURCE:ARG:苦痛 += LOCAL
 
-SIF (!FLAG:70 || CFLAG:ARG:344 == 1) && !CFLAG:ARG:恶作剧
+SIF !FLAG:70 && !CFLAG:ARG:イタズラ
 	SOURCE:ARG:反感 += LOCAL:1
 
 
-@插入不可(ARG)
-;-2 = 搅大缸了 -1 = 刺激太弱 1= 需要经验 2= 需要经验和知识 3= 小人飞机杯
+@挿入不可(ARG)
+;-2 = ガバガバで気持ちよくない -1 = 刺激が弱い 1= 経験が必要 2= 経験と知識が必要 3= 小人オナホ
 #FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF ARG == PLAYER
+#DIM あなたのサイズ
+#DIM サイズ差
+IF ARG == PLAYER
 	RETURNF 0
-;如果是假鸡吧，不计算体型
-SIF !GETBIT(TALENT:PLAYER:2,1)
-	RETURNF 0
-SELECTCASE 尺寸差(ARG)
+ENDIF
+
+SELECTCASE TALENT:PLAYER:形状
+	CASE 0,3,4
+		あなたのサイズ = 0
+	CASE 1
+		あなたのサイズ = -1
+	CASE 2
+		あなたのサイズ = -2
+	CASE 6
+		あなたのサイズ = 1
+	CASE 5,10
+		あなたのサイズ = 2
+ENDSELECT
+
+サイズ差 = (TALENT:PLAYER:体型 - TALENT:ARG:体型) * 2 + あなたのサイズ
+
+SELECTCASE サイズ差
 	CASE IS > 8
 		RETURNF 3
 	CASE 5 TO 8
@@ -306,36 +312,4 @@ SELECTCASE 尺寸差(ARG)
 	CASE IS < -6
 		RETURNF -2
 ENDSELECT
-
-@尺寸差(受方)
-#FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM 攻方
-#DIM 受方
-#DIM 尺寸
-;没有检测到肉棒时弹出
-IF 受方 == PLAYER
-	攻方 = TARGET
-ELSE
-	攻方 = PLAYER
-ENDIF
-SELECTCASE TALENT:攻方:形状
-	CASE 0,3,4
-		尺寸 = 0
-	CASE 1
-		尺寸 = -1
-	CASE 2
-		尺寸 = -2
-	CASE 6
-		尺寸 = 1
-	CASE 5,10
-		尺寸 = 2
-ENDSELECT
-RETURNF (TALENT:攻方:体型 - TALENT:受方:体型) * 2 + 尺寸
-
-@挿入不可(ARG)
-#FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-RETURNF 插入不可(ARG)
+	

@@ -1,10 +1,10 @@
 ﻿;-------------------------------------------------
-;掀起裙子
-;日常系指令、レベル1
+;スカートをめくる
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 @COM330
 #DIM MEKURI
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 	BASE:MASTER:TSP -= 10
 ELSE
 	;固定で獲得するソース
@@ -21,7 +21,7 @@ ELSE
 				MEKURI *= 4
 		ENDSELECT
 		[IF_DEBUG]
-		PRINTFORMW 掀裙子{MEKURI}
+		PRINTFORMW スカート捲りで{MEKURI}
 		[ENDIF]
 		CUP:快Ｖ += MEKURI
 	ENDIF
@@ -59,26 +59,26 @@ ELSE
 	IF CFLAG:2 <= 100
 		TFLAG:193 = -5
 		DOWNBASE:MASTER:体力 += ABL:戦闘能力 * 100
-		TFLAG:掀裙子すぎ += RAND:30
+		TFLAG:スカートめくりすぎ += RAND:30
 	ELSEIF CFLAG:2 <= 1000
 		TFLAG:193 = -3
 		DOWNBASE:MASTER:体力 += ABL:戦闘能力 * 30
-		TFLAG:掀裙子すぎ += RAND:20
+		TFLAG:スカートめくりすぎ += RAND:20
 	ELSEIF CFLAG:2 <= 3000
 		TFLAG:193 = -1
-		TFLAG:掀裙子すぎ += RAND:10
+		TFLAG:スカートめくりすぎ += RAND:10
 	ELSEIF CFLAG:2 <= 5000
 		TFLAG:193 = 0
-		TFLAG:掀裙子すぎ += RAND:10
+		TFLAG:スカートめくりすぎ += RAND:10
 	ELSE
 		TFLAG:193 = 1
-		TFLAG:掀裙子すぎ += RAND:5
+		TFLAG:スカートめくりすぎ += RAND:5
 	ENDIF
 
 	SOURCE:受動 = 100 + 150 * ABL:従順
-	SOURCE:征服 = 100 + 150 * ABL:施虐属性
+	SOURCE:征服 = 100 + 150 * ABL:サドっ気
 
-	;二人きりだと効果UP、そうでないと露出以外ダウン=============
+	;二人きりだと効果アップ、そうでないと露出以外ダウン=============
 	FOR LOCAL,1,CHARANUM
 		SIF CFLAG:LOCAL:同室
 			LOCAL:2 ++
@@ -92,25 +92,25 @@ ELSE
 		TIMES SOURCE:露出 , 2.00
 		TIMES SOURCE:反感 , 1.50
 	ENDIF
-	;情緒の影響=====================================================
-	IF BASE:情緒 == MAXBASE:情緒
+	;ムードの影響=====================================================
+	IF BASE:ムード == MAXBASE:ムード
 		TIMES SOURCE:欲情 , 1.20
 		TIMES SOURCE:露出 , 1.20
 		TIMES SOURCE:反感 , 0.50
-	ELSEIF BASE:情緒 < 600 && BASE:情緒
+	ELSEIF BASE:ムード < 600 && BASE:ムード
 		TIMES SOURCE:欲情 , 1.00
 		TIMES SOURCE:露出 , 1.00
 		TIMES SOURCE:反感 , 1.00
-	ELSEIF BASE:情緒 <= 200
+	ELSEIF BASE:ムード <= 200
 		TIMES SOURCE:欲情 , 0.80
 		TIMES SOURCE:露出 , 0.80
 		TIMES SOURCE:反感 , 1.50
 	ENDIF
 
 	TIME += 5
-	IF CHK_DATENOW(CFLAG:TARGET:约会中)
-		EXP:MASTER:約會経験 ++
-		EXP:TARGET:約會経験 ++
+	IF CHK_DATENOW(CFLAG:TARGET:デート中)
+		EXP:MASTER:デート経験 ++
+		EXP:TARGET:デート経験 ++
 	ENDIF
 ENDIF
 RETURN 1
@@ -119,39 +119,39 @@ RETURN 1
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE330
-;掀裙子実行判定
+;スカートめくり実行判定
 SIF !TFLAG:100
 	RETURN 0
 ;一括管理
 SIF GLOBAL_COMABLE(330)
 	RETURN RESULT
-;时间停止中以及潜伏诶嘿嘿时跳过
-IF (!FLAG:70 || CFLAG:344 == 1) && !GETBIT(CFLAG:526,0)
+;時間停止中はスキップ
+IF !FLAG:70
 	;睡眠中
 	SIF CFLAG:睡眠
 		RETURN 0
 	;仕事中
 	SIF CFLAG:行動 == 5 && !(TARGET == [[美宵]])
 		RETURN 0
-	;约会中
-	SIF CHK_DATENOW(CFLAG:约会中) && CFLAG:現在位置 != OMANEKIBEYA()
+	;デート中
+	SIF CHK_DATENOW(CFLAG:デート中) && CFLAG:現在位置 != OMANEKIBEYA()
 		RETURN 0
-	;陪睡中
-	SIF CFLAG:陪睡中
+	;添い寝中
+	SIF CFLAG:添い寝中
 		RETURN 0
 	;甲斐性無しにそんな度胸はない
 	SIF FLAG:甲斐性無
 		RETURN 0
 ENDIF
 ;服装制限
-SIF !(EQUIP:裙子 || EQUIP:連衣裙 || EQUIP:和服 || EQUIP:裤子) || EQUIP:0 == 0
+SIF !(EQUIP:スカート || EQUIP:ワンピース || EQUIP:着物 || EQUIP:ズボン) || EQUIP:0 == 0
 	RETURN 0
 ;気力0
 SIF BASE:MASTER:気力 <= 0
 	RETURN 0
 SIF !TARGET
 	RETURN 0
-;被逆推中の制御
+;押し倒され中の制御
 SIF GETBIT (TCVAR:26,7)
 	RETURN 0
 RETURN 1

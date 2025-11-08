@@ -1,4 +1,5 @@
-﻿;qol
+﻿[SKIPSTART]
+;qol
 ;--------------------------------------------------
 ;珠数の計算処理（他で同様の処理があるので関数切り出し）
 ;--------------------------------------------------
@@ -27,14 +28,14 @@ RETURNF LOCAL
 LOCAL:3 = 0
 FOR LOCAL:9, 0, VARSIZE("nPalamList")
 	LOCAL = nPalamList:(LOCAL:9)
-	PRINTFORM 　%PALAM_TR(PALAMNAME:LOCAL), 6, LEFT% 
+	PRINTFORM 　%PALAM_TR(PALAMNAME:LOCAL, "PalamSh"), 6, LEFT% 
 	;lubrication
 	IF LOCAL == 9 && PALAM:4 >= 20000
-		PRINTFORM    　湿了->
+		PRINTFORM    　Wet->
 	ELSEIF PALAM:LOCAL >= 99999999
-		PRINTFORM   超限->
+		PRINTFORM   Beyond->
 	ELSEIF PALAM:LOCAL > 9999999
-		PRINTFORM 　 极限->
+		PRINTFORM 　 Limit->
 	ELSE
 		PRINTFORM  {PALAM:LOCAL, 7}->
 	ENDIF
@@ -68,7 +69,7 @@ FOR LOCAL, 0, CHARANUM
 	ENDIF
 	SIF ARG && LOCAL == MASTER
 		CONTINUE
-	SIF STRCOUNT(CALLNAME:LOCAL, SEARCH_STRING) && SEARCH_STRING != ""
+	SIF STRCOUNT(TOLOWER(CALLNAME:LOCAL), TOLOWER(SEARCH_STRING)) && SEARCH_STRING != ""
 		SETCOLOR 103,228,126
 	PRINTFORMLC [{LOCAL, 3}] %CALLNAME:LOCAL%
 	RESETCOLOR
@@ -91,21 +92,21 @@ LOCAL = TIME:1 - EX:MASTER:前回の入浴時刻
 SELECTCASE LOCAL
 	CASE IS < 90
 	SETCOLOR C_AQUA
-		RETURNF "清新"
+		RETURNF "Fresh"
 	CASE IS < 180
 	SETCOLOR C_P_BLUE
-		RETURNF "洁净"
+		RETURNF "Clean"
 	CASE IS < 270
 	SETCOLOR C_P_YELLOW
-		RETURNF "整洁"
+		RETURNF "Neat"
 	CASE IS < 360
-		RETURNF "干净"
+		RETURNF "Tidy"
 	CASEELSE
-		RETURNF "可以入浴"
+		RETURNF "Can bathe"
 ENDSELECT
 
 ;disabled, as daily "luck" score was moved to CFLAG:MASTER:今日の運勢, and Suwako can't help you with that
-[SKIPSTART]
+;[SKIPSTART]
 @EVENTTRAIN
 #LATER
 ;needs earth blessing from suwako
@@ -130,6 +131,7 @@ SELECTCASE FLAG:日替わりイベント
 		PRINTFORML Rich harvest!!!
 ENDSELECT
 WAIT
+;[SKIPEND]
 
 
 @EVENTTRAIN
@@ -262,15 +264,15 @@ SELECTCASE 種類
 	CASE CUSTOM_PANTY_START_INDEX TO CUSTOM_PANTY_START_INDEX + 4
 		CALL COLORMESSAGE(@"Got %CALLNAME:ARG%'s special panties!",C_PINK,2,1)
 ENDSELECT
-[SKIPEND]
+
 @QoL_DateEndConfirm()
-PRINTFORML 你确定要回家吗?
+PRINTFORML Do you really want to go home?
 SIF FLAG:デート相手
-	PRINTFORML 现在的约会将结束
+	PRINTFORML Your current date will be over.
 CALL ASK_YN
 SIF RESULT
 	RETURN -1
-[SKIPSTART]
+	
 @QoL_Stall(ARGS, CHARA, 商人パワー, ARG)
 #DIM REF CHARA
 #DIM 商人パワーM
@@ -451,7 +453,7 @@ PRINTFORML [  8] - Show gift scores upon buying them：\@ !nHideGiftScores ? Yes
 nHideGiftScores = !nHideGiftScores
 SIF !nHideGiftScores
 	PRINTFORMW Note that the score will only be shown with sufficient Knowledge and Intimacy.
-[SKIPEND]
+
 @Qol_GiftData(TASTE_LIST, TASTE_CNT)
 #DIMS TASTE_LIST
 #DIM  TASTE_CNT
@@ -463,7 +465,6 @@ SIF TASTE_CNT >= 5
 	SETCOLOR 0xffc8c8
 PRINTBUTTON @"[%TASTE_TR(TASTE_LIST)%]Lv{TASTE_CNT, 2}", ""
 RESETCOLOR
-
 
 ;highlight characters with active requests
 @QoL_HighlightRequestChara(ARG)
@@ -510,145 +511,143 @@ RETURNF TALENT:ARG:妊娠 && (CFLAG:ARG:903 <= 30 || CFLAG:ARG:903 >= 71) && !(T
 nRemberTsp = BASE:MASTER:TSP
 
 
-@QoL_UnlockExtraTraitsInfo(ARG, EXPECTED_WIDTH)
-#DIM EXPECTED_WIDTH
-CALL PRINTBUTTON_EX("素质获得",915,TFLAG_HideSkillAcquisition, , , 1, EXPECTED_WIDTH)
-SIF TFLAG_HideSkillAcquisition
-    RETURN
+@QoL_UnlockExtraTraitsInfo(ARG)
 PRINTL
-CALL COLORMESSAGE(@"□接吻魔", C_AQUA, 1)
+CALL PRINTLINE("Skill Acquisition")
+PRINTL
+CALL COLORMESSAGE(@"□Condition to acquire Lewd Lips", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:キス魔
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(EXP:ARG:キス経験 > 300,@"接吻经验大于 300 (现在：{EXP:ARG:キス経験})")
+	CALL COND_COLORMESSAGE(EXP:ARG:キス経験 > 300,@"Kissing Exp greater than 300 (Current:{EXP:ARG:キス経験})")
 	PRINT 　
-	CALL COND_COLORMESSAGE(ABL:ARG:Ｍ感覚 > 5,@"M感觉大于 5 (现在：{ABL:ARG:Ｍ感覚})")
+	CALL COND_COLORMESSAGE(ABL:ARG:Ｍ感覚 > 5,@"M Sense greater than 5 (Current:{ABL:ARG:Ｍ感覚})")
 ENDIF
-PRINTFORML %"-"*(EXPECTED_WIDTH)%
-CALL COLORMESSAGE(@"□自慰狂", C_AQUA, 1)
+PRINTFORML %"-"*(144)%
+CALL COLORMESSAGE(@"□Condition to acquire Loves To Masturbate", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:自慰狂い
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(EXP:ARG:調教自慰経験 > 200,@"诶嘿嘿自慰经验大于 200 (现在：{EXP:ARG:調教自慰経験})")
+	CALL COND_COLORMESSAGE(EXP:ARG:調教自慰経験 > 200,@"Masturbate during sex more than 200 times (Current:{EXP:ARG:調教自慰経験})")
 	PRINT 　
-	CALL COND_COLORMESSAGE(EXP:ARG:自慰経験 > 500,@"自慰经验大于 500 (现在：{EXP:ARG:自慰経験})")
+	CALL COND_COLORMESSAGE(EXP:ARG:自慰経験 > 500,@"Masturbation Exp greater than 500 (Current:{EXP:ARG:自慰経験})")
 ENDIF
-PRINTFORML %"-"*(EXPECTED_WIDTH)%
+PRINTFORML %"-"*(144)%
 
 IF HAS_VAGINA(ARG)
-	CALL COLORMESSAGE(@"□子宫口敏感", C_AQUA, 1)
+	CALL COLORMESSAGE(@"□Condition to acquire Lewd Cervix", C_AQUA, 1)
 	PRINTFORML 
 	IF TALENT:ARG:ポルチオ性感
 		PRINT 　
-		CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 	ELSE
 		PRINT 　
-		CALL COND_COLORMESSAGE(EXP:ARG:子宮口開発経験 > 50,@"子宫口开发经验大于 50 (现在：{EXP:ARG:子宮口開発経験})")
+		CALL COND_COLORMESSAGE(EXP:ARG:子宮口開発経験 > 50,@"Cervix Tease Exp greater than 50 (Current:{EXP:ARG:子宮口開発経験})")
 	ENDIF
-	PRINTFORML %"-"*(EXPECTED_WIDTH)%
+	PRINTFORML %"-"*(144)%
 ENDIF
 
 IF ARG == MASTER
-	CALL COLORMESSAGE(@"□音乐知识", C_AQUA, 1)
+	CALL COLORMESSAGE(@"□Condition to acquire Musical Knowledge", C_AQUA, 1)
 	PRINTFORML 
 	IF TALENT:ARG:音楽知識
 		PRINT 　
-		CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 	ELSE
 		PRINT 　
-		CALL COND_COLORMESSAGE(EXP:ARG:演奏経験 >= 1000,@"演奏经验大于 1000 (现在：{EXP:ARG:演奏経験})")
+		CALL COND_COLORMESSAGE(EXP:ARG:演奏経験 >= 1000,@"Musical Performance Exp 1000 (Current:{EXP:ARG:演奏経験})")
 		PRINT 　
-		CALL COND_COLORMESSAGE(ABL:ARG:技巧 >= 3 ,@"技巧达到 3 (现在：{ABL:ARG:技巧})")
+		CALL COND_COLORMESSAGE(ABL:ARG:技巧 >= 3 ,@"Technique 3 (Current:{ABL:ARG:技巧})")
 	ENDIF
-	PRINTFORML %"-"*(EXPECTED_WIDTH)%
+	PRINTFORML %"-"*(144)%
 	
-	CALL COLORMESSAGE(@"□音感", C_AQUA, 1)
+	CALL COLORMESSAGE(@"□Condition to acquire Sense Of Sound", C_AQUA, 1)
 	PRINTFORML 
 	IF TALENT:ARG:音感
 		PRINT 　
-		CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 	ELSE
 		PRINT 　
-		CALL COND_COLORMESSAGE(EXP:ARG:演奏経験 >= 5000,@"演奏经验大于 5000 (现在：{EXP:ARG:演奏経験})")
+		CALL COND_COLORMESSAGE(EXP:ARG:演奏経験 >= 5000,@"Musical Performance Exp 5000 (Current:{EXP:ARG:演奏経験})")
 	ENDIF
-	PRINTFORML %"-"*(EXPECTED_WIDTH)%
+	PRINTFORML %"-"*(144)%
 ENDIF
 
-CALL COLORMESSAGE(@"□灵活手指", C_AQUA, 1)
+CALL COLORMESSAGE(@"□Condition to acquire Nimble-fingered", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:器用な指
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(ABL:ARG:指 >= 5,@"指技达到 5 (现在：{ABL:ARG:指})")
+	CALL COND_COLORMESSAGE(ABL:ARG:指 >= 5,@"Hand Skill 5 (Current:{ABL:ARG:指})")
 ENDIF
-PRINTFORML %"-"*(EXPECTED_WIDTH)%
+PRINTFORML %"-"*(144)%
 
-CALL COLORMESSAGE(@"□灵活舌头", C_AQUA, 1)
+CALL COLORMESSAGE(@"□Condition to acquire Skilled Tongue", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:舌使い
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(ABL:ARG:舌 >= 5,@"舌技达到 5 (现在：{ABL:ARG:舌})")
+	CALL COND_COLORMESSAGE(ABL:ARG:舌 >= 5,@"Tongue Skill 5 (Current:{ABL:ARG:舌})")
 ENDIF
-PRINTFORML %"-"*(EXPECTED_WIDTH)%
+PRINTFORML %"-"*(144)%
 
 IF IS_FEMALE(ARG)
-	CALL COLORMESSAGE(@"□淫乳", C_AQUA, 1)
+	CALL COLORMESSAGE(@"□Condition to acquire Lewd Breasts", C_AQUA, 1)
 	PRINTFORML 
 	IF TALENT:ARG:淫乳
 		PRINT 　
-		CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 	ELSE
 		PRINT 　
-		CALL COND_COLORMESSAGE(ABL:ARG:胸 >= 5,@"胸技达到 5 (现在：{ABL:ARG:胸})")
+		CALL COND_COLORMESSAGE(ABL:ARG:胸 >= 5,@"Chest Skill 5 (Current:{ABL:ARG:胸})")
 	ENDIF
-	PRINTFORML %"-"*(EXPECTED_WIDTH)%
+	PRINTFORML %"-"*(144)%
 ENDIF
 
 IF HAS_VAGINA(ARG)
-	CALL COLORMESSAGE(@"□淫壶", C_AQUA, 1)
+	CALL COLORMESSAGE(@"□Condition to acquire Lewd Vagina", C_AQUA, 1)
 	PRINTFORML 
 	IF TALENT:ARG:淫壺
 		PRINT 　
-		CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+		CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 	ELSE
 		PRINT 　
-		CALL COND_COLORMESSAGE(ABL:ARG:膣 >= 5,@"膣技达到 5 (现在：{ABL:ARG:膣})")
+		CALL COND_COLORMESSAGE(ABL:ARG:膣 >= 5,@"Vagina Skill 5 (Current:{ABL:ARG:膣})")
 	ENDIF
-	PRINTFORML %"-"*(EXPECTED_WIDTH)%
+	PRINTFORML %"-"*(144)%
 ENDIF
 
-CALL COLORMESSAGE(@"□尻穴狂", C_AQUA, 1)
+CALL COLORMESSAGE(@"□Condition to acquire Lewd Anus", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:尻穴狂い
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(ABL:ARG:アナル >= 5,@"尻技达到 5 (现在：{ABL:ARG:アナル})")
+	CALL COND_COLORMESSAGE(ABL:ARG:アナル >= 5,@"Anal Skill 5 (Current:{ABL:ARG:アナル})")
 ENDIF
-PRINTFORML %"-"*(EXPECTED_WIDTH)% 
+PRINTFORML %"-"*(144)% 
 
-CALL COLORMESSAGE(@"□调合知识", C_AQUA, 1)
+CALL COLORMESSAGE(@"□Condition to acquire Mixing Knowledge", C_AQUA, 1)
 PRINTFORML 
 IF TALENT:ARG:調合知識
 	PRINT 　
-	CALL COLORMESSAGE(@"-　已获得", C_YELLOW, 1)
+	CALL COLORMESSAGE(@"-　Acquired", C_YELLOW, 1)
 ELSE
 	PRINT 　
-	CALL COND_COLORMESSAGE(TALENT:ARG:調合Lv >= 3,@"调合达到 3 (现在：{TALENT:ARG:調合Lv})")
+	CALL COND_COLORMESSAGE(TALENT:ARG:調合Lv >= 3,@"Mixing 3 (Current:{TALENT:ARG:調合Lv})")
 	PRINT 　
-	CALL COND_COLORMESSAGE(ABL:ARG:教養 >= 3,@"教养达到 3 (现在：{ABL:ARG:教養})")
+	CALL COND_COLORMESSAGE(ABL:ARG:教養 >= 3,@"Knowledge 3 (Current:{ABL:ARG:教養})")
 ENDIF
 PRINTFORML 
 
@@ -674,8 +673,8 @@ SELECTCASE nExp
 		CALL Qol_PrintBar(nExp, ABL:nChara:音楽技能, LOCAL)
 	CASE GETNUM(EXP, "伐採経験")
 		CALL Qol_PrintBar(nExp, TALENT:nChara:伐採Lv, EXP:nChara:伐採経験)
-	CASE GETNUM(EXP, "釣魚経験")
-		CALL Qol_PrintBar(nExp, TALENT:nChara:釣魚Lv, EXP:nChara:釣魚経験)
+	CASE GETNUM(EXP, "釣り経験")
+		CALL Qol_PrintBar(nExp, TALENT:nChara:釣りLv, EXP:nChara:釣り経験)
 	CASE GETNUM(EXP, "採集経験")
 		CALL Qol_PrintBar(nExp, TALENT:nChara:採集Lv, EXP:nChara:採集経験)
 	CASE GETNUM(EXP, "調合経験")
@@ -702,7 +701,7 @@ ENDIF
 #DIM nSkillLv
 #DIM nXp
 SELECTCASE nSkill
-	CASE GETNUM(EXP, "学習経験"), GETNUM(EXP, "戦闘経験"), GETNUM(EXP, "料理経験"), GETNUM(EXP, "伐採経験"), GETNUM(EXP, "釣魚経験"), GETNUM(EXP, "採集経験"), GETNUM(EXP, "調合経験")
+	CASE GETNUM(EXP, "学習経験"), GETNUM(EXP, "戦闘経験"), GETNUM(EXP, "料理経験"), GETNUM(EXP, "伐採経験"), GETNUM(EXP, "釣り経験"), GETNUM(EXP, "採集経験"), GETNUM(EXP, "調合経験"), GETNUM(EXP, "催眠経験") ;added
 		IF nSkillLv == 0
 			RESULT = nXp, 6, 6
 		ELSEIF nSkillLv == 1
@@ -729,7 +728,6 @@ SELECTCASE nSkill
 ENDSELECT
 ;DEBUGPRINTFORML nSkill = {nSkill} nSkillLv = {nSkillLv} nXp = {nXp}|Current XP = {RESULT:0} Xp for next = {RESULT:1} Xp total = {RESULT:2}
 
-[SKIPSTART]
 ;expanded function for foraging list that shows player's current inventory
 @QOL_SHOW_GATHERING_ITEM(PLACE)
 #DIM PLACE
@@ -837,7 +835,7 @@ NEXT
 @QOL_PRINT_NPC_ACTIVITY(CHARACTERSSTRING, IS_FREE_ACTIVITY)
 #DIMS CHARACTERSSTRING
 #DIM  IS_FREE_ACTIVITY
-#DIM DYNAMIC CHARACTERS, 人物数量上限
+#DIM DYNAMIC CHARACTERS, キャラクタ数上限
 #DIM DYNAMIC IS_PLURAL
 
 SPLIT CHARACTERSSTRING, "、", LOCALS
@@ -847,7 +845,7 @@ NEXT
 
 IF RESULT > 1
 	;hag club
-	IF !IS_FREE_ACTIVITY && CFLAG:(CHARACTERS:0):職種 == JOB_お酒
+	IF !IS_FREE_ACTIVITY && CFLAG:(CHARACTERS:0):職種 == 52
 		LOCAL:1 = 0 ;set to 1 when group name is placed
 		FOR LOCAL, 0, RESULT
 			IF GROUPMATCH(CHARACTERS:LOCAL, 4, 26, 32, 55, 66, 72, 102, 124)
@@ -870,7 +868,7 @@ IF RESULT > 1
 		CHARACTERSSTRING '= REPLACE(CHARACTERSSTRING, @" {[[雷鼓]]}、", "")
 	ENDIF
 	;Choujuu Gigaku
-	IF ((IS_FREE_ACTIVITY && FreeAct_Name(CHARACTERS:0) == "セッションする") || (!IS_FREE_ACTIVITY && CFLAG:(CHARACTERS:0):職種 == JOB_音楽)) && ARRAY_EXISTS_ALL(CHARACTERS, 0, RESULT, [[ミスティア]], [[響子]])
+	IF ((IS_FREE_ACTIVITY && FreeAct_Name(CHARACTERS:0) == "セッションする") || (!IS_FREE_ACTIVITY && CFLAG:(CHARACTERS:0):職種 == 45)) && ARRAY_EXISTS_ALL(CHARACTERS, 0, RESULT, [[ミスティア]], [[響子]])
 		CHARACTERSSTRING '= REPLACE(CHARACTERSSTRING, @" {[[ミスティア]]}、", "Choujuu Gigaku、")
 		CHARACTERSSTRING '= REPLACE(CHARACTERSSTRING, @" {[[響子]]}、", "")
 	ENDIF
@@ -994,7 +992,7 @@ IF !IS_FREE_ACTIVITY
 ELSE
 	PRINTFORML %BREAKENG(@"%LIST_IN_STRING(CHARACTERSSTRING)% \@ IS_PLURAL || STRCOUNT(CHARACTERSSTRING, "、") > 1 ? are # is \@ here %JOIN_IN_SINGLE_TR(FreeAct_Name(CHARACTERS:0))%")%.
 ENDIF
-[SKIPEND]
+
 @PRINT_STATE_GIFTDATA_TR(CHARA, MAX_DISPLAY_COUNT)
 #DIM CHARA
 #DIM MAX_DISPLAY_COUNT
@@ -1008,8 +1006,8 @@ SIF !GIFT_GOT:CHARA:1
 	RETURN
 	
 ;custom code, since there can be 100 gifts and bloat the fuck out
-CALL PRINTBUTTON_EX(@"你送出的礼物", 900, TFLAG_GiftsHide, , , 1)
-SIF TFLAG_GiftsHide
+CALL PRINTBUTTON_EX(@"Given Gifts", 900, TFLAG:GiftsHide, , , 1)
+SIF TFLAG:GiftsHide
 	RETURN
 
 SIF !MAX_DISPLAY_COUNT
@@ -1043,20 +1041,30 @@ ELSE
 ENDIF
 
 ;お気に入りを先頭に持ってくる
-SIF CFLAG:CHARA:获得的礼物
-	CALL PRINT_GIFTDATA(CFLAG:CHARA:获得的礼物, CHARA, "角色の")
+SIF CFLAG:CHARA:貰った贈り物
+	CALL PRINT_GIFTDATA(CFLAG:CHARA:貰った贈り物, CHARA, "キャラの")
 FOR LOCAL, START_INDEX, END_INDEX
-	SIF GIFT_GOT:CHARA:LOCAL && GIFT_GOT:CHARA:LOCAL != CFLAG:CHARA:获得的礼物
-		CALL PRINT_GIFTDATA(GIFT_GOT:CHARA:LOCAL, CHARA, "角色の")
+	SIF GIFT_GOT:CHARA:LOCAL && GIFT_GOT:CHARA:LOCAL != CFLAG:CHARA:貰った贈り物
+		CALL PRINT_GIFTDATA(GIFT_GOT:CHARA:LOCAL, CHARA, "キャラの")
 NEXT
 IF START_INDEX2 >= 0
 	FOR LOCAL, START_INDEX2, END_INDEX2
-		SIF GIFT_GOT:CHARA:LOCAL && GIFT_GOT:CHARA:LOCAL != CFLAG:CHARA:获得的礼物
-			CALL PRINT_GIFTDATA(GIFT_GOT:CHARA:LOCAL, CHARA, "角色の")
+		SIF GIFT_GOT:CHARA:LOCAL && GIFT_GOT:CHARA:LOCAL != CFLAG:CHARA:貰った贈り物
+			CALL PRINT_GIFTDATA(GIFT_GOT:CHARA:LOCAL, CHARA, "キャラの")
 	NEXT
 ENDIF
 
-
+;Optimized version of 自立先選定
+@自立先選定_TR(CHARA, CHILDNUM)
+#DIM CHARA
+#DIM CHILDNUM
+{
+#DIM CONST VALID_AREAS = 
+	神社境内, 神社本堂, 夢幻遺跡, 命蓮寺境内, 命蓮寺方丈, 神霊廟広場, 神霊廟道場, 広場, 商家町, 呑屋小道, 広間, 食堂, 大図書館,
+	斜角の竹林, 永遠亭, 夢幻館, 香霖堂, 中有の道, 三途の川, 彼岸, 白玉楼庭, 畜生界, 玄武の沢, 間欠泉地下センター,
+	九天の滝, 守矢神社境内, 守矢神社本殿, 旧地獄街道, 地霊殿, 灼熱地獄跡, 月の都, 玉兎の街
+}
+CHILD_AREA:CHARA:CHILDNUM = VALID_AREAS:(RAND:32)
 
 @QOL_SELECT_CHILD
 #DIM CHARA
@@ -1069,18 +1077,18 @@ DO
 	SIF LINECOUNT - LOCAL:9 > 0
 		CLEARLINE LINECOUNT - LOCAL:9
 	;---------------------------------
-	PRINTL 想找哪个孩子?
+	PRINTL だれ？
 	DRAWLINE
 	FOR LOCAL, 0, nChildrenPresentCount
 		CHARA = nChildrenPresent:LOCAL % 1000
 		CHILD = nChildrenPresent:LOCAL / 1000
 		SIF !STRLENS(CHILD_ACT:CHARA:CHILD)
 			CONTINUE
-		PRINTFORML [{LOCAL,3}] - %兒童ふれあい名称(nChildrenPresent:LOCAL)% (%CALLNAME:CHARA%) (爱情度: {CHILD_LOVE:CHARA:CHILD})
+		PRINTFORML [{LOCAL,3}] - %子供ふれあい名称(nChildrenPresent:LOCAL)% (%CALLNAME:CHARA%) (愛情度: {CHILD_LOVE:CHARA:CHILD})
 		RESETCOLOR
 	NEXT
 	DRAWLINE
-	PRINTL [ -1] - 返回
+	PRINTL [ -1] - 戻る
 
 	INPUT
 	SELECTCASE RESULT
@@ -1102,7 +1110,7 @@ FOR LOCAL, 0, nChildrenPresentCount
 		LOCAL:1 ++
 NEXT
 RETURNF LOCAL:1
-[SKIPSTART]
+
 ;-------------------------------
 ;Custom config section
 ;-------------------------------
@@ -1220,7 +1228,7 @@ ELSEIF TALENT:RANDOM_CHARANUM:風俗嬢
 ELSE
     RETURNF CFLAG:RANDOM_CHARANUM:よく行く地域 == MOBGIRL_PLACE:ARG
 ENDIF
-[SKIPEND]
+
 @CAN_PHARMA_INGREDIENT_COUNT_TR(R_ID, AMT)
 #FUNCTION
 #DIM R_ID
@@ -1253,7 +1261,7 @@ FOR LOCAL, 0, 6
     LOCALS += @"%ITEMNAME_TR(INGREDIENTS_ID:LOCAL)%({ITEM:(INGREDIENTS_ID:LOCAL)})%COND_STR(@"×{INGREDIENTS_COUNT:LOCAL}", INGREDIENTS_COUNT:LOCAL)% "
 NEXT
 SIF RECIPE_DATA(R_ID, 7)
-	LOCALS += "水 "
+	LOCALS += "Water "
 LOCALS += "→（"
 LOCALS += TOSTR(RECIPE_DATA(R_ID, 6))
 LOCALS += "）"
@@ -1344,13 +1352,13 @@ ELSEIF GROUPMATCH(TALENT:CHARA:人間, 1, 6) ;genuine human women, including out
     妊娠必要値 /= 2
 ELSEIF TALENT:CHARA:妖怪 == 6 ;mammalian beast youkai are more fertile than other youkai
     妊娠必要値 = 妊娠必要値 * 9 / 10
-ELSEIF TALENT:CHARA:妖怪 == 1 && CHECK_CHARA(CHARA, "魔法使") ;youkai magicians are close in nature to humans
+ELSEIF TALENT:CHARA:妖怪 == 1 && CHECK_CHARA(CHARA, "魔法使い") ;youkai magicians are close in nature to humans
     妊娠必要値 = 妊娠必要値 * 85 / 100
 ENDIF
 
 SIF TCVAR:CHARA:発情 ;slight bonus for in-heat
 	妊娠必要値 = 妊娠必要値 * 95 / 100
-[SKIPSTART]
+
 @QOL_INFO_SITUATION
 #DIM Date
 #DIM NumberDates
@@ -1700,7 +1708,7 @@ PRINTFORML [ 15] - Temperature unit：\@ !useFahrenheit ? Celsius # Fahrenheit \
 
 @CUSTOM_OPTION_RESULT_15
 useFahrenheit = !useFahrenheit
-[SKIPEND]
+
 @QOL_GET_YEAR(ARG)
 #FUNCTION
 RETURNF ((ARG-1) / 124) + 1
@@ -1733,7 +1741,7 @@ FOR LOCAL, 0, 楽譜最大数
 
 		IF (0 < LOCAL:1) && LOCAL:3
 			PRINTFORML
-			PRINTFORML 【{SERIES_NO + 1,2}:%GET_SERIES_NAME(SERIES_NO)%】({LOCAL:2}/{LOCAL:1})
+			PRINTFORML 【{SERIES_NO + 1,2}:%GET_SERIES_NAME_TR(SERIES_NO)%】({LOCAL:2}/{LOCAL:1})
 		ENDIF
 		SCORES_COUNT = 0
 		VARSET SCORES_HTML
@@ -1754,8 +1762,8 @@ NEXT
 #DIMS sPrint_Text		; HTML_PRINTする文字列TEMP
 
 IF (STR:SCORE_NO != "")
-	sPrint_Text '= @"  <button value='{BUTTONVAL}' title='获取条件: %HTML_ESCAPE(GET_SCORE_INFO_MESSAGE(SCORE_NO))%'>"
-	LOCALS = %GET_SCORE_NAME(SCORE_NO, !HAVE_SCORE(SCORE_NO)), 70, LEFT%
+	sPrint_Text '= @"  <button value='{BUTTONVAL}' title='Condition for obtaining: %HTML_ESCAPE(GET_SCORE_INFO_MESSAGE_TR(GET_SCORE_INFO_MESSAGE(SCORE_NO)))%'>"
+	LOCALS = %GET_SCORE_NAME_TR(SCORE_NO, !HAVE_SCORE(SCORE_NO)), 70, LEFT%
 	sPrint_Text += @"{SERIES_SCORE_NO + 1,2}:%HTML_ESCAPE(LOCALS)%"
 	sPrint_Text += @"</button>"
 	SCORES_HTML:(SCORES_COUNT++) '= sPrint_Text
@@ -1784,7 +1792,7 @@ FOR LOCAL:10, 0, SCORES_COUNT
 		ENDIF
 	ENDIF
 NEXT
-[SKIPSTART]
+
 ;calculates the time the character is expected to have been awake between the times passed as arguments
 ;not completely reliable, as it cannot account for characters being exhausted/put to sleep by the player, but helpful in some cases
 @QOL_AWAKE_TIME_1DAY(ARG, START_TIME, END_TIME = -1)
@@ -1862,7 +1870,7 @@ NEXT
 FOR LOCAL, 1, CHARANUM
 	CALL KOJO_MESSAGE_SEND("EVENT", 0, LOCAL, , , "EVENTCOMEND") ;addition custom code
 NEXT
-[SKIPEND]
+
 @QOL_GET_RANDOM_DRINK()
 #FUNCTION
 #DIM DRINK_ID
@@ -1882,7 +1890,7 @@ RETURNF GETNUM(ITEM, ALC_NAME(ARG))
 #DIM BASE_ID
 #DIM CHARA
 RETURNF MAXBASE:CHARA:BASE_ID - BUFF:CHARA:BASE_ID
-[SKIPSTART]
+
 @QOL_BLOCKED_COM_HIDDEN_SEX(ARG)
 #FUNCTION
 IF CFLAG:MASTER:うふふ && !CFLAG:うふふ && GETBIT(FLAG:潜伏,0)
@@ -2051,32 +2059,6 @@ TIME += 7
 CALL COM_KOJO_CALL(CHARA, 491)
 
 RETURN 1
-
-;modified to randomize correctly and give all children an equal chance of appearing, so that kids will not be penalized for having siblings
-@QOL_PICK_RAND_GROWN_CHILD_TR
-#DIM DYNAMIC SHUFFLED_CHILDREN, 100 ;shuffling a hundred kids should be enough
-#DIM DYNAMIC ARRAY_INDEX
-SIF !CFLAG:MASTER:子供人数
-	RETURN -1
-CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
-FOR LOCAL:10, 0, CHARANUM - 1
-	LOCAL = SHAFFLE_ARRAY:(LOCAL:10) + 1
-
-	FOR LOCAL:1, 1, MAXCHILD + 1
-		IF CHILDNAME:LOCAL:(LOCAL:1) != "" && CHILD_INDEPENDENT:LOCAL:(LOCAL:1)
-			SHUFFLED_CHILDREN:(ARRAY_INDEX++) = LOCAL:1 * 1000 + LOCAL
-			SIF ARRAY_INDEX >= 100
-				BREAK
-		ENDIF
-	NEXT
-	SIF ARRAY_INDEX >= 100
-		BREAK
-NEXT
-SIF ARRAY_INDEX == 0
-	RETURN -1
-LOCAL = SHUFFLED_CHILDREN:(RAND:ARRAY_INDEX)
-
-RETURN LOCAL % 1000, LOCAL / 1000
 
 ;performs timestop, sleep, and nirikiri availability for dialogue
 @QOL_KOJO_DIALOGUE_ALLOWED(CHARA, SUBTYPE, ID, IDNAME)
@@ -2367,7 +2349,7 @@ DEBUGPRINTFORML %CALLNAME:C_ID% Multi Pushdown: {CHARA_JUDGMENT} (Compatibility:
 SIF CHARA_JUDGMENT < 900 + 300 * MAX(NUM_TARGET - 1, 1)
     RETURNF 0
 RETURNF 1
-[SKIPEND]
+
 @QOL_CAN_HOME_DELIVER(CHARA, CHK_SLOT)
 #FUNCTION
 #DIM CHARA
@@ -2387,7 +2369,7 @@ RETURNF 0
 
 @QOL_HUMAN_DISGUISE(CHARA)
 #DIM CHARA
-IF !TCVAR:CHARA:本来的服装 && INRANGE(CFLAG:CHARA:現在位置, 200, 297)
+IF !TCVAR:CHARA:本来の服装 && INRANGE(CFLAG:CHARA:現在位置, 200, 297)
 	CALL EX_COSTUME(CHARA, "人間")
 ELSEIF !INRANGE(CFLAG:CHARA:現在位置, 200, 297)
 	CALL QOL_REMOVE_EX_COSTUME(CHARA, "人間")
@@ -2397,19 +2379,19 @@ ENDIF
 #DIM  C_ID
 #DIM  EX_COS
 #DIMS TYPE
-SIF !TCVAR:C_ID:本来的服装
+SIF !TCVAR:C_ID:本来の服装
 	RETURN
 EX_COS = GET_INT(C_ID, "キャラデータ", NO:C_ID, @"%TYPE%衣装")
 SIF !EX_COS
 	RETURN 0
 
 IF CFLAG:C_ID:基本服装セット == EX_COS
-	CALL OKIGAE(C_ID,TCVAR:C_ID:本来的服装)
-	TCVAR:C_ID:本来的服装 = 0
+	CALL OKIGAE(C_ID,TCVAR:C_ID:本来の服装)
+	TCVAR:C_ID:本来の服装 = 0
 	RETURN 1
 ENDIF
 RETURN 0
-[SKIPSTART]
+
 @QOL_LIST_FOOD_REQUESTS
 #DIM REQUEST_ID
 #DIM CHARA
@@ -2526,7 +2508,7 @@ ELSEIF 挿入不可(TARGET) == 1
 	SIF Com_Size_Check("strictA")
 		CALL COLORMESSAGE("　<A Insertion impossible>", C_ORANGE, 0)
 ENDIF
-[SKIPEND]
+
 @QOL_CAN_STAY_OVER(CHARA, LEWD, ASLEEP)
 #FUNCTION
 #DIM CHARA
@@ -2563,8 +2545,6 @@ LOOP ROOMMATE > 0 && ROOMMATE < CHARANUM - 1
 RETURNF 1
 
 @QOL_STAYOVER(CHARA, LEWD, ASLEEP)
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #DIM CHARA
 #DIM LEWD
 #DIM ASLEEP
@@ -2584,11 +2564,10 @@ RETURN 1
 
 ;returns 1 if the character cannot get pregnant because they're raising a child 
 @QOL_IS_IN_RECOVERY(ARG)
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTION
-RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !FLAG:CHILD_LIMIT_BYPASS && !TALENT:ARG:HYPERFERTILE
-[SKIPSTART]
+;RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !FLAG:CHILD_LIMIT_BYPASS && !TALENT:ARG:HYPERFERTILE
+RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !TALENT:ARG:HYPERFERTILE
+
 @QOL_PRINT_NUMBER(ARG)
 #FUNCTIONS
 #DIMS CONST ABBREVIATIONS, 7 = "", "K", "M", "G", "T", "P", "E"
@@ -2635,18 +2614,4 @@ ELSE
 		RETURNF @"{LOCAL}%ABBREVIATIONS:MAGNITUDE%"
 	ENDIF
 ENDIF
-
-;add an increasing chance to trigger the breast blessing event
-@QOL_DAILY_OPPAI_EVENT
-SIF !TFLAG:OPPAI
-	RETURN
-
-IF PERCENT(QOL_ACCUMULATED_OPPAI)
-	CALL DAILY_EV5
-	RETURN 1
-ENDIF
-
-QOL_ACCUMULATED_OPPAI++
-
-RETURN 0
 [SKIPEND]

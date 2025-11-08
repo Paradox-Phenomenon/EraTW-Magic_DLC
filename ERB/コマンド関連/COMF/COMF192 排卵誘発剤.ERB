@@ -1,10 +1,10 @@
 ﻿;-------------------------------------------------
 ;排卵誘発剤
-;特殊指令
+;特殊コマンド
 ;-------------------------------------------------
 @COM192
 IF TCVAR:強制排卵
-	PRINTL 已吃过了
+	PRINTL すでに服用済だ
 	RETURN -1
 ENDIF
 ITEM:排卵誘発剤 -= 1
@@ -18,7 +18,7 @@ TCVAR:116 = PLAYER
 ;ソース追加処理
 ;-------------------------------------------------
 ;消費体力、気力
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 
 ELSE
 
@@ -37,7 +37,7 @@ ENDIF
 ;経験の処理
 ;-------------------------------------------------
 ;同性愛　レズなら戻り値1ゲイなら戻り値2
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 	IF HETEROSEX(TARGET,PLAYER)
 		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 1
 	ENDIF
@@ -54,13 +54,13 @@ SKIPDISP ARG
 ;-------------------------------------------------
 ;実行判定処理
 ;-------------------------------------------------
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0) || CFLAG:恶作剧
+IF FLAG:70 == 1 || CFLAG:イタズラ
 
 ELSE
 A = 0
 S = 0
 
-;全部の命令に共通の要素を考慮
+;すべての命令に共通の要素を考慮
 ;(従順が高いと命令に従いやすいなど)
 CALL COM_ORDER
 
@@ -78,7 +78,7 @@ IF ABL:Ｖ感覚
 	SIF S
 		PRINT  + 
 	A += ABL:Ｖ感覚 * 2
-	PRINT Ｖ感觉
+	PRINT Ｖ感覚
 	PRINTV 'LV,ABL:Ｖ感覚,'(,ABL:Ｖ感覚 * 2,')
 	S = 1
 ENDIF
@@ -96,7 +96,7 @@ IF MARK:快楽刻印
 	SIF S
 		PRINT  + 
 	A += MARK:快楽刻印 * 1
-	PRINT 快乐刻印
+	PRINT 快楽刻印
 	PRINTV 'LV,MARK:快楽刻印,'(,MARK:快楽刻印 * 1,')
 	S = 1
 ENDIF
@@ -105,23 +105,23 @@ IF GETPALAMLV(PALAM:欲情,5)
 	SIF S
 		PRINT  + 
 	A += GETPALAMLV(PALAM:欲情,5) * 1
-	PRINT 情欲
+	PRINT 欲情
 	PRINTV 'LV,GETPALAMLV(PALAM:欲情,5),'(,GETPALAMLV(PALAM:欲情,5) * 1,')
 	S = 1
 ENDIF
-;害羞
+;恥じらい
 IF TALENT:羞恥心 > 0
 	PRINT  - 
 	A -= 1
-	PRINT 害羞
+	PRINT 恥じらい
 	PRINTV '(,1,')
 	S = 1
 ENDIF
-;討厭男人（恋慕、親愛で無効）
+;男嫌い（恋慕、親愛で無効）
 IF OTOKOGIRAI(TARGET)
 	PRINT  - 
 	A -= 12
-	PRINT 讨厌男人
+	PRINT 男嫌い
 	PRINTV '(,12,')
 	S = 1
 ENDIF
@@ -139,7 +139,7 @@ IF TALENT:愛欲 && ASSIPLAY == 0
 	SIF S
 		PRINT  + 
 	A += 5
-	PRINT 爱欲
+	PRINT 愛欲
 	PRINTV '(,5,')
 	S = 5
 ENDIF
@@ -148,34 +148,34 @@ IF TALENT:恋慕 > 1 && ASSIPLAY == 0
 	SIF S
 		PRINT  + 
 	A += 5
-	PRINT 恩爱
+	PRINT 親愛
 	PRINTV '(,5,')
 	S = 5
 ENDIF
 
-;允许无套
-IF CFLAG:允许无套 == 2
+;生解禁
+IF CFLAG:生解禁 == 2
 	SIF S
 		PRINT  + 
 	A += 5
-	PRINT 同意中出
+	PRINT 中出し合意
 	PRINTV '(,5,')
 	S = 1
 ELSE
 	SIF S
 		PRINT  - 
 	A -= 200
-	PRINT 未同意中出
+	PRINT 中出し未合意
 	PRINTV '(,200,')
 	S = 1
 ENDIF
 
-;調教者が扶她
+;調教者がふたなり
 IF (TALENT:PLAYER:2 & 3) == 3
 	SIF S
 		PRINT  + 
 	A += 8
-	PRINT 扶她
+	PRINT ふたなり
 	PRINTV '(,8,')
 	S = 1
 ENDIF
@@ -191,7 +191,7 @@ SIF A == V
 	PRINT  = 
 SIF A > V
 	PRINT  > 
-PRINT 实行值
+PRINT 実行値
 PRINTV V
 
 WAIT
@@ -212,18 +212,16 @@ SIF !TFLAG:100
 ;一括管理
 SIF GLOBAL_COMABLE(192)
 	RETURN RESULT
-;道具を持っていないとダメ
+;アイテムを持っていないとダメ
 SIF ITEM:排卵誘発剤 == 0
 	RETURN 0
-IF DRUG == 0
-	;薬毒耐性だとダメ
-	SIF TALENT:薬毒耐性
-		RETURN 0
-	;停止中は不可
-	SIF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
-		RETURN 0
-ENDIF
-SIF SHIRAHU(TARGET) && CFLAG:允许无套 != 2
+;薬毒耐性だとダメ
+SIF TALENT:薬毒耐性
+	RETURN 0
+;停止中は不可
+SIF FLAG:70 == 1
+	RETURN 0
+SIF SHIRAHU(TARGET) && CFLAG:生解禁 != 2
 	RETURN 0
 RETURN 1
 

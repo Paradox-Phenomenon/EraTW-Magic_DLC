@@ -12,15 +12,15 @@
 #DIM 経過時間
 経過時間 = Activity_Duration:TARGET
 SELECTCASE O_DATA
-;陪同行動指令の名称
+;自由行動に付き合うコマンドの名称
 CASE "名称"
-	CALLF MAKE_STR(V_NAME, "帮忙买东西")
+	CALLF MAKE_STR(V_NAME, "買い物を手伝う")
 CASE "CHAIN"
-;他角色に連鎖しない場合コメントアウトすること
+;他キャラに連鎖しない場合コメントアウトすること
 	CALLF MAKE_INT(V_NAME, 1)
 CASE "経過時間"
-;陪同行動指令での経過時間
-;0だと30分か残り時間全部の小さい方
+;自由行動に付き合うコマンドでの経過時間
+;0だと30分か残り時間すべての小さい方
 	CALLF MAKE_INT(V_NAME, 0)
 ENDSELECT
 
@@ -43,49 +43,22 @@ SELECTCASE ARGS
 		SIF !INRANGE(TIME, 540, 1140)
 			RETURN 0
 		SIF メッセージ表示
-			PRINTFORMW %CALLNAME:CHARA%\@ CHAIN ? 决定跟着%CALLNAME:CHAIN%一起购物了。# 拿出了购物袋来了。\@
+			PRINTFORMW %CALLNAME:CHARA%は\@ CHAIN ? %CALLNAME:CHAIN%に付き合い始めた。# 買い物かごを取り出した。\@
 		RETURN 60 + RAND:30
 	CASE "行動中"
 		IF メッセージ表示
-			IF 充填率(TARGET,1) >= 10 || 充填率(TARGET,2) >= 10
-				PRINTFORMW %CALLNAME:CHARA%满脸通红的%TEXTR("寻找着便宜的商品/拿起物品开始估值/在烦恼着该买哪个/在随意地逛街购物中")%。
-			ELSE
-				PRINTFORMW %CALLNAME:CHARA%%TEXTR("寻找着便宜的商品/拿起物品开始估值/在烦恼着该买哪个/在随意地逛街购物中")%。
-			ENDIF	
+			PRINTFORMW %CALLNAME:CHARA%は%TEXTR("掘り出し物を探している/品物を手にとって値踏みしている/何を買おうか悩んでいる/気ままに買い物している")%。
 		ENDIF
 	CASE "完了"
-		IF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%吐着甜美的喘息买完东西了。
-		ELSE
-			SIF メッセージ表示
-				PRINTFORMW %CALLNAME:CHARA%似乎买完东西了。
-		ENDIF	
+		SIF メッセージ表示
+			PRINTFORMW %CALLNAME:CHARA%は買い物を終えたようだ。
 	CASE "中断"
-	CASE "交手"
+	CASE "付き合う"
 		;自由行動に付き合ったとき用メッセージ
-		PRINTFORML %CALLNAME:PLAYER%陪%CALLNAME:TARGET%一起逛街購物了
-		IF 充填率(CHARA,1) >= 150 || 充填率(CHARA,2) >= 150
-				PRINTFORML %CALLNAME:CHARA%捂着小腹忍耐着体内\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的爱抚…香汗淋漓…
-				PRINTFORML 脸涨得通红并且夹杂着甜美喘息看着商品、
-				PRINTFORML 停留过的地方留下了迷之水痕…
-			ELSEIF 充填率(CHARA,1) >= 100 || 充填率(CHARA,2) >= 100
-				PRINTFORML %CALLNAME:CHARA%正享受着体内满满\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激轻轻娇喘……
-				PRINTFORML %CALLNAME:PLAYER%观察着%CALLNAME:TARGET%的状态、夹杂着甜美的娇喘的购物格外有趣…
-			ELSEIF 充填率(CHARA,1) >= 70 || 充填率(CHARA,2) >= 70
-				PRINTFORML %CALLNAME:CHARA%正感受着体内大量\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子的刺激……
-				PRINTFORML %CALLNAME:TARGET%断断续续的选购、说话时不时夹杂着甜美的娇喘…
-			ELSEIF 充填率(CHARA,1) >= 40 || 充填率(CHARA,2) >= 40
-				PRINTFORML %CALLNAME:CHARA%正被体内许多\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML %TEXTR(@"满脸通红的%CALLNAME:TARGET%询问要买的商品的位置…/满脸通红的%CALLNAME:TARGET%告知要寻找类似的商品…/提满脸通红的%CALLNAME:TARGET%的购物袋到处移动中…")%
-			ELSEIF 充填率(CHARA,1) >= 10 || 充填率(CHARA,2) >= 10
-				PRINTFORML %CALLNAME:CHARA%正被体内残存\@ TALENT:MASTER:濃厚精液? 浓厚的 # 的\@精子刺激着……
-				PRINTFORML %TEXTR(@"红着脸的%CALLNAME:TARGET%询问要买的商品的位置…/被红着脸的%CALLNAME:TARGET%告知要寻找类似的商品…/提着红着脸的%CALLNAME:TARGET%的购物袋到处移动中…")%
-			ELSE
-				PRINTFORML %TEXTR(@"%CALLNAME:TARGET%询问要买的商品的位置…/被%CALLNAME:TARGET%告知要寻找类似的商品…/提着%CALLNAME:TARGET%的购物袋到处移动中…")%
-			ENDIF		
+		PRINTFORML %CALLNAME:PLAYER%は%CALLNAME:TARGET%の買い物を手伝った
+		PRINTFORML %CALLNAME:TARGET%%TEXTR("はどれを買おうか悩んでいる…/に言われて似た商品をかき集めた…/の荷物を持ってあちこち移動した…")%
 	CASE "ソース"
-		;交手指令選択時の入手ソース、時間係数は付き合った時間の1/10
+		;付き合うコマンド選択時の入手ソース、時間係数は付き合った時間の1/10
 		DOWNBASE:MASTER:体力 += 20 * 時間係数
 		DOWNBASE:MASTER:気力 += 20 * 時間係数
 		DOWNBASE:TARGET:体力 += 10 * 時間係数

@@ -1,6 +1,6 @@
 ﻿
 
-;C/Yは筹码・​￥
+;C/Yはカリスマ・￥
 @CASINO_TRADE
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -12,49 +12,49 @@
 #DIM Y_MAX
 #DIM Y_PRICE
 C_RATE = CHARISMA_NOW()
-;Y_RATEはC_RATEの1/100だが精度の関係で不使用
+;Y_RATEはC_RATEの1/100だが精度の関係で使わない
 ;Y_RATE = FUNC_CASINO("TRADE") / 100
-;C購入取引に使用筹码入力の上限
+;C購入取引に使うカリスマ入力の上限
 C_MAX = MIN(CM_LIMIT - MONEY:2, MONEY / C_RATE)
 
-PRINTFORML 妖精女仆
-PRINTFORML 　欢迎光临
-PRINTFORML 　这里可以用￥来交换筹码
+PRINTFORML メイド妖精
+PRINTFORML 　いらっしゃいませ
+PRINTFORML 　こちらでは￥とカリスマの交換を承っております
 IF C_RATE < 100
-	PRINTFORML 　非常抱歉
-	PRINTFORML 　现在无法购买筹码。
+	PRINTFORML 　申し訳ございません
+	PRINTFORML 　ただいま、カリスマの購入はご利用いただけません。
 ENDIF
-PRINTFORML 你的现金￥　　　　　　%金额表示(MONEY), 13, RIGHT%
-PRINTFORML 你拥有的筹码　　　%三桁区切(MONEY:2), 13, RIGHT% / %三桁区切(CM_LIMIT)%
-PRINTFORMW 现在的￥/筹码兑换率 　%金额表示(C_RATE), 13, RIGHT%
+PRINTFORML %"あなたの保有￥", 36 + 3 + STRLENS(三桁区切(CM_LIMIT)), LEFT%%金額表示(MONEY), 13, RIGHT%
+PRINTFORML %"あなたの保有カリスマ", 36, LEFT%%三桁区切(MONEY:2), 13, RIGHT% / %三桁区切(CM_LIMIT)%
+PRINTFORML %"現在の￥/カリスマレート", 36 + 3 + STRLENS(三桁区切(CM_LIMIT)), LEFT%%金額表示(C_RATE), 13, RIGHT%
 DRAWLINE
-CALL ASK_M(@"购入筹码",C_RATE > 100 && C_MAX > 0, @"卖出筹码",FLAG:会員ランク,"放弃",1)
+CALL ASK_M(@"カリスマ購入",C_RATE > 100 && C_MAX > 0, @"カリスマ売却",FLAG:会員ランク,"やめる",1)
 SELECTCASE RESULT
 	CASE 0
 		IF CM_LIMIT <= MONEY:2
-			PRINTFORML 对不起、客人你的筹码已经达到上限了、请使用后再购买
-			PRINTFORML 或提高会员等级、欢迎再次光临
+			PRINTFORML 申し訳ありませんが、お客様のカリスマは保有上限に達しているため、これ以上は購入いただけません
+			PRINTFORML 会員ランクを上げるか、大負けしてからまたお越しください
 			RETURN
 		ENDIF
-		PRINTFORML 妖精女仆
-		PRINTFORML 　请输入要买的筹码数量（上限%三桁区切(C_MAX)%）
+		PRINTFORML メイド妖精
+		PRINTFORML 　カリスマの購入額をご入力下さい（上限%三桁区切(C_MAX)%）
 		FOR LCOUNT, 0, LOG10(C_MAX) + 1
 			LOCAL = POWER(10, LCOUNT)
-			PRINTFORML [{LOCAL, LOG10(C_MAX) + 1}] - 购入{LOCAL}筹码
+			PRINTFORML [{LOCAL, LOG10(C_MAX) + 1}] - {LOCAL}カリスマを購入
 		NEXT
 		SIF C_MAX >= 4
-			PRINTFORML [{C_MAX / 2, LOG10(C_MAX) + 1}] - 购入最大值的一半
-		PRINTFORML [{C_MAX, LOG10(C_MAX) + 1}] - 购入最大值
-		PRINTFORML [{0, LOG10(C_MAX) + 1}] - 放弃
+			PRINTFORML [{C_MAX / 2, LOG10(C_MAX) + 1}] - 最大値の半分を購入
+		PRINTFORML [{C_MAX, LOG10(C_MAX) + 1}] - 最大値を購入
+		PRINTFORML [{0, LOG10(C_MAX) + 1}] - やめる
 		INPUT
 		IF INRANGE(RESULT, 1, C_MAX)
 			C_PRICE = RESULT
 			Y_PRICE = C_PRICE * C_RATE
 			CALL CASINO_MONEY("￥", -Y_PRICE)
-			CALL CASINO_MONEY("筹码", C_PRICE)
-			PRINTFORML 妖精女仆
-			PRINTFORML 　感谢您的使用
-			PRINTFORMW 　购买%三桁区切(C_PRICE)%个筹码花费了%金額表示(Y_PRICE)%
+			CALL CASINO_MONEY("カリスマ", C_PRICE)
+			PRINTFORML メイド妖精
+			PRINTFORML 　ご利用ありがとうございます
+			PRINTFORMW 　%三桁区切(C_PRICE)%カリスマのご購入で、料金は%金額表示(Y_PRICE)%となります
 		ENDIF
 	CASE 1
 		CALL CM_BALANCE
@@ -66,27 +66,27 @@ ENDSELECT
 @MOENY_HENDOU
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF FLAG:筹码変動累積 >= 10
-	FLAG:筹码変動状況 = RAND(1, 10)
-	SELECTCASE FLAG:筹码変動状況
+IF FLAG:カリスマ変動累積 >= 10
+	FLAG:カリスマ変動状況 = RAND(1, 10)
+	SELECTCASE FLAG:カリスマ変動状況
 		CASE 9
 			CALL SHOW_REMILLIA_INTERVIEW
 		CASE 1
 			CALL SHOW_CHARISMA_GUARD
 	ENDSELECT
-	FLAG:筹码変動累積 = 0
+	FLAG:カリスマ変動累積 = 0
 ENDIF
 
 ;極端な状況の補正
-IF FLAG:筹码人気 >= 300
-	SIF RAND:(FLAG:筹码人気 / 50)
-		FLAG:筹码変動状況 = MAX(1, FLAG:筹码変動状況 - 2)
-ELSEIF FLAG:筹码人気 <= 50 && INRANGE(FLAG:筹码変動状況, 1, 4)
-	SIF RAND:(6 - FLAG:筹码変動状況)
-		FLAG:筹码変動状況 += 2
+IF FLAG:カリスマ人気 >= 300
+	SIF RAND:(FLAG:カリスマ人気 / 50)
+		FLAG:カリスマ変動状況 = MAX(1, FLAG:カリスマ変動状況 - 2)
+ELSEIF FLAG:カリスマ人気 <= 50 && INRANGE(FLAG:カリスマ変動状況, 1, 4)
+	SIF RAND:(6 - FLAG:カリスマ変動状況)
+		FLAG:カリスマ変動状況 += 2
 ENDIF
 
-SELECTCASE FLAG:筹码変動状況
+SELECTCASE FLAG:カリスマ変動状況
 CASE 1
 	LOCAL = 60 + RAND:10
 CASE 2
@@ -96,14 +96,14 @@ CASE 3
 CASE 4
 	LOCAL = 95 + RAND:5
 CASE 5
-	IF FLAG:筹码人気 <= 85
-		FLAG:筹码人気 += RAND(1, 10)
-	ELSEIF FLAG:筹码人気 >= 150
-		FLAG:筹码人気 -= RAND(1, 10)
+	IF FLAG:カリスマ人気 <= 85
+		FLAG:カリスマ人気 += RAND(1, 10)
+	ELSEIF FLAG:カリスマ人気 >= 150
+		FLAG:カリスマ人気 -= RAND(1, 10)
 	ELSEIF RAND:2
-		FLAG:筹码人気 += RAND(1, 10)
+		FLAG:カリスマ人気 += RAND(1, 10)
 	ELSE
-		FLAG:筹码人気 -= RAND(1, 10)
+		FLAG:カリスマ人気 -= RAND(1, 10)
 	ENDIF
 CASE 6
 	LOCAL = 105 + RAND:5
@@ -115,19 +115,19 @@ CASE 9
 	LOCAL = 200 + RAND:100
 ENDSELECT
 
-IF FLAG:筹码変動状況 == 5
-	FLAG:筹码変動累積 += 5
+IF FLAG:カリスマ変動状況 == 5
+	FLAG:カリスマ変動累積 += 5
 ELSE
-	FLAG:筹码人気 = FLAG:筹码人気 * LOCAL / 100
-	FLAG:筹码変動累積 += ABS(5 - FLAG:筹码変動状況) + RAND:2
+	FLAG:カリスマ人気 = FLAG:カリスマ人気 * LOCAL / 100
+	FLAG:カリスマ変動累積 += ABS(5 - FLAG:カリスマ変動状況) + RAND:2
 ENDIF
 
-FLAG:筹码人気 = MAX(10, FLAG:筹码人気)
-TIMES FLAG:筹码流通, 0.98
+FLAG:カリスマ人気 = MAX(10, FLAG:カリスマ人気)
+TIMES FLAG:カリスマ流通, 0.98
 
 
 
-;￥、やってることは筹码と同様
+;￥、やってることはカリスマと同様
 IF FLAG:￥変動累積 >= 10
 	FLAG:￥変動状況 = RAND(1, 10)
 	FLAG:￥変動累積 = 0
@@ -192,10 +192,12 @@ DEBUGPRINTFORML {RESULT / 10000000000000}年 {(RESULT / 100000000000) % 100}月 
 
 年月 = RESULT / 100000000000
 
-IF 年月 != FLAG:前回筹码設定月
+IF 年月 != FLAG:前回カリスマ設定月
 	DUMPRAND
-	PRINTFORMW 设定{RESULT / 10000000000000}年 {(RESULT / 100000000000) % 100}月的筹码行情
-	FLAG:前回筹码設定月 = 年月
+	IF !SILENT_ACTION
+		PRINTFORMW {RESULT / 10000000000000}年 {(RESULT / 100000000000) % 100}月のカリスマ相場を設定します。
+		FLAG:前回カリスマ設定月 = 年月
+	ENDIF
 	RANDOMIZE 年月
 	CALL SET_THISMONTHCHARISMA
 	INITRAND
@@ -208,10 +210,10 @@ SIF !SILENT_ACTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
 PRINTFORML 
-PRINTFORML ～今天的筹码～
-PRINTFORML 　1筹码＝%金額表示(FUNC_CASINO("TRADE"))%
-PRINTFORML 　＜筹码＞
-PRINTFORML 　　傾向{FLAG:筹码変動状況}　累積{FLAG:筹码変動累積, 2}　人気{FLAG:筹码人気}％
+PRINTFORML ～きょうのかりすま～
+PRINTFORML 　1カリスマ＝%金額表示(FUNC_CASINO("TRADE"))%
+PRINTFORML 　＜カリスマ＞
+PRINTFORML 　　傾向{FLAG:カリスマ変動状況}　累積{FLAG:カリスマ変動累積, 2}　人気{FLAG:カリスマ人気}％
 PRINTFORML 　＜￥＞
 PRINTFORML 　　傾向{FLAG:￥変動状況}　累積{FLAG:￥変動累積, 2}　人気{FLAG:￥人気}％
 PRINTFORMW 
@@ -219,26 +221,26 @@ PRINTFORMW
 [SKIPEND]
 
 
-;紅魔賭場用初期設定
+;紅魔カジノ用初期設定
 @SET_CHARISMA(TYPE)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIMS TYPE
 #DIM LCOUNT
 SELECTCASE TYPE
-;まだ筹码を設定していないデータ用
+;まだカリスマを設定していないデータ用
 CASE "NEW"
-	FLAG:筹码人気 = 100
-	FLAG:筹码変動状況 = 5
+	FLAG:カリスマ人気 = 100
+	FLAG:カリスマ変動状況 = 5
 	FLAG:￥人気 = 100
 	FLAG:￥変動状況 = 5
-;すでに筹码を設定している周回用
-;要するに紅魔賭場の初期化指令だがカモられ指数は初期化しない
+;すでにカリスマを設定している周回用
+;要するに紅魔カジノの初期化コマンドだがカモられ指数は初期化しない
 CASE "RESET"
-	FLAG:筹码流通 = 0
-	FLAG:筹码人気 = 100
-	FLAG:筹码変動状況 = 5
-	FLAG:筹码変動累積 = 0
+	FLAG:カリスマ流通 = 0
+	FLAG:カリスマ人気 = 100
+	FLAG:カリスマ変動状況 = 5
+	FLAG:カリスマ変動累積 = 0
 
 	FLAG:￥流通 = 0
 	FLAG:￥人気 = 100
@@ -247,16 +249,16 @@ CASE "RESET"
 ENDSELECT
 
 @SET_THISMONTHCHARISMA
-#DIM 筹码変動累積
+#DIM カリスマ変動累積
 #DIM 変動幅
 
-筹码変動累積 = 0
+カリスマ変動累積 = 0
 
 ;初日は150~250
 CHARISMA_RATE:0 = 150 + RAND:100
 CHARISMA_TENDENCY:0 = 5
 FOR LOCAL,1,32
-	IF 筹码変動累積 >= 10
+	IF カリスマ変動累積 >= 10
 		;適正レートだと安定しやすい
 		IF INRANGE(CHARISMA_TENDENCY:(LOCAL - 1),150,250) && !RAND:2
 			CHARISMA_TENDENCY:LOCAL = 5
@@ -270,84 +272,84 @@ FOR LOCAL,1,32
 		ELSE
 			CHARISMA_TENDENCY:LOCAL = RAND(2, 9)
 		ENDIF
-		筹码変動累積 = 0
+		カリスマ変動累積 = 0
 	ELSE
 		;変動しないなら前期と同じ
 		CHARISMA_TENDENCY:LOCAL = CHARISMA_TENDENCY:(LOCAL -1)
 	ENDIF
-	;前期筹码価格に応じて補正
+	;前期カリスマ価格に応じて補正
 	SELECTCASE CHARISMA_RATE:(LOCAL -1)
 		CASE IS < 50
 			IF !RAND:4
 				CHARISMA_TENDENCY:LOCAL = 9
-				筹码変動累積 = 0
+				カリスマ変動累積 = 0
 			ENDIF
 		CASE 50 TO 100
 			IF !RAND:5
 				CHARISMA_TENDENCY:LOCAL = 8
-				筹码変動累積 = 0
+				カリスマ変動累積 = 0
 			ENDIF
 		CASE 250 TO 300
 			IF !RAND:5
 				CHARISMA_TENDENCY:LOCAL = 2
-				筹码変動累積 = 0
+				カリスマ変動累積 = 0
 			ENDIF
 		CASE IS > 300
 			IF !RAND:4
 				CHARISMA_TENDENCY:LOCAL = 1
-				筹码変動累積 = 0
+				カリスマ変動累積 = 0
 			ENDIF
 	ENDSELECT
 
 	SELECTCASE CHARISMA_TENDENCY:LOCAL
 		CASE 1
 			変動幅 = - RAND:30 - 100
-			筹码変動累積 += 3 + RAND:2 + RAND:3
+			カリスマ変動累積 += 3 + RAND:2 + RAND:3
 		CASE 2
 			変動幅 = RAND:20 - 50
-			筹码変動累積 += 2 + RAND:2 + RAND:2
+			カリスマ変動累積 += 2 + RAND:2 + RAND:2
 		CASE 3
 			変動幅 = RAND:10 - 30
-			筹码変動累積 += 1 + RAND:3 + RAND:2
+			カリスマ変動累積 += 1 + RAND:3 + RAND:2
 		CASE 4
 			変動幅 = -RAND:5 - 5
-			筹码変動累積 += 1 + RAND:3 + RAND:2
+			カリスマ変動累積 += 1 + RAND:3 + RAND:2
 		CASE 5
 			変動幅 = RAND:10 - 5
-			筹码変動累積 += 1 + RAND:3
+			カリスマ変動累積 += 1 + RAND:3
 		CASE 6
 			変動幅 = RAND:5 + 5
-			筹码変動累積 += 1 + RAND:3 + RAND:2
+			カリスマ変動累積 += 1 + RAND:3 + RAND:2
 		CASE 7
 			変動幅 = 30 - RAND:10
-			筹码変動累積 += 1 + RAND:3 + RAND:3
+			カリスマ変動累積 += 1 + RAND:3 + RAND:3
 		CASE 8
 			変動幅 = RAND:20 + 50
-			筹码変動累積 += 2 + RAND:2 + RAND:2
+			カリスマ変動累積 += 2 + RAND:2 + RAND:2
 		CASE 9
 			変動幅 = RAND:30 + 100
-			筹码変動累積 += 3 + RAND:2 + RAND:3
+			カリスマ変動累積 += 3 + RAND:2 + RAND:3
 	ENDSELECT
 
 	CHARISMA_RATE:LOCAL = CHARISMA_RATE:(LOCAL -1) + 変動幅
 	CHARISMA_RATE:LOCAL = LIMIT(CHARISMA_RATE:LOCAL,1,400)
 	SIF CHARISMA_RATE:LOCAL == 1 || CHARISMA_RATE:LOCAL == 400
-		筹码変動累積 = 10
+		カリスマ変動累積 = 10
 NEXT
 
 @SHOW_CHARISMA
-#DIM 前期筹码傾向
+#DIM 前期カリスマ傾向
 IF NOW_PERIOD()
-	前期筹码傾向 = CHARISMA_TENDENCY:(NOW_PERIOD() -1)
+	前期カリスマ傾向 = CHARISMA_TENDENCY:(NOW_PERIOD() -1)
 	LOCAL = CHARISMA_TENDENCY:(NOW_PERIOD()-1)
-	IF CHARISMA_TENDENCY:NOW_PERIOD() != 前期筹码傾向 && NOW_PERIOD() > 1
+	IF CHARISMA_TENDENCY:NOW_PERIOD() != 前期カリスマ傾向 && NOW_PERIOD() > 1
 	SETCOLOR C_YELLOW
 		SELECTCASE CHARISMA_TENDENCY:NOW_PERIOD()
 			CASE 9
 				CALL SHOW_REMILLIA_INTERVIEW
 			CASE 5
-				SIF GROUPMATCH(前期筹码傾向,1,2,8,9)
-					PRINTFORML %SHOW_TENDENCY(前期筹码傾向)%的筹码价格没什么波动的样子。
+				SIF GROUPMATCH(前期カリスマ傾向,1,2,8,9)
+					PRINTFORML %SHOW_TENDENCY(前期カリスマ傾向)%していたカリスマ値動きは落ち着いたようです。
 			CASE 1
 				CALL SHOW_CHARISMA_GUARD
 		ENDSELECT
@@ -356,12 +358,12 @@ IF NOW_PERIOD()
 	ENDIF
 ENDIF
 PRINTL
-PRINTFORML ◇本月{NOW_PERIOD()}号的筹码行情：１筹码＝%金額表示(CHARISMA_NOW())%
-PRINTFORMW 价格的变动为：%SHOW_TENDENCY(CHARISMA_TENDENCY:NOW_PERIOD())%
+PRINTFORML ◇今月{NOW_PERIOD()}日のカリスマ相場は、１カリスマ＝%金額表示(CHARISMA_NOW())%
+PRINTFORMW 変動状況は%SHOW_TENDENCY(CHARISMA_TENDENCY:NOW_PERIOD())%です
 
 IF FLAG:新聞購読
 	PRINTFORML 
-	PRINTFORML 最近的筹码波动为
+	PRINTFORML 直近のカリスマ値動き
 	FOR LOCAL,1,40
 		SIF !INRANGE(LOCAL,NOW_PERIOD()-9,NOW_PERIOD())
 			CONTINUE
@@ -380,24 +382,24 @@ SELECTCASE ARG
 	CASE 3
 		LOCALS = 下降
 	CASE 4
-		LOCALS = 微减
+		LOCALS = 微減
 	CASE 5
 		LOCALS = 安定
 	CASE 6
-		LOCALS = 坚调
+		LOCALS = 堅調
 	CASE 7
-		LOCALS = 上升
+		LOCALS = 上昇
 	CASE 8
-		LOCALS = 高腾
+		LOCALS = 高騰
 	CASE 9
-		LOCALS = 暴腾
+		LOCALS = 暴騰
 ENDSELECT
 RETURNF LOCALS
 
 @NOW_PERIOD()
 #FUNCTION
 GETTIME
-;筹码変動は一日一度に変更
+;カリスマ変動は一日一度に変更
 LOCAL = (RESULT / 1000000000) % 100
 ;LOCAL = ((RESULT / 1000000000) % 100 - 1) * 6 + ((RESULT / 10000000) % 100) / 4
 RETURNF LOCAL
@@ -413,7 +415,7 @@ RETURNF LOCAL
 RETURNF CHARISMA_RATE:NOW_PERIOD()
 
 @CM_BALANCE(ARG)
-#DIM 売却筹码
+#DIM 売却カリスマ
 #DIM 売却額
 #DIM 手数料
 #DIM 精算額
@@ -423,7 +425,7 @@ RETURNF CHARISMA_RATE:NOW_PERIOD()
 
 IF FLAG:新聞購読
 	PRINTFORML 
-	PRINTFORML 最近的筹码波动为
+	PRINTFORML 直近のカリスマ値動き
 	FOR LOCAL,1,40
 		SIF !INRANGE(LOCAL,NOW_PERIOD()-9,NOW_PERIOD())
 			CONTINUE
@@ -431,45 +433,44 @@ IF FLAG:新聞購読
 		PRINTFORML 　{LOCAL}期%金額表示(CHARISMA_RATE:LOCAL)%　%SHOW_TENDENCY(CHARISMA_TENDENCY:LOCAL)%
 	NEXT
 ENDIF
-PRINTFORML 请输入要出售多少筹码
-PRINTFORML 手续费是{CM_COMMISSION}％
-PRINTFORML [{MONEY:2}] - 全部卖出
-PRINTFORML [0] - 中止
+PRINTFORML 売却するカリスマ量を入力してください
+PRINTFORML 手数料は{CM_COMMISSION}％です
+PRINTFORML [{MONEY:2}] - すべて売却
+PRINTFORML [0] - やめる
 INPUT
 IF !INRANGE(RESULT,0,MONEY:2)
-	PRINTFORMW 无效的数值
+	PRINTFORMW 無効な数値です
 	RETURN
 ELSEIF !RESULT
 	RETURN
 ENDIF
-売却筹码 = RESULT
-売却額 = 売却筹码 * レート
+売却カリスマ = RESULT
+売却額 = 売却カリスマ * レート
 手数料 = 売却額 * CM_COMMISSION / 100
 
 精算額 = 売却額 - 手数料
-PRINTFORML 卖出汇率：%金額表示(CHARISMA_NOW())% × 卖出额：{売却筹码} ＝ %金額表示(売却額)%
-LOCAL = STRLENS(@"%金額表示(CHARISMA_NOW())% × 卖出额：{売却筹码} ＝ %金額表示(売却額)%")
-PRINTFORML 手续费：%金額表示(手数料), LOCAL%
-PRINTFORML 精算额：　%金額表示(精算額), LOCAL%
+PRINTFORML 売却レート：%金額表示(CHARISMA_NOW())% × 売却額：{売却カリスマ} ＝ %金額表示(売却額)%
+LOCAL = STRLENS(@"　　%金額表示(CHARISMA_NOW())% × 売却額：{売却カリスマ} ＝ %金額表示(売却額)%")
+PRINTFORML 手数料：%金額表示(手数料), LOCAL%
+PRINTFORML 精算額　%金額表示(精算額), LOCAL%
 
-PRINTFORML 可以吗？
+PRINTFORML よろしいですか？
 CALL ASK_YN
 SIF RESULT
 	RETURN
 
 MONEY += 精算額
-MONEY:2 -= 売却筹码
+MONEY:2 -= 売却カリスマ
 
 @SHOW_CHARISMA_GUARD
 IF FLAG:新聞購読
 	RESETCOLOR
 	PRINTFORML ─────────────────────────────────────────
-	PRINTFORML ─────────────────────────────────────────
 	FONTBOLD
-	PRINTFORML %CENTER(SPLIT_G("红魔馆馆主：近距离接触！/这个简直就是铁壁般的防御啊！/筹码的价格突然下降！","/"), 72)%
+	PRINTFORML %CENTER(SPLIT_G("紅魔館当主　その実態に迫る！:これが鉄壁のカリスマガードだッ！:突然のカリスマブレイク！"), 72)%
 	FONTREGULAR
 	PRINTFORML ─────────────────────────────────────────
-	SETFONT "ＭＳ Ｐゴシック"
+	SETFONT CHKFONTNAME("ＭＳ Ｐゴシック")
 	PRINTL                 　　　　　　　　　　　　　　　　　 　 　,. -‐'''''"￣￣｀"''ヽ. 　 〉､
 	PRINTL                 　　　　　　　　　　　 ,.-ｧ　　　　r'/´　　　　　　　　　　　｀Y/ヽヽ.
 	PRINTL                 　　　　　　　　　　／::〈　　　r‐､iY　　　　　　　　　　　　　 ', 　 ｀ヽ.
@@ -489,8 +490,8 @@ IF FLAG:新聞購読
 	SETCOLOR C_YELLOW
 	
 ENDIF
-PRINTFORML 文文。新闻刊登了蕾米莉亚抱头蹲防姿势的照片！
-PRINTFORML 因此筹码价格大幅度下降！
+PRINTFORML 文々。新聞の一面にレミリアの下段ガード姿が掲載されました！
+PRINTFORML その影響でカリスマが大暴落しています！
 RESETCOLOR
 
 @SHOW_REMILLIA_INTERVIEW
@@ -498,10 +499,10 @@ IF FLAG:新聞購読
 	RESETCOLOR
 	PRINTFORML ─────────────────────────────────────────────────────────
 	FONTBOLD
-	PRINTFORML %CENTER(SPLIT_G("红魔馆当家　近距离接触她的魅力！/『筹码』新的货币　那个秘密是！？/终于自机化！？直接向本人打听传闻的真相！","/"), 100)%
+	PRINTFORML %CENTER(SPLIT_G("紅魔館当主　その魅力に迫る！:『カリスマ』新たな通貨　その秘密とは！？:ついに自機化！？噂の真相を本人に直撃！"), 100)%
 	FONTREGULAR
 	PRINTFORML ─────────────────────────────────────────────────────────
-	SETFONT "ＭＳ Ｐゴシック"
+	SETFONT CHKFONTNAME("ＭＳ Ｐゴシック")
 	PRINTL                                                     　　　　　　　　　　　　　　　　　　＿＿＿＿__
 	PRINTL                                                     　　　　　　 　 　 　 　 　 ,..　　´　　　　　 　 　 ｀　　､
 	PRINTL                                                     　　　 　 　 　 　 　 　 ／　　　　　　　　　　　　　　　 ＼
@@ -534,6 +535,6 @@ IF FLAG:新聞購読
 	PRINTFORMW ─────────────────────────────────────────────────────────
 	SETCOLOR C_YELLOW
 ENDIF
-PRINTFORML 对蕾米莉亚的采访报道登上了文文。新闻的头版！
-PRINTFORMW 其内容引起了反响，筹码价格暴涨！
+PRINTFORML レミリアへのインタビュー記事が文々。新聞の一面を飾りました！
+PRINTFORMW その内容が反響を呼びカリスマ価格が暴騰しています！
 RESETCOLOR

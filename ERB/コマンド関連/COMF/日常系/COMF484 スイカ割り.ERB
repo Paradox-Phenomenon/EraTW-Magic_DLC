@@ -1,4 +1,4 @@
-﻿;打西瓜
+﻿;スイカ割り
 @COM484
 #DIM CHARA
 #DIM 同室人数
@@ -7,12 +7,12 @@
 ;雨天中止
 IF GROUPMATCH(天候, 4, 5, 6, 7, 8, 10, 11, 12, 13) || GROUPMATCH(FLAG:異常気象, 9, 10)
 	IF OUTROOF(CFLAG:MASTER:現在位置)
-		PRINTFORMW 天气太差了、还是算了吧…
+		PRINTFORMW 天気が悪いのでやめておこう…
 		RETURN -1
 	ENDIF
 ;料理がある
 ELSEIF DISH_NAME != ""
-	PRINTFORMW 先想办法处理掉手上的料理吧…
+	PRINTFORMW 手に持っている料理をどうにかしよう…
 	RETURN -1
 ENDIF
 
@@ -34,7 +34,7 @@ SIF 参加可能人数 == 0
 	THROW
 SUIKA_PLAYERNUM = 0
 CALL SUIKA_CHARASELECT(同室人数, 参加可能人数)
-;中止
+;キャンセル
 SIF RESULT == -1
 	RETURN -1
 
@@ -43,18 +43,18 @@ CALL SUIKA_WEAPONSELECT
 
 ;開幕地の文
 DRAWLINE
-IF GROUPMATCH(SUIKA_WEAPON, "万宝槌", "控制棒")
-	PRINTFORML %CALLNAME:MASTER%戴上眼罩、全神贯注地开始在原地旋转起来…
+IF GROUPMATCH(SUIKA_WEAPON, "打ち出の小槌", "制御棒")
+	PRINTFORML %CALLNAME:MASTER%はアイマスクを装着すると、一心不乱にその場で回転し始めた…
 ELSE
-	PRINTFORML %CALLNAME:MASTER%戴上眼罩、以插在地上的%SUIKA_WEAPON%为轴全神贯注地开始了旋转…
+	PRINTFORML %CALLNAME:MASTER%はアイマスクを装着すると、地面に突き立てた%SUIKA_WEAPON%を軸にして一心不乱に回転し始めた…
 ENDIF
-;セットUP
+;セットアップ
 CALL SUIKA_SETUP
 WAIT
 ;TARGETが参加していない場合はTARGETを変更しておく
-IF FLAG:约会的对象
+IF FLAG:デート相手
 	;参加しなくても最優先,そんなひどいことする？
-	TARGET = FLAG:约会的对象
+	TARGET = FLAG:デート相手
 ELSEIF !MATCH(SUIKA_PLAYER, TARGET)
 	;一人目をターゲットに変更
 	TARGET = SUIKA_PLAYER:1
@@ -76,24 +76,24 @@ FOR LOCAL, 1, SUIKA_PLAYERNUM + 1
 	CASE 0
 		SOURCE:CHARA:歓楽 = 1500 + ABL:CHARA:親密 * 100
 		SOURCE:CHARA:受動 = 100 + 50 * ABL:CHARA:従順
-		SOURCE:CHARA:征服 = 200 + 80 * ABL:CHARA:施虐属性
+		SOURCE:CHARA:征服 = 200 + 80 * ABL:CHARA:サドっ気
 	CASE 1, 2
 		SOURCE:CHARA:歓楽 = 2500 + ABL:CHARA:親密 * 100
 		SOURCE:CHARA:受動 = 200 + 60 * ABL:CHARA:従順
-		SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:施虐属性
+		SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:サドっ気
 	CASE -1
 		IF SUIKA_LIAR:LOCAL || CHARA == [[正邪]]
 			SOURCE:CHARA:歓楽 = 1500 + ABL:CHARA:親密 * 100
-			SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:施虐属性
+			SOURCE:CHARA:征服 = 400 + 120 * ABL:CHARA:サドっ気
 		ELSE
 			SOURCE:CHARA:歓楽 = 800 + ABL:CHARA:親密 * 100
 			SOURCE:CHARA:受動 = 100 + 50 * ABL:CHARA:従順
-			SOURCE:CHARA:征服 = 50 + 20 * ABL:CHARA:施虐属性
+			SOURCE:CHARA:征服 = 50 + 20 * ABL:CHARA:サドっ気
 		ENDIF
 	ENDSELECT
 	IF TFLAG:193 >= 0
 		SIF CHARA == TARGET
-			TFLAG:信賴度管理 = 1 + TFLAG:193
+			TFLAG:信頼度管理 = 1 + TFLAG:193
 		IF TFLAG:193 == 2
 			TIMES SOURCE:CHARA:歓楽, 1.20
 			TIMES SOURCE:CHARA:受動, 1.20
@@ -117,7 +117,7 @@ NEXT
 
 ;料理生成
 SIF TFLAG:193 >= 0
-	CALL 料理生成("切好的西瓜")
+	CALL 料理生成("カットスイカ")
 	
 ;結果記録
 IF TFLAG:193 > 0
@@ -129,17 +129,17 @@ ENDIF
 ;時間経過
 TIME += 60
 
-;フラグをリセットして你のフラグを立てる
+;フラグをリセットしてあなたのフラグを立てる
 VARSET SUIKA_PLAYER
-CVARSET TCVAR, GETNUM(TCVAR, "打西瓜参加"), 0
-TCVAR:MASTER:打西瓜参加 = 1
+CVARSET TCVAR, GETNUM(TCVAR, "スイカ割り参加"), 0
+TCVAR:MASTER:スイカ割り参加 = 1
 
 RETURN 1
 
 ;-------------------------------------------------
 ;実行可能判定
 ;-------------------------------------------------
-;打西瓜
+;スイカ割り
 @COM_ABLE484
 ;時間停止中
 SIF FLAG:時間停止
@@ -149,20 +149,20 @@ SIF !TFLAG:100
 ;一括管理
 SIF GLOBAL_COMABLE(484)
 	RETURN RESULT
-;西瓜がない
-SIF !ITEM:西瓜
+;スイカがない
+SIF !ITEM:スイカ
 	RETURN 0
-;眼罩がない
-SIF !ITEM:眼罩
+;アイマスクがない
+SIF !ITEM:アイマスク
 	RETURN 0
 ;夏じゃない
-SIF GET_MONTH() != "夏之月"
+SIF GET_MONTH() != "夏の月"
 	RETURN 0
 ;とりあえず訓練できる場所
 SIF !戦闘訓練可(CFLAG:MASTER:現在位置)
 	RETURN 0
 ;一日一回まで
-SIF TCVAR:MASTER:打西瓜参加
+SIF TCVAR:MASTER:スイカ割り参加
 	RETURN 0
 ;対象がいない
 SIF TARGET <= 0
@@ -170,11 +170,11 @@ SIF TARGET <= 0
 ;意識がない
 SIF !SHIRAHU(TARGET)
 	RETURN 0
-;陪睡中
-SIF CFLAG:MASTER:陪睡中
+;添い寝中
+SIF CFLAG:MASTER:添い寝中
 	RETURN 0
-;诶嘿嘿中
-SIF CFLAG:MASTER:诶嘿嘿
+;うふふ中
+SIF CFLAG:MASTER:うふふ
 	RETURN 0
 ;仕事中
 SIF CFLAG:行動 == 5
@@ -188,7 +188,7 @@ SIF BASE:TARGET:気力 < 500 || BASE:TARGET:体力 < 500
 RETURN 1
 
 ;-------------------------------------------------
-;打西瓜：角色セレクト関数
+;スイカ割り：キャラクターセレクト関数
 ;ARG 同室人数
 ;-------------------------------------------------
 @SUIKA_CHARASELECT(ARG, 参加可能人数)
@@ -202,7 +202,7 @@ DRAWLINE
 ;全員参加指示
 SIF 参加要求
 	SUIKA_PLAYERNUM = MIN(参加可能人数, SUIKA_MAXPLAYER)
-PRINTFORML ●请选择参加者（%TOFULL(TOSTR(SUIKA_PLAYERNUM))%／%TOFULL(TOSTR(SUIKA_MAXPLAYER))%）谎言数：{SUIKA_LIARNUM()}
+PRINTFORML ●参加者を選んでください（%TOFULL(TOSTR(SUIKA_PLAYERNUM))%／%TOFULL(TOSTR(SUIKA_MAXPLAYER))%）ウソつきの数：{SUIKA_LIARNUM()}
 FOR LOCAL, 1, ARG + 1
 	CHARA = TARGET:LOCAL
 	SIF !SHIRAHU(CHARA)
@@ -213,10 +213,10 @@ FOR LOCAL, 1, ARG + 1
 		CONTINUE
 	;全員参加指示
 	IF 参加要求
-		TCVAR:CHARA:打西瓜参加 = LOCAL:1 + 1
+		TCVAR:CHARA:スイカ割り参加 = LOCAL:1 + 1
 		SUIKA_PLAYER:(LOCAL:1 + 1) = CHARA
 	ENDIF
-	SIF TCVAR:CHARA:打西瓜参加
+	SIF TCVAR:CHARA:スイカ割り参加
 		SETCOLOR C_AQUA
 	PRINTFORM [{CHARA, 3}] %CALLNAME:CHARA, 18, LEFT%
 	LOCAL:1 ++
@@ -234,19 +234,19 @@ IF LOCAL:1 % 3
 	LINE ++
 ENDIF
 IF 参加可能人数 > SUIKA_MAXPLAYER
-	PRINTL [902] 以上８人参加
+	PRINTL [902] 上から８人を参加
 ELSE
-	PRINTL [901] 全员参加
+	PRINTL [901] 全員参加
 ENDIF
 DRAWLINE
-PRINTL [900] 决定　　　　　　　[903] 规则说明
-PRINTL [999] 果然还是算了
+PRINTL [900] 決定　　　　　　　[903] ルール説明
+PRINTL [999] やっぱりやめる
 INPUT
 
-;放弃
+;やめる
 IF RESULT == 999
 	;参加フラグをリセットする
-	CVARSET TCVAR, GETNUM(TCVAR, "打西瓜参加"), 0
+	CVARSET TCVAR, GETNUM(TCVAR, "スイカ割り参加"), 0
 	VARSET SUIKA_PLAYER
 	RETURN -1
 ;決定
@@ -254,13 +254,13 @@ ELSEIF RESULT == 900
 	IF INRANGE(SUIKA_PLAYERNUM, 1, SUIKA_MAXPLAYER)
 		RETURN 1
 	ELSE
-		PRINTFORMW 只能有１～%TOFULL(TOSTR(SUIKA_MAXPLAYER))%名参加者！
+		PRINTFORMW 参加者が１～%TOFULL(TOSTR(SUIKA_MAXPLAYER))%人になるようにしてください！
 		LINE ++
 	ENDIF
 ;全員参加,上から８人を参加
 ELSEIF RESULT == 901 || RESULT == 902
 	;一旦リセット
-	CVARSET TCVAR, GETNUM(TCVAR, "打西瓜参加"), 0
+	CVARSET TCVAR, GETNUM(TCVAR, "スイカ割り参加"), 0
 	SUIKA_PLAYERNUM = 0
 	VARSET SUIKA_PLAYER
 	参加要求 = 1
@@ -268,43 +268,43 @@ ELSEIF RESULT == 901 || RESULT == 902
 ELSEIF RESULT == 903
 	CALL SUIKA_TUTORIAL
 	RESTART
-;角色選択
+;キャラ選択
 ELSEIF INRANGE(RESULT, 1, CHARANUM) && MATCH(TARGET, RESULT)
 	;参加エントリー
-	IF !TCVAR:RESULT:打西瓜参加
+	IF !TCVAR:RESULT:スイカ割り参加
 		;上限
 		IF SUIKA_PLAYERNUM >= SUIKA_MAXPLAYER
-			PRINTW 已经不能再加入了！
+			PRINTW これ以上参加できません！
 			LINE ++
 		ELSE
 			FOR LOCAL, 1, SUIKA_MAXPLAYER + 1
 				;空きに入れる
 				IF !SUIKA_PLAYER:LOCAL
 					SUIKA_PLAYER:LOCAL = RESULT
-					TCVAR:RESULT:打西瓜参加 = LOCAL
+					TCVAR:RESULT:スイカ割り参加 = LOCAL
 					BREAK
 				ENDIF
 			NEXT
 			SUIKA_PLAYERNUM ++
 		ENDIF
-	;参加中止
+	;参加キャンセル
 	ELSE
-		FOR LOCAL, TCVAR:RESULT:打西瓜参加, SUIKA_MAXPLAYER + 1
-			;参加者は中止する
+		FOR LOCAL, TCVAR:RESULT:スイカ割り参加, SUIKA_MAXPLAYER + 1
+			;参加者はキャンセルする
 			IF SUIKA_PLAYER:LOCAL == RESULT
 				SUIKA_PLAYER:LOCAL = 0
 			;番号が後の人がいるなら登録番号を一つ下げる
 			ELSEIF SUIKA_PLAYER:LOCAL
-				TCVAR:(SUIKA_PLAYER:LOCAL):打西瓜参加 --
+				TCVAR:(SUIKA_PLAYER:LOCAL):スイカ割り参加 --
 			ENDIF
 		NEXT
 		;その後シフトする
-		FOR LOCAL, TCVAR:RESULT:打西瓜参加, SUIKA_MAXPLAYER + 1
+		FOR LOCAL, TCVAR:RESULT:スイカ割り参加, SUIKA_MAXPLAYER + 1
 			SIF !SUIKA_PLAYER:LOCAL
 				SWAP SUIKA_PLAYER:LOCAL, SUIKA_PLAYER:(LOCAL + 1)
 		NEXT
 		;参加状態を戻す
-		TCVAR:RESULT:打西瓜参加 = 0
+		TCVAR:RESULT:スイカ割り参加 = 0
 		SUIKA_PLAYERNUM --
 	ENDIF
 ENDIF
@@ -312,7 +312,7 @@ CLEARLINE LINE
 RESTART
 
 ;-------------------------------------------------
-;打西瓜：单独指导
+;スイカ割り：チュートリアル
 ;-------------------------------------------------
 @SUIKA_TUTORIAL
 #DIM MAXPAGE
@@ -321,37 +321,37 @@ MAXPAGE = 4
 SIF !PAGE
 	PAGE = 1
 DRAWLINE
-PRINTFORML ●规则说明({PAGE} / {MAXPAGE})
+PRINTFORML ●ルール説明({PAGE} / {MAXPAGE})
 SELECTCASE PAGE
 CASE 1
-	PRINTFORML 你在被蒙住眼睛的状态下握持打击武器、依赖幻想少女们的声音
-	PRINTFORML 将场地某处的西瓜敲碎的游戏。
+	PRINTFORML あなたが目隠しをした状態で打撃武器を持ち、幻想少女たちの声を頼りに
+	PRINTFORML フィールドのどこかにあるスイカを叩いて割るゲームです。
 	PRINTL 
-	PRINTFORML 但是参加者中的一些（根据人数）混杂了担当欺骗役的人。
-	PRINTFORML 说谎的角色会在提示时撒谎。
+	PRINTFORML ただし参加者の中には（人数に応じた）ウソつき役が混ざっています。
+	PRINTFORML ウソつきとなったキャラはあなたに対して嘘のヒントを与えてきます。
 CASE 2
-	PRINTFORML 因为击打的次数基本只有１次、所以请一边寻找说谎者、
-	PRINTFORML 一边探寻真实的提示、慎重地进行移动。
+	PRINTFORML 叩ける回数は基本的に１回のみなので、誰がウソつきなのか、
+	PRINTFORML どのヒントが真実なのかを探りながら慎重に移動しましょう。
 	PRINTL 
-	PRINTFORML 在试图移动到场地外的时候会撞到一名参加者。
-	PRINTFORML 这种场合下是不能移动的。
+	PRINTFORML フィールドの外に移動しようとすると参加者にぶつかってしまいます。
+	PRINTFORML その場合移動はできません。
 CASE 3
-	PRINTFORML 如果能完全捕捉到西瓜的位置就是大成功。
-	PRINTFORML 是很美味的成功哦。
+	PRINTFORML スイカの位置を完全に捉えていると大成功。
+	PRINTFORML おしいと成功になります。
 	PRINTL 
-	PRINTFORML 即使是不好的状态、也会有因身份而提示「就是那里！」的情况。
-	PRINTFORML 如果想要追求大成功，最好更加仔细地挑选。
+	PRINTFORML おしい状態でもキャラによっては「そこだ！」等の指示をします。
+	PRINTFORML 大成功を狙うならより吟味すると良いでしょう。
 CASE 4
-	PRINTFORML 当人数是奇数（3人以上）的情况下欺骗役的比例会增多难度也会上升。
-	PRINTFORML 感觉太难的话可以和偶数人一起玩。
+	PRINTFORML 人数が（3人以上で）奇数のときはウソつき役の割合が多くなり難易度が上がります。
+	PRINTFORML 難しいと感じたら偶数人でプレイすると良いでしょう。
 	PRINTL 
-	PRINTFORML 如果能成功地打碎西瓜就能做出＜切好的西瓜＞。
-	PRINTFORML 请和参加者们一起享用吧。
+	PRINTFORML 見事スイカを割ることができると＜カットスイカ＞が出来上がります。
+	PRINTFORML ぜひ参加者のみんなで食べましょう。
 ENDSELECT
 PRINTL 
-PRINTFORML \@ PAGE < MAXPAGE ? [1] 次页 # \@
-PRINTFORML \@ PAGE > 1 ? [2] 前页 # \@
-PRINTFORML [0] 返回
+PRINTFORML \@ PAGE < MAXPAGE ? [1] 次へ # \@
+PRINTFORML \@ PAGE > 1 ? [2] 前へ # \@
+PRINTFORML [0] 戻る
 INPUT
 IF RESULT == 1 && PAGE < MAXPAGE
 	PAGE ++
@@ -365,29 +365,29 @@ CLEARLINE 12
 RESTART
 
 ;-------------------------------------------------
-;打西瓜：武器選択関数
+;スイカ割り：武器選択関数
 ;-------------------------------------------------
 @SUIKA_WEAPONSELECT
 DRAWLINE
-PRINTFORML ●请选择要使用的武器
-PRINTFORML [1] - 自己的扫箒　　%CALLNAME:MASTER%总是随身携带的扫箒。允许额外出手１回。
-PRINTFORML [2] - 驱魔棒　　　带有少许诱导的不思议的祭具。开始时必定朝向西瓜的方向。
-PRINTFORML [3] - 木刀　　　　　具有切断力的简单武器。绮丽地切割后能获得更多资源。面向上级者。
-PRINTFORML [4] - 万宝槌　寄托着愿望的小槌。即使只是掠过也能绮丽地切割。
-PRINTFORML [5] - 控制棒　　　　吸收了核能的重棒。开始时将西瓜吸引过来。
+PRINTFORML ●使用する武器を選んでください
+PRINTFORML [1] - マイほうき　　%CALLNAME:MASTER%がいつも持ち歩いている箒。１回までお手つきが許される。
+PRINTFORML [2] - お祓い棒　　　少しだけホーミングする不思議な祭具。開始時に必ずスイカのある方向に向く。
+PRINTFORML [3] - 木刀　　　　　切断力のあるシンプルな武器。綺麗に割れれば獲得リソースが増える。上級者向き。
+PRINTFORML [4] - 打ち出の小槌　願いの込められた小槌。かすっただけでも綺麗に割れる。
+PRINTFORML [5] - 制御棒　　　　核エネルギーを吸収する重たい棒。開始時にスイカを引き寄せる。
 INPUT
 IF INRANGE(RESULT, 1, 5)
 	SELECTCASE RESULT
 	CASE 1
-		SUIKA_WEAPON = 自己的扫箒
+		SUIKA_WEAPON = マイほうき
 	CASE 2
-		SUIKA_WEAPON = 驱魔棒
+		SUIKA_WEAPON = お祓い棒
 	CASE 3
 		SUIKA_WEAPON = 木刀
 	CASE 4
-		SUIKA_WEAPON = 万宝槌
+		SUIKA_WEAPON = 打ち出の小槌
 	CASE 5
-		SUIKA_WEAPON = 控制棒
+		SUIKA_WEAPON = 制御棒
 	ENDSELECT
 ELSE
 	CLEARLINE 8
@@ -395,14 +395,14 @@ ELSE
 ENDIF
 
 ;-------------------------------------------------
-;打西瓜：ウソつきの人数
+;スイカ割り：ウソつきの人数
 ;-------------------------------------------------
 @SUIKA_LIARNUM
 #FUNCTION
 RETURNF MAX((SUIKA_PLAYERNUM - 1) / 2, 0)
 
 ;-------------------------------------------------
-;打西瓜：二点間の距離
+;スイカ割り：二点間の距離
 ;ARG:1,座標１ ARG:2,座標２ ARG:3,0=合計距離,1=X軸距離,2=Y軸距離
 ;-------------------------------------------------
 @SUIKA_DISTANCE(ARG:1, ARG:2, ARG:3)
@@ -422,7 +422,7 @@ ELSE
 ENDIF
 
 ;-------------------------------------------------
-;打西瓜：打撃する位置（正面位置）
+;スイカ割り：打撃する位置（正面位置）
 ;-------------------------------------------------
 @SUIKA_AIMING
 #FUNCTION
@@ -438,7 +438,7 @@ CASE 8
 ENDSELECT
 
 ;-------------------------------------------------
-;打西瓜：背面位置
+;スイカ割り：背面位置
 ;-------------------------------------------------
 @SUIKA_BACK
 #FUNCTION
@@ -454,7 +454,7 @@ CASE 8
 ENDSELECT
 
 ;-------------------------------------------------
-;打西瓜：位置が場外に出ている判定
+;スイカ割り：位置が場外に出ている判定
 ;ARG,座標
 ;-------------------------------------------------
 @SUIKA_OVER(ARG)
@@ -463,8 +463,8 @@ SIF ARG >= 100 || ARG % 10 == 0 || ARG / 10 == 0
 	RETURNF 1
 
 ;-------------------------------------------------
-;打西瓜：西瓜のある方向（客観方向）
-;ARG,0=軸指定無,1=X軸,2=Y軸
+;スイカ割り：スイカのある方向（客観方向）
+;ARG,0=軸指定なし,1=X軸,2=Y軸
 ;-------------------------------------------------
 @SUIKA_RADAR(ARG)
 #FUNCTION
@@ -493,7 +493,7 @@ ELSEIF LOCAL == 2
 ENDIF
 
 ;-------------------------------------------------
-;打西瓜：セットUP関数
+;スイカ割り：セットアップ関数
 ;-------------------------------------------------
 @SUIKA_SETUP
 #DIM 最大距離
@@ -501,20 +501,20 @@ ENDIF
 SUIKA_CHALLENGE ++
 ;得点リセット
 SUIKA_SCORE = 0
-;西瓜を失う
-CALL LOST_ITEM("西瓜", 1, 1)
+;スイカを失う
+CALL LOST_ITEM("スイカ", 1, 1)
 ;お手つき許容回数
-IF SUIKA_WEAPON == "自己的扫箒"
+IF SUIKA_WEAPON == "マイほうき"
 	SUIKA_OTETSUKI = 1
 ELSE
 	SUIKA_OTETSUKI = 0
 ENDIF
-;西瓜の位置
+;スイカの位置
 SUIKA_SUIKA_P = (RAND:9 + 1) * 10 + RAND:9 + 1
-;你の位置,西瓜の位置と距離が6以上12以内,（控制棒なら距離8以内）
+;あなたの位置,スイカの位置と距離が6以上12以内,（制御棒なら距離8以内）
 SUIKA_MASTER_P = 0
-IF SUIKA_WEAPON == "控制棒"
-	PRINTFORML 【控制棒的效果】滋滋滋……　在控制棒的作用下、西瓜被吸引过来了！
+IF SUIKA_WEAPON == "制御棒"
+	PRINTFORML 【制御棒の効果】ｽﾞｽﾞｽﾞ……　制御棒の効果でスイカが引き寄せられた！
 	最大距離 = 8
 ELSE
 	最大距離 = 16
@@ -522,13 +522,13 @@ ENDIF
 WHILE !SUIKA_MASTER_P || !INRANGE(SUIKA_DISTANCE(SUIKA_SUIKA_P, SUIKA_MASTER_P), 6, 最大距離)
 	SUIKA_MASTER_P = (RAND:9 + 1) * 10 + RAND:9 + 1
 WEND
-;你の向き
+;あなたの向き
 SUIKA_DIRECTION = 5
-IF SUIKA_WEAPON == "驱魔棒"
+IF SUIKA_WEAPON == "お祓い棒"
 	WHILE SUIKA_DIRECTION % 2 != 0
 		SUIKA_DIRECTION = SUIKA_RADAR()
 	WEND
-	PRINTFORML 【驱魔棒的效果】被驱魔棒牵引着、%CALLNAME:MASTER%的身体转向了西瓜的方向！
+	PRINTFORML 【お祓い棒の効果】お祓い棒に引き寄せられて、%CALLNAME:MASTER%の身体はスイカのある方向へ向いた！
 ELSE
 	SUIKA_DIRECTION = RAND:4 * 2 + 2
 ENDIF
@@ -555,7 +555,7 @@ NEXT
 [ENDIF]
 
 ;-------------------------------------------------
-;打西瓜：ゲーム部分関数
+;スイカ割り：ゲーム部分関数
 ;-------------------------------------------------
 @SUIKA_SMASHING
 #DIM CHARA
@@ -577,13 +577,13 @@ FOR LINENUM, 1, 9
 	ENDIF
 	SELECTCASE LINENUM
 	CASE 2
-		PRINTFORM 　　　　　[8] 向前一步　　　　　
+		PRINTFORM 　　　　　[8] 一歩前へ　　　　　
 	CASE 4
-		PRINTFORM 　[4] 左转　　　　[6] 右转　
+		PRINTFORM 　[4] 左を向く　　[6] 右を向く　
 	CASE 6
-		PRINTFORM 　　　＜＜[5] 敲下！＞＞　　　　
+		PRINTFORM 　　　＜＜[5] 叩く！＞＞　　　　
 	CASE 8
-		PRINTFORM 　　　　　[2] 向后一步　　　　
+		PRINTFORM 　　　　　[2] 一歩後ろへ　　　　
 	CASEELSE
 		PRINTFORM %" " * 32%
 	ENDSELECT
@@ -603,7 +603,7 @@ DRAWLINE
 SELECTCASE RESULT
 CASE 5
 	PRINTL 
-	PRINTFORMW %CALLNAME:MASTER%用尽全力将%SUIKA_WEAPON%在眼前挥下！
+	PRINTFORMW %CALLNAME:MASTER%は渾身の力を込めて目の前に%SUIKA_WEAPON%を叩きつけた！
 	PRINTL 
 	LINENUM_PLUS += 3
 	IF SUIKA_DISTANCE(SUIKA_AIMING(), SUIKA_SUIKA_P) == 0
@@ -615,7 +615,7 @@ CASE 5
 			RETURN 1
 		ENDIF
 	ELSEIF SUIKA_DISTANCE(SUIKA_AIMING(), SUIKA_SUIKA_P) == 1
-		IF SUIKA_WEAPON == "万宝槌"
+		IF SUIKA_WEAPON == "打ち出の小槌"
 			CALL COLORMESSAGE("LUCKY STRIKE!", C_YELLOW, 2, 3)
 			RETURN 1
 		ELSE
@@ -623,10 +623,10 @@ CASE 5
 			RETURN 0
 		ENDIF
 	ELSE
-		CALL COLORMESSAGE("打偏了ー！", C_CREAM, 2, 2)
+		CALL COLORMESSAGE("からぶりー！", C_CREAM, 2, 2)
 		IF SUIKA_OTETSUKI
 			PRINTL 
-			PRINTFORMW …但使用扫箒时是可以允许的
+			PRINTFORMW …しかしマイほうきルールにより許された
 			SUIKA_OTETSUKI --
 			LINENUM_PLUS += 4
 		ELSE
@@ -635,7 +635,7 @@ CASE 5
 	ENDIF
 CASE 4
 	PRINTFORML …………
-	PRINTFORMW %CALLNAME:MASTER%转向了左边
+	PRINTFORMW %CALLNAME:MASTER%は左を向いた
 	SELECTCASE SUIKA_DIRECTION
 	CASE 2
 		SUIKA_DIRECTION = 6
@@ -649,7 +649,7 @@ CASE 4
 	LINENUM_PLUS += 2
 CASE 6
 	PRINTFORML …………
-	PRINTFORMW %CALLNAME:MASTER%转向了右边
+	PRINTFORMW %CALLNAME:MASTER%は右を向いた
 	SELECTCASE SUIKA_DIRECTION
 	CASE 2
 		SUIKA_DIRECTION = 4
@@ -667,7 +667,7 @@ CASE 2
 		CALL SUIKA_COLLISION
 		LINENUM_PLUS += RESULT
 	ELSE
-		PRINTFORMW %CALLNAME:MASTER%向后退了一步
+		PRINTFORMW %CALLNAME:MASTER%は一歩下がった
 		SUIKA_MASTER_P = SUIKA_BACK()
 		LINENUM_PLUS += 2
 	ENDIF
@@ -677,7 +677,7 @@ CASEELSE
 		CALL SUIKA_COLLISION
 		LINENUM_PLUS += RESULT
 	ELSE
-		PRINTFORMW %CALLNAME:MASTER%向前迈了一歩
+		PRINTFORMW %CALLNAME:MASTER%は一歩前に出た
 		SUIKA_MASTER_P = SUIKA_AIMING()
 		LINENUM_PLUS += 2
 	ENDIF
@@ -686,13 +686,13 @@ CLEARLINE 11 + LINENUM_PLUS
 RESTART
 
 ;-------------------------------------------------
-;打西瓜：衝突メッセージ
+;スイカ割り：衝突メッセージ
 ;-------------------------------------------------
 @SUIKA_COLLISION
 #DIM LINE
 LINE = 4
 LOCAL = SUIKA_PLAYER:(RAND:SUIKA_PLAYERNUM + 1)
-PRINTFORMW 咕咚！
+PRINTFORMW ゴツンッ！
 PRINTL 
 ;◆口上
 CALL KOJO_MESSAGE_SEND("SUIKA", 0, LOCAL, 0, 0, "衝突")
@@ -703,15 +703,15 @@ IF RESULTS != ""
 ENDIF
 RESETCOLOR
 IF LOCAL == [[萃香]]
-	PRINTFORMW 那不是西瓜而是萃香
+	PRINTFORMW それはスイカではなく萃香だ
 ELSE
-	PRINTFORMW %CALLNAME:MASTER%与%CALLNAME:LOCAL%相撞了……
+	PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:LOCAL%とぶつかってしまった……
 ENDIF
 
 RETURN LINE
 
 ;-------------------------------------------------
-;打西瓜：台詞関数１,どんな台詞を言うかの判定
+;スイカ割り：台詞関数１,どんな台詞を言うかの判定
 ;ARG,プレイヤー番号
 ;ARG:1,表示位置 1=LEFT,2=RIGHT
 ;-------------------------------------------------
@@ -874,7 +874,7 @@ ELSE
 ENDIF
 
 ;-------------------------------------------------
-;打西瓜：台詞関数２,実際に喋る台詞
+;スイカ割り：台詞関数２,実際に喋る台詞
 ;ARG,プレイヤー番号
 ;-------------------------------------------------
 @SUIKA_MESSAGE_2(CHARA, ARG, 指示)
@@ -887,187 +887,187 @@ CASE "そこだ！"
 	SELECTCASE CFLAG:CHARA:口調
 	;～です系
 	CASE 1
-		RESULTS = %TEXTR("就是那里！/是现在！")%
+		RESULTS = %TEXTR("そこです！/今です！")%
 	;～だよ系
 	CASE 2
-		RESULTS = %TEXTR("那里！/现在！")%
+		RESULTS = %TEXTR("そこ！/今！")%
 	;～だぞ系
 	CASE 3
-		RESULTS = %TEXTR("是那里哒！/就是现在！")%
+		RESULTS = %TEXTR("そこだ！/今だ！")%
 	;～のじゃ系
 	CASE 4
-		RESULTS = %TEXTR("在那里！/现在！")%
+		RESULTS = %TEXTR("そこじゃ！/今じゃ！")%
 	;無口系
 	CASE 5
-		RESULTS = %TEXTR("那里…！/现在…！")%
+		RESULTS = %TEXTR("そこ…！/今…！")%
 	;～のよ系
 	CASEELSE
-		RESULTS = %TEXTR("就是那边哟！/现在哟！")%
+		RESULTS = %TEXTR("そこよ！/今よ！")%
 	ENDSELECT
 CASE "近い"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("非常接近了/在靠近中/再近一点")%
+		RESULTS = %TEXTR("かなり近いです/近づいてます/もう少しです")%
 	CASE 2
-		RESULTS = %TEXTR("很近！很近了哟！/在靠近了哟！/再走一点！")%
+		RESULTS = %TEXTR("近い！近いよ！/近づいてるよ！/あとちょっと！")%
 	CASE 3
-		RESULTS = %TEXTR("很近了喔/在靠近了喔/还差一点")%
+		RESULTS = %TEXTR("かなり近いぞ/近づいてるぞ/あと少しだ")%
 	CASE 4
-		RESULTS = %TEXTR("很近/就在很近的地方/再来一点")%
+		RESULTS = %TEXTR("近いのう/近づいてるぞい/あと少しじゃ")%
 	CASE 5
-		RESULTS = %TEXTR("……相当近/……在靠近了/……还差一点")%
+		RESULTS = %TEXTR("……かなり近い/……近づいている/……もう少し")%
 	CASEELSE
-		RESULTS = %TEXTR("很近了哇/正在靠近呢/再继续哟")%
+		RESULTS = %TEXTR("かなり近いわ/近づいてるわよ/もう少しよ")%
 	ENDSELECT
 CASE "遠い"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("还是远的呢/还是很远")%
+		RESULTS = %TEXTR("まだ遠いですね/まだ遠いです")%
 	CASE 2
-		RESULTS = %TEXTR("还远哟/还不够～")%
+		RESULTS = %TEXTR("まだ遠いよ/まだまだ～")%
 	CASE 3
-		RESULTS = %TEXTR("还远着呐/还远呢")%
+		RESULTS = %TEXTR("まだ遠いな/まだ遠いぞ")%
 	CASE 4
-		RESULTS = %TEXTR("还远哦/还远的呢")%
+		RESULTS = %TEXTR("まだ遠いのう/まだ遠いぞい")%
 	CASE 5
-		RESULTS = %TEXTR("……远/……还远")%
+		RESULTS = %TEXTR("……遠い/……まだ遠い")%
 	CASEELSE
-		RESULTS = %TEXTR("还远讷/还远哟")%
+		RESULTS = %TEXTR("まだ遠いわね/まだ遠いわよ")%
 	ENDSELECT
 CASE "かなり遠い"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("还是很远很远的呢/还有很长的路呢")%
+		RESULTS = %TEXTR("まだまだ遠いです/だいぶ遠いですね")%
 	CASE 2
-		RESULTS = %TEXTR("差的太远了哟ー/差的太远太远了ー")%
+		RESULTS = %TEXTR("全然遠いよー/まだまだずっと遠いー")%
 	CASE 3
-		RESULTS = %TEXTR("相当远呢/离得可远了啊")%
+		RESULTS = %TEXTR("かなり遠いな/だいぶ離れてるぞ")%
 	CASE 4
-		RESULTS = %TEXTR("还远的呢/还很远很远啊")%
+		RESULTS = %TEXTR("まだ遠いぞい/まだまだ遠いのう")%
 	CASE 5
-		RESULTS = %TEXTR("……很远呢/……距离很远")%
+		RESULTS = %TEXTR("……かなり遠い/……かけ離れている")%
 	CASEELSE
-		RESULTS = %TEXTR("好远啊/离得好远啊")%
+		RESULTS = %TEXTR("かなり遠いわ/だいぶ離れてるわね")%
 	ENDSELECT
 CASE "前"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("就是前面/就是这样/方向是正确的")%
+		RESULTS = %TEXTR("前にあります/そのままです/向きは合ってます")%
 	CASE 2
-		RESULTS = %TEXTR("就在前面哟/就这样、就这样/这边这边")%
+		RESULTS = %TEXTR("前にあるよ/そのまま、そのまま/そっちそっち")%
 	CASE 3
-		RESULTS = %TEXTR("是前方哒/就这样向前/就在正前方哦")%
+		RESULTS = %TEXTR("前の方だ/そのまま前/正面を向いてるぞ")%
 	CASE 4
-		RESULTS = %TEXTR("在前面呀/继续下去就很好/快、迈步")%
+		RESULTS = %TEXTR("前じゃ/そのままで良いぞ/ほれ、歩け")%
 	CASE 5
-		RESULTS = %TEXTR("……前/……就这样/……方向正确")%
+		RESULTS = %TEXTR("……前/……そのまま/……その方向")%
 	CASEELSE
-		RESULTS = %TEXTR("在前方呀/就这样走/是那个方向哟")%
+		RESULTS = %TEXTR("前にあるわ/そのまま歩いて/そっちの方向よ")%
 	ENDSELECT
 CASE "少し前"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("前方一点点/稍微再前点/再向前走一步吗…")%
+		RESULTS = %TEXTR("ちょっと前です/少し前です/一歩前でしょうか…")%
 	CASE 2
-		RESULTS = %TEXTR("就在前一点！/前一点/再一歩！")%
+		RESULTS = %TEXTR("ちょっとだけ前！/すこーし前/あと一歩！")%
 	CASE 3
-		RESULTS = %TEXTR("前一点点/稍微前点/再前一歩吧")%
+		RESULTS = %TEXTR("ちょっと前だ/少し前だぞ/一歩前かな")%
 	CASE 4
-		RESULTS = %TEXTR("前面一点点/稍微前一点/还要前一歩呐")%
+		RESULTS = %TEXTR("やや前じゃ/少し前じゃぞ/一歩前じゃな")%
 	CASE 5
-		RESULTS = %TEXTR("……前点/……稍微前些/……再一歩")%
+		RESULTS = %TEXTR("……やや前/……少し前/……あと一歩")%
 	CASEELSE
-		RESULTS = %TEXTR("就在前面一点哟/只是稍微前边呢/只差向前一歩了")%
+		RESULTS = %TEXTR("ちょっとだけ前よ/まだ少し前ね/あと一歩前かしら")%
 	ENDSELECT
 CASE "後ろ"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("是在后面/是在反方向的/那边可没有啊")%
+		RESULTS = %TEXTR("後ろです/反対を向いてます/そっちの方には無いです")%
 	CASE 2
-		RESULTS = %TEXTR("转向后边！/反了、反了！/不在那边哟ー")%
+		RESULTS = %TEXTR("後ろ向いてる！/逆、逆！/そっちじゃないよー")%
 	CASE 3
-		RESULTS = %TEXTR("在后边哦/在后方哒/可不在那边哦")%
+		RESULTS = %TEXTR("後ろだぞ/後ろ向きだ/そっちにはないぞ")%
 	CASE 4
-		RESULTS = %TEXTR("后面啊/在相反的方向/不在那边的")%
+		RESULTS = %TEXTR("後ろじゃ/逆さを向いておる/そっちには無いぞい")%
 	CASE 5
-		RESULTS = %TEXTR("……后边/……反了/……不在那边")%
+		RESULTS = %TEXTR("……後ろ/……逆/……そっちじゃない")%
 	CASEELSE
-		RESULTS = %TEXTR("后边哟/反方向哟/不是那个方向啊")%
+		RESULTS = %TEXTR("後ろよ/反対方向よ/そっちの方じゃないわ")%
 	ENDSELECT
 CASE "少し後ろ"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("就在后边/稍微往后点/再向后走一步吗…")%
+		RESULTS = %TEXTR("すぐ後ろです/少し後ろです/一歩後ろでしょうか…")%
 	CASE 2
-		RESULTS = %TEXTR("就在后边的哟！/后一点点/退一歩！")%
+		RESULTS = %TEXTR("すぐ後ろだよ！/すこーし後ろ/一歩後ろ！")%
 	CASE 3
-		RESULTS = %TEXTR("就在后边了呢/稍微往后一点/再退一歩吗")%
+		RESULTS = %TEXTR("すぐ後ろだな/少し後ろだぞ/一歩後ろかな")%
 	CASE 4
-		RESULTS = %TEXTR("后一点点/稍稍后一点/再退一歩吧")%
+		RESULTS = %TEXTR("やや後ろじゃ/少し後ろじゃぞ/一歩後ろじゃな")%
 	CASE 5
-		RESULTS = %TEXTR("……后点/……稍微后些/……后退一步")%
+		RESULTS = %TEXTR("……やや後ろ/……少し後ろ/……一歩下がって")%
 	CASEELSE
-		RESULTS = %TEXTR("就在后边呢/稍微后面一点哟/只差向后一歩了")%
+		RESULTS = %TEXTR("すぐ後ろね/少し後ろよ/一歩後ろかしら")%
 	ENDSELECT
 CASE "右"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("是右边/是右边哟ー/是在右方")%
+		RESULTS = %TEXTR("右です/右ですよー/右の方です")%
 	CASE 2
-		RESULTS = %TEXTR("右的哟/右、右/再右点")%
+		RESULTS = %TEXTR("右だよ/右、右/もっと右")%
 	CASE 3
-		RESULTS = %TEXTR("右边哦/右边呢/在右边的")%
+		RESULTS = %TEXTR("右だぞ/右だな/右だ")%
 	CASE 4
-		RESULTS = %TEXTR("右面啊/右面哦/右边呐")%
+		RESULTS = %TEXTR("右じゃ/右じゃぞ/右じゃな")%
 	CASE 5
-		RESULTS = %TEXTR("右/……右/……右哟")%
+		RESULTS = %TEXTR("右/……右/……右よ")%
 	CASEELSE
-		RESULTS = %TEXTR("右哟/还在右边呢/右边的吧")%
+		RESULTS = %TEXTR("右よ/まだ右ね/右かしら")%
 	ENDSELECT
 CASE "少し右"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("是右一点点/稍微往右点吧")%
+		RESULTS = %TEXTR("やや右です/少し右でしょうか")%
 	CASE 2
-		RESULTS = %TEXTR("就往右一点/再右一点")%
+		RESULTS = %TEXTR("ちょっとだけ右/まだ右かな")%
 	CASE 3
-		RESULTS = %TEXTR("稍微右点/再右一点")%
+		RESULTS = %TEXTR("少し右だ/まだ右だな")%
 	CASE 4
-		RESULTS = %TEXTR("稍微右一下/稍稍右一点点")%
+		RESULTS = %TEXTR("少し右じゃ/やや右じゃな")%
 	CASE 5
-		RESULTS = %TEXTR("……稍微右/……右一点")%
+		RESULTS = %TEXTR("……少し右/……やや右")%
 	CASEELSE
-		RESULTS = %TEXTR("右一点呐/稍微往右一点吧")%
+		RESULTS = %TEXTR("やや右ね/少し右かしら")%
 	ENDSELECT
 CASE "左"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("是左边/是左边哟ー/是在左方")%
+		RESULTS = %TEXTR("左です/左ですよー/左の方です")%
 	CASE 2
-		RESULTS = %TEXTR("左的哟/左、左/再左点")%
+		RESULTS = %TEXTR("左だよ/左、左/もっと左")%
 	CASE 3
-		RESULTS = %TEXTR("左边哦/左边呢/在左边的")%
+		RESULTS = %TEXTR("左だぞ/左だな/左だ")%
 	CASE 4
-		RESULTS = %TEXTR("左面啊/左面哦/左边呐")%
+		RESULTS = %TEXTR("左じゃ/左じゃぞ/左じゃな")%
 	CASE 5
-		RESULTS = %TEXTR("左/……左/……左哟")%
+		RESULTS = %TEXTR("左/……左/……左よ")%
 	CASEELSE
-		RESULTS = %TEXTR("左哟/还在左边呢/左边的吧")%
+		RESULTS = %TEXTR("左よ/まだ左ね/左かしら")%
 	ENDSELECT
 CASE "少し左"
 	SELECTCASE CFLAG:CHARA:口調
 	CASE 1
-		RESULTS = %TEXTR("是左一点点/稍微往左点吧")%
+		RESULTS = %TEXTR("やや左です/少し左でしょうか")%
 	CASE 2
-		RESULTS = %TEXTR("就往左一点/再左一点")%
+		RESULTS = %TEXTR("ちょっとだけ左/まだ左かな")%
 	CASE 3
-		RESULTS = %TEXTR("稍微左点/再左一点")%
+		RESULTS = %TEXTR("少し左だ/まだ左だな")%
 	CASE 4
-		RESULTS = %TEXTR("稍微左一下/稍稍左一点点")%
+		RESULTS = %TEXTR("少し左じゃ/やや左じゃな")%
 	CASE 5
-		RESULTS = %TEXTR("……稍微左/……左一点")%
+		RESULTS = %TEXTR("……少し左/……やや左")%
 	CASEELSE
-		RESULTS = %TEXTR("左一点呐/稍微往左一点吧")%
+		RESULTS = %TEXTR("やや左ね/少し左かしら")%
 	ENDSELECT
 ENDSELECT
 RETURNF "「" + RESULTS + "」"

@@ -1,6 +1,6 @@
 ﻿;-------------------------------------------------
-;接吻
-;コミュニケーション系指令、レベル1
+;キス
+;コミュニケーション系コマンド、レベル1
 ;-------------------------------------------------
 @COM20
 
@@ -22,7 +22,7 @@ TCVAR:108 = 1
 ;-------------------------------------------------
 
 ;消費体力、気力
-IF (FLAG:70 == 1 && CFLAG:TARGET:344 == 0)
+IF FLAG:70 == 1
 	BASE:MASTER:TSP -= 20
 	SOURCE:快Ｍ = ABL:PLAYER:舌 * 3 + 20
 	;停止中はTARGETの技術が絡む処理はしない方がいいよね
@@ -62,7 +62,7 @@ ENDIF
 ;-------------------------------------------------
 ;汚れの処理
 ;-------------------------------------------------
-;奴隷の口⇔調教者の口的污垢が移動
+;奴隷の口⇔調教者の口の汚れが移動
 STAIN:0 |= STAIN:PLAYER:0
 STAIN:PLAYER:0 |= STAIN:0
 
@@ -70,7 +70,7 @@ STAIN:PLAYER:0 |= STAIN:0
 ;経験の処理
 ;-------------------------------------------------
 CALL KISS_EXP
-SIF TALENT:恋慕 && !(FLAG:70 == 1 || CFLAG:恶作剧)
+SIF TALENT:恋慕 && !(FLAG:70 == 1 || CFLAG:イタズラ)
 	EXP:愛情経験 += 1 + RAND:2
 TCVAR:ＦＫ喪失 = 1
 
@@ -78,18 +78,18 @@ RETURN 1
 
 @CAN_COM20(ARG)
 SKIPDISP ARG
-PRINTL 接吻
+PRINTL キスする
 ;-------------------------------------------------
 ;実行できるかの判定
 ;-------------------------------------------------
-IF FLAG:70 == 1 || CFLAG:恶作剧
+IF FLAG:70 == 1 || CFLAG:イタズラ
 
 ELSE
 
 	A = 0
 	S = 0
 
-	;全部の命令に共通の要素を考慮
+	;すべての命令に共通の要素を考慮
 	;(従順が高いと命令に従いやすいなど)
 	CALL COM_ORDER
 
@@ -107,7 +107,7 @@ ELSE
 		SIF S
 			PRINT  + 
 		A += ABL:奉仕精神 * 4
-		PRINT 侍奉精神
+		PRINT 奉仕精神
 		PRINTV 'LV,ABL:奉仕精神,'(,ABL:奉仕精神 * 4,')
 		S = 1
 	ENDIF
@@ -116,7 +116,7 @@ ELSE
 		SIF S
 			PRINT  + 
 		A += MARK:快楽刻印 * 2
-		PRINT 快乐刻印
+		PRINT 快楽刻印
 		PRINTV 'LV,MARK:快楽刻印,'(,MARK:快楽刻印 * 2,')
 		S = 1
 	ENDIF
@@ -126,16 +126,16 @@ ELSE
 		SIF S
 			PRINT  + 
 		A += GETPALAMLV(PALAM:欲情,5) * 1
-		PRINT 情欲
+		PRINT 欲情
 		PRINTV 'LV,GETPALAMLV(PALAM:欲情,5),'(,GETPALAMLV(PALAM:欲情,5) * 1,')
 		S = 1
 	ENDIF
 
-	;害羞
+	;恥じらい
 	IF TALENT:羞恥心 > 0
 		PRINT  - 
 		A -= 1
-		PRINT 害羞
+		PRINT 恥じらい
 		PRINTV '(,1,')
 		S = 1
 	ENDIF
@@ -144,7 +144,7 @@ ELSE
 		SIF S
 			PRINT  + 
 		A += 1
-		PRINT 污臭钝感
+		PRINT 汚臭鈍感
 		PRINTV '(,1,')
 		S = 1
 	ENDIF
@@ -152,7 +152,7 @@ ELSE
 	IF TALENT:汚臭耐性 < 0
 		PRINT  - 
 		A -= 1
-		PRINT 污臭敏感
+		PRINT 汚臭敏感
 		PRINTV '(,1,')
 		S = 1
 	ENDIF
@@ -165,11 +165,11 @@ ELSE
 		PRINTV '(,6,')
 		S = 1
 	ENDIF
-	;否定快感（淫乱、娼婦で無効）
+	;快感の否定（淫乱、娼婦で無効）
 	IF TALENT:快感応答 < 0 && !TALENT:淫乱
 		PRINT  - 
 		A -= 1
-		PRINT 否定快感
+		PRINT 快感の否定
 		PRINTV '(,1,')
 		S = 1
 	ENDIF
@@ -187,37 +187,37 @@ ELSE
 		SIF S
 			PRINT  + 
 		A += 10
-		PRINT 恩爱
+		PRINT 親愛
 		PRINTV '(,10,')
 		S = 10
 	ENDIF
 
 	Y = 0
-	;愛液的污垢
+	;愛液の汚れ
 	SIF STAIN:PLAYER:0 & 1
 		Y += 1
-	;精液的污垢
+	;精液の汚れ
 	SIF STAIN:PLAYER:0 & 4
 		Y += 3
-	;肛門的污垢
+	;アナルの汚れ
 	SIF STAIN:PLAYER:0 & 8
 		Y += 7
 	SIF STAIN:PLAYER:0 & 16
 		Y += 15
-	;接吻では汚れがそれほど影響しない
+	;キスでは汚れがそれほど影響しない
 	Y /= 2
 	Y = Y * (2 - TALENT:汚臭耐性) / 2
 
-	;有污垢
+	;汚れあり
 	IF Y
 		PRINT  - 
 		A -= Y
-		PRINT 有污垢
+		PRINT 汚れあり
 		;汚臭鈍感
 		IF TALENT:汚臭耐性 > 0
-			PRINT 、污臭钝感
+			PRINT 、汚臭鈍感
 		ELSEIF TALENT:汚臭耐性 < 0
-			PRINT 、污臭敏感
+			PRINT 、汚臭敏感
 		ENDIF
 		PRINTV '(,Y,')
 		S = 1
@@ -235,7 +235,7 @@ ELSE
 		PRINT  = 
 	SIF A > V
 		PRINT  > 
-	PRINT 实行值
+	PRINT 実行値
 	PRINTV V
 
 	WAIT
@@ -251,15 +251,15 @@ RETURN 1
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE20
-;接吻実行判定
+;キスする実行判定
 SIF !TFLAG:100
 	RETURN 0
 ;一括管理
 SIF GLOBAL_COMABLE(20)
 	RETURN RESULT
 
-;口球使用中は不可
-SIF TEQUIP:口球
+;ボールギャグ使用中は不可
+SIF TEQUIP:ボールギャグ
 	RETURN 0
 
 RETURN 1

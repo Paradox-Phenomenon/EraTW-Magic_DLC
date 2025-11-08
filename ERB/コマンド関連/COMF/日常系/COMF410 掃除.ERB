@@ -1,22 +1,18 @@
 ﻿;-------------------------------------------------
 ;掃除
-;日常系指令、レベル1
+;日常系コマンド、レベル1
 ;-------------------------------------------------
 @COM410
-#DIM 掃除前的污垢
-#DIM 掃除後的污垢
+#DIM 掃除前の汚れ
+#DIM 掃除後の汚れ
 #DIM 清掃力
 #DIM SWEEPID
 SWEEPID = CFLAG:MASTER:現在位置
-TFLAG:情緒上昇抑制 = 1
+TFLAG:ムード上昇抑制 = 1
 IF YOGORE:SWEEPID < OSOUJI_LIMIT(MASTER)
-	IF SWEEPGOD == 2
-		RETURN -1
-	ELSE
-		DRAWLINE
-		PRINTFORML 也没有那么乱七八糟、就算不扫除可以吧
-		RETURN -1
-	ENDIF
+	DRAWLINE
+	PRINTFORML そんなに散らかっていないし、まだ掃除しないでいいだろう
+	RETURN -1
 ENDIF
 
 SELECTCASE YOGORE:SWEEPID
@@ -37,7 +33,7 @@ SIF BASE:MASTER:TSP > 2000
 	LOCAL:4 = 2
 
 IF YOGORE:(SWEEPID) > 5000 && TALENT:MASTER:61 == -2 && BASE:MASTER:体力 > (1500 - LOCAL:4 * 300) && BASE:MASTER:気力 > (2000 - LOCAL:4 * 100) && BASE:MASTER:TSP > 1000 && !CFLAG:MASTER:335 && !FLAG:70
-	PRINTL 即便如此、这也实在脏的令人无法忍受…
+	PRINTL それにしても、耐えがたい汚さだ…
 	;PRINTL [0]平常心を保つ
 	;PRINTL [1]無理
 	;INPUT
@@ -51,7 +47,7 @@ IF YOGORE:(SWEEPID) > 5000 && TALENT:MASTER:61 == -2 && BASE:MASTER:体力 > (15
 ELSE
 	$ CANCEL_LOOP
 	IF (!TARGET || !SHIRAHU(TARGET))
-		CALL 胖次発見
+		CALL パンツ発見
 	ENDIF
 	IF TARGET && ABL:親密 * 500 + ABL:従順 * 500 + ABL:清掃技能 * 1000 > CFLAG:310 - CFLAG:MASTER:310 && (!CFLAG:行動 || (CFLAG:行動 == 5 && GROUPMATCH(CFLAG:職種, JOB_清掃, JOB_宴会の片づけ)) ) ;allow characters to join as long as they're not working (or if they are cleaning)
 		TFLAG:193 = 1
@@ -60,8 +56,8 @@ ELSE
 	ENDIF
 
 	清掃力 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
-	;特制竹箒による補正
-	SELECTCASE ITEM:特制竹箒
+	;カスタム竹箒による補正
+	SELECTCASE ITEM:カスタム竹箒
 		CASE 1
 			清掃力 += 2
 		CASE 2
@@ -69,23 +65,23 @@ ELSE
 		CASE 3
 			清掃力 += 4
 	ENDSELECT
-	SIF ITEM:特制竹箒
-		PRINTFORML %CALLNAME:MASTER%用特制的扫帚发出吼声
+	SIF ITEM:カスタム竹箒
+		PRINTFORML %CALLNAME:MASTER%用にカスタムされた特注箒が唸りを上げる！
 	
 	清掃力 = 清掃力 * (5 - TALENT:MASTER:61) / 5
-	掃除前的污垢 = YOGORE:(SWEEPID)
+	掃除前の汚れ = YOGORE:(SWEEPID)
 	IF TFLAG:193 && !CFLAG:睡眠
 		YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / (清掃力 + 1)
 	ELSE
 		YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / 清掃力
 	ENDIF
 	IF (CFLAG:MASTER:現在位置 == 9 || CFLAG:MASTER:現在位置 == 10)
-		PRINTL 顺手把虫笼也清扫干净了
-		PRINTFORML 因为只要挪开针妙丸的私人物品再倒过来抖一抖就行了所以很简单
+		PRINTL ついでに虫かごも綺麗にした
+		PRINTFORML 針妙丸の私物をどけて逆さに振るだけだから簡単だ
 		YOGORE:(54) = 0
 	ENDIF
-	掃除後的污垢 = YOGORE:(CFLAG:MASTER:現在位置)
-	EX:MASTER:今日的掃除回数 = EX:MASTER:今日的掃除回数 + 掃除前的污垢 - 掃除後的污垢
+	掃除後の汚れ = YOGORE:(CFLAG:MASTER:現在位置)
+	EX:MASTER:今日の掃除回数 = EX:MASTER:今日の掃除回数 + 掃除前の汚れ - 掃除後の汚れ
 	IF FLAG:70
 		BASE:MASTER:TSP -= 50
 		LOCAL:3 = 0
@@ -105,7 +101,7 @@ ELSE
 		DOWNBASE:MASTER:気力 = 100
 	ENDIF
 
-	IF TARGET > 0 && !CFLAG:睡眠 && !FLAG:70 && !CFLAG:诶嘿嘿
+	IF TARGET > 0 && !CFLAG:睡眠 && !FLAG:70 && !CFLAG:うふふ
 		;固定で獲得するソース
 		SOURCE:歓楽 = 400
 		;信頼
@@ -136,8 +132,8 @@ ELSE
 		ENDIF
 		SIF SOURCE:歓楽 < 0
 			SOURCE:歓楽 = 0
-		SOURCE:征服 = 300 + 100 * ABL:施虐属性
-	ELSEIF TARGET > 0 && CFLAG:诶嘿嘿 && !FLAG:70
+		SOURCE:征服 = 300 + 100 * ABL:サドっ気
+	ELSEIF TARGET > 0 && CFLAG:うふふ && !FLAG:70
 		DOWNBASE:気力 += 100
 		SOURCE:反感 += 500
 		SOURCE:鬱屈 += 100
@@ -156,11 +152,11 @@ ELSE
 	ENDIF
 
 	IF !FLAG:70
-		TIME += 20
+		TIME += 30
 		SIF CFLAG:同行
-			CFLAG:同行 += 20
+			CFLAG:同行 += 30
 	ENDIF
-	SIF TFLAG:193 && !CFLAG:睡眠 && !FLAG:70 && !CFLAG:诶嘿嘿
+	SIF TFLAG:193 && !CFLAG:睡眠 && !FLAG:70 && !CFLAG:うふふ
 		EXP:清掃経験 ++
 	EXP:MASTER:清掃経験 ++
 ENDIF
@@ -169,26 +165,26 @@ RETURN 1
 @OSOUJI(ARG)
 VARSET LOCAL
 SETCOLOR 0xEE1010
-PRINTFORMW %CALLNAME:PLAYER%非常生气。
-PRINTFORMW 下定了决心、一定要把这杯盘狼籍的%GET_MAPNAME(MAIN_MAP)%给收拾干净。
-PRINTFORMW %CALLNAME:PLAYER%并没有信仰。
-PRINTFORMW %CALLNAME:PLAYER%只不过是、超常的强奸魔而已。
-PRINTW 将时间停止、过着玩弄少女的生活。
-PRINTW 但是对于脏东西、也有着超过常人一倍的敏感。
+PRINTFORMW %CALLNAME:PLAYER%は激怒した。
+PRINTW 必ず、この杯盤狼籍（はいばんろうぜき）の%GET_MAPNAME(MAIN_MAP)%を片づけなければならぬと決意した。
+PRINTFORMW %CALLNAME:PLAYER%には信仰がわからぬ。
+PRINTFORMW %CALLNAME:PLAYER%は、超常の強姦魔である。
+PRINTW 時を止め、少女を弄んで暮して来た。
+PRINTW けれども汚れに対しては、人一倍に敏感であった。
 RESETCOLOR
 PRINTFORML 
-PRINTFORML %CALLNAME:PLAYER%停止了时间、打扫起了%GET_MAPNAME(MAIN_MAP)%！
+PRINTFORML %CALLNAME:PLAYER%は時を止め、%GET_MAPNAME(MAIN_MAP)%中を掃除して回った！
 PRINTFORML 
-PRINTFORMW %CALLNAME:PLAYER%扫除中…
-PRINTFORMW %CALLNAME:PLAYER%扫除中……
-PRINTFORMW %CALLNAME:PLAYER%扫除中………
+PRINTFORMW %CALLNAME:PLAYER%お掃除中…
+PRINTFORMW %CALLNAME:PLAYER%お掃除中……
+PRINTFORMW %CALLNAME:PLAYER%お掃除中………
 FOR LOCAL,MINROOM(), MAXROOM
 IF YOGORE:( LOCAL) > 2000
 	YOGORE:( LOCAL) = YOGORE:( LOCAL:1) / (3 + ABL:MASTER:清掃技能)
 FLAG:562 += 1
 ENDIF
 NEXT 
-PRINTFORMW %CALLNAME:PLAYER%清扫了{FLAG:562}房间
+PRINTFORMW %CALLNAME:PLAYER%は{FLAG:562}部屋掃除した
 CFLAG:MASTER:335 += 4 + RAND:(13 - 2 * ABL:MASTER:清掃技能)
 CFLAG:MASTER:現在位置 = CFLAG:MASTER:初期位置
 FOR LOCAL,1,11
@@ -205,42 +201,42 @@ SIF ARG
 SIF !ARG
 	EXP:MASTER:清掃経験 += (1 + RAND: (2))
 EXP:MASTER:異常清掃経験 += RAND:5
-@胖次発見
-#DIM 自宅人物
+@パンツ発見
+#DIM 自宅キャラ
 VARSET LOCAL
 [SKIPSTART]
 SELECTCASE CFLAG:MASTER:現在位置
 	;霊夢私室
 	CASE 15
 		LOCAL = 1
-	;破舊小屋（EXメンバー私室）
+	;ボロ小屋（EXメンバー私室）
 	CASE 16
-		LOCAL = FLAG:住宿人物
-	;小的倉庫（留琴）
+		LOCAL = FLAG:住み込みキャラ
+	;小さい納戸（る～こと）
 	CASE 17
 		LOCAL = 2
-	;押し入れ（卡娜）
+	;押し入れ（カナ）
 	CASE 18
 		LOCAL = 3
-	;大的倉庫（萃香）
+	;大きい納戸（萃香）
 	CASE 19
 		LOCAL = 10
-	;桑尼私室
+	;サニー私室
 	CASE 32
 		LOCAL = 7
-	;露娜私室
+	;ルナ私室
 	CASE 33
 		LOCAL = 5
-	;斯塔私室
+	;スター私室
 	CASE 34
 		LOCAL = 6
 	;夢美私室
 	CASE 43
 		LOCAL = 9
-	;千百合私室
+	;ちゆり私室
 	CASE 44
 		LOCAL = 8
-	;別屋（魅魔様専用別屋）
+	;離れ（魅魔様専用離れ）
 	CASE 52
 		LOCAL = 4
 	CASE 54
@@ -249,22 +245,22 @@ SELECTCASE CFLAG:MASTER:現在位置
 		LOCAL = FLAG:16
 	CASEELSE
 		LOCAL = 0
-		FOR 自宅人物,1,CHARANUM
-			IF CFLAG:MASTER:現在位置 == CFLAG:(自宅人物):神社在住
-				LOCAL = 自宅人物
+		FOR 自宅キャラ,1,CHARANUM
+			IF CFLAG:MASTER:現在位置 == CFLAG:(自宅キャラ):神社在住
+				LOCAL = 自宅キャラ
 			ENDIF
 		NEXT
 ENDSELECT
 [SKIPEND]
 
-FOR 自宅人物,1,CHARANUM
-	IF CFLAG:MASTER:現在位置 == CFLAG:(自宅人物):神社在住
-		LOCAL = 自宅人物
+FOR 自宅キャラ,1,CHARANUM
+	IF CFLAG:MASTER:現在位置 == CFLAG:(自宅キャラ):神社在住
+		LOCAL = 自宅キャラ
 	ENDIF
 NEXT
-LOCAL:1 = 今天穿的内裤(LOCAL)
+LOCAL:1 = 今日のぱんつ(LOCAL)
 LOCAL:2 =  RAND:5000
-SIF FLAG:祈願内容 == 202
+SIF FLAG:願掛け内容 == 202
 	LOCAL:2 = RAND:4000
 IF YOGORE:(CFLAG:MASTER:現在位置) > LOCAL:2 && LOCAL && LOCAL:1 && !FLAG:70
 	TSTR:3 = %CALLNAME:LOCAL%{LOCAL:1}/
@@ -273,12 +269,12 @@ IF YOGORE:(CFLAG:MASTER:現在位置) > LOCAL:2 && LOCAL && LOCAL:1 && !FLAG:70
 	FOUND_PANTS_OWNER = LOCAL
 ENDIF
 
-;角色がそろそろ掃除しようと思う部屋の散らかり具合
+;キャラがそろそろ掃除しようと思う部屋の散らかり具合
 @OSOUJI_LIMIT(ARG)
 #FUNCTION
 #DIM O_LIMIT
 O_LIMIT = 300
-SIF TALENT:ARG:懒散
+SIF TALENT:ARG:ズボラ
 	O_LIMIT *= 10
 O_LIMIT = O_LIMIT * (3 + TALENT:ARG:汚臭耐性) / 3
 SIF TALENT:ARG:献身的
@@ -294,19 +290,19 @@ SIF !TFLAG:100
 ;一括管理
 SIF GLOBAL_COMABLE(410)
 	RETURN RESULT
-SIF CHK_DATENOW(CFLAG:MASTER:约会中)
+SIF CHK_DATENOW(CFLAG:MASTER:デート中)
 	RETURN 0
 ;汚れてないとダメ
 SIF YOGORE:(CFLAG:MASTER:現在位置) < 100
 	RETURN 0
-;陪睡中はダメ
-SIF CFLAG:陪睡中
+;添い寝中はダメ
+SIF CFLAG:添い寝中
 	RETURN 0
-SIF CFLAG:诶嘿嘿 == 2
+SIF CFLAG:うふふ == 2
 	RETURN 0
-SIF CFLAG:行動 == 5 && GROUPMATCH(CFLAG:職種, JOB_宴会準備, JOB_宴会参加, JOB_酔いつぶれる) && !FLAG:70
+SIF CFLAG:行動 == 5 && GROUPMATCH(CFLAG:職種, JOB_宴会準備, JOB_宴会参加, JOB_酔いつぶれる) && !FLAG:70 ;allow cleaning nearby working characters as long as it's not the banquet-related stuff
 	RETURN 0
-;外出中はダメ、待客室は掃除できる
+;外出中はダメ、お招き部屋は掃除できる
 SIF AT_HOME(MASTER) == 0 && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 	RETURN 0
 ;気力0
@@ -320,14 +316,14 @@ RETURN 1
 ;自動掃除
 @AUTO_SWEEP
 #DIM SWEEPID
-#DIM 掃除前的污垢
-#DIM 掃除後的污垢
+#DIM 掃除前の汚れ
+#DIM 掃除後の汚れ
 #DIM 清掃力
 #DIM 掃除量
-#DIM 掃除骰子
+#DIM 掃除ダイス
 
-;一人でいる場合、出発地点を掃除
-[IF DEBUG]
+;一人でいる場合、出発地点を掃除する
+[IF_DEBUG]
 PRINTFORML 自動掃除フラグ:{GETBIT(FLAG:自動掃除, 1)}、同行：{CFLAG:MASTER:同行}
 [ENDIF]
 IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
@@ -340,7 +336,7 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 	ENDIF
 	
 	;体力気力0ならスキップ
-	IF (BASE:MASTER:体力 == 0 || BASE:MASTER:気力 == 0)
+	IF (BASE:MASTER:体力 <= 0 || BASE:MASTER:気力 <= 0)
 		RETURN -1
 	ENDIF
 	
@@ -350,8 +346,8 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 	;掃除処理
 	清掃力 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
 	
-	;特制竹箒による補正
-	SELECTCASE ITEM:特制竹箒
+	;カスタム竹箒による補正
+	SELECTCASE ITEM:カスタム竹箒
 		CASE 1
 			清掃力 += 2
 		CASE 2
@@ -361,38 +357,34 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 	ENDSELECT
 	
 	;成功判定
-	掃除骰子 = (4 + ABL:MASTER:清掃技能) - RAND:11
+	掃除ダイス = (4 + ABL:MASTER:清掃技能) - RAND:11
 	
-	[IF DEBUG]
-	PRINTFORML [ベースの清掃力:{清掃力}][掃除骰子:{掃除骰子}]
+	[IF_DEBUG]
+	PRINTFORML [ベースの清掃力:{清掃力}][掃除ダイス:{掃除ダイス}]
 	[ENDIF]
 	
-	;掃除骰子が1以上なら成功(清掃0で30%、清掃6で90%)
-	IF (掃除骰子 > 0)
+	;掃除ダイスが1以上なら成功(清掃0で30%、清掃6で90%)
+	IF (掃除ダイス > 0)
 	
 		清掃力 = 清掃力 * (5 - TALENT:MASTER:61) / 5
 		
-		掃除前的污垢 = YOGORE:(SWEEPID)
+		掃除前の汚れ = YOGORE:(SWEEPID)
 		
 		YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / 清掃力
 		
-		掃除後的污垢 = YOGORE:(SWEEPID)
+		掃除後の汚れ = YOGORE:(SWEEPID)
 		
 		;掃除量を計算して半分を戻して反映
-		掃除量 = (掃除前的污垢 - 掃除後的污垢) / 2
-		掃除後的污垢 += 掃除量
+		掃除量 = (掃除前の汚れ - 掃除後の汚れ) / 2
+		掃除後の汚れ += 掃除量
 		YOGORE:(SWEEPID) += 掃除量
-		EX:MASTER:今日的掃除回数 = EX:MASTER:今日的掃除回数 + 掃除量
+		EX:MASTER:今日の掃除回数 = EX:MASTER:今日の掃除回数 + 掃除量
 		
-		IF SWEEPGOD == 3
-			PRINTFORML -------------------------扫除中----------------------------
-		ELSE
-			PRINTFORML %CALLNAME:PLAYER%在离开%NAME_FROM_PLACE(SWEEPID)%之前做了扫除
-		ENDIF
+		PRINTFORML %CALLNAME:PLAYER%は%NAME_FROM_PLACE(SWEEPID)%を出る前に掃除した
 		PRINTFORML
 		
-		[IF DEBUG]
-		PRINTFORML [清掃力:{清掃力}][掃除前:{掃除前的污垢}][掃除後:{掃除後的污垢}]
+		[IF_DEBUG]
+		PRINTFORML [清掃力:{清掃力}][掃除前:{掃除前の汚れ}][掃除後:{掃除後の汚れ}]
 		[ENDIF]
 		
 		;清掃経験は1/3上昇
@@ -403,23 +395,23 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 		;掃除失敗
 		SELECTCASE IFRAND("0TO10", 1, "D2, D6, D7", FLAG:70)
 			CASE 1
-				PRINTFORML %CALLNAME:PLAYER%想在%NAME_FROM_PLACE(SWEEPID)%做扫除、却把水桶打翻了
+				PRINTFORML %CALLNAME:PLAYER%は%NAME_FROM_PLACE(SWEEPID)%を出る前に掃除しようとして、バケツをひっくり返した
 			CASE 2
-				PRINTFORML %CALLNAME:PLAYER%手中的扫帚突然开始暴走、飞到了找不到的地方
+				PRINTFORML %CALLNAME:PLAYER%が手に取ったホウキは突然暴れ始めてどこかへ行ってしまった
 			CASE 3
-				PRINTFORML %CALLNAME:PLAYER%没能很好地扫除%NAME_FROM_PLACE(SWEEPID)%
+				PRINTFORML %CALLNAME:PLAYER%は%NAME_FROM_PLACE(SWEEPID)%をうまく掃除できなかった
 			CASE 4
-				PRINTFORML %CALLNAME:PLAYER%扫除过后的%NAME_FROM_PLACE(SWEEPID)%看起来比之前更脏了
+				PRINTFORML %CALLNAME:PLAYER%が掃除した%NAME_FROM_PLACE(SWEEPID)%は前より汚れているように見える
 			CASE 5
-				PRINTFORML %CALLNAME:PLAYER%在让%NAME_FROM_PLACE(SWEEPID)%变得更漂亮这件事上努力过了
+				PRINTFORML %CALLNAME:PLAYER%は%NAME_FROM_PLACE(SWEEPID)%を綺麗にしようと努力はした
 			CASE 6
-				PRINTFORML %CALLNAME:PLAYER%正准备打扫房间的时候、面前出现了想要捣乱的妖精集团！
+				PRINTFORML 掃除をしようとした%CALLNAME:PLAYER%の前に邪魔しようとする妖精の集団が現れた！
 			CASE 7
-				PRINTFORML %CALLNAME:PLAYER%在前面扫除的时候、有妖精在后面捣乱...
+				PRINTFORML %CALLNAME:PLAYER%が掃除している後ろで妖精がゴミを散らかしている...
 			CASE 8
-				PRINTFORML %CALLNAME:PLAYER%觉得还是明天再整理就好了
+				PRINTFORML %CALLNAME:PLAYER%は片づけは明日でいいやと感じた
 			CASEELSE
-				PRINTFORML %CALLNAME:PLAYER%感觉现在还不是扫除的时候
+				PRINTFORML %CALLNAME:PLAYER%は今は掃除をする時ではないと感じた
 		ENDSELECT
 		PRINTFORML
 		
@@ -433,21 +425,11 @@ IF (GETBIT(FLAG:自動掃除, 1) && !CFLAG:MASTER:同行)
 	
 	;自動時止め移動、またはTS中ならTSP消費
 	IF ((GETBIT(FLAG:瞬間移動, 1) || FLAG:70) && BASE:MASTER:TSP > 25)
-		IF SWEEPGOD == 2
-			BASE:MASTER:TSP -= 10
-		ELSEIF SWEEPGOD == 3
-			BASE:MASTER:TSP -= 0
-		ELSE
-			BASE:MASTER:TSP -= 25
-		ENDIF
+		BASE:MASTER:TSP -= 25
 	ELSE
 		DOWNBASE:MASTER:体力 = 25
 		DOWNBASE:MASTER:気力 = 50
-		IF SWEEPGOD > 1
-			TIME += 5
-		ELSE
-			TIME += 15
-		ENDIF
+		TIME += 15
 	ENDIF
 ENDIF
 

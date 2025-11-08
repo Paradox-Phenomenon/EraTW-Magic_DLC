@@ -1,4 +1,4 @@
-﻿;借书屋
+﻿;貸本屋
 @COM620
 #DIM CHARISMA
 #DIM ItemId
@@ -7,45 +7,46 @@ $C_LOOP
 DRAWLINE
 IF !CHARISMA
 	PRINTFORML 所持金:%金額表示(MONEY)%
-	PRINTFORML 「借书每本一律%金額表示(3000)%」
+	PRINTFORML 「借り賃はどれも%金額表示(3000)%です」
 ELSE
-	PRINTFORML 所持筹码:{MONEY:2}
-	PRINTL 「每本书的借书费用都是10筹码。」
+	PRINTFORML 所持カリスマ:{MONEY:2}
+	PRINTL 「借り賃はどれも10カリスマです」
 ENDIF
+
 DRAWLINE
 FOR LOCAL,1, BookTitles + 1
 	ItemId = LOCAL + 100
-	PRINTFORM [{LOCAL}] %ITEMNAME_TR(ItemId)%
+	PRINTFORM [{LOCAL}] %ITEMNAME:ItemId%
 	IF ITEM:ItemId
-		PRINTFORML （被%CALLNAME:MASTER%借着 返还时间{FLAG:借书返还期限-1}日）
+		PRINTFORML （%CALLNAME:MASTER%が借りている 返却まで{FLAG:貸本返却期限-1}日)
 	ELSEIF GETBIT (FLAG:1011,LOCAL)
-		PRINTL （借出中）
+		PRINTL （貸し出し中）
 	ELSE
 		PRINTL 　
 	ENDIF
 NEXT
 
 IF !CHARISMA
-	PRINTFORML [100] 筹码付款
+	PRINTFORML [100] カリスマ払い
 ELSE
-	PRINTFORML [100] 现金支付
+	PRINTFORML [100] 現金払い
 ENDIF
 DRAWLINE
-PRINTL [0] 放弃
+PRINTL [0] やめる
 
 $LOOP
 INPUT
 
 IF RESULT == 100
 	IF !CHARISMA
-		LOCALS = 「筹码付款？？？？」/「嗯……那么就10个筹码？可以么……」
+		LOCALS = 「カリスマで払う？？？？」/「えっと……じゃあ10カリスマ？でいいです……」
 		CALL BOOK_RENTAL_SALESTALK(LOCALS)
 		IF MONEY:2 < 10
-			PRINTFORMW 筹码不足
+			PRINTFORMW カリスマが足りない
 			GOTO C_LOOP
 		ENDIF
 	ELSE
-		LOCALS = 「啊、我用钱支付吧」
+		LOCALS = 「あ、お金で払ってくれるんですね」
 		CALL BOOK_RENTAL_SALESTALK(LOCALS)
 	ENDIF
 	PRINTFORML 
@@ -53,7 +54,7 @@ IF RESULT == 100
 	GOTO C_LOOP
 ELSE
 	IF !CHARISMA && MONEY < 3000
-		PRINTW 钱不够…
+		PRINTW お金が足りなかった…
 		RETURN -1
 	ENDIF
 	IF INRANGE(RESULT, 1, BookTitles)
@@ -61,13 +62,13 @@ ELSE
 		IF GETBIT (FLAG:1011,RESULT:1)
 			ItemId = RESULT:1 + 100
 			IF ITEM:ItemId
-				IF FLAG:借书返还期限 == 8
-					LOCALS = 「您不是正在借着吗？」
+				IF FLAG:貸本返却期限 == 8
+					LOCALS = 「その本は今日あなたが借りましたよ……？」
 					CALL BOOK_RENTAL_SALESTALK(LOCALS)
 					RETURN -1
 				ENDIF
 				
-				LOCALS = 「那本书您现在正借着呢,可是......」/「您要支付借书费用,将借书期限延长一周吗?」
+				LOCALS = 「その本は今あなたが借りていますけど……」/「借り賃を払って、貸出期間を一週間に延長しますか？」
 				CALL BOOK_RENTAL_SALESTALK(LOCALS)
 				CALL ASK_YN
 				IF !RESULT
@@ -76,15 +77,15 @@ ELSE
 					ELSE
 						MONEY:2 -= 10
 					ENDIF
-					FLAG:借书返还期限 = 8
-					PRINTFORML 将%ITEMNAME_TR((100 + RESULT:1))%的借阅期限延长了一周。
-					LOCALS = 「非常感谢」/「您似乎很喜欢这本书呢。」
+					FLAG:貸本返却期限 = 8
+					PRINTFORML %ITEMNAME:(100 + RESULT:1)%の貸出期間を一週間に延長した
+					LOCALS = 「ありがとうございました」/「その本がよほど気に入ったんですね」
 					CALL BOOK_RENTAL_SALESTALK(LOCALS)
 				ELSE
 					RETURN -1
 				ENDIF
 			ELSE
-				LOCALS = 「正在外借中呢」
+				LOCALS = 「貸し出し中です」
 				CALL BOOK_RENTAL_SALESTALK(LOCALS)
 			ENDIF
 			RETURN -1
@@ -92,7 +93,7 @@ ELSE
 			FOR LOCAL,1, BookTitles + 1
 				ItemId = LOCAL + 100
 				IF ITEM:ItemId
-					LOCALS = 「不能同时借两本以上」/「我需要再收取借书费用,您能先归还当前借的书，然后再借这本书，好嘛?」
+					LOCALS = 「二冊以上の貸し出しはできません」/「また借り賃を貰いますが、今借りている本を返却してその本を借りますか？」
 					CALL BOOK_RENTAL_SALESTALK(LOCALS)
 					CALL ASK_YN
 					IF !RESULT
@@ -110,10 +111,10 @@ ELSE
 				MONEY:2 -= 10
 			ENDIF
 			ITEM:(100 + RESULT:1) = 1
-			FLAG:借书返还期限 = 8
+			FLAG:貸本返却期限 = 8
 			TFLAG:193 = 1
-			PRINTFORML %ITEMNAME_TR((100 + RESULT:1))%借走了
-			LOCALS = 「非常感谢」/「还书期限是一周哦」
+			PRINTFORML %ITEMNAME:(100 + RESULT:1)%を借りた
+			LOCALS = 「ありがとうございました」/「貸出期間は一週間です」 
 			CALL BOOK_RENTAL_SALESTALK(LOCALS)
 			RETURN 1
 		ENDIF
@@ -125,12 +126,12 @@ ELSE
 ENDIF
 TIME += 30
 
-;借书屋
+;貸本屋
 @COM_ABLE620
 ;一括管理
 SIF GLOBAL_COMABLE(620)
 	RETURN RESULT
-;借书屋ではない場所
+;貸本屋ではない場所
 SIF !BOOK_RENTAL(CFLAG:MASTER:現在位置)
 	RETURN 0
 ;睡眠中
@@ -141,7 +142,7 @@ SIF FLAG:70
 	RETURN 0
 RETURN 1
 
-;借书屋を判定する関数
+;貸本屋を判定する関数
 @BOOK_RENTAL(ARG)
 #FUNCTION
 ;鈴奈庵
@@ -156,13 +157,13 @@ FOR LOCAL,1,BookTitles + 1
 	SIF !ITEM:(100 + LOCAL) && !RAND:3
 		INVERTBIT FLAG:1011,LOCAL
 NEXT
-SIF FLAG:借书返还期限
-	FLAG:借书返还期限 -= 1
-IF FLAG:借书返还期限 == 1
+SIF FLAG:貸本返却期限
+	FLAG:貸本返却期限 -= 1
+IF FLAG:貸本返却期限 == 1
 	FOR LOCAL,1,BookTitles + 1
 		ITEM:(100 + LOCAL) = 0
 	NEXT
-	PRINTL 因为还书时限到了、把借来的书归还了。
+	PRINTL 返却期限が来たので、借りていた本を返しました。
 ENDIF
 
 @BOOK_RENTAL_SALESTALK(ARGS)

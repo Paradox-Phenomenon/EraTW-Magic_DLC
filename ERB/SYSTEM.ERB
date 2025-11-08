@@ -11,25 +11,22 @@ CALL MAKE_ALL_CLASS_LIST
 ;複雑化のため専用関数へ移動
 CALL NEWGAME
 
-;积攒度の初期設定
+;溜まってる度の初期設定
 FOR LOCAL,1,CHARANUM
-	CFLAG:LOCAL:积攒度 = RAND:500
+	CFLAG:LOCAL:溜まってる度 = RAND:500
 NEXT
 ;ロード時と共通の初期化
 
 ;依頼：手紙の宛先処理
 CALL SETUP_ALL_LETTERS
 FOR LOCAL,1,CHARANUM
-	IF TALENT:LOCAL:路人
+	IF TALENT:LOCAL:行きずり
 		RANDOM_CHARANUM = LOCAL
 		BREAK
 	ENDIF
 NEXT
-;Custom code, updates character dialog status
-;CALL CHARACTER_DIALOG_STATUS
 ;木材データ
 CALL WoodData
-CALL MAIL_ORDER_DESCRIPTION_生成
 ;アップデート処理
 CALL NEWGAME_VERUP
 
@@ -37,33 +34,8 @@ CALL NEWGAME_VERUP
 BEGIN SHOP
 
 @EVENTLOAD
-#DIM chara
-#DIM index
-#DIM DYNAMIC printTimes
 GETTIME
 DEBUGPRINTFORML {RESULT / 10000000000000}年 {(RESULT / 100000000000) % 100}月 {(RESULT / 1000000000) % 100}日 {(RESULT / 10000000) % 100}時だよ
-;即时读档
-IF SaveDataInTrain
-	FOR chara, 0, CHARANUM
-		FOR index, 0, 500
-			STcvar:chara:index = TCVAR:chara:index
-		NEXT
-		FOR index, 0, 250
-			STequip:chara:index = TEQUIP:chara:index
-		NEXT
-		;防死循环
-		;防死循环
-		IF chara % 20
-			TWAIT 1, 0
-			printTimes ++
-			CLEARLINE 1
-			PRINTFORML 少女折寿中%"." * (printTimes / 10 % 3 + 1), 5, LEFT% {chara * 50 / CHARANUM}\%
-		ENDIF
-	NEXT
-	ARRAYCOPY "TFLAG", "STflag"
-	BEGIN TRAIN
-ENDIF
-VARSET 剧本错误警告
 CALL ROOMSETTING
 CALL VERSION_UP
 SIF CFLAG:MASTER:312
@@ -72,22 +44,13 @@ CFLAG:MASTER:312 = 0
 CALL MAKE_ALL_CLASS_LIST
 ;依頼：手紙の宛先処理
 CALL SETUP_ALL_LETTERS
-
-;Custom code, updates character dialog status
-;CALL CHARACTER_DIALOG_STATUS
-
 FOR LOCAL,1,CHARANUM
 	;口上の基本フラグ設定
 	CALL KOJO_MESSAGE_SEND("FLAGSETTING", 0, LOCAL)
-	IF TALENT:LOCAL:路人
+	IF TALENT:LOCAL:行きずり
 		RANDOM_CHARANUM = LOCAL
 		BREAK
 	ENDIF
 NEXT
-SIF SAVESTR:本体バージョン != eraTW_Version
-	CALL UPDATE_MAIN("init")
 ;木材データ
 CALL WoodData
-CALL MAIL_ORDER_DESCRIPTION_生成
-BREWING_LIST_CHECKED = 0
-CALL BREWING_GUIDE_CHECK_EXISTING

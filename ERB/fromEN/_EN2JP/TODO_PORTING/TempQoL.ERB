@@ -1,0 +1,443 @@
+﻿@IsRequestProgressable(ARG)
+#FUNCTION
+#DIM IRAI_NUM
+SIF IRAI_CHARA_TO_PROGRESS(ARG) == "依頼達成"
+	RETURNF 1
+IRAI_NUM = COUNT_IRAI_SLOT()
+FOR LOCAL, 1, IRAI_NUM + 1
+	IF IRAI_SLOT_TO_PROGRESS(LOCAL) == "依頼中" 
+		SIF !IRAI_SLOT_TO_PERSON(LOCAL) && IRAI_SLOT_TO_CLIENT(LOCAL) == ARG && ITEM:IRAI_SLOT_TO_ITEM(LOCAL) >= IRAI_SUB:LOCAL
+			RETURNF 2
+		SIF IRAI_SLOT_TO_PERSON(LOCAL) == ARG && !IRAI_SLOT_CAN_DOWSING(LOCAL)
+			RETURNF 3
+	ENDIF
+NEXT
+RETURNF 0
+
+@SELECT_CHILD
+#DIM CHARA
+#DIM CHILD
+PRINTL
+PRINTL
+LOCAL:9 = LINECOUNT
+REDRAW 0
+DO
+	SIF LINECOUNT - LOCAL:9 > 0
+		CLEARLINE LINECOUNT - LOCAL:9
+	;---------------------------------
+	PRINTL だれ？
+	DRAWLINE
+	FOR LOCAL, 0, nChildrenPresentCount
+		CHARA = nChildrenPresent:LOCAL % 1000
+		CHILD = nChildrenPresent:LOCAL / 1000
+		SIF !STRLENS(CHILD_ACT:CHARA:CHILD)
+			CONTINUE
+		PRINTFORML [{LOCAL,3}] - %子供ふれあい名称(nChildrenPresent:LOCAL)% (%CALLNAME:CHARA%) (愛情度: {CHILD_LOVE:CHARA:CHILD})
+		RESETCOLOR
+	NEXT
+	DRAWLINE
+	PRINTL [ -1] - 戻る
+
+	INPUT
+	SELECTCASE RESULT
+	CASE -1
+		RETURN -1
+	CASEELSE
+		IF INRANGE(RESULT, 0, nChildrenPresentCount - 1) && STRLENS(CHILD_ACT:(nChildrenPresent:RESULT % 1000):(nChildrenPresent:RESULT / 1000))
+			RETURN nChildrenPresent:RESULT
+		ENDIF
+	ENDSELECT
+LOOP 1
+
+;returns amount of interactable children
+@INTERACTABLE_CHILDREN()
+#FUNCTION
+LOCAL:1 = 0
+FOR LOCAL, 0, nChildrenPresentCount
+	SIF STRLENS(CHILD_ACT:(nChildrenPresent:LOCAL % 1000):(nChildrenPresent:LOCAL / 1000))
+		LOCAL:1 ++
+NEXT
+RETURNF LOCAL:1
+
+@RACIAL_PREGNANCY_BONUS(妊娠必要値, CHARA)
+#DIM REF 妊娠必要値
+#DIM CHARA
+
+IF GROUPMATCH(CHARA, [[舞]], [[里乃]]) ;special case for the dancers as they're in-between humans and youkai, retain baseline 2000 to make them more fertile than youkai and demihumans, but less so than pure humans
+ELSEIF GROUPMATCH(TALENT:CHARA:人間, 1, 6) ;genuine human women, including outsiders
+    妊娠必要値 /= 2
+ELSEIF TALENT:CHARA:妖怪 == 6 ;mammalian beast youkai are more fertile than other youkai
+    妊娠必要値 = 妊娠必要値 * 9 / 10
+ELSEIF TALENT:CHARA:妖怪 == 1 && CHECK_CHARA(CHARA, "魔法使い") ;youkai magicians are close in nature to humans
+    妊娠必要値 = 妊娠必要値 * 85 / 100
+ENDIF
+
+SIF TCVAR:CHARA:発情 ;slight bonus for in-heat
+	妊娠必要値 = 妊娠必要値 * 95 / 100
+
+@IS_IN_RECOVERY(ARG)
+#FUNCTION
+RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !TALENT:ARG:HYPERFERTILE
+
+@TEMP_QOL_CHARA_SCORES(C_ID)
+#DIM C_ID
+
+#DIM SCORE_NO			; 楽譜番号
+#DIM SERIES_NO			; シリーズ番号
+#DIM SERIES_SCORE_NO	; シリーズ内の楽譜番号
+#DIMS sPrint_Text		        ; HTML_PRINTする文字列TEMP
+#DIM SCORE_INFO
+#DIM CHARA_SERIES, 50 ;holds the series' the character applies to, may need to be increased at some point
+#DIM CHARA_SERIES_COUNT
+#DIMS SCORES_HTML, 10 ;keeps a list of html buttons to be printed later
+#DIM  SCORES_COUNT ;per album
+
+SERIES_NO = -1
+;may contain duplicates 
+CHARA_SERIES_COUNT = EXEC_SCORES(楽譜処理モード：キャラ関連シリーズを全取得, NO:C_ID)
+ARRAYCOPY "RESULT", "CHARA_SERIES"
+;special cases that aren't just "great performance" checks
+SELECTCASE C_ID
+    CASE [[サニー]], [[ルナ]], [[スター]], [[大妖精]], [[チルノ]] ;sunny, luna, star, daiyousei, or cirno
+        CHARA_SERIES:(CHARA_SERIES_COUNT++) = 17 ;fairy wars
+    CASE [[文]] ;aya
+        CHARA_SERIES:(CHARA_SERIES_COUNT++) = 10 ;shoot the bullet
+    CASE [[はたて]] ;hatate
+        CHARA_SERIES:(CHARA_SERIES_COUNT++) = 16 ;double spoiler
+    CASE [[正邪]] ;seija (not really character-related, but it does kind of relate to her)
+        CHARA_SERIES:(CHARA_SERIES_COUNT++) = 21 ;danmaku amanojaku
+ENDSELECT
+ARRAYSORT CHARA_SERIES, FORWARD, 0, CHARA_SERIES_COUNT
+
+SIF CHARA_SERIES_COUNT <= 0
+    RETURN
+PRINTFORML
+CALL PRINTBUTTON_EX("楽譜入手",GETNUM(TFLAG, "HideSongs"),TFLAG:HideSongs, , , 1)
+
+SIF TFLAG:HideSongs
+    RETURN
+
+sPrint_Text =
+FOR LOCAL, 0, CHARA_SERIES_COUNT
+    SIF CHARA_SERIES:LOCAL < 0
+        BREAK
+    SIF SERIES_NO == CHARA_SERIES:LOCAL ;already handled
+        CONTINUE
+    SCORES_COUNT = 0
+    VARSET SCORES_HTML
+
+    SERIES_NO = CHARA_SERIES:LOCAL
+    PRINTFORML 【{SERIES_NO + 1,2}:%GET_SERIES_NAME(SERIES_NO)%】
+    FOR SERIES_SCORE_NO, 0, 楽譜最大数（シリーズ毎）
+        SCORE_NO = 楽譜名開始番号 + SERIES_NO * 楽譜最大数（シリーズ毎）+ SERIES_SCORE_NO
+        SCORE_INFO = GET_SCORE_INFO_NO(SCORE_NO)
+
+        ;we don't need to do many further checks since we only look at albums the character is involved in
+        SELECTCASE SCORE_INFO
+            CASE IS < 楽譜入手方法：ランダム
+                SIF FINDELEMENT(nTempScoreInfo, NO:C_ID) < 0
+                    CONTINUE
+            CASE 楽譜入手方法：シリーズ関連キャラ弾幕勝負
+            CASE 楽譜入手方法：シリーズ関連キャラ陥落
+            CASE 楽譜入手方法：妖精依頼成功
+                ;marisa is also on this album but doesn't qualify for these
+                SIF !GROUPMATCH(NO:C_ID, [[サニー]], [[ルナ]], [[スター]], [[大妖精]], [[チルノ]])
+                    CONTINUE
+            CASE 楽譜入手方法：文依頼成功
+            CASE 楽譜入手方法：はたて依頼成功
+            CASE 楽譜入手方法：依賴失敗時
+            CASEELSE
+                CONTINUE
+        ENDSELECT
+
+        CALL TEMP_QOL_DISPLAY_SCORE_MAKE_HTML(SCORES_HTML, SCORES_COUNT, -999, SCORE_NO, SERIES_SCORE_NO)
+    NEXT
+    CALL TEMP_QOL_PRINT_SCORES(SCORES_HTML, SCORES_COUNT)
+    PRINTL
+NEXT
+
+@TEMP_QOL_DISPLAY_SCORE_MAKE_HTML(SCORES_HTML, SCORES_COUNT, BUTTONVAL, SCORE_NO, SERIES_SCORE_NO)
+#DIMS REF SCORES_HTML
+#DIM REF SCORES_COUNT
+#DIM BUTTONVAL
+#DIM SCORE_NO
+#DIM SERIES_SCORE_NO
+#DIMS sPrint_Text		; HTML_PRINTする文字列TEMP
+
+IF (STR:SCORE_NO != "")
+	sPrint_Text '= @"  <button value='{BUTTONVAL}' title='%HTML_ESCAPE(GET_SCORE_INFO_MESSAGE(SCORE_NO))%'>"
+	LOCALS = %GET_SCORE_NAME(SCORE_NO, !HAVE_SCORE(SCORE_NO)), 70, LEFT%
+	sPrint_Text += @"{SERIES_SCORE_NO + 1,2}:%HTML_ESCAPE(LOCALS)%"
+	sPrint_Text += @"</button>"
+	SCORES_HTML:(SCORES_COUNT++) '= sPrint_Text
+ENDIF
+
+@TEMP_QOL_PRINT_SCORES(SCORES_HTML, SCORES_COUNT)
+#DIMS REF SCORES_HTML ;keeps a list of html buttons to be printed later
+#DIM  REF SCORES_COUNT ;per album
+#DIM USE_TWO_COLUMNS ;determines if scores should be displayed in two columns
+#DIM  SCORES_HALFWAY ;rounded up
+USE_TWO_COLUMNS = MAXWIDTH() >= (70 * 2) + 10
+
+SCORES_HALFWAY = SCORES_COUNT / 2
+SIF SCORES_COUNT % 2 == 1 ;round upwards
+	SCORES_HALFWAY++
+FOR LOCAL:10, 0, SCORES_COUNT
+	IF !USE_TWO_COLUMNS
+		HTML_PRINT SCORES_HTML:(LOCAL:10)
+	ELSE
+		SIF LOCAL:10 >= SCORES_HALFWAY
+			BREAK
+		IF LOCAL:10 + SCORES_HALFWAY < SCORES_COUNT ;two columns
+			HTML_PRINT @"%SCORES_HTML:(LOCAL:10)%%SCORES_HTML:(SCORES_HALFWAY + LOCAL:10)%"
+		ELSE ;one column
+			HTML_PRINT SCORES_HTML:(LOCAL:10)
+		ENDIF
+	ENDIF
+NEXT
+
+@TEMP_QoL_DetailedInfo(nType = -1, ARG:1, ARG:2)
+#DIM nType
+SELECTCASE nType
+	CASE Qol_Info_Dialogue
+		CALL TEMP_Qol_Info_Dialogue(ARG:1)
+CASEELSE
+	PRINTFORML QoL_DetailedInfo ERROR - Unrecognized {nType}!
+ENDSELECT
+
+@TEMP_Qol_Info_Dialogue(ARG)
+RESULTS:1 =
+CALL KOJO_ACTIVE_INFO(ARG)
+SIF !RESULT
+	RETURN
+IF RESULT
+	SIF CFLAG:ARG:口上セレクタ == 0 && RESULTS:1 == ""
+		RESULTS:1 = 初期
+		
+	LOCALS = 現在の口上: [{CFLAG:ARG:口上セレクタ}]\@ RESULTS:1 != "" ? %" " + CALLNAME:(ARG)%%RESULTS:1% # \@
+	PRINTPLAINFORM %LOCALS%\@ STRLENS(RESULTS) ? %" "%%LOCALS:1%#\@
+ENDIF
+
+
+@TEMP_SkillProgressBar(nChara, nExp)
+#DIM nChara
+#DIM nExp
+SELECTCASE nExp
+	CASE GETNUM(EXP, "学習経験")
+		CALL TEMP_PrintBar(nExp, ABL:nChara:教養, EXP:nChara:学習経験)
+	CASE GETNUM(EXP, "会話経験")
+		CALL TEMP_PrintBar(nExp, ABL:nChara:話術技能, EXP:nChara:会話経験)
+	CASE GETNUM(EXP, "戦闘経験")
+		CALL TEMP_PrintBar(nExp, ABL:nChara:戦闘能力, EXP:nChara:戦闘経験)
+	CASE GETNUM(EXP, "清掃経験")
+		CALL TEMP_PrintBar(nExp, ABL:nChara:清掃技能, EXP:nChara:清掃経験)
+	CASE GETNUM(EXP, "料理経験")
+		CALL TEMP_PrintBar(nExp, ABL:nChara:料理技能, EXP:nChara:料理経験)
+	CASE GETNUM(EXP, "演奏経験"), GETNUM(EXP, "歌唱経験"), GETNUM(EXP, "舞踏経験")
+		LOCAL = MAX(EXP:nChara:演奏経験, EXP:nChara:歌唱経験, EXP:nChara:舞踏経験)
+		CALL TEMP_PrintBar(nExp, ABL:nChara:音楽技能, LOCAL)
+	CASE GETNUM(EXP, "伐採経験")
+		CALL TEMP_PrintBar(nExp, TALENT:nChara:伐採Lv, EXP:nChara:伐採経験)
+	CASE GETNUM(EXP, "釣り経験")
+		CALL TEMP_PrintBar(nExp, TALENT:nChara:釣りLv, EXP:nChara:釣り経験)
+	CASE GETNUM(EXP, "採集経験")
+		CALL TEMP_PrintBar(nExp, TALENT:nChara:採集Lv, EXP:nChara:採集経験)
+	CASE GETNUM(EXP, "調合経験")
+		CALL TEMP_PrintBar(nExp, TALENT:nChara:調合Lv, EXP:nChara:調合経験)
+ENDSELECT
+
+@TEMP_PrintBar(nSkill, nSkillLv, nXp)
+#DIM nSkill
+#DIM nSkillLv
+#DIM nXp
+IF nSkillLv < 6
+	PRINTFORML
+	CALLF TEMP_XpProgressToNextLevel(nSkill, nSkillLv, nXp)
+	CALL PRINTLEVELBAR(RESULT:0, RESULT:1, nSkillLv, nSkillLv+1)
+ENDIF
+
+;returnvalues
+;RESULT:0 = xp into current level
+;RESULT:1 = xp difference between current level and next level
+;RESULT:2 = xp required total
+@TEMP_XpProgressToNextLevel(nSkill, nSkillLv, nXp)
+#FUNCTION
+#DIM nSkill
+#DIM nSkillLv
+#DIM nXp
+SELECTCASE nSkill
+	CASE GETNUM(EXP, "学習経験"), GETNUM(EXP, "戦闘経験"), GETNUM(EXP, "料理経験"), GETNUM(EXP, "伐採経験"), GETNUM(EXP, "釣り経験"), GETNUM(EXP, "採集経験"), GETNUM(EXP, "調合経験"), GETNUM(EXP, "催眠経験") ;added
+		IF nSkillLv == 0
+			RESULT = nXp, 6, 6
+		ELSEIF nSkillLv == 1
+			RESULT = nXp - 6, EXPLV:(nSkillLv + 3) - 6, EXPLV:(nSkillLv + 3)
+		ELSE
+			RESULT = nXp - EXPLV:(nSkillLv + 2), EXPLV:(nSkillLv + 3) - EXPLV:(nSkillLv + 2), EXPLV:(nSkillLv + 3)
+		ENDIF
+	CASE GETNUM(EXP, "会話経験"), GETNUM(EXP, "清掃経験")
+		IF nSkillLv == 0
+			RESULT = nXp, EXPLV:(nSkillLv + 3), EXPLV:(nSkillLv + 3)
+		ELSE
+			RESULT = nXp - EXPLV:(nSkillLv + 2), EXPLV:(nSkillLv + 3) - EXPLV:(nSkillLv + 2), EXPLV:(nSkillLv + 3)
+		ENDIF
+	CASE GETNUM(EXP, "演奏経験"), GETNUM(EXP, "歌唱経験"), GETNUM(EXP, "舞踏経験")
+		IF nSkillLv == 0
+			RESULT = nXp, 21, 21
+		ELSEIF nSkillLv == 1
+			RESULT = nXp - 21, (EXPLV:(nSkillLv + 3) * 2) - 21, (EXPLV:(nSkillLv + 3) * 2)
+		ELSE
+			RESULT = nXp - (EXPLV:(nSkillLv + 2) * 2), (EXPLV:(nSkillLv + 3) * 2) - (EXPLV:(nSkillLv + 2) * 2), (EXPLV:(nSkillLv + 3) * 2)
+		ENDIF
+	CASEELSE
+		THROW @TEMP_XpProgressToNextLevel: No case defined for {nSkill}
+ENDSELECT
+;DEBUGPRINTFORML nSkill = {nSkill} nSkillLv = {nSkillLv} nXp = {nXp}|Current XP = {RESULT:0} Xp for next = {RESULT:1} Xp total = {RESULT:2}
+
+@TEMP_DishTaste
+PRINTL
+DRAWLINE
+DO
+	PRINTL 料理の味を入力：
+	INPUTS
+	CALL TEMP_DishTaste_Search(RESULTS)
+	SIF RESULT
+		RETURN
+LOOP 1
+
+;search through every dish through translated taste_dish, add any matches to the list, show every matching entry with translated dish/its taste/comment, about 10 per page
+@TEMP_DishTaste_Search(ARGS)
+#DIMS DYNAMIC TASTE_LIST, 100
+#DIM  DYNAMIC TASTE_CNT,  100
+#DIM  DYNAMIC TASTE_NUM
+#DIM DYNAMIC nPage = 1
+#DIM DYNAMIC nPageLength
+#DIM nPageSize
+#DIM DYNAMIC nPrintCount
+#DIM DYNAMIC nCurLoop
+
+#DIMS DYNAMIC strPrintRange
+
+PRINTFORML 検索中：【%ARGS%】
+LOCAL:1 = 0
+strPrintRange =
+;create a list
+FOR LOCAL, 101, 401 + CHARANUM
+	CALL DISHDATA(LOCAL)
+	;add taste from ingredients
+	FOR LOCAL:2, 0, VARSIZE("DISH_ING")
+		SIF DISH_ING:(LOCAL:2) > 0
+			CALL DISH_TASTE_ADD(DISH_ING:(LOCAL:2))
+	NEXT
+	;separate into a searchable array
+	CALLF CNT_SPLIT(DISH_TASTE, TASTE_LIST, TASTE_CNT, TASTE_NUM)
+	FOR LOCAL:2, 0, TASTE_NUM
+		IF STRCOUNT( TASTE_LIST:(LOCAL:2), ESCAPE(ARGS) )
+			strPrintRange += TOSTR(LOCAL) + ":"
+			LOCAL:1 ++
+			BREAK
+		ENDIF
+	NEXT
+	CALL RESET_DISH
+NEXT
+
+nPageSize = 10
+
+gLineCount = LINECOUNT
+REDRAW 0
+;print list
+DO
+	;add await
+	SIF LINECOUNT - gLineCount > 0
+		CLEARLINE LINECOUNT - gLineCount
+
+	;total amount of items
+	nPageLength = LOCAL:1 / nPageSize + ((LOCAL:1 % nPageSize) == 0 ? 0 # 1)
+	
+	;reset current page in case it gets overflowed
+	SIF nPage > nPageLength
+		nPage = 1
+
+
+	IF LOCAL:1 == 0
+		DRAWLINE
+		PRINTFORML
+		PRINTFORML 結果なし
+		PRINTFORML
+		DRAWLINE
+		nPageLength = 0
+		nPage = 0
+	ELSE
+		PRINTFORML
+		PRINTFORML {LOCAL:1}件の結果が見つかった
+		PRINTFORML これは修飾効果を除いた料理の基本的な味だけを表示する
+		PRINTFORML 利用可能なすべての食材の味が含まれる場合がある
+		DRAWLINE
+		
+		nPrintCount = 0
+		FOR LOCAL, 101, 401 + CHARANUM
+			SIF !SPLIT_CHECK(strPrintRange, LOCAL) ;show only those who are in the list
+				CONTINUE
+			
+			IF (nPrintCount >= (nPage-1) * nPageSize) && (nPrintCount < (nPage) * nPageSize)
+				CALL DISHDATA(LOCAL)
+				PRINTFORML 【%DISH_NAME%】%DISH_COMMENT%
+				PRINT 　
+				FOR LOCAL:2, 0, VARSIZE("DISH_ING")
+					SIF DISH_ING:(LOCAL:2) > 0
+						CALL DISH_TASTE_ADD(DISH_ING:(LOCAL:2))
+				NEXT
+				PRINTBUTTON @"[No: {LOCAL,3}]", ""
+				IF INRANGE(LOCAL, 101, 200)
+					PRINTBUTTON "[軽食]", ""
+				ELSEIF INRANGE(LOCAL, 201, 300)
+					PRINTBUTTON "[主食]", ""
+				ELSEIF INRANGE(LOCAL, 301, 400)
+					PRINTBUTTON "[デザート]", ""
+				ENDIF
+				CALL SHOW_TASTE(DISH_TASTE, "DISH_DATA",,1)
+				CALL RESET_DISH
+				PRINTL
+			ENDIF
+			nPrintCount ++
+		NEXT
+		PRINTFORML
+	ENDIF
+	CALL EQUATE_LINE, (gLineCount + 10 + nPageSize*3)
+	;controls
+	DRAWLINE
+	IF nPageLength == 1
+		SETCOLOR 0x606060
+		PRINTFORM %"前ページ",15,LEFT%
+		RESETCOLOR 
+	ELSE
+		PRINTBUTTON @"%"前ページ",15,LEFT%", 888
+	ENDIF
+	PRINTFORM ({nPage}/{nPageLength})%BL(6)%
+	PRINTFORM 
+	IF nPageLength == 1
+		SETCOLOR 0x606060
+		PRINTFORM %"次ページ",15,LEFT%
+		RESETCOLOR 
+	ELSE
+		PRINTBUTTON @"%"次ページ",15,LEFT%", 777
+	ENDIF
+	PRINTFORML 
+	PRINTFORML 
+	PRINTBUTTON "[998] 再検索　", 998
+	PRINTFORML 
+	PRINTBUTTON "[999] 戻る　", 999
+	PRINTFORM  
+		
+	INPUT
+	SELECTCASE RESULT
+	CASE 998
+		RETURN
+	CASE 999
+		CALL RESET_DISH
+		RETURN 1
+	CASE 777, 888
+		SIF nPageLength == 1
+			CONTINUE
+		nPage = PAGE_HANDLE(RESULT, 888, nPage, 1, nPageLength)
+	ENDSELECT
+LOOP 1

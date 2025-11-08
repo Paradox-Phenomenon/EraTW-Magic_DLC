@@ -1,61 +1,54 @@
 ﻿;--------------------------------------------------
 ;地点名変更関数
 ;--------------------------------------------------
-@MAP_PLACENAME_0(ARG,ARG:1)
+@MAP_PLACENAME_0(ARG)
 #FUNCTIONS
 IF GET_MAPID(ARG) == MAIN_MAP
 	SELECTCASE ARG
-		CASE P53倉庫
+		CASE P53納戸
 			IF CFLAG:MASTER:初期位置 == ARG
-				RETURNF CALLNAME:MASTER + "的仓库"
+				RETURNF CALLNAME:MASTER + "の納戸"
 			ELSE
-				RETURNF "仓库"
+				RETURNF "納戸"
 			ENDIF
 		CASE SUMIKOMI_ROOM
-			IF FLAG:住宿人物
-				IF HOUGONG
-					RETURNF CALLNAME:MASTER+ "的后宫别墅"
-				ELSE
-					RETURNF CALLNAME:(FLAG:住宿人物) + "的小屋"
-				ENDIF
+			IF FLAG:住み込みキャラ
+				RETURNF CALLNAME:(FLAG:住み込みキャラ) + "の小屋"
 			ELSE
-				RETURNF "破旧小屋"
+				RETURNF "ボロ小屋"
 			ENDIF
 		CASE MINROOM() TO (MAXROOM - 1)
-			RETURNF ARG:1 ? STR:(ARG + 8000) # STR_TR(ARG + 8000) ;custom code
+			RETURNF STR:(ARG + 8000)
 		CASE OMANEKIBEYA()
 			RETURNF OMANEKI_PLACE()
 		CASE SUKIMA()
-			RETURNF "隙间空间"
+			RETURNF "スキマ空間"
 		CASE MAXROOM
-			RETURNF "参道的另一边"
+			RETURNF "参道の向こう"
 		CASEELSE
 			RETURNF "不明"
 	ENDSELECT
 ELSE
-	RETURNF "神社之外"
+	RETURNF "神社の外"
 ENDIF
 
 ;--------------------------------------------------
 ;場所ARGがどのエリアにあるか
-;表示するMapの番号と連動（TFLAG:地圖切換）
+;表示するマップの番号と連動（TFLAG:マップ切り替え）
 ;ARG     場所ID
 ;--------------------------------------------------
 @MAP_AREASELECT_0(ARG)
 #FUNCTION
 SELECTCASE ARG
-	;三妖精之家
-	CASE P27三妖精之家・大廳 TO P35三妖精之家・地下室
+	;三妖精の家
+	CASE P27三妖精の家・広間 TO P35三妖精の家・地下室
 		RETURNF 3
 	;夢幻遺跡
 	CASE P36夢幻遺跡前 TO P51夢幻遺跡・倉庫
 		RETURNF 2
 	;神社周辺
-	CASE P22参道 TO P25鎮守之森
+	CASE P22参道 TO P25鎮守の森
 		RETURNF 4
-	;大别墅
-	CASE P57大温泉 TO P68大广场
-		RETURNF 5
 	;博麗神社
 	CASEELSE
 		RETURNF 1
@@ -63,7 +56,7 @@ ENDSELECT
 
 ;--------------------------------------------------
 ;内部構造がある場所の内部の判定
-;TFLAG:地圖切換  内部察知が必要なMap番号
+;TFLAG:マップ切り替え  内部察知が必要なマップ番号
 ;                P_ID  表示ボタンの場所ID
 ;                Q_ID  判定する内部の場所ID,必ずP_IDと一致した数値も含める
 ;--------------------------------------------------
@@ -71,12 +64,12 @@ ENDSELECT
 #FUNCTION
 #DIM P_ID
 #DIM Q_ID
-IF TFLAG:地圖切換 == 4
+IF TFLAG:マップ切り替え == 4
 	SELECTCASE P_ID
-		;三妖精之家
-		CASE P27三妖精之家・大廳
+		;三妖精の家
+		CASE P27三妖精の家・広間
 			SELECTCASE Q_ID
-			CASE P27三妖精之家・大廳 TO P35三妖精之家・地下室
+			CASE P27三妖精の家・広間 TO P35三妖精の家・地下室
 				RETURNF 1
 			ENDSELECT
 		;夢幻遺跡
@@ -92,7 +85,7 @@ RETURNF 0
 ;--------------------------------------------------
 ;移動制限設定
 ;ARG    場所ID
-;CHARA  移動する角色ID
+;CHARA  移動するキャラID
 ;RETURNF 1=移動できる,0=移動できない
 ;TFLAG:移動不能メッセージ   ↓の@MAP_CANNOT_WORD用の設定
 ;--------------------------------------------------
@@ -101,25 +94,25 @@ RETURNF 0
 #DIM CHARA
 SELECTCASE ARG
 	;虫かご
-	CASE P54小人的虫籠
+	CASE P54小人の虫かご
 		;小人じゃないと入れない
 		IF TALENT:CHARA:体型 > -5
 			TFLAG:移動不能メッセージ = 2
 			RETURNF 0
 		ENDIF
 	;三妖精ハウス
-	CASE P27三妖精之家・大廳 TO P35三妖精之家・地下室
+	CASE P27三妖精の家・広間 TO P35三妖精の家・地下室
 		;妖精なら入れる
 		SIF TALENT:CHARA:妖精
 			RETURNF 1
 		;中からは動ける
-		SIF INRANGE(CFLAG:CHARA:現在位置, P27三妖精之家・大廳, P35三妖精之家・地下室)
+		SIF INRANGE(CFLAG:CHARA:現在位置, P27三妖精の家・広間, P35三妖精の家・地下室)
 			RETURNF 1
-		;你は恋慕か教養LV1以上で入れる
+		;あなたは恋慕か教養LV1以上で入れる
 		IF CHARA == MASTER
-			IF TALENT:[[桑尼]]:恋慕 || TALENT:[[露娜]]:恋慕 || TALENT:[[斯塔]]:恋慕 || ABL:CHARA:教養 >= 1
+			IF TALENT:[[サニー]]:恋慕 || TALENT:[[ルナ]]:恋慕 || TALENT:[[スター]]:恋慕 || ABL:CHARA:教養 >= 1
 				RETURNF 1
-			ELSEIF INRANGE(CFLAG:MASTER:初期位置, P27三妖精之家・大廳, P35三妖精之家・地下室)
+			ELSEIF INRANGE(CFLAG:MASTER:初期位置, P27三妖精の家・広間, P35三妖精の家・地下室)
 				RETURNF 1
 			ELSE
 				TFLAG:移動不能メッセージ = 1
@@ -129,23 +122,12 @@ SELECTCASE ARG
 		ELSE
 			RETURNF 0
 		ENDIF
-	;夢幻遺跡,你以外は教養LV3が必要
+	;夢幻遺跡,あなた以外は教養LV3が必要
 	CASE P37夢幻遺跡・一階通路 TO P51夢幻遺跡・倉庫
 		;中からは動ける
 		IF INRANGE(CFLAG:CHARA:現在位置, P37夢幻遺跡・一階通路, P51夢幻遺跡・倉庫)
 			RETURNF 1
 		ELSEIF ABL:CHARA:教養 <= 2 && CHARA != MASTER
-			RETURNF 0
-		ENDIF
-	;大别墅
-	CASE P57大温泉 TO P68大广场
-		;中からは動ける
-		SIF INRANGE(CFLAG:CHARA:現在位置, P57大温泉, P68大广场)
-			RETURNF 1
-		IF FamilyHotel
-			RETURNF 1
-		ELSE
-			TFLAG:移動不能メッセージ = 3
 			RETURNF 0
 		ENDIF
 ENDSELECT
@@ -157,12 +139,9 @@ RETURNF 1
 @MAP_CANNOT_WORD_0(ARG)
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
-		PRINTFORMW 不熟悉的%CALLNAME:MASTER%没有找到路…
+		PRINTFORMW 未熟な%CALLNAME:MASTER%には見つけることができない…
 	CASE 2
-		PRINTFORMW %CALLNAME:MASTER%无论如何也进不去
-	CASE 3
-		PRINTFORMW 大别墅正在装修中…\n（※旅店系统补丁未开启）
-	CLEARLINE 1
+		PRINTFORMW とても%CALLNAME:MASTER%には入れない
 ENDSELECT
 CLEARLINE 2
 REUSELASTLINE
@@ -185,33 +164,30 @@ ENDSELECT
 #FUNCTION
 SELECTCASE ARG
 	CASE P1鳥居, P22参道
-		RETURNF 桜花道的鳥居
-	CASE P2境内, P5手水舎, P6庫房, P20本殿内部, P21守矢神社分社
+		RETURNF 桜並木の鳥居
+	CASE P2境内, P5手水舎, P6物置, P20本殿の裏, P21守矢神社分社
 		RETURNF 神社境内
 	;賽銭箱,本堂
 	CASE P3賽銭箱, P4本堂
 		RETURNF 神社本堂
-	;三妖精之家
-	CASE P27三妖精之家・大廳 TO P35三妖精之家・地下室
-		RETURNF 妖精的大樹
+	;三妖精の家
+	CASE P27三妖精の家・広間 TO P35三妖精の家・地下室
+		RETURNF 妖精の大樹
 	;夢幻遺跡
 	CASE P36夢幻遺跡前 TO P51夢幻遺跡・倉庫
 		RETURNF 夢幻遺跡
-	;大别墅
-	CASE P57大温泉 TO P68大广场
-		RETURNF 大别墅
 	CASEELSE
-		RETURNF 神社走廊
+		RETURNF 神社縁側
 ENDSELECT
 RETURNF 0
 
 ;--------------------------------------------------
-;Mapの紹介文
+;マップの紹介文
 ;--------------------------------------------------
-@Map紹介_0
+@マップ紹介_0
 ;とりあえず5行
-PRINTFORML eratohoTW的元祖地图。因为加入了各种各样的设定、所以变成了一个大神社。
-PRINTFORML 除神社本体之外还包括三妖精所居住的大树、以及梦美＆千百合居住的梦幻遗迹。
-PRINTFORML 基本施设一应俱全、因为工作而来访的角色也很多。
-PRINTFORML 另外、三妖精的家是需要有一定的教养才能进去的。
-PRINTFORML 如果和守矢三神中的一人同行的话就可以从分社直接移动到守矢神社。
+PRINTFORML eratohoTWにおける元祖マップ。様々な設定を盛り込んでいる為、神社は大所帯となっている。
+PRINTFORML 神社の他にも三妖精の住む大樹と夢美＆ちゆりの住む夢幻遺跡ある。
+PRINTFORML 基本的な施設は一通り揃っており、仕事で来訪するキャラも多い。
+PRINTFORML なお、三妖精の家は教養が一定以上ないと入ることができない。
+PRINTFORML また守矢三神のいずれかと同行中なら分社から守矢神社へワープできる。

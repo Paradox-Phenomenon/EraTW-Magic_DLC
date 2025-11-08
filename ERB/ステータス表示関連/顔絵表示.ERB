@@ -1,5 +1,5 @@
-﻿;CIDが0の時別途定義のMOB角色を表示するように
-;例）CALL PRINT_FACE, 0, "通常", "服", "6" でMOB僵尸妖精を表示
+﻿;CIDが0の時別途定義のMOBキャラを表示するように
+;例）CALL PRINT_FACE, 0, "通常", "服", "6" でMOBゾンビフェアリーを表示
 @PRINT_FACE,CID,表情="",服装="",差分="",エフェクト=""
 #DIMS 表情
 #DIMS 服装
@@ -7,61 +7,53 @@
 #DIMS エフェクト
 #DIMS ツールチップ
 #DIM CID
-#DIM DYNAMIC PREV_立ち絵種類
 
-SIF !顔絵付きメッセージ || !FLAG:画像表示
+SIF !FLAG:画像表示
 	RETURN
-角色画像表示尺寸比 = 100
+キャラ画像表示サイズ比 = 100
 
 SIF 表情 == ""
 	表情 = 通常
 
-PREV_立ち絵種類 = FLAG:立ち絵種類
-
 IF CID
-	FLAG:立ち絵種類 = 1
-	;custom code
-	TRYCALLFORM IMAGE_EX_I{NO:CID}_PREリソースチェック(CID, "顔絵", 服装, 表情, "", 差分, "")
+	TRYCALLFORM IMAGE_EX_I{CID}_PREリソースチェック(CID, "", "服", "通常", "", "", "")
 	CALL GET_BASE_RESOURCE(CID, "顔絵", 服装, 表情, "", 差分)
 	SIF !RESULT
 		RESULTS = %GET_BASESTYLE(CID, "顔絵")%_服_通常_{CID}
 	ツールチップ '= CALLNAME:CID
 ELSE
 	RESULTS = 顔絵_%服装%_%表情%_MOB_%差分%
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_リソースチェック(RESULTS)
-		CALL 路人店員画像作成(TOINT(差分))
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_リソースチェック(RESULTS)
+	SIF !SPRITECREATED(RESULTS)
+		CALL モブ店員画像作成(TOINT(差分))
+	SIF !SPRITECREATED(RESULTS)
 		RESULTS = 顔絵_服_通常_MOB_%差分%
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_リソースチェック(RESULTS)
+	SIF !SPRITECREATED(RESULTS)
 		RETURN
-	ツールチップ = 路人子
+	ツールチップ = モブ子
 ENDIF
 
-SIF FLAG:多尺寸
-	默认角色画像横幅 = RM_リソースの高さ(RESULTS)
+SIF FLAG:マルチサイズ
+	デフォルトキャラ画像横幅 = SPRITEHEIGHT(RESULTS)
 
 ;-------------------------
 DEBUGPRINTFORML PRINT_FACEで%RESULTS%を表示
 ;-------------------------
 
-CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 0, 1, "100", ツールチップ)
+CALL 画像セット(RESULTS, 0, 0, キャラ画像表示サイズ比, 0, 1, "100", ツールチップ)
 
 IF エフェクト != ""
-	CALL GET_EFFECT_RESOURCE(CID, エフェクト, , , 服装)
+	CALL GET_EFFECT_RESOURCE(CID, エフェクト)
 	FOR LOCAL, 0, RESULT
-		CALL 画像セット(RESULTS:LOCAL, 0, 0, 角色画像表示尺寸比, LOCAL + 1)
+		CALL 画像セット(RESULTS:LOCAL, 0, 0, キャラ画像表示サイズ比, LOCAL + 1)
 	NEXT
 ENDIF
 
 CALL 画像一斉表示(0, 0, 1, -1)
-FLAG:立ち絵種類 = PREV_立ち絵種類
+
 
 @SPTALK,CID,表情="",デフォルト=0,MESSAGE,整形=0,CUSTOMFONTCOLOR
-;CIDが0の時別途定義のMOB角色を表示するように
-;例）CALL SPTALK, 0, "笑顔", 1, @"「この記述で」/「路人が喋ります」",1
+;CIDが0の時別途定義のMOBキャラを表示するように
+;例）CALL SPTALK, 0, "笑顔", 1, @"「この記述で」/「モブが喋ります」",1
 #DIM CID
 #DIMS 表情
 #DIM デフォルト
@@ -72,14 +64,13 @@ FLAG:立ち絵種類 = PREV_立ち絵種類
 #DIMS FONTCOLOR
 #DIMS ツールチップ
 #DIM TEMP_COLOR
-#DIM DYNAMIC PREV_立ち絵種類
 
 #DIMS CUSTOMFONTCOLOR
 
-角色画像表示尺寸比 = 100
+キャラ画像表示サイズ比 = 100
 TEMP_COLOR = GETCOLOR()
 
-PREV_立ち絵種類 = FLAG:立ち絵種類
+LOCAL:9 = FLAG:立ち絵種類
 
 ;口上色取得判定:通常キャラ
 IF CID
@@ -89,6 +80,7 @@ IF CID
 	ELSE
 		FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
 	ENDIF
+	;tweak to reset color
 	RESETCOLOR
 ENDIF
 VARSET MESSAGE_PRINT
@@ -115,9 +107,9 @@ IF 顔絵付きメッセージ == 1
 		
 		FLAG:立ち絵種類 = 1
 
-		IF TALENT:CID:行きずり && !GCREATED(CFLAG:CID:路人子素材CFLAG開始位置)
-			CALL 路人子生成(CID,0)
-			CALL 路人子生成(CID,1)
+		IF TALENT:CID:行きずり && !GCREATED(CFLAG:CID:モブ子素材CFLAG開始位置)
+			CALL モブ子生成(CID,0)
+			CALL モブ子生成(CID,1)
 		ENDIF
 		CALL GET_BASE_RESOURCE(CID, "顔絵", 服装, 表情)
 		SIF !RESULT
@@ -126,9 +118,8 @@ IF 顔絵付きメッセージ == 1
 		SIF !STRLENS(服装)
 			服装 = 服
 		RESULTS = 顔絵_%服装%_%表情%_MOB_{デフォルト}
-		;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-		SIF !RM_リソースチェック(RESULTS)
-			CALL 路人店員画像作成(デフォルト)
+		SIF !SPRITECREATED(RESULTS)
+			CALL モブ店員画像作成(デフォルト)
 		IF !FLAG:口上色
 			FONTCOLOR = 0XD5DEDF
 		ELSEIF デフォルト >= 90
@@ -139,9 +130,9 @@ IF 顔絵付きメッセージ == 1
 					FONTCOLOR = 0xD37CD0
 			ENDSELECT
 		ELSE
-			FONTCOLOR = %TOSTR(路人子店員口上色:デフォルト, "X")%
+			FONTCOLOR = %TOSTR(モブ子店員口上色:デフォルト, "X")%
 		ENDIF
-		ツールチップ = Mob
+		ツールチップ = モブ子
 	ENDIF
 	SIF CUSTOMFONTCOLOR != ""
 		FONTCOLOR '= CUSTOMFONTCOLOR
@@ -156,9 +147,9 @@ IF 顔絵付きメッセージ == 1
 	ENDIF
 	
 
-	SIF FLAG:多尺寸
-		默认角色画像横幅 = RM_リソースの高さ(RESULTS)
-	CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 0, 1, "100", ツールチップ)
+	SIF FLAG:マルチサイズ
+		デフォルトキャラ画像横幅 = SPRITEHEIGHT(RESULTS)
+	CALL 画像セット(RESULTS, 0, 0, キャラ画像表示サイズ比, 0, 1, "100", ツールチップ)
 
 	;オプション指定で行送りを揃える
 	SIF 整形
@@ -167,13 +158,13 @@ IF 顔絵付きメッセージ == 1
 	SPLIT MESSAGE,"/",MESSAGE_PRINT
 	FOR LOCAL,0,RESULT
 		SIF LOCAL != 0
-			CALL ダミーセット(0, 0, 角色画像表示尺寸比, LOCAL)
+			CALL ダミーセット(0, 0, キャラ画像表示サイズ比, LOCAL)
 		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%MESSAGE_PRINT:LOCAL%</font>"
 	NEXT
 	CALL 画像一斉表示(0, 0, 1, -1)
 	PRINTL
 	
-	FLAG:立ち絵種類 = PREV_立ち絵種類
+	FLAG:立ち絵種類 = LOCAL:9
 ELSE
 	IF !CID
 		IF デフォルト >= 90
@@ -184,7 +175,7 @@ ELSE
 					FONTCOLOR = 0xD37CD0
 			ENDSELECT
 		ELSE
-			FONTCOLOR = %TOSTR(路人子店員口上色:デフォルト, "X")%
+			FONTCOLOR = %TOSTR(モブ子店員口上色:デフォルト, "X")%
 		ENDIF
 	ENDIF
 	SIF CUSTOMFONTCOLOR != ""
@@ -216,7 +207,7 @@ SETCOLOR TEMP_COLOR
 #DIM DYNAMIC メッセージ行 = 0
 VARSET 分割後メッセージ
 
-画像行幅 = 默认角色画像横幅 / GETCONFIG("一行の高さ")
+画像行幅 = デフォルトキャラ画像横幅 / GETCONFIG("一行の高さ")
 SPLIT ARGS, "/", 分割後メッセージ
 
 ;文が4行以下の時は間隔を開ける。それ以外は詰めて成形

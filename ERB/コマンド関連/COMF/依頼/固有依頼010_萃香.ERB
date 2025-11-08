@@ -5,17 +5,17 @@
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE ARG % 1000
-;ID101：想要喝酒
+;ID101：酒をのませろ
 CASE 101
 	SELECTCASE O_DATA
 	CASE "依頼名"
-		CALLF MAKE_STR(V_NAME, "想要喝酒")
+		CALLF MAKE_STR(V_NAME, "酒をのませろ")
 	CASE "依頼内容表示"
-		CALLF MAKE_STR(V_NAME, "提供清酒")
+		CALLF MAKE_STR(V_NAME, "清酒を納入する")
 	CASE "依頼報酬表示"
 		CALLF MAKE_STR(V_NAME, @"%金額表示(5000)%")
-	CASE "依頼実行指令名"
-		CALLF MAKE_STR(V_NAME, "送出清酒")
+	CASE "依頼実行コマンド名"
+		CALLF MAKE_STR(V_NAME, "清酒を渡す")
 		
 	CASE "依頼内容"
 		CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(GETNUM(ITEM, "清酒"), "調達"))
@@ -51,7 +51,7 @@ ENDSELECT
 ;固有依頼の設定用
 ;この関数は実行/成功/失敗時の
 ;報酬とペナルティと地の文のみを扱います
-;各角色のメッセージは別所にて
+;各キャラのメッセージは別所にて
 @IRAI_固有10(CHARA, IRAI_ID, SCENE)
 #DIM  CHARA
 #DIM  IRAI_ID
@@ -59,8 +59,8 @@ ENDSELECT
 #DIM  CLIENT_ID
 CLIENT_ID = IRAI_ID_TO_CLIENT(IRAI_ID)
 SELECTCASE STR_DATA_IRAI(IRAI_ID, "依頼名", CLIENT_ID)
-;个々の依頼名で分岐
-CASE "想要喝酒"
+;個々の依頼名で分岐
+CASE "酒をのませろ"
 	SELECTCASE SCENE
 	CASE "依頼条件表示"
 	;何か専用の表示情報を設けたい時用
@@ -74,9 +74,9 @@ CASE "想要喝酒"
 	CASE "依頼実行時"
 	;このCASEに限り、RESULTが意味を持ちます
 	;依頼実行時のRESULTにはIRAI_CONST_RESULT()を使用してください
-	;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
+	;可能な引数は"キャンセル", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
-		PRINTFORMW %CALLNAME:MASTER%把酒交给了%CALLNAME:TARGET%
+		PRINTFORMW %CALLNAME:MASTER%は%CALLNAME:TARGET%にお酒を渡した
 		ITEM:清酒 --
 		RETURN IRAI_CONST_RESULT("実行して成功")
 	CASE "依頼成功時"
@@ -85,21 +85,21 @@ CASE "想要喝酒"
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, 30)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, 20)
-		;心情をよくする処理を入れてもいい
-		TALENT:TARGET:心情 = LIMIT(TALENT:心情 + 1, -1, 1)
+		;機嫌をよくする処理を入れてもいい
+		TALENT:TARGET:機嫌 = LIMIT(TALENT:機嫌 + 1, -1, 1)
 		CALL GET_MONEY_YEN(5000, 2)
 	CASE "依頼失敗時"
 	;失敗報告時の処理
 		;システムメッセージつき好感度変化
 		;最後の引数だけ好感度が変化
 		CALL CHANGE_CFLAG(2, TARGET, -50)
-		;システムメッセージつき信賴度変化
-		;最後の引数だけ信賴度が変化
+		;システムメッセージつき信頼度変化
+		;最後の引数だけ信頼度が変化
 		CALL CHANGE_CFLAG(4, TARGET, -20)
-		;心情を悪化させる処理を入れてもいい
-		TALENT:(TARGET):心情 = LIMIT(TALENT:(TARGET):心情 -1, -1, 1)
+		;機嫌を悪化させる処理を入れてもいい
+		TALENT:(TARGET):機嫌 = LIMIT(TALENT:(TARGET):機嫌 -1, -1, 1)
 	ENDSELECT
 ENDSELECT

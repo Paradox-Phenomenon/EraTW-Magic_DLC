@@ -1,48 +1,48 @@
 ﻿;-----------------------------------------------------------
-;【新游戏特典】
+;【ニューゲーム特典】
 ;-----------------------------------------------------------
 @NEWGAME_BONUS_SELECT
-#DIMS buttonText, 10
 #DIM L_COUNT
+#DIMS buttonText, 10
 SETCOLOR 103,228,126
-PRINTFORML 【新游戏特典】
+PRINTFORML 【ニューゲーム特典】
 RESETCOLOR
-PRINTFORML 请选择你喜欢的一项
-buttonText:0 '= @"%金額表示(99999)%"
-buttonText:1 '= "我是单推"
-buttonText:2 '= "我能照顾好自己"
-buttonText:3 '= "我很好色"
+PRINTFORML お好きなものを選んでください
+buttonText:0 '= @"%金額表示(50000)%"
+buttonText:1 '= "初期好感度・信頼度アップ"
+buttonText:2 '= "初期能力アップ"
+buttonText:3 '= "愛欲を独占するミラダの石ミレニアム"
 FOR L_COUNT,0,4
 	PRINTFORML [{L_COUNT}] - %buttonText:L_COUNT%
 NEXT
 INPUT
 SELECTCASE RESULT
 	CASE 0
-		新游戏特典 '= @"%金額表示(99999)%"
+		ニューゲーム特典 '= @"%金額表示(50000)%"
 	CASE 1
 		CALL NEWGAME_BONUS_CHARA
 		IF !RESULT
 			RESTART
 		ENDIF
 	CASE 2
-		新游戏特典 '= "初期能力UP"
+		ニューゲーム特典 '= "初期能力アップ"
 	CASE 3
-		新游戏特典 '= "色色套餐"
+		ニューゲーム特典 '= "スケベセット"
 ENDSELECT
-PRINTFORMW 选择了%新游戏特典%
+PRINTFORMW %ニューゲーム特典%を選択します
 RETURN
 
 ;-----------------------------------------------------------
 ;初期好感度
 ;-----------------------------------------------------------
 @NEWGAME_BONUS_CHARA
-PRINTFORML 任意一位角色的初期好感度+999、信赖度+99
-PRINTFORML 请选择对象
+PRINTFORML キャラ一人の初期好感度を500、信頼度を50にします
+PRINTFORML 対象を選んでください
 CALL ASK_CALLNAME
 IF RESULT == 999
 	RETURN 0
 ELSE
-	新游戏特典 '= TOSTR(RESULT)
+	ニューゲーム特典 '= TOSTR(RESULT)
 	RETURN 1
 ENDIF
 
@@ -52,57 +52,57 @@ ENDIF
 ;-----------------------------------------------------------
 @NEWGAME_BONUS_APPLY
 #DIM C_ID
-C_ID = TOINT(新游戏特典)
-SELECTCASE 新游戏特典
-	CASE "无"
+C_ID = TOINT(ニューゲーム特典)
+SELECTCASE ニューゲーム特典
+	CASE "なし"
 	CASE ""
-		MONEY += 99999
-	CASE @"%金額表示(99999)%"
-		MONEY += 99999
-	CASE "初期能力UP"
-		ABL:MASTER:清掃技能 = 3
-		ABL:MASTER:教養 = 3
-		ABL:MASTER:料理技能 = 3
-		ABL:MASTER:技巧 = 3
+		MONEY += 50000
+	CASE @"%金額表示(50000)%"
+		MONEY += 50000
+	CASE "初期能力アップ"
+		ABL:MASTER:清掃技能 = 1
+		ABL:MASTER:教養 = 1
+		ABL:MASTER:料理技能 = 1
+		ABL:MASTER:技巧 = 2
 		ABL:MASTER:話術技能 = 3
-	CASE "色色套餐"
-		ITEM:奇跡之石 += 1
-		ITEM:跳蛋 += 5
-		ITEM:媚薬 += 10
-		MAXBASE:MASTER:TSP = 800
+	CASE "スケベセット"
+		ITEM:ミラダの石 += 1
+		ITEM:ローター += 1
+		ITEM:媚薬 += 5
+		MAXBASE:MASTER:TSP = 500
 		BASE:MASTER:TSP = MAXBASE:MASTER:TSP
 		MONEY:1 = 1800
-		ABL:MASTER:技巧 = 4
+		ABL:MASTER:技巧 = 2
 	CASEELSE
-		CFLAG:C_ID:好感度 = 999
-		CFLAG:C_ID:信賴度 = 99
+		CFLAG:C_ID:好感度 = 500
+		CFLAG:C_ID:信頼度 = 100
 		IF CHECK_CHARA(C_ID, "神霊")
-			TALENT:MASTER:讓神霊懷孕 = 1
+			TALENT:MASTER:神霊孕ませ = 1
 		ELSEIF CHECK_CHARA(C_ID, "付喪神")
-			TALENT:MASTER:讓付喪神懷孕 = 1
+			TALENT:MASTER:付喪神孕ませ = 1
 		ELSEIF CHECK_CHARA(C_ID, "蓬莱人")
-			TALENT:MASTER:讓蓬莱懷孕 = 1
+			TALENT:MASTER:蓬莱孕ませ = 1
 		ELSEIF CHECK_CHARA(C_ID, "幽霊")
-			TALENT:MASTER:讓幽霊懷孕 = 1
+			TALENT:MASTER:幽霊孕ませ = 1
 		ELSEIF CHECK_CHARA(C_ID, "人形")
-			TALENT:MASTER:讓人偶懷孕 = 1
+			TALENT:MASTER:人形孕ませ = 1
 		ENDIF
 ENDSELECT
 
 ;-----------------------------------------------------------
-;設定表示用文本化
+;設定表示用テキスト化
 ;-----------------------------------------------------------
 @NEWGAMEBONUS_TEXT
 #FUNCTIONS
-SELECTCASE 新游戏特典
+SELECTCASE ニューゲーム特典
 	CASE ""
-		RETURNF "<font color='#67e47e'>" + "可以选择新游戏特典" + "</font>"
-	CASE @"%金额表示(99999)%"
-		RETURNF @"%金额表示(99999)%金钱为初始资金开局"
-	CASE "初期能力UP"
-		RETURNF "一部份能力的上升使得早期的家事更容易"
-	CASE "色色套餐"
-		RETURNF "一部份能力的上升使得早期的Ｈ更容易"
+		RETURNF "<font color='#67e47e'>" + "ニューゲーム特典を選択できます" + "</font>"
+	CASE 金額表示(50000)
+		RETURNF @"%金額表示(50000)%持って開始します"
+	CASE "初期能力アップ"
+		RETURNF "一部能力の上昇で早い段階から家事などが楽になります"
+	CASE "スケベセット"
+		RETURNF "一部能力の上昇と特殊なアイテムで早い段階からエッチなことがしやすくなります"
 	CASEELSE
-		RETURNF @"%CALLNAME:TOINT(新游戏特典)%的初期好感度与信赖度上升的状态下开局 对于难以妊娠的种族、也会追加概率提升的能力"
+		RETURNF @"%CALLNAME:TOINT(ニューゲーム特典)%の好感度と信頼度が上がった状態で開始します 妊娠しづらい種族の場合、確率向上能力も追加で取得します"
 ENDSELECT
