@@ -1,0 +1,1622 @@
+﻿@神签打印(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC MESSAGE_PRINT,50
+#DIMS DYNAMIC COL,4
+#DIM DYNAMIC 神签GID
+SIF INRANGE(ARG,1,128)
+	CALL 生成图片,@"剧本自定义附件/东方幻存神签/神签_{ARG}.webp",@"神签_{ARG}"
+神签GID = RESULT
+LOCALS '= 神签INFO(ARG)
+SPLIT LOCALS," ",MESSAGE_PRINT
+FOR count, 2, 5
+	COL:1 += MESSAGE_PRINT:count + " "
+NEXT
+FOR count, 5, RESULT
+	IF STRCOUNT(MESSAGE_PRINT:count,"：")
+		COL:3 += MESSAGE_PRINT:count + " "
+	ELSE
+		COL:2 += MESSAGE_PRINT:count + " "
+	ENDIF
+NEXT
+MESSAGE_PRINT '= REPLACE(MESSAGE_PRINT,"(第|签)","")
+IF TOINT(MESSAGE_PRINT) < 10
+	LOCAL = 2
+ELSEIF TOINT(MESSAGE_PRINT) < 100
+	LOCAL = 1
+ELSE
+	LOCAL = 0
+ENDIF
+{
+LOCALS '= @"/
+╔═════╦═════════════════════╗/
+║          ║                                          ║/
+║ 第%"0"*LOCAL%%MESSAGE_PRINT%签  ║  %MESSAGE_PRINT:1,40,LEFT%║/
+║          ║                                          ║/
+╠═════╩═════════════════════╣/
+║                                                      ║/
+%BREAKCOLUMN(REPLACE(COL:1,"\s+$",""),25,"NULL")%
+║                                                      ║/
+╠═══════════════════════════╣/
+║                                                      ║/
+%BREAKCOLUMN(REPLACE(COL:2,"\s+$",""),25,"[，。？！；]")%
+║                                                      ║/
+╟───────────────────────────╢/
+║                                                      ║/
+%BREAKCOLUMN(REPLACE(COL:3,"\s+$",""),25,"NULL")%
+║                                                      ║/
+╚═══════════════════════════╝"
+}
+IF INRANGE(ARG,1,128)
+	默认角色画像横幅 *= 4
+	CALL IMG_COLUMN,@"神签_{ARG}",LOCALS,,神签TOID:ARG,100
+	默认角色画像横幅 /= 4
+ELSE
+	SPLIT LOCALS,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		SIF MESSAGE_PRINT:LOCAL != ""
+			PRINTFORML %MESSAGE_PRINT:LOCAL%
+	NEXT
+ENDIF
+RETURN 神签GID
+
+;--------------------------------------------------------
+@BREAKCOLUMN(strInput, nLength = 0, strMatch = "\s", nIndent = 0, strBreakLine = "/")
+#FUNCTIONS
+#DIMS DYNAMIC MESSAGE_PRINT,50
+#DIM LINELENGTH
+#DIM nIndent
+#DIM nLength
+#DIMS strInput
+#DIMS strBreakLine
+#DIMS strMatch
+;PRINTFORML %strInput%的strMatch是%strMatch%
+SIF !nLength
+	nLength = MAXWIDTH() - 19
+LINELENGTH = nLength - nIndent
+VARSET LOCALS
+IF LINELENGTH < 1
+	THROW @BREAKCOLUMN Usable length cannot be less than 1, strInput - %strInput%, nIndent - {nIndent}
+ELSE
+	strInput '= REPLACE(strInput, "\s", strBreakLine)
+	SPLIT strInput,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		IF strMatch == "NULL"
+			;PRINTFORML %MESSAGE_PRINT:LOCAL%的REPLACE是%REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:|$)", " "*nIndent + "$1")%
+			MESSAGE_PRINT:LOCAL '= REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:|$)", " "*nIndent + "$1" + strBreakLine)
+		ELSE
+			;PRINTFORML %MESSAGE_PRINT:LOCAL%的REPLACE是%REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:" + strMatch + "|$)", " "*nIndent + "$1")%
+			MESSAGE_PRINT:LOCAL '= REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "}?"+ strMatch +")", " "*nIndent + "$1" + strBreakLine)
+		ENDIF
+		LOCALS += MESSAGE_PRINT:LOCAL
+	NEXT
+ENDIF
+SUBSTRING LOCALS, 0, STRLENS(LOCALS) - STRLENS(strBreakLine)
+SPLIT RESULTS,"/",MESSAGE_PRINT
+VARSET LOCALS
+FOR LOCAL,0,RESULT
+	LOCALS += @"║%MESSAGE_PRINT:LOCAL,54,LEFT%║/ "
+NEXT
+;RETURNF SUBSTRING(LOCALS, 0, STRLENS(LOCALS) - STRLENS(strBreakLine))
+RETURNF REPLACE(LOCALS,"\s+$","")
+
+
+;-------------------------------------------------
+;函数名:IMG_TALK
+;概　要:简单图文混排
+;引　用：SPTALK,CID,表情="",默认=0,MESSAGE,整形=0
+;K63_PRINT_FACE与SPTALK的功能融合版，为了简单图片与对话混排，默认整形
+;-------------------------------------------------
+@IMG_COLUMN(基本画像, MESSAGE, 整形=1, CID,尺寸)
+#DIMS DYNAMIC 基本画像
+#DIMS DYNAMIC MESSAGE
+#DIMS DYNAMIC MESSAGE_PRINT,50
+#DIMS DYNAMIC FONTCOLOR
+#DIM DYNAMIC TEMP_COLOR
+#DIM DYNAMIC CID
+#DIM DYNAMIC 整形
+#DIM DYNAMIC 尺寸
+#DIM DYNAMIC PATTERN
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF !尺寸
+	尺寸 = 角色画像表示尺寸比
+TEMP_COLOR = GETCOLOR()
+
+;口上色取得判定:通常角色
+IF CID
+	CALL SET_KOJO_COLOR(CID)
+	IF GETCOLOR() == 12632256 || !FLAG:口上色
+		FONTCOLOR = 0xD5DEDF
+	ELSE
+		FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
+	ENDIF
+ELSE
+	FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
+ENDIF
+VARSET MESSAGE_PRINT
+IF 顔絵付きメッセージ == 1
+	IF 基本画像 == ""
+		GOTO 图形错误
+	ELSEIF !RM_リソースチェック(基本画像) 
+		PRINTFORMDL 资源「%基本画像%」未设置
+		GOTO 图形错误
+	ELSE
+		CALL 画像セット(基本画像, 0, 0, 尺寸, 0)
+	ENDIF
+	;オプション指定で行送りを揃える
+	SIF 整形
+		MESSAGE = %SPTALK整形(MESSAGE)%
+
+	SPLIT MESSAGE,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		CALL PRINT_STR, MESSAGE_PRINT:LOCAL
+		LOCALS = %HTML_POPPRINTINGSTR()%
+		SIF LOCAL != 0
+			CALL ダミーセット(0, 0, 尺寸 * RM_リソースの幅(基本画像)/RM_リソースの高さ(基本画像), LOCAL)
+		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%LOCALS%</font>"
+	NEXT
+	CALL 画像一斉表示(0, 0, 1, -1)
+	PRINTL
+ELSE
+	$图形错误
+	;顔絵メッセージOFF時は通常街道に表示させる
+	SIF CID
+		PRINTFORML －%CALLNAME:CID%－
+	SPLIT MESSAGE,"/",MESSAGE_PRINT
+	FOR LOCAL,0,RESULT
+		SIF MESSAGE_PRINT:LOCAL != ""
+			PRINTFORML %MESSAGE_PRINT:LOCAL%
+	NEXT
+ENDIF
+SETCOLOR TEMP_COLOR
+
+@神签INFO(ARG)
+#FUNCTIONS
+SELECTCASE ARG
+CASE 1
+{
+LOCALS =
+第1签 凶
+让周围变暗的妖怪
+露米娅
+操纵黑暗程度的能力
+心抱暗秽，须知已遭侵潜，当自警省。
+运势：即使在明亮之处也很快会失去方向。正可谓前路茫茫。
+健康：唯有睡觉。
+旅行：即使去也无妨。但是，仅限夜晚。
+学业：仅数学为吉。
+失物：放弃吧。
+婚恋：会变得孤立。
+争执：因孤立而平静。
+动物：意外地会被夜视能力强的猫科动物亲近。也许是被小瞧了也说不定。
+}
+
+CASE 2
+{
+LOCALS =
+第2签 小吉
+现身于雾中的妖精
+大妖精（姓名不详）
+在雾中畅游程度的能力
+纵无名姓，亦不介怀。此般模样，更显飒然。
+运势：没有什么大事发生。好事坏事皆是如此。
+商业：一切如常。敬畏自然则吉。
+学业：不要抱有期待。
+健康：非常良好。
+恋爱：能进行毫无烦恼的恋爱。
+住所：注意霉菌。勤于除湿。
+旅行：无论去哪儿都看不见景色。
+人际：志趣相投的伙伴会聚集起来，变得愉快。
+失物：会失去名字。找不到。
+}
+;第3签 最凶@-@最强@　　　　　　　　　　　　　　　　
+;考虑了一个手动制表的土办法，就是手动填充至行宽
+CASE 3
+{
+LOCALS =
+第3签 最凶
+最燃的冰之妖精 琪露诺
+操纵冰程度的能力
+竟欲结纳妾身，足见汝颇具识见！如此，堪称最强！
+运势：两极分化、动荡不安的每日，心态若好，便可成为最强。
+健康：即使感冒也浑然不觉，所以无妨。
+生意：算不清账。
+学业：笨蛋也挺好。
+旅行：玩得开心却回不了家。
+失物：忘了自己丢东西这回事。
+恋爱：有好的征兆，却浑然不觉。
+争执：家常便饭。
+家庭：明亮欢乐却不安稳。
+搬家：忘了自己搬家这回事。
+方位：八方皆吉。同时也会给人添麻烦。
+}
+
+CASE 4
+{
+LOCALS =
+第4签 平
+
+红美铃
+
+所谓门番，实乃虚设。盖因吾自渺茫虚空而来。
+
+}
+
+CASE 5
+{
+LOCALS =
+第5签 末吉
+
+小恶魔
+
+静息为要。否则书声喧嚷，便无从听闻矣。
+
+}
+
+CASE 6
+{
+LOCALS =
+第6签 中吉
+
+帕秋莉·诺蕾姬
+
+一周之中，唯月相亏缺之时，身形若娇小，便是最遭嫌恶之日。
+
+}
+
+CASE 7
+{
+LOCALS =
+第7签 大吉
+
+十六夜咲夜
+
+稍请赐时，可乎？然已告终矣。
+
+}
+
+CASE 8
+{
+LOCALS =
+第8签 吉凶不定
+
+蕾米莉亚·斯卡雷特
+
+占算未来，实无必要。未来之路，自择则佳。
+
+}
+
+CASE 9
+{
+LOCALS =
+第9签 凶猛
+
+芙兰朵露·斯卡雷特
+
+既已奋力造就，便当盛大摧折。
+
+}
+
+CASE 10
+{
+LOCALS =
+第10签 中吉
+
+蕾蒂·霍瓦特洛克
+
+嗜此寒节者，其心自暖。（本人言）
+
+}
+
+CASE 11
+{
+LOCALS =
+第11签 凶
+
+橙
+
+引黑猫者，莫谓不幸。其黑者，唯毛尔。
+
+}
+
+CASE 12
+{
+LOCALS =
+第12签 末吉
+
+爱丽丝·玛格特罗伊德
+
+手若灵巧，仅止于此。纵为丝线，纵为魔法，概莫能外。
+
+}
+
+CASE 13
+{
+LOCALS =
+第13签 大吉
+
+莉莉白
+
+纵有何事生变，尽可归咎于春。
+
+}
+
+CASE 14
+{
+LOCALS =
+第14签 吉
+
+露娜萨·普莉兹姆利巴
+
+此般绝妙紧张感，诚可赞矣。若一味松弛，便无音声可闻。
+
+}
+
+CASE 15
+{
+LOCALS =
+第15签 中吉
+
+梅露兰·普莉兹姆利巴
+
+金属本应发最响之音。盖因，音乐即力量。
+
+}
+
+CASE 16
+{
+LOCALS =
+第16签 小吉
+
+莉莉卡·普莉兹姆利巴
+
+凡所触之即发乐音之键盘乐器，诚为最难。
+
+}
+
+CASE 17
+{
+LOCALS =
+第17签 半吉
+
+魂魄妖梦
+
+君可曾被问？幽幽子大人。此乃偌大之枕也。
+
+}
+
+CASE 18
+{
+LOCALS =
+第18签 末大吉
+
+西行寺幽幽子
+
+宁为这般快适，何言有异？唯觉腹空耳。
+
+}
+
+CASE 19
+{
+LOCALS =
+第19签 吉
+
+八云蓝
+
+动物唯依单纯算法而动。论及人类，亦复如是。
+
+}
+
+CASE 20
+{
+LOCALS =
+第20签 吉与凶的境界
+
+八云紫
+
+君自何时起不信神签？诚可哀也。
+
+}
+
+CASE 21
+{
+LOCALS =
+第21签 凶
+
+伊吹萃香
+
+纵看似繁杂，世界实较所想空疏。
+
+}
+
+CASE 22
+{
+LOCALS =
+第22签 末吉
+
+莉格露·奈特巴格
+
+唯具五分魂者，今乃显其可怖之时。
+
+}
+
+CASE 23
+{
+LOCALS =
+第23签 小小凶
+
+米斯蒂娅·萝蕾拉
+
+人谓恋爱盲目，然实则不然。
+
+}
+
+CASE 24
+{
+LOCALS =
+第24签 大吉
+
+上白泽慧音
+
+先生博识且温厚，诚可信赖。然满月之夜……
+
+}
+
+CASE 25
+{
+LOCALS =
+第25签 大大吉
+
+因幡帝
+
+忆及往昔惨事，余每于赘言处皆慎之。
+
+}
+
+CASE 26
+{
+LOCALS =
+第26签 凶
+
+铃仙·优昙华院·因幡
+
+可视光不过电磁波之极小部，实乃一无所见。
+
+}
+
+CASE 27
+{
+LOCALS =
+第27签 吉
+
+八意永琳
+
+君于新月之时，竟不知月都何在。
+
+}
+
+CASE 28
+{
+LOCALS =
+第28签 末大凶
+
+蓬莱山辉夜
+
+此等之事，明日为之即可。因时犹有闲裕也。
+
+}
+
+CASE 29
+{
+LOCALS =
+第29签 大凶
+
+上白泽慧音（白泽形态）
+
+历史非物理现象。实乃人类解读之产物。
+
+}
+
+CASE 30
+{
+LOCALS =
+第30签 末吉
+
+藤原妹红
+
+耐之又耐，持续忍耐，必令今时更优之日来访。
+
+}
+
+CASE 31
+{
+LOCALS =
+第31签 末凶
+
+梅蒂欣·梅兰可莉
+
+生物凭毒而动。唯生者不明此理。
+
+}
+
+CASE 32
+{
+LOCALS =
+第32签 吉
+
+风见幽香
+
+其可怜之姿与香氛，原是为集虫类而存。然则人类又当如何？
+
+}
+
+CASE 33
+{
+LOCALS =
+第33签 @-@凶@大吉　　　　　　　　　　　　　　　　　
+
+射命丸文
+
+笔较拳铳更强。既轻便，又可书写，且锐利。
+
+}
+
+CASE 34
+{
+LOCALS =
+第34签 末吉
+
+小野冢小町
+
+若死神过劳，此世恐将归于寂静。
+
+}
+
+CASE 35
+{
+LOCALS =
+第35签 大吉
+
+四季映姬·亚玛撒那度
+
+真相原非仅一者。然余将其归一耳。
+
+}
+
+CASE 36
+{
+LOCALS =
+第36签 小吉
+
+秋静叶
+
+欲令里、森、山皆具秋之风貌，实非易事。
+
+}
+
+CASE 37
+{
+LOCALS =
+第37签 大吉
+
+秋穰子
+
+能饱腹进食之幸福，实乃无可比拟之物。
+
+}
+
+CASE 38
+{
+LOCALS =
+第38签 大凶
+
+键山雏
+
+君竟拾得那随川流而去、身负命运之雏人形。
+
+}
+
+CASE 39
+{
+LOCALS =
+第39签 中吉
+
+河城荷取
+
+机械如河川般变迁不止。其回路中流淌者，实为血液。
+
+}
+
+CASE 40
+{
+LOCALS =
+第40签 小吉
+
+犬走椛
+
+世界因观测而具形态。绝无过度观测之困扰。
+
+}
+
+CASE 41
+{
+LOCALS =
+第41签 奇迹☆
+
+东风谷早苗
+
+此宇宙虽有限，却由数之不尽之奇迹构成。
+
+}
+
+CASE 42
+{
+LOCALS =
+第42签 大吉
+
+八坂神奈子
+
+信仰渐次消逝。若一味秉持陈旧保守之观念，实非善事。
+
+}
+
+CASE 43
+{
+LOCALS =
+第43签 大吉
+
+洩矢诹访子
+
+勿轻传言，否则祟生。
+
+}
+
+CASE 44
+{
+LOCALS =
+第44签 小吉
+
+永江衣玖
+
+地震将起，大地难宁。
+
+}
+
+CASE 45
+{
+LOCALS =
+第45签 大大吉
+
+比那名居天子
+
+若与合格相伴，此亦天人之责。
+
+}
+
+CASE 46
+{
+LOCALS =
+第46签 末凶
+
+琪丝美
+
+唯缓缓摇曳，终坠落。恰似桶中攀附者。
+
+}
+
+CASE 47
+{
+LOCALS =
+第47签 大凶
+
+黑谷山女
+
+遗忘之病常伴，终有溃时，眸中玉珠迟暮。
+
+}
+
+CASE 48
+{
+LOCALS =
+第48签 末吉
+
+水桥帕露西
+
+煌煌日常，成功若嘘。嗟乎，妒意难平。
+
+}
+
+CASE 49
+{
+LOCALS =
+第49签 乱
+
+星熊勇仪
+
+尔前。如此无力，焉能渡此乱世？
+
+}
+
+CASE 50
+{
+LOCALS =
+第50签 吉
+
+古明地觉
+
+世人自由行止，只因难窥他心。
+
+}
+
+CASE 51
+{
+LOCALS =
+第51签 大大凶
+
+火焰猫燐
+
+人間皆然，归宿归一。汝亦有吾照拂。
+
+}
+
+CASE 52
+{
+LOCALS =
+第52签 大凶，一部分大吉
+
+灵乌路空
+
+敢与吾刃相向，恐入伊卡洛斯之舞局。
+
+}
+
+CASE 53
+{
+LOCALS =
+第53签 不明
+
+古明地恋
+
+险哉。尘世之渊，坠落不自知。
+
+}
+
+CASE 54
+{
+LOCALS =
+第54签 小吉
+
+纳兹琳
+
+大山鸣动，缘因一鼠。常持冷静，所求乃得。
+
+}
+
+CASE 55
+{
+LOCALS =
+第55签 中吉
+
+多多良小伞
+
+非雨撑伞，人渐多矣。紫外荫庇，缘于此乎？
+
+}
+
+CASE 56
+{
+LOCALS =
+第56签 末大吉
+
+云居一轮&云山
+
+人生如云，凝重泪垂。终有雾散，何复萦怀。
+
+}
+
+CASE 57
+{
+LOCALS =
+第57签 大大凶
+
+村纱水蜜
+
+究竟人谁？勺底凿穿或可救。然有一辈，徒作妄为休。
+
+}
+
+CASE 58
+{
+LOCALS =
+第58签 大吉
+
+寅丸星
+
+定是君所求物，为君执有。舟载一抔，君且安受。
+
+}
+
+CASE 59
+{
+LOCALS =
+第59签 吉
+
+圣白莲
+
+苦中欲逃，当舍诸求。唯凭精进，方得自由。
+
+}
+
+CASE 60
+{
+LOCALS =
+第60签 凶
+
+封兽鵺
+
+一体何兽，方为本体？私隐遭侵，慎之戒之。
+
+}
+
+CASE 61
+{
+LOCALS =
+第61签 小吉
+
+姬海棠果
+
+未出家门，家事尽明。此等时代，已至君庭。
+
+}
+
+CASE 62
+{
+LOCALS =
+第62签 小吉
+
+桑尼米尔克
+
+天朗气清，何忍轻生？斯世何辜，竟赴泉台？
+
+}
+
+CASE 63
+{
+LOCALS =
+第63签 小小吉
+
+露娜切露德
+
+世间大半，日逊月华。清辉皎皎，尤显其佳。
+
+}
+
+CASE 64
+{
+LOCALS =
+第64签 小小吉
+
+斯塔萨菲娅
+
+夜空晦暗，因观星数有限；可见之星，皆为苍穹所限。
+
+}
+
+CASE 65
+{
+LOCALS =
+第65签 小吉
+
+幽谷响子
+
+般若波罗蜜多故…… 闻此语，腹灭之忧可解矣。
+
+}
+
+CASE 66
+{
+LOCALS =
+第66签 末吉
+
+宫古芳香
+
+思之徒劳，徒劳矣。人之一世，终化枯骨，此乃必然。
+
+}
+
+CASE 67
+{
+LOCALS =
+第67签 末凶
+
+霍青娥
+
+无墙则尽由己为，此乃真全球化之相。
+
+}
+
+CASE 68
+{
+LOCALS =
+第68签 末吉
+
+苏我屠自古
+
+诚然快适，此乃常态。肉体非必需，生活自逍遥。
+
+}
+
+CASE 69
+{
+LOCALS =
+第69签 自己决定
+
+物部布都
+
+运势本是当时运，龙脉难窥人何能。
+
+}
+
+CASE 70
+{
+LOCALS =
+第70签 最大吉
+
+丰聪耳神子
+
+众人无争无逆，循礼而行。此乃和之真谛。
+
+}
+
+CASE 71
+{
+LOCALS =
+第71签 大吉
+
+二岩猯藏
+
+人可成何者，皆由己心裁。烟草烟中散，自在任悠哉。
+
+}
+
+CASE 72
+{
+LOCALS =
+第72签 末吉
+
+秦心
+
+何以至此？近来渐觉，情感不表人渐多。
+
+}
+
+CASE 73
+{
+LOCALS =
+第73签 半吉
+
+若鹭姬
+
+半人半鱼，故有此说。荐之何物？半份天妇罗。
+
+}
+
+CASE 74
+{
+LOCALS =
+第74签 大吉
+
+赤蛮奇
+
+斗殴也罢，弹幕战也罢，人头多者方为强，此乃定数。
+
+}
+
+CASE 75
+{
+LOCALS =
+第75签 中吉
+
+今泉影狼
+
+满月依时，潮沙萦思。此归地球，亦属狼人。
+
+}
+
+CASE 76
+{
+LOCALS =
+第76签 末吉
+
+九十九弁弁
+
+魔风肆虐卷大岚，眼球之上，诸行无常之响悠悠然。
+
+}
+
+CASE 77
+{
+LOCALS =
+第77签 末吉
+
+九十九八桥
+
+折角惜生世中活，太过较真亦损折。
+
+}
+
+CASE 78
+{
+LOCALS =
+第78签 大凶
+
+鬼人正邪
+
+人谓乐事皆无味，如此人生可称好？
+
+}
+
+CASE 79
+{
+LOCALS =
+第79签 小吉
+
+少名针妙丸
+
+岂容这般磨蹭过？唯求一发逆乾坤！
+
+}
+
+CASE 80
+{
+LOCALS =
+第80签 末大吉
+
+堀川雷鼓
+
+时光有限，本是定数。众生鼓动，皆循同频同步律动。
+
+}
+
+CASE 81
+{
+LOCALS =
+第81签 凶
+
+茨木华扇
+
+是也，如你所知，喜爱动物之人，从无恶人。
+
+}
+
+CASE 82
+{
+LOCALS =
+第82签 凶
+
+宇佐见堇子
+
+学校者，伪德戏台也。徒教演技，何用之有？
+
+}
+
+CASE 83
+{
+LOCALS =
+第83签 吉
+
+清兰
+
+月兔捣团，所成何物？赤浆果团耶？
+
+}
+
+CASE 84
+{
+LOCALS =
+第84签 吉
+
+铃瑚
+
+花团相较，谬也。若比，当赏月团。
+
+}
+
+CASE 85
+{
+LOCALS =
+第85签 末大吉
+
+哆来咪苏伊特
+
+若无意识皆为梦，人世大半梦支配。梦之支配，世界之支配也。
+
+}
+
+CASE 86
+{
+LOCALS =
+第86签 吉凶不定
+
+稀神探女
+
+我本不幸，亦属不运。人生至恶，此境定转幸运。
+
+}
+
+CASE 87
+{
+LOCALS =
+第87签 小凶
+
+克劳恩皮丝
+
+地狱暗昧，不见一物？且看，已然光明。
+
+}
+
+CASE 88
+{
+LOCALS =
+第88签 大大凶
+
+纯狐
+
+纯化之时，自然生命，感情种种，皆为信息。
+
+}
+
+CASE 89
+{
+LOCALS =
+第89签 吉·凶·大凶
+
+赫卡提亚·拉碧斯拉祖利
+
+认知之数，即世界之广。多样性者，宇宙之广本相也。
+
+}
+
+CASE 90
+{
+LOCALS =
+第90签 大大凶
+
+依神女苑
+
+金钱本是天下流通物。何人俭用，实属愚妄。
+
+}
+
+CASE 91
+{
+LOCALS =
+第91签 超大凶
+
+依神紫苑
+
+纵我一生，未感幸事，终会消逝，如此而已。
+
+}
+
+CASE 92
+{
+LOCALS =
+第92签 末吉
+
+爱塔妮缇拉尔瓦
+
+捕食对照，以蝶为佳。其羽浅薄，却拥绮丽。
+
+}
+
+CASE 93
+{
+LOCALS =
+第93签 小吉
+
+坂田合欢
+
+社会多眷恋，偶有独处世，此境亦佳也。
+
+}
+
+CASE 94
+{
+LOCALS =
+第94签 大吉
+
+高丽野阿吽
+
+得缘起物，何其幸哉。更兼双物，尤佳之极。
+
+}
+
+CASE 95
+{
+LOCALS =
+第95签 大大吉
+
+矢田寺成美
+
+幸甚幸甚，愿助一臂。五十六亿七千万年，此程与共。
+
+}
+
+CASE 96
+{
+LOCALS =
+第96签 吉
+
+丁礼田舞
+
+忽而退缩？意料之外，方为人生至佳之调味。
+
+}
+
+CASE 97
+{
+LOCALS =
+第97签 吉
+
+尔子田里乃
+
+何苦如此？这般煎熬。吾辈援之，汝可知晓？
+
+}
+
+CASE 98
+{
+LOCALS =
+第98签 末大凶
+
+摩多罗隐岐奈
+
+吾乃摩多罗隐岐奈，此般乱象，实乃吾之杰作。
+
+}
+
+CASE 99
+{
+LOCALS =
+第99签 大吉
+
+戎璎花
+
+但求尽兴，便是胜局。纵死，亦无憾。
+
+}
+
+CASE 100
+{
+LOCALS =
+第100签 凶
+
+牛崎润美
+
+其重也，究是石之密度，抑或大地之恶意？
+
+}
+
+CASE 101
+{
+LOCALS =
+第101签 小吉
+
+庭渡久侘歌
+
+鸡者，缘何破晓啼？莫非噩梦酷烈，惊觉方鸣？
+
+}
+
+CASE 102
+{
+LOCALS =
+第102签 吉
+
+吉吊八千慧
+
+若初即如此，本该长生存。
+
+}
+
+CASE 103
+{
+LOCALS =
+第103签 中吉
+
+杖刀偶磨弓
+
+汝且惧之。吾之忠心，于世间堪称第二坚硬。
+
+}
+
+CASE 104
+{
+LOCALS =
+第104签 大吉
+
+埴安神袿姬
+
+尚未为端粒所役耶？且以水土，重铸汝身。
+
+}
+
+CASE 105
+{
+LOCALS =
+第105签 大吉
+
+骊驹早鬼
+
+神之坐骑，为兽神也。是以人之坐骑，为兽人也。
+
+}
+
+CASE 106
+{
+LOCALS =
+第106签 大吉
+
+饕餮尤魔
+
+捕食者与被食者，孰强孰弱，不辩自明。
+
+}
+
+CASE 107
+{
+LOCALS =
+第107签 大吉
+
+豪德寺三花
+
+君且近前观之。观毕即归，此乃观览之价也。
+
+}
+
+CASE 108
+{
+LOCALS =
+第108签 吉
+
+山城高岭
+
+纵是何等去处，皆可营生。纵是山之极奥，亦复如是。
+
+}
+
+CASE 109
+{
+LOCALS =
+第109签 是吉还是凶呢？
+
+驹草山如
+
+无博奕之人生，不过耐受苦痛之机械模样。
+
+}
+
+CASE 110
+{
+LOCALS =
+第110签 大吉
+
+玉造魅须丸
+
+纵是如此，仍欲发掘否？神代沉眠之稀矿，正待君采。
+
+}
+
+CASE 111
+{
+LOCALS =
+第111签 末凶
+
+菅牧典
+
+此乃私房话，若今时今日仍不作为，定当吃亏。
+
+}
+
+CASE 112
+{
+LOCALS =
+第112签 @-@大凶@大大吉　　　　　　　　　　　　　　　
+
+饭纲丸龙
+
+且看头顶。彼等尽是吾掌中魂灵。
+
+}
+
+CASE 113
+{
+LOCALS =
+第113签 吉凶不定
+
+天弓千亦
+
+世人莫非错认，命运亦可私有？
+
+}
+
+CASE 114
+{
+LOCALS =
+第114签 大大吉
+
+姬虫百百世
+
+哈哈哈哈！运势如河奔流，能将其尽吞干涸者，唯洒家尔！
+
+}
+
+CASE 115
+{
+LOCALS =
+第115签 吉
+
+孙美天
+
+猿山之主，行修罗道。勿与妖类同流，堕于温吞境地。
+
+}
+
+CASE 116
+{
+LOCALS =
+第116签 末吉
+
+三头慧之子
+
+但使准备周全，后唯待之即可。陷阱一物，原是这般便利。
+
+}
+
+CASE 117
+{
+LOCALS =
+第117签 大大凶
+
+天火人血枪
+
+纵是兆头不祥，罢了，即便如此，焉知非福？
+
+}
+
+CASE 118
+{
+LOCALS =
+第118签 末大吉
+
+豫母都日狭美
+
+喜乐也罢，苦楚也罢，于我面前，皆无从遁逃。
+
+}
+
+CASE 119
+{
+LOCALS =
+第119签 无
+
+日白残无
+
+事以至此，纵有何举，尽是徒劳。万物将倾，尽归虚无。
+
+}
+
+CASE 120
+{
+LOCALS =
+第120签 大吉
+
+绵月丰姬
+
+人生至珍之物为何？此问易答，无非山珍海味尔。
+
+}
+
+CASE 121
+{
+LOCALS =
+第121签 中吉
+
+绵月依姬
+
+欲求坚韧存，关键在人援。
+
+}
+
+CASE 122
+{
+LOCALS =
+第122签 中吉
+
+本居小铃
+
+读书非俗务，贵在感其魂。
+
+}
+
+CASE 123
+{
+LOCALS =
+第123签 吉
+
+奥野田美宵
+
+若有烦心事，不妨与人言。酒醉吐真意，心结自开颜。
+
+}
+
+CASE 124
+{
+LOCALS =
+第124签 大大凶
+
+宫出口瑞灵
+
+怨恨难平事，唯有怨灵知。
+
+}
+
+CASE 125
+{
+LOCALS =
+第125签 小吉
+
+森近霖之助
+
+不知起何时，外界说明册，读而不明言。
+
+}
+
+CASE 126
+{
+LOCALS =
+第126签 吉
+
+稗田阿求
+
+斯世若此，何忘将发之事耶。
+
+}
+
+CASE 127
+{
+LOCALS =
+第127签 末吉
+
+雾雨魔理沙
+
+恶事虽难见，然必经。任听天命者，与破灭同义。
+
+}
+
+CASE 128
+{
+LOCALS =
+第128签 超大吉
+
+博丽灵梦
+
+引我至此境，幸甚此组缘。
+
+}
+
+CASEELSE
+{
+LOCALS =
+第129签 清洁吉
+
+%CALLNAME:MASTER%
+
+扫帚清尘焕新境，拾掇愉悦吾身心。
+
+}
+		
+ENDSELECT
+RETURNF LOCALS
