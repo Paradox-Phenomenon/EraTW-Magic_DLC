@@ -1327,17 +1327,16 @@ ENDIF
 ;	・旧関数の互換処理を削除、描画制御と背景色比較処理のみに変更
 ;-------------------------------------------------
 ;@SET_MAP_WEATHER_BGCOLOR
-@SET_MAP_WEATHER_BGCOLOR(ARG = -1, 非幻想乡色光 = -1)
-#DIM 非幻想乡色光
+@SET_MAP_WEATHER_BGCOLOR(ARG = -1, LOCATION_ID = -1)
 #DIM CURRED		;CURRENT REDRAW。CURRENTREDRAWを保存
 #DIM NEXTCOLOR
 #DIMS 低気圧位置
 #DIMS 積乱雲位置
-;目前而言无天气判定区域（天界、仙界区域等恒定晴，以及独立天气系统区域冥地月魔四个地图）统一设置为晴
+#DIM LOCATION_ID
 SIF ARG == -1
-	ARG = 无天气判定(AT_AREA(MASTER)) ? 天气_晴 # TIME:5
-SIF 非幻想乡色光 == -1
-	非幻想乡色光 = GROUPMATCH(GET_MAPID(AT_AREA(MASTER)),MAP冥界,MAP地底,MAP月,MAP魔界)
+	ARG = TIME:5
+SIF LOCATION_ID == -1
+	LOCATION_ID = AT_AREA(MASTER)
 
 SIF FLAG:時間停止 || !FLAG:背景色推移
 	RETURN
@@ -1362,9 +1361,9 @@ SELECTCASE TIME:0
 	CASE 360 TO 479
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏" && !非幻想乡色光
+				IF 低気圧位置 == "台風勢力圏"
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF ((低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !非幻想乡色光
+				ELSEIF ((低気圧位置 == "寒冷渦接近" && DAY:2 != 2) || (IS_COLD_LOW && DAY:2 == 2) || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近")
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_晴天_朝
@@ -1400,7 +1399,7 @@ SELECTCASE TIME:0
 	CASE 720 TO 1079
 		;SELECTCASE 積乱雲位置
 		;	CASE "積乱雲接近", "積乱雲直下"
-		IF (積乱雲位置 == "積乱雲接近" || 積乱雲位置 == "積乱雲直下") && !非幻想乡色光
+		IF (積乱雲位置 == "積乱雲接近" || 積乱雲位置 == "積乱雲直下")
 			SELECTCASE CAN_CUMULUS:0
 				CASE 天气_阴, 天气_雨, 天气_大雨
 					NEXTCOLOR = C_MAP_積乱雲_昼
@@ -1430,9 +1429,9 @@ SELECTCASE TIME:0
 	CASE 1080 TO 1199
 		SELECTCASE ARG
 			CASE IS <= 天气_阴
-				IF 低気圧位置 == "台風勢力圏" && !非幻想乡色光
+				IF 低気圧位置 == "台風勢力圏"
 					NEXTCOLOR = C_MAP_夕焼け_台風
-				ELSEIF (低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近") && !非幻想乡色光
+				ELSEIF (低気圧位置 == "寒冷渦接近" || IS_COLD_LOW || 低気圧位置 == "二つ玉低気圧接近" || 低気圧位置 == "日本海低気圧接近" || 低気圧位置 == "南岸低気圧接近" || 低気圧位置 == "温暖前線接近")
 					NEXTCOLOR = C_MAP_夕焼け_低気圧
 				ELSE
 					NEXTCOLOR = C_MAP_夕焼け_通常
@@ -1462,6 +1461,29 @@ SELECTCASE TIME:0
 				NEXTCOLOR = C_MAP_晴天_夜
 		ENDSELECT
 ENDSELECT
+
+;不同区域的幻想乡色光单独设置，复用一些颜色吧
+;三途川天气恒雾且没有时间感，用昼雾色
+SIF IS_SANZUKAWA(LOCATION_ID)
+	NEXTCOLOR = C_MAP_霧_昼
+;彼岸温和光芒且没有时间感，用个夕阳黄感觉可以，不知道有没有更好的颜色
+SIF IS_HIGAN(LOCATION_ID)
+	NEXTCOLOR = C_MAP_夕焼け_通常
+;地狱更多是血红的，用个台风特有夕阳红吧
+SIF IS_JIGOKU(LOCATION_ID)
+	NEXTCOLOR = C_MAP_夕焼け_台風
+;旧地狱一片石头，啥都看不清，还是当夜晚处理吧
+SIF IS_KYUUJIGOKU(LOCATION_ID)
+	NEXTCOLOR = C_MAP_晴天_夜
+;梦境世界……我想用紫色或者粉色qwq，还是先填晴夜吧
+SIF IS_YUMESEKAI(LOCATION_ID)
+	NEXTCOLOR = C_MAP_晴天_夜
+;月都，标准的恒定晴夜
+SIF IS_TSUKIMIYAKO(LOCATION_ID)
+	NEXTCOLOR = C_MAP_晴天_夜
+;魔界，浓重的紫色？也先填晴夜吧
+SIF IS_MAKAI(LOCATION_ID)
+	NEXTCOLOR = C_MAP_晴天_夜
 
 SIF NEXTCOLOR != GETBGCOLOR()
 	SETBGCOLOR NEXTCOLOR
@@ -2901,9 +2923,10 @@ ENDSELECT
 ;屋内では20℃に近づくように気温が上下する
 ;屋外では日射がある場合、気温上昇
 日射補正 = 0
-IF OUTROOF(CFLAG:MASTER:現在位置)
+;IF OUTROOF(CFLAG:MASTER:現在位置)
+IF OUTROOF(CFLAG:MASTER:現在位置) && !IS_NO_SUN(VISITOR_LOCATION(CFLAG:MASTER:現在位置))
 	SELECTCASE TIME:5
-		CASE 0,1
+		CASE 天气_少云, 天气_晴
 			SELECTCASE TIME:0
 				CASE 360 TO 599, 960 TO 1079
 					日射補正 += 15
@@ -2912,14 +2935,15 @@ IF OUTROOF(CFLAG:MASTER:現在位置)
 			ENDSELECT
 
 			SELECTCASE DAY:2
-				CASE 1,3
+				CASE 季节_春, 季节_秋
 					日射補正 += 10
-				CASE 2
+				CASE 季节_夏
 					日射補正 += 15
-				CASE 4
+				;这里按道理补正应该是+5……？
+				CASE 季节_冬
 					日射補正 += 10
 			ENDSELECT
-		CASE 2
+		CASE 天气_多云
 			日射補正 += 5
 	ENDSELECT
 	補正温度 += 日射補正

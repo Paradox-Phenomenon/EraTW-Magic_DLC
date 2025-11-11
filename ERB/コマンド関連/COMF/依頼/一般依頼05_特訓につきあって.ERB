@@ -88,6 +88,7 @@ CASE "依頼実行時"
 
 ;天気を参照
 	BAD_WEATHER = 0
+	[SKIPSTART]
 	SELECTCASE TIME:5
 	CASE 4, 6, 8, 10, 12, 13
 		;悪天候
@@ -101,33 +102,42 @@ CASE "依頼実行時"
 		SIF DAY:2 == 2 && TIME:5 == 1 && INRANGE(TIME, 361, 1019)
 			BAD_WEATHER = 3
 	ENDSELECT
+	[SKIPEND]
+	SIF GROUPMATCH(TIME:5, 天气_雨, 天气_雾雨, 天气_雪, 天气_细雪, 天气_雨夹雪, 天气_冰霰) && !IS_NO_RAIN(AT_AREA(MASTER))
+		BAD_WEATHER = 1
+	SIF GROUPMATCH(TIME:5, 天气_大雨, 天气_大雪, 天气_暴雨, 天气_冰雹) && !IS_NO_RAIN(AT_AREA(MASTER))
+		BAD_WEATHER = 2
+	SIF DAY:2 == 季节_夏 && TIME:5 == 天气_晴 && INRANGE(TIME, 361, 1019) && !IS_NO_SUN(AT_AREA(MASTER)) && !IS_NO_SEASON_CHANGE(AT_AREA(MASTER))
+		BAD_WEATHER = 3
 	SIF !OUTROOF(CFLAG:MASTER:現在位置)
 		BAD_WEATHER = 0
 	
 	PRINTFORMW %CALLNAME:MASTER%和%CALLNAME:TARGET%进行着弹幕游戏的特训
-	SELECTCASE TIME:5
-	CASE 4, 6
-		PRINTL 进行雨中的弹幕训练
-		PRINTW 非常的累
-	CASE 1
-		IF BAD_WEATHER == 3
-			PRINTL 在强烈的直射日光下进行弹幕训练
-			PRINTW 好像要中暑了…
-		ELSE
-			PRINTW 在万里无云的蓝天下进行弹幕训练
-		ENDIF
-	CASE 5
-		PRINTL 在暴雨中、强行进行严格的训练
-		PRINTW 累得快死了
-	CASE 8, 10, 12, 13
-		PRINTL 进行雪中的弹幕训练
-		PRINTW 非常的累
-	CASE 9
-		PRINTL 在暴风雪中、强行进行严格的训练
-		PRINTW 累得快死了
-	CASEELSE
-;		PRINTL 进行弾幕訓練
-	ENDSELECT
+	IF !IS_NO_WEATHER_SEE(AT_AREA(MASTER))
+		SELECTCASE TIME:5
+			CASE 天气_雨, 天气_雾雨
+				PRINTL 进行雨中的弹幕训练
+				PRINTW 非常的累
+			CASE 天气_晴
+				IF BAD_WEATHER == 3
+					PRINTL 在强烈的直射日光下进行弹幕训练
+					PRINTW 好像要中暑了…
+				ELSE
+					PRINTW 在万里无云的蓝天下进行弹幕训练
+				ENDIF
+			CASE 天气_大雨, 天气_暴雨
+				PRINTL 在暴雨中、强行进行严格的训练
+				PRINTW 累得快死了
+			CASE 天气_雪, 天气_细雪, 天气_雨夹雪, 天气_冰霰
+				PRINTL 进行雪中的弹幕训练
+				PRINTW 非常的累
+			CASE 天气_大雪, 天气_冰雹
+				PRINTL 在暴风雪中、强行进行严格的训练
+				PRINTW 累得快死了
+			CASEELSE
+				;PRINTL 进行弾幕訓練
+		ENDSELECT
+	ENDIF
 	
 	TCVAR:MASTER:空腹時刻 -= 15
 	TCVAR:TARGET:空腹時刻 -= 15
