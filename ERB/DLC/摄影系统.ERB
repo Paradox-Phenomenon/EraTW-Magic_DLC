@@ -72,8 +72,8 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 			时间描述 = %TEXTR("午夜/深夜/半夜/夜阑")%
 	ENDSELECT
 	时间描述 += "时"
-	;天气，天界、地底、月都、魔界不存在天气
-	IF !无天气判定(AT_AREA(ARG)) && OUTROOF(CFLAG:ARG:現在位置)
+	;天气，无天气感知区不显示天气描述
+	IF !IS_NO_WEATHER_SEE(AT_AREA(ARG)) && OUTROOF(CFLAG:ARG:現在位置)
 		IF INRANGE(FLAG:異常気象, 0, 8) || FLAG:異常気象 > 10
 			SELECTCASE TIME:5
 				CASE 0, 1
@@ -127,8 +127,9 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 		ENDIF
 	ENDIF
 
-	;地底、魔界没有明确的时间观念
-	SIF GET_MAPID(CFLAG:ARG:現在位置) == 9 || GET_MAPID(CFLAG:ARG:現在位置) == 11
+	;无时间感知区，以前包括地底之类，现在可以直接用精细一点
+	;SIF GET_MAPID(CFLAG:ARG:現在位置) == 9 || GET_MAPID(CFLAG:ARG:現在位置) == 11
+	SIF IS_NO_TIME_SEE(AT_AREA(ARG))
 		VARSET 时间描述
 
 	IF GET_MAPID(CFLAG:ARG:現在位置) == MAIN_MAP
@@ -173,10 +174,10 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 		ELSE
 			IF !拍摄察觉
 				IF OUTROOF(CFLAG:ARG:現在位置)
-					IF GET_MAPID(CFLAG:ARG:現在位置) != 9 && (MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界)
+					IF !IS_NO_WEATHER_SEE(AT_AREA(ARG))
 						IF 天候造成的影響(ARG, CFLAG:ARG:現在位置) <= -3
 							行动描述 = %通常行动描述_未察觉_室外_天气可用_适宜气候(ARG)%
-							; 	IF OUTROOF(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) != 9
+							; 	IF OUTROOF(CFLAG:ARG:現在位置) && !IS_NO_WEATHER_SEE(AT_AREA(ARG))
 							; 		IF (MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界)
 							; 			IF !(GROUPMATCH(TIME:5, 5, 9, 12, 13, 14, 15, 16) || GROUPMATCH(FLAG:異常気象, 9, 10, 12))
 							; 				SELECTCASE RAND:10
@@ -252,7 +253,7 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 							; 					行动描述 = 抬头看向头顶的深空
 							; 			ENDSELECT
 							; 		ENDIF
-							; 	ELSEIF OUTROOF(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) == 9
+							; 	ELSEIF OUTROOF(CFLAG:ARG:現在位置) && IS_NO_WEATHER_SEE(AT_AREA(ARG))
 							; 		SELECTCASE RAND:10
 							; 			CASE 0
 							; 				行动描述 = 静静注视着远方不知在看什么
@@ -357,7 +358,7 @@ IF CFLAG:ARG:诶嘿嘿 == 0
 		;ELSEIF TALENT:ARG:炮友 || TALENT:ARG:愛欲 || TALENT:ARG:淫乱
 
 		;ELSE
-			; IF (OUTROOF(CFLAG:ARG:現在位置) && ((MAIN_MAP != 8 && CFLAG:ARG:現在位置 != 天界) || (MAIN_MAP == 8 && MAP_SEARCH_REPLACEMENT_8(CFLAG:ARG:現在位置) != 天界))) && !(GROUPMATCH(TIME:5, 0, 1, 2, 3, 7, 17, 18) || INRANGE(FLAG:異常気象, 0, 8))
+			; IF (OUTROOF(CFLAG:ARG:現在位置) && !IS_NO_WEATHER_SEE(AT_AREA(ARG)) && !(GROUPMATCH(TIME:5, 0, 1, 2, 3, 7, 17, 18) || INRANGE(FLAG:異常気象, 0, 8))
 			; 	SELECTCASE TIME:5
 			; 		CASE
 			; 	ENDSELECT
