@@ -1,0 +1,53 @@
+;titjob
+@ADD_SEX_ACTION_1_9(ARG, MULTIPLIER)
+#DIM MULTIPLIER
+;-------------------------------------------------
+;COM別FLAGの設定
+;-------------------------------------------------
+;行為者
+TCVAR:ARG:116 = ARG
+;奉仕快楽
+TCVAR:ARG:108 = 1
+
+CSTR:PLAYER:10 += @"{ARG}/"
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+TCVAR:PLAYER:2 = 8
+;射精快感強度
+TCVAR:PLAYER:4 += MULTIPLY(300, MULTIPLIER)
+
+;-------------------------------------------------
+;ソース追加処理
+;-------------------------------------------------
+;消費体力、気力
+IF FLAG:70 == 1
+	BASE:MASTER:TSP -= 40
+
+	SOURCE:PLAYER:快Ｃ += MULTIPLY(20, MULTIPLIER)
+	SIF CFLAG:妊娠経過日数 >= 30
+		SOURCE:PLAYER:快Ｃ += MULTIPLY(CFLAG:妊娠経過日数 / 2, MULTIPLIER)
+ELSE
+	DOWNBASE:体力 += 20
+	DOWNBASE:気力 += 20
+
+	SOURCE:PLAYER:快Ｃ += MULTIPLY(40, MULTIPLIER)
+	SIF CFLAG:妊娠経過日数 >= 30
+		SOURCE:PLAYER:快Ｃ += MULTIPLY(CFLAG:妊娠経過日数, MULTIPLIER)
+ENDIF
+RETURN 1
+
+@ADD_SEX_ABLE_1_9(ARG)
+SIF !TFLAG:100
+	RETURN 0
+SIF !TARGET
+    RETURN 0
+SIF CFLAG:うふふ == 0
+    RETURN 0
+SIF !HAS_PENIS(PLAYER)
+	RETURN 0
+SIF !CHECK_CLO("belly_visible")
+    RETURN 0
+RETURN 1
+
+@ADD_SEX_CAN_1_9()
+ADD_SEX_MODULE_DIFFICULTY_TEMP += 20
+ADD_SEX_MODULE_COM_ORDER_TEMP |= QOL_COM_ORDER_SERVICE_FULL | QOL_COM_ORDER_DIRT_SOURCE_PENIS

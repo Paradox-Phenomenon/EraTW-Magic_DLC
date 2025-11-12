@@ -1,0 +1,172 @@
+;Exposed Spread Labia
+@ADD_CUSTOM_SCOM3
+;-------------------------------------------------
+;COM別FLAGの設定
+;-------------------------------------------------
+;行為者
+TCVAR:116 = TARGET
+;奉仕快楽
+TCVAR:PLAYER:108 = 1
+
+;-------------------------------------------------
+;ソース追加処理
+;-------------------------------------------------
+;消費体力、気力
+DOWNBASE:体力 += 50
+DOWNBASE:気力 += 90
+
+SOURCE:快Ｃ = 43
+SOURCE:達成 = 20
+SOURCE:恐怖 = 180
+SOURCE:液体 = 12
+SOURCE:露出 = 450
+SOURCE:屈従 = 600
+SOURCE:逸脱 = 450
+SOURCE:反感 = 450
+;-------------------------------------------------
+;特殊ソース処理
+;-------------------------------------------------
+;抑圧、抵抗持ちには、抑鬱ソース追加
+SIF TALENT:自己愛 < 0 || TALENT:抵抗
+	SOURCE:鬱屈 += 150
+
+;処女&&無自覚非処女、貞操観念
+IF TALENT:処女 == 1 || TALENT:処女 == -1
+	TIMES SOURCE:恐怖 , 1.20
+	TIMES SOURCE:屈従 , 1.20
+	TIMES SOURCE:反感 , 1.20
+	SOURCE:露出 += 300
+	IF TALENT:貞操 > 0
+		TIMES SOURCE:露出 , 2.00
+		TIMES SOURCE:逸脱 , 2.00
+	ENDIF
+ENDIF
+;-------------------------------------------------
+;汚れの処理
+;-------------------------------------------------
+;奴隷のＶ⇔指の汚れが移動
+STAIN:3 |= STAIN:1
+STAIN:1 |= STAIN:3
+;-------------------------------------------------
+;経験の処理
+;-------------------------------------------------
+;露出癖Lv3以上で自慰経験加算
+SIF ABL:露出癖 >= 3
+	EXP:自慰経験 ++
+
+;同性愛　レズなら戻り値1ゲイなら戻り値2
+IF HETEROSEX(TARGET,PLAYER)
+	EXP:(50 + HETEROSEX(TARGET,PLAYER)) += 1
+	EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 1
+ENDIF
+RETURN 1
+
+@ADD_CUSTOM_CAN_SCOM3(ARG)
+SKIPDISP ARG
+PRINTL Exposed Spread Labia
+
+CALL QOL_COM_ORDER_STANDARD_CHECKS(36, QOL_COM_ORDER_EXPOSURE_FULL | QOL_COM_ORDER_VAGINAL_PARTIAL, TARGET)
+LOCAL = RESULT
+SKIPDISP 0
+RETURN LOCAL
+
+@ADD_CUSTOM_SCOM_ABLE3
+;秘貝開帳実行判定
+SIF !TFLAG:100
+	RETURN 0
+SIF FLAG:70 && !MAXBASE:TARGET:TSP
+	RETURN 0
+;一括管理
+IF TFLAG:102 != 2 || TARGET == MASTER
+	RETURN 0
+ENDIF
+;毒人形だと性器がついてないのでダメ
+SIF TALENT:196 == 99
+	RETURN 0
+;従順が3未満だとダメ
+SIF ABL:従順 < 3
+	RETURN 0
+;処女の場合、従順3以上または露出癖3以上ないとダメ
+SIF TALENT:処女 && ABL:従順 < 3 && ABL:露出癖 < 3
+	RETURN 0
+;縄使用中は不可
+SIF TEQUIP:縄
+	RETURN 0
+;下半身着衣
+SIF TEQUIP:0 & 4 || TEQUIP:0 & 2
+	RETURN 0
+;バイブ挿入中はダメ
+SIF TEQUIP:13
+	RETURN 0
+;オトコだとダメ
+SIF !(TALENT:2 & 1)
+	RETURN 0
+;お風呂場プレイ中はプレイマットが無いとダメ
+IF TEQUIP:31
+	SIF ITEM:20 == 0 && NOITEM == 0
+		RETURN 0
+ENDIF
+
+RETURN 1
+
+@ADD_CUSTOM_MESSAGE_SCOM3
+IF ONGOING()
+	PRINTL
+	CLEARLINE 1
+ENDIF
+PRINTFORML %ONGOING_NAME(MASTER)% seat yourself behind %CALLNAME:TARGET% and tell %HIM_HER(TARGET)% to show you %HIS_HER(TARGET)% labia while looking at the mirror.
+;露出癖
+IF ABL:露出癖 == 0
+	PRINTFORM On the verge of tears, %HE_SHE(TARGET)% attempts to avert %HIS_HER(TARGET)% gaze as %HE_SHE(TARGET)% shows off %HIS_HER(TARGET)% 
+	;小柄体型
+	SIF TALENT:体型 == -2
+		PRINT childlike 
+	SIF TALENT:処女 == 1
+		PRINT virgin 
+	PRINTFORML slit in the mirror, using two fingers to spread the lips left and right...
+	SIF TCVAR:102
+		PRINTFORML As %HIS_HER(TARGET)% vagina is spread open, some semen from before comes oozing out...
+ELSEIF ABL:露出癖 == 1
+	PRINTFORML %HIS_HER(TARGET,1)% face is bright red as %HE_SHE(TARGET)% looks at %HIMSELF_HERSELF(TARGET)% spreading %HIS_HER(TARGET)% genitals...
+	SIF TCVAR:102
+		PRINTFORML As %HIS_HER(TARGET)% vagina is spread open, some semen from before comes oozing out...
+ELSEIF ABL:露出癖 == 2
+	PRINTFORML Excitedly, %HE_SHE(TARGET)% positions %HIMSELF_HERSELF(TARGET)% to put %HIS_HER(TARGET)% nethers in full view as %HE_SHE(TARGET)% spreads %HIS_HER(TARGET)% %SLIT()%.
+	IF TCVAR:102
+		PRINTFORML As %HIS_HER(TARGET)% vagina is spread open, some semen from before comes oozing out...
+	ELSE
+		PRINTFORML You stare closely, it wiggles obscenely slick with fluids, looking completely ready... 
+	ENDIF
+ELSEIF ABL:露出癖 == 3
+	PRINTFORML %HE_SHE(TARGET,1)% uses one hand to spread the labia and starts caressing %HIS_HER(TARGET)% clitoris with the other, growing more and more excited by %HIS_HER(TARGET)% own body.
+	IF TCVAR:102
+		PRINTFORML The slick opening obscenely discharges some semen from before...
+	ELSE
+		PRINTFORML Every time %HE_SHE(TARGET)%'s hand stimulates %HIS_HER(TARGET)% clitoris some more fluid comes gushing out...
+	ENDIF
+ELSEIF ABL:露出癖 == 4
+	PRINTFORML %HE_SHE(TARGET,1)% uses both %HIS_HER(TARGET)% fingers to not only spread the labia, but the insides as well, positioning %HIMSELF_HERSELF(TARGET)% to get a good look at %HIS_HER(TARGET)% own orifice.
+	IF TCVAR:102
+		PRINTFORML As %HIS_HER(TARGET)% hands spreads %HIS_HER(TARGET)% vagina even wider, some semen from before comes dripping out...
+	ELSE
+		PRINTFORML %CALLNAME:TARGET% pants heavily as you look into %HIS_HER(TARGET)% depths...
+	ENDIF
+ELSEIF ABL:露出癖 >= 5 && TALENT:淫乱 == 0
+	PRINTFORML %HE_SHE(TARGET,1)% uses both %HIS_HER(TARGET)% hands as hooks to spread %HIS_HER(TARGET)% vagina wide, eagerly showing off %HIS_HER(TARGET)% insides.
+	IF TCVAR:102
+		PRINTFORML As the vaginal passage is widened, some semen from before flows out...
+	ELSE
+		PRINTFORML As %HE_SHE(TARGET)% spreads %HIMSELF_HERSELF(TARGET)% wide, the walls convulse and an endless torrent of love juice gushes out...
+	ENDIF
+;露出癖LV5以上＋淫乱or娼婦
+ELSEIF ABL:露出癖 >= 5 && TALENT:淫乱
+	PRINTFORML %HE_SHE(TARGET,1)% uses both %HIS_HER(TARGET)% hands as hooks to spread %HIS_HER(TARGET)% vagina wide, showing off %HIS_HER(TARGET)% insides with a %FSYN("lewd")% smile on %HIS_HER(TARGET)% face.
+	IF TCVAR:102
+		PRINTFORML Some semen trickles down the wriggling walls of %HIS_HER(TARGET)% vagina, obscenely spilling out...
+	ELSE
+		PRINTFORML The walls seem soft and alive, wriggling as if trying to invite you inside...
+	ENDIF
+ENDIF
+IF TALENT:PLAYER:羞恥心 > 0 && EXP:PLAYER:挿入経験 < 40
+	PRINTFORML Despite giving the order yourself, as you see %CALLNAME:TARGET%'s insides you're assaulted by feelings of guilt and shame, your face beet red as you're forced to look away...
+ENDIF

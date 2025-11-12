@@ -1,0 +1,198 @@
+;Exposed Anal Reverse Lotus
+@ADD_CUSTOM_SCOM2
+;-------------------------------------------------
+;COM別FLAGの設定
+;-------------------------------------------------
+;行為者
+TCVAR:116 = PLAYER
+
+;奉仕快楽フラグ
+TCVAR:PLAYER:108 = 1
+
+CSTR:PLAYER:10 += @"{TARGET}/"
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+TCVAR:PLAYER:2 = 2
+TCVAR:PLAYER:童貞喪失 = 1
+TCVAR:Ａ喪失発生 = 1
+;強度
+TCVAR:PLAYER:4 = 2600
+
+CSTR:TARGET:10 += @"{PLAYER}/"
+;TCVAR:2 射精箇所フラグ（-1=コンドーム 1=膣内 2=アナル 3=手淫 4=口淫 5=パイズリ 6=素股 7=足コキ 8=体表 9=アナル奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
+TCVAR:TARGET:2 = 12
+;強度
+TCVAR:TARGET:4 = 2400
+
+DOWNBASE:PLAYER:体力 += 40
+DOWNBASE:PLAYER:気力 += 50
+
+;-------------------------------------------------
+;ソース追加処理
+;-------------------------------------------------
+;消費体力、気力
+DOWNBASE:体力 += 80
+DOWNBASE:気力 += 90
+SOURCE:PLAYER:快Ｃ = 400
+
+SOURCE:快Ａ = 350
+SOURCE:快Ｂ = 250
+SOURCE:情愛 = 350
+SOURCE:苦痛 = 700
+SOURCE:露出 = 700
+SOURCE:逸脱 = 1000
+SOURCE:反感 = 1500
+
+;上のほうで計算した汚れデータ
+SOURCE:不潔 = Y*10 + 60
+
+;-------------------------------------------------
+;特殊ソース処理
+;-------------------------------------------------
+;抑圧、抵抗持ちには、抑鬱ソース追加
+SIF TALENT:自己愛 < 0 || TALENT:抵抗
+	SOURCE:鬱屈 += 1200
+;Aへの苦痛は先に処理しておく
+CALL PAIN_CHECK_A(TARGET)
+
+;-------------------------------------------------
+;汚れの処理
+;-------------------------------------------------
+;射精に関係なく行われる処理はここから
+;奴隷のＡ⇔調教者のＰの汚れが移動
+CALL STAIN_肛門Ｐ挿入
+
+;-------------------------------------------------
+;経験の処理
+;-------------------------------------------------
+EXP:Ａ経験 ++
+EXP:PLAYER:挿入経験 ++
+;同性愛　レズなら戻り値1ゲイなら戻り値2
+IF FLAG:70 == 1
+	IF HETEROSEX(TARGET,PLAYER)
+		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 4
+	ENDIF
+		EXP:PLAYER:時姦経験 += 1
+ELSE
+	IF HETEROSEX(TARGET,PLAYER)
+		EXP:(50 + HETEROSEX(TARGET,PLAYER)) += 4
+		EXP:PLAYER:(50 + HETEROSEX(TARGET,PLAYER)) += 4
+	ENDIF
+	EXP:Ａ性交経験 ++
+	;愛情経験
+	SIF !ASSIPLAY
+		EXP:愛情経験 += TALENT:恋慕
+ENDIF
+Qol_Info_Count_Array:TARGET:Qol_Count_ASex ++ ;qol custom code
+SIF FLAG:70 == 1 || CFLAG:イタズラ
+	Qol_Info_Count_Array:TARGET:Qol_Count_UncASex ++ ;qol custom code
+RETURN 1
+
+@ADD_CUSTOM_CAN_SCOM2(ARG)
+SKIPDISP ARG
+;takes from Exposed Reverse Lotus and Reverse Anal Lotus, with overall higher requirements
+IF FLAG:70
+	PRINTL Exposed Anal Reverse Lotus Rape
+ELSE
+	IF !TEQUIP:縄
+		PRINTL Exposed Anal Reverse Lotus
+		
+		CALL QOL_COM_ORDER_STANDARD_CHECKS(60, QOL_COM_ORDER_ANAL_FULL | QOL_COM_ORDER_EXPOSURE_PARTIAL, TARGET)
+		LOCAL = RESULT
+		SKIPDISP 0
+		RETURN LOCAL
+	ENDIF
+ENDIF
+SKIPDISP 0
+RETURN 1
+
+@ADD_CUSTOM_SCOM_ABLE2
+;乱れ牡丹実行判定
+SIF !TFLAG:100
+	RETURN 0
+;一括管理
+IF TFLAG:102 != 2 || TARGET == MASTER
+	RETURN 0
+ENDIF
+;毒人形だと肛門がついてないのでダメ
+SIF TALENT:196 == 99
+	RETURN 0
+;調教者がオトコ、ふたなりの場合はある程度勃起してないとダメ
+SIF (HAS_PENIS(MASTER)) && BASE:MASTER:勃起 < 1000
+	RETURN 0
+;羞恥プレイ中じゃないとダメ
+SIF TEQUIP:30 == 0
+	RETURN 0
+;アナルビーズ使用中は不可
+SIF TEQUIP:15
+	RETURN 0
+;普通の浣腸使用中は不可
+SIF TEQUIP:21
+	RETURN 0
+;バルーン使用中は不可
+SIF TEQUIP:22
+	RETURN 0
+;電極使用中は不可
+SIF TEQUIP:23
+	RETURN 0
+;停止中は不可
+SIF FLAG:70 == 1
+	RETURN 0
+;一定のＡ経験が必要
+SIF EXP:2 < EXPLV:3
+	RETURN 0
+;お風呂場プレイ中はプレイマットが無いとダメ
+IF TEQUIP:31
+	SIF ITEM:20 == 0 && NOITEM == 0
+		RETURN 0
+ENDIF
+;全裸でないとダメ（靴下、特殊は除く）
+SIF TEQUIP:0 || TEQUIP:1
+	RETURN 0
+;custom code: Show command but have it be blocked by other means instead of hiding it.
+;体格差がある場合は経験がないとダメ
+;SIF Com_Size_Check("strictA") ;com custom code
+;	RETURN 0
+;体格差がある場合は経験がないとダメ
+;SIF Com_Size_Check("regA") ;com custom code
+;	RETURN 0
+;SIF 挿入不可(TARGET) == 3
+;	RETURN 0
+;調教者がオトコ、半人半妖、ふたなり、もしくはペニスバンドがないとダメ
+SIF !(HAS_PENIS(MASTER)) && ITEM:PBAND == 0
+	RETURN 0
+;潤滑不足で、従順3以下・レズっ気3以下のASSIの場合乱れ牡丹はできない（サドならＯＫ）
+IF PALAM:潤滑 < PALAMLV:2 && ASSIPLAY
+	SIF (ABL:ASSI:従順 <= 3 || ABL:ASSI:レズっ気 <= 3) && TALENT:ASSI:サド == 0
+		RETURN 0
+ENDIF
+;対面座位、正常位からはダメ
+SIF POSE_FACING(TEQUIP:体位)
+	RETURN 0
+;睡眠姦中
+SIF CFLAG:イタズラ > 1
+	RETURN 0
+;室内でないかバスルームでプレイマットがないとダメ
+SIF !INROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)
+	RETURN 0
+RETURN 1
+
+@ADD_CUSTOM_MESSAGE_SCOM2
+;連続
+IF SELECTCOM == PREVCOM && ASSIPLAY == TFLAG:150
+	PRINTFORML You let your hands crawl all over %CALLNAME:TARGET%'s front, thrusting into %HIS_HER(TARGET)% %FSYN("anus")% from behind while showing %HIM_HER(TARGET)% off...
+;抜かず
+ELSEIF TCVAR:100 == PLAYER
+	PRINTFORML You thrust into %CALLNAME:TARGET% from behind, spreading %HIS_HER(TARGET)% legs wide and holding up %HIS_HER(TARGET)% arms...
+ELSE
+	PRINTFORML You embrace %CALLNAME:TARGET% from behind, slowly sinking into %HIS_HER(TARGET)% %FSYN("anus")% as you spread %HIS_HER(TARGET)% legs open...
+ENDIF
+;露出癖
+IF ABL:露出癖 >= 5
+	PRINTFORML %TNAME(TARGET,1)% moans loudly while looking at %HIS_HER(TARGET)% reflection in the mirror, %HIS_HER(TARGET)% eyes overcome with lust...
+ELSEIF ABL:露出癖 >= 4
+	PRINTFORML %TNAME(TARGET,1)% drowns in the pleasure of shame as %HE_SHE(TARGET)% stares at %HIS_HER(TARGET)% body through the mirror...
+ELSEIF ABL:露出癖 >= 2
+	PRINTFORML %TNAME(TARGET,1)% blushes fiercely, but erotic moans manage to slip out of %HIM_HER(TARGET)% at times...
+ELSEIF ABL:露出癖 >= 1
+	PRINTFORML %TNAME(TARGET,1)% tries to hide %HIS_HER(TARGET)% face, embarrassed by the sound %HIS_HER(TARGET)% own body is making...
+ENDIF
