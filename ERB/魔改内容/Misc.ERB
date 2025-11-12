@@ -136,3 +136,50 @@ RETURNF VISITOR_LOCATION(CFLAG:ARG:300)
 #DIM DYNAMIC PID
 #FUNCTION
 RETURNF IS_UNDERWORLD(PID) || IS_ISEKAI(PID)
+
+;=========================================================
+;概　要:连乘函数
+
+;POWER的扩展，用于底数为小数的运算，因为没法传递浮点数，所以底数采取有效数字和精度两个部分，精度默认为两位
+;intbase是底数*精度的int整数，如计算某数乘以0.80的幂，则intbase为80
+;※如果需要增加精度，intbase也要同时增大倍数
+;返回值：ARG * intbase^(expo/precision)
+;=========================================================
+@ExPOWER(ARG,intbase,expo,precision=100)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC intbase
+#DIM DYNAMIC expo
+#DIM DYNAMIC precision
+LOCAL = 0
+SIF !ARG
+	RETURNF 0
+SIF !expo
+	RETURNF 1
+WHILE ARG && LOCAL != expo
+ARG = ARG * intbase / precision
+LOCAL++
+WEND
+RETURNF ARG
+
+@生成图片(ARGS,ARGS:1)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALLF 生成GID
+GCREATEFROMFILE NEXT_GID, ARGS
+SPRITECREATE ARGS:1,NEXT_GID
+RETURNF NEXT_GID
+
+@生成GID
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM GID
+GID = NEXT_GID
+WHILE GCREATED(GID)
+	GID ++
+WEND
+NEXT_GID = GID
+

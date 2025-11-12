@@ -5,26 +5,28 @@
 ;各自对应的选择编号。
 ;目前设计成可后续参照抽到的结果进行处理的结构，若想追加内容，可在各项目末尾补充
 @FORTUNE
-#LOCALSIZE 10
+#DIM DYNAMIC 神签ID减1
+#DIM DYNAMIC 刮刮奖
+#LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM DYNAMIC GID
 ;先把签的结果展示出来吧
 ;整体运的内容之后会再补充
-LOCAL:0 = (CFLAG:MASTER:今日の運勢) % 129
+神签ID减1 = RAND:神签_MAXNUM
 PRINTFORML 　今日的幻存神签：
-CALL 神签打印((LOCAL:0)+1)
+CALL 神签打印(神签ID减1 + 1)
 GID = RESULT
 DRAWLINE
 WAIT
 SETCOLOR 0xc0c0c0
 PRINT 签后广告时间：
-PRINTDATAW LOCAL:1
+PRINTDATAW 刮刮奖
 	DATAFORM 恭喜你中奖了！如果对今天的签不满意的话可以再抽一次（下次抽神签时会退款·对定期契约无效）
 	DATAFORM 博丽神社！超过守矢神社的，幻想乡最强的神社！
 	DATAFORM 现订阅《文文。新闻》还送美女记者特殊♥服务——（所谓特殊服务，指的是订阅者可以作为本报的独家新闻素材——主编S.Aya氏）
 	DATAFORM 雾雨牌魔女扫把——一把可以拿来打扫卫生的扫把（飞行功能暂未实装）
 	DATAFORM 博丽神社最新幻存神签服务——十分准！不准不要钱！（广告夸张说法，请以实际情况为准）
-	DATAFORM FumoFumo~（下面画了一个巨大的Fumo）
+	DATAFORM FumoFumo～（下面画了一个巨大的Fumo）
 	DATAFORM 如果对结果有所不满请明天再试一次吧——请继续支持幻存神签！
 	DATAFORM 铃奈庵借书服务——知名作家稗……阿加莎克里斯Q新书绝赞公开中！
 	DATAFORM 骚灵乐团演唱会二手门票低价出售——详情请咨询二岩女士（售票地点：妖怪狸森林，卖假票的不是人）
@@ -42,36 +44,7 @@ PRINTDATAW LOCAL:1
 	DATAFORM 宫出口牌咒具，百年老字号。纸人形，稻草人形，蛊毒，让你的仇人如被怨灵缠身般痛苦！（对怨灵凭依可能导致的副作用概不负责）
 ENDDATA
 
-IF 0
-;是否启用：不启用0 启用1
-    PRINTFORML
-    SELECTCASE CFLAG:MASTER:今日の運勢
-        CASE 0 TO 199
-	        PRINTFORML 今日的运势：差({CFLAG:MASTER:今日の運勢})
-        CASE 200 TO 479
-	         PRINTFORML 今日的运势：较差({CFLAG:MASTER:今日の運勢})
-	    CASE 480 TO 519
-	        PRINTFORML 今日的运势：平({CFLAG:MASTER:今日の運勢})
-	    CASE 520 TO 799
-	        PRINTFORML 今日的运势：较好({CFLAG:MASTER:今日の運勢})
-	    CASE 800 TO 979
-	        PRINTFORML 今日的运势：好({CFLAG:MASTER:今日の運勢})
-	    CASE 980 TO 999
-	        PRINTFORML 今日的运势：非常幸运！({CFLAG:MASTER:今日の運勢})
-	    CASEELSE
-
-    ENDSELECT
-    PRINTFORMW 再提醒一句：根据这个去行动吧
-ENDIF
-RESETCOLOR
-;用于确认。会在控制台记录各项抽到的是第几个选项
-;DEBUGPRINTFORML FORTUNE:{LOCAL:0, 2}, {LOCAL:1, 2}, {LOCAL:2, 2}, {LOCAL:3, 2}, {LOCAL:4, 2}, {LOCAL:99, 2}
-
-;目前仅作展示用
-;若想根据抽签结果触发某些动作，请在此处补充代码
-;各项目的第n-1行会存储到对应变量中
-
-SELECTCASE LOCAL:0
+SELECTCASE 神签ID减1
 	CASE 6,12,23,24,34,36,41,42,44,57,69,70,73,93,94,98,103,104,105,106,109,113,119,127
 		TFLAG:幸運補正 = 5
 	CASE 3,118
@@ -94,9 +67,9 @@ SELECTCASE LOCAL:0
 		ENDIF
 	CASE 40
 		PRINTFORMW %CALLNAME:MASTER%感觉自己似乎受到了来自守矢神社风祝的奇迹护佑……
-		FOR LOCAL:0, 1, CHARANUM
-			TALENT:(LOCAL:0):心情 = 1
-			BASE:(LOCAL:0):憤怒 = 0
+		FOR LOCAL, 1, CHARANUM
+			TALENT:(LOCAL):心情 = 1
+			BASE:(LOCAL):憤怒 = 0
 		NEXT
 		PRINTL 情绪也变得格外的平稳
 		PRINTW 另外感觉自己的身体也变轻了呢
@@ -118,7 +91,7 @@ SELECTCASE LOCAL:0
 			TFLAG:幸運補正 = -1*RAND:5
 		ENDIF
 	CASE 68
-		PRINTFORML 那么，就决定一下今天的运势吧~
+		PRINTFORML 那么，就决定一下今天的运势吧～
 		CALL ASK_M("大吉",1,"吉",1,"末吉",1,"末凶",1,"凶",1,"大凶",1,"不需要",1)
 		SELECTCASE RESULT
 		CASE 0
@@ -186,8 +159,49 @@ SELECTCASE LOCAL:0
 		EXP:MASTER:清掃経験 += 1
 	CASEELSE
 ENDSELECT
+
+IF 1
+;逆天改命
+	SELECTCASE TFLAG:幸運補正
+		CASE IS <= -5
+			CFLAG:MASTER:今日の運勢 = RAND(0,480)
+		CASE IS <= -3
+			CFLAG:MASTER:今日の運勢 = RAND(100,520)
+		CASE IS <= -1
+			CFLAG:MASTER:今日の運勢 = RAND(200,520)
+		CASE IS <= 0
+			CFLAG:MASTER:今日の運勢 = RAND(480,520)
+		CASE IS <= 1
+			CFLAG:MASTER:今日の運勢 = RAND(500,800)
+		CASE IS <= 3
+			CFLAG:MASTER:今日の運勢 = RAND(700,980)
+		;大吉有点多
+		CASEELSE
+			CFLAG:MASTER:今日の運勢 = RAND(700,1000)
+	ENDSELECT
+	PRINTFORML
+	SELECTCASE CFLAG:MASTER:今日の運勢
+		CASE 0 TO 199
+			PRINTFORML 今日的运势：差({CFLAG:MASTER:今日の運勢})
+		CASE 200 TO 479
+			PRINTFORML 今日的运势：较差({CFLAG:MASTER:今日の運勢})
+		CASE 480 TO 519
+			PRINTFORML 今日的运势：平({CFLAG:MASTER:今日の運勢})
+		CASE 520 TO 799
+			PRINTFORML 今日的运势：较好({CFLAG:MASTER:今日の運勢})
+		CASE 800 TO 979
+			PRINTFORML 今日的运势：好({CFLAG:MASTER:今日の運勢})
+		CASE 980 TO 999
+			PRINTFORML 今日的运势：非常幸运！({CFLAG:MASTER:今日の運勢})
+		CASEELSE
+
+	ENDSELECT
+	PRINTFORMW 再提醒一句：根据这个去行动吧
+ENDIF
+RESETCOLOR
+
 ;中奖用
-SELECTCASE LOCAL:1
+SELECTCASE 刮刮奖
 	;中奖啦，再送一次（下次抽神签时会退款）
 	;不过，若处于定期契约中则无退款（因为处理起来太麻烦）
 	CASE 0
@@ -199,13 +213,18 @@ SELECTCASE LOCAL:1
 		PRINTFORML 
 	CASEELSE
 ENDSELECT
-IF !更丰富的神签效果
-	GDISPOSE GID
-	RETURN
-ENDIF
+SIF 更丰富的神签效果 && !神签_FILTER:(神签ID减1 + 1)
+	CALL 更丰富的神签效果(神签ID减1)
+;GDISPOSE GID
+RETURN
+
 ;关于神签里“特殊运势”的处理
 ;目前只挑了几个喜欢的做了，后续可能会增加？（挖坑）
-SELECTCASE LOCAL:0
+@更丰富的神签效果(神签ID减1)
+#DIM 神签ID减1
+#LOCALSIZE 3
+#LOCALSSIZE 1
+SELECTCASE 神签ID减1
 	CASE 2
 		SETCOLOR 0X09f9ff
 		PRINTFORMW 突然，抽到的神签上，标注着“学业”的那一条运势发起了象征着“智慧”的青蓝光……
@@ -224,10 +243,10 @@ SELECTCASE LOCAL:0
 			ELSE
 				PRINTFORML 『虽然我有不止一个恋人，但是既然恋人数量多于两个的话，也就不算“脚踏两艘船”了吧？』
 				PRINTFORMW %CALLNAME:MASTER%手握着神签这样想着……
-				PRINTFORMW 神签像是感应到了%CALLNAME:MASTER%的思考，渐渐地，运势散发的红光淡弱了下去……
+				PRINTFORMW 神签像是感应到了%CALLNAME:MASTER%的思考，渐渐地，运势散发的红光黯淡了下去……
 			ENDIF
 		ELSE
-			PRINTFORMW 随后，神签像是察觉到了%CALLNAME:MASTER%只有一个恋人的事，运势散发的红光满意地淡弱了下去……
+			PRINTFORMW 随后，神签像是察觉到了%CALLNAME:MASTER%只有一个恋人的事，运势散发的红光满意地黯淡了下去……
 		ENDIF
 	CASE 8
 		SETCOLOR 0Xff0000
@@ -237,11 +256,10 @@ SELECTCASE LOCAL:0
 		PRINTFORMW …
 		PRINTFORMW 仿佛是在一瞬间内，神签的红光突然亮得刺眼，
 		SETCOLOR 0xc0c0c0
-		LOCAL:1 = 0
-		FOR LOCAL:1,1,CHARANUM
-			IF TALENT:(LOCAL:1):恋人
-				BASE:(LOCAL:1):体力 = 0
-				BASE:(LOCAL:1):気力 = 0
+		FOR LOCAL,1,CHARANUM
+			IF TALENT:(LOCAL):恋人
+				BASE:(LOCAL):体力 = 0
+				BASE:(LOCAL):気力 = 0
 			ENDIF
 		NEXT
 		IF LOVER_COUNT() > 1
@@ -257,10 +275,9 @@ SELECTCASE LOCAL:0
 		SETCOLOR 0X3fe8a2
 		PRINTFORMW 突然，抽到的神签上，标注着“恋爱”的那一条运势发起了象征着斩断的青绿光……
 		SETCOLOR 0xc0c0c0
-		LOCAL:1 = 0
-		FOR LOCAL:1,1,CHARANUM
-			IF TALENT:(LOCAL:1):爱欲
-				TALENT:(LOCAL:1):爱欲 = 0
+		FOR LOCAL,1,CHARANUM
+			IF TALENT:(LOCAL):爱欲
+				TALENT:(LOCAL):爱欲 = 0
 			ENDIF
 		NEXT
 		PRINTFORMW 看来什么事情悄然发生了呢……
@@ -285,18 +302,17 @@ SELECTCASE LOCAL:0
 		PRINTFORMW 看来什么事情悄然发生了呢……
 		EXP:MASTER:学習経験 += 8
 		EXP:MASTER:調合経験 += 8
-	;CASE 30
-		;SETCOLOR 0X993ac5
-		;PRINTFORMW 突然，抽到的神签上，标注着“恋爱”的那一条运势发起了象征着剧毒的紫光……
-		;SETCOLOR 0xc0c0c0
-		;LOCAL:1 = 0
-		;FOR LOCAL:1,1,CHARANUM
-			;IF TFLAG:(LOCAL:1):21 >= 1
-				;CFLAG:(LOCAL:1):2 += 5*(TFLAG:(LOCAL:1):21)
-				;CFLAG:(LOCAL:1):4 += 5*(TFLAG:(LOCAL:1):21)
-			;ENDIF
-		;NEXT
-		;PRINTFORMW 看来什么事情悄然发生了呢……
+	CASE 30
+		SETCOLOR 0X993ac5
+		PRINTFORMW 突然，抽到的神签上，标注着“恋爱”的那一条运势发起了象征着剧毒的紫光……
+		SETCOLOR 0xc0c0c0
+		FOR LOCAL,1,CHARANUM
+			IF MARK:(LOCAL):3 >= 1
+				CFLAG:(LOCAL):2 += 10*(MARK:(LOCAL):3)
+				CFLAG:(LOCAL):4 += 5*(MARK:(LOCAL):3)
+			ENDIF
+		NEXT
+		PRINTFORMW 看来什么事情悄然发生了呢……
 	CASE 32
 		PRINTFORMW 今天的神签看上去平平无奇……
 		PRINTFORMW 噗——
@@ -331,15 +347,119 @@ SELECTCASE LOCAL:0
 		PRINTFORML 总之，上述内容显然足以作为%CALLNAME:MASTER%氏为性压抑色狼一事之证据，
 		PRINTFORMW 愿乡内少女保护好自己，洁身自好，切勿落入色狼魔爪！
 		PRINTFORMW
-		FOR LOCAL:1,1,CHARANUM
-				CFLAG:(LOCAL:1):2 -= 100
-				CFLAG:(LOCAL:1):4 -= 50
+		FOR LOCAL,1,CHARANUM
+				CFLAG:(LOCAL):2 -= 100
+				CFLAG:(LOCAL):4 -= 50
 		NEXT	
 		PRINTFORMW ……
 		PRINTFORMW 『搞什么啊这报纸？！』
 		PRINTFORMW %CALLNAME:MASTER%又仔细看向神签，标注着“恋爱”的那一条运势正微微发着和其它字一样的墨水颜色的光……
+	CASE 33
+		SETCOLOR 0Xffe553
+		PRINTFORMW 突然，抽到的神签上，标注着“财运”的那一条运势发起了象征着财富的金光……
+		SETCOLOR 0xc0c0c0
+		MONEY += 30
+		;江户时代的六文钱换算成现代日元差不多就是30日元。
+		;当然我也知道大结界建立于明治17年但那样就是0.0078日元了，我觉得钱的话还是能多给点就多给点比较好（）
+		;真是慷慨的神签啊（棒读）
+		PRINTFORMW 看来什么事情悄然发生了呢……
+	CASE 50
+		SETCOLOR 0Xbb2424
+		PRINTFORMW 突然，抽到的神签上，标注着“健康”的那一条运势发起了象征着死亡的暗红光……
+		SETCOLOR 0xc0c0c0
+		LOCAL:1 = 0
+		LOCAL:2 = 0
+		IF BASE:MASTER:体力 > 666
+			LOCAL:2 += ((BASE:MASTER:体力)-666)/2
+			CALL BUFF_BASE(MASTER,0,(-1*(BASE:MASTER:体力)+666),1)
+		ELSE
+			LOCAL:1 += 1
+		ENDIF
+		IF BASE:MASTER:気力 > 666
+			LOCAL:2 += ((BASE:MASTER:気力)-666)/2
+			CALL BUFF_BASE(MASTER,1,(-1*(BASE:MASTER:気力)+666),1)
+		ELSE
+			LOCAL:1 += 1
+		ENDIF
+		IF LOCAL:1 == 2
+			PRINTFORMW 然而这暗红光没亮多久，就又黯淡了下去……
+			PRINTFORMW 『这是什么意思？难道我现在这样已经和死人差不多了吗？？！』
+		ELSE
+			CALL BUFF_BASE(MASTER,6,LOCAL:2,1)
+			PRINTFORMW 看来什么事情悄然（？）发生了呢……
+		ENDIF
+	CASE 51
+		SETCOLOR 0X36cb36
+		PRINTFORMW 突然，抽到的神签上，标注着“学业”的那一条运势发起了象征着核弹鸟脑袋的绿光……
+		SETCOLOR 0xc0c0c0
+		EXP:MASTER:学習経験 -= 6
+		IF RAND:100 >= 95
+			;大成功！
+			SETCOLOR 0X00ff00
+			PRINTFORMW 随后，仿佛是在一瞬间，标注着“财运”的那一条运势发起了象征着梦幻般清洁能源的碧绿光……
+			SETCOLOR 0xc0c0c0
+			IF MONEY <= 5000
+				MONEY += 5000
+			ELSEIF MONEY >= 25000
+				MONEY += 25000
+			ELSE
+				MONEY *= 2
+			ENDIF
+		ENDIF
+		PRINTFORMW 看来什么事情悄然发生了呢……
+	CASE 59
+		SETCOLOR 0X9611bc
+		PRINTFORMW 突然，抽到的神签上，标注着“恋爱”的那一条运势发起了象征着寡欲的紫光……
+		SETCOLOR 0xc0c0c0
+		FOR LOCAL,1,CHARANUM
+			IF TALENT:(LOCAL):恋人 || TALENT:(LOCAL):爱欲
+				CFLAG:(LOCAL):2 -= 400
+				CFLAG:(LOCAL):340 = 0
+				TCVAR:(LOCAL):139 = 0
+				TCVAR:(LOCAL):140 = 0
+				TCVAR:(LOCAL):142 = 0
+			ELSEIF TALENT:(LOCAL):恋慕
+				CFLAG:(LOCAL):2 -= 200
+				CFLAG:(LOCAL):340 = 0
+				TCVAR:(LOCAL):139 = 0
+				TCVAR:(LOCAL):140 = 0
+				TCVAR:(LOCAL):142 = 0
+			ENDIF
+		NEXT
+		PRINTFORMW 看来什么事情悄然发生了呢……
+		PRINTFORMW 你本能地感觉到自己的情缘全都暂时断结了……
+		PRINTFORMW 然而，已断之缘仍可再续；塞翁失马焉知非福？
+	;CASE 62
+		;SETCOLOR 0Xfbfac4
+		;PRINTFORMW 突然，抽到的神签上，标注着“人际”的那一条运势发起了象征着月光的淡黄光……
+		;SETCOLOR 0xc0c0c0
+		;与人约会时则双方体力都*1.5
+	CASE 64
+		SETCOLOR 0X1fdb92
+		PRINTFORMW 突然，抽到的神签上，标注着“呼喝”的那一条运势发起了象征着大喊的绿光……
+		SETCOLOR 0xc0c0c0
+		PRINTFORML 『纳贡之时已至！』
+		PRINTFORMW %CALLNAME:MASTER%喊道。
+		PRINTFORMW 神签上的绿光很满意地黯淡了下去……
+	CASE 69
+		SETCOLOR 0Xf8ff8b
+		PRINTFORMW 突然，抽到的神签上，标注着“恋爱”的那一条运势发起了象征着圣人的金光……
+		SETCOLOR 0xc0c0c0
+		IF LOVER_COUNT() >= 10
+			PRINTFORMW 似乎是察觉到了%CALLNAME:MASTER%广阔的后宫，神签似乎很满意……
+			FOR LOCAL,1,CHARANUM
+				IF TALENT:(LOCAL):恋人
+					TCVAR:(LOCAL):142 = 1
+				ENDIF
+			NEXT
+			PRINTFORMW 然后，就在一瞬间，在神签的影响下，%CALLNAME:MASTER%的恋人们全都开始发情了……
+			PRINTFORMW 要确保后宫和谐哦～
+		ELSE
+			PRINTFORMW 随后，神签像是察觉到了%CALLNAME:MASTER%的后宫数量，运势散发的金光略显失望地黯淡了下去……
+			PRINTFORMW tm的，真是被看扁了啊……
+		ENDIF
 	CASEELSE
 ENDSELECT
 RESETCOLOR
-GDISPOSE GID
+;GDISPOSE GID
 RETURN 0
