@@ -55,7 +55,9 @@ ELSE
 	RESULT = 0
 	TRYCALLFORM MAP_UNIQUEMESSAGE_{MAIN_MAP}
 	;どれにも引っかからなければ天気
-	SIF OUTROOF(CFLAG:MASTER:現在位置) && !RESULT && !GROUPMATCH(TIME:5, 0, 2, 3, 6, 7, 10, 11)
+	;SIF OUTROOF(CFLAG:MASTER:現在位置) && !RESULT && !GROUPMATCH(TIME:5, 0, 2, 3, 6, 7, 10, 11)
+	;这好像和好天气也无关啊……应该是把MESSAGE_TALK(4)里面没有的天气筛出来吧，天气补丁追加天气描述之后这里应该也要变动了，还有无天气感知区
+	SIF OUTROOF(CFLAG:MASTER:現在位置) && !IS_NO_WEATHER_SEE(AT_AREA(MASTER)) && !RESULT && !GROUPMATCH(TIME:5, 天气_少云, 天气_多云, 天气_阴, 天气_细雪)
 		CALL MESSAGE_TALK(4)
 	;SIF+コメント行は不具合を起こすので調整
 	;SIF OUTROOF(CFLAG:MASTER:現在位置) && !RESULT
@@ -230,24 +232,24 @@ SELECTCASE ARG
 		IF TIME:7
 			SELECTCASE TIME:7
 				;虹
-				CASE 1
+				CASE 天气_彩虹
 					IF FLAG:70
 						PRINTL 天空挂着一道单色的彩虹…
 					ELSE
 						PRINTL 天空中挂着一道彩虹…
 					ENDIF
 				;ダイヤモンドダスト
-				CASE 2
+				CASE 天气_钻石尘
 					PRINTL 雪花的结晶在阳光下闪闪发光……呼出的气体也变成了白色…
 				;流れ星
-				CASE 3
+				CASE 天气_流星
 					IF FLAG:70
 						PRINTL 流星停留在夜空中…
 					ELSE
 						PRINTL 夜空中不时、有流星掠过…
 					ENDIF
 				;流星群
-				CASE 4
+				CASE 天气_流星群
 					IF FLAG:70
 						PRINTL 流星群停留在夜空中…
 					ELSE
@@ -257,9 +259,9 @@ SELECTCASE ARG
 		ELSE
 			SELECTCASE TIME:5
 				;お天道様
-				CASE 1
-					IF TIME:2 >= 2 && TIME:2 <= 4
-						IF DAY:2 == 2
+				CASE 天气_晴
+					IF TIME:2 >= 时段_正午前_6_12 && TIME:2 <= 时段_昼下がり_15_18
+						IF DAY:2 == 季节_夏
 							PRINTL 太阳在万里无云的碧空上毫不留情地照耀着…
 						ELSE
 							PRINTL 天气清爽而晴朗
@@ -267,74 +269,74 @@ SELECTCASE ARG
 					ENDIF
 				;雨
 				;(天候パッチ)強風時の文章追加
-				CASE 4
+				CASE 天气_雨
 					IF FLAG:70
 						PRINTL 雨滴静止了…
-					ELSEIF WIND_VELOCITY >= 1
+					ELSEIF WIND_VELOCITY >= 天气_强风
 						PRINTL 雨水从侧面飞来
 					ELSE
 						PRINTL 淅淅沥沥的小雨…
 					ENDIF
 				;大雨
 				;(天候パッチ)強風時の文章追加
-				CASE 5
+				CASE 天气_大雨
 					IF FLAG:70
 						PRINTL 雨滴静止了…
-					ELSEIF WIND_VELOCITY >= 1
+					ELSEIF WIND_VELOCITY >= 天气_强风
 						PRINTL 狂风之下大雨飘摇…
 					ELSE
 						PRINTL 大雨如注…
 					ENDIF
 				;大雨
 				;(天候パッチ)豪雨時の文章追加
-				CASE 14
+				CASE 天气_暴雨
 					IF FLAG:70
 						PRINTL 雨滴静止了…
-					ELSEIF WIND_VELOCITY >= 1
+					ELSEIF WIND_VELOCITY >= 天气_强风
 						PRINTL 风雨强劲得让人喘不上气…
 					ELSE
 						PRINTL 相当有压迫感的大雨…看不清前方的事物…
 					ENDIF
 				;霧・霧雨・霧雪
 				;(天候パッチ)濃霧時の文章追加
-				CASE 6, 7, 11
+				CASE 天气_雾雨, 天气_雾, 天气_雾雪
 					PRINTL 雾中只有白色…
 				;雪
 				;(天候パッチ)強風時の文章追加
-				CASE 8
+				CASE 天气_雪
 					IF FLAG:70
 						PRINTL 雪停下来了…
-					ELSEIF WIND_VELOCITY >= 1
+					ELSEIF WIND_VELOCITY >= 天气_强风
 						PRINTL 能把人冻僵的暴风雪呼啸着…连吐出的热气也因此染成了白色…
 					ELSE
 						PRINTL 雪花缓缓飘落…连呼出的气体也变成了白色…
 					ENDIF
 				;大雪
 				;(天候パッチ)強風時の文章追加・大雪に変更
-				CASE 9
+				CASE 天气_大雪
 					IF FLAG:70
 						PRINTL 雪停下来了…
-					ELSEIF WIND_VELOCITY >= 1
+					ELSEIF WIND_VELOCITY >= 天气_强风
 						PRINTL 暴风雪在猛吹…稍不留神就会迷失方向…
 					ELSE
 						PRINTL 下雪了！看不清前方…
 					ENDIF
 				;雨雪交加
-				CASE 12
+				CASE 天气_雨夹雪
 					IF FLAG:70
 						PRINTL 雨夹雪停止了…
 					ELSE
 						PRINTL 冰冷的雨夹雪…连呼出的气体也变成了白色…
 					ENDIF
 				;冰雹
-				CASE 13
+				CASE 天气_冰霰
 					IF FLAG:70
-						PRINTL 冰雹停止了…
+						PRINTL 冰霰停止了…
 					ELSE
-						PRINTL 大颗大颗的冰雹砸落着…连呼出的气体也变成了白色…
+						PRINTL 小粒小粒的冰霰砸落着…连呼出的气体也变成了白色…
 					ENDIF
 				;(天候パッチ)ひょう
-				CASE 15
+				CASE 天气_冰雹
 					IF FLAG:70
 						PRINTL 大粒的冰雹静止在了空中…
 					ELSE

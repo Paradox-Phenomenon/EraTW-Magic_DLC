@@ -91,6 +91,8 @@ PRINTL
 ;「一日が終わりました」表示と宴会関連の更新処理など
 CALL INFO_GO_NEXTDAY
 CALL CHANGE_TIMEZONE
+;除时间带变动导致天气变动外，区域变动时现在最好也重新赋值天气
+CALL qol_SET_REGION_WEATHER
 
 ;兒童の描写
 CALL CHILD_DESCRIPTION
@@ -449,7 +451,7 @@ PRINTFORM 携行中(%CALLNAME:PLAYER%)
 SIF DISH_NAME != ""
 	CALL INFO_DISH
 ;addition custom code
-SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) ;addition custom code
+SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) && !IS_NO_RAIN(AT_AREA(MASTER)) ;addition custom code
 	PRINTFORM <伞\@ GETBIT(nUmbrellaMods, Umbrella_HPDisplay) ? (HP:{Add_UmbrellaMaxHealth()-FLAG:傘耐久度}/{Add_UmbrellaMaxHealth()})#\@>
 ;qol custom code
 SIF VAR_WATER != ""
@@ -620,7 +622,7 @@ ELSEIF ARG == 3
 		RETURNF 1
 	SIF VAR_WATER != ""
 		RETURNF 1
-	SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) ;addition custom code
+	SIF ITEM:折り畳み傘 && !nDontUseUmbrella && GROUPMATCH(TIME:5, 4, 5, 6, 8, 9, 10, 12, 13, 14, 15) && OUTROOF(CFLAG:MASTER:現在位置) && !IS_NO_RAIN(AT_AREA(MASTER)) ;addition custom code
 		RETURNF 1
 ENDIF
 RETURNF 0
@@ -1043,7 +1045,7 @@ FOR LOCAL, 0, CHARANUM
 		TEQUIP:LOCAL:201 = 0
 	;相合伞フラグ（同行依存）
 	;约会中持続させる処理＋ターゲットと相合伞する処理＋連れ出した後外出了時雨が降っていたら相合伞する処理
-	SIF LOCAL != 0 && (CHK_DATENOW(CFLAG:LOCAL:约会中) || CFLAG:LOCAL:同行) && LOCAL == TARGET && TIME:5 > 3 && TIME:5 < 14 && OUTROOF(CFLAG:MASTER:現在位置) && (ITEM:36 || (TARGET == 16 || TARGET == 26 || TARGET == 40 || TARGET == 68))
+	SIF LOCAL != 0 && (CHK_DATENOW(CFLAG:LOCAL:约会中) || CFLAG:LOCAL:同行) && LOCAL == TARGET && TIME:5 > 3 && TIME:5 < 14 && OUTROOF(CFLAG:MASTER:現在位置) && !IS_NO_RAIN(AT_AREA(MASTER)) && (ITEM:36 || (TARGET == 16 || TARGET == 26 || TARGET == 40 || TARGET == 68))
 		TEQUIP:LOCAL:201 = 1
 NEXT
 
@@ -1854,7 +1856,7 @@ RESETCOLOR
 @INFO_STATUS
 IF TARGET
 	CALL INFO_EMOTION
-	SIF FLAG:生理周期可視化
+	SIF NOTICE_CYCLE(TARGET) ;bugfix
 		CALL CYCLE_PRINT(TARGET)
 	SIF EX:TARGET:膣内精液 > 0
 		PRINTFORM 膣内精液量:{EX:TARGET:膣内精液,5,LEFT}

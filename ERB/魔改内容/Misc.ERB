@@ -79,41 +79,8 @@ RETURNF 0
 #FUNCTION
 RETURNF CFLAG:ARG:同行 || FLAG:デート相手 == ARG || FINDELEMENT(Datees, ARG) > -1
 
-;qol天气系统配套判定
 ;-------------------------------------------------
-;概　要:在幻想乡的地下，雨雪遮蔽
-;备  注：为讨论进入招待室的情况，判定角色现在位置时需要采用 AT_AREA(CID)预处理
-;-------------------------------------------------
-@IS_UNDERWORLD(PID)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTION
-#DIM DYNAMIC PID
-SIF GROUPMATCH(PID,中有之道,三途之川,彼岸,地獄,畜生界,霊長園)
-	RETURNF 1
-SIF GROUPMATCH(GET_MAPID(PID),MAP地底)
-	RETURNF 1
-RETURNF 0
-
-;-------------------------------------------------
-;概　要:在域外，不受幻想乡天气影响
-;备  注：为讨论进入招待室的情况，判定角色现在位置时需要采用 AT_AREA(CID)预处理
-;参  数：是PID-AREA，参见ERB\DIM.ERH，如果是据点地图ID，则需要用VISITOR_LOCATION(PID)预处理
-;引  用：替换目标 CFLAG:MASTER:現在位置 != 天界
-;-------------------------------------------------
-@IS_ISEKAI(PID)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTION
-#DIM DYNAMIC PID
-SIF GROUPMATCH(PID,天界,神霊廟広場,神霊廟道場,仙人的宅邸,槐安通路,迷途之家,白玉楼庭,白玉楼)
-	RETURNF 1
-SIF GROUPMATCH(GET_MAPID(PID),MAP月,MAP魔界)
-	RETURNF 1
-RETURNF 0
-
-;-------------------------------------------------
-;概　要:判定角色所在的区域
+;概　要:判定角色所在的区域，包含了招待室的情况
 ;参数：CID-角色
 ;返回值：PID-AREA，参见ERB\DIM.ERH
 ;-------------------------------------------------
@@ -123,16 +90,53 @@ RETURNF 0
 #FUNCTION
 SIF ARG == -1
 	ARG = MASTER
-SIF CFLAG:ARG:300 == OMANEKIBEYA()
+SIF CFLAG:ARG:現在位置 == OMANEKIBEYA()
 	RETURNF (CFLAG:(CFLAG:ARG:招待):自宅位置)
-RETURNF VISITOR_LOCATION(CFLAG:ARG:300)
+RETURNF VISITOR_LOCATION(CFLAG:ARG:現在位置)
 
-;-------------------------------------------------
-;概　要:任何天气造成的影响无效。天气并不会消失。
-;-------------------------------------------------
-@无天气判定(PID)
+;=========================================================
+;概　要:连乘函数
+
+;POWER的扩展，用于底数为小数的运算，因为没法传递浮点数，所以底数采取有效数字和精度两个部分，精度默认为两位
+;intbase是底数*精度的int整数，如计算某数乘以0.80的幂，则intbase为80
+;※如果需要增加精度，intbase也要同时增大倍数
+;返回值：ARG * intbase^(expo/precision)
+;=========================================================
+@ExPOWER(ARG,intbase,expo,precision=100)
+#FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIM DYNAMIC PID
+#DIM DYNAMIC intbase
+#DIM DYNAMIC expo
+#DIM DYNAMIC precision
+LOCAL = 0
+SIF !ARG
+	RETURNF 0
+SIF !expo
+	RETURNF 1
+WHILE ARG && LOCAL != expo
+ARG = ARG * intbase / precision
+LOCAL++
+WEND
+RETURNF ARG
+
+@生成图片(ARGS,ARGS:1)
 #FUNCTION
-RETURNF IS_UNDERWORLD(PID) || IS_ISEKAI(PID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALLF 生成GID
+GCREATEFROMFILE NEXT_GID, ARGS
+SPRITECREATE ARGS:1,NEXT_GID
+RETURNF NEXT_GID
+
+@生成GID
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM GID
+GID = NEXT_GID
+WHILE GCREATED(GID)
+	GID ++
+WEND
+NEXT_GID = GID
+

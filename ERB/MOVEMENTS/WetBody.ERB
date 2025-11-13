@@ -1,10 +1,8 @@
 ﻿@WET_BODY(ARG)
 #DIM DYNAMIC 衣着度
 #DIM DYNAMIC 淋雨量
-#DIM 无天气
 衣着度 = 1      ;模拟角色裸体时（主要是分母不能是0）+每次计算时自动重置
 淋雨量 = 0
-无天气 = 无天气判定(AT_AREA(MASTER))
 
 ;计算衣着度
 SIF equip:ARG:18     ;外搭
@@ -23,7 +21,7 @@ SIF equip:ARG:7 || equip:ARG:8       ;胸罩
     衣着度 += 5
 ;#;CFLAG:ARG:4444 = 衣着度
 ;计算淋雨量（只有在室外同行时才会触发）
-IF OUTROOF(CFLAG:ARG:300) && !无天气
+IF OUTROOF(CFLAG:ARG:300) && !IS_NO_RAIN(AT_AREA(ARG))
     SELECTCASE TIME:5
     CASE 4  ;雨
         IF !CFLAG:ARG:同行
@@ -66,7 +64,7 @@ SIF BATHROOM(CFLAG:ARG:現在位置)
     湿身度:ARG = 0  ;洗澡时湿身度:ARG自动清空
 SIF CFLAG:ARG:睡眠 && 湿身度:ARG > 2
     湿身度:ARG = 2  ;睡觉时湿身度:ARG自动几乎清空（还是会残留点水渍的）
-IF OUTROOF(CFLAG:ARG:300) && !无天气
+IF OUTROOF(CFLAG:ARG:300) && !IS_NO_SUN(AT_AREA(ARG))
     SELECTCASE TIME:5
     CASE 0,1    ;晴天/晴朗
         SIF 湿身度:ARG > 0
@@ -93,22 +91,3 @@ SIF 湿身度:ARG > 100
 #FUNCTION
 #DIM DYNAMIC lapse
 RETURNF ExPOWER(ARG,ARG:1,lapse)
-;=========================================================
-;连乘函数——狂气小白兔
-;POWER的扩展，用于底数为小数的运算，因为没法传递浮点数，所以底数采取有效数字和精度两个部分，精度默认为两位
-;intbase是底数*精度的int整数，如计算某数乘以0.80的幂，则intbase为80
-;※如果需要增加精度，intbase也要同时增大倍数
-;=========================================================
-@ExPOWER(ARG,intbase,expo,precision=100)
-#FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM intbase
-#DIM expo
-#DIM precision
-LOCAL = 0
-WHILE ARG && LOCAL != expo
-ARG = ARG * intbase / precision
-LOCAL++
-WEND
-RETURNF ARG
