@@ -55,9 +55,24 @@ IF !Counter不発指令(SELECTCOM) && !RESULT
 	;CALL EVENT_COUNTER_COMBINATION
 ENDIF
 FOR LOCAL,0,CHARANUM
+	SIF NO:LOCAL != 0
+		CONTINUE
+
+	TEQUIP:LOCAL:50 = ADD_CHARA_WHO_TOUCHING_ACTOR(LOCAL, SET_P, SET_V)
+	TEQUIP:LOCAL:51 = ADD_CHARA_WHO_TOUCHING_ACTOR(LOCAL, SET_P, SET_A)		
+NEXT
+
+FOR LOCAL,0,CHARANUM
+	SIF NO:LOCAL == 0 ;addition custom code
+		CONTINUE
 	SIF CFLAG:LOCAL:現在位置 != CFLAG:MASTER:現在位置
 		CONTINUE
 	;性交フラグの設定
+	;addition custom code, rewrite
+	TEQUIP:LOCAL:50 = ADD_CHARA_WHO_INSERTED_IN(LOCAL, SET_V)
+	TEQUIP:LOCAL:51 = ADD_CHARA_WHO_INSERTED_IN(LOCAL, SET_A)
+
+	[SKIPSTART]
 	IF TEQUIP:LOCAL:Ｖ接触部位 == 1
 		TEQUIP:LOCAL:50 = MASTER
 	ELSE
@@ -78,6 +93,7 @@ FOR LOCAL,0,CHARANUM
 	ELSE
 		TEQUIP:PLAYER:51 = -1
 	ENDIF
+	[SKIPEND]
 NEXT
 
 FOR LOCAL,0,CHARANUM
@@ -127,6 +143,7 @@ CALL KOJO_MESSAGE_SEND("EXTRASOURCE", SELECTCOM, TARGET)
 
 IF OAZUKE(TARGET)
 	PRINTFORML 被吊着胃口的%CALLNAME:TARGET%看起来很不满……
+	CALL KOJO_MESSAGE_SEND("EVENT",10,TARGET,3,8) ;addition custom code
 	SOURCE:反感 += 3000
 	SOURCE:屈従 += 500
 	SOURCE:恭順 -= 1500
@@ -531,7 +548,7 @@ IF Ｖ性交保存 != -1 && GROUPMATCH(体位保存,1,2,3,4,5) && !FLAG:挿入�
 		PRINTL
 	SELECTCASE 体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_挿入")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_挿入")
@@ -552,7 +569,7 @@ IF PLAYERＶ性交保存 != -1 && GROUPMATCH(PLAYER体位保存,1,2,3,4,5) && !F
 		PRINTL
 	SELECTCASE PLAYER体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_挿入")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_挿入")
@@ -753,7 +770,7 @@ IF NOWEX:Ｖ絶頂 && Ｖ性交保存 != -1 && GROUPMATCH(体位保存,1,2,3,4,5
 	IF !GETBIT(TCVAR:50,1)
 		SELECTCASE 体位保存
 			CASE 1 ;image tweak custom code, standing missionary
-				IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+				IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 					CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_絶頂")
 				ELSE
 					CALL PRINT_IMAGE_ANIMATION_正常位("正常位_絶頂")
@@ -781,7 +798,7 @@ IF NOWEX:MASTER:Ｖ絶頂 && PLAYERＶ性交保存 != -1 && GROUPMATCH(PLAYER体
 	IF NOWEX:TARGET:射精 == 0
 		SELECTCASE PLAYER体位保存
 			CASE 1 ;image tweak custom code, standing missionary
-				IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+				IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 					CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_絶頂")
 				ELSE
 					CALL PRINT_IMAGE_ANIMATION_正常位("正常位_絶頂")
@@ -860,7 +877,7 @@ IF GETBIT(TCVAR:50,1) && TEQUIP:Ｖ性交 != -1 && !TCVAR:PLAYER:避孕套 && GR
 		PRINTL
 	SELECTCASE 体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_射精")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_射精")
@@ -889,7 +906,7 @@ IF NOWEX:TARGET:射精 > 0 && PLAYERＶ性交保存 != -1 && !TCVAR:TARGET:避�
 		PRINTL
 	SELECTCASE PLAYER体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_stand_射精")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_正常位("正常位_射精")
@@ -1103,7 +1120,7 @@ PRINTL
 IF GETBIT(TCVAR:50,1) && TEQUIP:Ｖ性交 != -1 && !TCVAR:PLAYER:避孕套 && GROUPMATCH(体位保存,1,2,3,4,5)
 	SELECTCASE 体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_射精後("正常位_stand_中出し")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_射精後("正常位_中出し")
@@ -1122,7 +1139,7 @@ ENDIF
 IF NOWEX:TARGET:射精 > 0 && PLAYERＶ性交保存 != -1 && !TCVAR:TARGET:避孕套 && GROUPMATCH(PLAYER体位保存,1,2,3,4,5)
 	SELECTCASE PLAYER体位保存
 		CASE 1 ;image tweak custom code, standing missionary
-			IF (!BEDROOM(CFLAG:PLAYER:現在位置) && !(BATHROOM() && ITEM:20)) || TFLAG:193
+			IF IS_STANDING_SEX(SELECTCOM) || TFLAG:193 ;addition custom code
 				CALL PRINT_IMAGE_ANIMATION_射精後("正常位_stand_中出し")
 			ELSE
 				CALL PRINT_IMAGE_ANIMATION_射精後("正常位_中出し")

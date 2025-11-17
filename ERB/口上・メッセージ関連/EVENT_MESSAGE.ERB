@@ -508,32 +508,34 @@ RETURNF LOCALS
 ;-------------------------------------------------
 ;函数名:HIP
 ;概　要:三番煎じ上等
-;参　数:ARG…角色登录番号
+;参　数:ARG…角色登录番号；ARG:1…形容词（向后兼容是默认打开）
 ;返回值:
 ;备　考:文中函数
 ;使用例:%HIP(TARGET)%
 ;-------------------------------------------------
-@HIP(ARG)
+@HIP(ARG,ARG:1 = 1,ARG:2 = 0)
 #FUNCTIONS
 #LOCALSIZE 1
 #LOCALSSIZE 1
 VARSET LOCALS
 VARSET LOCAL
-IF PALAM:ARG:欲情 >= PALAMLV:4 && !RAND:4
-	IF EQUIP:ARG:緊身内衣 || EQUIP:ARG:連体内衣
-		LOCALS = 紧贴着湿透%SHOW_下半身内衣(ARG,3)%、
-	ELSEIF EQUIP:ARG:下半身内衣１
-		LOCALS = 紧贴着\@ GET_INT(ARG, "下半身内衣_ずらし不可", EQUIP:ARG:下半身内衣１, "半透明(后)") ?湿透#汗湿 \@%PANTSNAME(EQUIP:ARG:下半身内衣１, ARG)%、
-	ELSEIF EQUIP:ARG:下半身内衣２
-		LOCALS = 紧贴着\@ GET_INT(ARG, "下半身内衣_ずらし可能", EQUIP:ARG:下半身内衣２, "半透明(后)")?湿透#汗湿\@%PANTSNAME(EQUIP:ARG:下半身内衣２, ARG)%、
-	ELSE
-		LOCALS = 浮现出晶莹汗珠、
+IF ARG:1
+	IF PALAM:ARG:欲情 >= PALAMLV:4 && !RAND:4
+		IF EQUIP:ARG:緊身内衣 || EQUIP:ARG:連体内衣
+			LOCALS = 紧贴着湿透%SHOW_下半身内衣(ARG,3)%、
+		ELSEIF EQUIP:ARG:下半身内衣１
+			LOCALS = 紧贴着\@ GET_INT(ARG, "下半身内衣_ずらし不可", EQUIP:ARG:下半身内衣１, "半透明(后)") ?湿透#汗湿 \@%PANTSNAME(EQUIP:ARG:下半身内衣１, ARG)%、
+		ELSEIF EQUIP:ARG:下半身内衣２
+			LOCALS = 紧贴着\@ GET_INT(ARG, "下半身内衣_ずらし可能", EQUIP:ARG:下半身内衣２, "半透明(后)")?湿透#汗湿\@%PANTSNAME(EQUIP:ARG:下半身内衣２, ARG)%、
+		ELSE
+			LOCALS = 浮现出晶莹汗珠、
+		ENDIF
+	ELSEIF !RAND:5 && EXP:ARG:出産経験 && TALENT:ARG:ヒップサイズ <= 0
+		LOCALS = 很难想象属于%TOKANJIT(EXP:ARG:出産経験)%个孩子母亲、
+	ELSEIF !RAND:5 && CFLAG:ARG:乳品质提升 && TALENT:ARG:ヒップサイズ > 0
+		LOCALS = 怀孕后\@TALENT:ARG:ヒップサイズ > 0 ?更显媚惑#变得有女人味\@、
 	ENDIF
-ELSEIF !RAND:5 && EXP:ARG:出産経験 && TALENT:ARG:ヒップサイズ <= 0
-	LOCALS = 很难想象属于%TOKANJIT(EXP:ARG:出産経験)%个孩子母亲、
-ELSEIF !RAND:5 && CFLAG:ARG:乳品质提升 && TALENT:ARG:ヒップサイズ > 0
-	LOCALS = 怀孕后\@TALENT:ARG:ヒップサイズ > 0 ?更显媚惑#变得有女人味\@、
-ENDIF
+
 IF TALENT:ARG:ヒップサイズ < -1
 	LOCAL = RAND(0,13)
 ELSEIF TALENT:ARG:ヒップサイズ == -1
@@ -639,6 +641,8 @@ CASE 44 TO 46
 CASE 47 TO 49
 	LOCALS += "仿佛将人吸住的超大"
 ENDSELECT
+ENDIF
+
 IF TALENT:ARG:体型 == -2 && TALENT:ARG:ヒップサイズ <= -2
 	LOCALS += TEXTR("屁屁/屁股/粉臀/玉臀/俏臀")
 ELSEIF TALENT:ARG:ヒップサイズ < 0
@@ -747,7 +751,7 @@ RETURNF LOCALS:1
 #FUNCTIONS
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIM 有定语
+#DIM DYNAMIC 有定语
 
 VARSET LOCALS
 SIF !ARG

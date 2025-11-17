@@ -2,9 +2,13 @@
 ;愛撫、性交等の継続、解除、処理
 ;────────────────────────────────────
 @SHOW_TOUCH
+CALL ADD_SHOW_TOUCH_TR
+RETURN
 ;(1=阴茎 2=阴蒂 3=指 4=口 5=胸 6=膣 7=肛門 8=足)
 FOR LOCAL, 1, GET_TARGETNUM() + 1
 	SIF TARGET:LOCAL <= 0
+		CONTINUE
+	SIF !CFLAG:(TARGET:LOCAL):うふふ ;qol custom code, only for those involved in sex
 		CONTINUE
 	SELECTCASE TEQUIP:(TARGET:LOCAL):Ｐ接触部位
 		CASE 3
@@ -71,6 +75,9 @@ NEXT
 PRINTL
 
 @TOUCH_SUCCESSION(ARG)
+CALL ADD_TOUCH_SUCCESSION_TR(ARG) ;addition custom code
+RETURN
+
 VARSET LOCAL
 SELECTCASE SELECTCOM
 	;愛撫　指と口をリセット
@@ -571,9 +578,6 @@ SELECTCASE SELECTCOM
 		CALL TOUCH_SET(0,0,0,1)
 	CASE 778
 		CALL TOUCH_SET(0,0,0,1)
-	;自定义指令
-	CASE ADD_CUSTOM_COM
-		CALL ADD_CUSTOM_COM_TOUCH_RESET(ARG)
 
 ENDSELECT
 
@@ -584,11 +588,15 @@ ENDSELECT
 ;ARG:1 MASTERの接触部位(1=阴茎 2=阴蒂 3=指 4=口 5=胸 6=膣 7=肛門 8=足)
 ;ARG:2 対象の角色番号
 ;ARG:3 真ならリセットする
+;addition custom code
+CALL ADD_TOUCH_SET_TR(PLAYER, ARG-100,ARG:1,ARG:2,,ARG:3)
+RETURN
+
 VARSET LOCAL
 
 IF ARG:3
 	FOR LOCAL,1,CHARANUM
-		FOR LOCAL:1,1,9
+		FOR LOCAL:1,1,10 ;custom code, cancel armpitjobs too
 		;COM60~70の場合、口はリセットしない
 			SIF LOCAL == ARG:2 && LOCAL:1 == 4 && TFLAG:3 >= 60 && TFLAG:3 <= 70
 				CONTINUE
@@ -633,11 +641,14 @@ ENDIF
 
 ;MASTERの接触部位をリセットする
 @TOUCH_RESET_M(ARG)
+;addition custom code
+CALL ADD_TOUCH_RESET_M_TR(ARG, PLAYER)
+RETURN
 ;ARG MASTERの接触部位(1=阴茎 2=阴蒂 3=指 4=口 5=胸 6=膣 7=肛門 8=足)
 FOR LOCAL, 1, GET_TARGETNUM() + 1
 	SIF TARGET:LOCAL <= 0
 		CONTINUE
-	FOR LOCAL:1,1,9
+	FOR LOCAL:1,1,10 ;custom code, cancel armpitjobs too
 		SIF TEQUIP:(TARGET:LOCAL):(100 + LOCAL:1) == ARG
 				TEQUIP:(TARGET:LOCAL):(100 + LOCAL:1) = 0
 	NEXT
@@ -645,7 +656,10 @@ NEXT
 
 ;TARGETの接触部位をリセットする
 @TOUCH_RESET_T(ARG)
-FOR LOCAL,1,9
+;addition custom code
+CALL ADD_TOUCH_RESET_T_TR(ARG)
+RETURN
+FOR LOCAL,1,10 ;custom code, cancel armpitjobs too
 	TEQUIP:ARG:(100 + LOCAL) = 0
 NEXT
 SIF TEQUIP:ARG:体位 > 0
@@ -662,6 +676,8 @@ SIF TEQUIP:MASTER:体位 > 0
 ;ARG返回接触MASTER的ARG:1的角色
 
 #FUNCTION
+;addition custom code
+RETURNF ADD_MASTER_POSE_TR(PLAYER, ARG, ARG:1, ARG:2)
 VARSET LOCAL
 IF !ARG
 	FOR LOCAL,1,CHARANUM
@@ -684,6 +700,9 @@ NEXT
 @插入解除(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+;addition custom code
+CALL ADD_挿入解除_TR(ARG)
+RETURN
 SIF TEQUIP:ARG:Ｖ接触部位 == 1
 	TEQUIP:ARG:Ｖ接触部位 = 0
 SIF TEQUIP:ARG:Ａ接触部位 == 1
@@ -698,4 +717,6 @@ TCVAR:ARG:誤爆挿入フラグ = 0
 @挿入解除(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-CALL 插入解除(ARG)
+;addition custom code
+CALL ADD_挿入解除_TR(ARG)
+RETURN
