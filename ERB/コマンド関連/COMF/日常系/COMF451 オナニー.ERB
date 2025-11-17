@@ -28,17 +28,88 @@ SELECTCASE C_ID
 		PRINTFORML %CALLNAME:MASTER%は%CALLNAME:C_ID%のことを考えながら性欲を処理した
 	CASE 999
 		PRINTFORML %CALLNAME:MASTER%は%TEXTR("天体の運行/山川草木/生老病死")%に思いを馳せながら性欲を処理した
+		IF FLAG:1058 >= 4
+			PRINTW ………
+			PRINTW 段々ムラムラしてきたので、とりあえず頭に浮かんだにとりをオカズにする事に決めた…
+			C_ID = 51
+		ENDIF
 	CASEELSE
 		RETURN -1
 ENDSELECT
-AMT = 50 + RAND:50
+
+AMT = 50 + RAND:51
+
+;オナホ構造改革
+IF FLAG:1058 == 1
+	PRINTW 改造したオナホールで自家発電に勤しむ…
+	AMT *= 2
+ENDIF
+
+;魔法のオナホ
+IF FLAG:1058 == 4
+	PRINTL 魔改造したオナホールで自家発電に勤しむ…
+	PRINTFORMW 魔法のオナホは%CALLNAME:MASTER%が思い描く%CALLNAME:C_ID%の膣内を模るかのように変化した！
+	AMT *= 4
+ENDIF
+
+;奇跡のオナホ
+IF FLAG:1058 == 5
+	PRINTL 奇跡を呼ぶオナホールで自家発電に勤しむ…
+	PRINTFORMW 奇跡のオナホは%CALLNAME:MASTER%が思い描く%CALLNAME:C_ID%の膣内とリンクした！
+	CALL PRINT_FACE, C_ID, "発情", "裸", ""
+	PRINTFORML %CALLNAME:MASTER%はオナホを通して%CALLNAME:C_ID%の感触を心行くまで堪能する…
+	PRINTFORMW 離れた場所にいる%CALLNAME:C_ID%は訳も分からぬまま膣内を蹂躙されてしまった！
+	SIF TALENT:C_ID:0 ==1
+		PRINTFORML あくまでオナホ越しの行為なので、実際には%CALLNAME:C_ID%の処女こそ奪っていないものの、
+	PRINTFORMW %CALLNAME:MASTER%は散々%CALLNAME:C_ID%の膣オナホを弄んだ後に最奥への膣内射精をキメた！
+	EXP:C_ID:1 += RAND:10 + 1
+	EXP:C_ID:6 += RAND:10 + 1
+	AMT *= 8
+ENDIF
+
 IF TALENT:MASTER:濃厚精液
 	AMT *= 2
 	PRINTFORMW ……濃いのが{AMT}出た
 ELSE
 	PRINTFORMW ……{AMT}出た
 ENDIF
+
+;オナホ増設タンク
+IF FLAG:1058 >= 2 && FLAG:1058 != 5 
+	TFLAG:700 += AMT
+	PRINTFORMW オナホに接続したタンクには精液が{TFLAG:700}溜まっている…
+	IF TFLAG:700 >= 1000 && FLAG:1058 == 4
+		PRINTL
+		PRINTW その時、不思議な事が起こった…
+		PRINTFORML 魔法のオナホと溜め込んだ精液と%CALLNAME:MASTER%の時間停止能力etc…が奇跡を起こす！
+		PRINTW 魔法のオナホは『奇跡のオナホ』へと進化を遂げた！！
+		BASE:MASTER:8 = 0
+		TFLAG:700 = 0
+		FLAG:1058 = 5
+	ELSEIF TFLAG:700 >= 1000 && FLAG:1058 != 4
+		PRINTL
+		PRINTW その時、不思議な事が起こった…
+		PRINTFORML 気温、風向、湿度、大気圧、曜日、月齢、惑星の並び…そして何よりも%CALLNAME:MASTER%の溜まりに溜まったリビドー…
+		PRINTFORMW それらが複雑に絡み合い、%CALLNAME:MASTER%の放った精液が生命の輝きと共に結晶化する！
+		CALL COLORMESSAGE("愛欲を独占するミラダの石ミレニアム", C_D_PINK, 0, 1)
+		PRINTFORMW を手に入れた！！
+		TFLAG:700 = 0
+		ITEM:530 += 1
+	ENDIF
+ELSEIF FLAG:1058 == 5
+	TFLAG:700 += AMT
+ENDIF
+
+;奇跡のオナホ
+IF FLAG:1058 == 5 && TFLAG:700 > 0
+	PRINTFORML %CALLNAME:MASTER%の射精した精液はオナホ内から%CALLNAME:C_ID%の膣内へと転送されていった！
+	EX:C_ID:14 += AMT
+	PRINTFORMW %CALLNAME:C_ID%の膣内には精液が{EX:C_ID:14}溜まっている…
+ENDIF
+
 BASE:MASTER:精力 -= AMT
+SIF BASE:MASTER:精力 < 0
+	BASE:MASTER:精力 = 0
 DOWNBASE:MASTER:気力 = 100
 
 TIME += 20
