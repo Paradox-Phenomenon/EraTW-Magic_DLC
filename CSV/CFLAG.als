@@ -314,16 +314,7 @@
 9109,PERSISTENT_DUPLICATE,;duplicated character exists outside of sex
 
 ;custom com filters (range 9110-9119)
-9110,RevServiceFilter
-9111,RevSexFilter
-9112,STANDING_TOGGLE
 
-;9120,PullOutPromiseDenied
-;9121,WIFE_THE_DUST_ID
-;9122,LIVE_IN_WIFE
-;9123,EXTENDED_TRAITS_SET
-;9124,ALLOW_BATH
-;
 ;9125,MORNING_TIPS,;does character have night tips, for authors
 ;9126,MORNING_TIPS_DISABLED,;are their night tips enabled in the settings
 ;9115,BUTT_SIZE_UPDATED
