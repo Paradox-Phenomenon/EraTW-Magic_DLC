@@ -494,8 +494,7 @@ NEXT
 #DIM 素体COUNT
 #DIM 表情COUNT
 #DIMS VARIANT
-;#DIMS 素体 = "別顔_裸", "別顔_服", "別顔_服_ボロ", "別顔_服_水着", "別立ち_裸", "別立ち_服", "別立ち_服_ボロ", "別立ち_服_水着"
-#DIMS 素体 = "別顔_裸", "別顔_服", "別顔_服_ボロ", "別立ち_裸", "別立ち_服", "別立ち_服_ボロ"
+#DIMS 素体 = "別顔_裸", "別顔_服", "別顔_服_ボロ", "別顔_服_水着", "別立ち_裸", "別立ち_服", "別立ち_服_ボロ", "別立ち_服_水着"
 {
 #DIMS 表情 = "通常", "通常1", "笑顔", "笑顔1", "憤怒", "憤怒1",
 			"睡眠", "発情", "自慰",
@@ -754,21 +753,21 @@ NEXT
 			"Start_8",  "41", "Heart_Glance",  "End",
 			"Start_9",  "50",  "End",
 
-			"Start_9",  "60",  "End",
-			"Start_10", "61",  "End",
-			"Start_11", "70",  "End",
-			"Start_12", "71",  "End",
-			"Start_13", "72",  "End",
+			"Start_10", "60",  "End",
+			"Start_11", "61",  "End",
+			"Start_12", "70",  "End",
+			"Start_13", "71",  "End",
+			"Start_14", "72",  "End",
 
-			"Start_14", "80", "Manpu_Shocked", "End",
-			"Start_15", "90",  "End",
+			"Start_15", "80", "Manpu_Shocked", "End",
+			"Start_16", "90",  "End",
 
-			"Start_16", "60", "Heart", "End",
-			"Start_17", "61", "Heart", "End",
-			"Start_18", "72", "Heart", "End",
-			"Start_19", "73", "Heart", "End",
-			"Start_20", "10", "Heart", "End",
-			"Start_21", "20", "Heart", "Manpu_Anger", "End",
+			"Start_17", "60", "Heart", "End",
+			"Start_18", "61", "Heart", "End",
+			"Start_19", "72", "Heart", "End",
+			"Start_20", "73", "Heart", "End",
+			"Start_21", "10", "Heart", "End",
+			"Start_22", "20", "Heart", "Manpu_Anger", "End",
 }
 SIF !CHECK_IMAGE_NEEDS_UPDATE([[わかさぎ姫]])
 	RETURN
@@ -816,6 +815,104 @@ FOR 素体COUNT, 0, VARSIZE("素体")
 
 		$NEXTLOOP
 	NEXT
+NEXT
+
+@EX_COMPOSE_SPRITE(CHARA, 表示形式, 服装, ARGS, ARGS:1, 差分, 乳量,素体,表情库,PAT)
+#DIM DYNAMIC G_ID
+#DIM DYNAMIC L_COUNT
+#DIM DYNAMIC 素体COUNT
+#DIM DYNAMIC 表情COUNT,2
+#DIMS DYNAMIC VARIANT
+#DIMS 素体 = "別顔_裸", "別顔_服"
+{
+#DIMS 表情库 = "通常", "通常1", "笑顔", "笑顔1", "憤怒", "煩う",
+			"睡眠", "発情", "発情1", "自慰",
+			"愛撫", "愛撫1", "性交", "性交1", "性交2",
+			"困る", "得意げ",
+			"発情愛撫", "発情愛撫1", "発情性交", "発情性交1", "発情笑顔", "発情憤怒"
+}
+{
+#DIMS PAT =
+			"Start_0",  "00",  "End",
+			"Start_1",  "01",  "End",
+			"Start_2",  "10",  "End",
+			"Start_3",  "11",  "End",
+			"Start_4",  "20", "Manpu_Anger", "End",
+			"Start_5",  "21", "Manpu_Bothered",  "End",
+
+			"Start_6",  "30",  "End",
+			"Start_7",  "40", "Heart", "End",
+			"Start_8",  "41", "Heart_Glance",  "End",
+			"Start_9",  "50",  "End",
+
+			"Start_10", "60",  "End",
+			"Start_11", "61",  "End",
+			"Start_12", "70",  "End",
+			"Start_13", "71",  "End",
+			"Start_14", "72",  "End",
+
+			"Start_15", "80", "Manpu_Shocked", "End",
+			"Start_16", "90",  "End",
+
+			"Start_17", "60", "Heart", "End",
+			"Start_18", "61", "Heart", "End",
+			"Start_19", "72", "Heart", "End",
+			"Start_20", "73", "Heart", "End",
+			"Start_21", "10", "Heart", "End",
+			"Start_22", "20", "Heart", "Manpu_Anger", "End",
+}
+#DIM DYNAMIC CHARA
+#DIMS DYNAMIC 表示形式
+#DIMS DYNAMIC 服装
+#DIMS DYNAMIC 表情,2
+#DIMS DYNAMIC 差分
+#DIMS DYNAMIC 乳量
+#LOCALSIZE 1
+#LOCALSSIZE 1
+素体COUNT = FINDELEMENT(素体, 服装)
+IF 素体COUNT == -1
+	素体COUNT = 1
+ENDIF
+;拼接图得不到任何索引
+CALL GET_PRE_FACETYPE(CHARA, 表示形式, 服装, 差分, 表情库, 表情)
+FOR LOCAL, 0, 2
+	表情COUNT:LOCAL = FINDELEMENT(表情库, 表情:LOCAL, , , 1)
+	SIF LOCAL && 表情:LOCAL == ""
+		BREAK
+	IF 表情COUNT:LOCAL == -1
+		表情COUNT:LOCAL = 0
+	ENDIF
+	IF RM_リソースチェック(@"%素体:素体COUNT%_%表情库:(表情COUNT:LOCAL)%_93")
+		RESULTS:LOCAL = %素体:素体COUNT%_%表情库:(表情COUNT:LOCAL)%_93
+		CONTINUE
+	ENDIF
+
+	VARIANT = %\@ STRFIND(表示形式, "顔") > -1 ? faceparts # bodyparts \@%
+
+	;compose 素体
+	G_ID = 0
+	CALL 画像合成(G_ID, @"93_%素体:素体COUNT%")
+
+	;顔合成
+	L_COUNT = FINDELEMENT(PAT, @"Start_{(表情COUNT:LOCAL)}", , , 1)
+	;照れ, on top of 素体, underneath everything else due to unique layering
+	SIF CHECK_BLUSH(93)
+		CALL 画像合成(G_ID, @"93_%VARIANT%_Blush")
+	SIF 表情库:(表情COUNT:LOCAL) != "睡眠" && (STRFIND(素体:素体COUNT, "裸") > -1 || STRFIND(表情库:(表情COUNT:LOCAL), "発情") > -1 || STRFIND(表情库:(表情COUNT:LOCAL), "性交") > -1 || STRFIND(表情库:(表情COUNT:LOCAL), "愛撫") > -1)
+		CALL 画像合成(G_ID, @"93_%VARIANT%_Blush")
+	;compose the expression
+	L_COUNT ++
+	WHILE L_COUNT < VARSIZE("PAT") || PAT:L_COUNT != @"End"
+		CALL 画像合成(G_ID, @"93_%VARIANT%_%PAT:L_COUNT%")
+		;skip to nextloop if currently composing for a variant that shouldn't exist(missing resource)
+		SIF RESULT == 0
+			BREAK
+		L_COUNT ++
+	WEND
+
+	SPRITECREATE @"%素体:素体COUNT%_%表情库:(表情COUNT:LOCAL)%_93", G_ID
+	RESULTS:LOCAL = %素体:素体COUNT%_%表情库:(表情COUNT:LOCAL)%_93
+	;PRINTFORMDW done%素体:素体COUNT%_%表情库:(表情COUNT:LOCAL)%_93  表情%ARGS:0% %ARGS:1% %服装%
 NEXT
 
 

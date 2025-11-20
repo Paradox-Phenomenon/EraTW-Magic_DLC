@@ -595,7 +595,7 @@ RESULT = 0
 VARSET RESULTS ;bug fix, fix reusing previous calls RESULTS
 TRYCCALLFORM SPECIAL_BASE_IMAGE_{CHARA}
 IF RESULTS != ""
-	TRYCCALLFORM %RESULTS%_GET_BASE_RESOURCE(CHARA, 表示形式, 服装, 表情)
+	TRYCCALLFORM %RESULTS%_GET_BASE_RESOURCE(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー , 差分)
 	CATCH
 		VARSET RESULTS
 	ENDCATCH
@@ -686,7 +686,7 @@ ELSE
 ENDIF
 SIF 表情_マウスオーバー != ""
     RESULTS:1 = %表情_マウスオーバー%
-;PRINTFORML 表情「%RESULTS:0%」を確認
+;PRINTFORML get传入表情「%RESULTS:0%/%RESULTS:1%」
 
 RESULTS:0 = %表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%
 RESULTS:1 = %表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%
@@ -1234,3 +1234,158 @@ SELECTCASE FUNC_TYPE
 		ENDCATCH
 ENDSELECT
 RETURN 0, 0
+
+;预先获得表情
+@GET_PRE_FACETYPE(CHARA, 表示形式, 服装, 差分, 表情库,表情)
+#DIM CHARA
+#DIMS 表示形式
+#DIMS 服装
+#DIMS 差分
+#DIMS TEMP, 2
+#DIMS REF 表情库
+#DIMS REF 表情
+
+IF TALENT:CHARA:心情 == -1 || CFLAG:CHARA:ブチギレ
+	RESULTS:0 = 憤怒
+	LOCAL = -1
+ELSEIF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 == MAXBASE:CHARA:情緒 || TCVAR:CHARA:烂醉
+	RESULTS:0 = 笑顔
+	LOCAL = 1
+ELSE
+	RESULTS:0 = 通常
+	LOCAL = 0
+ENDIF
+SIF CHECK_CHARA(CHARA, "陥落")
+	LOCAL ++
+SIF BATHROOM(CFLAG:CHARA:現在位置) && 風呂逐出条件(CHARA)
+	LOCAL --
+SIF MARK:CHARA:反発刻印
+	LOCAL --
+SIF BASE:CHARA:憤怒 >= 500
+	LOCAL --
+SIF BASE:CHARA:情緒 >= 650
+	LOCAL ++
+;addition custom code: display jealous characters' angry portraits if you're on dates with them and they aren't the current target (thanks to Harris for the idea) 
+IF TALENT:CHARA:嫉妬 && FLAG:デート相手 == CHARA && TARGET != CHARA 
+	RESULTS:0 = 憤怒 
+	LOCAL = -1 
+ENDIF 
+SELECTCASE RESULTS:0
+CASE "笑顔"
+;	笑顔時は表情が固まらないように
+;	IF LOCAL < 0
+		RESULTS:1 = 通常
+;	ELSE
+;		RESULTS:1 = 笑顔
+;	ENDIF
+CASE "憤怒"
+	IF LOCAL > 0
+		RESULTS:1 = 通常
+	ELSE
+		RESULTS:1 = 憤怒
+	ENDIF
+CASEELSE
+	IF LOCAL > 0
+		RESULTS:1 = 笑顔
+	ELSEIF LOCAL < 0
+		RESULTS:1 = 憤怒
+	ELSE
+		RESULTS:1 = 通常
+	ENDIF
+ENDSELECT
+
+;表情がなければ通常
+;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF !FINDELEMENT(表情库, RESULTS:0, , , 1)
+	RESULTS:0 = 通常
+;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF !FINDELEMENT(表情库, RESULTS:1, , , 1)
+	RESULTS:1 = 通常
+
+;発情用
+;IF TCVAR:CHARA:発情 && SPRITECREATED(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+IF TCVAR:CHARA:発情 && FINDELEMENT(表情库, "発情", , , 1)
+	RESULTS:0 = 発情
+	RESULTS:1 = 発情
+ENDIF
+
+;睡眠用
+;IF CFLAG:CHARA:睡眠 && SPRITECREATED(@"%表示形式%_%服装%_睡眠_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+IF CFLAG:CHARA:睡眠 && FINDELEMENT(表情库, "睡眠", , , 1)
+	RESULTS:0 = 睡眠
+	RESULTS:1 = 睡眠
+ENDIF
+;IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && SPRITECREATED(@"%表示形式%_%服装%_トロ顔_{CHARA}%差分%") ;debloat custom code
+IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && FINDELEMENT(表情库, "トロ顔", , , 1)
+	RESULTS:0 = トロ顔
+	RESULTS:1 = トロ顔
+	IF NOWEX:CHARA:TotalEX >= 5
+		RESULTS:0 = イキ顔
+		RESULTS:1 = イキ顔
+	ENDIF
+ENDIF
+;専用の特殊表情変化
+CALL IMAGE_CHARA_OVERRIDE("特殊表情", CHARA)
+SIF RESULTS:0 == ""
+	RESULTS:0 = 通常
+SIF RESULTS:1 == ""
+	RESULTS:1 = 通常
+;以下指令から追加される表情
+SIF FLAG:時間停止 || CHARA != TARGET || CFLAG:CHARA:睡眠
+	RETURN 0
+
+;現在的表情を一時保存
+TEMP:0 = %RESULTS:0%
+TEMP:1 = %RESULTS:1%
+
+;挿入中なら性交表情
+;SIF IS_SEXING(CHARA) && SPRITECREATED(@"%表示形式%_%服装%_性交_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF IS_SEXING(CHARA) && FINDELEMENT(表情库, "性交", , , 1)
+	RESULTS:0 = 性交
+
+SELECTCASE SELECTCOM
+	;愛撫系
+	CASE 0 TO 15
+		IF SELECTCOM == 9
+			RESULTS:0 = 自慰
+		ELSE
+			RESULTS:0 = 愛撫
+		ENDIF
+	;性交系
+	CASE 60 TO 79, 317 TO 323
+		RESULTS:0 = 性交
+	;Counterまたは日常系愛撫
+	CASE 313 TO 316
+		IF CFLAG:CHARA:诶嘿嘿
+			RESULTS:0 = 愛撫
+		ELSEIF MARK:CHARA:不埒刻印 == 3
+			RESULTS:1 = 愛撫
+		ENDIF
+ENDSELECT
+;PRINTFORML 表情チェック　%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%
+;表情がなければ戻す
+;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF !FINDELEMENT(表情库, RESULTS:0, , , 1)
+	RESULTS:0 = %TEMP:0%
+;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF !FINDELEMENT(表情库, RESULTS:1, , , 1)
+	RESULTS:1 = %TEMP:1%
+
+;発情時2/3でマウスオーバーと表情交代
+;SIF RAND:3 && TCVAR:CHARA:発情 && SPRITECREATED(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
+;addition custom code, duplicated characters
+SIF RAND:3 && TCVAR:CHARA:発情 && FINDELEMENT(表情库, "発情", , , 1)
+	SWAP RESULTS:0, RESULTS:1
+
+;専用の特殊表情変化
+CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA, SELECTCOM)
+FOR LOCAL, 0, 2
+	表情:LOCAL '= RESULTS:LOCAL
+NEXT
