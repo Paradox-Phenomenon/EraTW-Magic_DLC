@@ -3,9 +3,9 @@
 ;日常系指令、レベル1
 ;-------------------------------------------------
 @COM410
-#DIM 掃除前的污垢
 #DIM 清掃力
 #DIM SWEEPID
+#DIM SWEEP_YOGORE
 SWEEPID = CFLAG:MASTER:現在位置
 TFLAG:情緒上昇抑制 = 1
 IF YOGORE:SWEEPID < OSOUJI_LIMIT(MASTER)
@@ -57,21 +57,17 @@ ELSE
 	清掃力 = SWEEP_POWER_CALC(TFLAG:193 ? TARGET # 0)
 	SIF ITEM:特制竹箒
 		PRINTFORML %CALLNAME:MASTER%用特制的扫帚发出吼声
-	掃除前的污垢 = YOGORE:(SWEEPID)
-	IF TFLAG:193 && !CFLAG:睡眠
-		YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / (清掃力 + 1)
-	ELSE
-		YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / 清掃力
-	ENDIF
+	SWEEP_YOGORE = YOGORE:SWEEPID - YOGORE:SWEEPID / (清掃力 * (SWEEPID == P54小人的虫籠 ? 5 # 1))
+	YOGORE:SWEEPID -= SWEEP_YOGORE
 	;这里加上顺手清扫虫笼的体型限制，小人也可以请求其他人帮忙
 	IF GROUPMATCH(SWEEPID, P9居間, P10走廊) && (TALENT:MASTER:体型 > -5 || TFLAG:193 && TALENT:体型 > -5)
 		PRINTFORML 顺手把虫笼也清扫干净了
 		PRINTFORML 因为只要挪开针妙丸的私人物品再倒过来抖一抖就行了所以很简单
 		;这里把虫笼的垃圾乘上体型修正也加入扫除量，不然像是垃圾被虚空吃了一样
-		EX:MASTER:今日的掃除回数 += YOGORE:P54小人的虫籠 / 5
+		SWEEP_YOGORE += YOGORE:P54小人的虫籠 / 5
 		YOGORE:P54小人的虫籠 = 0
 	ENDIF
-	EX:MASTER:今日的掃除回数 += 掃除前的污垢 - YOGORE:(SWEEPID)
+	EX:MASTER:今日的掃除回数 += SWEEP_YOGORE
 	IF FLAG:時間停止
 		BASE:MASTER:TSP -= 50
 		LOCAL:3 = 0
@@ -314,8 +310,8 @@ RETURN 1
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM SWEEPID
-#DIM 掃除前的污垢
 #DIM 清掃力
+#DIM SWEEP_YOGORE
 #DIM 掃除骰子
 [IF DEBUG]
 PRINTFORML 自動掃除フラグ:{GETBIT(FLAG:自動掃除, 1)}、同行：{CFLAG:MASTER:同行}
@@ -343,9 +339,10 @@ PRINTFORML [ベースの清掃力:{清掃力}][掃除骰子:{掃除骰子}]
 [ENDIF]
 ;掃除骰子が1以上なら成功(清掃0で30%、清掃6で90%)
 IF (掃除骰子 > 0)
-	掃除前的污垢 = YOGORE:(SWEEPID)
-	YOGORE:(SWEEPID) = YOGORE:(SWEEPID) / 清掃力 * 2
-	EX:MASTER:今日的掃除回数 += 掃除前的污垢 - YOGORE:(SWEEPID)
+	;掃除量を計算して半分を戻して反映
+	SWEEP_YOGORE = (YOGORE:SWEEPID - YOGORE:SWEEPID / (清掃力 * (SWEEPID == P54小人的虫籠 ? 5 # 1))) / 2
+	YOGORE:SWEEPID -= SWEEP_YOGORE
+	EX:MASTER:今日的掃除回数 += SWEEP_YOGORE
 	SIF SWEEPGOD < 2
 		PRINTFORML %CALLNAME:PLAYER%在离开%NAME_FROM_PLACE(SWEEPID)%之前做了扫除
 	PRINTFORML
