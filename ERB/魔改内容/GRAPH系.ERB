@@ -14,6 +14,13 @@
 #DIMS DYNAMIC 表情, 2
 #DIMS DYNAMIC 全图索引, 2
 #DIMS DYNAMIC Version
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;生成特效
+IF !LOCAL
+	CALL SPIRIT_BUILD_特效差分(0,CHARA,CFLAG:CHARA:差し替え適用)
+	LOCAL = 1
+ENDIF
 
 ;SPIRIT_{妊肚}_{乳量}_{私处}_{服装}_{表情}_{CHARA}
 
@@ -29,6 +36,12 @@ IF 服装 == ""
 		服装 += RESULTS
 	ENDIF
 ENDIF
+
+RESULT = 0
+TRYCALLFORM EagloV_Version{CHARA}
+SIF RESULT
+	Version = %RESULTS%
+
 ;妊肚 = %SPIRIT_妊肚判定(CHARA)%
 ;乳量 = %SPIRIT_乳量判定(CHARA)%
 TRYCCALLFORM SPIRIT_特殊私处_{CHARA}(服装)
@@ -41,21 +54,21 @@ ENDCATCH
 
 ;表情(RESULTSに格納)
 IF 表情 == ""
-    CALL SPIRIT_GET_FACETYPE(CHARA, 表示形式, 服装, 差分)
+	CALL SPIRIT_GET_FACETYPE(Version, CHARA, 表示形式, 服装, 差分)
 	;PRINTFORMW 表情「%RESULTS:0%/%RESULTS:1%」を確認
 	表情 '= RESULTS
 ENDIF
 SIF 表情:1 == "" && RESULTS:1 != ""
 	表情:1 '= RESULTS:1
 全图索引:0 = %SPIRIT_全图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情:0)%
-SIF !SPRITECREATED(全图索引:0)
+SIF !RM_リソースチェック(全图索引:0)
 	CALL SPIRIT_BUILD_BASE_IMAGE(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情:0)
 
 IF 表情:1 == ""
 	全图索引:1 = 
 ELSE
 	全图索引:1 = %SPIRIT_全图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情:1)%
-	SIF !SPRITECREATED(全图索引:1)
+	SIF !RM_リソースチェック(全图索引:1)
 		CALL SPIRIT_BUILD_BASE_IMAGE(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情:1)
 ENDIF
 
@@ -88,10 +101,10 @@ RETURN
 #DIMS DYNAMIC 全图索引
 
 体图索引 = %SPIRIT_体图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装)%
-表情索引 = %SPIRIT_表情索引(Version, CHARA, 表情)%
+表情索引 = %SPIRIT_表情索引(Version, CHARA, 服装, 表情)%
 全图索引 = %SPIRIT_全图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情)%
 
-IF !SPRITECREATED(体图索引)
+IF !RM_リソースチェック(体图索引)
 	CALL SPIRIT_BUILD_体差分(Version, CHARA, 妊肚, 乳量, 私处, 服装)
 ENDIF
 
@@ -113,14 +126,14 @@ RETURN
 #DIMS DYNAMIC 颜像索引, 2
 
 颜像索引:0 = %SPIRIT_颜像索引(全图索引:0)%
-SIF !SPRITECREATED(颜像索引:0)
+SIF !RM_リソースチェック(颜像索引:0)
 	CALL SPIRIT_颜像切分(Version, CHARA, 全图索引:0)
 
 IF 全图索引:1 == ""
 	颜像索引:1 = 
 ELSE
 	颜像索引:1 = %SPIRIT_颜像索引(全图索引:1)%
-	SIF !SPRITECREATED(颜像索引:1)
+	SIF !RM_リソースチェック(颜像索引:1)
 		CALL SPIRIT_颜像切分(Version, CHARA, 全图索引:1)
 ENDIF
 
@@ -137,7 +150,7 @@ RETURN
 #DIMS DYNAMIC 颜像索引
 #DIM DYNAMIC 颜RECT,4
 
-IF SPRITECREATED(@"%Version%{CHARA}_颜像范围")
+IF RM_リソースチェック(@"%Version%{CHARA}_颜像范围")
 	颜RECT:0 = SPRITEPOSX(@"%Version%{CHARA}_颜像范围")
 	颜RECT:1 = SPRITEPOSY(@"%Version%{CHARA}_颜像范围")
 	颜RECT:2 = SPRITEWIDTH(@"%Version%{CHARA}_颜像范围")
@@ -185,12 +198,13 @@ RETURNF @"%Version%_%妊肚%_%乳量%_%私处%_%服装%_%表情%_{CHARA}"
 #DIMS DYNAMIC 服装
 RETURNF @"%Version%体图_%妊肚%_%乳量%_%私处%_%服装%_{CHARA}"
 
-@SPIRIT_表情索引(Version, CHARA, 表情)
+@SPIRIT_表情索引(Version, CHARA, 服装, 表情)
 #FUNCTIONS
 #DIMS DYNAMIC Version
 #DIM DYNAMIC CHARA
 #DIMS DYNAMIC 表情
-RETURNF @"%Version%{CHARA}_表情_%表情%"
+#DIMS DYNAMIC 服装
+RETURNF @"{CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_%表情%"
 ;}
 
 @SPIRIT_BUILD_体差分(Version, CHARA, 妊肚, 乳量, 私处, 服装)
@@ -204,7 +218,7 @@ RETURNF @"%Version%{CHARA}_表情_%表情%"
 #DIMS DYNAMIC 体图索引
 
 体图索引 = %SPIRIT_体图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装)%
-SIF SPRITECREATED(体图索引)
+SIF RM_リソースチェック(体图索引)
 	RETURN
 
 G_ID = 0
@@ -242,7 +256,7 @@ RETURN
 #DIMS DYNAMIC Version
 #DIM DYNAMIC CHARA
 #DIMS DYNAMIC 妊肚
-IF 妊肚 != "" && SPRITECREATED(@"%Version%{CHARA}_裸躯_膨腹_躯干")
+IF 妊肚 != "" && RM_リソースチェック(@"%Version%{CHARA}_裸躯_膨腹_躯干")
 	RESULTS = %@"%Version%{CHARA}_裸躯_膨腹_躯干"%
 	RETURN 1
 ENDIF
@@ -256,11 +270,11 @@ RETURN 1
 #DIMS DYNAMIC Version
 #DIM DYNAMIC CHARA
 #DIMS DYNAMIC 乳量
-IF SPRITECREATED(@"%Version%{CHARA}_裸胸_%乳量%")
+IF RM_リソースチェック(@"%Version%{CHARA}_裸胸_%乳量%")
 	RESULTS = %@"%Version%{CHARA}_裸胸_%乳量%"%
 	RETURN 1
 ENDIF
-IF SPRITECREATED(@"%Version%{CHARA}_裸胸")
+IF RM_リソースチェック(@"%Version%{CHARA}_裸胸")
 	RESULTS = %@"%Version%{CHARA}_裸胸"%
 	RETURN 1
 ENDIF
@@ -274,11 +288,11 @@ RETURN 0
 #DIMS DYNAMIC 妊肚
 #DIMS DYNAMIC 乳量
 IF 妊肚 != ""
-	IF SPRITECREATED(@"%Version%{CHARA}_裸腹_%乳量%_妊肚")
+	IF RM_リソースチェック(@"%Version%{CHARA}_裸腹_%乳量%_妊肚")
 		RESULTS = %@"%Version%{CHARA}_裸腹_%乳量%_妊肚"%
 		RETURN 1
 	ENDIF
-	IF SPRITECREATED(@"%Version%{CHARA}_裸腹_妊肚")
+	IF RM_リソースチェック(@"%Version%{CHARA}_裸腹_妊肚")
 		RESULTS = %@"%Version%{CHARA}_裸腹_妊肚"%
 		RETURN 1
 	ENDIF
@@ -295,12 +309,12 @@ RETURN 0
 SIF 私处 == ""
 	RETURN 0
 
-IF SPIRIT_妊肚判定(CHARA) != "" && SPRITECREATED(@"%Version%{CHARA}_膨腹_%私处%")
+IF SPIRIT_妊肚判定(CHARA) != "" && RM_リソースチェック(@"%Version%{CHARA}_膨腹_%私处%")
 	RESULTS = %@"%Version%{CHARA}_膨腹_%私处%"%
 	RETURN 1
 ENDIF
 
-IF SPRITECREATED(@"%Version%{CHARA}_私处_%私处%")
+IF RM_リソースチェック(@"%Version%{CHARA}_私处_%私处%")
 	RESULTS = %@"%Version%{CHARA}_私处_%私处%"%
 	RETURN 1
 ENDIF
@@ -336,9 +350,9 @@ RETURN 1
 #DIM DYNAMIC CHARA
 #DIMS DYNAMIC 乳量
 #DIMS DYNAMIC 服装
-IF SPRITECREATED(@"%Version%{CHARA}_服躯_%服装%_妊肚")
+IF RM_リソースチェック(@"%Version%{CHARA}_服躯_%服装%_妊肚")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_%服装%_妊肚"%
-ELSEIF SPRITECREATED(@"%Version%{CHARA}_服躯_%服装%")
+ELSEIF RM_リソースチェック(@"%Version%{CHARA}_服躯_%服装%")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_%服装%"%
 ELSE
 	RETURN 0
@@ -361,11 +375,11 @@ RETURN 1
 LOCALS = %妊肚%
 
 ; 躯干
-IF LOCALS == "膨腹" && SPRITECREATED(@"%Version%{CHARA}_服躯_%服装%_膨腹")
+IF LOCALS == "膨腹" && RM_リソースチェック(@"%Version%{CHARA}_服躯_%服装%_膨腹")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_%服装%_膨腹"%
-ELSEIF LOCALS != "" && SPRITECREATED(@"%Version%{CHARA}_服躯_%服装%_妊肚")
+ELSEIF LOCALS != "" && RM_リソースチェック(@"%Version%{CHARA}_服躯_%服装%_妊肚")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_%服装%_妊肚"%
-ELSEIF SPRITECREATED(@"%Version%{CHARA}_服躯_%服装%")
+ELSEIF RM_リソースチェック(@"%Version%{CHARA}_服躯_%服装%")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_%服装%"%
 	妊肚 = 
 ELSE
@@ -388,11 +402,11 @@ RETURN 1
 RESULTS:0 = 
 
 ; 躯干
-IF 妊肚 == "膨腹" && SPRITECREATED(@"%Version%{CHARA}_服躯_服_膨腹")
+IF 妊肚 == "膨腹" && RM_リソースチェック(@"%Version%{CHARA}_服躯_服_膨腹")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_常服_膨腹"%
-ELSEIF 妊肚 != "" && SPRITECREATED(@"%Version%{CHARA}_服躯_服_妊肚")
+ELSEIF 妊肚 != "" && RM_リソースチェック(@"%Version%{CHARA}_服躯_服_妊肚")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_服_妊肚"%
-ELSEIF SPRITECREATED(@"%Version%{CHARA}_服躯_常服")
+ELSEIF RM_リソースチェック(@"%Version%{CHARA}_服躯_常服")
 	RESULTS:0 = %@"%Version%{CHARA}_服躯_服"%
 ELSE
 	RETURN 0
@@ -416,7 +430,8 @@ RETURNF ""
 #LOCALSIZE 1
 #LOCALSSIZE 1
 FOR LOCAL, 0, VARSIZE("特效")
-	SIF SPRITECREATED(@"別立ち{ARG}_%特效:LOCAL%_{CHARA}")
+	;PRINTFORML 在处理 別立ち{ARG}_%特效:LOCAL%_{CHARA}
+	SIF RM_リソースチェック(@"別立ち{ARG}_%特效:LOCAL%_{CHARA}")
 		CALL SPIRIT_特效切分(Version, CHARA, @"別立ち{ARG}_%特效:LOCAL%_{CHARA}")
 NEXT
 
@@ -429,7 +444,7 @@ NEXT
 #DIM DYNAMIC 颜RECT,4
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF SPRITECREATED(@"%Version%{CHARA}_颜像范围")
+IF RM_リソースチェック(@"%Version%{CHARA}_颜像范围")
 	颜RECT:0 = SPRITEPOSX(@"%Version%{CHARA}_颜像范围")
 	颜RECT:1 = SPRITEPOSY(@"%Version%{CHARA}_颜像范围")
 	颜RECT:2 = SPRITEWIDTH(@"%Version%{CHARA}_颜像范围")
@@ -441,18 +456,20 @@ ELSE
 	颜RECT:3 = 300
 ENDIF
 颜像索引 = %REPLACE(全图索引, "別立ち", "別顔")%
+;PRINTFORML 在为%全图索引%生成颜像索引：%颜像索引%
 G_ID = 0
 CALL 画像合成(G_ID, "ダミー", 0, 0, 颜RECT:2, 颜RECT:3)
 CALL 画像合成(G_ID, 全图索引, 颜RECT:0, 颜RECT:1, 500, 500)
 SPRITECREATE 颜像索引, G_ID
 RETURN
 
-@SPIRIT_GET_FACETYPE(CHARA, 表示形式, 服装, 差分)
-#DIM CHARA
-#DIMS 表示形式
-#DIMS 服装
-#DIMS 差分
-#DIMS TEMP, 2
+@SPIRIT_GET_FACETYPE(Version, CHARA, 表示形式, 服装, 差分)
+#DIM DYNAMIC CHARA
+#DIMS DYNAMIC 表示形式
+#DIMS DYNAMIC 服装
+#DIMS DYNAMIC 差分
+#DIMS DYNAMIC Version
+#DIMS DYNAMIC TEMP, 2
 
 IF TALENT:CHARA:心情 == -1 || CFLAG:CHARA:ブチギレ
 	RESULTS:0 = 憤怒
@@ -502,33 +519,32 @@ CASEELSE
 		RESULTS:1 = 通常
 	ENDIF
 ENDSELECT
-
 ;表情がなければ通常
-;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
+;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}_表情_%RESULTS:0%")
+SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_%RESULTS:0%")
 	RESULTS:0 = 通常
-;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
+;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}_表情_%RESULTS:1%")
+SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_%RESULTS:1%")
 	RESULTS:1 = 通常
 
 ;発情用
-;IF TCVAR:CHARA:発情 && SPRITECREATED(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
+;IF TCVAR:CHARA:発情 && RM_リソースチェック(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-IF TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}_表情_発情")
+IF TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_発情")
 	RESULTS:0 = 発情
 	RESULTS:1 = 発情
 ENDIF
 
 ;睡眠用
-;IF CFLAG:CHARA:睡眠 && SPRITECREATED(@"%表示形式%_%服装%_睡眠_{CHARA}%差分%") ;debloat custom code
+;IF CFLAG:CHARA:睡眠 && RM_リソースチェック(@"%表示形式%_%服装%_睡眠_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-IF CFLAG:CHARA:睡眠 && RM_リソースチェック(@"{NO:CHARA}_表情_睡眠")
+IF CFLAG:CHARA:睡眠 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_睡眠")
 	RESULTS:0 = 睡眠
 	RESULTS:1 = 睡眠
 ENDIF
-IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && RM_リソースチェック(@"{NO:CHARA}_表情_トロ顔")
+IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_トロ顔")
 	RESULTS:0 = トロ顔
 	RESULTS:1 = トロ顔
 	IF NOWEX:CHARA:TotalEX >= 5
@@ -550,9 +566,9 @@ SIF FLAG:時間停止 || CHARA != TARGET || CFLAG:CHARA:睡眠
 TEMP:0 = %RESULTS:0%
 TEMP:1 = %RESULTS:1%
 ;挿入中なら性交表情
-;SIF IS_SEXING(CHARA) && SPRITECREATED(@"%表示形式%_%服装%_性交_{CHARA}%差分%") ;debloat custom code
+;SIF IS_SEXING(CHARA) && RM_リソースチェック(@"%表示形式%_%服装%_性交_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF IS_SEXING(CHARA) && RM_リソースチェック(@"{NO:CHARA}_表情_性交")
+SIF IS_SEXING(CHARA) && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_性交")
 	RESULTS:0 = 性交
 
 SELECTCASE SELECTCOM
@@ -576,18 +592,18 @@ SELECTCASE SELECTCOM
 ENDSELECT
 ;PRINTFORML 表情チェック　%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%
 ;表情がなければ戻す
-;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
+;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}_表情_%RESULTS:0%")
+SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_%RESULTS:0%")
 	RESULTS:0 = %TEMP:0%
-;SIF !SPRITECREATED(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
+;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}_表情_%RESULTS:1%")
+SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_%RESULTS:1%")
 	RESULTS:1 = %TEMP:1%
 ;発情時2/3でマウスオーバーと表情交代
-;SIF RAND:3 && TCVAR:CHARA:発情 && SPRITECREATED(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
+;SIF RAND:3 && TCVAR:CHARA:発情 && RM_リソースチェック(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF RAND:3 && TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}_表情_発情")
+SIF RAND:3 && TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%%服装%",Version != "")%_表情_発情")
 	SWAP RESULTS:0, RESULTS:1
 ;専用の特殊表情変化
 CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA, SELECTCOM)
