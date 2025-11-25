@@ -1,16 +1,32 @@
 ﻿@约会終了タイムUP処理
+;bugfix custom code
+#DIM DYNAMIC AFFECTED_CHARAS, キャラクタ数上限
+#LOCALSIZE 10
+#LOCALSSIZE 5
 VARSET LOCAL
 ;気力ゼロ,衰弱時约会中断
 FOR LOCAL,0,CHARANUM
-	SIF CHK_DATENOW(CFLAG:LOCAL:约会中) && (CFLAG:LOCAL:衰弱 || (BASE:LOCAL:気力 == 0 && CFLAG:LOCAL:現在位置 != 情人用宿屋 && CFLAG:LOCAL:現在位置 != 情人旅館 && CFLAG:LOCAL:現在位置 != OMANEKIBEYA()))
+	;bugfix custom code
+	IF CHK_DATENOW(CFLAG:LOCAL:约会中) && (CFLAG:LOCAL:衰弱 || (BASE:LOCAL:気力 == 0 && CFLAG:LOCAL:現在位置 != 情人用宿屋 && CFLAG:LOCAL:現在位置 != 情人旅館 && CFLAG:LOCAL:現在位置 != OMANEKIBEYA()))
 		LOCAL:1 ++
+		AFFECTED_CHARAS:LOCAL = 1
+	ENDIF
+	;bug fix, separate master
+	IF LOCAL:1 && LOCAL == MASTER
+		LOCAL:1 --
+		LOCAL:3 ++
+	ENDIF
 	SIF CHK_DATENOW(CFLAG:LOCAL:约会中) && CFLAG:LOCAL:衰弱
 		CALL ENDUFUFU(LOCAL)
 NEXT
 SIF NEMUKE() >= 720 || BASE:MASTER:酒気 >= MAXBASE:MASTER:酒気
 	LOCAL:2 ++
-;招待していて連泊でなければ泊めて貰える
-IF CFLAG:MASTER:招待 && (LOCAL:1 || LOCAL:2) && (!FLAG:70 || CFLAG:TARGET:344 == 1)
+
+;bugfix custom code
+SIF LOCAL:2 || LOCAL:3
+	AFFECTED_CHARAS:MASTER = 1
+;お招きしていて連泊でなければ泊めて貰える
+IF CFLAG:MASTER:招待 && (LOCAL:3 || LOCAL:2) && (!FLAG:70 || CFLAG:TARGET:344 == 1)
 	IF !TALENT:TARGET:恋慕
 		PRINTFORML %CALLNAME:(CFLAG:MASTER:招待)%也差不多到了清醒过来的时候了吧、是时候离开了…
 		IF CFLAG:TARGET:诶嘿嘿
@@ -23,8 +39,9 @@ IF CFLAG:MASTER:招待 && (LOCAL:1 || LOCAL:2) && (!FLAG:70 || CFLAG:TARGET:344 
 		CALL 泡風呂終了判定("你限界")
 		GOTO ESCAPE
 	ENDIF
-	IF LOCAL:1
-		PRINT 气力快用完了
+	;bug fix
+	IF LOCAL:3
+		PRINT 快筋疲力尽了
 	ELSEIF LOCAL:2
 		PRINT 差不多到了回去的时间了
 	ENDIF
@@ -56,7 +73,8 @@ IF CFLAG:MASTER:招待 && (LOCAL:1 || LOCAL:2) && (!FLAG:70 || CFLAG:TARGET:344 
 	ENDIF
 ENDIF
 $ESCAPE
-IF LOCAL:1 && CFLAG:MASTER:現在位置
+;bug fix
+IF LOCAL:3 && CFLAG:MASTER:現在位置
 	PRINTL 
 	PRINTW ***** 因为气力归０了、踏上了归途 *****
 	CALL 帰宅の時間経過
@@ -66,29 +84,38 @@ IF LOCAL:1 && CFLAG:MASTER:現在位置
 ELSEIF LOCAL:2
 	PRINTL
 	IF BASE:MASTER:酒気 >= MAXBASE:MASTER:酒気
-		PRINTW ***** 酩酊大醉、踉跄着踏上了归途 *****
+		PRINTW ***** 酩酊大醉、着踏上了归途 *****
 		PRINTFORMW 回到了%GET_MAPNAME(MAIN_MAP)%的%CALLNAME:MASTER%直接当场倒下了
 	ELSE
 		PRINTW ***** 因为倦意袭来了、踏上了归途 *****
 	ENDIF
 	CALL 帰宅の時間経過
 ENDIF
-IF LOCAL:1 || LOCAL:2
+IF LOCAL:1 || LOCAL:2 || LOCAL:3 ;bug fix
 	FOR LOCAL, 0, CHARANUM
+		;bugfix custom code
+		SIF !AFFECTED_CHARAS:LOCAL
+			CONTINUE
+
 		IF LOCAL && CFLAG:LOCAL:衰弱
 			IF !CFLAG:LOCAL:神社在住
 				CFLAG:LOCAL:初期位置 = SUKIMA()
 				CFLAG:LOCAL:現在位置 = SUKIMA()
 				CFLAG:LOCAL:拠点来訪 = 0
-				CALL KOJO_MESSAGE_SEND("EVENT",20,LOCAL,2,0)
-				PRINTFORMW 筋疲力尽的%CALLNAME:LOCAL%回去了
+				IF IS_HERE(LOCAL) ;bugfix custom code
+					CALL KOJO_MESSAGE_SEND("EVENT",20,LOCAL,2,0)
+					PRINTFORMW 筋疲力尽的%CALLNAME:LOCAL%回去了
+				ENDIF ;bugfix custom code
 			ELSE
-				PRINTFORM %CALLNAME:LOCAL%往%NAME_FROM_PLACE(CFLAG:LOCAL:初期位置)%
-				PRINTW 返回
+				;custom code
+				IF IS_HERE(LOCAL) ;bugfix custom code
+					PRINTFORMW %CALLNAME:LOCAL%回去%NAME_FROM_PLACE(CFLAG:LOCAL:初期位置)%了
+				ENDIF ;bugfix custom code
 				SIF CFLAG:MASTER:初期位置 != CFLAG:LOCAL:初期位置
 					LOCK:(CFLAG:LOCAL:初期位置) = 1
 				CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:初期位置
-				CALL KOJO_MESSAGE_SEND("EVENT",3,LOCAL,1,0)
+				SIF IS_HERE(LOCAL) ;bugfix custom code
+					CALL KOJO_MESSAGE_SEND("EVENT",3,LOCAL,1,0) ;bugfix custom code
 			ENDIF
 		ENDIF
 		CALL SET_DATE(99, LOCAL)

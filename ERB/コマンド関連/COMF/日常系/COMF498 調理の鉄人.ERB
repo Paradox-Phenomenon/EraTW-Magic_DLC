@@ -62,9 +62,18 @@ ENDIF
 
 PRINTFORML 「好，各位观众！接下来即将开幕的是大家期待已久的——料理铁人！今日灶台上燃起的火焰，究竟会点燃胜利的意志，还是化作败北的泪水呢！」
 IF 対戦相手 == CALLNAME:TARGET
-	PRINTFORML 「本次的主题是【%TASTE_TR(THEME)%】。若我的记忆无误，说到%TASTE_TR(THEME)%当属此女！」
+	CALL PRINT_STRL, @"「本次的主题是@HEX@{C_YELLOW}@【%TASTE_TR(THEME)%】@！！若我的记忆无误，说到%TASTE_TR(THEME)%当属此女！」"
 ELSE
-	PRINTFORML 「本次的主题是【%TASTE_TR(THEME)%】。若我的记忆无误，说到%TASTE_TR(THEME)%当属此男！」
+	CALL PRINT_STRL, @"「本次的主题是@HEX@{C_YELLOW}@【%TASTE_TR(THEME)%】@！！若我的记忆无误，说到%TASTE_TR(THEME)%当属此男！」"
+ENDIF
+;qol custom code
+CALL QOL_IRON_CHEF_JUDGE_SELECTION(THEME)
+IF RESULT < 0
+	PRINTFORML 「…很遗憾，今天我们没能找到足够的评委。」
+	PRINTFORMW 「下次再会吧！」
+	RETURN -1
+ELSE
+	ARRAYCOPY "RESULT" , "JUDGE"
 ENDIF
 PRINTFORML 「请大家用热烈的掌声欢迎！%TASTE_TR(THEME)%的铁人，%対戦相手%！」
 SIF THEME == "家庭料理"
@@ -75,23 +84,25 @@ PRINTFORML 「而挑战者则是%CALLNAME:MASTER%！」
 PRINTFORML 「评审团由以下诸位组成」
 
 $JUDGE_SELECT
-CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
-ARRAYCOPY "SHAFFLE_ARRAY" , "JUDGE"
 
-;テーマの味が嫌いな審査員だった場合再抽選
-;対戦相手,なりきり時は自分だった場合も再抽選
-FOR LOCAL, 0 , 3
-	C_ID = JUDGE:LOCAL + 1
-	SIF STRCOUNT(GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), THEME)
-		GOTO JUDGE_SELECT
-	SIF C_ID == TARGET
-		GOTO JUDGE_SELECT
-	SIF C_ID == FLAG:なりきり
-		GOTO JUDGE_SELECT
-NEXT
+; qol custom code, disabled here
+;CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
+;ARRAYCOPY "SHAFFLE_ARRAY" , "JUDGE"
+
+;;テーマの味が嫌いな審査員だった場合再抽選
+;;対戦相手,なりきり時は自分だった場合も再抽選
+;FOR LOCAL, 0 , 3
+;	C_ID = JUDGE:LOCAL + 1
+;	SIF STRCOUNT(GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), THEME)
+;		GOTO JUDGE_SELECT
+;	SIF C_ID == TARGET
+;		GOTO JUDGE_SELECT
+;	SIF C_ID == FLAG:なりきり
+;		GOTO JUDGE_SELECT
+;NEXT
 
 FOR LOCAL, 0 , 3
-	JUDGE:LOCAL += 1
+	;JUDGE:LOCAL += 1
 	C_ID = JUDGE:LOCAL
 	CALL PRINT_FACE, C_ID, "通常", "服", "", ""
 	PRINTFORML 
@@ -112,12 +123,12 @@ CALL JUDGE_RESEARCH(C_ID,"OUT")
 PRINTFORM 「本次料理铁人中…
 FOR LOCAL, 0, 6
 	IF LOCAL < 3
-		PRINTFORM [%TASTE_TR(RESULTS:LOCAL)%]
+		CALL COLORMESSAGE(@"[%TASTE_TR(RESULTS:LOCAL)%]",C_GREEN) ;qol custom code
 		TASTE_TREND_GOOD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 2
 			PRINTFORM 等口味的运用似乎会成为关键！相反，
 	ELSEIF LOCAL > 2 
-		PRINTFORM [%TASTE_TR(RESULTS:LOCAL)%]
+		CALL COLORMESSAGE(@"[%TASTE_TR(RESULTS:LOCAL)%]",C_RED) ;qol custom code
 		TASTE_TREND_BAD += RESULTS:LOCAL + "/"
 		SIF LOCAL == 5
 			PRINTFORM 等口味要谨慎！」
@@ -186,14 +197,14 @@ FOR LOCAL, 0 , 3
 		SETCOLOR C_GREEN
 		FONTBOLD
 		{
-		PRINTFORML 在%CALLNAME:C_ID%身后的是%TEXTR("红魔馆爆炸了/
+		PRINTFORML 在%CALLNAME:C_ID%身后的是%TRIM_TEXT(TEXTR("红魔馆爆炸了/
 		妖怪之山喷发了/铃奈庵被烧毁了/
 		辉针城坠落砸塌了博丽神社/动物灵和埴轮跳起了桑巴/
 		月亮弹起并嵌在了赫卡提亚的头上/
 		守矢神社一分为二发射核热造神非想天则升空/
 		血池地狱变成了钴蓝色，周围长出了椰子树/
 		巨大的键山雏脸庞浮现而出/
-		七色魔炮发射")%的背景
+		七色魔炮发射"))%的背景
 		}
 		RESETCOLOR
 		FONTREGULAR
