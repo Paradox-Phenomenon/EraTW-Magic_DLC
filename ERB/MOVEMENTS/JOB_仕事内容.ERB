@@ -8,6 +8,8 @@
 ;-----------------------------------------------------------
 @CHARA_HOLIDAY(ARG, ARG:1=0)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 
 ;残工作量・工作結束時間を確認するか分岐
 IF !ARG:1
@@ -24,6 +26,8 @@ RETURNF TCVAR:ARG:工作開始 == -1
 ;ARG:1に1を設定すると宴会や仕事中によるスキップを無視
 ;-----------------------------------------------------------
 @仕事内容設定(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM お掃除
 VARSET LOCAL
 
@@ -110,7 +114,7 @@ IF !RESULT
 			TCVAR:ARG:工资 = 0
 			TCVAR:ARG:工作開始 = CLOCK_TO_TIME( 6, 0)
 			TCVAR:ARG:工作結束 = CLOCK_TO_TIME( 11, 0)
-	TCVAR:ARG:礼物 = GETNUM(ITEM, "糖")
+			TCVAR:ARG:礼物 = GETNUM(ITEM, "糖")
 		ENDIF
 	CASE [[留琴]]
 		IF IS_WEEKDAY(DAY)
@@ -1007,10 +1011,11 @@ IF !RESULT
 			TCVAR:ARG:沒法幫忙 = 2
 		ENDIF
 	;他の人たちは今忙しいお仕事にはついてません。お仕事案募集。多分妖夢と藍様は不定期に忙しいんだろうなぁ……
+	;其他人现在都没在忙工作。诚邀工作提案。妖梦和蓝大人可能偶尔会很忙吧……
 	ENDSELECT
 ENDIF
-;休暇フラグ使わなくてもTCVAR:ARG:工作開始で判別できたので
-;仕事がない場合のリセット処理をまとめた
+;休暇フラグ使わなくてもTCVAR:ARG:工作開始で判別できたので    无需使用休假标志，通过TCVAR:ARG:工作開始即可判断
+;仕事がない場合のリセット処理をまとめた    总结了无工作任务时的重置处理流程
 IF TCVAR:ARG:工作開始 >= 0
 	;GET_JOBPLACEは主にREPLACEMENT用の処理
 	CFLAG:ARG:職場 = GET_JOBPLACE("仕事",ARG)
@@ -1027,6 +1032,8 @@ ENDIF
 ;COMMENT	
 ;-----------------------------------------------------------
 @JOBMOVE(ARG)
+#LOCALSIZE 2
+#LOCALSSIZE 1
 #DIM 前の職場
 #DIM お掃除
 SIF CFLAG:ARG:宴会参加 > 0 || GROUPMATCH(CFLAG:ARG:職種, JOB_宴会準備, JOB_宴会参加, JOB_宴会の片づけ, JOB_酔いつぶれる)
@@ -1137,27 +1144,26 @@ IF !RESULT
 			ENDIF
 		ENDIF
 	CASE [[艾伦]]
-		IF TIME:0 == TCVAR:ARG:357
+		IF TIME:時間 == TCVAR:ARG:357
 		;前回の処理から時間が経過してなければスルー
-		ELSEIF GROUPMATCH(DAY:3, 15, 30)
+		ELSEIF GROUPMATCH(DAY:日期, 15, 30)
 		;出張
 			;客数の増減、計上、基本は－３～＋５
 			LOCAL:1 = RAND:8 - 3
-			
 			;天候
-			SELECTCASE TIME:5
+			SELECTCASE TIME:天気
 			;霧雨、霧は－１
-			CASE 6, 7
+			CASE 天气_雾雨, 天气_雾, 天气_细雪, 天气_雾雪
 				LOCAL:1 -= 1
 			;雨、雪は－２
-			CASE 4, 8
+			CASE 天气_雨, 天气_雪
 				LOCAL:1 -= 2
 			;大雨、吹雪、雨雪交加、冰雹は－３
-			CASE 5, 9, 12, 13
+			CASE 天气_大雨, 天气_大雪, 天气_雨夹雪, 天气_冰霰, 天气_暴雨, 天气_冰雹
 				LOCAL:1 -= 3
 			ENDSELECT
 			;虹、ダイヤモンドダストは＋２
-			SIF TIME:7 >= 1
+			SIF TIME:虹 >= 天气_彩虹
 				LOCAL:1 += 2
 			
 			;客数が少ないならより増やす
@@ -1234,6 +1240,8 @@ SIF 前の職場 != CFLAG:ARG:職場
 ;-----------------------------------------------------------
 @GET_JOBNAME(ARG)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 IF CUSTOM_JOB_DESC:ARG:0 != ""
 	LOCALS '= CUSTOM_JOB_DESC:ARG:0
 	; SIF CUSTOM_JOB_DESC:ARG:(ARG:1) != ""
@@ -1471,6 +1479,8 @@ ENDIF
 RETURNF LOCALS
 
 @SPECIALJOB(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE ARG
 	CASE 1
 		PRINTFORML 今天%CALLNAME:ARG%好像有妖怪退治的工作
@@ -1494,6 +1504,8 @@ ENDSELECT
 ;-----------------------------------------------------------
 ;誰が何と言おうと女子会
 @JOB_女子会(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 MAXBASE:ARG:工作量 = 600 * 3
 TCVAR:ARG:工作開始 = CLOCK_TO_TIME(18, 0)
 TCVAR:ARG:工作結束 = CLOCK_TO_TIME(21, 0)
@@ -1502,6 +1514,8 @@ CFLAG:ARG:職種 = JOB_お酒
 TCVAR:ARG:沒法幫忙 = 1
 
 @JOB_妖精のお玩耍(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 MAXBASE:ARG:工作量 = 600 * 7
 TCVAR:ARG:工作開始 = CLOCK_TO_TIME(10, 0)
 TCVAR:ARG:工作結束 = CLOCK_TO_TIME(17, 0)

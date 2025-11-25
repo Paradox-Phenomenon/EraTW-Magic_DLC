@@ -47,27 +47,27 @@ ENDIF
 ;TRAGET初期化
 VARSET TARGET
 VARSET LOCAL
-;朝1日スタート处理
+;朝1日スタート处理    每日启动处理
 ;初期化
 
-;(天候パッチ)現在的天候管理が0であるときは初回プレイであると判断
+;(天候パッチ)現在的天候管理が0であるときは初回プレイであると判断    （天气补丁）若当前天气管理值为0，判定为初次游玩
 IF NOW_WEATHER_CONTROL == 0
-	;(天候パッチ)短期予報を行う
+	;(天候パッチ)短期予報を行う    （天气补丁）进行短期预报/月预报
 	CALL WEATHER_FORECAST_1TERM
-	;(天候パッチ)1日予報を行う
+	;(天候パッチ)1日予報を行う    （天气补丁）进行一日预报/日预报
 	CALL WEATHER_FORECAST_1DAY
 ENDIF
 
 FLAG:每日变更事件 = RAND:1000
 FLAG:70 = 0
-;(天候パッチ)時刻・天候に応じて背景色を変更
+;(天候パッチ)時刻・天候に応じて背景色を変更    根据时间和天气更改背景色
 CALL SET_MAP_WEATHER_BGCOLOR
 CFLAG:MASTER:陪睡中 = 0
 IF IN_HOME(CFLAG:MASTER:初期位置) == 0 || CFLAG:MASTER:初期位置 <= 0
 	PRINTW 初始位置不正确。请回到默认的位置。
 	CFLAG:MASTER:初期位置 = 默认初期位置
 ENDIF
-TFLAG:102 = 1
+TFLAG:COMABLE管理 = 1
 TFLAG:宴会場 = GET_JOBPLACE("宴会")
 UFUFU_START_TIME = 0
 UFUFU_START_DAY = 0
@@ -75,15 +75,15 @@ FOR LOCAL,0,CHARANUM
 	CALL InitializeBeforeTrain(LOCAL)
 NEXT
 
-;エンカウント路人店員のリセット
+;エンカウント路人店員のリセット    重置路人和店员的遭遇事件
 CALL 路人店員画像リセット
 
-;自由行動落とし穴＆雪だるまの処理
+;自由行動落とし穴＆雪だるまの処理    自由行动的陷阱和雪人处理
 VARSET FA16_HOLE
 FOR COUNT, 0, 100
 	SIF !FA17_OBJ:COUNT
 		CONTINUE
-	;完成した雪だるまは翌日に持ち越される
+	;完成した雪だるまは翌日に持ち越される    做好的雪人留到第二天
 	IF FA17_EXIST:COUNT % 10 || FA17_OBJ:COUNT < 1000
 		FA17_OBJ:COUNT = 0
 		FA17_EXIST:COUNT =0
@@ -94,54 +94,54 @@ NEXT
 
 CALL RESET_DISH
 CALL CHANGE_TIMEZONE
-;時間がMASTERの起床予定時刻より大きければ日期＋１
-IF TIME > TIME:3
-	DAY ++
-	DAY:3 ++
+;時間がMASTERの起床予定時刻より大きければ日期＋１    时间大于玩家起床预定时间则日期+1
+IF TIME > TIME:MASTERの起床予定時刻
+	DAY:総日数 ++
+	DAY:日期 ++
 	TIME -= 1440
 	
 	CALL CHANGE_MONTH
-	;(天候パッチ)短期予報を行う
+	;(天候パッチ)短期予報を行う    （天气补丁）进行短期预报/月预报
 	CALL WEATHER_FORECAST_1TERM
-	;(天候パッチ)1日予報を行う
+	;(天候パッチ)1日予報を行う    （天气补丁）进行一日预报/日预报
 	CALL WEATHER_FORECAST_1DAY
 	;宴会の参加者決定
-	SIF FLAG:3 && 宴会開始日判定()
+	SIF FLAG:宴会的有無 && 宴会開始日判定()
 		CALL ENKAI_ENTRY
 ENDIF
 
 ;乙女の身体周期の進行
 ;=================================
 FOR LOCAL,0,CHARANUM
-	;接吻経験が0なら[無接吻経験]を取得（未設定角色への対策と思われる）
+	;接吻経験が0なら[無接吻経験]を取得（未設定角色への対策と思われる）    若无接吻经验则获得[无接吻经验]（似乎是为未设定角色准备的对策）
 	SIF EXP:LOCAL:接吻経験 == 0 && TALENT:LOCAL:無接吻経験 == 0 && CSTR:LOCAL:初吻喪失履歴 == ""
-		 TALENT:LOCAL:無接吻経験 = 1
-	;女性器不在（性別のbit0が0）もしくは[幼児／幼児退行][幼稚]で[初潮]未取得で那个ば周期を設定しない
-	IF ((TALENT:LOCAL:150 || TALENT:LOCAL:151) && !TALENT:LOCAL:初潮) || !GETBIT(TALENT:LOCAL:性別,0)
-		CFLAG:LOCAL:900 = 0
+		TALENT:LOCAL:無接吻経験 = 1
+	;女性器不在（性別のbit0が0）もしくは[幼児／幼児退行][幼稚]で[初潮]未取得で那个ば周期を設定しない    若无女性器官或处于[幼儿][幼稚]且未记录[初潮]，则不设定周期
+	IF ((TALENT:LOCAL:幼児／幼児退行 || TALENT:LOCAL:幼稚) && !TALENT:LOCAL:初潮) || !GETBIT(TALENT:LOCAL:性別,0)
+		CFLAG:LOCAL:生理周期 = 0
 		CONTINUE
 	ENDIF
-	;周期が未設定の場合ここで決定
-	SIF (CFLAG:LOCAL:900 == 0 || CFLAG:LOCAL:900 > 11)
-		CFLAG:LOCAL:900 = RAND:10
+	;周期が未設定の場合ここで決定    若周期未设定则此处确定
+	SIF (CFLAG:LOCAL:生理周期 == 0 || CFLAG:LOCAL:生理周期 > 11)
+		CFLAG:LOCAL:生理周期 = RAND:10
 	;周期が1進む
-	CFLAG:LOCAL:900 += 1
+	CFLAG:LOCAL:生理周期 += 1
 	;なお10日周期（11以上で1の位だけにする）
-	SIF CFLAG:LOCAL:900 > 10
-		CFLAG:LOCAL:900 %= 10
+	SIF CFLAG:LOCAL:生理周期 > 10
+		CFLAG:LOCAL:生理周期 %= 10
 	SIF TALENT:LOCAL:妊娠 > 0
 	 	TALENT:LOCAL:妊娠 += 1
 NEXT
 ;=================================
-
+;来访判定
 CALL 来訪フラグ
 
-;EX角色休日约会先ばったり判定
+;EX角色休日约会先ばったり判定    EX角色假日约会先到先得判定
 CALL 遭遇判定
 
 同居人 = 0
 追加睡眠時間 = 0
-;被窝に引きずり込まれる
+;被窝に引きずり込まれる    被强留在被窝里
 IF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 	同居人 = CFLAG:MASTER:招待
 ;新增共用寝室角色的处理
@@ -153,11 +153,11 @@ ENDIF
 
 CFLAG:同居人:最後に会った日 = DAY
 
-IF TALENT:同居人:恋慕 && INRANGE(TIME:3, CFLAG:同居人:起床時間 - 180,CFLAG:同居人:起床時間)
+IF TALENT:同居人:恋慕 && INRANGE(TIME:MASTERの起床予定時刻, CFLAG:同居人:起床時間 - 180,CFLAG:同居人:起床時間)
 	起床妨害確率 = 20
-	SIF DAY:2 == 2
+	SIF DAY:季節 == 季节_夏
 		起床妨害確率 -= 10
-	SIF DAY:2 == 4
+	SIF DAY:季節 == 季节_冬
 		起床妨害確率 += 15
 	IF 起床妨害確率 > RAND:100
 		PRINTFORML %CALLNAME:MASTER%打算爬出被窝的时候、被%CALLNAME:同居人%抱住了
@@ -165,7 +165,7 @@ IF TALENT:同居人:恋慕 && INRANGE(TIME:3, CFLAG:同居人:起床時間 - 180
 		PRINTFORMW 没有办法只好在她起来前继续躺在被窝里……
 		EXP:同居人:愛情経験 += 5
 		CALL COLORMESSAGE(@"爱情经验＋5 （%CALLNAME:同居人%）",C_PINK,1)
-		追加睡眠時間 = CFLAG:同居人:起床時間 - TIME:3
+		追加睡眠時間 = CFLAG:同居人:起床時間 - TIME:MASTERの起床予定時刻
 	ENDIF
 ENDIF
 [SKIPSTART]
@@ -181,11 +181,11 @@ IF WEDDING_PLANNING_COMPLETE && (DAY * 1440 + TIME:3 + 追加睡眠時間) >= (W
 ENDIF
 [SKIPEND]
 
-;30分毎に神社のキャラを移動させる
+;30分毎に神社のキャラを移動させる    每30分钟移动一次角色
 LOCAL = 1
 WHILE LOCAL
-	IF TIME + 30 < TIME:3 + 追加睡眠時間
-		TIME:1 = TIME + 1440 * DAY
+	IF TIME + 30 < TIME:MASTERの起床予定時刻 + 追加睡眠時間
+		TIME:時間進行管理 = TIME + 1440 * DAY
 		TIME += 30
 		CALL CHARA_MOVEMENT
 	ELSE
@@ -193,9 +193,9 @@ WHILE LOCAL
 		FOR LOCAL:1,0,CHARANUM
 			CFLAG:(LOCAL:1):前一次的位置 = CFLAG:(LOCAL:1):現在位置
 		NEXT
-		;時間をMASTERの起床予定時刻に
-		TIME =  TIME:3 + 追加睡眠時間
-		TIME:1 = TIME + 1440 * DAY
+		;時間をMASTERの起床予定時刻に    将时间设定为MASTER的预计起床时间
+		TIME = TIME:MASTERの起床予定時刻 + 追加睡眠時間
+		TIME:時間進行管理 = TIME + 1440 * DAY
 		TFLAG:你起床 = TIME + 1440 * DAY
 		CALL CHARA_MOVEMENT
 		BREAK
@@ -203,7 +203,7 @@ WHILE LOCAL
 WEND
 CFLAG:MASTER:あなた前ターン位置 = CFLAG:MASTER:初期位置
 CALL CHANGE_TIMEZONE()
-;目覚め共通メッセージ表示
+;目覚め共通メッセージ表示    显示起床通用信息
 CALL GOODMORNING
 
 VARSET nChildrenPresent
@@ -212,14 +212,14 @@ VARSET CHILD_HUNGER
 nChildrenPresentCount = 0
 
 FOR LOCAL,1,CHARANUM
-	;初期位置は99で統一（53は古いデータ用）
-	SIF CFLAG:LOCAL:初期位置 == 53 || CFLAG:LOCAL:初期位置 == MAXROOM || CFLAG:LOCAL:初期位置 == 0 || (CFLAG:LOCAL:初期位置 / 100) != MAIN_MAP
+	;初期位置は99で統一（53は古いデータ用）    初始位置统一为隙间空间（P53倉庫用于旧数据）
+	SIF CFLAG:LOCAL:初期位置 == P53倉庫 || CFLAG:LOCAL:初期位置 == MAXROOM || CFLAG:LOCAL:初期位置 == 0 || (CFLAG:LOCAL:初期位置 / 100) != MAIN_MAP
 		CFLAG:LOCAL:初期位置 = SUKIMA()
 	SIF CFLAG:LOCAL:神社在住
 		CFLAG:LOCAL:初期位置 = CFLAG:LOCAL:神社在住
 	;お仕事を定義
 	BASE:LOCAL:工作量 = MAXBASE:LOCAL:工作量
-	;招待していたら遭遇フラグを自宅位置にする
+	;招待していたら遭遇フラグを自宅位置にする    若被邀请则将遭遇位置设为自宅位置
 	IF CFLAG:LOCAL:招待
 		[SKIPSTART]
 		;連動角色はワープしてしまうので一括補正
@@ -247,10 +247,10 @@ FOR LOCAL,1,CHARANUM
 		ENDSELECT
 		[SKIPEND]
 		CFLAG:LOCAL:遭遇位置 = CFLAG:LOCAL:自宅位置
-		;MASTERは外泊していたら约会フラグ（外出フラグ）を立てる
+		;MASTERは外泊していたら约会フラグ（外出フラグ）を立てる    如果MASTER在外过夜，就会被视为约会标志（外出标志）
 		SIF CFLAG:MASTER:招待
 			CFLAG:MASTER:约会中 = CFLAG:LOCAL:自宅位置 / 100
-		;その日は連泊できないように
+		;その日は連泊できないように    不要连住
 		TCVAR:LOCAL:连住禁止 = 1
 	ENDIF
 	;育児中なら子供の行動を判定
@@ -270,7 +270,7 @@ FOR LOCAL,1,CHARANUM
 		CALL CHILD_MOVEMENT_2(LOCAL)
 NEXT
 
-;システム変化系イベント
+;システム変化系イベント    系统变化系事件，目前似乎只有SUMIKOMI_ROOM相关
 CALL SYS_EVENT
 
 ;起床時間の記録
@@ -397,10 +397,7 @@ CALL IRAI_VANISH
 CALL MEMO_IRAI_DEADLINE
 
 FOR LOCAL,0,CHARANUM
-	
-
 	CFLAG:LOCAL:每日礼物 = 0
-
 NEXT
 
 IF FLAG:神簽契約
@@ -442,8 +439,8 @@ ENDIF
 ;	ITEM:奇跡之石 ++
 ;	FLAG:ミラダ支給 = NOW_PERIOD()
 ;ENDIF
-;小作人かつ月初め（初日除く）なら年貢のとりたて
-;外泊して逃げまわることもできなくはない
+;小作人かつ月初め（初日除く）なら年貢のとりたて    佃户的月初（第一天除外）年贡的征收
+;外泊して逃げまわることもできなくはない    也不是不能在外面过夜来逃跑
 SIF FLAG:地主 && FLAG:年貢 && (TARGET == FLAG:地主 || CFLAG:MASTER:現在位置 != OMANEKIBEYA())
 	CALL NENGU_NOUMIN
 CALL KODUCHI
@@ -461,16 +458,16 @@ ENDIF
 ;--------------------------------------------
 ;大掃除
 FOR LOCAL,1,11
-SIF CFLAG:LOCAL:335 > 0
-	CFLAG:LOCAL:335 -= 1
+SIF CFLAG:LOCAL:大掃除 > 0
+	CFLAG:LOCAL:大掃除 -= 1
 NEXT
-SIF CFLAG:MASTER:335 > 0
-	CFLAG:MASTER:335 -= 1
+SIF CFLAG:MASTER:大掃除 > 0
+	CFLAG:MASTER:大掃除 -= 1
 
 
 FOR LOCAL, 0, CHARANUM
 	;衣装設定
-	;行動中に着る服を設定してお着替えする
+	;行動中に着る服を設定してお着替えする    设定行动中穿的衣服换衣服
 	IF LOCAL == MASTER || !睡眠時間(LOCAL)
 		CFLAG:LOCAL:睡衣 = 0 ;disable pajama mode before setting clothes
 		CALL SELECT_CLOTHES(LOCAL, "今日の衣装")
@@ -496,10 +493,10 @@ FOR LOCAL, 0, CHARANUM
 	CALL CLOTHES_SETTING_TRAIN(LOCAL)
 NEXT
 
-;祈願リセット
+;祈願リセット    祈愿复位
 CVARSET CFLAG, GETNUM(CFLAG, "翌日来訪"), 0
-FLAG:560 = 0
-FLAG:561 = 0
+FLAG:祈願内容 = 0
+FLAG:精力強化回数 = 0
 ;qol custom code, replaced, apply to all characters
 ; IF FLAG:一時滞在
 ; 	CFLAG:(FLAG:一時滞在):初期位置 = CFLAG:(FLAG:一時滞在):本来の初期位置
@@ -566,14 +563,14 @@ CALL TOUCH_SET(0,0,0,1)
 FOR LOCAL,1,CHARANUM
 	起床状况 = 0
 	起床场所 = 0
-	SIF CFLAG:MASTER:300 != CFLAG:LOCAL:300 || LOCAL != DAYEVENT_TARGET
+	SIF CFLAG:MASTER:現在位置 != CFLAG:LOCAL:現在位置 || LOCAL != DAYEVENT_TARGET
 
 		CONTINUE
 	TARGET = LOCAL
 	IF TARGET
 		IF 睡眠時間(TARGET)
 			;同居中
-			IF CFLAG:MASTER:311 == CFLAG:TARGET:311
+			IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
 				;同居中对象还在睡
 				起床状况 = 3
 				;RETURN 1
@@ -581,7 +578,7 @@ FOR LOCAL,1,CHARANUM
 			ELSE
 				;顺便一提，如果房主先出去了，就会被留在房间里。如果将来实现睡眠奸后就寝的功能，这里需要进行分支处理
 				;如果不是自己的房间，且心虚的话，就移动到可移动的地点
-				SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:300 != CFLAG:MASTER:311
+				SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
 					CALL GETOUT(MASTER)
 				;潜行OFF
 				CALL SET_SNEAK(0,TARGET,2)
@@ -590,7 +587,7 @@ FOR LOCAL,1,CHARANUM
 			ENDIF
 		ELSE
 			;同居中
-			IF CFLAG:MASTER:311 == CFLAG:TARGET:311
+			IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
 				;同居中对象醒来了
 				起床状况 = 2
 			;非同居中
@@ -598,10 +595,10 @@ FOR LOCAL,1,CHARANUM
 				;非同居中对象醒来了
 				起床状况 = 1
 				;在MASTAR的房间起床
-				IF CFLAG:MASTER:300 == CFLAG:MASTER:311
+				IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 					起床场所 = 1
 				;在TARGET的自己房间里起床了（应该只发生在与同居对象同床共枕后就寝时）
-				ELSEIF CFLAG:MASTER:300 == CFLAG:TARGET:311
+				ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:初期位置
 					起床场所 = 0
 				;兜底情况
 				ELSE
@@ -626,12 +623,12 @@ NEXT
 IF FLAG:異常気象
 	PRINTFORML 感觉好像有种不同寻常的气息
 ELSE
-	SELECTCASE TIME:5
-		CASE 0,1
+	SELECTCASE TIME:天気
+		CASE 天气_少云, 天气_晴
 			CALL COLORMESSAGE(@"真是好天气。", C_P_GREEN, 1)
-		CASE IS & 4
+		CASE 天气_雨, 天气_大雨, 天气_雾雨, 天气_暴雨
 			CALL COLORMESSAGE(@"在下雨。", C_AQUA, 1)
-		CASE IS & 8
+		CASE 天气_雪, 天气_大雪, 天气_细雪, 天气_雾雪, 天气_雨夹雪, 天气_冰霰, 天气_冰雹
 			CALL COLORMESSAGE(@"在下雪。", C_CREAM, 1)
 	ENDSELECT
 ENDIF
@@ -654,7 +651,7 @@ IF DAY == FLAG:開始日 && FLAG:宴会開催FLAG
 	PRINTL 举办的日子
 	;ここでの宴会场代入だとCHARA_MOVEMENTで不具合が出たため上部へ移动
 	;FLAG:32 = GET_JOBPLACE("宴会")
-	IF TIME:3 >= FLAG:33
+	IF TIME:MASTERの起床予定時刻 >= FLAG:開始時間
 		FOR 宴会位置是正,1,CHARANUM
 			IF CFLAG:宴会位置是正:宴会参加
 				CFLAG:宴会位置是正:職場 = TFLAG:宴会場
@@ -692,26 +689,26 @@ IF CFLAG:MASTER:小槌 > 0
 	LOCAL = CFLAG:MASTER:魔力回収
 	IF CFLAG:MASTER:小槌 == 8
 			PRINTFORMW 针妙丸的身体变回了原状
-		TALENT:71:体型 = -5
-		SIF CFLAG:71:変異前的形状 != 0
-			TALENT:71:体型 = CFLAG:71:変異前的形状
-		IF CFLAG:71:初期位置 == 54 || CFLAG:71:現在位置 == 9
-			CFLAG:71:現在位置 = 54
-			CFLAG:71:初期位置 = 54
+		TALENT:[[針妙丸]]:体型 = -5
+		SIF CFLAG:[[針妙丸]]:変異前的形状 != 0
+			TALENT:[[針妙丸]]:体型 = CFLAG:[[針妙丸]]:変異前的形状
+		IF CFLAG:[[針妙丸]]:初期位置 == P54小人的虫籠 || CFLAG:[[針妙丸]]:現在位置 == P9居間
+			CFLAG:[[針妙丸]]:現在位置 = P54小人的虫籠
+			CFLAG:[[針妙丸]]:初期位置 = P54小人的虫籠
 		ENDIF
 	ELSEIF CFLAG:MASTER:小槌 == 4
 		IF CFLAG:MASTER:魔力回収 < 1
-			TALENT:MASTER:形状 = CFLAG:MASTER:382
+			TALENT:MASTER:形状 = CFLAG:MASTER:変異前的形状
 		ELSE
 			PRINTW 曾经很大的家伙变成了可怜的模样…
 			TALENT:MASTER:形状 = 2
 		ENDIF
 	ELSEIF CFLAG:MASTER:小槌 == 5
 		IF CFLAG:MASTER:魔力回収 < 1
-			TALENT:MASTER:形状 = CFLAG:MASTER:382
+			TALENT:MASTER:形状 = CFLAG:MASTER:変異前的形状
 		ELSE
 			PRINTW 曾经变成两根的家伙……变得…连一根都算不上了
-			TALENT:MASTER:183 = 0
+			TALENT:MASTER:双槍 = 0
 			TALENT:MASTER:形状 = 2
 			BASE:MASTER:精力 -= MAXBASE:MASTER:精力 / 2
 		ENDIF
@@ -719,9 +716,9 @@ IF CFLAG:MASTER:小槌 > 0
 		SIF CFLAG:MASTER:魔力回収 == 2
 			PRINTFORMW %CALLNAME:MASTER%的身体变回了原状
 		TALENT:MASTER:100 = FLAG:原本体格
-		IF CFLAG:MASTER:初期位置 == 54 || CFLAG:MASTER:現在位置 == 54
-			CFLAG:MASTER:現在位置 = 9
-			SIF CFLAG:MASTER:初期位置 == 54
+		IF CFLAG:MASTER:初期位置 == P54小人的虫籠 || CFLAG:MASTER:現在位置 == P54小人的虫籠
+			CFLAG:MASTER:現在位置 = P9居間
+			SIF CFLAG:MASTER:初期位置 == P54小人的虫籠
 				CFLAG:MASTER:初期位置 = 默认初期位置
 		ENDIF
 	ELSEIF CFLAG:MASTER:小槌 == 7
@@ -933,6 +930,7 @@ SIF ARG != MASTER
 	CALL 生活時間設定(ARG)
 SIF IN_HOME(CFLAG:ARG:初期位置) != 1 & CFLAG:ARG:睡眠
 	CALL SET_SLEEP(0,ARG,0)
+;睡一分钟特殊设置
 IF zzz1min && ARG
 	CFLAG:ARG:起床時間 = CFLAG:ARG:就寝時間+1
 	CFLAG:ARG:帰宅時間 = CFLAG:ARG:就寝時間

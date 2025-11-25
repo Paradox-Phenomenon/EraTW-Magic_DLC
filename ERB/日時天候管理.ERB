@@ -6,21 +6,23 @@
 ;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_MONTH
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM 神簽代
 #DIM IFS_COST
-;日期が月を跨いだら月変更
-IF DAY:3 > 31
-	DAY:3 = 1
-	DAY:2 ++
+;日期が月を跨いだら月変更    日期跨月变更
+IF DAY:日期 > 31
+	DAY:日期 = 1
+	DAY:季節 ++
 	;冬の次は春
-	IF DAY:2 > 4
-		DAY:2 = 1
+	IF DAY:季節 > 季节_冬
+		DAY:季節 = 季节_春
 		FLAG:年始貸付金 = FLAG:地主貸付金
-		;(天候パッチ)長期予報を行う
+		;(天候パッチ)長期予報を行う    （天气补丁）进行长期预报/年预报
 		CALL WEATHER_FORECAST_1YEAR
 	ENDIF
-	;夏になったらバレンタインフラグリセット
-	SIF DAY:2 == 2
+	;夏になったらバレンタインフラグリセット    夏天重置情人节标记
+	SIF DAY:季節 == 季节_夏
 		CVARSET CFLAG, 383
 	;徴収発生
 	SIF FLAG:地主
@@ -68,8 +70,10 @@ IF DAY:3 > 31
 			ENDIF
 		ENDIF
 	ENDIF
+	;虫采集服务续订
 	SIF FLAG:蟲の採集サービス
 		CALL IFS_SUBSCRIBE
+	;堇子的超能力加护续订
 	SIF ENCOUNTDLC
 		CALL SP_ENCOUNT
 ENDIF
@@ -87,6 +91,8 @@ SIF DAY:2 < 1 || DAY:2 > 4
 ;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_TIMEZONE
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM 現在時間帯
 
 ;SELECTCASE TIME
@@ -122,7 +128,7 @@ SELECTCASE TIME
 		LOCAL = 7
 ENDSELECT
 
-;(天候パッチ)天候システム上の時間帯管理
+;(天候パッチ)天候システム上の時間帯管理    天气系统的时间带管理
 SELECTCASE TIME
 	;AM0~3　未明
 	CASE 0 TO 179
@@ -150,7 +156,7 @@ SELECTCASE TIME
 		現在時間帯 = 8
 ENDSELECT
 
-;(天候パッチ)現在的天候傾向を判定
+;(天候パッチ)現在的天候傾向を判定    当前天气倾向判定，主要是天气系统的倾向
 CALL CHANGE_WEATHER_SYSTEM
 
 IF LOCAL != TIME:2
@@ -159,12 +165,12 @@ IF LOCAL != TIME:2
 	CALL TIMEZONE_MOVE
 ENDIF
 
-;(天候パッチ)天候システム上の時間帯変動・天候変化
+;(天候パッチ)天候システム上の時間帯変動・天候変化    天气系统的时间带变动和天气变化，主要是具体天气变动
 IF WEATHER_TIMEZOME != 現在時間帯
 	WEATHER_TIMEZOME = 現在時間帯
 	CALL CHANGE_WEATHER
 ENDIF
-;(天候パッチ)時刻・天候に応じて背景色を変更
+;(天候パッチ)時刻・天候に応じて背景色を変更    时间和天气对应的背景色变更
 CALL SET_MAP_WEATHER_BGCOLOR
 
 ;FileName_COMMON.ERB ------------------------------- Rev1.00
@@ -176,6 +182,8 @@ CALL SET_MAP_WEATHER_BGCOLOR
 ;-----------------------------------------------------------
 @GET_MONTH(ARG)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 5
 SIF !ARG
 	ARG = DAY:2
 SIF !STRLENS(LOCALS)
@@ -191,6 +199,8 @@ RETURNF LOCALS:(ARG)
 ;-----------------------------------------------------------
 @GET_WEATHER(ARG = -1)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 24
 #DIMS 表示_异常气象,15
 SIF ARG == -1
 	ARG = TIME:5
@@ -222,6 +232,8 @@ RETURNF LOCALS:(ARG)
 ;-------------------------------------------------
 @IS_WEEKDAY(ARG)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SIF !ARG
 	ARG = DAY
 RETURNF INRANGE(ARG % 7, 1, 5)
@@ -232,6 +244,8 @@ RETURNF INRANGE(ARG % 7, 1, 5)
 ;-------------------------------------------------
 @IS_WEEKEND(ARG)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SIF !ARG
 	ARG = DAY
 RETURNF !INRANGE(ARG % 7, 1, 5)
@@ -243,6 +257,8 @@ RETURNF !INRANGE(ARG % 7, 1, 5)
 ;-------------------------------------------------
 @YOUBI_MATCH(ARG, CHECK_STR)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS  CHECK_STR
 SIF !ARG
 	ARG = DAY
@@ -259,6 +275,8 @@ RETURNF 0
 ;-------------------------------------------------
 @GET_DAY(ARG)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS CONST YOUBI = "日", "月", "火", "水", "木", "金", "土"
 SIF !ARG
 	ARG = DAY
@@ -266,6 +284,8 @@ RETURNF YOUBI:(ARG % 7)
 
 @GET_DAY_CN(ARG)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS CONST 星期 = "日", "一", "二", "三", "四", "五", "六"
 SIF !ARG
 	ARG = DAY
@@ -278,6 +298,8 @@ RETURNF 星期:(ARG % 7)
 ;COMMENT
 ;-----------------------------------------------------------
 @CHANGE_WEATHER
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;#DIM 无天气
 #DIM 入手胖次
 #DIM 持ち主
@@ -658,8 +680,10 @@ SELECTCASE ARG
 ENDSELECT
 [SKIPEND]
 
-;定時遭遇位置再設定
+;定時遭遇位置再設定    该函数不变更本地、来访、宴会、招待、同行、仕事、睡眠的角色
 @TIMEZONE_MOVE
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS 移動前
 #DIMS 移動後
 FOR LOCAL,1,CHARANUM
@@ -675,7 +699,7 @@ FOR LOCAL,1,CHARANUM
 		CONTINUE
 	SIF CFLAG:LOCAL:睡眠
 		CONTINUE
-	;你と同じ場所にいるときは確率が下がる
+	;你と同じ場所にいるときは確率が下がる    和你处在同一位置时概率降低
 	IF CFLAG:MASTER:現在位置 == CFLAG:LOCAL:現在位置
 		IF TALENT:LOCAL:恋慕
 			;恋慕は5分の1

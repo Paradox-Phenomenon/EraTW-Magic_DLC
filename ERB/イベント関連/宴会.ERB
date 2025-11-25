@@ -1,4 +1,6 @@
 ﻿@ENKAI_SETTING
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;------------------------------------------------------------------------------------------------------
 ;宴会の開催判定
 ;------------------------------------------------------------------------------------------------------
@@ -162,6 +164,8 @@ SIF FLAG:宴会開催FLAG
 PRINTL  
 
 @ENKAI_ENTRY
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM DYNAMIC HOST_LIST  , 人物数量上限;主催者参加
 #DIM DYNAMIC GUEST_LIST , 人物数量上限;客参加
 #DIM DYNAMIC NG_LIST    , 人物数量上限;来ない
@@ -286,6 +290,8 @@ CALL ENKAI_ENTRY_CHARALIST(HOST_LIST, GUEST_LIST, NG_LIST, ResidentRate, Visitor
 
 ;列表を利用した宴会角色のプリセット関数
 @ENKAI_ENTRY_CHARALIST(HOST_LIST, GUEST_LIST, NG_LIST, ResidentRate, VisitorRate)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM REF HOST_LIST  ;主催者参加
 #DIM REF GUEST_LIST ;客参加
 #DIM REF NG_LIST    ;来ない
@@ -333,6 +339,8 @@ FOR LOCAL, 1, CHARANUM
 NEXT
 
 @ENKAI_WORK(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;宴会の行動内容を入力する
 ;NOSAMES:全部の引数が異なると1, 1つでも一致していると0を返す
 IF FLAG:宴会開催FLAG > 0 && (NOSAMES(CFLAG:ARG:職種, JOB_宴会準備, JOB_宴会参加, JOB_宴会の片づけ, JOB_酔いつぶれる) || CFLAG:ARG:行動 == 0)
@@ -356,6 +364,8 @@ RETURN 0
 
 
 @ENKAI_PREPARE(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;主催者の準備仕事
 IF CFLAG:ARG:職種 != JOB_宴会準備
 	MAXBASE:ARG:工作量 = FLAG:31 / 3
@@ -371,6 +381,8 @@ ENDIF
 RETURN 1
 
 @ENKAI_START(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;それぞれが飲むペースを変えるので、宴の規模に応じて工作量が変化
 IF CFLAG:ARG:職種 != JOB_宴会参加 && TCVAR:ARG:烂醉 == 0
 	MAXBASE:ARG:工作量 = FLAG:31
@@ -407,6 +419,8 @@ RETURN 1
 
 
 @ENKAI_KATAZUKE(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;主催者の片づけ仕事
 MAXBASE:ARG:工作量 = CFLAG:ARG:片付け工作量
 BASE:ARG:工作量 = MAXBASE:ARG:工作量
@@ -419,6 +433,8 @@ RETURN 1
 
 
 @ENKAI_DRUNK(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;喝得酩酊大醉ラインを超えていたら返回
 IF BASE:ARG:酒気 > (MAXBASE:ARG:酒気 / 10) * 8
 	RETURN 1
@@ -442,13 +458,17 @@ ENDIF
 RETURN 1
 
 @ENKAI_END
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;会場となった場所は荒れ果てる、拠点外でも対象地点的污垢増加させるためTFLAG:宴会場ではない
 SIF YOGORE:(FLAG:32) < 300
 	YOGORE:(FLAG:32) += 1000
 CALL ENKAI_STOP()
 
 @ENKAI_STOP
-;悪天候などによる中止
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;悪天候などによる中止    因恶劣天气等原因中止
 FOR LOCAL,0,CHARANUM
 	SIF	CFLAG:LOCAL:宴会参加 == 0
 		CONTINUE
@@ -461,27 +481,33 @@ FOR LOCAL,0,CHARANUM
 	CFLAG:LOCAL:片付け工作量 = 0
 NEXT
 FLAG:宴会開催FLAG = 0
-FLAG:31 = 0
-FLAG:32 = 0
+FLAG:宴会規模 = 0
+FLAG:宴会会場 = 0
 TFLAG:宴会場 = 0
-FLAG:33 = 0
+FLAG:開始時間 = 0
 FLAG:開始日 = 0
 FLAG:参加人数 = 0
-FLAG:36 = 0
+FLAG:悪天候中止FLAG = 0
 FLAG:宴会差し入れ = 0
 ;宴会会場表示 = 
 TFLAG:宴会状態 = 0
 RETURN 0
 
 @宴会予定表示
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORM {FLAG:33 / 60}:{(FLAG:33 % 60)/10}{(FLAG:33 % 60)%10}开始在%宴会場表示()%召开%EnkaiTitle%
 
 
 @SET_ENKAI_LOCATIONDISPLAY
+#LOCALSIZE 1
+#LOCALSSIZE 1
 宴会会場表示 = 
 
 @宴会場表示
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 LOCALS = 宴会場表示エラー
 IF FLAG:宴会開催FLAG
 	IF IN_HOME(FLAG:32)
@@ -493,6 +519,8 @@ ENDIF
 RETURNF LOCALS
 
 @宴会概要
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PRINTFORML \@ FLAG:開始日 == 1? 明日# {FLAG:開始日}日后\@、{FLAG:33 / 60}:{(FLAG:33 % 60)/10}{(FLAG:33 % 60)%10}开始要在%宴会場表示()%、召开「%EnkaiTitle%」
 
 PRINT 这样的话
@@ -512,7 +540,9 @@ FLAG:開始日 += DAY
 
 
 @宴会参加人数再計算
-;宴会の参加人数をセット
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;宴会の参加人数をセット    设定宴会参加人数
 FLAG:参加人数 = 0
 ;FOR LOCAL,0,CHARANUM
 ;	IF (CFLAG:LOCAL:宴会参加 == 1 || CFLAG:LOCAL:宴会参加 == 2) && !TCVAR:LOCAL:烂醉
@@ -526,7 +556,7 @@ WHILE LOCAL + 1 < CHARANUM
 	IF LOCAL < 0
 		BREAK
 	ELSE
-		;烂醉していない参加者および主催者をカウント
+		;烂醉していない参加者および主催者をカウント    统计未醉酒的参会者及主办方
 		SIF (CFLAG:LOCAL:宴会参加 == 1 || CFLAG:LOCAL:宴会参加 == 2) && !TCVAR:LOCAL:烂醉
 			FLAG:参加人数 ++
 	ENDIF
@@ -534,19 +564,27 @@ WEND
 
 @宴会開催中判定
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;RETURNF FLAG:宴会開催FLAG == 98 || FLAG:宴会開催FLAG == 99
 RETURNF TFLAG:宴会状態 == 98 || TFLAG:宴会状態 == 99
 
 @宴会場所在判定(ARG)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RETURNF 宴会開催中判定() && CFLAG:ARG:現在位置 == TFLAG:宴会場
 
 @宴会開始日判定()
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 RETURNF 宴会開催中判定() == 0 && DAY >= FLAG:開始日
 
 @宴会服决定(ARG)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE ARG
 	CASE 15
 		RETURNF [[晚宴礼服套装]]

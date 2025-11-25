@@ -1,5 +1,5 @@
 ﻿;----------------------------
-;ここで1を返す角色はMOVEMENT関係の処理を一切行わない
+;ここで1を返す角色はMOVEMENT関係の処理を一切行わない    在此返回1的角色不进行任何与MOVEMENT相关的处理
 ;----------------------------
 @MOVEMENTスキップ判定(ARG)
 #FUNCTION
@@ -14,8 +14,8 @@ SIF CFLAG:ARG:出禁
 RETURNF 0
 
 ;----------------------------
-;MASTER含む全ての角色に適用
-;時間経過による自然変動、会話累積度、風呂の処理
+;MASTER含む全ての角色に適用    适用于包括MASTER在内的所有角色
+;時間経過による自然変動、会話累積度、風呂の処理    随时间推移的自然变化、对话累积程度、浴室处理
 ;----------------------------
 @MOVEMENT共通処理(ARG)
 #LOCALSIZE 1
@@ -24,12 +24,12 @@ RETURNF 0
 CALL BASE自然変動(ARG)
 CALL WET_BODY(ARG)
 ;会話累積値（100以上会話すると時間経過100分経過まで会話不能）
-SIF TCVAR:ARG:301 > 100
-	TCVAR:ARG:302 = 1
-TCVAR:ARG:301 = MAX(TCVAR:ARG:301 - TIME_PROGRESS(TIME:1) , 0)
+SIF TCVAR:ARG:会話累計値 > 100
+	TCVAR:ARG:会話不能 = 1
+TCVAR:ARG:会話累計値 = MAX(TCVAR:ARG:会話累計値 - TIME_PROGRESS(TIME:時間進行管理) , 0)
 ;時刻経過で累積値が0になったら会話可能
-SIF TCVAR:ARG:301 == 0
-	TCVAR:ARG:302 = 0
+SIF TCVAR:ARG:会話累計値 == 0
+	TCVAR:ARG:会話不能 = 0
 
 ;身体の清潔度
 LOCAL = CFLAG:ARG:風呂
@@ -39,37 +39,37 @@ LOCAL = CFLAG:ARG:風呂
 
 ;IF BATHCHECK(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) == MAIN_MAP
 IF BATHROOM(CFLAG:ARG:現在位置) && GET_MAPID(CFLAG:ARG:現在位置) == MAIN_MAP
-	;汚臭耐性が低いほど長風呂（風呂フラグが下がりにくい）,一日分的污垢は大体30分で洗浄
-	CFLAG:ARG:風呂 = MAX(CFLAG:ARG:風呂 - TIME_PROGRESS(TIME:1) * (50 + TALENT:ARG:汚臭耐性 * 15), 0)
+	;汚臭耐性が低いほど長風呂（風呂フラグが下がりにくい）,一日分的污垢は大体30分で洗浄    耐污臭能力越低，洗得越久（越不容易降低洗澡欲望），一天的污垢大约30分钟就能洗净
+	CFLAG:ARG:風呂 = MAX(CFLAG:ARG:風呂 - TIME_PROGRESS(TIME:時間進行管理) * (50 + TALENT:ARG:汚臭耐性 * 15), 0)
 ELSE
-	;二日分弱まで蓄積
-	CFLAG:ARG:風呂 = MIN(CFLAG:ARG:風呂 + TIME_PROGRESS(TIME:1), 2500)
+	;二日分弱まで蓄積    积累到大约两天的量
+	CFLAG:ARG:風呂 = MIN(CFLAG:ARG:風呂 + TIME_PROGRESS(TIME:時間進行管理), 2500)
 ENDIF
 
-;抱きつき禁止時間の減少
+;抱きつき禁止時間の減少    减少禁止拥抱的时间
 IF TCVAR:ARG:抱きつき禁止時間 > 0
-	TCVAR:ARG:抱きつき禁止時間 = MAX(TCVAR:ARG:抱きつき禁止時間 - TIME_PROGRESS(TIME:1), 0)
+	TCVAR:ARG:抱きつき禁止時間 = MAX(TCVAR:ARG:抱きつき禁止時間 - TIME_PROGRESS(TIME:時間進行管理), 0)
 ENDIF
 
 
 ;----------------------------
-;不適切な位置にいる角色を別の場所へ移動させる
+;不適切な位置にいる角色を別の場所へ移動させる    将处于不适当位置的角色移动到其他位置
 ;----------------------------
 @強制移動(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-;時間停止中は処理しない
+;時間停止中は処理しない    时停期间不进行处理
 IF !FLAG:70
-	;虫カゴに入らない角色を虫カゴから追い出す
-	IF CFLAG:ARG:現在位置 == 54 && TALENT:ARG:体型 > -5
+	;虫カゴに入らない角色を虫カゴから追い出す    将不适合体型的角色逐出虫笼
+	IF CFLAG:ARG:現在位置 == P54小人的虫籠 && TALENT:ARG:体型 > -5
 		IF ARG == [[針妙丸]]
 			TALENT:ARG:体型 = -5
 		ELSE
-			CFLAG:ARG:現在位置 = 9
+			CFLAG:ARG:現在位置 = P9居間
 		ENDIF
 	ENDIF
 
-	;拠点の外に衰弱中の角色がいる場合隙間に送る
+	;拠点の外に衰弱中の角色がいる場合隙間に送る    若据点外有虚弱角色，则将其送入空隙
 	IF CFLAG:ARG:衰弱
 		SIF GET_MAPID(CFLAG:ARG:現在位置) != MAIN_MAP
 			CFLAG:ARG:現在位置 = SUKIMA()
@@ -119,7 +119,7 @@ SIF CFLAG:ARG:同行 || CHK_DATENOW(CFLAG:ARG:约会中)
 ;ENDIF
 
 ;------------------------------------------
-;時間に合わせて角色を起こす／寝かす
+;時間に合わせて角色を起こす／寝かす    根据时间安排角色起床/睡觉
 ;------------------------------------------
 @起床就寝処理(ARG)
 #LOCALSIZE 1
@@ -128,18 +128,18 @@ SIF FLAG:時間停止 || CFLAG:ARG:衰弱 || TCVAR:ARG:烂醉
 	RETURN
 SIF CFLAG:ARG:诶嘿嘿 && CFLAG:ARG:积攒度 > 0
 	RETURN
-;睡眠時間帯の場合
+;睡眠時間帯の場合    在睡眠时间的情况下
 IF 睡眠時間(ARG)
-	;起きてたら寝かせる
+	;起きてたら寝かせる    如果醒了就哄去睡觉
 	IF !CFLAG:ARG:睡眠
 		;约会中なら午睡は無視する
 		IF !(CHK_DATENOW(CFLAG:ARG:约会中) && !睡眠時間(ARG))
-			;CHARA_SLEEP改良に伴い一旦凍結
-;			;住宿人物的家にお泊まりした時は帰らないように97 + MAIN_MAP * 100に避難
-;			IF CFLAG:ARG:現在位置 != 97 + MAIN_MAP * 100
-;				;约会中に就寝時間になったら強制的に中止して帰宅
-;				CALL 睡眠時约会中断(ARG)
-;			ENDIF
+			;CHARA_SLEEP改良に伴い一旦凍結    因CHARA_SLEEP改进，暂时冻结
+			;住宿人物的家にお泊まりした時は帰らないように97 + MAIN_MAP * 100に避難    若借宿于人家则不返回并到97+MAIN_MAP*100避难
+			;IF CFLAG:ARG:現在位置 != 97 + MAIN_MAP * 100
+			;	;约会中に就寝時間になったら強制的に中止して帰宅    如果约会时到了睡觉时间，就强制中止回家
+			;	CALL 睡眠時约会中断(ARG)
+			;ENDIF
 			IF !CFLAG:ARG:招待 && !(CFLAG:ARG:神社在住 && CFLAG:ARG:現在位置 == CFLAG:ARG:初期位置)
 				IF CFLAG:MASTER:現在位置 == CFLAG:ARG:現在位置 && !CFLAG:MASTER:睡眠
 					IF CFLAG:ARG:诶嘿嘿 || CHK_DATENOW(CFLAG:ARG:约会中)
@@ -153,20 +153,20 @@ IF 睡眠時間(ARG)
 	ENDIF
 	;主人公が起床中ならメッセージ表示
 	CALL CHARA_SLEEP, ARG, !CFLAG:MASTER:睡眠
-;睡眠時間帯から外れている場合
+;睡眠時間帯から外れている場合    若不在睡眠时间段内
 ELSE
 	;寝てたら起こす
 	IF CFLAG:ARG:睡眠
 		CALL CHARA_AWAKE, ARG
-		;住宿人物が自分的家で起きた場合、参道的另一边に移動させる
+		;住宿人物が自分的家で起きた場合、参道的另一边に移動させる    若住宿人物在家地图异常，则将其移至最大房
 		SIF CFLAG:ARG:神社在住 && CFLAG:ARG:現在位置 == 97 + MAIN_MAP * 100
 			CFLAG:ARG:現在位置 = MAXROOM
 	ENDIF
 ENDIF
 
 ;------------------------------------------
-;訪問フラグが立っている角色を你の拠点物件に移動させる
-;角色を自分的家に返す／在宅中の処理を行う
+;訪問フラグが立っている角色を你の拠点物件に移動させる    将已标记为访问的角色移动到你的据点处
+;角色を自分的家に返す／在宅中の処理を行う    将角色返回到自己的家中/处理居家中的事务
 ;------------------------------------------
 @訪問帰宅処理(ARG)
 #LOCALSIZE 1
@@ -174,12 +174,12 @@ ENDIF
 SIF FLAG:時間停止 || CFLAG:ARG:衰弱 || TCVAR:ARG:烂醉 || CFLAG:ARG:招待 || CFLAG:ARG:诶嘿嘿 || 仕事中チェック(ARG)
 	RETURN
 
-;住宿人物・宴会に参加する角色は来訪・帰宅の処理を行わない
+;住宿人物・宴会に参加する角色は来訪・帰宅の処理を行わない    在住或宴会角色无需处理来访和归家事宜
 IF !CFLAG:ARG:神社在住 && !CFLAG:ARG:宴会参加
 	;活動時間内
 	IF VISIT(ARG)
 		IF CFLAG:ARG:拠点来訪
-			;来訪フラグがあるなら主人公の拠点に出現させる(仕事中は無理)
+			;来訪フラグがあるなら主人公の拠点に出現させる(仕事中は無理)    若有来访标记则出现在玩家据点（工作时无法出现）
 			IF !AT_HOME(ARG) && !仕事中チェック(ARG)
 				CALL 主人公物件へ向かう(ARG)
 			ENDIF
@@ -259,7 +259,7 @@ IF CFLAG:ARG:来訪不能
 	CFLAG:ARG:拠点来訪 = 0
 	RETURN
 ENDIF
-;お泊まりすると起きる現象
+;お泊まりすると起きる現象    入住后会出现的现象
 IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG:约会中) && !TALENT:ARG:路人
 	IF CFLAG:ARG:態度 && !FLAG:约会的对象
 		PRINTFORMW %CALLNAME:ARG%想要去%GET_MAPNAME(MAIN_MAP)%
@@ -284,7 +284,7 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG
 			CFLAG:MASTER:约会中 = MAIN_MAP
 			CFLAG:ARG:同行 = 60
 			CFLAG:MASTER:同行 = 60
-			IF TARGET == 93 && !GETBIT (FLAG:泳池, 0)
+			IF TARGET == [[若鷺姫]] && !GETBIT (FLAG:泳池, 0)
 				TIME += 30
 				BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - 500,500)
 			ENDIF

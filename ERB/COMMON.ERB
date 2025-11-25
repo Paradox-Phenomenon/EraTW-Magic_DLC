@@ -826,21 +826,21 @@ ELSE
 ENDIF
 ;-------------------------------------------------
 ;関数名:VISIT
-;概　要:その角色の活動時間帯かどうかを返す関数
+;概　要:その角色の活動時間帯かどうかを返す関数    判断该角色是否处于活动时间段的函数
 ;-------------------------------------------------
 @VISIT(ARG)
 #FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
-;if they're on the main map before visit time (e.g. slept over), they don't go home
+;if they're on the main map before visit time (e.g. slept over), they don't go home    如果他们在访问时间之前已经在主地图上（例如留宿），那么他们就不会回家
 SIF (BETWEENTIME(CFLAG:ARG:起床時間,CFLAG:ARG:来訪時間) || CFLAG:ARG:睡眠) && CFLAG:MASTER:初期位置 == CFLAG:ARG:現在位置 && CFLAG:ARG:拠点来訪
 	RETURNF 1
 
 RETURNF BETWEENTIME(CFLAG:ARG:来訪時間,CFLAG:ARG:帰宅時間)
 ;-------------------------------------------------
 ;関数名:睡眠時間
-;概　要:住宿人物が寝てるかどうかを返す関数だったのを全員使えるように
-;寝てると1を返す
+;概　要:住宿人物が寝てるかどうかを返す関数だったのを全員使えるように    将原本只对住宿人员是否在睡觉进行反馈的函数改为全员可用
+;寝てると1を返す    睡觉时返回1
 ;-------------------------------------------------
 @睡眠時間(ARG)
 #FUNCTION
@@ -851,7 +851,7 @@ SIF ARG == MASTER
 IF CFLAG:ARG:衰弱
 	RETURNF 1
 ELSE
-	;睡眠時間をチェックする
+	;睡眠時間をチェックする    检查睡眠时间
 	CALLF 睡眠時間２(ARG)
 	IF !BETWEENTIME(CFLAG:ARG:起床時間, CFLAG:ARG:就寝時間 + CFLAG:ARG:清醒劑)
 		RETURNF 1
@@ -861,8 +861,8 @@ ELSE
 ENDIF
 ;-------------------------------------------------
 ;関数名:睡眠時間２
-;概　要:角色ARGが寝てから起きるまでの時間の計測
-;逸脱していた場合は自動で修正する
+;概　要:角色ARGが寝てから起きるまでの時間の計測    测量角色ARG从睡下到醒来的时间
+;逸脱していた場合は自動で修正する    如有偏离则自动修正
 ;-------------------------------------------------
 @睡眠時間２(ARG)
 #FUNCTION
@@ -870,17 +870,17 @@ ENDIF
 #LOCALSSIZE 1
 #DIM SLEEPTIME
 #DIM WAKEUPTIME
-;清醒劑の強度分延長する
+;清醒劑の強度分延長する    清醒剂延长持续时间
 WAKEUPTIME = CFLAG:ARG:起床時間
 SLEEPTIME = CFLAG:ARG:就寝時間 + CFLAG:ARG:清醒劑
-;就寝時間が24時を超えている場合
+;就寝時間が24時を超えている場合    若就寝时间超过24点的情况
 WHILE SLEEPTIME >= 1440
 	SLEEPTIME -= 1440
 WEND
-;前日の夜に寝て翌日の朝に起きる場合
+;前日の夜に寝て翌日の朝に起きる場合    前一天晚上睡下第二天早上起的情况
 SIF SLEEPTIME > WAKEUPTIME
 	WAKEUPTIME += 1440
-;睡眠時間が2～14時間を逸している場合はチェック
+;睡眠時間が2～14時間を逸している場合はチェック    若睡眠时间偏离2～14小时进行检查
 IF !INRANGE(WAKEUPTIME - SLEEPTIME, 120, 840)
 	;清醒劑が原因
 	IF CFLAG:ARG:清醒劑
@@ -921,7 +921,7 @@ CFLAG:CHARA:起床時間 = 時刻計算(CSVCFLAG(CHARA, GETNUM(CFLAG, "起床時
 CFLAG:CHARA:来訪時間 = 時刻計算(CSVCFLAG(CHARA, GETNUM(CFLAG, "来訪時間")) + CFLAG:CHARA:生活時間補正)
 CFLAG:CHARA:帰宅時間 = 時刻計算(CSVCFLAG(CHARA, GETNUM(CFLAG, "帰宅時間")) + CFLAG:CHARA:生活時間補正)
 CFLAG:CHARA:就寝時間 = 時刻計算(CSVCFLAG(CHARA, GETNUM(CFLAG, "就寝時間")) + CFLAG:CHARA:生活時間補正)
-;大晦日はみんな夜ふかし
+;大晦日はみんな夜ふかし    跨年夜大家都熬夜
 IF FESTIVAL() == "大晦日"
 	IF INRANGE(CFLAG:CHARA:帰宅時間, 900 , 1440) || INRANGE(CFLAG:CHARA:帰宅時間, 0 , 59) || INRANGE(CFLAG:CHARA:就寝時間, 900 , 1440) || INRANGE(CFLAG:CHARA:就寝時間, 0 , 119)
 		CFLAG:CHARA:帰宅時間 = 60
@@ -2189,8 +2189,8 @@ SIF CHARA == FLAG:扮演
 RETURNF 1
 
 ;----------------------------------------------------------------------------------------------------
-;現在地点から移動可能な場所へ移動
-;部屋から追い出されるときなど
+;現在地点から移動可能な場所へ移動    从当前位置移动到可到达的位置
+;部屋から追い出されるときなど    比如被赶出房间的时候
 ;----------------------------------------------------------------------------------------------------
 @GETOUT(ARG)
 #LOCALSIZE 1
@@ -2198,11 +2198,11 @@ RETURNF 1
 TCVAR:ARG:追い出され時刻 = TIME
 TCVAR:ARG:追い出され地点 = CFLAG:ARG:現在位置
 FOR LOCAL, MINROOM(), MAXROOM
-	;全くもってスマートでないが、番号の関係上幽香私室からは露台に追い出されてしまうため个別処理する
+	;全くもってスマートでないが、番号の関係上幽香私室からは露台に追い出されてしまうため个別処理する    虽然一点也不聪明，但因为编号关系，我被幽香私室赶到了露台，所以要单独处理
 	IF CFLAG:ARG:現在位置 == P463幽香私室
 		CFLAG:ARG:現在位置 = P465大堂
 		BREAK
-	;bugfix: when the Tsukumo Sisters and Raiko kick you out of their room, move the player to Residential Area
+	;bugfix: when the Tsukumo Sisters and Raiko kick you out of their room, move the player to Residential Area    当雷鼓弁弁八桥将你从她们的房间赶出去时，将玩家移动到居住区
 	ELSEIF GROUPMATCH(CFLAG:ARG:現在位置, P208雷鼓の部屋, P209八橋の部屋, P210弁々の部屋)
 		CFLAG:ARG:現在位置 = P214長屋前
 		BREAK
