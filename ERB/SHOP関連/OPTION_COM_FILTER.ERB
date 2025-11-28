@@ -2,6 +2,8 @@
 ;とりあえず0～599の範囲で使って下さい
 @GET_COMNAME(ID_COM)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM ID_COM
 ;派生コマンド用
 SIF INRANGE(ID_COM, 500, 599)
@@ -11,9 +13,10 @@ SIF INRANGE(ID_COM, 0, 499)
 THROW 不正なCOM番号が渡されました {ID_COM}
 
 
-
 @QUICKFILTER(ID_COM)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM ID_COM
 #DIM CONST BIT_Ｖ系       = 1
 #DIM CONST BIT_Ａ系       = 2
@@ -22,10 +25,8 @@ THROW 不正なCOM番号が渡されました {ID_COM}
 #DIM CONST BIT_セクハラ系 = 7
 #DIM CONST BIT_家事系     = 9
 #DIM CONST BIT_自慰系     = 13  ;たぶんつかってない
-
 SIF QUICKFILTER_UNIQUE(ID_COM)
-	RETURNF 1
-
+	RETURNF 0
 SIF IS_COM_VAGINA(ID_COM)   && !CFLAG:TARGET:Ｖアンフィルタ
 	RETURNF 0
 SIF IS_COM_ANAL(ID_COM)     && !CFLAG:TARGET:Ａアンフィルタ
@@ -45,20 +46,38 @@ SIF IS_COM_KOJO(ID_COM)     && CFLAG:TARGET:hideKojoCom
 RETURNF 1
 
 @QUICKFILTER_UNIQUE(ID_COM)
+;複数のフィルタに関係するコマンド
+;非表示にする状況の場合1を返す（呼び出し元で非表示処理）
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM ID_COM
-
 ;アナル愛撫
-SIF ID_COM == 314 && (CFLAG:TARGET:Ａアンフィルタ || CFLAG:TARGET:セクハラアンフィルタ)
-	RETURNF 1
 ;指挿入れ
-SIF ID_COM == 316 && (CFLAG:TARGET:Ｖアンフィルタ || CFLAG:TARGET:セクハラアンフィルタ)
-	RETURNF 1
-
+IF ID_COM == 314 || ID_COM == 316
+	IF (CFLAG:うふふ || CFLAG:MASTER:イタズラ)
+ 		;SEX系のフィルタが設定可能なときはそちらのフィルタを参照
+		SIF IS_COM_VAGINA(ID_COM)   && !CFLAG:TARGET:Ｖアンフィルタ
+			RETURNF 1
+		SIF IS_COM_ANAL(ID_COM)     && !CFLAG:TARGET:Ａアンフィルタ
+			RETURNF 1
+		;以下アナル愛撫・指挿入れ時は関係ないけど一応入れとく
+		SIF IS_COM_HOUSI(ID_COM)    && !CFLAG:TARGET:奉仕アンフィルタ
+			RETURNF 1
+		SIF IS_COM_SM(ID_COM)       && !CFLAG:TARGET:ＳＭアンフィルタ
+			RETURNF 1
+	ELSE
+ 		;SEX系のフィルタが設定不可能なときはセクハラアンフィルタを参照
+		SIF !CFLAG:TARGET:セクハラアンフィルタ && (!FLAG:70 || CFLAG:TARGET:344 == 1)
+			RETURNF 1
+	ENDIF
+ENDIF
 RETURNF 0
 
 @フィルタ表示
 ;Act_COMのラインと合体
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM DYNAMIC ShowSex
 SIF CFLAG:うふふ || CFLAG:MASTER:イタズラ
 	ShowSex = 1
