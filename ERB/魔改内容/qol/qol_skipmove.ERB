@@ -1,0 +1,88 @@
+﻿;-----------------------------------------------------------
+;@初始化邻接表(ARG = 0)
+;概  要:用字符串充当邻接表
+;参  数：为真时强制初始化，或许只需要在update时更新
+;-----------------------------------------------------------
+@初始化邻接表(ARG = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF P_AdjListDone && !ARG
+	RETURN 0
+VARSET P_AdjList
+FOR I, 0, MAXHOME
+	;出发地
+	FOR J, 1, 100
+		;目的地
+		FOR K, 1, 100
+			IF GETMETH(@"CAN_MOVE_{I}", 0, I*100 + J, I*100 + K) & 1
+				P_AdjList:(I*100 + J) += @"{I*100 + K}/"
+			ENDIF
+		NEXT
+	NEXT
+NEXT
+P_AdjListDone = 1
+
+;-----------------------------------------------------------
+; @QOL_SKIP_MOVE_ADJ(目的地, 出发地, 地图ID)
+; 概  要:使用预先生成的邻接表和BFS算法寻找最短路径
+; 参  数:参照@SKIP_MOVE_{地图ID}(目的地, 出发地)的规格
+; 返回值:从“出发地”到“目的地”需要移动到的下一个地点ID
+;-----------------------------------------------------------
+@QOL_SKIP_MOVE_INFO(ARG, ARG:1, map_id)
+#LOCALSIZE 1
+#LOCALSSIZE 30
+#DIM DYNAMIC queue, MAX_LOCATIONS
+#DIM DYNAMIC parent, MAX_LOCATIONS
+#DIM DYNAMIC visited, MAX_LOCATIONS
+#DIM DYNAMIC queue_head
+#DIM DYNAMIC queue_tail
+#DIM DYNAMIC current_location
+#DIM DYNAMIC path_tracer
+#DIM DYNAMIC neighbor
+#DIM DYNAMIC map_id
+SIF !ARG:1
+	ARG:1 = CFLAG:MASTER:現在位置
+IF P_AdjList:(ARG:1) == "" && !(GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1)
+	PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，将直接传送
+	RETURN ARG
+ENDIF
+
+;SIF CAN_MOVE(ARG:1, ARG) & 1
+SIF GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1
+	RETURN ARG
+
+;BFS
+queue:queue_tail = ARG:1 % 100
+queue_tail += 1
+visited:(ARG:1 % 100) = 1
+parent:(ARG:1 % 100) = -1
+
+WHILE queue_head < queue_tail
+	current_location = queue:queue_head
+	queue_head += 1
+	IF current_location == ARG % 100
+		BREAK
+	ENDIF
+	SPLIT P_AdjList:(current_location + 100 * map_id),"/",LOCALS
+	FOR i, 0, RESULT
+		neighbor = TOINT(LOCALS:I) % 100
+		IF !visited:neighbor
+			visited:neighbor = 1
+			parent:neighbor = current_location
+			queue:queue_tail = neighbor
+			queue_tail += 1
+		ENDIF
+	NEXT
+WEND
+path_tracer = ARG % 100
+IF visited:path_tracer == 0
+	RETURN ARG
+ENDIF
+WHILE parent:path_tracer != -1 && parent:path_tracer != ARG:1 % 100
+	path_tracer = parent:path_tracer
+WEND
+IF parent:path_tracer == -1
+	RETURN ARG
+ELSE
+	RETURN path_tracer + 100 * map_id
+ENDIF
