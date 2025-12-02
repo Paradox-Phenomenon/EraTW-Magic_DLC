@@ -11,12 +11,18 @@ IF GET_MAPID(ARG) == MAIN_MAP
 			ELSE
 				RETURNF "空的小屋"
 			ENDIF
+		CASE P754空房间
+			IF CFLAG:MASTER:初期位置 == ARG
+				RETURNF CALLNAME:MASTER + "的房间"
+			ELSE
+				RETURNF "空房间"
+			ENDIF
 		CASE SUMIKOMI_ROOM
 			;※このMapでは未実装
 			IF FLAG:住宿人物
 				RETURNF CALLNAME:(FLAG:住宿人物) + "的房间"
 			ELSE
-				RETURNF "空的房间"
+				RETURNF "空房间"
 			ENDIF
 		CASE MINROOM() TO (MAXROOM - 1)
 			RETURNF ARG:1 ? STR:(ARG + 8000) # STR_TR(ARG + 8000) ;custom code
@@ -50,6 +56,12 @@ SELECTCASE ARG
 	;仙人的宅邸・２階～３階
 	CASE P726仙人的宅邸・居間, P727仙人的宅邸・華扇私室, P728仙人的宅邸・空的部屋
 		RETURNF 4
+	;圣域
+	CASE P741猿猴通路 TO P750驯子的小屋
+		RETURNF 5
+	;净秽山
+	CASE P751浅间净秽山 TO P762空房间
+		RETURNF 6
 	;妖怪之山・山麓
 	CASEELSE
 		RETURNF 1
@@ -78,6 +90,21 @@ IF TFLAG:地圖切換 == 1
 			SELECTCASE Q_ID
 			CASE P720仙人的宅邸・廚房 TO P729仙人的宅邸・玄関
 				RETURNF 1
+			ENDSELECT
+		;圣域
+		CASE P743圣域林道
+			SELECTCASE Q_ID
+				CASE P741猿猴通路 TO P762空房间
+					RETURNF 1
+			ENDSELECT
+	ENDSELECT
+ELSEIF TFLAG:地圖切換 == 5
+	SELECTCASE P_ID
+		;净秽山
+		CASE P751浅间净秽山
+			SELECTCASE Q_ID
+				CASE P751浅间净秽山 TO P762空房间
+					RETURNF 1
 			ENDSELECT
 	ENDSELECT
 ENDIF
@@ -128,6 +155,23 @@ SELECTCASE ARG
 			TFLAG:移動不能メッセージ = 3
 			RETURNF 0
 		ENDIF
+	CASE P741猿猴通路 TO P762空房间
+		;在内部或者住在内部，必须能回去
+		SIF INRANGE(CFLAG:CHARA:現在位置, P741猿猴通路, P762空房间) || INRANGE(CFLAG:CHARA:初期位置, P741猿猴通路, P762空房间)
+			RETURNF 1
+		IF CHARA == MASTER && ABL:[[合欢乃]]:亲密 < 5 && ABL:[[美天]]:亲密 < 5
+			TFLAG:移動不能メッセージ = 3
+			RETURNF 0
+		;月都人
+		ELSEIF GROUPMATCH(GET_MAPID(CFLAG:LOCAL:自宅位置), 10)
+			RETURNF 1
+		;其他额外得到许可的角色
+		ELSEIF GROUPMATCH(CHARA, [[正邪]], [[美天]])
+			RETURNF 1
+		ELSEIF ABL:CHARA:教養 < 3
+			TFLAG:移動不能メッセージ = 3
+			RETURNF 0
+		ENDIF
 ENDSELECT
 RETURNF 1
 
@@ -137,17 +181,17 @@ RETURNF 1
 @MAP_CANNOT_WORD_7(ARG)
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
-		PRINTFORMW 从刚才开始和屋子的距离就完全没有减少……
+		PRINTFORML 从刚才开始和屋子的距离就完全没有减少……
 		PRINTFORMW 好像在同一个地方一直转着圈
 		CLEARLINE 3
 		TIME += 10
 	CASE 2
-		PRINTFORMW 有危险的老虎蹲在在庭院中、看到%CALLNAME:MASTER%的样子后提高了呜呜的吼声
+		PRINTFORML 有危险的老虎蹲在在庭院中、看到%CALLNAME:MASTER%的样子后提高了呜呜的吼声
 		PRINTFORMW 看来不要靠近比较好
 		CLEARLINE 3
 		TIME += 5
 	CASE 3
-		PRINTFORMW 不知道在哪里……
+		PRINTFORMW 完全找不到路……
 		CLEARLINE 2
 ENDSELECT
 REUSELASTLINE
@@ -183,8 +227,10 @@ SELECTCASE ARG
 		RETURNF 仙人的宅邸
 	CASE P712間欠泉地下中樞
 		RETURNF 間欠泉地下中樞
-	CASE P738森の深奥 TO P741美天の棲み処
+	CASE P738森の深奥 TO P740山童の宣傳站
 		RETURNF 森の深奥
+	CASE P741猿猴通路 TO P762空房间
+		RETURNF 圣域
 	CASEELSE
 		RETURNF 山麓樹海
 ENDSELECT
