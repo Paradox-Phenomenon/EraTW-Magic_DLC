@@ -327,11 +327,11 @@ CASE "answer"
 	LOCALS:0 = say:tell:answer:reply
 CASE "request"
 	LOCALS:0 = request:demand:desire:order:directions
-CASE "唇部吞咽音"
+CASE "唇部吞咽音","lips_gulp"
 	LOCALS:0 = 嗯呜:咕啾:啵啾:呲溜:啾噜:滋啵:呸咯:咕啾啾:嘶噜噜:咧啰
-CASE "嘴唇闷音"
+CASE "嘴唇闷音","lips_muffle"
 	LOCALS:0 = 嗯:嗯嗯:姆噗:呣呋:呣噗:呼呜:啊呜:嗯噗:呣呵:呣嗯:呣咯
-CASE "唇间溢出"
+CASE "唇间溢出","lips_over"
 	LOCALS:0 = 噗哈:呼哇:哈啊啊:噗啊
 CASE "嘿"
 	LOCALS:0 = 嘿:咦:啊:呀:呀
@@ -410,7 +410,7 @@ SELECTCASE SPLIT_SINGLE(ARGS)
 	CASE "男人"
 		LOCALS '= IS_MALE(ARG:0) ? ARGS # "女人"
 	CASE "husband", "丈夫"
-		LOCALS '= IS_MALE(ARG:0) ? ARGS # "妻子"
+		LOCALS '= IS_MALE(ARG:0) ? "丈夫" # "妻子"
 	CASE "fiancé", "fiance", "未婚夫"
 		LOCALS '= IS_MALE(ARG:0) ? "未婚夫" # "未婚妻"
 	CASE "papa"
@@ -736,3 +736,20 @@ SELECTCASE RAND:3
 	CASE 2
 		RETURNF SLUR(KISS_CN(ARGS), -2)
 ENDSELECT
+
+@SPECIAL_FIRSTKISS_CN(ARGS, ARG = -1)
+SIF ARG == -1
+	ARG = TARGET
+CALL MUTUAL_KISS(ARG)
+CALL SET_FIRSTKISS(MASTER, ARG, LOCAL)
+IF TALENT:ARG:無接吻経験
+	CALL SET_FIRSTKISS(ARG, MASTER, LOCAL)
+	IF CHK_DATENOW(CFLAG:ARG:约会中) && CFLAG:ARG:現在位置 != OMANEKIBEYA()
+		CSTR:ARG:初吻位置 = %DATENAME_SPOT()%
+	ELSEIF CHK_DATENOW(CFLAG:MASTER:约会中) && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+		CSTR:ARG:初吻位置 = %DATENAME_PLACE()%的%DATENAME_SPOT()%
+	ELSE
+		CSTR:ARG:初吻位置 = %NAME_FROM_PLACE(CFLAG:ARG:現在位置)%
+	ENDIF
+	CSTR:ARG:初吻喪失履歴 = %PRINT_DATE_F(DAY)%、在%CSTR:ARG:初吻位置%%ARGS%
+ENDIF
