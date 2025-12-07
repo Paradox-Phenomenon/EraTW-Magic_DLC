@@ -1,5 +1,5 @@
 ﻿;-----------------------------------------------------------
-;外出模式，即普通外出模式和特殊据点模式
+;外出模式，即普通外出模式和特殊据点模式，返回的地图都是外出地图
 ;-----------------------------------------------------------
 @GMF_IS_ODEKAKE(MAP_ID = -1)
 #FUNCTION
@@ -8,15 +8,56 @@
 #DIM MAP_ID
 SIF MAP_ID == -1
 	MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
-;搬家时默认设0以使用修改的MAIN_MAP，ODEKAKEMAP_SETTING调用时默认设1
+;搬家时默认设0以使用修改的MAIN_MAP，HITOSAGASI等仅据点逻辑调用时设0，ODEKAKEMAP_SETTING等仅外出逻辑调用时设1
 SIF 引っ越し
 	RETURNF 0
-SIF GMF_METHOD_STACK == "ODEKAKEMAP_SETTING"
+SIF GROUPMATCH(GMF_METHOD_STACK, "OHEYA_CHECK", "HITOSAGASI")
+	RETURNF 0
+SIF GROUPMATCH(GMF_METHOD_STACK, "ODEKAKEMAP_SETTING", "RANDOM_ODEKAKE")
 	RETURNF 1
 RETURNF (GMF_MAP_MODE && (MAP_ID == GMF_HOME_MAP)) || (!GMF_MAP_MODE && (MAP_ID != GMF_HOME_MAP))
 
 ;-----------------------------------------------------------
-;从据点地图移动模式转为外出地图移动模式的地点变换
+;约会中，我不知道作者怎么想的，估计是因为把所有角色的初始位置都丢隙间，所以约会中锁家地图吧
+;但因为我要全地图约会，所以没办法让你存在家地图了，用-1表示不在约会吧，这个函数运用太广我已经不敢动手了
+;总之，这个函数先暂时保留，传入的ARG也应该是角色而非约会中
+;-----------------------------------------------------------
+@GMF_CHK_DATENOW(ARG)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+RETURNF FLAG:约会的对象 == ARG || CFLAG:ARG:约会中 != -1
+
+;-----------------------------------------------------------
+;据点地图移动模式和外出地图移动模式的地点变换
+;-----------------------------------------------------------
+@GMF_LOCATION_HOME_TO_ODEKAKE
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:MASTER:現在位置 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{CFLAG:MASTER:現在位置/100}", CFLAG:MASTER:現在位置, CFLAG:MASTER:現在位置)
+FOR LOCAL, 1, CHARANUM
+	;修正角色位于隙间空间时的状态，即隙间空间情况下角色应该视为处于自宅中
+	SIF !CFLAG:LOCAL:出禁 && (CFLAG:LOCAL:現在位置 % 100 == 0 || CFLAG:LOCAL:現在位置 % 100 == 99)
+		CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:初期位置
+	CFLAG:LOCAL:GMF_現在拠点位置 = CFLAG:LOCAL:現在位置
+	CFLAG:LOCAL:現在位置 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{CFLAG:LOCAL:現在位置/100}", CFLAG:LOCAL:現在位置, CFLAG:LOCAL:現在位置)
+	;随后，修正当前位置的情况，将睡眠等的情况重新移回隙间空间，表示隐藏无法访问的意思
+	SIF CFLAG:LOCAL:睡眠 && CFLAG:LOCAL:GMF_現在拠点位置 == CFLAG:LOCAL:初期位置
+		CFLAG:LOCAL:現在位置 = SUKIMA()
+NEXT
+
+@GMF_LOCATION_ODEKAKE_TO_HOME
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:MASTER:現在位置 = GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:MASTER:現在位置)
+FOR LOCAL, 1, CHARANUM
+	SIF !CFLAG:LOCAL:GMF_現在拠点位置
+		CALLF GMF_ERROR_INFO_PRINT(@"%CALLNAME:LOCAL%的据点位置为空！角色当前的现在位置为{CFLAG:LOCAL:現在位置}")
+	CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:GMF_現在拠点位置
+NEXT
+
+;-----------------------------------------------------------
+;移动指令和散步指令的变换
 ;-----------------------------------------------------------
 @GMF_400_TO_604
 #LOCALSIZE 1
@@ -25,12 +66,8 @@ RETURNF (GMF_MAP_MODE && (MAP_ID == GMF_HOME_MAP)) || (!GMF_MAP_MODE && (MAP_ID 
 MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
 ;设定地图模式，使GMF_IS_ODEKAKE一定返回1，从而在此时据点地点恒替换为外出地点
 GMF_MAP_MODE = MAP_ID == GMF_HOME_MAP
-CFLAG:MASTER:現在位置 = GET_MAP_REPLACEMENT(CFLAG:MASTER:現在位置)
+CALL GMF_LOCATION_HOME_TO_ODEKAKE
 
-
-;-----------------------------------------------------------
-;从外出地图移动模式转为据点地图移动模式的地点变换
-;-----------------------------------------------------------
 @GMF_604_TO_400
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -41,7 +78,7 @@ MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
 ;设定地图模式，使GMF_IS_ODEKAKE一定返回0
 GMF_MAP_MODE = MAP_ID != GMF_HOME_MAP
 経過時間 = GMF_GET_MAP_REPLACEMENT_INVERSE_TIME(CFLAG:MASTER:現在位置)
-CFLAG:MASTER:現在位置 = GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:MASTER:現在位置)
+CALL GMF_LOCATION_ODEKAKE_TO_HOME
 TFLAG:地圖切換 = MAP_AREASELECT(MAP_ID, CFLAG:MASTER:現在位置)
 ;时间消耗，借鉴SKIP_MOVE
 TSP消費倍率 = 5
@@ -64,16 +101,38 @@ ELSE
 ENDIF
 
 ;-----------------------------------------------------------
+;GMF遭遇位置设定函数，主要用于据点地图下的遭遇设置
+;-----------------------------------------------------------
+@GMF_ENCOUNTER_LOCATION_DETERMINE(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF CFLAG:ARG:遭遇位置
+	;#;PRINTFORM GMF_DEBUG:%CALLNAME:ARG%的遭遇位置为{CFLAG:ARG:遭遇位置}%STR_TR(6000 + (CFLAG:ARG:遭遇位置 / 10))%，
+	IF CFLAG:ARG:遭遇位置 == CFLAG:ARG:自宅位置
+		CFLAG:ARG:遭遇位置 = CFLAG:ARG:初期位置
+	ELSE
+		CFLAG:ARG:遭遇位置 = GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:ARG:遭遇位置)
+	ENDIF
+	;#;PRINTFORML 现遭遇位置为{CFLAG:ARG:遭遇位置}%STR_TR(8000 + CFLAG:ARG:遭遇位置)%
+ENDIF
+
+;-----------------------------------------------------------
+;GMF移动函数相关，即MOVEMENT.ERB内的函数改版或增补
+;-----------------------------------------------------------
+;休日移動処理
+@GMF_ODEKAKE_CHARA_LOCATION_DETERMINE(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CFLAG:ARG:GMF_現在拠点位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
+CFLAG:ARG:現在位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
+
+;-----------------------------------------------------------
 ;GMF自定义函数：外出地点ID替换为据点地点ID，即GMF_GET_MAP_REPLACEMENT的反变换
 ;因为没有先例所以瞎几把写了，差不多对上就行
 ;因为原变换是多对一，而这里基本都是一对一，所以用得好说不定能亚空间移动……建议加上额外时间消耗
 ;-----------------------------------------------------------
 @GMF_GET_MAP_REPLACEMENT_INVERSE(ARG)
 #FUNCTION
-#DIM MAP_ID
-MAP_ID = GET_MAPID(ARG)
-SIF GMF_IS_ODEKAKE(MAP_ID)
-	RETURNF ARG
 SELECTCASE ARG
 	CASE 桜花道的鳥居
 		RETURNF P22参道
@@ -197,6 +256,10 @@ SELECTCASE ARG
 		RETURNF P712間欠泉地下中樞
 	CASE 森の深奥
 		RETURNF P738森の深奥
+	CASE 圣域
+		RETURNF P743圣域林道
+	CASE 浅间净秽山
+		RETURNF P751浅间净秽山
 	CASE 九天瀑布
 		RETURNF P802橋
 	CASE 絶景之丘
@@ -381,6 +444,10 @@ SELECTCASE ARG
 		RETURNF 0
 	CASE 森の深奥
 		RETURNF 1
+	CASE 圣域
+		RETURNF 3
+	CASE 浅间净秽山
+		RETURNF 3
 	CASE 九天瀑布
 		RETURNF 1
 	CASE 絶景之丘
