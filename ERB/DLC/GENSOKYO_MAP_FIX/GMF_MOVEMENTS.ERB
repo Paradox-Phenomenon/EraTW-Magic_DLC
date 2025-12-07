@@ -434,3 +434,50 @@ SELECTCASE ARG
 	CASEELSE
 		RETURNF 0
 ENDSELECT
+
+;-----------------------------------------------------------
+;GMF清扫结算函数，因为现在其他地图也可以扫除所以需要重写逻辑
+;-----------------------------------------------------------
+@GMF_RANK_POINT
+#LOCALSIZE 6
+#LOCALSSIZE 1
+VARSET LOCAL
+FOR LOCAL, 0, MAXHOME
+	;为旅馆地图做准备
+	;SIF LOCAL == MAXHOME - 1
+	;	LOCAL = MAP自建旅馆
+	;清潔度
+	LOCAL:2 = GMF_MAP_SWEEP_VALUE:LOCAL / 10
+	IF DAY:2 == 季节_冬 && DAY:3 == 31
+		LOCAL:2 *= 2
+	ENDIF
+	MONEY += LOCAL:2
+	PRINTFORML 今日在%GET_MAPNAME(LOCAL,1)%扫除了{GMF_MAP_SWEEP_VALUE:LOCAL}的垃圾，获得了%金額表示(LOCAL:2)%的\@(DAY:2 == 季节_冬 && DAY:3 == 31) ? 年底大扫除 # 清扫\@额外奖励！
+	;拠点の主の好感度と信賴度が上昇
+	LOCAL:3 = MIN(10, GMF_MAP_SWEEP_VALUE:LOCAL / 2000)
+	IF LOCAL:3
+		CFLAG:(GMF_拠点_家主:LOCAL):好感度 += LOCAL:3 * 2
+		CFLAG:(GMF_拠点_家主:LOCAL):信賴度 += LOCAL:3
+		IF LOCAL:3 / 3 > 0
+			ITEM:平价食材 += LOCAL:3 / 3
+		ENDIF
+		PRINTFORML 通过努力的扫除，提高了%CALLNAME:(GMF_拠点_家主:LOCAL)%对你的评价\@(LOCAL:3 / 3 > 0) ? ，还收到了{LOCAL:3 / 3}个平价食材 # \@！
+	ENDIF
+	GMF_MAP_SWEEP_VALUE:LOCAL = 0
+NEXT
+PRINTL
+;手伝い報酬
+LOCAL:4 = TCVAR:MASTER:帮忙工作量
+SIF LOCAL:4 > 0
+	PRINTFORML 帮忙干活得到的额外奖励 %金額表示(LOCAL:4)%
+MONEY += LOCAL:4
+;好感度上昇
+IF FLAG:本日の累計好感度上昇量 && MONEY:2 < CM_LIMIT
+	LOCAL:5 = MAX(1, FLAG:本日の累計好感度上昇量 / 100)
+	LOCAL:5 = MIN(LOCAL:5, CM_LIMIT - MONEY:2)
+	PRINTFORML 好感度上升额外奖励 ＋{LOCAL:5}筹码
+	MONEY:2 += LOCAL:5
+	PRINTFORML 现在的筹码：%三桁区切(MONEY:2)%　筹码保有上限：%三桁区切(CM_LIMIT)%
+ENDIF
+FLAG:12 = 0
+PRINTW
