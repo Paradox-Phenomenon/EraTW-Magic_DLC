@@ -1,0 +1,436 @@
+﻿;-----------------------------------------------------------
+;外出模式，即普通外出模式和特殊据点模式
+;-----------------------------------------------------------
+@GMF_IS_ODEKAKE(MAP_ID = -1)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM MAP_ID
+SIF MAP_ID == -1
+	MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
+;搬家时默认设0以使用修改的MAIN_MAP，ODEKAKEMAP_SETTING调用时默认设1
+SIF 引っ越し
+	RETURNF 0
+SIF GMF_METHOD_STACK == "ODEKAKEMAP_SETTING"
+	RETURNF 1
+RETURNF (GMF_MAP_MODE && (MAP_ID == GMF_HOME_MAP)) || (!GMF_MAP_MODE && (MAP_ID != GMF_HOME_MAP))
+
+;-----------------------------------------------------------
+;从据点地图移动模式转为外出地图移动模式的地点变换
+;-----------------------------------------------------------
+@GMF_400_TO_604
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM MAP_ID
+MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
+;设定地图模式，使GMF_IS_ODEKAKE一定返回1，从而在此时据点地点恒替换为外出地点
+GMF_MAP_MODE = MAP_ID == GMF_HOME_MAP
+CFLAG:MASTER:現在位置 = GET_MAP_REPLACEMENT(CFLAG:MASTER:現在位置)
+
+
+;-----------------------------------------------------------
+;从外出地图移动模式转为据点地图移动模式的地点变换
+;-----------------------------------------------------------
+@GMF_604_TO_400
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM MAP_ID
+#DIM 経過時間
+#DIM TSP消費倍率
+MAP_ID = GET_MAPID(CFLAG:MASTER:現在位置)
+;设定地图模式，使GMF_IS_ODEKAKE一定返回0
+GMF_MAP_MODE = MAP_ID != GMF_HOME_MAP
+経過時間 = GMF_GET_MAP_REPLACEMENT_INVERSE_TIME(CFLAG:MASTER:現在位置)
+CFLAG:MASTER:現在位置 = GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:MASTER:現在位置)
+TFLAG:地圖切換 = MAP_AREASELECT(MAP_ID, CFLAG:MASTER:現在位置)
+;时间消耗，借鉴SKIP_MOVE
+TSP消費倍率 = 5
+SIF TALENT:MASTER:100 < -4
+	TSP消費倍率 += 15
+SIF TFLAG:運搬
+	TSP消費倍率 += 3
+IF FLAG:70 == 1 || (GETBIT(FLAG:瞬間移動, 1) && !CFLAG:MASTER:同行 && BASE:MASTER:TSP > TSP消費倍率 * 経過時間)
+	BASE:MASTER:TSP -= TSP消費倍率 * 経過時間
+	SIF TFLAG:運搬
+		CFLAG:(TFLAG:運搬):現在位置 = CFLAG:MASTER:現在位置
+ELSE
+	SIF TALENT:MASTER:100 < -4 && !CFLAG:MASTER:同行
+		TIME += 7 * 経過時間
+	TIME += 2 * 経過時間
+	IF CFLAG:93:同行 && !GETBIT (FLAG:泳池, 0)
+		TIME += 2 * 経過時間
+		BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - (5 * 経過時間), 500)
+	ENDIF
+ENDIF
+
+;-----------------------------------------------------------
+;GMF自定义函数：外出地点ID替换为据点地点ID，即GMF_GET_MAP_REPLACEMENT的反变换
+;因为没有先例所以瞎几把写了，差不多对上就行
+;因为原变换是多对一，而这里基本都是一对一，所以用得好说不定能亚空间移动……建议加上额外时间消耗
+;-----------------------------------------------------------
+@GMF_GET_MAP_REPLACEMENT_INVERSE(ARG)
+#FUNCTION
+#DIM MAP_ID
+MAP_ID = GET_MAPID(ARG)
+SIF GMF_IS_ODEKAKE(MAP_ID)
+	RETURNF ARG
+SELECTCASE ARG
+	CASE 桜花道的鳥居
+		RETURNF P22参道
+	CASE 神社境内
+		RETURNF P2境内
+	CASE 神社本堂
+		RETURNF P4本堂
+	CASE 神社走廊
+		RETURNF P10走廊
+	CASE 妖精的大樹
+		RETURNF P25鎮守之森
+	CASE 夢幻遺跡
+		RETURNF P36夢幻遺跡前
+	CASE 大别墅
+		RETURNF P68大广场
+	CASE 地蔵小路
+		RETURNF P140地蔵小路
+	CASE 倒垂的柳樹下
+		RETURNF P140地蔵小路
+	CASE 命蓮寺境内
+		RETURNF P102境内
+	CASE 命蓮寺方丈
+		RETURNF P110走廊
+	CASE 墓地
+		RETURNF P121墓地
+	CASE 神霊廟広場
+		RETURNF P124霊廟広場
+	CASE 神霊廟道場
+		RETURNF P126道場
+	CASE 広場
+		RETURNF P202中央広場
+	CASE 商家町
+		RETURNF P204東大街
+	CASE 呑屋小道
+		RETURNF P203南大街
+	CASE 寺子屋
+		RETURNF P222寺子屋
+	CASE 大衆浴場
+		RETURNF P223銭湯
+	CASE 情人用宿屋
+		RETURNF P225情人用宿屋
+	CASE 長屋街
+		RETURNF P214長屋前
+	CASE 霧之湖
+		RETURNF P343湖畔
+	CASE 冰造的小雪屋
+		RETURNF P343湖畔
+	CASE 廃洋館
+		RETURNF P334廃洋館・入口
+	CASE 正門
+		RETURNF P301正門
+	CASE 大廳
+		RETURNF P309大廳
+	CASE 食堂
+		RETURNF P314食堂
+	CASE 大図書館
+		RETURNF P310図書館
+	CASE 地下室
+		RETURNF P328地下走廊
+	CASE 竹林入口
+		RETURNF P447竹林入口
+	CASE 迷失的小道
+		RETURNF P434迷失的小道
+	CASE 斜角的竹林
+		RETURNF P433斜角的竹林
+	CASE 兎的洞穴
+		RETURNF P431兎的洞穴
+	CASE 永遠亭
+		RETURNF P401永遠亭入口
+	CASE 無名之丘
+		RETURNF P436無名之丘
+	CASE 太陽花田
+		RETURNF P438太陽花田
+	CASE 永遠亭的内院
+		RETURNF P409走廊
+	CASE 夢幻館
+		RETURNF P450玄関
+	CASE 森林的入口
+		RETURNF P501魔法之森入口
+	CASE 香霖堂
+		RETURNF P502香霖堂
+	CASE 古木的大樹
+		RETURNF P540古木的大樹
+	CASE 霧雨魔法店
+		RETURNF P510霧雨魔法店
+	CASE 人偶的洋館
+		RETURNF P520人偶洋館前
+	CASE 再思之道
+		RETURNF P509再思之道
+	CASE 無縁塚
+		RETURNF P506無縁塚
+	CASE 中有之道
+		RETURNF P601中有之道
+	CASE 三途之川
+		RETURNF P602賽の河原
+	CASE 迷途之家
+		RETURNF P630八雲邸玄関
+	CASE 彼岸
+		RETURNF P604彼岸
+	CASE 白玉楼庭
+		RETURNF P621庭
+	CASE 白玉楼
+		RETURNF P622廊下
+	CASE 地獄
+		RETURNF P605地獄
+	CASE 畜生界
+		RETURNF P640異界の関所
+	CASE 霊長園
+		RETURNF P642霊長園
+	CASE 山麓樹海
+		RETURNF P701樹海道入口
+	CASE 玄武之澤
+		RETURNF P703玄武之澤
+	CASE 大蛤蟆之池
+		RETURNF P708大蛤蟆之池
+	CASE 正邪的隠匿処前
+		RETURNF P733正邪的隠匿処
+	CASE 仙人的宅邸
+		RETURNF P730仙人的宅邸・庭
+	CASE 間欠泉地下中樞
+		RETURNF P712間欠泉地下中樞
+	CASE 森の深奥
+		RETURNF P738森の深奥
+	CASE 九天瀑布
+		RETURNF P802橋
+	CASE 絶景之丘
+		RETURNF P805頂上
+	CASE 山之湖
+		RETURNF P814湖畔
+	CASE 守矢神社境内
+		RETURNF P811境内
+	CASE 守矢神社本殿
+		RETURNF P812本殿
+	CASE 虹龍洞
+		RETURNF P855虹龍洞
+	CASE 天界
+		RETURNF P830玄雲海
+	CASE 幻想風穴
+		RETURNF P948縦穴底部
+	CASE 地獄的深道
+		RETURNF P944街道
+	CASE 旧地獄街道
+		RETURNF P931大街
+	CASE 旧地獄温泉
+		RETURNF P934温泉
+	CASE 情人旅館
+		RETURNF P935情人旅館
+	CASE 地霊殿
+		RETURNF P901地霊殿前
+	CASE 灼熱地獄跡
+		RETURNF P928灼熱地獄跡
+	CASE 槐安通路
+		RETURNF P1001槐安通路
+	CASE 月之都
+		RETURNF P1002月之都
+	CASE 綿月亭
+		RETURNF P1020綿月亭・門
+	CASE 玉兎之街
+		RETURNF P1003玉兎街
+	CASE 桃林～砂浜
+		RETURNF P1015砂浜
+	CASE 寧靜海
+		RETURNF P1016入海口
+	CASE 魔界都市
+		RETURNF P1104万魔殿・仿
+	CASE 万魔殿
+		RETURNF P1153万魔殿・庭院
+	CASE 堕落神殿
+		RETURNF P1173堕落神殿・殿外
+	CASE 冰雪世界
+		RETURNF P1182冰雪世界・冰原
+	CASE 法界
+		RETURNF P1184法界
+	CASEELSE
+		RETURNF ARG
+ENDSELECT
+
+;-----------------------------------------------------------
+;GMF自定义函数：外出地点ID替换为据点地点ID的消耗时间
+;这个消耗时间是估摸着填的，主要是片区内最远点到返回点之间的移动次数
+;基本思路是原地0，小建筑或一步到1，私室区或一条街2，大建筑或者小城区3，大城市4，魔界都市5
+;-----------------------------------------------------------
+@GMF_GET_MAP_REPLACEMENT_INVERSE_TIME(ARG)
+#FUNCTION
+SELECTCASE ARG
+	CASE 桜花道的鳥居
+		RETURNF 1
+	CASE 神社境内
+		RETURNF 1
+	CASE 神社本堂
+		RETURNF 0
+	CASE 神社走廊
+		RETURNF 2
+	CASE 妖精的大樹
+		RETURNF 2
+	CASE 夢幻遺跡
+		RETURNF 2
+	CASE 大别墅
+		RETURNF 2
+	CASE 地蔵小路
+		RETURNF 0
+	CASE 倒垂的柳樹下
+		RETURNF 1
+	CASE 命蓮寺境内
+		RETURNF 2
+	CASE 命蓮寺方丈
+		RETURNF 2
+	CASE 墓地
+		RETURNF 0
+	CASE 神霊廟広場
+		RETURNF 1
+	CASE 神霊廟道場
+		RETURNF 2
+	CASE 広場
+		RETURNF 1
+	CASE 商家町
+		RETURNF 2
+	CASE 呑屋小道
+		RETURNF 2
+	CASE 寺子屋
+		RETURNF 0
+	CASE 大衆浴場
+		RETURNF 1
+	CASE 情人用宿屋
+		RETURNF 0
+	CASE 長屋街
+		RETURNF 2
+	CASE 霧之湖
+		RETURNF 2
+	CASE 冰造的小雪屋
+		RETURNF 1
+	CASE 廃洋館
+		RETURNF 2
+	CASE 正門
+		RETURNF 2
+	CASE 大廳
+		RETURNF 3
+	CASE 食堂
+		RETURNF 1
+	CASE 大図書館
+		RETURNF 1
+	CASE 地下室
+		RETURNF 1
+	CASE 竹林入口
+		RETURNF 2
+	CASE 迷失的小道
+		RETURNF 2
+	CASE 斜角的竹林
+		RETURNF 2
+	CASE 兎的洞穴
+		RETURNF 0
+	CASE 永遠亭
+		RETURNF 2
+	CASE 無名之丘
+		RETURNF 1
+	CASE 太陽花田
+		RETURNF 1
+	CASE 永遠亭的内院
+		RETURNF 2
+	CASE 夢幻館
+		RETURNF 2
+	CASE 森林的入口
+		RETURNF 1
+	CASE 香霖堂
+		RETURNF 0
+	CASE 古木的大樹
+		RETURNF 2
+	CASE 霧雨魔法店
+		RETURNF 2
+	CASE 人偶的洋館
+		RETURNF 2
+	CASE 再思之道
+		RETURNF 0
+	CASE 無縁塚
+		RETURNF 0
+	CASE 中有之道
+		RETURNF 0
+	CASE 三途之川
+		RETURNF 2
+	CASE 迷途之家
+		RETURNF 2
+	CASE 彼岸
+		RETURNF 2
+	CASE 白玉楼庭
+		RETURNF 2
+	CASE 白玉楼
+		RETURNF 2
+	CASE 地獄
+		RETURNF 2
+	CASE 畜生界
+		RETURNF 4
+	CASE 霊長園
+		RETURNF 2
+	CASE 山麓樹海
+		RETURNF 3
+	CASE 玄武之澤
+		RETURNF 1
+	CASE 大蛤蟆之池
+		RETURNF 0
+	CASE 正邪的隠匿処前
+		RETURNF 0
+	CASE 仙人的宅邸
+		RETURNF 2
+	CASE 間欠泉地下中樞
+		RETURNF 0
+	CASE 森の深奥
+		RETURNF 1
+	CASE 九天瀑布
+		RETURNF 1
+	CASE 絶景之丘
+		RETURNF 1
+	CASE 山之湖
+		RETURNF 0
+	CASE 守矢神社境内
+		RETURNF 1
+	CASE 守矢神社本殿
+		RETURNF 2
+	CASE 虹龍洞
+		RETURNF 1
+	CASE 天界
+		RETURNF 3
+	CASE 幻想風穴
+		RETURNF 1
+	CASE 地獄的深道
+		RETURNF 2
+	CASE 旧地獄街道
+		RETURNF 2
+	CASE 旧地獄温泉
+		RETURNF 0
+	CASE 情人旅館
+		RETURNF 0
+	CASE 地霊殿
+		RETURNF 2
+	CASE 灼熱地獄跡
+		RETURNF 2
+	CASE 槐安通路
+		RETURNF 2
+	CASE 月之都
+		RETURNF 2
+	CASE 綿月亭
+		RETURNF 2
+	CASE 玉兎之街
+		RETURNF 2
+	CASE 桃林～砂浜
+		RETURNF 1
+	CASE 寧靜海
+		RETURNF 2
+	CASE 魔界都市
+		RETURNF 5
+	CASE 万魔殿
+		RETURNF 3
+	CASE 堕落神殿
+		RETURNF 3
+	CASE 冰雪世界
+		RETURNF 1
+	CASE 法界
+		RETURNF 0
+	CASEELSE
+		RETURNF 0
+ENDSELECT
