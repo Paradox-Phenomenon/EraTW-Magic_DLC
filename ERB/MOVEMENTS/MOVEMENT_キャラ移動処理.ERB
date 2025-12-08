@@ -21,6 +21,10 @@
 #DIM END
 #DIM N_ID
 #DIM G_POINT
+;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "角色移動処理"
+	JUMP GMF_MAP_METHOD(CFLAG:ARG:現在位置, 1, "角色移動処理", ARG)
+ENDIF
 VARSET LOCAL
 END = 0
 ;你の拠点物件にいる角色のみが対象    仅限身处你据点的人员
@@ -40,6 +44,8 @@ IF END
 ENDIF
 
 N_ID = CFLAG:ARG:現在位置
+SIF GMF_GETBIT("幻想乡大地图")
+	N_ID = CFLAG:ARG:GMF_現在拠点位置
 
 ;停留率
 ;新增剧本侧接口，调用剧本侧设定的角色移动数值
@@ -257,6 +263,10 @@ IF ROOMDATA:(N_ID % 100) & 場所_ワンルーム
 					ワンルーム人数カウント ++
 					CFLAG:LOCAL:現在位置 = 移動先
 					TCVAR:LOCAL:なるべく動かない = 1
+					IF GMF_GETBIT("幻想乡大地图") && GMF_IS_ODEKAKE(移動先)
+						CFLAG:LOCAL:GMF_現在拠点位置 = 移動先
+						CFLAG:LOCAL:現在位置 = GET_MAP_REPLACEMENT(移動先)
+					ENDIF
 				ENDIF
 			ENDIF
 		NEXT
@@ -265,6 +275,10 @@ IF ROOMDATA:(N_ID % 100) & 場所_ワンルーム
 			IF !TALENT:ARG:恋慕
 				PRINTFORML %CALLNAME:MASTER%\@ ワンルーム人数カウント ? 他们 #  \@、在%CALLNAME:ARG%的催促下从【%NAME_FROM_PLACE(N_ID)%】往【%NAME_FROM_PLACE(移動先)%】移动了
 				CFLAG:MASTER:現在位置 = 移動先
+				IF GMF_GETBIT("幻想乡大地图") && GMF_IS_ODEKAKE(移動先)
+					CFLAG:MASTER:GMF_現在拠点位置 = 移動先
+					CFLAG:MASTER:現在位置 = GET_MAP_REPLACEMENT(移動先)
+				ENDIF
 			ELSEIF ワンルーム人数カウント
 				PRINTFORML 在%CALLNAME:ARG%的催促下、%CALLNAME:MASTER%以外的人从【%NAME_FROM_PLACE(N_ID)%】往【%NAME_FROM_PLACE(移動先)%】移动了
 			ELSE
@@ -279,6 +293,10 @@ SIF 移動メッセージ
 ;移動処理
 CFLAG:ARG:現在位置 = 移動先
 TCVAR:ARG:なるべく動かない = 1
+IF GMF_GETBIT("幻想乡大地图") && GMF_IS_ODEKAKE(移動先)
+	CFLAG:ARG:GMF_現在拠点位置 = 移動先
+	CFLAG:ARG:現在位置 = GET_MAP_REPLACEMENT(移動先)
+ENDIF
 
 ;--------------------------------------------------------
 ;角色(ARG)が地点(移動先)へ移動する確率／分    角色（ARG）移动至地点（目的地）的概率/分钟

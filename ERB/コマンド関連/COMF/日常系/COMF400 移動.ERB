@@ -15,8 +15,13 @@
 #DIM ANIMATION_SEED
 #DIM PREV_REDRAW
 ;#DIM DYNAMIC CAN_BE_UNLOKED_ROOM_SAVE
-;SIF GMF_GETBIT("幻想乡大地图")
-	;JUMP GMF_COM400
+;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "COM400"
+	;外出转为非外出的移动指令时进行地点变换
+	SIF GMF_IS_ODEKAKE()
+		CALL GMF_604_TO_400
+	JUMP GMF_MAP_METHOD(-1, 0, "COM400")
+ENDIF
 
 BUTTON返回 = MAXROOM + 1
 BUTTON切替左 = MAXROOM + 2
@@ -92,7 +97,8 @@ ELSEIF FLAG:察知模式 == 2
 		PRINTL
 	ENDIF
 ENDIF
-SIF CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
+;GMF 不在真正家地图时不显示返回私室
+SIF CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置 && (!GMF_GETBIT("幻想乡大地图") || GET_MAPID(CFLAG:MASTER:現在位置) == GMF_HOME_MAP)
 	PRINTL [  0] - 返回私室
 FOR LOCAL, MINROOM(), MAXROOM
 	SIF !(CAN_MOVE(CFLAG:MASTER:現在位置, LOCAL) & 1)
@@ -242,6 +248,10 @@ DO
 		RESTART
 	;私室に返回
 	CASE 0
+		;GMF 不在私室地图时视为无效输入
+		IF GET_MAPID(CFLAG:MASTER:現在位置) != GMF_HOME_MAP
+			RESTART
+		ENDIF
 		IF IN_HOME(CFLAG:MASTER:初期位置) != 1
 			PRINTW 初始位置不正确，重设为私室位置
 			CFLAG:MASTER:初期位置 = 默认初期位置
@@ -299,7 +309,7 @@ SIF CFLAG:MASTER:恶作剧
 	RETURN 0
 SIF CFLAG:MASTER:陪睡中
 	RETURN 0
-;现在全地图可以移动
+;GMF 现在全地图可以移动
 SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER) == 0
 	RETURN 0
 RETURN 1
@@ -330,6 +340,12 @@ TFLAG:地圖切換 = 0
 
 出発地点 = CFLAG:MASTER:現在位置
 FLAG:自室施錠 = 0
+;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "SKIP_MOVE"
+	SIF GET_MAPID(出発地点) != GET_MAPID(最終目的地)
+		THROW 跨地图移动。
+	JUMP GMF_MAP_METHOD(最終目的地, 2, "SKIP_MOVE", ARG, 最終目的地)
+ENDIF
 ;自動掃除
 SIF GETBIT(FLAG:自動掃除, 1)
 	CALL AUTO_SWEEP
@@ -568,6 +584,10 @@ SIF NEXTCOM == 0
 @CANNOT_MOVE_MESSAGE(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "CANNOT_MOVE_MESSAGE"
+	CALL GMF_MAP_METHOD(ARG, 1, "CANNOT_MOVE_MESSAGE", ARG)
+ENDIF
 IF !ARG || NAME_FROM_PLACE(ARG) == "" || TFLAG:移動不能メッセージ == 998
 	PRINTFORMW 错误的输入
 	CLEARLINE 2
@@ -580,160 +600,3 @@ ELSE
 	TRYCALLFORM MAP_CANNOT_WORD_{MAIN_MAP}(ARG)
 ENDIF
 TFLAG:移動不能メッセージ = 0
-
-;-----------------------------------------------------------
-;SKIP_MOVE中止移动时的部分，即STOP跳转的位置
-;-----------------------------------------------------------
-@qol_SKIP_MOVE_STOP(最終目的地, 直前位置)
-#DIM 最終目的地
-#DIM 直前位置
-#LOCALSIZE 5
-#LOCALSSIZE 1
-IF IN_TOILET(RESULT)
-	CALL 廁所侵入(RESULT)
-	SIF RESULT == -1
-		CFLAG:MASTER:現在位置 = 直前位置
-ELSEIF BATHCHECK(RESULT)
-	LOCAL:1 = IN_ROOM_MEMBER("MIN", RESULT, "CFLAG", 6)
-	IF !LOCAL:1 && !CFLAG:MASTER:同行
-		PRINTFORMW 进入浴场的%CALLNAME:MASTER%泡在了浴池里
-	ELSEIF LOCAL:1 && 風呂逐出条件(LOCAL:1) && !CFLAG:MASTER:同行
-		PRINTFORMW 被在浴场里的%CALLNAME:(LOCAL:1)%赶出来了…
-		CALL KOJO_MESSAGE_SEND("EVENT",11,LOCAL:1,1,0)
-		CFLAG:MASTER:現在位置 = 直前位置
-	ELSEIF LOCAL:1 && !CFLAG:MASTER:同行
-		IF FLAG:70 == 1
-			PRINTFORMW %CALLNAME:(LOCAL:1)%在入浴中的样子…
-		ELSE
-			PRINTFORMW 与在浴场里的%CALLNAME:(LOCAL:1)%对上了视线…
-			CALL KOJO_MESSAGE_SEND("EVENT",11,LOCAL:1,2,0)
-		ENDIF
-		CFLAG:MASTER:現在位置 = 最終目的地
-	ELSE
-		FOR LOCAL, 1, CHARANUM
-			IF 風呂逐出条件(LOCAL) && CFLAG:LOCAL:同行
-				PRINTFORMW 共同入浴的邀请被%CALLNAME:LOCAL%拒绝了
-				CALL KOJO_MESSAGE_SEND("EVENT",23,LOCAL,1,0)
-				CFLAG:MASTER:現在位置 = 直前位置
-				;GOTO END
-				RETURN
-			ELSEIF LOCAL:1 && 風呂逐出条件(LOCAL:1)
-				PRINTFORMW 被在浴场里的%CALLNAME:(LOCAL:1)%赶出来了…
-				CALL KOJO_MESSAGE_SEND("EVENT",11,LOCAL:1,1,0)
-				CFLAG:MASTER:現在位置 = 直前位置
-				;GOTO END
-				RETURN
-			ENDIF
-		NEXT
-		FOR LOCAL, 1, CHARANUM
-			IF CFLAG:LOCAL:同行
-				PRINTFORMW %CALLNAME:LOCAL%好像想一起进入浴场的样子
-				CALL KOJO_MESSAGE_SEND("EVENT",23,LOCAL,2,0)
-				BREAK
-			ENDIF
-		NEXT
-		CFLAG:MASTER:現在位置 = 最終目的地
-	ENDIF
-ELSEIF RESULT == 54
-	CALL 虫かご侵入(RESULT)
-	SIF RESULT == -1
-		CFLAG:MASTER:現在位置 = 直前位置
-;原函数针对可以进入原本锁住的房间，默认家主在屋内睡觉一种对应情况，不管家主实际上在不在家
-;默认将玩家视为闯入，仅在MASTER搬入该地点才不会被视为闯入
-ELSEIF LOCK:(RESULT)
-	LOCAL:2 = 0
-	LOCAL:4 = RESULT
-	IF FLAG:70 == 1
-		FOR LOCAL, 1, CHARANUM
-			IF CFLAG:LOCAL:311 == RESULT && CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:出禁
-				PRINTFORMW 好像%CALLNAME:LOCAL%正在睡觉的样子
-				LOCAL:2 = 1
-			ENDIF
-		NEXT
-	ELSEIF FLAG:70 == 0
-		FOR LOCAL, 1, CHARANUM
-			IF CFLAG:LOCAL:311 == RESULT && CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:出禁
-				PRINTFORMW 好像%CALLNAME:LOCAL%正在睡觉的样子
-				LOCAL:2 = 1
-			;ELSEIF CFLAG:LOCAL:311 == RESULT && !CFLAG:LOCAL:睡眠 && !CFLAG:LOCAL:出禁
-			;这里应该是已经进入睡眠时间但仍能互动的一段时间
-			ELSEIF CFLAG:LOCAL:311 == RESULT && CFLAG:LOCAL:300 == RESULT && 睡眠時間(LOCAL) && !CFLAG:LOCAL:出禁
-				PRINTFORML 好像%CALLNAME:LOCAL%正准备睡觉了
-				PRINTFORMW 还能听到一些动静…
-				LOCAL:2 = 1
-			ENDIF
-		NEXT
-		;从排除非潜入情况的白名单改为只有上述三种情况才算潜入的黑名单
-		IF !LOCAL:2
-		;移動成立
-		CFLAG:MASTER:現在位置 = 最終目的地
-		ELSE
-			CALL ASK_YN("潜入房间","算了吧")
-			IF RESULT == 0
-				CALL 潜入房間(LOCAL:4, 直前位置)
-				;GOTO END
-				RETURN
-			ELSEIF RESULT == 1
-				CFLAG:MASTER:現在位置 = 直前位置
-			ENDIF
-		ENDIF
-	ENDIF
-ELSEIF TFLAG:宴会場 == RESULT
-	CALL ENKAI_SINKOU()
-ENDIF
-
-;-----------------------------------------------------------
-;SKIP_MOVE结算时间的部分，即END跳转的位置
-;-----------------------------------------------------------
-@qol_SKIP_MOVE_TIME(経過時間)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM 経過時間
-#DIM TSP消費倍率
-TSP消費倍率 = 5
-SIF TALENT:MASTER:100 < -4
-	TSP消費倍率 += 15
-SIF TFLAG:運搬
-	TSP消費倍率 += 3
-IF FLAG:70 == 1 || (GETBIT(FLAG:瞬間移動, 1) && !CFLAG:MASTER:同行 && BASE:MASTER:TSP > TSP消費倍率 * 経過時間)
-	BASE:MASTER:TSP -= TSP消費倍率 * 経過時間
-	SIF TFLAG:運搬
-		CFLAG:(TFLAG:運搬):現在位置 = CFLAG:MASTER:現在位置
-ELSE
-	SIF TALENT:MASTER:100 < -4 && !CFLAG:MASTER:同行
-		TIME += 7 * 経過時間
-	TIME += 2 * 経過時間
-	IF CFLAG:93:同行 && !GETBIT (FLAG:泳池, 0)
-		TIME += 2 * 経過時間
-		BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - (5 * 経過時間), 500)
-	ENDIF
-ENDIF
-
-;-----------------------------------------------------------
-;SKIP_MOVE陷阱的部分，即结算时间之后的部分
-;-----------------------------------------------------------
-@qol_SKIP_MOVE_HOLE
-#LOCALSIZE 1
-#LOCALSSIZE 1
-;21/09/01 自由行動に対応するフレーバー追加
-IF CFLAG:MASTER:現在位置 == FA16_HOLE:0 && !FA16_HOLE:1
-	IF (50 - (ABL:MASTER:戦闘能力 * 7)) < RAND:100
-		PRINTFORMW ……脚下有一个落穴、但%CALLNAME:MASTER%毫不费力地避开了
-		FA16_HOLE:1 = 1
-	ELSE
-		PRINTFORMW %CALLNAME:MASTER%掉进了一个落穴中！！
-		SELECTCASE RAND(15) + TFLAG:幸運補正
-			CASE IS < 2
-				PRINTFORML 好痛！！　这么想着的时候屁股已经落地了…
-				CALL RECOVER(MASTER, -50, "体力", "屁股痛")
-				WAIT
-			CASE IS > 12
-				MONEY += 100
-				PRINTFORML …在穴底发现了100円
-				PRINTFORMW 　现在的所持金:%金额表示(MONEY)%
-		ENDSELECT
-		TIME += 3
-		FA16_HOLE:1 = 2
-		FA16_HOLE:2 = TIME
-	ENDIF
-ENDIF

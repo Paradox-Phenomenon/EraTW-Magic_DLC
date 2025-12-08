@@ -8,6 +8,13 @@
 #DIM 特殊ワープ
 #DIM ANIMATION_SEED
 #DIM PREV_REDRAW
+;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "COM604"
+	;非外出转为外出的散步指令时进行地点变换
+	SIF !GMF_IS_ODEKAKE(-1)
+		CALL GMF_400_TO_604
+	JUMP GMF_MAP_METHOD(-1, 0, "COM604")
+ENDIF
 ;散步
 時間停止ジャンプ = FLAG:時間停止 || (GETBIT(FLAG:瞬間移動, AT_HOME(MASTER)) && !FLAG:デート相手) ;bug fix for auto-tsp movement
 FLAG:自室施錠 = 0 ;custom code, unlocks door
@@ -165,8 +172,8 @@ SIF TFLAG:妄想中
 ;一括管理
 SIF GLOBAL_COMABLE(604)
 	RETURN RESULT
-;约会中以外
-SIF AT_HOME(MASTER)
+;约会中以外 GMF 现在全地图可以移动
+SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER)
 	RETURN 0
 SIF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 	RETURN 0
