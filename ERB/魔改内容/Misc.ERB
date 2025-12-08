@@ -80,6 +80,21 @@ RETURNF 0
 RETURNF CFLAG:ARG:同行 || FLAG:デート相手 == ARG || FINDELEMENT(Datees, ARG) > -1
 
 ;-------------------------------------------------
+;函数名:GROUPCHECK_TSUKIAU
+;概　要:同行状态的群组判断
+;-------------------------------------------------
+@GROUPCHECK_TSUKIAU(LIST)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM REF LIST
+#FUNCTION
+FOR LOCAL, 0, VARSIZE("LIST")
+	SIF CFLAG:(LIST:LOCAL):同行 || FLAG:デート相手 == (LIST:LOCAL) || FINDELEMENT(Datees, (LIST:LOCAL)) > -1
+		RETURNF 1
+NEXT
+RETURNF 0
+
+;-------------------------------------------------
 ;概　要:判定角色所在的区域，包含了招待室的情况
 ;参数：CID-角色
 ;返回值：PID-AREA，参见ERB\DIM.ERH
@@ -140,3 +155,40 @@ WHILE GCREATED(GID)
 WEND
 NEXT_GID = GID
 
+;-------------------------------------------------
+;函数名:GROUPMATCH_CVAR
+;概　要:角色变量的群组判断
+;参  数:ARG = 匹配值,ARG:1 = 0匹配模式，1排除模式）,ARG:2 = 完全匹配）
+;-------------------------------------------------
+@GROUPMATCH_CVAR(LIST,CVAR,ARG = 0,ARG:1 = 0,ARG:2 = 0)
+#LOCALSIZE 1
+#DIM REF LIST
+#DIM DYNAMIC TEMP
+#DIM DYNAMIC TEMP_RESULT
+#DIMS DYNAMIC VAR_INDEX,2
+#DIMS CVAR
+#FUNCTION
+
+;在式中函数中调用会重写RESULT(S)的命令时需要暂存RESULT(S)
+TEMP_RESULT = RESULT
+SPLIT CVAR, ":", VAR_INDEX
+RESULT = TEMP_RESULT
+
+FOR LOCAL, 0, VARSIZE("LIST")
+	IF ARG:1 == 1
+		IF GETVAR(@"%VAR_INDEX:0%:{(LIST:LOCAL)}:%VAR_INDEX:1%") != ARG
+			TEMP++
+		ELSE
+			SIF ARG:2
+				RETURNF 0
+		ENDIF
+	ELSE
+		IF GETVAR(@"%VAR_INDEX:0%:{(LIST:LOCAL)}:%VAR_INDEX:1%") == ARG
+			TEMP++
+		ELSE
+			SIF ARG:2
+				RETURNF 0
+		ENDIF
+	ENDIF
+NEXT
+RETURNF TEMP
