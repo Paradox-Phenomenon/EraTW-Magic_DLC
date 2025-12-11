@@ -2,6 +2,8 @@
 ;地点名変更関数
 ;--------------------------------------------------
 @MAP_PLACENAME_7(ARG,ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 IF GET_MAPID(ARG) == MAIN_MAP
 	SELECTCASE ARG
@@ -45,6 +47,8 @@ ENDIF
 ;ARG     場所ID
 ;--------------------------------------------------
 @MAP_AREASELECT_7(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 SELECTCASE ARG
 	;秋姉妹的家
@@ -57,7 +61,7 @@ SELECTCASE ARG
 	CASE P726仙人的宅邸・居間, P727仙人的宅邸・華扇私室, P728仙人的宅邸・空的部屋
 		RETURNF 4
 	;圣域
-	CASE P741猿猴通路 TO P750驯子的小屋
+	CASE P736圣域入口, P741猿猴通路 TO P750驯子的小屋
 		RETURNF 5
 	;净秽山
 	CASE P751浅间净秽山 TO P762空房间
@@ -74,6 +78,8 @@ ENDSELECT
 ;                Q_ID  判定する内部の場所ID,必ずP_IDと一致した数値も含める
 ;--------------------------------------------------
 @GETMAP_BUILDING_7(P_ID, Q_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM P_ID
 #DIM Q_ID
@@ -118,6 +124,8 @@ RETURNF 0
 ;TFLAG:移動不能メッセージ   ↓の@MAP_CANNOT_WORD用の設定
 ;--------------------------------------------------
 @MAP_CAN_MOVE_7(ARG, CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
 SELECTCASE ARG
@@ -159,7 +167,7 @@ SELECTCASE ARG
 		;在内部或者住在内部，必须能回去
 		SIF INRANGE(CFLAG:CHARA:現在位置, P741猿猴通路, P762空房间) || INRANGE(CFLAG:CHARA:初期位置, P741猿猴通路, P762空房间)
 			RETURNF 1
-		IF CHARA == MASTER && ABL:[[合欢乃]]:亲密 < 5 && ABL:[[美天]]:亲密 < 5
+		IF CHARA == MASTER && 圣域进入许可() == 0
 			TFLAG:移動不能メッセージ = 3
 			RETURNF 0
 		;月都人
@@ -175,10 +183,28 @@ SELECTCASE ARG
 ENDSELECT
 RETURNF 1
 
+@圣域进入许可()
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM LIST = [[铃仙]], [[辉夜]], [[永琳]], [[合欢乃]], [[美天]], [[依姬]], [[丰姬]], [[铃仙二号]], [[清兰]], [[铃瑚]], [[哆来咪]], [[探女]], [[克劳恩皮丝]], [[纯狐]], [[赫卡提亚]] 
+;常识改变
+SIF FLAG:催眠強度 > 50
+	RETURNF 1
+SIF GROUPCHECK_TSUKIAU(LIST)
+	RETURNF 1
+SIF GROUPMATCH_CVAR(LIST,"TALENT:思慕",,1)
+	RETURNF 1
+SIF FINDELEMENT(LIST, FLAG:扮演) > -1
+	RETURNF 1
+RETURNF 0
+
 ;--------------------------------------------------
 ;移動不能時に表示されるメッセージ
 ;--------------------------------------------------
 @MAP_CANNOT_WORD_7(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE TFLAG:移動不能メッセージ
 	CASE 1
 		PRINTFORML 从刚才开始和屋子的距离就完全没有减少……
@@ -201,6 +227,8 @@ REUSELASTLINE
 ;WAITはかけないように
 ;-----------------------------------------
 @MAP_UNIQUEMESSAGE_7
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE CFLAG:MASTER:現在位置
 	CASE P703玄武之澤
 		IF DAY:2 == 2 && TALENT:MASTER:形状 == 4 && GROUPMATCH(TIME:2, 5, 6, 7)
@@ -215,6 +243,8 @@ ENDSELECT
 ;RETURNF  差し替え場所ID（お出かけMap）
 ;-----------------------------------------
 @MAP_SEARCH_REPLACEMENT_7(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 SELECTCASE ARG
 	CASE P703玄武之澤, P704河童の宣傳站, P735游泳場
@@ -229,9 +259,10 @@ SELECTCASE ARG
 		RETURNF 間欠泉地下中樞
 	CASE P738森の深奥 TO P740山童の宣傳站
 		RETURNF 森の深奥
-	CASE P741猿猴通路 TO P750驯子的小屋
+	CASE P741猿猴通路 TO P748魑魅的草棚
 		RETURNF 圣域
-	CASE P751浅间净秽山 TO P762空房间
+	;浅间净秽山在外出分区上需要与据点地图分布错开，尤其是749和750在山内的部分，这是为了方便天气系统
+	CASE P749山中密道 TO P762空房间
 		RETURNF 浅间净秽山
 	CASEELSE
 		RETURNF 山麓樹海
@@ -242,6 +273,8 @@ RETURNF 0
 ;Mapの紹介文
 ;--------------------------------------------------
 @Map紹介_7
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;とりあえず5行
 PRINTFORML 有很多的采集点和2个钓鱼点、是山中冒险者所垂涎的据点。
 PRINTFORML 可以从间歇泉地下中枢直通灼热地狱遗迹、也有去山顶的近路。
