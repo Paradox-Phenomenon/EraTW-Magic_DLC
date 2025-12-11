@@ -147,41 +147,43 @@ RETURN 1
 @IMAGE_I25_特殊服装(CHARA)
 #DIM CHARA
 VARSET RESULTS
-IF CFLAG:25:差し替え適用
-    ;差し替え画像
-    IF CHECK_NUDE(CHARA)
-        ;裸
-        IF FLAG:立絵種類
-            ;顔絵
-            IF CFLAG:25:差し替え適用 == 1
-                IF IS_BUNNY(CHARA)
-                    IF TALENT:CHARA:胸圍 > 1
-                        RESULTS = _爆バニー
-                    ELSE
-                        RESULTS = _バニー
-                    ENDIF
-                ENDIF
-            ENDIF
-        ELSE
-            ;立ち絵
-        ENDIF
-    ELSE
-        ;服
-        IF FLAG:立絵種類
-            ;顔絵
-            IF CFLAG:25:差し替え適用 == 1
-                IF IS_BUNNY(CHARA)
-                    IF TALENT:CHARA:胸圍 > 1
-                        RESULTS = _爆バニー
-                    ELSE
-                        RESULTS = _バニー
-                    ENDIF
-                ENDIF
-            ENDIF
-        ELSE
-            ;立ち絵
-        ENDIF
-    ENDIF
+IF CFLAG:25:差し替え適用 == 2
+	;差し替え画像
+	IF CHECK_NUDE(CHARA)
+		;裸
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立絵
+		ENDIF
+	ELSE
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立絵
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:25:差し替え適用 == 1
+	;差し替え画像
+	IF CHECK_NUDE(CHARA)
+		;裸
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立絵
+		ENDIF
+	ELSE
+		;服
+		IF CFLAG:CHARA:睡眠
+			RESULTS = _睡衣
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 55 || CURRENT_CLOTHES_SET(CHARA) == 66
+			RESULTS = _兔女郎
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 31 || EQUIP:CHARA:上身衣服２ == 3
+			RESULTS = _睡衣
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
 ELSE
 	;通常画像
 	IF CHECK_NUDE(CHARA)
@@ -193,98 +195,41 @@ ELSE
 	ENDIF
 ENDIF
 
-;IMAGE_I25_体形(CHARA)-----------------------------------------------------------------------
-;キャラクター特有の体形表示条件
-;エフェクトを共有する体形差分はこちら
-;服装を指定しても自動で表示されるので注意
-;使用時注意点:
-;   RESULTSに体形を格納すること
-;   書式は %体形%%服装% 適宜"_"等入れること
-;   "巨乳"は本編で実装済み %体形%巨乳%服装% で追記可能
-;-------------------------------------------------------------------------------------------
-@IMAGE_I25_体形(CHARA)
+@IMAGE_I25_特殊表情COM(CHARA, コマンド)
 #DIM CHARA
-VARSET RESULTS
+#DIM コマンド
 
-IF CFLAG:25:差し替え適用 == 1 && FLAG:立絵種類 && CHECK_NUDE(CHARA) && TALENT:CHARA:胸圍 > 1
-	RESULTS = 爆乳
-ENDIF
-
-;IMAGE_I25_特殊エフェクト(CHARA)--------------------------------------------------------------------
-;キャラクター特有のエフェクト表示条件
-;使用時注意点:
-;	RESULTS配列に特殊エフェクトを格納
-;	RETURNで追加するエフェクト数を返却すること
-;-------------------------------------------------------------------------------------------
-@IMAGE_I25_特殊エフェクト(CHARA)
-#DIM CHARA
-#DIM DYNAMIC エフェクト数 = 0
-VARSET RESULTS
-
-IF CFLAG:25:差し替え適用 == 1 && FLAG:立絵種類
-	IF !CHECK_NUDE(CHARA) && (!BEDROOM() || !BATHROOM(CFLAG:MASTER:現在位置))
-		RESULTS:エフェクト数 = 帽子
-		エフェクト数 += 1
-	ENDIF
-	IF TCVAR:CHARA:発情 && CFLAG:CHARA:积攒度 > 25 && !MARK:CHARA:反発刻印 && TALENT:CHARA:心情 >= 0
-		RESULTS:エフェクト数 = 湯気
-		エフェクト数 += 1
-	ENDIF
-	;顔絵
-	IF TALENT:CHARA:母乳体質 && NOWEX:CHARA:噴乳 && CHECK_NUDE(CHARA)
-		IF FLAG:巨乳差分表示 && TALENT:CHARA:胸圍>=2
-			RESULTS:エフェクト数 = 爆乳母乳
+SELECTCASE CFLAG:25:差し替え適用
+	CASE 2
+	CASE 1
+		IF CHECK_NUDE(CHARA)
 		ELSE
-			RESULTS:エフェクト数 = 母乳
+			IF CURRENT_CLOTHES_SET(CHARA) == 55 || CURRENT_CLOTHES_SET(CHARA) == 66
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 31 || EQUIP:CHARA:上身衣服２ == 3
+			ELSEIF CHECK_CLO("bra_visible", CHARA)
+			ELSE
+				SELECTCASE コマンド
+					CASE 305
+						RESULTS = 膝枕覆盖
+					CASE 6,12,313
+						RESULTS = 揉胸覆盖
+				ENDSELECT
+			ENDIF
 		ENDIF
-		エフェクト数 += 1
-	ENDIF
-	IF CHECK_NUDE(CHARA) && !BEDROOM() && !BATHROOM(CFLAG:MASTER:現在位置)
-		RESULTS:エフェクト数 = 前掛け
-		エフェクト数 += 1
-	ENDIF
-	IF NOWEX:CHARA:TotalEX >= 5
-		IF !RAND:2
-			CSTR:CHARA:汎用エフェクト = ～～
+	CASE 0
+		IF CHECK_NUDE(CHARA)
+			;裸
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立ち絵
+			ENDIF
 		ELSE
-			CSTR:CHARA:汎用エフェクト = んお゛お゛
+			;服
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立ち絵
+			ENDIF
 		ENDIF
-	ENDIF
-ENDIF
-
-RETURN エフェクト数
-
-;IMAGE_I25_特殊表情(CHARA)--------------------------------------------------------------------
-;キャラクター特有の表情表示条件
-;時間停止中でも維持する表情はこちら
-;使用時注意点:
-;   RESULTS:0に表情を格納
-;   RESULTS:1にマウスオーバー時の表情を格納すること
-;   "通常","笑顔","憤怒","発情","睡眠"は本編で実装済み
-;-------------------------------------------------------------------------------------------
-@IMAGE_I25_特殊表情(CHARA)
-#DIM CHARA
-IF CFLAG:25:差し替え適用 == 1 && FLAG:立絵種類
-	IF TCVAR:CHARA:発情 && CFLAG:CHARA:积攒度 > 25 && !MARK:CHARA:反発刻印 && TALENT:CHARA:心情 >= 0
-		IF !CFLAG:CHARA:诶嘿嘿
-			RESULTS:0 = 発情Ａ
-			RESULTS:1 = 発情Ｂ
-		ELSEIF !NOWEX:CHARA:TotalEX && !FLAG:70
-			RESULTS:0 = 発情Ｃ
-			RESULTS:1 = 発情Ｃ
-		ENDIF
-	ENDIF
-ENDIF
-
-;********************************************************************************************
-@IMAGE_EX_I25_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
-#DIM CHARA
-#DIMS 表示形式
-#DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
-#DIMS 差分
-#DIMS 乳量
-
-SIF CFLAG:25:差し替え適用 == 1
-		CALL COMPOSE_SPRITE_PRESET([[藍]],"別顔_裸_/別顔_服_/別顔_服_バニー_/別顔_服_爆バニー_","通常/笑顔/憤怒/発情/トロ顔/イキ顔/発情Ａ/発情Ｂ/発情Ｃ")
+ENDSELECT
