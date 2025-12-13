@@ -1,4 +1,4 @@
-﻿;-------------------------------------------------
+;-------------------------------------------------
 ;特殊区域移动
 ;日常系指令、レベル1
 ;-------------------------------------------------
@@ -20,14 +20,15 @@ NEXT
 IF NEMUKE() >= 720
 	PRINTL 在睡意来袭时还是别外出比较好吧
 	RETURN -1
-ELSEIF LOCAL:1 > 1
-	PRINTL 不能带二人以上外出
+ELSEIF !MOREDATE && LOCAL:1 > 1
+	PRINTL 不能带多人外出
 	RETURN -1
 ELSEIF LOCAL:2 || BASE:MASTER:気力 == 0
 	PRINTFORML 因为身体不适所以无法外出\@ BASE:MASTER:気力 == 0 ? （气力为零） # （同行者身体不适）\@
 	RETURN -1
 ELSEIF LOCAL:3 && FESTIVAL() == ""
-	PRINTL 因为同行者处于工作日,所以请注意分配时间...
+	PRINTL 因为同行者处于工作日，所以请注意分配时间…
+	RETURN -1
 ;(天候パッチ)悪天候時も外出可能に
 ;ELSEIF TIME:5 == 9 || TIME:5 == 5
 ;	PRINTL 因为天气恶劣所以无法外出
@@ -38,7 +39,7 @@ ELSEIF TALENT:MASTER:100 < -4
 ENDIF
 SELECTCASE CFLAG:MASTER:現在位置
 	CASE 205, 210, 803, 820
-		IF !INRANGE(TIME, 540, 1020)
+		IF !INRANGE(TIME, 540, 1260) ;qol custom code, allow cableway to work up to 21:00 instead of 17:00 at a higher fee
 			PRINTFORML 已过营业时间
 			RETURN -1
 		ENDIF
@@ -59,25 +60,36 @@ SELECTCASE CFLAG:MASTER:現在位置
 				PRINTFORML 似乎因为大雪而停止运行了
 				RETURN -1
 		ENDSELECT
-		;守矢角色たちと同行時は敷設者割引運賃
-		IF CFLAG:31:同行 || CFLAG:32:同行 || CFLAG:33:同行
+		;守矢キャラたちと同行時は敷設者割引運賃
+		IF MOREDATE && NumberOfDates > 1 ; handle custom group date code first, if its a 1 on 1 we can use the original 
+			IF IS_IN_GROUP_DATE(31) || IS_IN_GROUP_DATE(32) || IS_IN_GROUP_DATE(33) ; moriya check
+				FEE = 1
+			ELSE
+				FEE = 5 + (5 * NumberOfDates)
+			ENDIF
+		ELSEIF (CFLAG:31:同行 || CFLAG:32:同行 || CFLAG:33:同行) || GROUPMATCH(FLAG:デート相手, 31, 32, 33) ;bug fix, correct check for dating moriya
 			FEE = 1
-		ELSEIF CFLAG:MASTER:同行
+		ELSEIF CFLAG:MASTER:同行 || FLAG:デート相手 ;bug fix
 			FEE = 10
 		ELSE
 			FEE = 5
 		ENDIF
+		;qol custom code
+		SIF TIME >= 1020 && FEE != 1
+			FEE += 5
+		IF MOREDATE && NumberOfDates > 1
+			CALL MOREDATES_CABLEWAY(FEE)
 		;相手が鬼か天狗だと愛想笑い／敷設者にも敬意を払う
-		IF GROUPMATCH(TARGET, 10, 29, 31, 32, 33, 42, 64, 65) && CFLAG:TARGET:同行
-			;ガワを山の河童(16)or里の人类(12)に決める
+		ELSEIF GROUPMATCH(TARGET, 10, 29, 31, 32, 33, 42, 64, 65) && CFLAG:TARGET:同行
+			;ガワを山の河童(16)or里の人間(12)に決める
 			LOCAL = 12 + ((CFLAG:MASTER:現在位置 / 100 == 8) * 4)
-			CALL SPTALK, 0, "笑顔", LOCAL, @"「哎呀哎呀，是%CALLNAME:TARGET%啊，您要使用吗？」",1
-			PRINTFORM 认出了%CALLNAME:TARGET%的样子
+			CALL SPTALK, 0, "笑顔", LOCAL, @"「哎呀哎呀，是%CALLNAME:TARGET%啊，您要使用缆车吗？」",1
+			PRINTFORM 认出了%CALLNAME:TARGET%的
 			;人里側に河童が常駐してるのもアレかなと
 			IF CFLAG:MASTER:現在位置 / 100 == 2
-				PRINTFORM 受付担当
+				PRINTFORM 售票员
 			ELSE
-				PRINTFORM 受付河童
+				PRINTFORM 售票河童
 			ENDIF
 			PRINTFORML 脸上浮现出亲切的笑容
 		ELSE
@@ -87,27 +99,41 @@ SELECTCASE CFLAG:MASTER:現在位置
 			ELSE
 				CALL SPTALK, 0, "通常", 16, @"「…干嘛？要乘坐索道么？」/「{FEE}筹码或%金額表示(FEE * 200)%金也行」",1
 			ENDIF
+			;qol custom code
+			SIF TIME >= 1020 && FEE != 1
+				CALL SPTALK, 0, "笑顔", CFLAG:MASTER:現在位置 / 100 == 2 ? 12 # 16, @"「啊啦……晚班班次需要收取额外费用哟」",1
 		ENDIF
 		CALL PAY_YEN_OR_CM(FEE * 200, FEE)
 		SELECTCASE RESULT
 			CASE 0
 				RETURN -1
 			CASE 1
-				IF CFLAG:31:同行 || CFLAG:32:同行 || CFLAG:33:同行
+                SIF FLAG:口上色 ;qol custom code, set shopkeeper text color
+                    SETCOLOR CFLAG:MASTER:現在位置 / 100 == 2 ? 路人子店員口上色:12 # 路人子店員口上色:16
+				IF (CFLAG:31:同行 || CFLAG:32:同行 || CFLAG:33:同行) || GROUPMATCH(FLAG:デート相手, 31, 32, 33) || (MOREDATE && (IS_IN_GROUP_DATE(31) || IS_IN_GROUP_DATE(32) || IS_IN_GROUP_DATE(33))) ;bug fix
 					PRINTFORML 「给您优惠哦～」
 				ELSE
 					PRINTFORML 「多谢惠顾」
 				ENDIF
+                RESETCOLOR
 			CASE 2
-				IF CFLAG:MASTER:現在位置 / 100 == 2
-					PRINTFORML 「用筹码付款吧...嗯、谢谢」
+                SIF FLAG:口上色 ;qol custom code, set shopkeeper text color
+                    SETCOLOR CFLAG:MASTER:現在位置 / 100 == 2 ? 路人子店員口上色:12 # 路人子店員口上色:16
+				;custom code
+				IF (CFLAG:31:同行 || CFLAG:32:同行 || CFLAG:33:同行) || GROUPMATCH(FLAG:デート相手, 31, 32, 33) || (MOREDATE && (IS_IN_GROUP_DATE(31) || IS_IN_GROUP_DATE(32) || IS_IN_GROUP_DATE(33))) ;bug fix
+					PRINTFORML 「给您优惠哦～」
+				ELSEIF CFLAG:MASTER:現在位置 / 100 == 2
+					PRINTFORML 「用筹码付款吧…嗯、谢谢」
 				ELSE
 					PRINTFORML 「诶ー、客人明明是人类居然拥有筹码么？真是厉害」
 				ENDIF
 		ENDSELECT
 ENDSELECT
-;住宿先からの特殊移動 or 住宿先でない場所への特殊移動は约会扱い
+;住み込み先からの特殊移動 or 住み込み先でない場所への特殊移動はデート扱い
 IF AT_HOME(MASTER) || MAIN_MAP != SPECIAL_AREAMOVE() / 100
+	;bug fix: move time here so that it can proper add before position changes
+    ;qol let player use TSP if auto-tsp is active
+    CALL QOL_MOVE_TO_OTHER_AREA_APPLY_TIME
 	LOCAL:2 = 0
 	LOCALS = %STR_TR(6000 + SPECIAL_AREAMOVE() / 10)%
 	FOR LOCAL,1,CHARANUM
@@ -121,15 +147,32 @@ IF AT_HOME(MASTER) || MAIN_MAP != SPECIAL_AREAMOVE() / 100
 	CFLAG:MASTER:约会中 = SPECIAL_AREAMOVE() / 100
 	CFLAG:MASTER:現在位置 = SPECIAL_AREAMOVE()
 
-	IF CFLAG:MASTER:约会中 == 2
+	IF MOREDATE && NumberOfDates > 1 ;do the same thing but as a loop
+		FOR LOCAL:10, 0, NumberOfDates
+			IF CFLAG:MASTER:デート中 == 2
+				CALL EX_COSTUME(Datees:(LOCAL:10), "人里デート")
+			SIF RESULT
+				PRINTFORMW %CALLNAME:(Datees:(LOCAL:10))%换了一件适合在村子里穿的衣服
+			ELSE
+				CALL EX_COSTUME(Datees:(LOCAL:10), "デート")
+				SIF RESULT
+					PRINTFORMW %CALLNAME:(Datees:(LOCAL:10))%为了约会特意打扮了
+			ENDIF
+		NEXT
+	ELSEIF CFLAG:MASTER:デート中 == 2
 		CALL EX_COSTUME(FLAG:约会的对象, "人里デート")
 		SIF RESULT
-			PRINTFORMW %CALLNAME:(FLAG:约会的对象)%换了一件适合在人间之里穿的衣服。
+			PRINTFORMW %CALLNAME:(FLAG:约会的对象)%换了一件适合在村子里穿的衣服
+	;addition custom code, change to date clothes for some chara
+	ELSE
+		CALL EX_COSTUME(FLAG:デート相手, "デート")
+		SIF RESULT
+			PRINTFORMW %CALLNAME:(FLAG:デート相手)%为了约会特意打扮了
 	ENDIF
 	PRINTFORML 出门去%LOCALS%
-	TIME += SPECIAL_AREAMOVE_TIME()
+	;TIME += SPECIAL_AREAMOVE_TIME() ;bug fix
 
-;住宿先でないところから住宿先への移動は约会終了扱い
+;住み込み先でないところから住み込み先への移動はデート終了扱い
 ELSEIF !AT_HOME(MASTER) && MAIN_MAP == SPECIAL_AREAMOVE() / 100
 	IF CFLAG:败犬 && TALENT:路人 == 1
 		PRINTFORML 把%CALLNAME:TARGET%带回去了。

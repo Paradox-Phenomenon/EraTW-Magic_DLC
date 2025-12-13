@@ -73,7 +73,14 @@ TFLAG:情緒上昇抑制 = 1
 伐採パワー = 1 + (TALENT:MASTER:伐採Lv * 2) + ABL:MASTER:教養
 ;参加者判定
 IF FLAG:约会的对象 && (!FLAG:70 || CFLAG:TARGET:344 == 1)
-	CHARA = FLAG:约会的对象
+	;Group date stuff, prioritize target date instead of lastest date invite
+	IF MOREDATE
+		IF IS_IN_GROUP_DATE(TARGET)
+			CHARA = TARGET
+		ENDIF
+	ELSE
+		CHARA = FLAG:デート相手
+	ENDIF
 ELSEIF TARGET && ABL:TARGET:親密 >= 10 && (!FLAG:70 || CFLAG:TARGET:344 == 1)
 	CHARA = TARGET
 ELSE
@@ -413,8 +420,8 @@ SIF CFLAG:诶嘿嘿
 ;伐採可能場所でのみ
 SIF !伐採可能(CFLAG:MASTER:現在位置)
 	RETURN 0
-;约会中は约会的对象とだけ
-SIF FLAG:约会的对象 && TARGET != FLAG:约会的对象
+;デート中はデート相手とだけ
+SIF FLAG:デート相手 && ((!MOREDATE && TARGET != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(TARGET)))
 	RETURN 0
 ;睡眠中
 SIF CFLAG:MASTER:睡眠 || CFLAG:MASTER:イタズラ ;custom code

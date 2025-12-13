@@ -10,7 +10,14 @@
 
 ;参加者判定
 IF FLAG:约会的对象
-	CHARA = FLAG:约会的对象
+	;Group date stuff, prioritize target date instead of lastest date invite
+	IF MOREDATE
+		IF IS_IN_GROUP_DATE(TARGET)
+			CHARA = TARGET
+		ENDIF
+	ELSE
+		CHARA = FLAG:デート相手
+	ENDIF
 ;仕事中はダメ
 ELSEIF TARGET && ABL:TARGET:親密 >= 5 - TALENT:TARGET:採集Lv && SHIRAHU(TARGET) && CFLAG:行動 != 5
 	CHARA = TARGET
@@ -136,7 +143,7 @@ IF CHARA
 		SOURCE:CHARA:歓楽 += 1600 + (ABL:従順 * 30)
 		SOURCE:CHARA:情愛 += 1000 + (ABL:親密 * 20)
 	ENDIF
-	SIF CHARA != FLAG:约会的对象 
+	SIF (!MOREDATE && CHARA != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(CHARA)) 
 		SOURCE:CHARA:情愛 = 0
 	
 	SOURCE:CHARA:受動 = 200 + 100 * ABL:従順
@@ -256,7 +263,7 @@ SIF !MUSHITORI_SPOT(CFLAG:MASTER:現在位置)
 SIF GET_MONTH() == "冬之月"
 	RETURN 0
 ;约会中は约会的对象とだけ
-SIF FLAG:约会的对象 && TARGET != FLAG:约会的对象
+SIF FLAG:デート相手 && ((!MOREDATE && TARGET != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(TARGET)))
 	RETURN 0
 ;陪睡中
 SIF CFLAG:MASTER:陪睡中

@@ -1,4 +1,4 @@
-﻿;FileName_MOVEMENT.ERB ----------------------------- Rev1.00
+;FileName_MOVEMENT.ERB ----------------------------- Rev1.00
 ;時間経過処理
 ;CALL		USER
 ;ARG		経過時間前
@@ -67,11 +67,13 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 						PRINTFORMW +{TIME_REQUIRED(CFLAG:ARG:現在位置 / 100, CFLAG:ARG:自宅位置 / 100)}分
 						TIME += TIME_REQUIRED(CFLAG:ARG:現在位置 / 100, CFLAG:ARG:自宅位置 / 100)
 					ELSE
-						PRINTFORML 应%CALLNAME:ARG%的邀请、%CALLNAME:MASTER%走向了不知具体位置的%CALLNAME:ARG%的房间……
+						PRINTFORML 应%CALLNAME:ARG%的邀请、%CALLNAME:MASTER%走向了%CALLNAME:ARG%那不知道具体方位的房间……
 						PRINTFORMW +30分
 						TIME += 30
 					ENDIF
 					;帰宅口上,5,誘われるまま行く
+					SIF MOREDATE
+						HouseInvitationStatus = 1
 					CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 5, 0)
 					CALL OMANEKI_ENTER(ARG)
 					CALL TARGETSET_CHECK
@@ -89,22 +91,7 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 					CFLAG:MASTER:現在位置 = CFLAG:MASTER:约会中 * 100
 			ENDIF
 		ENDIF
-		;多人约会 - 目标1回家 继续和目标2约会,同时记录好感度,下面删除了一段判定
-		IF 同行人数() > 1
-		;#;PRINTFORMW 多人约会判定  1 - 开始
-			FOR LOCAL,1,CHARANUM
-				SIF LOCAL == ARG
-					CONTINUE
-				IF CHK_DATENOW(CFLAG:(LOCAL):约会中)
-					FLAG:约会的对象 = LOCAL
-					TFLAG:约会前好感度 = CFLAG:LOCAL:好感度
-					CFLAG:MASTER:约会中 = CFLAG:LOCAL:约会中
-					CFLAG:MASTER:現在位置 = CFLAG:LOCAL:現在位置
-				ENDIF
-			NEXT
-		;#;PRINTFORMW 多人约会判定  1 - 结束
-		ENDIF
-	;神社内にいるか自宅でも待客室でもない場所
+	;神社内にいるか自宅でもお招き部屋でもない場所
 	ELSEIF AT_HOME(ARG) || (CFLAG:(ARG):現在位置 != CFLAG:(ARG):自宅位置 && CFLAG:(ARG):現在位置 != OMANEKIBEYA()) && CFLAG:ARG:行動 != 5
 		;帰宅口上,1,通常帰宅
 		CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 1)
@@ -116,30 +103,21 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 	IF CFLAG:(ARG):诶嘿嘿 > 0 || CHK_DATENOW(CFLAG:(ARG):约会中)
 		;修改了大量判定
 		CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
-			SIF CFLAG:MASTER:招待 != ARG && CFLAG:ARG:诶嘿嘿
-				CALL ENDUFUFU(ARG)
-			FLAG:约会的对象 = 0
-			TFLAG:约会前好感度 = 0
-		;招待诶嘿嘿中は継続
-		SIF !CFLAG:MASTER:招待
-			CFLAG:MASTER:诶嘿嘿 = 0
-		CFLAG:MASTER:同行 = 0
-		;多人约会 - 单一目标困了回家bug
-		;#;PRINTFORMW 多人约会判定  2 - 开始
 		FOR LOCAL,1,CHARANUM
-			SIF LOCAL == ARG
-				CONTINUE
-			IF CHK_DATENOW(CFLAG:(LOCAL):约会中)
-				FLAG:约会的对象 = LOCAL
-				TFLAG:约会前好感度 = CFLAG:LOCAL:好感度
-				CFLAG:MASTER:约会中 = CFLAG:LOCAL:约会中
-				CFLAG:MASTER:現在位置 = CFLAG:LOCAL:現在位置
-				PRINTFORML 目送%CALLNAME:ARG%远去,%CALLNAME:MASTER%决定继续和%CALLNAME:LOCAL%约会...
-				CFLAG:MASTER:同行 = 180
-				CFLAG:LOCAL:同行 = 180
-			ENDIF
+			;お招き中は継続
+			SIF CFLAG:MASTER:お招き != LOCAL && CFLAG:LOCAL:うふふ
+				CALL ENDUFUFU(LOCAL)
+			;デートは消える
+			CFLAG:LOCAL:デート中 = MAIN_MAP
+			FLAG:デート相手 = 0
+			TFLAG:デート前好感度 = 0
 		NEXT
-		;#;PRINTFORMW 多人约会判定  2 - 结束
+		SIF MOREDATE
+			CALL REMOVE_FROM_GROUP_DATE(ARG)
+		;お招きうふふ中は継続
+		SIF !CFLAG:MASTER:お招き
+			CFLAG:MASTER:うふふ = 0
+		CFLAG:MASTER:同行 = 0
 	ENDIF
 ENDIF
 CFLAG:ARG:同行 = 0
@@ -168,8 +146,8 @@ SIF !ARG
 	RETURN
 SIF CFLAG:ARG:現在位置 != CFLAG:MASTER:現在位置
 	RETURN
-SIF !睡眠時間(ARG)
-	RETURN
+;SIF !睡眠時間(ARG) ;addition custom code
+;	RETURN
 SIF CFLAG:ARG:現在位置 != CFLAG:ARG:初期位置
 	RETURN
 SIF !SHIRAHU(ARG)
@@ -178,6 +156,12 @@ SIF !SHIRAHU(ARG)
 SIF CFLAG:ARG:隠密中
 	RETURN
 SIF 寝室許可(ARG, 1)
+	RETURN
+SIF CFLAG:ARG:同行 ;if being led by
+	RETURN
+SIF CFLAG:ARG:出禁 ;if banned
+	RETURN
+SIF !睡眠時間(ARG) && !LOCK:(CFLAG:MASTER:現在位置) ;if not asleep and the room isn't locked
 	RETURN
 
 ;なんのためのCLEARLINE？
@@ -242,7 +226,8 @@ IF CFLAG:MASTER:現在位置 != OMANEKIBEYA()
 
 ;翌日仕事に行く場合    第二天去工作
 ELSEIF 仕事中チェック(ARG) && TCVAR:ARG:连住禁止 && CFLAG:ARG:诶嘿嘿 != 1
-	CFLAG:MASTER:現在位置 = CFLAG:ARG:自宅位置
+	SIF !MOREDATE || (MOREDATE && CFLAG:MASTER:お招き == ARG) ;only kick from room if they own it
+		CFLAG:MASTER:現在位置 = CFLAG:ARG:自宅位置
 	IF CFLAG:ARG:诶嘿嘿
 		PRINTFORMW %CALLNAME:ARG%好像要开始工作了…
 		CALL ENDUFUFU(ARG)
@@ -259,6 +244,8 @@ ELSEIF CHK_DATENOW(CFLAG:ARG:约会中)
 		IF 睡眠時間(ARG)
 			CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
 			FLAG:约会的对象 = 0
+			SIF MOREDATE
+				CALL REMOVE_FROM_GROUP_DATE(ARG)
 		ENDIF
 	ELSE
 		;约会中に返回時間が来たらメッセージ＆约会だけ消す    如果在约会中收到返回时间的消息，就只删除消息和约会信息
@@ -272,6 +259,7 @@ ENDIF
 @待客室から出る(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+#DIM DYNAMIC 出口
 ;遭遇フラグを自宅位置に設定（連動してると他の角色が駆けつけてくるのは仕様）    将遭遇标志设置在家中位置（若已联动，其他角色会赶来，这是正常现象）
 CFLAG:ARG:遭遇位置 = CFLAG:ARG:自宅位置
 ;初期位置を元に戻す（参道的另一边や0もいるが99でもおｋ）    将初始位置恢复（参道的另一边或0都行，99也ok）
@@ -288,6 +276,8 @@ IF CFLAG:ARG:神社在住
 	CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
 	FLAG:约会的对象 = 0
 	TFLAG:约会前好感度 = 0
+	SIF MOREDATE
+		CALL REMOVE_FROM_GROUP_DATE(ARG)
 ELSE
 	IF !睡眠時間(ARG) && !CFLAG:ARG:睡眠
 		;自宅位置に移動
@@ -304,17 +294,37 @@ ELSE
 		CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
 		FLAG:约会的对象 = 0
 		TFLAG:约会前好感度 = 0
+		SIF MOREDATE
+			CALL REMOVE_FROM_GROUP_DATE(ARG)
 	ENDIF
 ENDIF
 
 ;招待フラグを消して日常に戻す
 CFLAG:ARG:招待 = 0
-CFLAG:MASTER:招待 = 0
-LOCK:(OMANEKIBEYA()) = 0
-
+IF !MOREDATE || (MOREDATE && CFLAG:MASTER:お招き == ARG) ; need to always runs this in case player turns off mod and characters get their initial place stuck forever
+	LOCK:(OMANEKIBEYA()) = 0
+	;GET EXIT
+	IF CFLAG:(CFLAG:MASTER:お招き):自宅位置
+		出口 = CFLAG:(CFLAG:MASTER:お招き):自宅位置
+	ELSE
+		DO
+			LOCAL = RAND:9
+			IF LOCAL == MAIN_MAP
+				出口 = 0
+			ELSE
+				出口 = LOCAL * 100 + 10
+			ENDIF
+		LOOP !出口
+	ENDIF
+	;move player to exit
+	CFLAG:MASTER:お招き = 0
+	CFLAG:MASTER:デート中 = 出口 / 100
+	CFLAG:MASTER:現在位置 = 出口
+	CALL MOREDATES_HOUSE_EXIT(出口)
+ENDIF
 
 @OneNightStay(ARG)
-#LOCALSIZE 1
+#LOCALSIZE 3
 #LOCALSSIZE 1
 #DIM YANUSHI
 #DIM REQUIRED_DESIRE
@@ -323,8 +333,9 @@ SIF CFLAG:ARG:积攒度 < 800
 	RETURN
 SIF CFLAG:ARG:現在位置 != CFLAG:MASTER:現在位置
 	RETURN
-SIF FLAG:一時滞在
-	RETURN
+;qol custom code
+; SIF FLAG:一時滞在
+; 	RETURN
 SIF CFLAG:ARG:神社在住
 	RETURN
 SIF !AT_HOME(MASTER)
@@ -348,14 +359,34 @@ PRINTFORML %CALLNAME:ARG%说今天晚上不想回去…
 CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 7)
 CALL ASK_YN("同意留宿","不同意留宿")
 IF !RESULT
-	IF YANUSHI
+	IF !QOL_CAN_STAY_OVER(ARG) ; qol custom code
 		PRINTFORMW 虽然非常想让对方留下了、但是有点害怕%CALLNAME:YANUSHI%…
 		GOTO REFUSAL
+	ELSE
+		;qol custom code, description
+		LOCAL = 0
+		LOCAL:1 = 0
+		LOCAL:2 = 0
+		LOCALS =
+		DO
+			LOCAL = FINDCHARA(CFLAG:初期位置, CFLAG:MASTER:初期位置, LOCAL + 1, CHARANUM - 1)
+			SIF LOCAL == ARG
+				CONTINUE
+			IF LOCAL > 0
+				LOCALS += @"%CALLNAME:LOCAL%、"
+				LOCAL:1++
+				LOCAL:2 = LOCAL
+			ENDIF
+		LOOP LOCAL > 0 && LOCAL < CHARANUM - 1
+		IF LOCAL:1
+			PRINTFORMDL 你询问%LIST_IN_STRING(LOCALS)%的意见，\@ LOCAL:1 > 1 ? 她们都 # 她 \@欣然允许%CALLNAME:ARG%留宿一晚。
+		ENDIF
 	ENDIF
-	FLAG:一時滞在 = ARG
-	CFLAG:ARG:本来の初期位置 = CFLAG:ARG:初期位置
-	CFLAG:ARG:初期位置 = CFLAG:MASTER:初期位置
-	CFLAG:ARG:神社在住 = CFLAG:ARG:初期位置
+	; FLAG:一時滞在 = ARG
+	; CFLAG:ARG:本来の初期位置 = CFLAG:ARG:初期位置
+	; CFLAG:ARG:初期位置 = CFLAG:MASTER:初期位置
+	; CFLAG:ARG:神社在住 = CFLAG:ARG:初期位置
+	CALL QOL_STAYOVER(ARG) ;qol custom code
 	PRINTFORMW %CALLNAME:ARG%在%NAME_FROM_PLACE(CFLAG:MASTER:初期位置)%留宿了
 	;帰宅口上,8,泊まっていくことになる
 	CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 8)
