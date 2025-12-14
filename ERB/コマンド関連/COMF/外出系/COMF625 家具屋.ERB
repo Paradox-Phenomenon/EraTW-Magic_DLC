@@ -164,6 +164,13 @@ SELECTCASE RESULT
 					GOTO INPUT_LOOP01
 				ENDIF
 				MaterialID = FURNITURE(リザルト, "資材番号", ITEM:リザルト)
+				;原木信息
+				IF ITEM:原木 > 0
+					SIF !FLAG:原木種類
+						FLAG:原木種類 = 1
+				ELSE
+					FLAG:原木種類 = 0
+				ENDIF
 				CALL WoodData(MaterialID)
 				MaterialQTY = FURNITURE(リザルト, "軽減上限", ITEM:リザルト)
 				MarketPrice = FURNITURE(リザルト, "市场价", ITEM:リザルト)
@@ -173,7 +180,7 @@ SELECTCASE RESULT
 
 				;注文家具の請求を作成
 				DRAWLINE
-				PRINTFORML %ITEMNAME_TR(リザルト)%的\@ ITEM:リザルト == 0? 订购# 改修\@
+				PRINTFORML %ITEMNAME_TR(リザルト)%的\@ ITEM:リザルト == 0? 订购# 改造\@
 				;所持製材量での値引きの表記
 				;Lv1→2の時は半額
 				[SKIPSTART]
@@ -198,21 +205,25 @@ SELECTCASE RESULT
 
 				;価格軽減に必要な資材量と現在所持量の比較
 				PRINTFORML 　价格补贴条件：提供所需的%LOGName:MaterialID%木料
-				PRINTFORM 　现有件数　　：
+				PRINTFORM  现有/所需木料：
 				SIF LOG_SALES:MaterialID >= MaterialQTY
 					SETCOLOR C_RED
 				PRINTFORML （{LOG_SALES:MaterialID}／{MaterialQTY}）
 				RESETCOLOR
 				;一木一器
-				PRINTFORML 　一木一器条件：\@GROUPMATCH(リザルト, 907) ? 该家具无法一木一器 # 提供所需的%LOGName:MaterialID%整根原木\@
-				PRINTFORM 　原木尺寸　　：
+				PRINTFORML 　一木一器条件：\@GROUPMATCH(リザルト, 907) ? 该家具无法一木一器 # 提供所需的整根%LOGName:MaterialID%原木\@
+				PRINTFORM  现有/所需木料：
 				SIF ITEM:原木 && ((FLAG:原木種類)%100 == MaterialID) && (LOG_LUMBERING(FLAG:原木種類) >= MaterialQTY-1)
 					SETCOLOR C_RED
-				;这里用WOODNAME主要是为了返回尺寸标记
-				CALL WoodData(FLAG:原木種類%100)
-				PRINTFORM （%WOOD_NAME(FLAG:原木種類)%／
+				IF ITEM:原木
+					CALL WoodData(FLAG:原木種類%100)
+					PRINTFORM （%WOOD_NAME(FLAG:原木種類)%
+				ELSE
+					PRINTFORM （无原木
+				ENDIF
 				CALL WoodData(MaterialID)
-				PRINTFORML %WOOD_NAME((MaterialQTY-1-1)/2*100+MaterialID)%）
+				PRINTFORML ／%WOOD_NAME((MaterialQTY-1-1)/2*100+MaterialID)%）
+				CALL WoodData(FLAG:原木種類%100)
 				RESETCOLOR
 			CASE 999
 				PRINTL 
@@ -377,7 +388,7 @@ RESETCOLOR
 ;在新伐木系统调整了原木制材量后，这边家具也应该做点对应调整，一般原木家具比较讲求一木一器啦，所以其实完全可以和制材量相关
 ;此外，现在家具购买价格会和木材市场价挂钩，ITEM价格现在只作为参考了。加工费应该是大头，这样才能体现师傅的匠人精神啊
 SELECTCASE F_ID
-	;桧木浴缸
+	;桧木浴室
 	CASE 902
 		資材番号 = 2;ヒノキ
 		軽減上限 = 10
@@ -401,7 +412,7 @@ SELECTCASE F_ID
 		軽減上限 = 6
 		最低額 = 300000
 		期間 = 10
-	;橡木沙发
+	;栎木沙发
 	CASE 906
 		資材番号 = 9;ナラ
 		軽減上限 = 6
