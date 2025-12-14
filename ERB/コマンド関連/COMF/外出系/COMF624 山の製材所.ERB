@@ -25,7 +25,7 @@ IF FLAG:最後に製材所に訪れた日 == 0
 	ENDIF
 	;依頼の報酬など、伐採以外で原木を入手してしまった場合の退避用
 	SIF !FLAG:原木種類
-		FLAG:原木種類 = MAX(RAND:12, 1)
+		FLAG:原木種類 = 1
 	
 	LOCALS '= @"「终于见面了。很高兴见到你，盟友！」/"
 	SIF FLAG:なりきり == 0
@@ -235,7 +235,7 @@ SELECTCASE リザルト保管
 		AMOUNTPAID_M += 売値
 		CALL LOST_ITEM("原木", 1, 1)
 		;库存中增加售出物品
-		WOODYARD_M:(WOOD_NUM(FLAG:原木種類)) += (1 + FLAG_TO_LOGSIZE(FLAG:原木種類) * 2)
+		WOODYARD_M:(WOOD_NUM(FLAG:原木種類)) += LOG_LUMBERING(FLAG:原木種類)
 		FLAG:原木種類 = 0
 		CALL WOOD_V_RESET
 	;出售木材/青竹
@@ -457,6 +457,8 @@ RETURN 1
 ;-------------------------------------------------
 @LUMBERING_CMCOST(FLAG_L, Num = 1)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM FLAG_L
 #DIM 費用ベース
 #DIM Num
@@ -483,6 +485,8 @@ RETURNF 費用ベース
 ;-------------------------------------------------
 @LUMBERING(FLAG_L, Craft, Type, Num = 1)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM FLAG_L
 #DIM 費用ベース
 #DIM 製材数
@@ -495,7 +499,7 @@ IF Type == "QTY"
 	IF FLAG_L == 12
 		製材数 = Num
 	ELSE
-		製材数 = 1 + FLAG_TO_LOGSIZE(FLAG_L) * 2
+		製材数 = LOG_LUMBERING(FLAG_L)
 	ENDIF
 	RETURNF 製材数
 ENDIF
@@ -512,9 +516,21 @@ ENDSELECT
 RETURNF 費用ベース
 
 ;-------------------------------------------------
+;原木转为制材数计算
+;-------------------------------------------------
+@LOG_LUMBERING(FLAG_L)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM FLAG_L
+RETURNF 1 + FLAG_TO_LOGSIZE(FLAG_L) * 2
+
+;-------------------------------------------------
 ;製材結果の表示など
 ;-------------------------------------------------
 @LogRefine(Craft, FLAG_L, Num = 1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS Craft
 #DIM FLAG_L
 #DIM 候補番号
