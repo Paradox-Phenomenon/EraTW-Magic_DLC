@@ -3,7 +3,7 @@ import glob
 import xml.etree.ElementTree as ET
 import os
 
-CSV_EXCEPT = ["list.csv", "tokei.csv", "eikianim.csv", "EagloV_11.csv", "EagloV_22.csv", "EagloV_49.csv", "EagloV_61.csv", "EagloV_62.csv", "EagloV_72.csv", "EagloV_断面.csv", "xray.csv", "拼接.csv", "30.csv"]
+CSV_EXCEPT = ["list.csv", "tokei.csv", "eikianim.csv", "EagloV_11.csv", "CATBURGER.csv", "EagloV_49.csv", "EagloV_61.csv", "EagloV_62.csv", "EagloV_72.csv", "EagloV_断面.csv", "xray.csv", "拼接.csv", "30.csv"]
 
 def GetParams(row, base):
     ret = { "name":row[0], "src":base+row[1] }
