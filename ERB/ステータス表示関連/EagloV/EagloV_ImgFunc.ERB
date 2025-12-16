@@ -266,7 +266,7 @@ ELSEIF LOCAL == 1
 	RETURNF "胖次"
 ELSEIF LOCAL == 2
 	RETURNF "胸罩"
-ELSEIF LOCAL == 3 && GROUPMATCH(CFLAG:ARG:衣装一時変更,0,100)
+ELSEIF LOCAL == 3 ;&& GROUPMATCH(CFLAG:ARG:衣装一時変更,0,100)
 	RETURNF "内衣"
 ELSE
 	RETURNF "服"
@@ -301,19 +301,20 @@ RETURNF ""
 ;}
 
 ; 表情判定{
-@EagloV_表情判定(ARG, Version)
+@EagloV_表情判定(ARG, Version,ARG:1)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIMS Version
 #DIM 曾無自覚絶頂数,300
 RESULTS:0 = 
 RESULTS:1 = 
-
-TRYCCALLFORM EagloV_特殊表情%Version%_{ARG}
-	SIF RESULT
-		RETURN
-CATCH
-ENDCATCH
+IF !ARG:1
+	TRYCCALLFORM EagloV_特殊表情%Version%_{ARG}
+		SIF RESULT
+			RETURN
+	CATCH
+	ENDCATCH
+ENDIF
 
 LOCAL = 曾無自覚絶頂数:ARG
 曾無自覚絶頂数:ARG = EX:ARG:無自覚Ｃ絶頂 + EX:ARG:無自覚Ｖ絶頂 + EX:ARG:無自覚Ａ絶頂 + EX:ARG:無自覚Ｂ絶頂 + EX:ARG:無自覚Ｍ絶頂
@@ -995,8 +996,16 @@ RETURN 0
 #DIMS 妊肚
 #DIMS 乳量
 IF 妊肚 != ""
+	IF SPRITECREATED(@"%Version%EagloV{CHARA}_裸腹_%乳量%_%妊肚%")
+		RESULTS = %@"%Version%EagloV{CHARA}_裸腹_%乳量%_%妊肚%"%
+		RETURN 1
+	ENDIF
 	IF SPRITECREATED(@"%Version%EagloV{CHARA}_裸腹_%乳量%_妊肚")
 		RESULTS = %@"%Version%EagloV{CHARA}_裸腹_%乳量%_妊肚"%
+		RETURN 1
+	ENDIF
+	IF SPRITECREATED(@"%Version%EagloV{CHARA}_裸腹_%妊肚%")
+		RESULTS = %@"%Version%EagloV{CHARA}_裸腹_%妊肚%"%
 		RETURN 1
 	ENDIF
 	IF SPRITECREATED(@"%Version%EagloV{CHARA}_裸腹_妊肚")
@@ -2628,6 +2637,7 @@ SIF 内衣差分暂存:0 != ""
 	CALL 画像合成(G_ID, 内衣差分暂存:0)
 IF 内衣差分暂存:1 != ""
 	CALL 画像合成(G_ID, 内衣差分暂存:1)
+ELSEIF NUDITYCHECK(CHARA) == 3 && EQUIP:CHARA:0 ;不露
 ELSE
 	CALL EagloV_GET_裸胸差分(Version, CHARA, 乳量)
 	SIF RESULT
