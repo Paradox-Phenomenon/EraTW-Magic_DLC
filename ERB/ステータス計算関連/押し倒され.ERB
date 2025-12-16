@@ -85,8 +85,8 @@ IF !CHK_DATENOW(CFLAG:TARGET:约会中)
 	;抱きつきが優先の場合
 	IF 抱きつき優先
 		IF !CFLAG:诶嘿嘿 && TFLAG:102 != 3 && 抱きつき値 >= RAND:250 + 250 && TCVAR:抱きつき禁止時間 <= 0
-			;室外では抱きつかれない
-			IF (!HITOKE() && INROOM(CFLAG:MASTER:現在位置) && AT_HOME(MASTER)) || CFLAG:MASTER:現在位置 == OMANEKIBEYA()
+			;角色发动逆推的条件：1四下无人（指从角色和玩家的所在地，察觉不到其他角色；现已追加，如果是在自己家，则不会检查能否观察到室外的情况）；2在室内（这一点也许可以斟酌）；3在据点，外出时不行；4被招待时特殊处理，因为是私密空间；现已追加，在旅馆也一样可以
+			IF ((!HITOKE() || GROUPMATCH(CFLAG:MASTER:現在位置,CFLAG:初期位置,CFLAG:MASTER:初期位置)) && INROOM(CFLAG:MASTER:現在位置) && AT_HOME(MASTER)) || GROUPMATCH(CFLAG:MASTER:現在位置,OMANEKIBEYA(),GET_MAP_REPLACEMENT(P935情人旅館),GET_MAP_REPLACEMENT(P225情人用宿屋))
 				;同室にいるのが1人のみの場合(抱きつきは複数人不可)
 				IF GET_TARGETNUM() == 1
 					PRINTL
@@ -109,8 +109,8 @@ IF !CHK_DATENOW(CFLAG:TARGET:约会中)
 	;被逆推が優先の場合
 	ELSE
 		IF ((!CFLAG:诶嘿嘿 && TFLAG:102 != 3) || (TFLAG:102 == 3 && TFLAG:抱住模式)) && 被逆推値 >= RAND:300 + 300
-			;室外では被逆推ない
-			IF (!HITOKE() && INROOM(CFLAG:MASTER:現在位置) && AT_HOME(MASTER)) || CFLAG:MASTER:現在位置 == OMANEKIBEYA()
+			;角色发动逆推的条件：1四下无人（指从角色和玩家的所在地，察觉不到其他角色；现已追加，如果是在自己家，则不会检查能否观察到室外的情况）；2在室内（这一点也许可以斟酌）；3在据点，外出时不行；4被招待时特殊处理，因为是私密空间；现已追加，在旅馆也一样可以
+			IF ((!HITOKE() || GROUPMATCH(CFLAG:MASTER:現在位置,CFLAG:初期位置,CFLAG:MASTER:初期位置)) && INROOM(CFLAG:MASTER:現在位置) && AT_HOME(MASTER)) || GROUPMATCH(CFLAG:MASTER:現在位置,OMANEKIBEYA(),GET_MAP_REPLACEMENT(P935情人旅館),GET_MAP_REPLACEMENT(P225情人用宿屋))
 				;同室にいるのが1人のみの場合または複数人に被逆推たとき
 				IF GET_TARGETNUM() == 1 || 複数被逆推() == 1
 					;被逆推ない効果
@@ -562,7 +562,7 @@ SIF RAND(1000) <= LOCAL:0
 RETURNF 0
 
 @HITOKE(同室チェック)
-;MASTERの位置から見て他的房間にだれかいるかどうか
+;MASTERの位置から見て他の部屋にだれかいるかどうか
 ;同室チェックの場合、同室に複数人いる場合も真
 #FUNCTION
 #DIM 同室チェック
@@ -571,7 +571,7 @@ SIF 同室チェック && FINDELEMENT(TARGET, 0) - 1 > 1
 ;公共の場
 SIF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_公共の場
 	RETURNF 1
-SIF TFLAG:描写中の兒童
+SIF nChildrenAwake ;qol custom code
 	RETURNF 1
 FOR LOCAL,1,CHARANUM
 	SIF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置
