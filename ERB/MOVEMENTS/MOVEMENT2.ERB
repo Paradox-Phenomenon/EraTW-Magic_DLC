@@ -49,8 +49,8 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 		;诶嘿嘿中は非表示
 		SIF !CFLAG:ARG:诶嘿嘿
 			PRINTFORMW %帰宅理由%%CALLNAME:ARG%和你的约会到此为止。
-		;自宅にいる時,待客室にいる時は诶嘿嘿していない時
-		IF CFLAG:ARG:現在位置 == CFLAG:ARG:自宅位置 || (CFLAG:ARG:現在位置 == OMANEKIBEYA() && !CFLAG:ARG:诶嘿嘿)
+		;自宅にいる時,待客室にいる時は诶嘿嘿していない時    在自宅或在待客室，且没有在诶嘿嘿时
+		IF (CFLAG:ARG:現在位置 == CFLAG:ARG:自宅位置 && (!GMF_GETBIT("幻想乡大地图") || GMF_IS_ODEKAKE(-1))) || (CFLAG:ARG:現在位置 == OMANEKIBEYA() && !CFLAG:ARG:诶嘿嘿)
 			;帰宅口上,3,玄関先で見送り
 			CALL KOJO_MESSAGE_SEND("EVENT", 20, ARG, 3)
 		;通常の约会中
@@ -102,7 +102,7 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CFLAG:MASTER:睡眠 &
 	ENDIF
 	IF CFLAG:(ARG):诶嘿嘿 > 0 || CHK_DATENOW(CFLAG:(ARG):约会中)
 		;修改了大量判定
-		CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+		CFLAG:ARG:约会中 = MAIN_MAP
 		FOR LOCAL,1,CHARANUM
 			;お招き中は継続
 			SIF CFLAG:MASTER:お招き != LOCAL && CFLAG:LOCAL:うふふ
@@ -135,6 +135,9 @@ IF !TCVAR:ARG:休憩中 && !CFLAG:ARG:招待
 	ENDIF
 ENDIF
 
+;幻想乡大地图，移动逻辑修改
+SIF GMF_GETBIT("幻想乡大地图")
+	CALL GMF_KITAKU(ARG)
 
 @被从寝室赶了出来(ARG)
 #LOCALSIZE 1
@@ -206,6 +209,11 @@ ELSE
 	CFLAG:ARG:現在位置 = KICKOUT()
 	;角色を動かしたのでTARGET再設定
 ENDIF
+
+;幻想乡大地图，移动逻辑修改
+SIF GMF_GETBIT("幻想乡大地图")
+	CALL GMF_BATH_KICKOUT(ARG)
+
 CFLAG:ARG:好感度 = MAX(CFLAG:ARG:好感度,0)
 CFLAG:ARG:信賴度 = MAX(CFLAG:ARG:信賴度,0)
 CALL TARGETSET_CHECK
@@ -242,7 +250,7 @@ ELSEIF CHK_DATENOW(CFLAG:ARG:约会中)
 	IF CFLAG:ARG:神社在住
 		;住宿人物は睡眠時間になったら约会終了    住宿人物到了睡眠时间约会结束
 		IF 睡眠時間(ARG)
-			CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+			CFLAG:ARG:约会中 = MAIN_MAP
 			FLAG:约会的对象 = 0
 			SIF MOREDATE
 				CALL REMOVE_FROM_GROUP_DATE(ARG)
@@ -273,7 +281,7 @@ ENDIF
 ;因为活动前也开始配置角色了，所以如果是起床时间，就让他们出门。
 IF CFLAG:ARG:神社在住
 	CFLAG:ARG:現在位置 = 97 + MAIN_MAP * 100
-	CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+	CFLAG:ARG:约会中 = MAIN_MAP
 	FLAG:约会的对象 = 0
 	TFLAG:约会前好感度 = 0
 	SIF MOREDATE
@@ -291,7 +299,7 @@ ELSE
 	;住宿人物は識別するために現在位置97を使ってるので要注意（MOVEMENT2のSLEEPへ続く）    为识别住宿人员，目前使用位置97，请注意（接MOVEMENT2的SLEEP）
 	ELSE
 		CFLAG:ARG:現在位置 = SUKIMA()
-		CFLAG:ARG:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+		CFLAG:ARG:约会中 = MAIN_MAP
 		FLAG:约会的对象 = 0
 		TFLAG:约会前好感度 = 0
 		SIF MOREDATE
@@ -322,6 +330,10 @@ IF !MOREDATE || (MOREDATE && CFLAG:MASTER:お招き == ARG) ; need to always run
 	CFLAG:MASTER:現在位置 = 出口
 	CALL MOREDATES_HOUSE_EXIT(出口)
 ENDIF
+
+;幻想乡大地图，移动逻辑修改
+SIF GMF_GETBIT("幻想乡大地图")
+	CALL GMF_RECEPTION_ROOM_OUT(ARG)
 
 @OneNightStay(ARG)
 #LOCALSIZE 3
