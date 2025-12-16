@@ -6,9 +6,16 @@
 #DIM 浮気
 #DIM 嫉妬
 
-;別の子と约会中
-IF FLAG:约会的对象 != TARGET && FLAG:约会的对象 != 0
-	PRINTFORM 虽然想进入%OMANEKI_PLACE()%、却被%CALLNAME:(FLAG:约会的对象)%死死地用眼神睨视着
+;別の子とデート中
+IF FLAG:デート相手 && ((!MOREDATE && FLAG:デート相手 != TARGET) || (MOREDATE && !IS_IN_GROUP_DATE(TARGET))) && GET_UWAKI_HISTORY(FLAG:デート相手, TARGET) != 2 ;custom code
+	PRINTFORMW 虽然想进入%OMANEKI_PLACE()%、却被%CALLNAME:(FLAG:デート相手)%死死地瞪着
+	RETURN -1
+ENDIF
+
+;com custom code
+IF BASE:怒り > 50
+	PRINTFORML 你提议想去%OMANEKI_PLACE()%坐坐，但%CALLNAME:TARGET%皱着眉头拒绝了。
+	PRINTFORMW 看来她还是很生气……
 	RETURN -1
 ENDIF
 
@@ -35,6 +42,8 @@ IF 嫉妬 || 浮気
 	RETURN -1
 ENDIF
 TIME += 1
+SIF MOREDATE && FLAG:デート相手 ;if in middle of a date, keep dating
+	HouseInvitationStatus = 0
 CALL OMANEKI_ENTER(TARGET)
 
 RETURN 1
@@ -48,6 +57,9 @@ RETURN 1
 ;一括管理
 SIF GLOBAL_COMABLE(698)
 	RETURN RESULT
+;仕事中
+SIF CFLAG:行動 == 5
+	RETURN 0
 ;自宅にいない
 SIF CFLAG:MASTER:現在位置 != CFLAG:自宅位置
 	RETURN 0
@@ -55,18 +67,18 @@ SIF CFLAG:MASTER:現在位置 != CFLAG:自宅位置
 SIF !CHK_DATENOW(CFLAG:MASTER:约会中)
 	RETURN 0
 IF HOMEWEL == 0
-	;仕事中
-	SIF CFLAG:行動 == 5
-		RETURN 0
-	;とりあえず恋慕だけ条件　発情も追加
-	SIF !TALENT:恋慕 && !TCVAR:TARGET:発情 && TALENT:炮友 != 2 && FLAG:催眠強度 <= 49
-		RETURN 0
-	;別の子と约会中,面白いので指令は実行できるように
-	;SIF FLAG:约会的对象 != TARGET && FLAG:约会的对象 != 0
+;とりあえず恋慕だけ条件　発情も追加
+;SIF !TALENT:恋慕 && !TCVAR:TARGET:発情 && TALENT:セフレ != 2
+	;RETURN 0
+;custom code, tweaked condition to be more forgiving and clear
+SIF !IS_FALLEN(TARGET) && TALENT:セフレ != 2 && !TCVAR:TARGET:発情 && !(TCVAR:誘惑時刻 && CFLAG:溜まってる度 >= 800) && FLAG:催眠強度 <= 49
+	RETURN 0
+	;別の子とデート中,面白いのでコマンドは実行できるように
+	;SIF FLAG:デート相手 != TARGET && FLAG:デート相手 != 0
 	;	RETURN 0
 	;怒ってたらだめ（バグ回避用でもある）
-	SIF BASE:憤怒 > 50
-		RETURN 0
+	;SIF BASE:怒り > 50 ;com custom code, cancel out with a notification instead
+	;	RETURN 0
 	;睡眠中
 	SIF CFLAG:睡眠
 		RETURN 0
@@ -95,7 +107,11 @@ CFLAG:ARG:初期位置 = OMANEKIBEYA()
 CFLAG:ARG:現在位置 = OMANEKIBEYA()
 CFLAG:MASTER:現在位置 = OMANEKIBEYA()
 
-;部屋的污垢具合
+IF MOREDATE && NumberOfDates > 1 ; omaneki gets called before actually ending the date so checking the number should be fine
+	CALL MOREDATES_HOUSE_VISIT(ARG)
+ENDIF
+
+;部屋の汚れ具合
 ;一度入っていたら参照する
 IF TCVAR:ARG:待客室的污垢 > 0
 	YOGORE:(OMANEKIBEYA()) = TCVAR:ARG:待客室的污垢

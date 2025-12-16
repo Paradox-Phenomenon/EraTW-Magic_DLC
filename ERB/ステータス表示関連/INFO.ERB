@@ -645,28 +645,28 @@ IF !TFLAG:PALAM非表示
 		; SIF LOCAL <= 4 && EX:TARGET:(LOCAL + 20)
 		; 	SETCOLOR C_YELLOW
 		; 若寸止重数 > 1，则用不同颜色表示
-        IF LOCAL <= 4 && EX:TARGET:(LOCAL + 20)
-            SELECTCASE (EX:TARGET:(LOCAL + 20))
-                CASE 1
-                    SETCOLOR 0xFFFF00  ; Yellow
-                CASE 2
-                    SETCOLOR 0xFFBF00  ; Yellow-Orange
-                CASE 3
-                    SETCOLOR 0xFF7F00  ; Orange
-                CASE 4
-                    SETCOLOR 0xFF3F00  ; Orange-Red
-                CASE 5
-                    SETCOLOR 0xFF0000  ; Red
-                CASE 6
-                    SETCOLOR 0xFF006F  ; Red-Pink
-                CASE 7
-                    SETCOLOR 0xFF00BF  ; Pink
-                CASE 8
-                    SETCOLOR 0xDF00BF  ; Pink-Purple
-                CASEELSE
-                    SETCOLOR 0xBF00BF  ; Purple
-            ENDSELECT
-        ENDIF
+		IF LOCAL <= 4 && EX:TARGET:(LOCAL + 20)
+			SELECTCASE (EX:TARGET:(LOCAL + 20))
+				CASE 1
+					SETCOLOR 0xFFFF00  ; Yellow
+				CASE 2
+					SETCOLOR 0xFFBF00  ; Yellow-Orange
+				CASE 3
+					SETCOLOR 0xFF7F00  ; Orange
+				CASE 4
+					SETCOLOR 0xFF3F00  ; Orange-Red
+				CASE 5
+					SETCOLOR 0xFF0000  ; Red
+				CASE 6
+					SETCOLOR 0xFF006F  ; Red-Pink
+				CASE 7
+					SETCOLOR 0xFF00BF  ; Pink
+				CASE 8
+					SETCOLOR 0xDF00BF  ; Pink-Purple
+				CASEELSE
+					SETCOLOR 0xBF00BF  ; Purple
+			ENDSELECT
+		ENDIF
 		PRINTFORM  %PALAM_TR(PALAMNAME:LOCAL)%Lv{GETPALAMLV(PALAM:LOCAL,15),2}
 		RESETCOLOR
 		IF GETPALAMLV(PALAM:LOCAL,15) >= 15
@@ -1446,7 +1446,34 @@ IF FLAG:自室施錠
 	PRINTFORM 　<已锁门>　
 	RESETCOLOR
 ENDIF
-IF NEMUKE() > 720
+IF FLAG:约会的对象
+	SETCOLOR 255,51,153
+	IF MOREDATE && NumberOfDates > 1
+		CALL MOREDATES_HUD_INFO
+	ELSE
+		IF CFLAG:(FLAG:约会的对象):現在位置 == OMANEKIBEYA()
+			PRINTFORM   <\@ TFLAG:泡風呂 ? 接受%CALLNAME:(FLAG:约会的对象)%的私人服务 # 拜访%CALLNAME:(FLAG:约会的对象)%的房间 \@中>
+		ELSEIF TEQUIP:MASTER:SWIMMING
+			PRINTFORM   <和%CALLNAME:(FLAG:约会的对象)%约会中玩水>
+		ELSE
+			PRINTFORM   <和%CALLNAME:(FLAG:约会的对象)%约会中>
+		ENDIF
+	ENDIF
+	RESETCOLOR
+	;MASTERの眠気が限界に近いなら警告
+ELSEIF TEQUIP:MASTER:SWIMMING
+	PRINTFORM <%COND_STR(@"和%CALLNAME:(TFLAG:ComPartner)%", TFLAG:ComPartner)%游泳中>
+ENDIF
+IF CFLAG:MASTER:デート中 != MAIN_MAP && CFLAG:MASTER:現在位置 != OMANEKIBEYA()
+	SELECTCASE NEMUKE()
+		CASE IS > 690
+			CALL COLORMESSAGE("　<马上就得回去了>", C_D_ORANGE)
+		CASE IS > 660
+			CALL COLORMESSAGE("　<非常疲惫了>", C_YELLOW)
+		CASE IS > 600
+			CALL COLORMESSAGE("　<累了>", C_P_YELLOW)
+	ENDSELECT
+ELSEIF NEMUKE() > 720
 	LOCALS = 睡眠可
 	IF NEMUKE() > 960
 		SETCOLOR C_RED
@@ -1456,41 +1483,22 @@ IF NEMUKE() > 720
 	ELSE
 		SETCOLOR C_P_YELLOW
 	ENDIF
-	SIF CFLAG:MASTER:清醒劑
-		LOCALS += "・清醒剂"
-	PRINTFORML <%LOCALS%>
+	PRINTFORM   <%LOCALS%>
 	RESETCOLOR
-ELSEIF FLAG:约会的对象
-	SETCOLOR 255,51,153
-	IF CFLAG:(FLAG:约会的对象):現在位置 == OMANEKIBEYA()
-		PRINTFORM   <\@ TFLAG:泡風呂 ? 接受%CALLNAME:(FLAG:约会的对象)%的私人服务 # 拜访%CALLNAME:(FLAG:约会的对象)%的房间 \@中>
-	ELSEIF TEQUIP:MASTER:SWIMMING
-		PRINTFORM   <和%CALLNAME:(FLAG:约会的对象)%约会中玩水>
-	ELSE
-		PRINTFORM   <和%CALLNAME:(FLAG:约会的对象)%约会中>
-	ENDIF
-	RESETCOLOR
-	;MASTERの眠気が限界に近いなら警告
-	IF NEMUKE() > 660
-		PRINT (差不多到了该结束的时候了)
-	ENDIF
-	PRINTL
-ELSEIF TEQUIP:MASTER:SWIMMING
-	PRINTFORML <%COND_STR(@"和%CALLNAME:(TFLAG:ComPartner)%", TFLAG:ComPartner)%游泳中>
-ELSEIF CFLAG:MASTER:清醒劑
+ENDIF
+IF CFLAG:MASTER:清醒劑
 	SELECTCASE CFLAG:MASTER:清醒劑
 		CASE IS > 240
-			PRINTL <清醒剂・极>
+			PRINT <清醒剂・极>
 		CASE IS > 180
-			PRINTL <清醒剂・强>
+			PRINT <清醒剂・强>
 		CASE IS > 120
-			PRINTL <清醒剂・中>
+			PRINT <清醒剂・中>
 		CASEELSE
-			PRINTL <清醒剂・弱>
+			PRINT <清醒剂・弱>
 	ENDSELECT
-ELSE
-	PRINTL
 ENDIF
+PRINTL
 
 
 
@@ -1504,9 +1512,9 @@ ELSE
 	PRINTFORMS NAME_FROM_PLACE(CFLAG:MASTER:現在位置)
 	SIF FamilyHotel == 2
 		CALL FamilyHotel_GPS_Info
-	;木浴缸設置場所はそれとわかるように
+	;桧木浴室設置場所はそれとわかるように
 	SIF NEAR_BATH() == CFLAG:MASTER:現在位置
-		PRINTFORMS " <木浴缸Lv{ITEM:木浴缸}>"
+		PRINTFORMS " <桧木浴室Lv{ITEM:桧木浴室}>"
 	;私室にいる時、家具シリーズの表記
 	IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
 		SIF ITEM:桐木床
@@ -2077,9 +2085,9 @@ ELSEIF !DATE
 	TIMEUP_MESSAGE:2 = 0
 ENDIF
 IF CFLAG:TARGET:340 >= 3500 && TARGET!= MASTER
-	CALL COLORMESSAGE(@"面色绯红的%CALLNAME:TARGET%正在竭力站稳...", C_RED, 2)
+	CALL COLORMESSAGE(@"面色绯红的%CALLNAME:TARGET%正在竭力站稳…", C_RED, 2)
 ELSEIF CFLAG:TARGET:340 >= 1500 && TARGET!= MASTER
-	CALL COLORMESSAGE(@"%CALLNAME:TARGET%的身体正在微微颤抖...", C_ORANGE, 2)
+	CALL COLORMESSAGE(@"%CALLNAME:TARGET%的身体正在微微颤抖…", C_ORANGE, 2)
 ENDIF
 IF NEMUKE() > 960 && !TIMEUP_MESSAGE:3 && !CFLAG:MASTER:诶嘿嘿
 	CALL COLORMESSAGE("想睡觉了…", C_RED, 2)

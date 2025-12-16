@@ -1114,6 +1114,8 @@ PRINTFORML %LOCALS%%"-"*(MAXWIDTH()-LOCAL)%
 ;==============================================
 @UPDATE_MAIN_IMAGESETS
 ;Img_Detected detects how many characters have new alts and doubles as CharaNum's real size (how many slots actually hold values)
+#LOCALSIZE 4
+#LOCALSSIZE 1
 #DIM C_ID
 #DIM Img_Detected
 #DIM Img_CharaNum, 人物数量上限
@@ -1144,18 +1146,20 @@ IF Img_Detected > 9
 	CLEARLINE 1
 ELSEIF Img_Detected
 	PRINTL 
-	PRINTFORML 检测到这些角色有新的可选立绘：
+	PRINTFORML 检测到这些角色有可选立绘变动：
 ELSE
 	RETURN
 ENDIF
 FOR LOCAL, 0, Img_Detected
 	CALL SET_KOJO_COLOR(Img_CharaNum:LOCAL)
-	PRINTFORML %CALLNAME:(Img_CharaNum:LOCAL)%
+	PRINTFORML %CALLNAME:(Img_CharaNum:LOCAL)% {CFLAG:(Img_CharaNum:LOCAL):別顔有+1} → {IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL)+1}
 	RESETCOLOR
 	
 	;get the new amount of alternate sets
-	Count_Sets = CFLAG:(Img_CharaNum:LOCAL):別顔有 < IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL) ? IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL) # 0
-
+	;Count_Sets = CFLAG:(Img_CharaNum:LOCAL):別顔有 < IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL) ? IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL)
+	Count_Sets = IMG_ALTERNATE_SETS:(Img_CharaNum:LOCAL)
+	CFLAG:((Img_CharaNum:LOCAL)):別顔有 = Count_Sets
+	CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = Count_Sets
 	SIF !Count_Sets
 		CONTINUE
 	VARSET Resources_Face
@@ -1179,8 +1183,6 @@ FOR LOCAL, 0, Img_Detected
 		NEXT
 	ENDIF
 
-	CFLAG:((Img_CharaNum:LOCAL)):別顔有 = Count_Sets
-	CFLAG:((Img_CharaNum:LOCAL)):別立ち有 = Count_Sets
 	SIF LOCAL:3
 		CONTINUE
 	;display portraits

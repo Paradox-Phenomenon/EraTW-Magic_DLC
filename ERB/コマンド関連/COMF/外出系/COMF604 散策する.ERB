@@ -1,4 +1,4 @@
-﻿@COM604
+@COM604
 #DIM LPCOUNT
 #DIM 現在地点
 #DIM P_ID
@@ -131,6 +131,12 @@ ELSEIF 特殊ワープ && RESULT == 特殊ワープ
 	IF FLAG:约会的对象
 		CFLAG:(FLAG:约会的对象):現在位置 = P_ID
 		CFLAG:(FLAG:约会的对象):约会中 = GET_MAPID(P_ID)
+		IF MOREDATE
+			FOR LOCAL:10, 0, NumberOfDates
+				CFLAG:(Datees:(LOCAL:10)):現在位置 = P_ID
+				CFLAG:(Datees:(LOCAL:10)):デート中 = GET_MAPID(P_ID)
+			NEXT
+		ENDIF
 	ENDIF
 	RETURN 1
 ELSEIF RESULT == 1234
@@ -282,33 +288,44 @@ SELECTCASE ARG
 		IF !FLAG:约会的对象
 			PRINTW 没办法一个人去
 			RETURN 0
-		ELSEIF MONEY < 3000
+		ELSEIF (!MOREDATE && MONEY < 3000) || (MOREDATE && MONEY < (1500 + 1500 * (NumberOfDates)))
 			PRINTW 金钱不足
 			RETURN 0
 		ENDIF
-		SIF !GETBIT(CFLAG:(FLAG:约会的对象):既成事實 , 1) && !TALENT:(FLAG:约会的对象):合意誤認
-			CALL 抱き寄せ(FLAG:约会的对象)
-		IF TCVAR:(FLAG:约会的对象):初次拥抱 >= 6 && !TCVAR:(FLAG:约会的对象):烂醉 && !CFLAG:(FLAG:约会的对象):败犬
-				PRINTFORMW %CALLNAME:(FLAG:约会的对象)%拒绝一起入内
-				SIF TCVAR:(FLAG:约会的对象):初次拥抱 == 6
-					PRINTFORMW 但是%CALLNAME:(FLAG:约会的对象)%看起来并不是不高兴的样子
-			RETURN 0
-		ELSE
-			PRINTFORML 要花%金额表示(3000)%。可以么？
-			CALL ASK_YN
-			CFLAG:(FLAG:约会的对象):诶嘿嘿 = 0
-			CFLAG:MASTER:诶嘿嘿 = 0
-			IF RESULT == 0
-				MONEY -= 3000
-				IF TCVAR:(FLAG:约会的对象):烂醉
-					PRINTFORMW 趁着%CALLNAME:(FLAG:约会的对象)%头脑朦胧的时机、%CALLNAME:MASTER%把她带进了%NAME_FROM_PLACE(ARG)%
-				ELSEIF CFLAG:(FLAG:约会的对象):败犬
-					PRINTFORMW %CALLNAME:MASTER%把不情愿的%CALLNAME:(FLAG:约会的对象)%拉近了%NAME_FROM_PLACE(ARG)%
-				ELSE
-					PRINTFORMW %CALLNAME:MASTER%和%CALLNAME:(FLAG:约会的对象)%一起进入了%NAME_FROM_PLACE(ARG)%
-				ENDIF
-			ELSE
+		IF MOREDATE && NumberOfDates > 1
+			CALL MOREDATES_LOVEHOTEL_ASK(ARG)
+			SIF !RESULT
 				RETURN 0
+		ELSE
+			IF !GETBIT(CFLAG:(FLAG:デート相手):既成事実 , 1) && !TALENT:(FLAG:デート相手):合意誤認 ;qol custom code
+				PRINTFORML 确定要邀请去情侣酒店吗？
+				CALL ASK_YN
+				SIF RESULT
+					RETURN 0
+			CALL 抱き寄せ(FLAG:约会的对象)
+			ENDIF
+			IF TCVAR:(FLAG:约会的对象):初次拥抱 >= 6 && !TCVAR:(FLAG:约会的对象):烂醉 && !CFLAG:(FLAG:约会的对象):败犬
+					PRINTFORMW %CALLNAME:(FLAG:约会的对象)%拒绝一起入内
+					SIF TCVAR:(FLAG:约会的对象):初次拥抱 == 6
+						PRINTFORMW 但是%CALLNAME:(FLAG:约会的对象)%看起来并不是不高兴的样子
+				RETURN 0
+			ELSE
+				PRINTFORML 要花%金额表示(3000)%。可以么？
+				CALL ASK_YN
+				CFLAG:(FLAG:约会的对象):诶嘿嘿 = 0
+				CFLAG:MASTER:诶嘿嘿 = 0
+				IF RESULT == 0
+					MONEY -= 3000
+					IF TCVAR:(FLAG:约会的对象):烂醉
+						PRINTFORMW 趁着%CALLNAME:(FLAG:约会的对象)%头脑朦胧的时机、%CALLNAME:MASTER%把她带进了%NAME_FROM_PLACE(ARG)%
+					ELSEIF CFLAG:(FLAG:约会的对象):败犬
+						PRINTFORMW %CALLNAME:MASTER%把不情愿的%CALLNAME:(FLAG:约会的对象)%拉近了%NAME_FROM_PLACE(ARG)%
+					ELSE
+						PRINTFORMW %CALLNAME:MASTER%和%CALLNAME:(FLAG:约会的对象)%一起进入了%NAME_FROM_PLACE(ARG)%
+					ENDIF
+				ELSE
+					RETURN 0
+				ENDIF
 			ENDIF
 		ENDIF
 ENDSELECT

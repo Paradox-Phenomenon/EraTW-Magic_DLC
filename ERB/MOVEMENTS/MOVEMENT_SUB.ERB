@@ -272,7 +272,7 @@ IF CFLAG:ARG:来訪不能
 ENDIF
 ;お泊まりすると起きる現象    入住后会出现的现象
 IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG:约会中) && !TALENT:ARG:路人
-	IF CFLAG:ARG:態度 && !FLAG:约会的对象
+	IF CFLAG:ARG:態度 && (MOREDATE || (!MOREDATE && !FLAG:デート相手))
 		PRINTFORMW %CALLNAME:ARG%想要去%GET_MAPNAME(MAIN_MAP)%
 		PRINTL [1] - 邀请约会
 		PRINTL [2] - 一起回去
@@ -280,6 +280,9 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG
 		INPUT
 		IF RESULT == 1
 			PRINTFORMW 决定和%CALLNAME:ARG%约会了
+			;Group date check
+			SIF MOREDATE
+				CALL ADD_TO_GROUP_DATE(ARG)
 			CFLAG:MASTER:同行 = 60
 			CFLAG:ARG:同行 = 60
 			CFLAG:ARG:约会中 = CFLAG:MASTER:現在位置 / 100
@@ -288,7 +291,13 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG
 		ELSEIF RESULT == 2
 			PRINTFORMW 决定带%CALLNAME:ARG%一起回去
 			CALL 帰宅の時間経過
-			CALL SET_DATE(99,ARG)
+			;Group date check
+			IF MOREDATE
+				CALL ADD_TO_GROUP_DATE(ARG)
+				CALL SET_DATES(99, Datees, NumberOfDates)
+			ELSE
+				CALL SET_DATE(99,ARG)
+			ENDIF
 			CFLAG:ARG:現在位置 = ENTRANCE
 			CFLAG:MASTER:現在位置 = ENTRANCE
 			CFLAG:ARG:约会中 = MAIN_MAP
@@ -379,6 +388,8 @@ IF !CFLAG:ARG:诶嘿嘿 || WORKING(ARG) || (CFLAG:ARG:诶嘿嘿 == 2 && CFLAG:AR
 		FLAG:约会的对象 = 0
 		TFLAG:约会前好感度 = 0
 		CFLAG:ARG:同行 = 0
+		SIF MOREDATE
+			CALL REMOVE_FROM_GROUP_DATE(ARG)
 	ENDIF
 
 	;宴会の片付け予定が入っている角色は手が空き次第片付け開始    负责宴会收拾工作的人员一有空就立即开始收拾

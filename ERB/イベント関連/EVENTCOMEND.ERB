@@ -18,10 +18,12 @@
 SETANIMETIMER 32627
 CALL TURN_RESET
 
-SIF FLAG:宴会開催FLAG > 0
+;addition custom code, new banquet system
+;CALL ADD_BANQUET_ARRIVAL
+SIF FLAG:宴会開催フラグ > 0
 	CALL ENKAI_SINKOU
 
-SIF TFLAG:102 < 2 && TARGET && SHIRAHU(TARGET) && (!FLAG:70 || CFLAG:TARGET:344 == 1)
+SIF TFLAG:102 < 2 && TARGET && SHIRAHU(TARGET) && (!FLAG:70 || CFLAG:TARGET:344 == 1) && !CFLAG:ディレイ ;addition custom code, delay affects confiscation
 	CALL ボッシュート
 IF BASE:MASTER:酒気 >= MAXBASE:MASTER:酒気
 	;AT_HOMEみるだけでも良いかもしれない
@@ -116,7 +118,8 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 			CFLAG:MASTER:現在位置 = CFLAG:MASTER:311
 			FLAG:気絶中断 = 0
 		ENDIF
-	ELSEIF TARGET > 0 && TALENT:TARGET:恋慕 && BASE:TARGET:体力 >= 500 && !CFLAG:TARGET:睡眠 && !CFLAG:MASTER:陪睡中 && ((CFLAG:TARGET:同行 && CHK_DATENOW(CFLAG:MASTER:约会中)) || !CHK_DATENOW(CFLAG:MASTER:约会中))
+	;custom code, added favor check since there are many instances of dialogue for this event without the lover talent
+	ELSEIF TARGET > 0 && (TALENT:TARGET:恋慕 || CFLAG:好感度 >= 1500) && BASE:TARGET:体力 >= 500 && !CFLAG:TARGET:睡眠 && !CFLAG:MASTER:陪睡中 && ((CFLAG:TARGET:同行 && CHK_DATENOW(CFLAG:MASTER:约会中)) || !CHK_DATENOW(CFLAG:MASTER:约会中))
 		IF CHK_DATENOW(CFLAG:MASTER:约会中)
 			PRINTFORMW %CALLNAME:TARGET%支撑着%CALLNAME:MASTER%回到了%GET_MAPNAME(MAIN_MAP)%
 		ENDIF
@@ -157,7 +160,9 @@ ELSEIF (BASE:MASTER:体力 <= 500 && !GETBIT(TCVAR:TARGET:随便,0)) || BASE:MAS
 		SIF !BATHCHECK(CFLAG:LOCAL:現在位置) && TEQUIP:LOCAL:浴室PLAY
 			TEQUIP:LOCAL:浴室PLAY = 0
 	NEXT
-;	数値変数が小数点以下を切り捨てる特性を悪用したものがこちら、他の変数を不使用分こちらのほうがいいのかも？
+	SIF MOREDATE
+		CALL CLEAN_GROUP_DATES
+;	数値変数が小数点以下を切り捨てる特性を悪用したものがこちら、他の変数を使わない分こちらのほうがいいのかも？
 	CFLAG:MASTER:约会中 = CFLAG:MASTER:現在位置 / 100
 	TFLAG:106 = 0
 	BEGIN AFTERTRAIN
@@ -265,6 +270,8 @@ IF FLAG:70 == 1
 			NEXT
 			FLAG:约会的对象 = 0
 			TFLAG:约会前好感度 = 0
+			SIF MOREDATE
+				CALL CLEAN_GROUP_DATES
 			TFLAG:106 = 0
 		ELSE
 			CALL FISHER_YATES_SHAFFLE(CHARANUM - 1)
@@ -311,7 +318,8 @@ IF TARGET && BASE:体力 < 500 && !TCVAR:TARGET:休憩中 && CFLAG:睡眠 == 0 &
 			CFLAG:衰弱 = 360
 			FLAG:70 = 0
 			FLAG:约会的对象 = 0
-			TFLAG:约会前好感度 = 0
+			SIF MOREDATE
+				CALL CLEAN_GROUP_DATES
 			;(天候パッチ)時刻・天候に応じて背景色を変更
 			CALL SET_MAP_WEATHER_BGCOLOR
 			RESETBGCOLOR
@@ -340,6 +348,8 @@ IF TARGET && BASE:体力 < 500 && !TCVAR:TARGET:休憩中 && CFLAG:睡眠 == 0 &
 		NEXT
 		FLAG:约会的对象 = 0
 		TFLAG:约会前好感度 = 0
+		SIF MOREDATE
+			CALL CLEAN_GROUP_DATES
 		TFLAG:106 = 0
 	ELSEIF TFLAG:泡風呂
 		CALL 泡風呂終了判定("体力限界")
@@ -351,16 +361,34 @@ IF TARGET && BASE:体力 < 500 && !TCVAR:TARGET:休憩中 && CFLAG:睡眠 == 0 &
 			;(天候パッチ)時刻・天候に応じて背景色を変更
 			CALL SET_MAP_WEATHER_BGCOLOR
 		ENDIF
+		;addition custom code
+		IF CFLAG:うふふ ;add after sex dialogue for tired characters
+			SIF (CHARANUM - CMATCH(CFLAG:うふふ, 0, 1, CHARANUM)) == 1
+				CALL AFTER_AFFAIR
+			SIF CFLAG:うふふ == 1 && (CFLAG:イタズラ < 1 || CFLAG:眠姦口上有)
+				CALL KOJO_MESSAGE_SEND("EVENT",15,TARGET,2,0)
+		ENDIF
+		;--------------------
+		
 		CALL CHARA_SLEEP, TARGET, 1
-		FOR LOCAL,0,CHARANUM
-			CALL ENDUFUFU(LOCAL)
-			CALL SET_PRANK(0,LOCAL,1)
-			SIF LOCAL
-				CFLAG:LOCAL:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
-			CFLAG:LOCAL:同行 = 0
-		NEXT
+
+		;qol custom code, only end sex for exhausted character
+		CALL ENDUFUFU(TARGET)
+		CALL SET_PRANK(0,TARGET,1)
+		CFLAG:TARGET:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+		CFLAG:TARGET:同行 = 0
+
+		;FOR LOCAL,0,CHARANUM
+		;	CALL ENDUFUFU(LOCAL)
+		;	CALL SET_PRANK(0,LOCAL,1)
+		;	SIF LOCAL
+		;		CFLAG:LOCAL:约会中 = GMF_GETBIT("幻想乡大地图") ? -1 # MAIN_MAP
+		;	CFLAG:LOCAL:同行 = 0
+		;NEXT
 		FLAG:约会的对象 = 0
 		TFLAG:约会前好感度 = 0
+		SIF MOREDATE
+			CALL CLEAN_GROUP_DATES
 		TFLAG:106 = 0
 	ENDIF
 ENDIF
@@ -376,8 +404,11 @@ IF GET_EXISTMOB(MAIN_MAP)
 ENDIF
 IF (!FLAG:70 || CFLAG:TARGET:344 == 1) && TARGET
 	IF TALENT:TARGET:動物耳 && CFLAG:TARGET:900 == 7 && !TCVAR:TARGET:発情 && PALAM:TARGET:欲情 >= PALAMLV:5 && !TALENT:TARGET:妊娠
+		;custom code
+		SETCOLOR C_PINK
 		PRINTFORML %CALLNAME:TARGET%脸颊泛红、气息慌乱起来…
 		PRINTFORML 在危险日极度兴奋起来的%CALLNAME:TARGET%好像[发情]了
+		RESETCOLOR
 		TCVAR:TARGET:発情 = 1
 	ENDIF
 ENDIF
@@ -510,7 +541,6 @@ ELSEIF TFLAG:宴会状態 == 98 && DAY >= FLAG:開始日 && TIME >= FLAG:33
 ELSEIF 宴会開催中判定() && FLAG:参加人数 == 0
 	IF CFLAG:MASTER:現在位置 == TFLAG:宴会場
 		PRINTL
-		;PRINTW 宴会はお開きのようです…
 		PRINTW 宴会好像要结束了…
 		PRINTL
 		TFLAG:宴会状態 = 101
@@ -519,7 +549,6 @@ ELSEIF 宴会開催中判定() && FLAG:参加人数 == 0
 	ENDIF
 ELSEIF TFLAG:宴会状態 == 100 && CFLAG:MASTER:現在位置 == TFLAG:宴会場
 	PRINTL
-	;PRINTW もう宴会は終わっているようです…
 	PRINTW 宴会好像已经结束了…
 	PRINTL
 	TFLAG:宴会状態 = 101

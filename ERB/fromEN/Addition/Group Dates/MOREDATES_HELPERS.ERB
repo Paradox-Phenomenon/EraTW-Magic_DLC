@@ -7,18 +7,19 @@
 ;
 ;-------------------------------------
 @IS_IN_GROUP_DATE(ARG)
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTION
-RETURNF FINDELEMENT(Datees, ARG) > -1
+FOR LOCAL, 0, NumberOfDates
+	IF Datees:LOCAL == ARG
+		RETURNF 1
+	ENDIF
+NEXT
+RETURNF 0
 
 ;-------------------------------------
 ; Returns a random character value from the date array
 ;
 ;-------------------------------------
 @GET_RANDOM_DATE()
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTION
 RETURNF Datees:(RAND:NumberOfDates)
 
@@ -54,9 +55,9 @@ FOR LOCAL, 0, FORLIMIT
 	IF !EXCLUDE || (EXCLUDE && NAMELIST:LOCAL != ARG) 
 		returnString = %returnString%%CALLNAME:(NAMELIST:LOCAL)% 
 		IF (LOCAL == FORLIMIT - 2 && PRINTAND)
-			returnString '= @"%returnString% and "
+			returnString '= @"%returnString%和"
 		ELSEIF LOCAL != FORLIMIT - 1
-			returnString '= @"%returnString%, "
+			returnString '= @"%returnString%、"
 		ENDIF
 	ENDIF
 NEXT
@@ -113,10 +114,12 @@ IF NumberOfDates > 1
 	CFLAG:MASTER:同行 = 60 ; some of the remove date codes remove 同行 so let's add it back
 ELSE
 	CFLAG:ARG:デート中 = MAIN_MAP
-	FLAG:デート相手 = 0
-	TFLAG:デート前好感度 = 0
+	IF FLAG:デート相手 == ARG
+		FLAG:デート相手 = 0
+		TFLAG:デート前好感度 = 0
+		CALL CLEAN_GROUP_DATES
+	ENDIF
 	CFLAG:ARG:同行 = 0
-	CALL CLEAN_GROUP_DATES
 ENDIF
 
 ;-------------------------------------
@@ -125,7 +128,7 @@ ENDIF
 ;-------------------------------------
 @CLEAN_GROUP_DATES()
 FOR LOCAL, 0, NumberOfDates
-	CFLAG:(Datees:LOCAL):约会中 = GMF_GETBIT("幻想乡大地图")&&LOCAL ? -1 # MAIN_MAP
+	CFLAG:(Datees:LOCAL):デート中 = MAIN_MAP
 	CFLAG:(Datees:LOCAL):同行 = 0
 	Datees:LOCAL = 0
 	DatesPrevLike:LOCAL = 0
@@ -135,7 +138,7 @@ DatesPrevLike = 0
 NumberOfDates = 0
 CFLAG:MASTER:同行 = 0
 FLAG:デート相手 = 0
-TFLAG:约会前好感度 = 0
+TFLAG:デート前好感度 = 0
 
 ;-------------------------------------
 ; Group date function, takes an array as the parameter, unlike SET_DATE you should never be able to TSP with it
@@ -240,26 +243,26 @@ FOR LOCAL:10, 0, (NumberOfDates + 1)
 	ENDIF
 	PRINTFORML
 	CALL SET_KOJO_COLOR(TARGET)
-	IF PreText == ""
-		PreText '= @"%CAPITALIZE(VERBT_PAST(Add_Custom_COM_Name(EVENTID)))% with "
-	ENDIF
-	IF PostText == ""
-		SELECTCASE RAND:4 ; feel free to expand
-			CASE 0
-				PostTextPrint = , who enjoyed it greatly.
-			CASE 1
-				PostTextPrint = , who had a nice time.
-			CASE 2
-				PostTextPrint = , enjoying %HIS_HER(TARGET)% company.
-			CASE 3
-				PostTextPrint = . It was nice.	
-			CASEELSE
-				PostTextPrint = .
-		ENDSELECT
-	ELSE
-		PostTextPrint = %PostText%
-	ENDIF
-	PRINTFORML %PreText%%CALLNAME:(TARGET)%%PostTextPrint%
+	;IF PreText == ""
+	;	PreText '= @"%Add_Custom_COM_Name(EVENTID)%"
+	;ENDIF
+	;IF PostText == ""
+	;	SELECTCASE RAND:4 ; feel free to expand
+	;		CASE 0
+	;			PostTextPrint = ，她很享受。
+	;		CASE 1
+	;			PostTextPrint = ，她玩得很开心。
+	;		CASE 2
+	;			PostTextPrint = ，享受着%HIS_HER(TARGET)%的陪伴。
+	;		CASE 3
+	;			PostTextPrint = 。很不错。
+	;		CASEELSE
+	;			PostTextPrint = 。
+	;	ENDSELECT
+	;ELSE
+	;	PostTextPrint = %PostText%
+	;ENDIF
+	;PRINTFORML %PreText%%PostTextPrint%
 	IF TARGET != TEMP
 		TRYCALLFORM M_KOJO_MESSAGE_COM_K{TARGET}_{EVENTID}
 	ENDIF

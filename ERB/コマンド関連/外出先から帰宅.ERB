@@ -33,21 +33,21 @@ IF !FLAG:70
 	;(天候パッチ)連続降水Counter20以上で土砂崩れに巻き込まれる可能性
 	IF CONTINUOUS_RAINFALL >= 20 && RAND:(MAX(2, (40 - CONTINUOUS_RAINFALL) / 2)) == 0
 		PRINTFORML …走在路上，从山边传来异响
-		PRINTFORMW ！！ 是泥石流！！
+		CALL COLORMESSAGE("！！ 是泥石流！！",C_RED,2,1)
 
 		PRINTFORML 
 		PRINTFORML %CALLNAME:MASTER%虽然被卷入泥石流
 		PRINTFORML 但还是设法成功逃脱了…
 		PRINTL 
 		CALL ASK_DIARY("遭遇了泥石流")
-		BASE:MASTER:体力 -= (MAXBASE:MASTER:体力 * 3)
+		CALL RECOVER(MASTER,-(MAXBASE:MASTER:体力 * 3),"体力", "遭遇了泥石流") ;qol custom code
 		
 		GOTO WARP2
 	ENDIF
 	;(天候パッチ)雪崩発生フラグが立っているとき雪崩に巻き込まれる可能性
 	IF POSSIBLITY_AVALANCHE == 1 && POWER_COLD_AIR >= 3 && RAND:((6 - POWER_COLD_AIR) * 10) == 0
 		PRINTFORML …走在路上，从山边有什么东西逼近
-		PRINTFORMW ！！ 是雪崩！！
+		CALL COLORMESSAGE("！！ 是雪崩！！",C_RED,2,1)
 
 		PRINTFORML 
 		PRINTFORML %CALLNAME:MASTER%虽然被卷入雪崩
@@ -58,12 +58,12 @@ IF !FLAG:70
 		CONTINUOUS_SNOWFALL = 0
 
 		CALL ASK_DIARY("遭遇了雪崩")
-		BASE:MASTER:体力 -= (MAXBASE:MASTER:体力 * 3)
+		CALL RECOVER(MASTER,-(MAXBASE:MASTER:体力 * 3),"体力", "遭遇了雪崩") ;qol custom code
 
 		GOTO WARP4
 	ELSEIF POSSIBLITY_AVALANCHE == 2 && POWER_WARM_AIR >= 2 && RAND:((6 - POWER_WARM_AIR) * 10) == 0
 		PRINTFORML …走在路上，从山边有什么东西逼近
-		PRINTFORMW ！！ 是雪崩！！
+		CALL COLORMESSAGE("！！ 是雪崩！！",C_RED,2,1)
 
 		PRINTFORML 
 		PRINTFORML %CALLNAME:MASTER%虽然被卷入雪崩
@@ -75,7 +75,7 @@ IF !FLAG:70
 		SNOW_COVERAGE = 0
 
 		CALL ASK_DIARY("遭遇了雪崩")
-		BASE:MASTER:体力 -= (MAXBASE:MASTER:体力 * 3)
+		CALL RECOVER(MASTER,-(MAXBASE:MASTER:体力 * 3),"体力", "遭遇了雪崩") ;qol custom code
 		
 		GOTO WARP5
 	ENDIF
@@ -87,7 +87,7 @@ IF !FLAG:70
 		PRINTFORML 
 		PRINTFORML ……迷路了，多走了{道迷い時間}分钟
 		TIME:0 += 道迷い時間
-		BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - (20 * 道迷い時間), 0)
+		CALL RECOVER(MASTER,-(20 * 道迷い時間),"体力", "暴风雪") ;qol custom code
 		
 		GOTO WARP6
 	ELSEIF TIME:5 == 8 && ((WIND_VELOCITY == 2 && RAND:10 == 0) || WIND_VELOCITY >= 3)
@@ -97,7 +97,7 @@ IF !FLAG:70
 		PRINTFORML 
 		PRINTFORML ……迷路了，多走了{道迷い時間}分钟
 		TIME:0 += 道迷い時間
-		BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - (15 * 道迷い時間), 0)
+		CALL RECOVER(MASTER,-(20 * 道迷い時間),"体力", "暴风雪") ;qol custom code
 		
 		GOTO WARP7
 	ENDIF
@@ -157,7 +157,7 @@ IF CFLAG:ARG:行動 == 5
 	PRINTFORMW %CALLNAME:ARG%现在正在工作中
 	RETURN 0
 ENDIF
-IF LOCAL != ARG && LOCAL != MASTER
+IF LOCAL != ARG && LOCAL != MASTER && !MOREDATE
 	PRINTFORM %CALLNAME:LOCAL%
 	;気弱系
 	IF CFLAG:LOCAL:性格傾向 == 1
@@ -176,10 +176,15 @@ IF LOCAL != ARG && LOCAL != MASTER
 		PRINTFORML 对着%CALLNAME:MASTER%叹息一声、摇了摇头
 	ENDIF
 	PRINTFORMW %CALLNAME:MASTER%放弃了邀请%CALLNAME:ARG%
+	CALL KOJO_MESSAGE_SEND("EVENT",27,LOCAL,90,0) ;addition custom code, the jealous date
+	CALL KOJO_MESSAGE_SEND("EVENT",27,ARG,91,0) ;addition custom code, the rival's response
 	RETURN 0
 ENDIF
 IF !VISIT(ARG)
-	PRINTFORMW 被告知现在不可以
+	PRINTFORML 被告知现在没时间
+	PRINTFORM 当前时间：%時刻表示(TIME)%，空闲时间：
+	CALL 滞在時間表示(ARG)
+	WAIT
 	RETURN 0
 ENDIF
 IF ARG == 93 && !ITEM:簡易泳池

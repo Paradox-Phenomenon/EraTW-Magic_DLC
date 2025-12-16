@@ -1964,7 +1964,7 @@ SELECTCASE POSE
     CASE POSE_REV_SUSPENDED_CONGRESS
         RETURNF "in the reverse suspended congress position"
 ENDSELECT
-
+[SKIPEND]
 @QOL_CAN_WHITE_DAY_HOME_DELIVERY(CHARA)
 #FUNCTION
 #DIM CHARA
@@ -1986,53 +1986,54 @@ SIF !QOL_CAN_WHITE_DAY_HOME_DELIVERY(CHARA)
 	RETURN 0
 
 ;copied from @COM491
-PRINTFORML What do you want to gift %CALLNAME:CHARA% something in return for White Day?（Received Gift：%CAPITALIZE(Valentine_Chocolate(CHARA))%）
+PRINTFORML 要给什么？（曾收到的是：%Valentine_Chocolate(TARGET)%）
 {
-CALL ASK_M("Cancel",1,"Black Thunder",ITEM:ブラックサンダー,"Rotor Chocolate",ITEM:ローターチョコ,
-"Homemade Chocolate Cookies",ITEM:手作りチョコクッキー,
-"Handmade Custard",ITEM:手作りプディング,@"Decorated Cake\@ CFLAG:CHARA:バレンタイン != 4 ? %" "%(Only in return for Handmade Chocolate)#\@",ITEM:デコレーションケーキ && CFLAG:CHARA:バレンタイン == 4)
+CALL ASK_M("放弃",1,"黑雷神巧克力",ITEM:黑雷神巧克力,"跳蛋巧克力",ITEM:跳蛋巧克力,"WD巧克力",ITEM:WD巧克力,
+"手制巧克力曲奇",ITEM:手制巧克力曲奇,"WD布丁",ITEM:WD布丁,
+"手制布丁",ITEM:手制布丁,"装饰蛋糕",ITEM:装饰蛋糕 && CFLAG:TARGET:バレンタイン == 4)
 }
 SELECTCASE RESULT
 	CASE 0
 		RETURN -1
 	CASE 1
-		WD_GIFT = ブラックサンダー
-		;custom code: from here on out - WD_GIFT_TR used to return translated gift name
-		WD_GIFT_TR = Black Thunder
-		SIF CFLAG:バレンタイン > 1 ;gifting the cheap throwaway store-bought chocolate in return to a proper gift reaction?
-			PRINTFORMW %CALLNAME:CHARA% seems utterly baffled...
+		WD_GIFT = 黑雷神巧克力
+		SIF CFLAG:バレンタイン > 1
+			PRINTFORMW %CALLNAME:TARGET%露出了难以释怀的表情……
 		親密係数 = 5
 	CASE 2
-		WD_GIFT = ローターチョコ
-		WD_GIFT_TR = Rotor Chocolate
+		WD_GIFT = 跳蛋巧克力
 		親密係数 = 10
-		SOURCE:CHARA:快Ｃ += 3000
-		SOURCE:CHARA:反感 += 300
+		SOURCE:快Ｃ += 3000
+		SOURCE:反感 += 300
 	CASE 3
-		WD_GIFT = 手作りチョコクッキー
-		WD_GIFT_TR = Homemade Chocolate Cookies
-		親密係数 = 50
-		EXP:CHARA:愛情経験 += 1
+		WD_GIFT = WD巧克力
+		親密係数 = 25
 		WD_BUFF = 100
 	CASE 4
-		WD_GIFT = 手作りプディング
-		WD_GIFT_TR = Handmade Custard
-		親密係数 = 80
-		EXP:CHARA:愛情経験 += 5
-		WD_BUFF = 200
+		WD_GIFT = 手制巧克力曲奇
+		親密係数 = 50
+		EXP:愛情経験 += 1
+		WD_BUFF = 100
 	CASE 5
-		WD_GIFT = デコレーションケーキ
-		WD_GIFT_TR = Decorated Cake
+		WD_GIFT = WD布丁
+		親密係数 = 70
+		EXP:愛情経験 += 3
+		WD_BUFF = 100
+	CASE 6
+		WD_GIFT = 手制布丁
+		親密係数 = 80
+		EXP:愛情経験 += 5
+		WD_BUFF = 200
+	CASE 7
+		WD_GIFT = 装饰蛋糕
 		親密係数 = 200
-		EXP:CHARA:愛情経験 += 30
+		EXP:愛情経験 += 30
 		WD_BUFF = 1000
 ENDSELECT
 TFLAG:193 = RESULT
 SIF RESULT >= 5
-	TALENT:CHARA:機嫌 = 1
-PRINTFORMW You present the %WD_GIFT_TR% to %CALLNAME:CHARA%!
-;ITEM:WD_GIFT --
-;custom code
+	TALENT:心情 = 1
+PRINTFORMW 向%CALLNAME:TARGET%赠送了%WD_GIFT%
 CALL LOST_ITEM(WD_GIFT, 1, 1)
 CALL JUEL_UP_SPECIAL(CHARA,"好意","親密",親密係数,1)
 CALL CHANGE_CFLAG(4,CHARA,親密係数)
@@ -2051,7 +2052,7 @@ TIME += 7
 CALL COM_KOJO_CALL(CHARA, 491)
 
 RETURN 1
-
+[SKIPSTART]
 ;modified to randomize correctly and give all children an equal chance of appearing, so that kids will not be penalized for having siblings
 @QOL_PICK_RAND_GROWN_CHILD_TR
 #DIM DYNAMIC SHUFFLED_CHILDREN, 100 ;shuffling a hundred kids should be enough

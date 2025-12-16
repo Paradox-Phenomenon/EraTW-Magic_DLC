@@ -212,22 +212,25 @@ SIF GLOBAL_COMABLE(626)
 SIF !GIFT_SHOP(CFLAG:MASTER:現在位置)
 	RETURN 0
 
-; 干脆改成妹纸在 ,就能给她送礼物,新增有目标才行
-;**********多人约会已修改**********
+;只要有目标，就可以送一次
 SIF !TARGET
 	RETURN 0
-;约会中でない
-;SIF !FLAG:约会的对象
-;	RETURN 0
-;TARGETが约会的对象ではない
-;SIF TARGET != FLAG:约会的对象
-;	RETURN 0
-;SIF !FLAG:约会的对象 && !CFLAG:TARGET:同行
-;	RETURN 0
-;********************
+[SKIPSTART]
+;デート中でない
+IF CFLAG:同行 && CFLAG:2 > 1500 && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP ;com custom code - allow to visit the gift shop with your "date" on a home map
+ELSEIF !FLAG:デート相手
+	RETURN 0
+ENDIF
+;TARGETがデート相手ではない
+IF CFLAG:同行 && CFLAG:2 > 1500 && GET_MAPID(CFLAG:MASTER:現在位置) == MAIN_MAP ;com custom code - allow to visit the gift shop with your "date" on a home map
+ELSEIF (!MOREDATE && TARGET != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(TARGET))
+	RETURN 0
+ENDIF
 ;一日一回
-;SIF GETBIT(TFLAG:一日一回, 10)
-;	RETURN 0
+SIF GETBIT(TFLAG:一日一回, 10)
+	RETURN 0
+[SKIPEND]
+
 ;既に貰ってたらダメ
 ;SIF TCVAR:今天的礼物
 SIF CFLAG:TARGET:每日礼物
