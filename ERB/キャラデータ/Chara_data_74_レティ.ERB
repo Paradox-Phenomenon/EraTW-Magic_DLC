@@ -124,18 +124,72 @@ RETURN 1
 @IMAGE_I74_特殊服装(CHARA)
 #DIM CHARA
 VARSET RESULTS
-IF IS_BUNNY(CHARA) && FLAG:立絵種類 && CFLAG:74:差し替え適用
-	RESULTS = _バニー
-ENDIF
-;********************************************************************************************
-@IMAGE_EX_I74_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
-#DIM CHARA
-#DIMS 表示形式
-#DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
-#DIMS 差分
-#DIMS 乳量
+SELECTCASE CFLAG:74:差し替え適用
+	;替换用画像
+	CASE 1
+	IF CHECK_NUDE(CHARA)
+		;裸
+	ELSE
+		;服
+		IF IS_BUNNY(CHARA)
+			RESULTS = _兔女郎
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[白衣天使套]]
+			RESULTS = _护士服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[晚宴礼服套装]]
+			RESULTS = _晚礼服
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+		
+	CASEELSE
+		;通常画像
+		IF CHECK_NUDE(CHARA)
+			;裸
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立絵
+			ENDIF
+		ELSE
+			;服
+			IF FLAG:立絵種類
+				;顔絵
+			ELSE
+				;立絵
+			ENDIF
+		ENDIF
+		
+ENDSELECT
 
-SIF CFLAG:74:差し替え適用 == 1
-	CALL COMPOSE_SPRITE_PRESET([[蕾蒂]],"別顔_裸_/別顔_服_/別顔_服_バニー_")
+;-------------------------------------------------------------------------------------------
+@IMAGE_I74_特殊表情COM(CHARA, 指令)
+#DIM CHARA
+#DIM 指令
+SELECTCASE CFLAG:74:差し替え適用
+
+CASE 1
+	;替换用画像
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[白衣天使套]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[晚宴礼服套装]]
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+				CASE 6,12,313
+					RESULTS = 揉胸覆盖
+			ENDSELECT
+		ENDIF
+	ENDIF
+CASEELSE
+	;通常画像
+	IF FLAG:立絵種類
+		;顔絵
+	ELSE
+		;立絵
+	ENDIF
+ENDSELECT
