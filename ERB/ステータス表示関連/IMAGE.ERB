@@ -19,7 +19,7 @@
 ;Better Xray
 #DIM Chara_Xray_Block_by_Better_Xray, 300
 
-SIF !ターゲット
+SIF !(ターゲット || (自机立绘显示 && 自机立绘开关))
 	RETURN RESULT
 SIF !FLAG:画像表示
 	RETURN RESULT
@@ -31,9 +31,10 @@ SIF GETCONFIGS("描画インターフェース") == "WINAPI"
 SAVE_RESULT = RESULT
 
 ;ターゲット情報の取得
-ターゲット人数 = GET_TARGETNUM() + 1
+ターゲット人数 = GET_TARGETNUM() + (自机立绘显示 && 自机立绘开关)
 現在ターゲット = FINDELEMENT(ターゲット,ターゲット:0,1)
-ARRAYSHIFT ターゲット, 1, 0
+SIF (自机立绘显示 && 自机立绘开关)
+	ARRAYSHIFT ターゲット, 1, 0, 1
 
 ;描画開始位置の決定
 IF FLAG:画像表示 != 1
@@ -43,7 +44,7 @@ IF FLAG:画像表示 != 1
 	ELSEIF iPrintStart == 現在ターゲット
 		;画面左端
 		iPrintStart--
-	ELSEIF (iPrintStart + FLAG:画像表示)-1 ==  現在ターゲット && ターゲット人数 > FLAG:画像表示
+	ELSEIF (iPrintStart + FLAG:画像表示)-1-(自机立绘显示 && 自机立绘开关) ==  現在ターゲット && ターゲット人数 > FLAG:画像表示
 		;画面右端
 		iPrintStart++
 	ENDIF
@@ -52,15 +53,15 @@ IF FLAG:画像表示 != 1
 ELSEIF FLAG:画像表示 == 1
 	iPrintStart = 現在ターゲット
 ENDIF
-
+;PRINTFORM iPrintStart{iPrintStart}
 SIF FLAG:多尺寸
 	默认角色画像横幅 = 0
 ;各角色の初期処理
 FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
-	SIF !ターゲット:LOCAL && LOCAL
+	SIF !ターゲット:LOCAL && ( !(自机立绘显示 && 自机立绘开关) || LOCAL > 1 )
 		BREAK
-	;SIF NO:(ターゲット:LOCAL) == MASTER
-	;	CONTINUE
+	SIF NO:(ターゲット:LOCAL) == MASTER && !(自机立绘显示 && 自机立绘开关)
+		CONTINUE
 	;Better xray
 	IF Xray_display_mode > 4 && CFLAG:(ターゲット:LOCAL):恶作剧 !=2 && CFLAG:(ターゲット:LOCAL):诶嘿嘿 == 0
 		IF GETBIT(Xray_display_mode, 2) && GETBIT(Xray_display_mode, 3) && 充填率((ターゲット:LOCAL), 3) == 0 && PALAM:(ターゲット:LOCAL):潤滑 <= 500
@@ -111,10 +112,10 @@ TEMP_HTML_MAX_HEIGHT = 默认角色画像横幅 * 角色画像表示尺寸比 / 
 ;-----------------
 sPrint_Text =  <p align='\@FLAG:画像表示位置?left#center\@'><nobr>
 FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
-	SIF !ターゲット:LOCAL && LOCAL
+	SIF !ターゲット:LOCAL && ( !(自机立绘显示 && 自机立绘开关) || LOCAL > 1 )
 		BREAK
-	;SIF NO:(ターゲット:LOCAL) == MASTER
-	;	CONTINUE
+	SIF NO:(ターゲット:LOCAL) == MASTER && !(自机立绘显示 && 自机立绘开关)
+		CONTINUE
 	SIF FLAG:多尺寸
 		默认角色画像横幅 = 各角色画像尺寸:(ターゲット:LOCAL):0
 
@@ -161,10 +162,10 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 	SIF CFLAG:CHARA:変化先 > 0
 		CHARATRANS = CFLAG:CHARA:変化先
 		
-	SIF !ターゲット:LOCAL && LOCAL
+	SIF !ターゲット:LOCAL && ( !(自机立绘显示 && 自机立绘开关) || LOCAL > 1 )
 		BREAK
-	;SIF NO:(ターゲット:LOCAL) == MASTER
-	;	CONTINUE
+	SIF NO:(ターゲット:LOCAL) == MASTER && !(自机立绘显示 && 自机立绘开关)
+		CONTINUE
 	RESULT = 0
     VARSET RESULTS
 	;多尺寸時の処理
@@ -296,8 +297,10 @@ NEXT
 IF FLAG:XRay_show
 	FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 		CHARA = ターゲット:LOCAL
-		SIF !ターゲット:LOCAL && LOCAL
+		SIF !ターゲット:LOCAL && ( !(自机立绘显示 && 自机立绘开关) || LOCAL > 1 )
 			BREAK
+		SIF NO:(ターゲット:LOCAL) == MASTER && !(自机立绘显示 && 自机立绘开关)
+			CONTINUE
 		RESULT = 0
 		VARSET RESULTS
 		;多尺寸時の処理
