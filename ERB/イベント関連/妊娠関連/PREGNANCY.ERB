@@ -6,20 +6,11 @@
 #DIM 妊娠精液判定
 #DIM DYNAMIC ConceptionCount
 
-	;don't process if the character's womb or nest is at the child limit.
+;don't process if the character's womb or nest is at the child limit.
 SIF CFLAG:ARG:WithChildCount >= MAXCHILD
 	RETURN
 
-SELECTCASE ABL:ARG:膣射中毒
-	CASE 0 TO 2
-		中毒補正 = 5
-	CASE 3 TO 5
-		中毒補正 = 4
-	CASEELSE
-		中毒補正 = 2
-ENDSELECT
-
-EX:ARG:子宮内精液 += EX:ARG:膣内精液 / 中毒補正
+EX:ARG:子宮内精液 += EX:ARG:膣内精液 / 中毒補正(ARG)
 
 SIF EX:ARG:子宮内精液 > EX:ARG:膣内精液
 	EX:ARG:子宮内精液 = EX:ARG:膣内精液
@@ -31,7 +22,7 @@ FOR LOCAL,0,CHARANUM
 	IF !CFLAG:ARG:(LOCAL + 2000)
 		CONTINUE
 	ELSE
-		CFLAG:ARG:(LOCAL + 2000) += CFLAG:ARG:(LOCAL + 3000) / 中毒補正
+		CFLAG:ARG:(LOCAL + 2000) += CFLAG:ARG:(LOCAL + 3000) / 中毒補正(ARG)
 		SIF CFLAG:ARG:(LOCAL + 2000) > CFLAG:ARG:(LOCAL + 3000)
 			CFLAG:ARG:(LOCAL + 2000) = CFLAG:ARG:(LOCAL + 3000)
 	ENDIF	
@@ -67,14 +58,15 @@ FOR LOCAL , 0 , CHARANUM - 1
 	
 NEXT
 
-@GET_CHILD_SUB(ARG,ARG:1)
-	;Addition custom code.
-#DIM DYNAMIC ConceptionCount
+;Addition custom code.
 ; ARG　母親　ARG:1 父親
+@GET_CHILD_SUB(ARG,ARG:1)
+#DIM DYNAMIC ConceptionCount
 #DIM 妊娠必要值
 #DIM 妊娠精液判定
 #DIM DADDY
-
+#LOCALSIZE 1
+#LOCALSSIZE 1
 DADDY = ARG:1
 
 EX:ARG:妊娠判定用精液量 = CFLAG:ARG:(DADDY + 2000)
@@ -88,82 +80,10 @@ EX:ARG:妊娠判定用精液量 = CFLAG:ARG:(DADDY + 2000)
 DEBUGPRINTFORML %CALLNAME:ARG%の子宮にある%CALLNAME:DADDY%の子種は{EX:ARG:妊娠判定用精液量}
 
 ;1≦出産経過日≦59の場合、子宮内精液リセット処理を追記
-SIF  (!TALENT:ARG:初潮 && (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行)) || Qol_IS_IN_RECOVERY(ARG)
+SIF (!TALENT:ARG:初潮 && (TALENT:ARG:幼稚 || TALENT:ARG:幼児／幼児退行)) || Qol_IS_IN_RECOVERY(ARG)
 	EX:ARG:妊娠判定用精液量 = 0
-
-IF !TALENT:MASTER:万能孕 && BABYDLC == 0
-	IF CHECK_CHARA(ARG, "鬼")
-		妊娠必要值 = 10000 - 3000 * TALENT:MASTER:讓鬼懷孕 - 1000 * TALENT:MASTER:讓妖怪懷孕
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(120 - 4 * CFLAG:ARG:子宝補正, 5) / 100
-	ELSEIF CHECK_CHARA(ARG, "天狗")
-		妊娠必要值 = 5000 - 2000 * TALENT:MASTER:讓天狗懷孕 - 1000 * TALENT:MASTER:讓妖怪懷孕
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
-	ELSEIF CHECK_CHARA(ARG, "妖精")
-		妊娠必要值 = 4000 - 1500 * TALENT:MASTER:讓妖精懷孕
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
-	ELSEIF CHECK_CHARA(ARG, "神霊")
-		妊娠必要值 = 20000 - 15000 * TALENT:MASTER:讓神霊懷孕
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(100 - 4 * CFLAG:ARG:子宝補正, 5) / 100
-	ELSEIF CHECK_CHARA(ARG, "付喪神")
-	;基本必要値は妖精より高いが道具使用経験によって下がる
-		妊娠必要值 = MAX(5000 - EXP:MASTER:道具使用経験 * (1 + TALENT:MASTER:讓付喪神懷孕), 2000)
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
-	ELSEIF CHECK_CHARA(ARG, "蓬莱人")
-	;祈願による影響が相対的にでかい
-		妊娠必要值 = 200000
-		SIF TALENT:MASTER:讓蓬莱懷孕
-			妊娠必要值 /= 10
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(50 - 2 * CFLAG:ARG:子宝補正, 1) / 100
-	ELSEIF CHECK_CHARA(ARG, "幽霊")
-		妊娠必要值 = 150000
-		SIF TALENT:MASTER:讓幽霊懷孕
-			妊娠必要值 /= 10
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(60 - 2 * CFLAG:ARG:子宝補正, 1) / 100
-	ELSEIF CHECK_CHARA(ARG, "人形")
-		妊娠必要值 = 150000
-		SIF TALENT:MASTER:讓人偶懷孕
-			妊娠必要值 /= 10
-		SIF CFLAG:ARG:子宝補正 >= 5
-			妊娠必要值 = 妊娠必要值 * MAX(60 - 2 * CFLAG:ARG:子宝補正, 1) / 100
-	ELSEIF CHECK_CHARA(ARG, "妖怪")
-		妊娠必要值 = MAX(3000 - CFLAG:ARG:子宝補正 * 10 - 1000 * TALENT:MASTER:讓妖怪懷孕, 500)
-	ELSEIF CHECK_CHARA(ARG, "仙人") || CHECK_CHARA(ARG, "天人") || CHECK_CHARA(ARG, "月人") || CHECK_CHARA(ARG, "魔界人")
-		妊娠必要值 = MAX(2400 - CFLAG:ARG:子宝補正 * 10, 500)
-	;其他人类
-	ELSE
-		妊娠必要值 = MAX(2000 - CFLAG:ARG:子宝補正 * 10, 500)
-	ENDIF
-	SIF CHECK_CHARA(ARG, "半人类")
-		妊娠必要值 = (妊娠必要值 + MAX(2000 - CFLAG:ARG:子宝補正 * 10, 500)) / 2
-ELSE
-	妊娠必要值 = MAX(2000 - CFLAG:ARG:子宝補正 * 12, 100)
-ENDIF
-SIF TCVAR:ARG:祝福
-	妊娠必要值 = 妊娠必要值 * 95 / 100
-SIF FLAG:抱負 == 6
-	妊娠必要值 = 妊娠必要值 / 2
-SIF FLAG:抱負 == 9
-	妊娠必要值 = 妊娠必要值 * 9 / 10
-;apply racial bonuses
-CALL QOL_RACIAL_PREGNANCY_BONUS(妊娠必要值, ARG)
-SIF TALENT:ARG:路人
-	妊娠必要值 /= 4
-SIF TALENT:DADDY:濃厚精液
-	妊娠必要值 /= 4
-SIF TALENT:ARG:妊娠願望
-	妊娠必要值 = 妊娠必要值 * 8 / 10
-		;bonus while hyperfertile for second child with normal pregnancy type or under 7 children with litter type.
-SIF TALENT:ARG:HYPERFERTILE && ((TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_NORMAL && CFLAG:ARG:WithChildCount == 1) || (TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_LITTERS && CFLAG:ARG:WithChildCount < 7))
-	妊娠必要值 = 妊娠必要值 * 9 / 10
-SIF ARG == 0
-	妊娠必要值 = 500
+;QOL，方便相关函数调用
+妊娠必要值 = 妊娠必要值(ARG,ARG:1)
 
 IF 充填率(ARG,5) > 70
 	DRAWLINE
@@ -424,13 +344,13 @@ IF MAX(充填率(ARG,5),0) * REAL_ESTRUS_CYCLE(ARG) / 100 > RAND:妊娠必要值
 		;egg laying.
 	IF GROUPMATCH(TALENT:ARG:PREGNANCY_TYPE, PREGNANCY_EGGS, PREGNANCY_CLUTCH) && !FLAG:EGGNANCY
 		PRINTFORMDW %CALLNAME:ARG%产下了受精卵
-		LOCAL:52 = 3
+		LOCAL = 3
 		IF TALENT:ARG:恋慕
-			LOCAL:52 = 1
+			LOCAL = 1
 		ELSEIF TALENT:ARG:愛欲
-			LOCAL:52 = 2
+			LOCAL = 2
 		ENDIF
-		CALL KOJO_MESSAGE_SEND("EVENT", 0, ARG, LOCAL:52, ConceptionCount, "LAY_EGG")
+		CALL KOJO_MESSAGE_SEND("EVENT", 0, ARG, LOCAL, ConceptionCount, "LAY_EGG")
 		IF TALENT:ARG:妊娠願望
 			TALENT:ARG:妊娠願望 = 0
 			PRINTFORMW %CALLNAME:ARG%失去了[怀孕愿望]
@@ -650,3 +570,101 @@ SIF CFLAG:ARG:妊娠経過日数 >= 60
 SIF INRANGE(CFLAG:ARG:出産経過日, 1, CHILD_離乳-1)
 	RETURNF 1
 RETURNF 0
+
+@妊娠必要值(ARG,ARG:1 = -1)
+#FUNCTION
+#DIM DYNAMIC 妊娠必要值
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF ARG:1 == -1
+	ARG:1 = MASTER
+IF !TALENT:(ARG:1):万能孕 && BABYDLC == 0
+	IF CHECK_CHARA(ARG, "鬼")
+		妊娠必要值 = 10000 - 3000 * TALENT:(ARG:1):讓鬼懷孕 - 1000 * TALENT:(ARG:1):讓妖怪懷孕
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(120 - 4 * CFLAG:ARG:子宝補正, 5) / 100
+	ELSEIF CHECK_CHARA(ARG, "天狗")
+		妊娠必要值 = 5000 - 2000 * TALENT:(ARG:1):讓天狗懷孕 - 1000 * TALENT:(ARG:1):讓妖怪懷孕
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
+	ELSEIF CHECK_CHARA(ARG, "妖精")
+		妊娠必要值 = 4000 - 1500 * TALENT:(ARG:1):讓妖精懷孕
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
+	ELSEIF CHECK_CHARA(ARG, "神霊")
+		妊娠必要值 = 20000 - 15000 * TALENT:(ARG:1):讓神霊懷孕
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(100 - 4 * CFLAG:ARG:子宝補正, 5) / 100
+	ELSEIF CHECK_CHARA(ARG, "付喪神")
+	;基本必要値は妖精より高いが道具使用経験によって下がる
+		妊娠必要值 = MAX(5000 - EXP:(ARG:1):道具使用経験 * (1 + TALENT:(ARG:1):讓付喪神懷孕), 2000)
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(60 - 4 * CFLAG:ARG:子宝補正, 5) / 40
+	ELSEIF CHECK_CHARA(ARG, "蓬莱人")
+	;祈願による影響が相対的にでかい
+		妊娠必要值 = 200000
+		SIF TALENT:(ARG:1):讓蓬莱懷孕
+			妊娠必要值 /= 10
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(50 - 2 * CFLAG:ARG:子宝補正, 1) / 100
+	ELSEIF CHECK_CHARA(ARG, "幽霊")
+		妊娠必要值 = 150000
+		SIF TALENT:(ARG:1):讓幽霊懷孕
+			妊娠必要值 /= 10
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(60 - 2 * CFLAG:ARG:子宝補正, 1) / 100
+	ELSEIF CHECK_CHARA(ARG, "人形")
+		妊娠必要值 = 150000
+		SIF TALENT:(ARG:1):讓人偶懷孕
+			妊娠必要值 /= 10
+		SIF CFLAG:ARG:子宝補正 >= 5
+			妊娠必要值 = 妊娠必要值 * MAX(60 - 2 * CFLAG:ARG:子宝補正, 1) / 100
+	ELSEIF CHECK_CHARA(ARG, "妖怪")
+		妊娠必要值 = MAX(3000 - CFLAG:ARG:子宝補正 * 10 - 1000 * TALENT:(ARG:1):讓妖怪懷孕, 500)
+	ELSEIF CHECK_CHARA(ARG, "仙人") || CHECK_CHARA(ARG, "天人") || CHECK_CHARA(ARG, "月人") || CHECK_CHARA(ARG, "魔界人")
+		妊娠必要值 = MAX(2400 - CFLAG:ARG:子宝補正 * 10, 500)
+	;其他人类
+	ELSE
+		妊娠必要值 = MAX(2000 - CFLAG:ARG:子宝補正 * 10, 500)
+	ENDIF
+	SIF CHECK_CHARA(ARG, "半人类")
+		妊娠必要值 = (妊娠必要值 + MAX(2000 - CFLAG:ARG:子宝補正 * 10, 500)) / 2
+ELSE
+	妊娠必要值 = MAX(2000 - CFLAG:ARG:子宝補正 * 12, 100)
+ENDIF
+SIF TCVAR:ARG:祝福
+	妊娠必要值 = 妊娠必要值 * 95 / 100
+SIF FLAG:抱負 == 6
+	妊娠必要值 = 妊娠必要值 / 2
+SIF FLAG:抱負 == 9
+	妊娠必要值 = 妊娠必要值 * 9 / 10
+;apply racial bonuses
+CALLF QOL_RACIAL_PREGNANCY_BONUS(妊娠必要值, ARG)
+SIF TALENT:ARG:路人
+	妊娠必要值 /= 4
+SIF TALENT:(ARG:1):濃厚精液
+	妊娠必要值 /= 4
+SIF TALENT:ARG:妊娠願望
+	妊娠必要值 = 妊娠必要值 * 8 / 10
+		;bonus while hyperfertile for second child with normal pregnancy type or under 7 children with litter type.
+SIF TALENT:ARG:HYPERFERTILE && ((TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_NORMAL && CFLAG:ARG:WithChildCount == 1) || (TALENT:ARG:PREGNANCY_TYPE == PREGNANCY_LITTERS && CFLAG:ARG:WithChildCount < 7))
+	妊娠必要值 = 妊娠必要值 * 9 / 10
+SIF ARG == 0
+	妊娠必要值 = 500
+RETURNF 妊娠必要值
+
+@中毒補正(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM C_ID
+#DIM 中毒補正
+#FUNCTION
+SELECTCASE ABL:C_ID:膣射中毒
+	CASE 0 TO 2
+		中毒補正 = 5
+	CASE 3 TO 5
+		中毒補正 = 4
+	CASEELSE
+		中毒補正 = 2
+ENDSELECT
+RETURNF 中毒補正
