@@ -231,3 +231,4 @@
 910,STAY_AWAKE,;lets the character be awake after their bedtime
 911,EVENT_CLOTHING_SET,;the highest possible priority for clothing sets, only to be used for temporary events that should override everything
 912,MAXROOM_WAITING_TIME,;how long a character has been waiting to enter the map
+914,SEEN_NOW,;if they know you're there while in another room

@@ -67,6 +67,8 @@ IF N_ID == MAXROOM
 ;引力点も固定    引力点停留率固定提升
 ELSEIF N_ID == TCVAR:ARG:引力点
 	停留率 = 5
+ELSEIF (TCVAR:ARG:INITIAL_VISITATION_POINT < 0 && N_ID == CFLAG:(TCVAR:ARG:INITIAL_VISITATION_POINT * -1):現在位置) || N_ID == TCVAR:ARG:INITIAL_VISITATION_POINT ;qol custom code
+	TCVAR:ARG:INITIAL_VISITATION_POINT = 0
 ELSE
 	;留まりにくい場所    不易停留的地方，包括地图入口或不停留标记
 	SIF N_ID == GET_ENTRANCE(MAIN_MAP) || ROOMDATA:(N_ID % 100) & 場所_留まらない
@@ -102,7 +104,20 @@ SIF 天候造成的影響(ARG, N_ID) <= -3
 	無差別移動 = 1
 ;現在位置の移動率を判定して、本来入らない場所（なおかつ你が居ない）ならG_POINTを付けて無差別移動    判断当前位置的移动率，如果是本不该进入的地方（而且你不在那里）则附加G_POINT进行无差别移动
 CALL 角色移動率(ARG, N_ID)
-IF RESULT <= 0 && N_ID != CFLAG:MASTER:現在位置
+IF TCVAR:ARG:INITIAL_VISITATION_POINT && IN_HOME(N_ID) == 1 ;qol custom code
+	IF TCVAR:ARG:INITIAL_VISITATION_POINT < 0
+		IF !AT_HOME(TCVAR:ARG:INITIAL_VISITATION_POINT * -1)
+			TCVAR:ARG:INITIAL_VISITATION_POINT = 0
+		ELSE
+			G_POINT = CFLAG:(TCVAR:ARG:INITIAL_VISITATION_POINT * -1):現在位置
+		ENDIF
+	ELSE
+		G_POINT = TCVAR:ARG:INITIAL_VISITATION_POINT
+	ENDIF
+	IF G_POINT
+		TCVAR:ARG:なるべく動かない = 0
+	ENDIF
+ELSEIF RESULT <= 0 && N_ID != CFLAG:MASTER:現在位置
 	無差別移動 = 1
 	;引力点が未設定ならとりあえず外に出ようとする    如果引力点未设定的话，就以地图出入口为G_POINT
 	SIF !TCVAR:ARG:引力点
@@ -137,7 +152,7 @@ WHILE 1
 	;引力点または脱出用のG_POINTがある場合は引力点に向かって移動する,G_POINTは条件無し    若有引力点或离开用的G_POINT，则向引力点移动，G_POINT无条件
 	IF 引力点発動可(ARG) || G_POINT
 		;引力点かG_POINTを目指す    以引力点或G_POINT为目标
-		移動先 = TCVAR:ARG:引力点 ? TCVAR:ARG:引力点 # G_POINT
+		移動先 = 引力点発動可(ARG) && TCVAR:ARG:引力点 ? TCVAR:ARG:引力点 # G_POINT
 		;スキップムーブでルート検索    无法直连移动时搜索路线
 		;fix 引力点可能是N_ID，而一个地点无法移动到自己。原版的处置是按照静态的疏散路径图强制移动到疏散位置，然后在下一次移动处理时再返回引力点，表现为反复进出引力点。优化后的寻路则是呆在引力点不动。
 		WHILE !(CAN_MOVE(N_ID, 移動先) & 1) && N_ID != 移動先

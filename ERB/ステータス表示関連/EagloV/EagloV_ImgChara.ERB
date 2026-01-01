@@ -1,80 +1,90 @@
-﻿
-
-; 72 永琳{
-@SPECIAL_BASE_IMAGE_72
+﻿; 1 灵梦{
+@SPECIAL_BASE_IMAGE_1
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:72:差し替え適用 == 2
-	RESULTS = EagloV2
+SIF CFLAG:1:差し替え適用 == 5
+	RESULTS = EagloV
 
-@SPECIAL_EFFECT_IMAGE_72
+@SPECIAL_EFFECT_IMAGE_1
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:72:差し替え適用 == 2
-	RESULTS = EagloV2
+SIF CFLAG:1:差し替え適用 == 5
+	RESULTS = EagloV
 
-@EagloV_特殊服装_72
+; RETURN：0:无，1:胸罩胖次，2:连体内衣
+@EagloV_特殊内衣_1
 #LOCALSIZE 1
 #LOCALSSIZE 1
-RESULTS = 
-IF IS_BUNNY(72)
+IF IS_BUNNY(1)
 	RESULTS = 兔女郎
+	RETURN 2
+ELSEIF EQUIP:1:下半身内衣２ == 2
+	RESULTS = 灯笼裤
 	RETURN 1
-ELSEIF CFLAG:72:妊娠経過日数 >= 60
-	RESULTS = 孕装
+ENDIF
+
+@EagloV_特殊服装_1(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM G_ID
+#DIM CHARA
+SIF !CHARA
+	CHARA = 1
+IF CURRENT_CLOTHES_SET(CHARA) == [[白无垢]]
+	RESULTS = 白无垢
 	RETURN 1
-ELSEIF YOUBI_MATCH(DAY, "月火金")
-	; 工作日，常服
-	RESULTS = 
-	RETURN 0
-ELSEIF DAY%2 && ABL:72:露出癖 >= 3
-	; 休息日。露出癖3，1/2概率衬衫；露出癖5，1/10概率裸衬衫
-	IF (EQUIP:72:上半身内衣１ + EQUIP:72:上半身内衣２ == 0) || (DAY%5 == 0 && ABL:72:露出癖 >= 5)
-		RESULTS = 裸衬衫
-	ELSE
-		RESULTS = 半透衫
-	ENDIF
+ELSEIF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
 	RETURN 1
 ENDIF
 RETURN 0
 
-@EagloV_特殊效果_72
+@EagloV_特殊效果_1(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+VARSET LOCALS
+SIF !CHARA
+	CHARA = 1
+IF EagloV_服装初步判定(CHARA) == "裸"
+	LOCALS:(エフェクト数*2) = 妊肚
+	エフェクト数 += 1
+ELSEIF EagloV_服装初步判定(CHARA) == "胖次" || EagloV_服装初步判定(CHARA) == "内衣"
+	IF !IS_LOVER(CHARA)
+		LOCALS:(エフェクト数*2) = 创可贴
+		エフェクト数 += 1
+	ENDIF
+ENDIF
+
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_特殊表情_1
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF EagloV_服装初步判定(72) != "服"
-	RESULTS:0 = EagloV72_特效_呆毛
-	RESULTS:1 = 
+#DIM G_ID
+SIF CFLAG:1:诶嘿嘿 || FLAG:時間停止 || CFLAG:1:睡眠 || CFLAG:1:ブチギレ
+	RETURN 0
+IF !SPRITECREATED("EagloV表情_得意颜_1")
+	G_ID = 0
+	CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
+	CALL 画像合成(G_ID, "EagloV1_眉_挑眉")
+	CALL 画像合成(G_ID, "EagloV1_目_半目")
+	CALL 画像合成(G_ID, "EagloV1_鼻_鼻")
+	CALL 画像合成(G_ID, "EagloV1_口_大笑")
+	SPRITECREATE "EagloV表情_得意颜_1", G_ID
+ENDIF
+
+IF TALENT:1:心情 > 0 && RAND:6 == 0
+	RESULTS:0 = 得意颜
+	RESULTS:1 = 好心情
 	RETURN 1
 ENDIF
-RESULTS = 
-CALL EagloV_特殊服装_72
-SELECTCASE RESULTS
-CASE "孕装", "裸衬衫", "半透衫"
-	RESULTS:0 = EagloV72_特效_呆毛
-	RESULTS:1 = 
-	RETURN 1
-ENDSELECT
-;}
-
-; 61 妹红{
-@SPECIAL_BASE_IMAGE_61
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF CFLAG:61:差し替え適用 == 2
-	RESULTS = EagloV
-
-@SPECIAL_EFFECT_IMAGE_61
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF CFLAG:61:差し替え適用 == 2
-	RESULTS = EagloV
-
-@EagloV_特殊效果_61
-#LOCALSIZE 1
-#LOCALSSIZE 1
-IF !CFLAG:61:诶嘿嘿 && !CFLAG:61:睡眠 && CFLAG:61:妊娠経過日数 < 20 && TALENT:61:心情 < 0 && SPRITECREATED("EagloV61_特效_香烟")
-	RESULTS:0 = EagloV61_特效_香烟
-	RESULTS:1 = 
+IF GETPALAMLV(PALAM:1:欲情, 8) >= 8 && CFLAG:1:积攒度 < 200 && RAND:2
+	RESULTS:0 = 得意颜
+	RESULTS:1 = 好心情
 	RETURN 1
 ENDIF
 ;}
@@ -96,13 +106,470 @@ SIF CFLAG:11:差し替え適用 == 3
 @EagloV_特殊内衣_11
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF TALENT:11:胸圍 <= 0 && CHARISMA_TENDENCY:(NOW_PERIOD()) >= 6
+IF (TALENT:11:胸圍 <= 0 && CHARISMA_TENDENCY:(NOW_PERIOD()) >= 6) || EQUIP:11:下半身内衣２ == 25
 	RESULTS = 創口貼
 	RETURN 1
 ELSEIF TEQUIP:11:SWIMMING || EQUIP:11:レオタード == 9
 	RETURN 2
 ENDIF
 RETURN 0
+;}
+
+; 17 爱丽丝{
+@SPECIAL_BASE_IMAGE_17
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:17:差し替え適用 == 4
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_17
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:17:差し替え適用 == 4
+	RESULTS = EagloV
+
+; RETURN：0:无，1:胸罩胖次，2:连体内衣
+@EagloV_特殊内衣_17(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 17
+IF EQUIP:CHARA:上半身内衣１ == 13 || EQUIP:CHARA:上半身内衣１ == 21
+	RESULTS = 黑纱睡衣
+	RETURN 1
+ELSEIF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+
+@EagloV_特殊服装_17(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM G_ID
+#DIM CHARA
+SIF !CHARA
+	CHARA = 17
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == 33 || CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+	IF !SPRITECREATED("EagloV17_服躯_黑纱睡衣")
+		G_ID = 0
+		CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
+		CALL 画像合成(G_ID, "EagloV17_胖次")
+		CALL 画像合成(G_ID, "EagloV17_胸罩_黑纱睡衣")
+		SPRITECREATE "EagloV17_服躯_黑纱睡衣", G_ID
+	ENDIF
+	RESULTS = 黑纱睡衣
+	RETURN 1
+ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女僕装]]
+	RESULTS = 女仆装
+	RETURN 1
+ELSEIF !CFLAG:CHARA:诶嘿嘿
+	RESULTS = 人偶师
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_17(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+VARSET LOCALS
+SIF !CHARA
+	CHARA = 17
+CALL EagloV_人偶差分_17(CHARA)
+IF RESULT && SPRITECREATED(RESULTS)
+	LOCALS:(エフェクト数*2) = %RESULTS%
+	エフェクト数 += 1
+ELSE
+	RETURN
+ENDIF
+CALL EagloV_GET_颊红差分(, CHARA)
+IF RESULT && SPRITECREATED(@"EagloV17_特效_人偶颊红")
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶颊红
+	エフェクト数 += 1
+ENDIF
+IF CFLAG:CHARA:睡眠
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
+ELSEIF (FLAG:時間停止 && EX:CHARA:無自覚Ｃ絶頂 + EX:CHARA:無自覚Ｖ絶頂 + EX:CHARA:無自覚Ａ絶頂 + EX:CHARA:無自覚Ｂ絶頂 + EX:CHARA:無自覚Ｍ絶頂 > 30) || (TCVAR:CHARA:烂醉 && BASE:CHARA:酒気 > MAXBASE:CHARA:酒気 * 2/3)
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶白目
+ELSEIF FLAG:時間停止
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶常目
+ELSEIF NOWEX:CHARA:TotalEX > 2 
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶白目
+ELSEIF TCVAR:CHARA:烂醉
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
+ELSEIF BASE:CHARA:憤怒 >= 900
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶暗目
+ELSEIF CFLAG:CHARA:心情不快 > 0
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
+ELSE
+	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶常目
+ENDIF
+エフェクト数 += 1
+
+; 3rd眼气泡
+IF RAND:4 && !FLAG:時間停止
+	CALL EagloV_气泡判定(CHARA)
+	;DEBUGPRINTFORML 气泡是%RESULTS%：{SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")}
+	IF SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")
+		LOCALS:(エフェクト数*2) = EagloV17_特效_人偶%RESULTS%
+		エフェクト数 += 1
+	ENDIF
+ENDIF
+[IF DEBUG]
+FOR LOCAL, 0, 10
+	SIF LOCALS:LOCAL != ""
+		DEBUGPRINTFORML {LOCAL}%LOCALS:LOCAL%
+NEXT
+[ENDIF]
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_人偶差分_17(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF CFLAG:CHARA:睡眠 || CFLAG:CHARA:诶嘿嘿 || EagloV_服装初步判定(CHARA) != "服"
+	RETURN 0
+TRYCALLFORM EagloV_特殊服装_{CHARA}
+IF RESULT
+	IF SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")
+		RESULTS = EagloV17_特效_人偶%RESULTS%
+		RETURN 1
+	ENDIF
+ENDIF
+
+; 22 露娜萨{
+@SPECIAL_BASE_IMAGE_22
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:22:差し替え適用 == 2
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_22
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:22:差し替え適用 == 2
+	RESULTS = EagloV
+
+; RETURN：0:无，1:胸罩胖次，2:连体内衣
+@EagloV_特殊内衣_22
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 22
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ELSEIF TEQUIP:CHARA:SWIMMING || EQUIP:CHARA:レオタード == 9
+	RESULTS = Y字泳衣
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_22
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;常驻前景图层
+RESULTS:0 = EagloV22_特效_前发
+RESULTS:1 = 
+RETURN 1
+;}
+
+; 25 蓝{
+;@SPECIAL_BASE_IMAGE_25
+;#LOCALSIZE 1
+;#LOCALSSIZE 1
+;SIF CFLAG:25:差し替え適用 == 3
+;	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_25
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:25:差し替え適用 == 3
+	RESULTS = EagloV
+
+@EagloV_特殊内衣_25
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 25
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+;}
+
+; 26 紫{
+@SPECIAL_BASE_IMAGE_26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:26:差し替え適用 == 5
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:26:差し替え適用 == 5
+	RESULTS = EagloV
+
+@EagloV_特殊效果_26
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+SIF !CHARA
+	CHARA = 26
+VARSET LOCALS
+IF IS_BUNNY(CHARA)
+ELSEIF !CHECK_NUDE(CHARA)
+	LOCALS:(エフェクト数*2) = EagloV26_特效_zun帽
+	エフェクト数++
+ENDIF
+IF EagloV_服装初步判定(CHARA) == "服" && !IS_FALLEN(CHARA)
+	LOCALS:(エフェクト数*2) = EagloV26_特效_掩面扇子
+	エフェクト数++
+ELSEIF EagloV_服装初步判定(CHARA) == "服"
+	LOCALS:(エフェクト数*2) = EagloV26_特效_手持扇子
+	エフェクト数++
+ENDIF
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_特殊内衣_26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 26
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+;}
+
+; 28 米斯蒂娅{
+@SPECIAL_BASE_IMAGE_28
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:28:差し替え適用 == 2
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_28
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:28:差し替え適用 == 2
+	RESULTS = EagloV
+
+; RETURN：0:无，1:胸罩胖次，2:连体内衣
+@EagloV_特殊内衣_28
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 28
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊表情_28
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC 表情,2
+#DIMS DYNAMIC 表情_眉
+#DIMS DYNAMIC 表情_目,2
+#DIMS DYNAMIC 表情_口,2
+#DIMS DYNAMIC 表情_鼻
+#DIMS DYNAMIC 表情索引
+#DIM DYNAMIC G_ID
+#DIM CHARA
+SIF !CHARA
+	CHARA = 28
+VARSET RESULTS
+CALL EagloV_表情判定(CHARA,,1)
+表情:0 = %RESULTS:0%
+表情:1 = %RESULTS:1%
+FOR LOCAL, 0, 2
+	SIF 表情:LOCAL == ""
+		CONTINUE
+	CALL EagloV_GET_表情差分(表情:LOCAL)
+	表情_眉 = %RESULTS:0%
+	表情_目:LOCAL = %RESULTS:1%
+	表情_口:LOCAL = %RESULTS:2%
+	表情_鼻 = %RESULTS:3%
+	IF 表情_口:LOCAL == "笑口" && 表情_目:LOCAL == "笑目"
+		表情索引 = %EagloV_表情索引(, CHARA, 表情:LOCAL+"2")%
+		IF !SPRITECREATED(表情索引)
+			G_ID = 0
+			CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
+			;EagloV{CHARA}_眉_{眉}
+			SIF SPRITECREATED(@"EagloV{CHARA}_眉_%表情_眉%")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_眉_%表情_眉%")
+
+			;EagloV{CHARA}_目_{目}
+			SIF SPRITECREATED(@"EagloV{CHARA}_目_笑目")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_目_笑目")
+
+			;EagloV{CHARA}_口_{口}
+			SIF SPRITECREATED(@"EagloV{CHARA}_口_大笑口")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_口_大笑口")
+
+			;EagloV{CHARA}_鼻_{鼻}
+			SIF SPRITECREATED(@"EagloV{CHARA}_鼻_%表情_鼻%")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_鼻_%表情_鼻%")
+
+			; 合成体图
+			SPRITECREATE 表情索引, G_ID
+		ENDIF
+	ENDIF
+NEXT
+RESULTS:0 '= 表情:0 != ""&&表情_口:0 == "笑口"&& 表情_目:0 == "笑目"&&CFLAG:CHARA:每回合随机数 % 3 == 0?@"%表情:0%2"# 表情:0
+RESULTS:1 '= 表情:1 != ""&&表情_口:1 == "笑口"&& 表情_目:1 == "笑目"&&CFLAG:CHARA:每回合随机数 % 3 == 0?@"%表情:1%2"# 表情:1
+RETURN 1
+
+@EagloV_特殊效果_28
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIMS DYNAMIC 表情,2
+#DIM CHARA
+SIF !CHARA
+	CHARA = 28
+VARSET LOCALS
+IF EagloV_服装初步判定(CHARA) != "服"
+	LOCALS:(エフェクト数*2) = EagloV28_特效_呆毛
+	エフェクト数++
+ENDIF
+IF CFLAG:CHARA:行動 == 5 && CFLAG:CHARA:職種 == JOB_料理
+	LOCALS:(エフェクト数*2) = EagloV28_特效_托盘
+	エフェクト数++
+	LOCALS:(エフェクト数*2) = EagloV28_特效_果汁
+	エフェクト数++
+ENDIF
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+;}
+
+; 31 早苗{
+@SPECIAL_BASE_IMAGE_31
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:31:差し替え適用 == 3
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_31
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:31:差し替え適用 == 3
+	RESULTS = EagloV
+
+@EagloV_特殊效果_31
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+SIF !CHARA
+	CHARA = 31
+VARSET LOCALS
+IF EagloV_服装初步判定(CHARA) == "服"
+	LOCALS:(エフェクト数*2) = EagloV31_特效_御币
+	エフェクト数++
+ENDIF
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_特殊内衣_31
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 31
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+;}
+
+; 32 神奈子{
+@SPECIAL_BASE_IMAGE_32
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:32:差し替え適用 == 2
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_32
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:32:差し替え適用 == 2
+	RESULTS = EagloV
+
+@EagloV_特殊内衣_32
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 32
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+;}
+
+; 33 诹访子{
+@SPECIAL_BASE_IMAGE_33
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:33:差し替え適用 == 3
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_33
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:33:差し替え適用 == 3
+	RESULTS = EagloV
+
+@EagloV_特殊内衣_33
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 33
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_33
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+SIF !CHARA
+	CHARA = 33
+;常驻前景图层
+LOCALS:(エフェクト数*2) = EagloV33_特效_前发
+エフェクト数++
+IF IS_BUNNY(CHARA)
+ELSEIF !CHECK_NUDE(CHARA)
+	LOCALS:(エフェクト数*2) = EagloV33_特效_帽子
+	エフェクト数++
+ENDIF
+RETURN エフェクト数
 ;}
 
 ; 49 觉{
@@ -231,39 +698,75 @@ RESULTS:1 =
 RETURN 1
 ;}
 
-; 22 露娜萨{
-@SPECIAL_BASE_IMAGE_22
+; 55 白莲{
+@SPECIAL_BASE_IMAGE_55
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:22:差し替え適用 == 2
+SIF CFLAG:55:差し替え適用 == 3
 	RESULTS = EagloV
 
-@SPECIAL_EFFECT_IMAGE_22
+@SPECIAL_EFFECT_IMAGE_55
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:22:差し替え適用 == 2
+SIF CFLAG:55:差し替え適用 == 3
 	RESULTS = EagloV
 
-; RETURN：0:无，1:胸罩胖次，2:连体内衣
-@EagloV_特殊内衣_22
+@EagloV_特殊服装_55(CHARA)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF TEQUIP:22:SWIMMING || EQUIP:22:レオタード == 9
-	RESULTS = Y字泳衣
-	RETURN 2
+#DIM CHARA
+SIF !CHARA
+	CHARA = 55
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == 33 || CFLAG:CHARA:睡眠
+	RESULTS = 薄纱睡衣
+	RETURN 1
+ELSEIF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 1
 ENDIF
 RETURN 0
 
-@EagloV_特殊效果_22
+@EagloV_特殊内衣_55
 #LOCALSIZE 1
 #LOCALSSIZE 1
-;常驻前景图层
-RESULTS:0 = EagloV22_特效_前发
-RESULTS:1 = 
-RETURN 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 55
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ELSEIF CURRENT_CLOTHES_SET(CHARA) == 27 || TEQUIP:CHARA:SWIMMING
+	RESULTS = 弹弓
+	RETURN 2
+ENDIF
+RETURN 0
 ;}
 
+; 61 妹红{
+@SPECIAL_BASE_IMAGE_61
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:61:差し替え適用 == 2
+	RESULTS = EagloV
 
+@SPECIAL_EFFECT_IMAGE_61
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:61:差し替え適用 == 2
+	RESULTS = EagloV
+
+@EagloV_特殊效果_61
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF !CFLAG:61:诶嘿嘿 && !CFLAG:61:睡眠 && CFLAG:61:妊娠経過日数 < 20 && TALENT:61:心情 < 0 && SPRITECREATED("EagloV61_特效_香烟")
+	RESULTS:0 = EagloV61_特效_香烟
+	RESULTS:1 = 
+	RETURN 1
+ENDIF
+;}
+
+; 62 辉夜{
 @SPECIAL_BASE_IMAGE_62
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -279,7 +782,7 @@ SIF CFLAG:62:差し替え適用 == 1
 @EagloV_特殊表情_62
 #LOCALSIZE 1
 #LOCALSSIZE 1
-
+VARSET RESULTS
 IF NOWEX:62:Ｃ絶頂 || NOWEX:62:Ｂ絶頂 || NOWEX:62:Ｖ絶頂 || NOWEX:62:Ａ絶頂 || NOWEX:62:Ｍ絶頂
 	IF EX:62:TotalEX >= 5
 		RESULTS:0 = 快感急
@@ -416,6 +919,298 @@ RETURNF (TALENT:62:性別==3 && NUDITYCHECK(62) <= 3)
 #LOCALSSIZE 1
 #FUNCTION
 RETURNF (EX:62:膣内精液 + EX:62:子宮内精液*2)
+;}
+
+; 72 永琳{
+@SPECIAL_BASE_IMAGE_72
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:72:差し替え適用 == 2
+	RESULTS = EagloV2
+
+@SPECIAL_EFFECT_IMAGE_72
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:72:差し替え適用 == 2
+	RESULTS = EagloV2
+
+@EagloV_特殊服装_72
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 72
+RESULTS = 
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 1
+ELSEIF EQUIP:CHARA:上身衣服２ == 13
+	IF (EQUIP:72:上半身内衣１ + EQUIP:72:上半身内衣２ == 0) || (FLAG:每日变更事件%5 == 0 && ABL:72:露出癖 >= 5)
+		RESULTS = 裸衬衫
+	ELSE
+		RESULTS = 半透衫
+	ENDIF
+	RETURN 1
+ELSEIF CFLAG:72:妊娠経過日数 >= 60
+	RESULTS = 孕装
+	RETURN 1
+ELSEIF YOUBI_MATCH(DAY, "月火金")
+	; 工作日，常服
+	RESULTS = 
+	RETURN 0
+ELSEIF ABL:72:露出癖 >= 3
+	; 休息日。露出癖3，1/2概率衬衫；露出癖5，1/10概率裸衬衫
+	IF (EQUIP:72:上半身内衣１ + EQUIP:72:上半身内衣２ == 0) || (DAY%5 == 0 && ABL:72:露出癖 >= 5)
+		RESULTS = 裸衬衫
+	ELSE
+		RESULTS = 半透衫
+	ENDIF
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊内衣_72
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 72
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_72
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF EagloV_服装初步判定(72) != "服"
+	RESULTS:0 = EagloV72_特效_呆毛
+	RESULTS:1 = 
+	RETURN 1
+ENDIF
+RESULTS = 
+CALL EagloV_特殊服装_72
+SELECTCASE RESULTS
+CASE "孕装", "裸衬衫", "半透衫"
+	RESULTS:0 = EagloV72_特效_呆毛
+	RESULTS:1 = 
+	RETURN 1
+ENDSELECT
+;}
+
+; 98-99 依姬丰姬{
+@SPECIAL_EFFECT_IMAGE_98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:98:差し替え適用 == 3
+	RESULTS = EagloV
+
+@EagloV_特殊服装_98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 98
+RESULTS = 
+IF IS_BUNNY(CHARA)
+	RESULTS = 逆兔女郎
+	RETURN 1
+ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[白衣天使套]]
+	RESULTS = 护士服
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊内衣_98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 98
+IF IS_BUNNY(CHARA)
+	RESULTS = 逆兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_98
+#LOCALSIZE 1
+#LOCALSSIZE 20
+#DIM DYNAMIC エフェクト数 = 0
+#DIMS DYNAMIC 表情,2
+#DIM CHARA
+SIF !CHARA
+	CHARA = 98
+VARSET LOCALS
+IF EagloV_服装初步判定(98) == "服"
+	LOCALS:(エフェクト数*2) = EagloV98_特效_剑
+	;LOCALS:(エフェクト数*2+1) = EagloV98_特效_剑
+	エフェクト数++
+ELSEIF EagloV_服装初步判定(98) == "裸" || EagloV_服装初步判定(98) == "内裤"
+	LOCALS:(エフェクト数*2) = EagloV98_特效_乳头
+	;LOCALS:(エフェクト数*2+1) = EagloV98_特效_乳头
+	エフェクト数++
+ENDIF
+VARSET RESULTS
+CALL EagloV_特殊服装_98
+SELECTCASE RESULTS
+CASE "逆兔女郎"
+	LOCALS:(エフェクト数*2) = EagloV98_特效_兔耳
+	;LOCALS:(エフェクト数*2+1) = EagloV98_特效_兔耳
+	エフェクト数++
+CASE "护士服"
+	LOCALS:(エフェクト数*2) = EagloV98_特效_护士帽
+	;LOCALS:(エフェクト数*2+1) = EagloV98_特效_护士帽
+	エフェクト数++
+CASEELSE
+	LOCALS:(エフェクト数*2) = EagloV98_特效_头巾
+	;LOCALS:(エフェクト数*2+1) = EagloV98_特效_头巾
+	エフェクト数++
+ENDSELECT
+IF EagloV_丁日判定(CHARA, EagloV_服装初步判定(CHARA)) == "丁日"
+	IF TALENT:CHARA:形状 == 4
+		LOCALS:(エフェクト数*2) = EagloV98_特效_神光棒
+		;LOCALS:(エフェクト数*2+1) = EagloV98_特效_神光棒
+		エフェクト数++
+	ENDIF
+ENDIF
+;战斗姿态
+[IF_DEBUG]
+FOR LOCAL, 0, 20
+	SIF LOCALS:LOCAL != ""
+		DEBUGPRINTFORML {LOCAL}%LOCALS:LOCAL%
+NEXT
+[ENDIF]
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_特殊表情_98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC 表情,2
+#DIMS DYNAMIC 表情_眉
+#DIMS DYNAMIC 表情_目
+#DIMS DYNAMIC 表情_口
+#DIMS DYNAMIC 表情_鼻
+#DIMS DYNAMIC 表情索引
+#DIM DYNAMIC G_ID
+#DIM CHARA
+SIF !CHARA
+	CHARA = 98
+IF EagloV_战斗判定_98()
+	VARSET RESULTS
+	CALL EagloV_表情判定(CHARA,,1)
+	表情:0 = %RESULTS:0%
+	表情:1 = %RESULTS:1%
+	FOR LOCAL, 0, 2
+		SIF 表情:LOCAL == ""
+			CONTINUE
+		表情索引 = %EagloV_表情索引(, CHARA, 表情:LOCAL+"红")%
+		IF !SPRITECREATED(表情索引)
+			G_ID = 0
+			CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
+			CALL EagloV_GET_表情差分(表情:LOCAL)
+			表情_眉 = %RESULTS:0%
+			表情_目 = %RESULTS:1%
+			表情_口 = %RESULTS:2%
+			表情_鼻 = %RESULTS:3%
+			;EagloV{CHARA}_眉_{眉}
+			SIF SPRITECREATED(@"EagloV{CHARA}_眉_%表情_眉%")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_眉_%表情_眉%")
+
+			;EagloV{CHARA}_目_{目}
+			IF SPRITECREATED(@"EagloV{CHARA}_目_%表情_目%红")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_目_%表情_目%红")
+			ELSE
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_目_%表情_目%")
+			ENDIF
+			;EagloV{CHARA}_口_{口}
+			SIF SPRITECREATED(@"EagloV{CHARA}_口_%表情_口%")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_口_%表情_口%")
+
+			;EagloV{CHARA}_鼻_{鼻}
+			SIF SPRITECREATED(@"EagloV{CHARA}_鼻_%表情_鼻%")
+				CALL 画像合成(G_ID, @"EagloV{CHARA}_鼻_%表情_鼻%")
+
+			; 合成体图
+			SPRITECREATE 表情索引, G_ID
+		ENDIF
+	NEXT
+	RESULTS:0 '= COND_STR(@"%表情:0%红",表情:0 != "")
+	RESULTS:1 '= COND_STR(@"%表情:1%红",表情:1 != "")
+	RETURN 1
+ENDIF
+
+;暂时不知道啥条件
+@EagloV_战斗判定_98
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+RETURNF 0
+
+@SPECIAL_EFFECT_IMAGE_99
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:99:差し替え適用 == 1
+	RESULTS = EagloV
+
+@EagloV_特殊内衣_99
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 99
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+
+;}
+
+; 124 隐岐奈{
+@SPECIAL_BASE_IMAGE_124
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:124:差し替え適用 == 3
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_124
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:124:差し替え適用 == 3
+	RESULTS = EagloV
+
+@EagloV_特殊服装_124(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 124
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+	RESULTS = 休闲服
+	RETURN 1
+ELSEIF EQUIP:CHARA:連衣裙 == 21
+	RESULTS = 毛衣
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊内衣_124
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 124
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ENDIF
+RETURN 0
+;}
 
 ; 130 八千慧{
 @SPECIAL_BASE_IMAGE_130
@@ -461,146 +1256,28 @@ ENDIF
 RETURN 0
 ;}
 
-
-@SPECIAL_EFFECT_IMAGE_99
+; 139 典{
+@SPECIAL_BASE_IMAGE_139
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:99:差し替え適用 == 1
+SIF CFLAG:139:差し替え適用 == 1
 	RESULTS = EagloV
 
-; 17 爱丽丝{
-@SPECIAL_BASE_IMAGE_17
+@SPECIAL_EFFECT_IMAGE_139
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF CFLAG:17:差し替え適用 == 4
+SIF CFLAG:139:差し替え適用 == 1
 	RESULTS = EagloV
 
-@SPECIAL_EFFECT_IMAGE_17
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF CFLAG:17:差し替え適用 == 4
-	RESULTS = EagloV
-
-; RETURN：0:无，1:胸罩胖次，2:连体内衣
-@EagloV_特殊内衣_17(CHARA)
+@EagloV_特殊内衣_139
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM CHARA
 SIF !CHARA
-	CHARA = 17
-IF EQUIP:CHARA:上半身内衣１ == 13 || EQUIP:CHARA:上半身内衣１ == 21
-	RESULTS = 黑纱睡衣
-	RETURN 1
-ENDIF
-
-@EagloV_特殊服装_17(CHARA)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM G_ID
-#DIM CHARA
-SIF !CHARA
-	CHARA = 17
-RESULTS = 
-IF CURRENT_CLOTHES_SET(CHARA) == 33 || CFLAG:CHARA:睡眠
-	IF !SPRITECREATED("EagloV17_服躯_黑纱睡衣")
-		G_ID = 0
-		CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
-		CALL 画像合成(G_ID, "EagloV17_胖次")
-		CALL 画像合成(G_ID, "EagloV17_胸罩_黑纱睡衣")
-		SPRITECREATE "EagloV17_服躯_黑纱睡衣", G_ID
-	ENDIF
-	RESULTS = 黑纱睡衣
-	RETURN 1
-ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女僕装]]
-	RESULTS = 女仆装
-	RETURN 1
-ELSEIF !CFLAG:CHARA:诶嘿嘿
-	RESULTS = 人偶师
-	RETURN 1
+	CHARA = 139
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
 ENDIF
 RETURN 0
-
-@EagloV_特殊效果_17(CHARA)
-#LOCALSIZE 1
-#LOCALSSIZE 10
-#DIM DYNAMIC エフェクト数 = 0
-#DIM CHARA
-VARSET LOCALS
-SIF !CHARA
-	CHARA = 17
-CALL EagloV_人偶差分_17(CHARA)
-IF RESULT && SPRITECREATED(RESULTS)
-	LOCALS:(エフェクト数*2) = %RESULTS%
-	エフェクト数 += 1
-ELSE
-	RETURN
-ENDIF
-CALL EagloV_GET_颊红差分(, CHARA)
-IF RESULT && SPRITECREATED(@"EagloV17_特效_人偶颊红")
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶颊红
-	エフェクト数 += 1
-ENDIF
-IF CFLAG:CHARA:睡眠
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
-ELSEIF (FLAG:時間停止 && EX:CHARA:無自覚Ｃ絶頂 + EX:CHARA:無自覚Ｖ絶頂 + EX:CHARA:無自覚Ａ絶頂 + EX:CHARA:無自覚Ｂ絶頂 + EX:CHARA:無自覚Ｍ絶頂 > 30) || (TCVAR:CHARA:烂醉 && BASE:CHARA:酒気 > MAXBASE:CHARA:酒気 * 2/3)
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶白目
-ELSEIF FLAG:時間停止
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶常目
-ELSEIF NOWEX:CHARA:TotalEX > 2 
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶白目
-ELSEIF TCVAR:CHARA:烂醉
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
-ELSEIF BASE:CHARA:憤怒 >= 900
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶暗目
-ELSEIF CFLAG:CHARA:心情不快 > 0
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶闭目
-ELSE
-	LOCALS:(エフェクト数*2) = EagloV17_特效_人偶常目
-ENDIF
-エフェクト数 += 1
-
-; 3rd眼气泡
-IF RAND:4 && !FLAG:時間停止
-	CALL EagloV_气泡判定(CHARA)
-	;DEBUGPRINTFORML 气泡是%RESULTS%：{SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")}
-	IF SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")
-		LOCALS:(エフェクト数*2) = EagloV17_特效_人偶%RESULTS%
-		エフェクト数 += 1
-	ENDIF
-ENDIF
-[IF DEBUG]
-FOR LOCAL, 0, 10
-	SIF LOCALS:LOCAL != ""
-		DEBUGPRINTFORML {LOCAL}%LOCALS:LOCAL%
-NEXT
-[ENDIF]
-VARSET RESULTS
-ARRAYCOPY "LOCALS", "RESULTS"
-RETURN エフェクト数
-
-@EagloV_人偶差分_17(CHARA)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM CHARA
-SIF CFLAG:CHARA:睡眠 || CFLAG:CHARA:诶嘿嘿 || EagloV_服装初步判定(CHARA) != "服"
-	RETURN 0
-TRYCALLFORM EagloV_特殊服装_{CHARA}
-IF RESULT
-	IF SPRITECREATED(@"EagloV17_特效_人偶%RESULTS%")
-		RESULTS = EagloV17_特效_人偶%RESULTS%
-		RETURN 1
-	ENDIF
-ENDIF
-
-; 25 蓝{
-;@SPECIAL_BASE_IMAGE_25
-;#LOCALSIZE 1
-;#LOCALSSIZE 1
-;SIF CFLAG:25:差し替え適用 == 3
-;	RESULTS = EagloV
-
-@SPECIAL_EFFECT_IMAGE_25
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF CFLAG:25:差し替え適用 == 3
-	RESULTS = EagloV
+;}
