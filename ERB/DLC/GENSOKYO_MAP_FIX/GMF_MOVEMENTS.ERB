@@ -50,11 +50,14 @@ RETURNF MAP_ID != GMF_HOME_MAP
 CFLAG:MASTER:現在位置 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{CFLAG:MASTER:現在位置/100}", CFLAG:MASTER:現在位置, CFLAG:MASTER:現在位置)
 ;角色位置变换
 FOR LOCAL, 1, CHARANUM
+	;出禁应该跳过变换
+	SIF CFLAG:LOCAL:出禁
+		CONTINUE
 	;角色的职场需要转换，神社在住可能也先变换着吧
 	CFLAG:LOCAL:職場 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{CFLAG:LOCAL:職場/100}", CFLAG:LOCAL:職場, CFLAG:LOCAL:職場)
 	CFLAG:LOCAL:神社在住 = (GET_MAPID(CFLAG:LOCAL:初期位置) == MAIN_MAP) ? CFLAG:LOCAL:初期位置 # 0
 	;修正角色位于隙间空间时的状态，即隙间空间情况下角色应该视为处于自宅中
-	IF !CFLAG:LOCAL:出禁 && (CFLAG:LOCAL:現在位置 % 100 == 0 || CFLAG:LOCAL:現在位置 % 100 == 99)
+	IF CFLAG:LOCAL:現在位置 % 100 == 0 || CFLAG:LOCAL:現在位置 % 100 == 99
 		CFLAG:LOCAL:GMF_現在拠点位置 = CFLAG:LOCAL:初期位置
 		CFLAG:LOCAL:現在位置 = CFLAG:LOCAL:自宅位置
 	ELSE
@@ -75,6 +78,9 @@ TFLAG:宴会場 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{FLAG:宴会会場/100}", FLA
 CFLAG:MASTER:現在位置 = GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:MASTER:現在位置)
 ;角色位置变换
 FOR LOCAL, 1, CHARANUM
+	;出禁应该跳过变换
+	SIF CFLAG:LOCAL:出禁
+		CONTINUE
 	;角色的职场需要转换，神社在住可能也先变换着吧，这可能得重新设定一遍才能解决，毕竟没有暂存
 	CALL 仕事内容設定(LOCAL)
 	CFLAG:LOCAL:神社在住 = (GET_MAPID(CFLAG:LOCAL:初期位置) == GET_MAPID(CFLAG:MASTER:現在位置)) ? CFLAG:LOCAL:初期位置 # 0
@@ -260,6 +266,13 @@ SIF GMF_IS_ODEKAKE(-1)
 #LOCALSSIZE 1
 ;浴室逐出，似乎也是直接照搬即可
 CFLAG:ARG:GMF_現在拠点位置 = CFLAG:ARG:現在位置
+
+;COMF444 女の子を物色
+@GMF_444_RANDOM_CHARA_SETTING
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;现在据点位置，要考虑玩家在外出的情况
+CFLAG:RANDOM_CHARANUM:GMF_現在拠点位置 = GMF_IS_ODEKAKE(-1) ? GMF_GET_MAP_REPLACEMENT_INVERSE(CFLAG:RANDOM_CHARANUM:現在位置) # CFLAG:RANDOM_CHARANUM:現在位置
 
 ;-----------------------------------------------------------
 ;GMF自定义函数：外出地点ID替换为据点地点ID，即GMF_GET_MAP_REPLACEMENT的反变换
@@ -586,7 +599,7 @@ SELECTCASE ARG
 	CASE 九天瀑布
 		RETURNF 1
 	CASE 絶景之丘
-		RETURNF 1
+		RETURNF 2
 	CASE 山之湖
 		RETURNF 0
 	CASE 守矢神社境内
