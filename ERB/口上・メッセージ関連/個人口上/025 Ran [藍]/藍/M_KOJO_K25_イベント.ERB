@@ -57,10 +57,12 @@
 ;CFLAG:25:1006	:お澡堂场身体接触で剃毛したかどうか
 ;CFLAG:25:1007	:妊娠回数
 ;CFLAG:25:1008	:時間停止奸许可
+;CFLAG:25:1009	:平安夜事件判定
 ;TCVAR:25:350	:」房间で遭遇」时に挨拶したか
 ;TCVAR:25:351	:胖次を盗んだか
 ;TCVAR:25:352	:选择肢付き会说着话か
 ;TCVAR:25:353   :祈愿制限
+;TCVAR:25:354	:过夜事件判定
 ;
 ;******************************************************************************
 
@@ -75,7 +77,7 @@
 #LOCALSIZE 1
 #LOCALSSIZE 1
 ;别人版を作成する际はこのテンプレではなく别人版用口上テンプレをご利用ください
-RESULTS:2 = 初始剧本<br>内容量较少（有效输出行：3956行）
+
 ;口上存在判定です、けしてコメントアウトしないでください
 ;他の处理は一切行わないように
 RETURN 1
@@ -95,10 +97,10 @@ RETURN 1
 CFLAG:25:時間停止口上有 = 1
 ;CFLAG:X:扮演口上有 = 0
 
-;破瓜中止口上有に1を入れると、@M_KOJO_EVENT_KX_LOST_VIRGIN_STOPで中止の成否を操作できます
+;破瓜中止口上有に1を入れると、@M_KOJO_EVENT_K25_LOST_VIRGIN_STOPで中止の成否を操作できます
 ;CFLAG:X:破瓜中止口上有 = 0
 
-;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_EVENT_KX_PERMISSIONで推倒の成否を操作できます
+;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_EVENT_K25_PERMISSIONで推倒の成否を操作できます
 ;CFLAG:X:口上内抱き寄せ判定_初回 = 0
 ;CFLAG:X:口上内抱き寄せ判定_通常 = 0
 
@@ -143,25 +145,25 @@ SETCOLOR 0x9883C9
 #LOCALSSIZE 1
 ;初对面、挨拶のタイミング
 ;TALENTの变更はここでどうぞ。
-PRINTDL 
+PRINTL 
 PRINTFORMW 「原来如此。你就是传闻中的新人吗」
-PRINTDL 
+PRINTL 
 PRINTFORMDW %CALLNAME:MASTER%不禁吓了一跳，向后仰去
 PRINTFORMDW 那个女人不知何时已经站在旁边，饶有兴致地仔细打量着这边
-PRINTDL 
+PRINTL 
 PRINTFORMW 「呀，吓到你真是抱歉。只是稍微开了个玩笑而已」
-PRINTDL 
+PRINTL 
 PRINTFORMDW 金发金眼的绝世美女眯起眼睛，可爱地笑着挥手表示『没有恶意』
 PRINTFORMDW 在她的身后，有九条毛色艳丽的漂亮尾巴
-PRINTDL 
+PRINTL 
 PRINTFORMW 「我是八云蓝。是侍奉某位大人的一个不起眼的式神」
 PRINTFORMW 「因为工作关系经常出入人里和神社，所以今后和你见面的机会也会很多吧」
 PRINTFORMW 「总之，今后也请多多关照」
-PRINTDL 
+PRINTL 
 PRINTFORMDW 这样说着，九尾狐有礼貌地低下了头
 PRINTFORMDW 真是的。与她那出众的美貌和存在感相反，似乎是个非常容易亲近的妖怪……
 PRINTFORMDW 纵向的狐狸瞳孔，一动不动地注视着回礼的%CALLNAME:MASTER%
-PRINTDL 
+PRINTL 
 ;妖狐
 TALENT:25:25 = 1
 TALENT:25:91 = 1
@@ -181,7 +183,7 @@ RETURN 1
 LOCAL = 0
 ;-------------
 IF LOCAL
-	PRINTFORMDL 
+	PRINTFORML 
 	;接吻を中止したい场合は以下を开放
 	;TCVAR:中止接吻 = 1
 ENDIF
@@ -312,7 +314,7 @@ IF LOCAL && !FLAG:70 && TALENT:恋慕
 		PRINTFORMDW %CALLNAME:MASTER%似乎让一个不得了的家伙动了真情……
 		RETURN 1
 	ENDIF
-	PRINTDL 
+	PRINTL 
 ENDIF
 RETURN 1
 
@@ -387,7 +389,7 @@ IF LOCAL
 				PRINTFORMDW %CALLNAME:MASTER%心想，蓝自己又是怎么想的呢
 			ENDSELECT
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -444,96 +446,236 @@ IF LOCAL
 	;四季ごとに朝昼晩
 	IF LOCAL:1 && ARG == 1
 		PRINTL
+		IF !TCVAR:25:350
 		;一日一回
-		SIF TCVAR:25:350 == 1
+			IF TALENT:恋慕
+				;元旦
+				IF DAY:2 == 1 && DAY:3 == 1 && DAY != 1
+					CALL M_KOJO_EVENT_K25_NEW_YEARS
+				;万圣节
+				ELSEIF DAY:2 == 3 && DAY:3 == 30
+					CALL M_KOJO_EVENT_K25_HALLOWEEN
+				;平安夜
+				ELSEIF DAY:2 == 4 && DAY:3 == 24
+					CALL M_KOJO_EVENT_K25_CHRISTMAS_EVE_1
+				;圣诞节
+				ELSEIF DAY:2 == 4 && DAY:3 == 25
+					CALL M_KOJO_EVENT_K25_CHRISTMAS
+				;情人节
+				ELSEIF DAY:2 == 4 && DAY:3 == 14
+					CALL M_KOJO_EVENT_K25_VALENTINE
+				;兔子之日
+				ELSEIF DAY:3 == 28
+					CALL M_KOJO_EVENT_K25_RABBIT
+				ELSE
+					;DAY:2で季节を选择
+					SELECTCASE DAY:2
+					;春
+					CASE 1
+						;欲求不满
+						IF CFLAG:25:340 > 600 && TCVAR:発情
+							PRINTFORML 「呐，%CALLNAME:MASTER%，你知道吗？」
+							PRINTFORMDL 突然间，被蓝从背后搂住，她猛烈的心跳声清晰可闻
+							PRINTFORML 「春天，是狐狸交配的季节哦~」
+							PRINTFORMW 「我呀，已经有些抑制不住了……可以，拜托你吗？」
+						ELSE
+							;TIME:2で朝昼晩を选择
+							SELECTCASE TIME:2
+							;朝
+							CASE 1,2
+								PRINTFORML 「%CALLNAME:MASTER%样。早上好」
+								PRINTFORML 「讨厌死板的问候？」
+								PRINTFORMDW 被尾巴搔弄着，似乎玩得很开心
+							;昼
+							CASE 3,4
+								PRINTFORML 「呵呵、%CALLNAME:MASTER%」
+								PRINTFORMW 「在这季节。选这时间出门最适合呢」
+							;夜
+							CASE 5,6,7
+								PRINTFORML 「晚上好、%CALLNAME:MASTER%」
+								PRINTFORMW 「就算是春分、晚上还是会冷。注意身体别着凉了」
+							ENDSELECT
+						ENDIF
+					;夏
+					CASE 2
+					;欲求不满
+						IF CFLAG:25:340 > 600 && TCVAR:発情
+							PRINTFORML 「好热……身体好热……」
+							PRINTFORMDL 蓝用湿热的目光看了过来,脸颊通红
+							PRINTFORMDL 她的白色衬衣完全被汗水浸湿，诱人的身材隐约可见
+							PRINTFORMW 「好热啊，%CALLNAME:MASTER%，我们去找个阴凉的地方吧」
+						ELSE
+							SELECTCASE TIME:2
+							;朝
+							CASE 1,2
+								PRINTFORML 「早上好，%CALLNAME:MASTER%」
+								PRINTFORML 「现在是早晚也很热的季节了。昨晚睡得好吗？」
+								PRINTFORMDW 蓝总是保持着凉爽的姿态
+							;中午
+							CASE 3,4
+								PRINTFORML 「你好。今天也很热呢，%CALLNAME:MASTER%」
+								PRINTFORML 「哎呀，出了好多汗。我帮你擦擦」
+								PRINTFORMDW 蓝帮我擦去了额头上的汗水
+							;晚上
+							CASE 5,6,7
+								PRINTFORML 「是%CALLNAME:MASTER%啊。没有被晒干真是太好了」
+								PRINTFORML 「天黑了，也变得凉快了。要卿卿我我的话现在正是时候哦」
+								PRINTFORMDW 蓝似乎觉得这是夏天为数不多的好机会，凑了过来
+							ENDSELECT
+						ENDIF
+					;秋天
+					CASE 3
+						;欲求不满
+						IF CFLAG:25:340 > 600 && TCVAR:発情
+							PRINTFORML 「啊，%CALLNAME:MASTER%，你来了啊」
+							PRINTFORMDL 蓝有些扭捏地靠了过来
+							PRINTFORMW 「天…天气不错啊，要不我俩找…找个地方独处一会？」
+						ELSE
+							SELECTCASE TIME:2
+							;早上
+							CASE 1,2
+								PRINTFORML 「您身体好吗，%CALLNAME:MASTER%」
+								PRINTFORMW 「身体没有不舒服吧。偶尔去竹林里的医生那里看看也好」
+							;中午
+							CASE 3,4
+								PRINTFORML 「嗯，风中飘来银杏的香味」
+								PRINTFORML 「说实话我已经闻腻了。救救我」
+								PRINTFORMDW 蓝把脸凑到我的脖子上，嗅了嗅鼻子
+							;晚上
+							CASE 5,6,7
+								PRINTFORML 「呀，%CALLNAME:MASTER%」
+								PRINTFORML 「你看，那边有蟋蟀在叫」
+								PRINTFORMDW 两人一起静静地聆听着这风雅的音色
+							ENDSELECT
+						ENDIF
+					;冬天
+					CASE 4
+						;欲求不满
+						IF CFLAG:25:340 > 600 && TCVAR:発情
+							PRINTFORML 「呜呜，真冷啊，%CALLNAME:MASTER%再靠过来一些」
+							PRINTFORMDL 暖烘烘的尾巴突然间缠绕上来，温柔地将我捕获
+							PRINTFORML 「呐呐，要不要一起，做一些能暖和起来的事呢」
+							PRINTFORMDW 面色潮红的蓝，在耳边低语着，呼出湿热的气息
+						ELSE
+							SELECTCASE TIME:2
+							;早上
+							CASE 1,2
+								PRINTFORML 「早上好，%CALLNAME:MASTER%……嗯？」
+								PRINTFORML 「真是突然啊。我倒是无所谓」
+								PRINTFORMDW 我把冰冷的手埋进了蓝蓬松的尾巴里
+							;中午
+							CASE 3,4
+								PRINTFORML 「冷吗，%CALLNAME:MASTER%？」
+								PRINTFORML 「那，再靠近我一点。我帮你暖到心底」
+								PRINTFORMDW 蓝的尾巴轻轻地缠绕在我的脖子上
+							;晚上
+							CASE 5,6,7
+								PRINTFORML 「呜，变得好冷啊」
+								PRINTFORML 「即使有毛皮，冷的时候还是冷啊」
+								PRINTFORMW 「这种时候还是人体的温暖最棒了。你觉得呢？」
+							ENDSELECT
+						ENDIF
+					ENDSELECT
+			    ENDIF
+			ELSEIF TALENT:思慕
+				PRINTFORML 「是%CALLNAME:MASTER%啊。能见到你真开心」
+				PRINTFORMDW 蓝笑着亲切地向我打招呼
+			ELSE
+				PRINTFORML 「是你呀」
+				PRINTFORMDW 蓝注意到这边，挥了挥手
+			ENDIF
+			TCVAR:25:350 = 1
 			RETURN 1
+		ELSE
 		IF TALENT:恋慕
 			;DAY:2で季节を选择
 			SELECTCASE DAY:2
 			;春
 			CASE 1
-				;TIME:2で朝昼晩を选择
-				SELECTCASE TIME:2
-				;朝
-				CASE 1,2
-					PRINTFORML 「%CALLNAME:MASTER%样。早上好」
-					PRINTFORML 「讨厌死板的问候？」
-					PRINTFORMDW 被尾巴搔弄着，似乎玩得很开心
-				;昼
-				CASE 3,4
-					PRINTFORML 「呵呵、%CALLNAME:MASTER%」
-					PRINTFORMW 「在这季节。选这时间出门最适合呢」
-				;夜
-				CASE 5,6,7
-					PRINTFORML 「晚上好、%CALLNAME:MASTER%」
-					PRINTFORMW 「就算是春分、晚上还是会冷。注意身体别着凉了」
+			;欲求不满
+			IF CFLAG:25:340 > 600 && TCVAR:発情
+				PRINTFORML 「%CALLNAME:MASTER%，发春的季节来到了哦~」
+				PRINTFORML 「不帮忙处理一下的话，我要来主动袭击你了」
+				PRINTFORMDW 蓝似乎要抑制不住动物本能了……
+			ELSE
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%，现在是樱花盛开的季节哦」
+					PRINTFORML 「有空的话，我们去赏花吧」
+					PRINTFORMW 「可以带上紫大人和橙，当然，我更想要一段独处的时光，我、和你」
+				CASE 1
+					PRINTFORML 「到了春天也还是有些冷啊，%CALLNAME:MASTER%可别着凉了」
+					PRINTFORML 「来，我帮你暖和一下」
+					PRINTFORMDW 被蓬松的大尾巴裹住了，有些痒痒的
 				ENDSELECT
+			ENDIF
 			;夏
 			CASE 2
-				SELECTCASE TIME:2
-				;朝
-				CASE 1,2
-					PRINTFORML 「早上好，%CALLNAME:MASTER%」
-					PRINTFORML 「现在是早晚也很热的季节了。昨晚睡得好吗？」
-					PRINTFORMDW 蓝总是保持着凉爽的姿态
-				;中午
-				CASE 3,4
-					PRINTFORML 「你好。今天也很热呢，%CALLNAME:MASTER%」
-					PRINTFORML 「哎呀，出了好多汗。我帮你擦擦」
-					PRINTFORMDW 蓝帮我擦去了额头上的汗水
-				;晚上
-				CASE 5,6,7
-					PRINTFORML 「是%CALLNAME:MASTER%啊。没有被晒干真是太好了」
-					PRINTFORML 「天黑了，也变得凉快了。要卿卿我我的话现在正是时候哦」
-					PRINTFORMDW 蓝似乎觉得这是夏天为数不多的好机会，凑了过来
-				ENDSELECT
-			;秋天
+				;欲求不满
+				IF CFLAG:25:340 > 600 && TCVAR:発情
+					PRINTFORML 「好热、好热……%CALLNAME:MASTER%你看，我已经浑身是汗了……」
+					PRINTFORMDL 蓝故意拉低衣领，将丰满的、冒着热气的胸口展露出来
+					PRINTFORMDW 看到此番美景，%CALLNAME:MASTER%感觉血液正往下半身汇聚……
+				ELSE
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「是%CALLNAME:MASTER%啊……」
+						PRINTFORML 「这天气……真的……好热啊……」
+						PRINTFORMDW 蓝吐着舌头、蔫着耳朵的样子，莫名有些可爱
+					CASE 1
+						PRINTFORML 「又出了不少汗呢，%CALLNAME:MASTER%」
+						PRINTFORML 「来吧，我来帮你擦擦」
+						PRINTFORMDW 蓝帮我擦去了额头上的汗水
+					ENDSELECT
+				ENDIF
+			;秋
 			CASE 3
-				SELECTCASE TIME:2
-				;早上
-				CASE 1,2
-					PRINTFORML 「您身体好吗，%CALLNAME:MASTER%」
-					PRINTFORMW 「身体没有不舒服吧。偶尔去竹林里的医生那里看看也好」
-				;中午
-				CASE 3,4
-					PRINTFORML 「嗯，风中飘来银杏的香味」
-					PRINTFORML 「说实话我已经闻腻了。救救我」
-					PRINTFORMDW 蓝把脸凑到我的脖子上，嗅了嗅鼻子
-				;晚上
-				CASE 5,6,7
-					PRINTFORML 「呀，%CALLNAME:MASTER%」
-					PRINTFORML 「你看，那边有蟋蟀在叫」
-					PRINTFORMDW 两人一起静静地聆听着这风雅的音色
-				ENDSELECT
+				;欲求不满
+				IF CFLAG:25:340 > 600 && TCVAR:発情 
+					PRINTFORML 「在食欲之秋，莫名会感到饥饿呢」
+					PRINTFORML 「我的下面也饿了呢，好想吃掉%CALLNAME:MASTER%啊……」
+					PRINTFORMDW 蓝揉搓着小腹，说出了奇怪的话……
+				ELSE
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「你来了啊，%CALLNAME:MASTER%」
+						PRINTFORMDL 蓝打理着尾巴，抖落掉卡在其中的落叶
+						PRINTFORMW 「地上落叶这么多，用来烤红薯应该很合适吧」
+					CASE 1
+						PRINTFORML 「炎热完全被秋风吹散了」
+						PRINTFORML 「这个季节很适合外出呢，你觉得呢？」
+						PRINTFORMDW 蓝的话音里带着一丝期待
+					ENDSELECT
+				ENDIF
 			;冬天
 			CASE 4
-				SELECTCASE TIME:2
-				;早上
-				CASE 1,2
-					PRINTFORML 「早上好，%CALLNAME:MASTER%……嗯？」
-					PRINTFORML 「真是突然啊。我倒是无所谓」
-					PRINTFORMDW 我把冰冷的手埋进了蓝蓬松的尾巴里
-				;中午
-				CASE 3,4
-					PRINTFORML 「冷吗，%CALLNAME:MASTER%？」
-					PRINTFORML 「那，再靠近我一点。我帮你暖到心底」
-					PRINTFORMDW 蓝的尾巴轻轻地缠绕在我的脖子上
-				;晚上
-				CASE 5,6,7
-					PRINTFORML 「呜，变得好冷啊」
-					PRINTFORML 「即使有毛皮，冷的时候还是冷啊」
-					PRINTFORMW 「这种时候还是人体的温暖最棒了。你觉得呢？」
-				ENDSELECT
+				;欲求不满
+				IF CFLAG:25:340 > 600 && TCVAR:発情
+					PRINTFORML 「想要取暖吗？我知道个好方法哦~」
+					PRINTFORML 「一起做这种运动的话，不仅能暖和起来，还很舒服呢❤」
+					PRINTFORMDW 蓝用手指勾出一个圈，套在另一个手指上，不断进进出出……
+				ELSE
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「这个季节，大家总是盯着我的尾巴，我很苦恼啊」
+						PRINTFORML 「但如果是你的话，怎样弄我都不会介意的」
+						PRINTFORMDW 扑在毛茸茸暖烘烘的尾巴堆里，感觉全身心都被治愈了
+					CASE 1
+						PRINTFORML 「来吧，再靠近我一点，我帮你暖和起来」
+						PRINTFORMDL 蓝的尾巴温柔地缠绕在我的脖子上
+						PRINTFORMDW 两人就这样依靠着，感受彼此的温暖
+					ENDSELECT
+				ENDIF
 			ENDSELECT
-		ELSEIF TALENT:思慕
-			PRINTFORML 「是%CALLNAME:MASTER%啊。能见到你真开心」
-			PRINTFORMDW 蓝笑着亲切地向我打招呼
-		ELSE
-			PRINTFORML 「呀」
-			PRINTFORMDW 蓝注意到这边，举起了手
-		ENDIF
-		TCVAR:25:350 = 1
+			ELSEIF TALENT:思慕
+				PRINTFORML 「是%CALLNAME:MASTER%啊，又见面了呢」
+				PRINTFORMDW 蓝的笑容中带着一丝羞涩
+			ELSE
+				PRINTFORML 「又见面了」
+				PRINTFORMDW 蓝注意到这边，微微点头示意
+			ENDIF
 		RETURN 1
+		ENDIF
 	ENDIF
 	;-------------------------------------------------
 	;TARGETが入ってきた
@@ -594,29 +736,190 @@ IF LOCAL
 	;-------------------------------------------------
 	;TARGET进入澡堂，被赶了出来
 	;记入检查（=0, 不显示、1, 显示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 5
-		PRINTFORML
+		PRINTL
+			PRINTFORMDL 打开门，引入眼帘的，是一对大而白的乳房
+			PRINTFORML 「很抱歉，这里已经有人在了」
+			PRINTFORMDL 注意到“不速之客”的到来，蓝护住胸口，摆出了要释放符卡的架势
+			PRINTFORMDW 在被轰出去之前，%CALLNAME:MASTER%很识相地关上了门
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;在外出地点遭遇
 	;记入检查（=0, 不显示、1, 显示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 6
-		PRINTFORMDL 
+		;每日首次见面
+		IF !TCVAR:25:350
+			IF TALENT:恋慕
+				;元旦
+				IF DAY:2 == 1 && DAY:3 == 1 && DAY != 1
+					CALL M_KOJO_EVENT_K25_NEW_YEARS
+				;万圣节
+				ELSEIF DAY:2 == 3 && DAY:3 == 30
+					CALL M_KOJO_EVENT_K25_HALLOWEEN
+				;圣诞节
+				ELSEIF DAY:2 == 4 && DAY:3 == 25
+					CALL M_KOJO_EVENT_K25_CHRISTMAS
+				;情人节
+				;ELSEIF DAY:2 == 4 && DAY:3 == 14
+				;	CALL M_KOJO_EVENT_K25_VALENTINE
+				;兔子之日
+				ELSEIF DAY:3 == 28
+					CALL M_KOJO_EVENT_K25_RABBIT
+				ELSE
+					;四季
+					SELECTCASE DAY:2
+					;春
+					CASE 1
+						PRINTFORML 「%CALLNAME:MASTER%，春天来了哦~」
+						PRINTFORMDW 模仿着报春精的语调，蓝俏皮地打着招呼
+					;夏
+					CASE 2
+						PRINTFORML 「……这么了？这样盯着我看？」
+						PRINTFORMDW 穿着轻薄的夏装，蓝的曼妙身材尽显无遗
+					;秋
+					CASE 3
+						PRINTFORML 「真是凉爽的天气呢」
+						PRINTFORMW 「%CALLNAME:MASTER%记得多添些衣服，可别感冒了」
+					;冬
+					CASE 4
+						PRINTFORML 「来吧，我这里可暖和了」
+						PRINTFORMDW 接受了蓝的邀请，把脸埋进了尾巴堆里
+					ENDSELECT
+				ENDIF
+			ELSEIF TALENT:思慕
+				PRINTFORML 「是%CALLNAME:MASTER%啊。能见到你真开心」
+				PRINTFORMDW 蓝露出了笑容
+			ELSE
+				PRINTFORML 「你好」
+				PRINTFORMDW 蓝随意地打着招呼
+			ENDIF
+		ELSE
+			IF TALENT:恋慕
+				SELECTCASE DAY:2
+				;春
+				CASE 1
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「%CALLNAME:MASTER%，现在是樱花盛开的季节哦」
+						PRINTFORML 「有空的话，我们去赏花吧」
+						PRINTFORMW 「可以带上紫大人和橙，当然，我更想要一段独处的时光，我、和你」
+					CASE 1
+						PRINTFORML 「到了春天也还是有些冷啊，%CALLNAME:MASTER%可别着凉了」
+						PRINTFORML 「来，我帮你暖和一下」
+						PRINTFORMDW 被蓬松的大尾巴裹住了，有些痒痒的
+					ENDSELECT
+				;夏
+				CASE 2
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「是%CALLNAME:MASTER%啊……」
+						PRINTFORML 「这天气……真的……好热啊……」
+						PRINTFORMDW 蓝吐着舌头、蔫着耳朵的样子，莫名有些可爱
+					CASE 1
+						PRINTFORML 「又出了不少汗呢，%CALLNAME:MASTER%」
+						PRINTFORML 「来吧，我来帮你擦擦」
+						PRINTFORMDW 蓝帮我擦去了额头上的汗水
+					ENDSELECT
+				;秋
+				CASE 3
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「你来了啊，%CALLNAME:MASTER%」
+						PRINTFORMDL 蓝打理着尾巴，抖落掉卡在其中的落叶
+						PRINTFORMW 「地上落叶这么多，用来烤红薯应该很合适吧」
+					CASE 1
+						PRINTFORML 「炎热完全被秋风吹散了」
+						PRINTFORML 「这个季节很适合外出呢，你觉得呢？」
+						PRINTFORMDW 蓝的话音里带着一丝期待
+					ENDSELECT
+				;冬天
+				CASE 4
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「这个季节，大家总是盯着我的尾巴，我很苦恼啊」
+						PRINTFORML 「但如果是你的话，怎样弄我都不会介意的」
+						PRINTFORMDW 扑在毛茸茸暖烘烘的尾巴堆里，感觉全身心都被治愈了
+					CASE 1
+						PRINTFORML 「来吧，再靠近我一点，我帮你暖和起来」
+						PRINTFORMDL 蓝的尾巴温柔地缠绕在我的脖子上
+						PRINTFORMDW 两人就这样依靠着，感受彼此的温暖
+					ENDSELECT
+				ENDSELECT
+			ELSEIF TALENT:思慕
+				PRINTFORML 「是%CALLNAME:MASTER%啊，又见面了呢」
+				PRINTFORMDW 蓝的笑容中带着一丝羞涩
+			ELSE
+				PRINTFORML 「哎呀，你又来了啊」
+				PRINTFORMW 「是有什么事情要处理吗？」
+			ENDIF 
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;和其他角色约会时遭遇
 	;ARG:1为约会对象
 	;记入检查（=0, 不显示、1, 显示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 6
-		PRINTFORMDL 
+		IF FLAG:约会的对象 == [[橙]]
+			IF TALENT:恋人
+				PRINTFORML 「哎呀，这不是我亲爱的%CALLNAME:MASTER%吗，和我的小式神在一起开心吗？」
+				PRINTFORMDL 蓝的声音从身后传来，伴随着尾巴搔弄后颈的毛绒感，%CALLNAME:MASTER%本能地回过头……
+				CALL HPH_PRINT,@"HPH啵HPH","L"
+				PRINTFORML 「……呼呼，好啦，不打扰了，继续你们的约会吧~」
+				CALL HPH_PRINT,@"(%CALLNAME:MASTER%那慌张的样子，还有橙那委屈的表情，都好可爱HPH)","W"
+			ELSEIF TALENT:恋慕
+				PRINTFORML 「挺能干的啊%CALLNAME:MASTER%，我家的橙也被你迷住了呢~」
+				PRINTFORMDL 伴随着尾巴搔弄后颈的毛绒感，蓝从背后贴近，在%CALLNAME:MASTER%的耳边呢喃
+				PRINTFORML 「偷腥的小猫，可别忘了你的狐狸主人哦~」
+				PRINTFORMDW 话毕，蓝拍了拍橙的小脑袋，便转身离开了……
+			ELSE
+				PRINTFORML 「哎呀，在和橙约会呢~玩的开心吗？」
+				PRINTFORMDL 蓝凑了过来，在%CALLNAME:MASTER%的耳畔沉声道
+				PRINTFORML 「好好对待橙哦，若是把她弄哭了，你 会 吃 苦 头 的」
+				PRINTFORMDW 说完，蓝戳了戳橙的小脸颊，便转身离开了……
+			ENDIF 
+		ELSEIF FLAG:约会的对象 == [[紫]]
+			IF TALENT:恋人
+				PRINTFORML 「紫大人，还有%CALLNAME:MASTER%，好巧啊，没想到能在这里碰上你们」
+				PRINTFORMDL 目击到自己的主人和恋人私会的场景，蓝却一脸平静地靠了过来
+				CALL HPH_PRINT,@"HPH啵HPH","L"
+				PRINTFORMDL 毫无征兆的，蓝在%CALLNAME:MASTER%的脸颊上留下了一个吻，像是在宣誓主权一般……
+				PRINTFORML 「……呼呼，好啦，不打扰了，继续你们的约会吧~」
+				PRINTFORMDL 话毕，蓝朝二人挥了挥手，便转身离开了……
+			ELSEIF TALENT:恋慕
+				PRINTFORML 「紫大人，您和%CALLNAME:MASTER%待在一起啊」
+				PRINTFORML	目击到自己的主人约会的场景，蓝却一脸平静地靠了过来
+				PRINTFORMW 「下次，请多宠幸宠幸我吧」
+			ELSE
+				PRINTFORML 「紫大人，还有……%CALLNAME:MASTER%？」
+				PRINTFORMDW 意识到自己撞见了主人的约会，蓝有些尬尴地笑了笑，闪到一旁去了……
+			ENDIF 
+		ELSE
+			IF TALENT:恋人
+				PRINTFORML 「%CALLNAME:MASTER%，好巧啊，真没想到能在这里碰上你……和别的女孩子约会，很开心吧？」
+				PRINTFORMDL 蓝的声音从身后传来，伴随着爬上脊梁的瘙痒感，%CALLNAME:MASTER%本能地回过头……
+				CALL HPH_PRINT,@"HPH啵HPH","L"
+				PRINTFORMDL 在众目睽睽之下，两人嘴唇相贴……%CALLNAME:MASTER%想要挣脱，身体却不听使唤，只能接受着蓝的深吻……
+				PRINTFORML 「……呼呼，我才是你的主人呢，记 住 了 吗？」
+				PRINTFORMDL 话毕，蓝轻轻弹了一下%CALLNAME:MASTER%的脑袋，接着转身离开了……
+			ELSEIF TALENT:恋慕
+				PRINTFORMDL “啪”金黄的大尾巴拍在了%CALLNAME:MASTER%的脸上
+				PRINTFORML 「抱歉，没收住，%CALLNAME:MASTER%没事吧」
+				PRINTFORMDL 蓝转过身来，用手温柔地抚摸着%CALLNAME:MASTER%的脸颊，丝毫不在意身边那尖锐的目光……
+				PRINTFORML 「……呼呼，看来没有大碍呢，好啦，继续你们的约会吧~」
+				PRINTFORMDW 留下这句话，蓝便转身离开了……
+			ELSE
+				PRINTFORML 「哎呀，真是甜蜜的一对呢~」
+				PRINTFORMDW 看着你侬我侬的两人，蓝打趣道
+			ENDIF 
+		ENDIF
 		RETURN 1
 	ENDIF
 ENDIF
@@ -647,7 +950,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && !ARG:1
-			PRINTFORMDW 
+			PRINTFORMW 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -656,7 +959,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORMDW 
+			PRINTFORMW 
 			RETURN 1
 		ENDIF
 		;共通
@@ -694,7 +997,7 @@ IF LOCAL
 			PRINTFORML 「早上好。睡得好吗，%CALLNAME:MASTER%」
 			PRINTFORMDW 醒来后，蓝在旁边正坐着
 		ENDIF
-		PRINTFORMDW 
+		PRINTFORMW 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -737,7 +1040,7 @@ IF LOCAL
 			PRINTFORML 「早上好，睡的还好吗？%CALLNAME:MASTER%」
 			PRINTFORMDW 醒来就看到正坐着的蓝
 		ENDIF
-		PRINTFORMDW 
+		PRINTFORMW 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -746,7 +1049,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORMDW 
+		PRINTFORMW 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -762,7 +1065,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && !ARG:1
-			PRINTFORMDW 
+			PRINTFORMW 
 			RETURN 1
 		ENDIF
 		;-------------------------------------------------
@@ -771,7 +1074,7 @@ IF LOCAL
 		LOCAL:1 = 0
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORMDW 
+			PRINTFORMW 
 			RETURN 1
 		ENDIF
 		;共通
@@ -784,11 +1087,11 @@ IF LOCAL
 			PRINTFORML 「难道看到我的睡脸了吗……啊、没什么」
 			PRINTFORMDW 蓝移开视綫、兴冲冲地开始打扮
 		ENDIF
-		PRINTFORMDW 
+		PRINTFORMW 
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -867,7 +1170,7 @@ IF LOCAL
 	;LOCAL:1 = 0
 	;-------------------------------------------------
 	;IF LOCAL:1 && ARG == 4
-		;PRINTFORMDW 
+		;PRINTFORMW 
 		;RETURN 1
 	;ENDIF
 	;-------------------------------------------------
@@ -927,7 +1230,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -938,7 +1241,7 @@ RETURN 1
 ;台词主人公为TARGET
 ;--------------------------------------------------
 ;记入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------
 
 IF LOCAL
@@ -948,32 +1251,98 @@ IF LOCAL
 	;立ち止まった
 	;この后遭遇口上に接续
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML
-		RETURN 1
+	IF !FLAG:70
+		IF TALENT:恋慕
+			IF TCVAR:発情
+				PRINTFORML 「啊，%CALLNAME:MASTER%，你来的正好」
+				PRINTFORMDW 蓝的脸红红的，似乎想要倾诉些什么
+			ELSE
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%，你来了啊」
+					PRINTFORMDW 蓝笑盈盈的
+				CASE 1
+					PRINTFORML 「你好啊%CALLNAME:MASTER%」
+					PRINTFORMW （呼呼，是来找我的吗？）
+				ENDSELECT
+			ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORMW 「你好啊%CALLNAME:MASTER%,有什么事吗？」
+		ELSE
+			PRINTFORMW 「你好，有什么事吗？」
+		ENDIF
+	ENDIF
+	RETURN 1
 	ENDIF
 	;-------------------------------------------------
-	;軽く会釈して街道过ぎた
+	;轻轻地会釈して街道过ぎた
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML
-		RETURN 1
+	IF !FLAG:70
+		IF TALENT:恋慕
+			IF TCVAR:発情
+				PRINTFORML 「啊，%CALLNAME:MASTER%，那个，你有空吗？」
+				PRINTFORML 「没，没啥重要的事啦……」
+				PRINTFORMDW 蓝的脸红红的，似乎想要倾诉些什么
+			ELSE
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%，你要出门吗？」
+					PRINTFORML 「记得早点回来哦，在外面待太晚的话我会担心的」
+					PRINTFORMDW “……担心过头了吧，你是我妈吗?”
+				CASE 1
+					PRINTFORML 「%CALLNAME:MASTER%，你有事要忙吗？」
+					PRINTFORML 「快去吧，处理完后记得回来多陪陪我哦~」
+					PRINTFORMDW 蓝莞尔一笑，挥手告别
+				ENDSELECT
+			ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORMDW 蓝莞尔一笑，挥手示意
+		ELSE
+			PRINTFORMDW 蓝微微点头回应 
+		ENDIF
+	ENDIF
+	RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;无视して街道过ぎた
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORML
-		RETURN 1
+	IF !FLAG:70
+		IF TALENT:恋慕
+			IF TCVAR:発情
+				PRINTFORML 「啊，%CALLNAME:MASTER%，那个……」
+				PRINTFORML （走掉了……是没看见我吗……）
+				PRINTFORMDW 蓝那通红的脸上露出了苦闷的神色
+			ELSE
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%，你要去……」
+					PRINTFORMW （走掉了……是没看见我吗……）
+				CASE 1
+					PRINTFORML 「%CALLNAME:MASTER%，你好啊……」
+					PRINTFORMW （走掉了……是有急事吗？……）
+				ENDSELECT
+			ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORMDW 蓝往这边看了一眼，
+		ELSE
+			PRINTFORMDW 蓝也无视了你
+		ENDIF
 	ENDIF
+	RETURN 1
+	ENDIF
+
+
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1035,7 +1404,7 @@ IF LOCAL
 			PRINTFORML 「紫大人。您在这里啊」
 			PRINTFORMDW 蓝的态度骤然一变。对主人的忠诚和敬意都写在了脸上
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1078,7 +1447,7 @@ IF LOCAL
 			PRINTFORML 「哦，橙」
 			PRINTFORMDW 蓝把%CALLNAME:MASTER%晾在一边，和自己的式神聊起天来
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -1179,18 +1548,18 @@ IF LOCAL
 	IF LOCAL:1 && ARG:1 == 4
 		;お相手が紫样
 		IF ARG == 26
-			PRINTFORMDL 
-			PRINTFORMDL 
+			PRINTFORML 
+			PRINTFORML 
 		;お相手が橙
 		ELSEIF ARG == 24
-			PRINTFORMDL 
-			PRINTFORMDL 
+			PRINTFORML 
+			PRINTFORML 
 		ELSEIF TALENT:恋慕
-			PRINTFORMDL 
-			PRINTFORMDL 
+			PRINTFORML 
+			PRINTFORML 
 		ELSE
-			PRINTFORMDL 
-			PRINTFORMDL 
+			PRINTFORML 
+			PRINTFORML 
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -1332,7 +1701,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1380,7 +1749,7 @@ IF LOCAL
 			PRINTFORML 「……这个，我从你这里还给主人吧」
 			PRINTFORMDW 被蓝用无奈的表情看着了。能这样就收场可能已经很好了
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1413,7 +1782,7 @@ IF LOCAL
 			PRINTFORML 「……这个，我从你这里还给主人吧」
 			PRINTFORMDW 被蓝用无奈的表情看着了。能这样就收场可能已经很好了
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -1464,7 +1833,7 @@ IF LOCAL
 			PRINTFORML 「把身体交给我吧。就当是给你的奖励」
 			PRINTFORMDW 俯视着他的蓝的金色眼睛，瞳孔带着虐待的色彩收缩了
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1473,11 +1842,13 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTDL 
+	IF TALENT:恋慕
+	ENDIF
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1545,7 +1916,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1617,7 +1988,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1629,7 +2000,7 @@ RETURN 1
 ;ARG:1に残っている工作量
 ;--------------------------------------------------
 ;记入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------
 
 IF LOCAL
@@ -1638,32 +2009,128 @@ IF LOCAL
 	;-------------------------------------------------
 	;工作开始（职场へ移动する）
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML
+		IF TALENT:恋慕
+			IF TFLAG:102 == 2 || TFLAG:102 == 3
+			;诶嘿嘿中。
+				PRINTFORML 「唔❤……哈❤……啊！这下糟了……」
+				PRINTFORMDL 缠绵中的蓝，动作突然僵住，露出慌张的神色。
+				PRINTFORML 「差点把紫大人安排的任务给忘了……抱歉，我得去工作了」
+				IF 充填率(TARGET,1) > 30
+					PRINTFORMDW 简单整理好身上凌乱的衣物后，蓝带着满肚子的精液，就这样匆匆离开了……
+				ELSE
+					PRINTFORMDW 简单整理好身上凌乱的衣物后，蓝便匆匆离开了……
+				ENDIF
+			ELSE
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「哎呀，已经到这个时候了，和%CALLNAME:MASTER%在一起，都差点把正事忘了」
+					PRINTFORML 「那么，恕我先失陪了」
+					PRINTFORMDL 蓝虽有些不舍，但还是转身向神社的方向飞去了……
+				CASE 1
+					PRINTFORML 「唔，差不多该去工作了」
+					PRINTFORML 「%CALLNAME:MASTER%，你也可以一起来哦」
+					PRINTFORMDL 蓝挥了挥手，然后转身向神社的方向飞去了……
+				ENDSELECT
+			ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORML 「恕我失陪了」
+			PRINTFORMDL 有事要忙的蓝，转身向神社的方向飞去了……
+		ELSE
+			PRINTFORMDL 蓝朝着神社的方向飞去了，像是有什么事要去处理……
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;业务中
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML
+		IF TALENT:恋慕 || TALENT:思慕
+			IF 充填率(TARGET,1) > 30
+				SELECTCASE RAND:2
+				CASE 0
+					PRINTFORML 「唔呜……好羞耻，要变得奇怪了……」
+					PRINTFORMDL 忍受着子宫被填满的快感，蓝红着脸，加快了工作速度。
+				CASE 1
+					PRINTFORMDL 溢满的精液，顺着蓝的大腿内侧滑下，滴洒得到处都是。
+					PRINTFORMDL 注意到在地板上那些污渍，蓝羞红了脸，却装出没看见的样子继续工作着。
+				ENDSELECT
+			ELSE
+				IF ABL:MASTER:教養 >= 4
+					SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「唔……没有问题，下一个……」蓝进行着结界维护的工作。
+						PRINTFORMDL 以现在的知识和技术，%CALLNAME:MASTER%已经能理解蓝的工作内容了。
+					CASE 1
+						PRINTFORML 「这里……不太妙啊，得再仔细检查一下……」蓝进行着结界的检查工作。
+						PRINTFORMDL 以现在的知识和技术，%CALLNAME:MASTER%也能看出，那里确实有漏洞存在。
+					CASE 2
+						PRINTFORML 「发现薄弱之处了……」蓝发动术式，对结界进行加固。
+						PRINTFORMDL 蓝色狐火从她掌心生成，往刚发现的结界漏洞的方向飞去了……
+					ENDSELECT
+				ELSEIF ABL:MASTER:教養 == 3
+					SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「唔……没有问题，下一个……」蓝应该是在进行着结界维护的工作。
+						PRINTFORMDL 在努力学习后，蓝的工作内容对%CALLNAME:MASTER%而言，已经不再是天书了。
+					CASE 1
+						PRINTFORML 「这里……不太妙啊，得再仔细检查一下……」蓝应该是在进行着结界的检查工作。
+						PRINTFORMDL 在努力学习后，%CALLNAME:MASTER%能大致看出那里的确有些不太对劲。
+					CASE 2
+						PRINTFORML 「发现薄弱之处了……」蓝发动术式，应该是要加固结界吧。
+						PRINTFORMDL 蓝色狐火从她掌心生成，迅速飞向远方，消失不见……
+					ENDSELECT
+				ELSE
+					SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「唔……没有问题，下一个……」蓝忙碌着，但不知道她在忙什么。
+						PRINTFORMDL %CALLNAME:MASTER%完全无法理解蓝的工作内容……还是先泡个茶吧。
+					CASE 1
+						PRINTFORML 「发现薄弱之处了……」蓝不知为何发动了术式。
+						PRINTFORMDW 蓝色狐火迅速生成，飞向远方消失了……
+					ENDSELECT
+				ENDIF
+			ENDIF
+		ELSE
+			SELECTCASE RAND:2
+			CASE 0
+				PRINTFORML 「唔……没有问题，下一个……」蓝似乎有事要忙，但不知道她在忙什么。
+			CASE 1
+				PRINTFORMDL 蓝不知为何发动了术式，突然生成的蓝色狐火吓了%CALLNAME:MASTER%一跳。
+				PRINTFORMDW 接着，那狐火就飞向远方，不知所踪了……
+			ENDSELECT
+		ENDIF
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;工作结束
 	;记入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 3
-		PRINTFORML
+		IF TALENT:恋慕
+			IF 充填率(TARGET,1) > 30
+				PRINTFORML 「终于干完了……得赶紧把这里清理好……」
+				PRINTFORMDL 地板上洒落着许多白色的污渍，就像是“翻云覆雨”后的现场……
+			ELSE
+				PRINTFORML 「呼呼，我的事情忙完了~%CALLNAME:MASTER%现在也有空吧？」
+				PRINTFORMDL 工作一结束，蓝就微笑着靠了过来。
+			ENDIF
+		ELSEIF TALENT:思慕
+			PRINTFORML 「呼呼，顺利完成」
+			PRINTFORMDL 蓝收起了工作时的严肃神色，朝着这边露出了笑容。
+		ELSE
+			PRINTFORML 「例行检查完成」
+			PRINTFORMDL 蓝结束了这次的工作。
+		ENDIF
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1688,7 +2155,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1725,7 +2192,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 
@@ -1761,7 +2228,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
 ENDIF
 RETURN 1
 ;==================================================
@@ -1921,7 +2388,7 @@ IF LOCAL
 			PRINTFORML 「……啊，%CALLNAME:MASTER%。我什么都不会做的哦」
 			PRINTFORMDW 蓝散发着强烈的色气，向这边笑了笑
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		CFLAG:25:1002 += LOCAL:4
 		RETURN 1
 	ENDIF
@@ -2085,7 +2552,7 @@ IF LOCAL
 					ENDIF
 			ENDSELECT
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		CFLAG:25:1002 += LOCAL:4
 		RETURN 1
 	ENDIF
@@ -2202,7 +2669,7 @@ IF LOCAL
 			ENDSELECT
 			CFLAG:25:1001 += 1
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		TCVAR:25:351 = 1
 		RETURN 1
 	ENDIF
@@ -2415,7 +2882,7 @@ IF LOCAL
 				ENDSELECT
 			ENDIF
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2540,7 +3007,7 @@ IF LOCAL
 				ENDSELECT
 			ENDIF
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2664,7 +3131,7 @@ IF LOCAL
 				ENDSELECT
 			ENDIF
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2797,7 +3264,7 @@ IF LOCAL
 				ENDSELECT
 			ENDIF
 		ENDIF
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -2931,7 +3398,7 @@ IF LOCAL
 		ELSEIF ARG:1 == 3
 		ENDIF
 		CFLAG:25:1004 += 1
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -2997,19 +3464,19 @@ IF LOCAL
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 5
 		PRINTFORMW 「……也是呢。已经，没有拒绝的理由了吗。」
-		PRINTDL 
+		PRINTL 
 		PRINTFORMDW 蓝露出难以言喻的表情，微笑着。
 		PRINTFORMDW 她面向%CALLNAME:MASTER%张开双腿，然后用双手分开秘唇，将其敞开。
-		PRINTDL 
+		PRINTL 
 		PRINTFORMW 「虽然一直装模作样地吊着你，但是我也想要你的孩子哦。」
 		PRINTFORMW 「我们都别再忍耐了。从今天开始，就瞄准危险日来交合吧。」
 		PRINTFORMW 「当然，现在就让我怀上也没关系哦。」
-		PRINTDL 
+		PRINTL 
 		PRINTFORMDW 面对露出粉红蜜唇诱惑的蓝，%CALLNAME:MASTER%再也无法忍耐，扑了上去。
-		PRINTDL 
+		PRINTL 
 		PRINTFORMDL 愛情経験＋30
 		EXP:TARGET:愛情経験 += 30
-		PRINTDL 
+		PRINTL 
 		RETURN 1
 	ENDIF
 ENDIF
@@ -3045,7 +3512,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORMDL 
+		PRINTFORML 
 		RETURN 1
 	ENDIF
 	PRINTL
@@ -3210,7 +3677,7 @@ IF LOCAL
 				PRINTFORMDL 蓝将SM用的那个东西对准秘处，长长地吐出一口气，然后用力地、猛地插了进去。
 				PRINTFORML 「一直插到最里面了……」
 				PRINTFORMDL 蓝的蜜壶含着一个一旦插入就掉不出来的东西，摇摇晃晃地走出了浴室。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 2
 				PRINTFORMDL 自慰経験＋2
 			ELSE
@@ -3218,7 +3685,7 @@ IF LOCAL
 				PRINTFORMDL 另一只手则伸进了阴唇之间。
 				PRINTFORMDL 两根手指在淫荡地融化的雌穴里来回搅动，拇指则执拗地抚摸着阴核的头部。
 				PRINTFORMDL 蓝紧闭着嘴，直到达到高潮，一声不吭地结束了。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 1
 				PRINTFORMDL 自慰経験＋1
 			ENDIF
@@ -3228,7 +3695,7 @@ IF LOCAL
 				PRINTFORMDL 顶端的倒钩和在棒身上描绘着圆环的凹凸，不断地剐蹭着蓝的阴道皱襞。
 				PRINTFORMDL 从口中塞满了坚硬异物的裂缝中，每次抽插都会飞溅出爱液。
 				PRINTFORMDL 蓝紧紧地咬着布，压抑着声音，静静地、激烈地安慰着自己……
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 2
 				PRINTFORMDL 自慰経験＋2
 			ELSE
@@ -3236,7 +3703,7 @@ IF LOCAL
 				PRINTFORMDL 另一只手则伸进了阴唇之间。
 				PRINTFORMDL 两根手指在淫荡地融化的雌穴里来回搅动，拇指则执拗地抚摸着阴核的头部。
 				PRINTFORMDL 蓝紧闭着嘴，直到达到高潮，一声不吭地结束了。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 1
 				PRINTFORMDL 自慰経験＋1
 			ENDIF
@@ -3246,14 +3713,14 @@ IF LOCAL
 				PRINTFORMDL 她只为自己巧妙地运用着手指技巧，高效地提高着性感。
 				PRINTFORMDL 仅仅几分钟就结束了，她叹了口气，进入了睡眠。
 				PRINTFORML 「……真不像我。竟然会自己玩。」
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 2
 				PRINTFORMDL 自慰経験＋2
 			ELSE
 				PRINTFORMDL 在被子里侧身蜷缩着，蓝偷偷地玩弄着股间。
 				PRINTFORMDL 她只为自己巧妙地运用着手指技巧，高效地提高着性感。
 				PRINTFORMDL 仅仅几分钟就结束了，她叹了口气，进入了睡眠。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 1
 				PRINTFORMDL 自慰経験＋1
 			ENDIF
@@ -3265,7 +3732,7 @@ IF LOCAL
 				PRINTFORMDL 浸泡了热水的它，恰到好处地温暖而富有弹性。网眼和结节给予了实物所没有的刺激。
 				PRINTFORML 「……嘛，难得都准备好了，嗯。」
 				PRINTFORMDL 蓝嘟囔着像是辩解一样的话，将又粗又长的芋头茎猛地塞进了秘处。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 2
 				PRINTFORMDL 自慰経験＋2
 			ELSE
@@ -3273,7 +3740,7 @@ IF LOCAL
 				PRINTFORMDL 在用微弱的刺激慢慢地提高兴奋之后，用空闲的两手的指尖，用力地捏住了紧绷的突起。
 				PRINTFORMDL 蓝向后仰着身体，享受着同时到来的高潮……
 				PRINTFORML 「我在做什么啊。」
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 1
 				PRINTFORMDL 自慰経験＋1
 			ENDIF
@@ -3283,14 +3750,14 @@ IF LOCAL
 				PRINTFORMDL 蓝紧紧地闭着嘴，用忍耐的表情跪着摇动着腰。
 				PRINTFORMDL 肌肤色的假阳具紧贴在坐垫的中央。泥泞的肉穴每次吞噬它的时候，都会发出噗妞噗妞的声音。
 				PRINTFORMDL 像并排的龟头一样的阶梯状棒身，每次往复都会从蓝的媚肉上刮下透明的淫液。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 2
 				PRINTFORMDL 自慰経験＋2
 			ELSE
 				PRINTFORMDL 在自己的房间里完成了书写工作的蓝，半蹲着将自己的股间抵在了矮桌的角上。
 				PRINTFORMDL 这是思春期的儿童在尝试错误中才会做的幼稚的自慰，但那也是一种情趣。
 				PRINTFORMDL 蓝隔着衣服抓住因振动而摇晃的乳房，沉醉于侮辱自己的快乐之中。
-				PRINTDL 
+				PRINTL 
 				EXP:TARGET:自慰経験 += 1
 				PRINTFORMDL 自慰経験＋1
 			ENDIF
@@ -3363,7 +3830,7 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
-	PRINTDL 
+	PRINTL 
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3429,7 +3896,7 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTDL 
+	PRINTL 
 	;妊娠した回数をカウント
 	CFLAG:25:1007 += 1
 ENDIF
@@ -3505,6 +3972,736 @@ IF LOCAL
 		RETURN 1
 	ENDIF
 	;其他
-	PRINTFORMDL 
+	PRINTFORML 
+ENDIF
+RETURN 1
+;==================================================
+;被看见自慰
+;ERB\コマンド関連\COMF\外出系\NASIKUZUSI.ERB
+;==================================================
+@M_KOJO_EVENT_K25_26(ARG,ARG:1)
+
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SELECTCASE ARG
+		;-------------------------------------------------
+		CASE 0
+		;被看见的瞬間
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 1
+		;什么都不做
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 2
+		;在注视下看着继续
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 3
+		;想做或者想看，被赶出去了
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 4
+		;允许一起做
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 5
+		;事后口上
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 6
+		;事后留宿
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+	ENDSELECT
+ENDIF
+
+;被发现自慰时的判定函数
+;RETURN -1強制失敗、RETURN 1強制成功
+@M_KOJO_EVENT_K25_26_1(ARGS)
+#DIM 補正値
+IF ARGS == "どうぞそのまま"		;看着做
+
+ELSEIF ARGS == "二人で"			;一起做
+
+ENDIF
+
+;使用例
+;IF !TALENT:XX:恋慕
+;	PRINTFORMDW %CALLNAME:XX%はガードが堅いぞ！
+;	RETURN -1
+;ENDIF
+;IF TALENT:MASTER:濃厚精液
+;	PRINTFORMDW %CALLNAME:XX%はちんぽに弱いぞ！
+;	RETURN 1
+;ENDIF
+;==================================================
+;TARGET邀请一起约会
+;ERB\イベント関連\情事発覚.ERB
+;==================================================
+@M_KOJO_EVENT_K25_27(ARG,ARG:1)
+;口上主 LOCAL
+;ARG:1是目的地
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SELECTCASE ARG
+		;-------------------------------------------------
+		CASE 0
+		;邀请的口上
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			SELECTCASE DAY:2
+			CASE 1
+				PRINTFORML 「樱花开了呢，这种时候，就该来一场浪漫的约会啊」
+				PRINTFORMW 「%CALLNAME:MASTER%，我们一起去赏樱吧~」
+			CASE 2
+				PRINTFORML 「这么热的天，一直呆在家里会闷坏的」
+				PRINTFORMW 「我知道个避暑的好地方，%CALLNAME:MASTER%要一起去吗？」
+			CASE 3
+				PRINTFORML 「有家店推出了秋季限定的甜品，我想去尝尝鲜呢」
+				PRINTFORMW 「据说还有情侣折扣哦，%CALLNAME:MASTER%愿意陪我一起去吗？」
+			CASE 4
+				PRINTFORML 「%CALLNAME:MASTER%，要一起去看雪吗？」
+				PRINTFORMW 「“外面太冷了？”我们紧紧靠在一起就不会冷了哦，看我用尾巴把你裹住，呼呼~」
+			ENDSELECT
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 1
+		;接受了
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			PRINTFORMW 「约会要带的东西早就准备好了呢，我们马上出发吧」
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 2
+		;拒绝了
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			PRINTFORML 「没时间吗？哎，这也是没办法的事啊，%CALLNAME:MASTER%你去忙吧」
+			PRINTFORMDL 虽然蓝尽量装出阔达的样子，但耷拉下来的耳朵还是暴露了她内心的失落
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 3
+		;邀请去房间
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			PRINTFORML 「陪我玩了这么久，%CALLNAME:MASTER%也累了吧，先回我房间休息一下吧」
+			PRINTFORML 「吃完饭再走也不迟，当然，直接留宿也是可以的哦~」
+			PRINTFORMDW 蓝用无比期待的眼光看了过来
+			IF CFLAG:25:340 > 600 && TALENT:恋慕
+				PRINTFORMDL 是因为约会太兴奋了吗？此时，蓝的脸红红的，喘息也有些剧烈
+				PRINTFORMW 「是、是这样吗？可能是和%CALLNAME:MASTER%待在一起太高兴了，心跳加速了吧哈哈……」
+			ENDIF
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 4
+		;邀请去房间，选择接受了
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			IF CFLAG:25:340 > 600 && TALENT:恋慕
+				PRINTFORML 「太好了，我会好好❤招 待❤%CALLNAME:MASTER%的哦~」
+				PRINTFORMDW 这个“招待”正经吗？怎么感觉掉进陷阱里了……
+			ELSE
+				PRINTFORML 「太好了，%CALLNAME:MASTER%请进吧」
+				PRINTFORMW 「我可是很会招待人的，要让你舒舒服服的哦~」
+			ENDIF
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 5
+		;邀请去房间，选择拒绝了
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			IF CFLAG:25:340 > 600 && TALENT:恋慕
+				PRINTFORML 「呜呜，不、不行吗……%CALLNAME:MASTER%慢走啊」
+				PRINTFORMDW 蓝露出了苦闷的神色
+			ELSE
+				PRINTFORML 「是吗，确实有点晚了，%CALLNAME:MASTER%得回家了呢」
+				PRINTFORMW 「路上要当心哦，可别被坏妖怪袭击了」
+			ENDIF
+		ENDIF
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;==================================================
+;脱衣口上
+;==================================================
+@M_KOJO_EVENT_K25_28(ARG,ARG:1)
+;口上角色编号 = TARGET
+;ARG	脱衣的方法
+;ARG:1（只要ARG=3才有这个值）地文的反应
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SELECTCASE ARG
+		;-------------------------------------------------
+		CASE 0
+		;全裸
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			;時間停止時
+			IF FLAG:70
+			;通常
+			ELSE
+			ENDIF
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 1
+		;只穿内衣
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			;時間停止時
+			IF FLAG:70
+			;通常
+			ELSE
+			ENDIF
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 2
+		;半脱
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			;時間停止時
+			IF FLAG:70
+			;通常
+			ELSE
+			ENDIF
+			RETURN 1
+		ENDIF
+		;-------------------------------------------------
+		CASE 3
+		;索要胖次
+		;启用（=0, 非表示、1, 表示）
+		LOCAL:1 = 1
+		;-------------------------------------------------
+		IF LOCAL:1
+			SELECTCASE ARG:1
+				;-------------------------------------------------
+				CASE 0
+				;要求交换胖次
+				;启用（=0, 非表示、1, 表示）
+				LOCAL:1 = 1
+				;-------------------------------------------------
+				IF LOCAL:1
+					IF TALENT:恋慕
+						PRINTFORML 「我今天的内裤很合%CALLNAME:MASTER%的胃口吗？」
+						PRINTFORML 「给你也不是不行，不过只有我一个人真空的话就太不公平了，想要的话，就用%CALLNAME:MASTER%的内裤交换吧，就要你现在穿着的这条」
+						PRINTFORMW 「放心啦，不会用它做奇怪的事情的，只是一时兴起的请求罢了，%CALLNAME:MASTER%没有那么小气吧~」
+					ELSE
+						PRINTFORML 「拿我的内裤作为收藏？真是奇怪的癖好」
+						PRINTFORMW 「如果你想要的话，就得用你自己的内裤交换，很公平吧？」
+					ENDIF
+					RETURN 1
+				ENDIF
+				;-------------------------------------------------
+				CASE 1
+				;OK（开心地给了
+				;启用（=0, 非表示、1, 表示）
+				LOCAL:1 = 1
+				;-------------------------------------------------
+				IF LOCAL:1
+					IF TALENT:恋慕
+						PRINTFORML 「眼光不错嘛，今天的内裤可是我精心挑选的呢……要好好珍惜哦，%CALLNAME:MASTER%不会用它来干什么坏事吧❤」
+						PRINTFORMW 「比方说，在夜深人静的时候，闻着内裤上残留的气味，偷偷用它自慰这种事，%CALLNAME:MASTER%可千万不要干哦❤~」
+					ELSE
+						PRINTFORML 「很想要这件内裤吗？行吧，给你了」
+						PRINTFORMW 「要好好珍惜它哦」
+					ENDIF
+					RETURN 1
+				ENDIF
+				;-------------------------------------------------
+				CASE 2
+				;OK（勉勉强强地给了
+				;启用（=0, 非表示、1, 表示）
+				LOCAL:1 = 1
+				;-------------------------------------------------
+				IF LOCAL:1
+					IF TALENT:恋慕
+						PRINTFORML 「欸？！想要我的内裤吗？可是我刚刚出了很多汗，内裤已经是脏兮兮的了」
+						PRINTFORML 「“就好这一口”？好变态的发言啊，真是拿你没办法」
+						PRINTFORMDW 蓝面露难色，但还是把那湿漉漉的内裤递了过来
+					ELSE
+						PRINTFORML 「真不明白你的脑子里在想什么」
+						PRINTFORMW 「诺，快拿去吧，我们该继续干正事了」
+					ENDIF
+					RETURN 1
+				ENDIF
+				;-------------------------------------------------
+				CASE 3
+				;不太情愿的样子
+				;启用（=0, 非表示、1, 表示）
+				LOCAL:1 = 1
+				;-------------------------------------------------
+				IF LOCAL:1
+					IF TALENT:恋慕
+						PRINTFORML 「欸？！想要我的内裤吗？可是我刚刚出了很多汗，内裤已经是脏兮兮的了」
+						PRINTFORML 「“就好这一口”？好变态的发言啊，真拿你没办法」
+						PRINTFORMDW 蓝面露难色，但还是把那湿漉漉的内裤递了过来
+					ELSE
+						PRINTFORMW 「……这么直白地索要女生的内裤，怎么可能会给你啊？！」
+					ENDIF
+					RETURN 1
+				ENDIF
+				RETURN 1
+			ENDSELECT
+		ENDIF
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;==================================================
+;愤怒口上
+;==================================================
+@M_KOJO_EVENT_K25_29(ARG,ARG:1)
+;口上角色编号 = TARGET
+;ARGはTARGETの度胸で分岐
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	;-------------------------------------------------
+	;小分岐
+	;-------------------------------------------------
+	;惹生气了
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 1
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;弄哭了　[胆怯]限定
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 2
+		RETURN 1
+	ENDIF
+ENDIF
+RETURN 1
+
+;==================================================
+;对方解除了推倒状态
+;==================================================
+@M_KOJO_EVENT_K25_30(ARG,ARG:1)
+;口上角色编号 = TARGET
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+
+IF LOCAL
+	;-------------------------------------------------
+	;对方累了
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 1
+		IF TALENT:恋慕
+			PRINTFORML 「唔……不行了……让我先、休息一会……」
+			IF 充填率(TARGET,1) > 50
+				PRINTFORMDL 做爱做到力竭的蓝，顾不上处理自己蜜穴里溢出的精液，径直瘫倒在自己的尾巴上，眼睛慢慢闭合……
+				PRINTFORMDL 在外面威风凛凛的九尾妖狐，现在就这失态地、毫无保留地躺在%CALLNAME:MASTER%面前
+				PRINTFORMDW 出于关心，%CALLNAME:MASTER%用符纸堵住蓝的小穴，防止精液流得到处都是，并找来了被子给她盖上
+			ELSE
+				PRINTFORMDL 做爱做到力竭的蓝，径直瘫倒在自己的尾巴上，眼睛慢慢闭合……
+				PRINTFORMDL 在外面威风凛凛的九尾妖狐，现在就这失态地、毫无保留地躺在%CALLNAME:MASTER%面前
+				PRINTFORMDW 出于关心，%CALLNAME:MASTER%简单清理了蓝身上的污渍，并找来了被子给她盖上
+			ENDIF
+		ELSE
+			PRINTFORMW 「有点、累了……这次、就先放过你……」
+		ENDIF
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;满足了所以放开了
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 2
+		IF TALENT:恋慕
+			PRINTFORML 「唔~这次做得好爽❤我们的相性真的很合呢，在做爱这方面❤」
+			IF 充填率(TARGET,1) > 50
+				PRINTFORMDL 蓝心满意足地揉着胀满的小腹，享受精液在子宫里晃荡的感觉
+				PRINTFORMW 「%CALLNAME:MASTER%的肉棒牛奶真是太美味了❤一不小心就吃撑了呢，好满足~」
+			ELSE
+				PRINTFORMDL 心满意足的蓝伸了个懒腰，依偎在%CALLNAME:MASTER%身上
+				PRINTFORMW 「全身都麻酥酥的，好满足~%CALLNAME:MASTER%最棒了❤」
+			ENDIF
+		ELSE
+			PRINTFORMW 「吃饱啦，多谢款待哦~」
+		ENDIF
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;满足了然后被反过来推倒了
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 3
+		IF TALENT:恋慕
+			PRINTFORML 「唔~这次做爽啦❤%CALLNAME:MASTER%也满足了吧？」
+			IF 充填率(TARGET,1) > 50
+				PRINTFORMDL 心满意足的蓝伸展着身体，背对%CALLNAME:MASTER%撅起了丰满的、滴着精液的臀部
+			ELSE
+				PRINTFORMDL 心满意足的蓝伸展着身体，撅起了丰满的臀部，胸前的巨大球体在%CALLNAME:MASTER%晃来晃去
+			ENDIF
+			PRINTFORMDL %CALLNAME:MASTER%哪里经得起这种诱惑？将蓝再一次推倒了
+			PRINTFORMW 「哎呀，看来%CALLNAME:MASTER%的性欲更胜一筹呢❤那就更多地疼爱我吧❤」
+		ELSE
+			PRINTFORMW 「哎呀，%CALLNAME:MASTER%还想要吗？」
+		ENDIF
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;要求继续进攻，做到坏掉
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 4
+		IF TALENT:恋慕
+			PRINTFORML 「居然敢对妖狐提出这种要求❤那我可就不客气喽」
+			IF 充填率(TARGET,1) > 50
+				PRINTFORMDL 蓝跨坐在%CALLNAME:MASTER%腰上，用肉棒堵住小穴不让精液漏出来，两人手牵手十指相扣
+				PRINTFORML 「每次做爱的时候，%CALLNAME:MASTER%都能像水龙头一样“噗噗噗”喷出精液，把我的子宫填得满满当当的」
+				PRINTFORML 「我很好奇，%CALLNAME:MASTER%的肉棒难道有魔法吗？里面的精液是真的取之不尽用之不竭的吗？」
+				PRINTFORML 「现在，乖乖地把精液全部射出来吧，让我的肚子像孕妇、不，是像水气球一样膨胀起来吧❤让我看看%CALLNAME:MASTER%的极限到底在哪里❤」
+			ELSE
+				PRINTFORMDL 蓝跨坐在%CALLNAME:MASTER%腰上，两人手牵手十指相扣
+				PRINTFORML 「已经逃不掉了哦，乖乖地把精液全部都献给我吧~」
+			ENDIF
+			PRINTFORMDW 蓝的兽欲彻底激发出来了……要被玩坏了……
+			TCVAR:25:発情 = 1
+			CFLAG:25:340 = 1000
+		ELSE
+			PRINTFORML 「你确定吗？那我可就不客气喽」
+			PRINTFORMW 「做好被榨得一滴都不剩的觉悟吧~」
+		ENDIF
+		RETURN 1
+	ENDIF
+ENDIF
+RETURN 1
+
+
+;==================================================
+;一天结束时(AFTERTRA之前)，没有见过面的话不会被调用
+;==================================================
+@M_KOJO_EVENT_K25_31(ARG,ARG:1)
+;口上角色编号 = TARGET
+;ARG	没见面的天数
+;如果几天没见面，角色可以抱怨。
+;CFLAG:オナバレ可以用于差分
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	IF TALENT:恋慕
+		;平安夜
+		IF DAY:2 == 4 && DAY:3 == 24
+			CALL M_KOJO_EVENT_K25_CHRISTMAS_EVE_2
+			RETURN 1
+		;圣诞节
+		;ELSEIF DAY:2 == 4 && DAY:3 == 25
+		;	CALL M_KOJO_EVENT_K25_NIGHT_OF_CHRISTMAS
+		;	RETURN 1
+		ELSE
+			;还没写
+			RETURN 1
+		ENDIF
+	ENDIF
+	;-------------------------------------------------
+	;小分岐
+	;-------------------------------------------------
+	;今日没见过面
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG
+		;是为了在显示口上之前，判别是谁的东西的地文，想变更的话，请在删除之后独自制作。
+		CALL EVENTEND_TSUBUYAKI
+		RETURN 1
+	ENDIF
+	;-------------------------------------------------
+	;今天见面了
+	;启用（=0, 非表示、1, 表示）
+	LOCAL:1 = 1
+	;-------------------------------------------------
+	IF LOCAL:1 && ARG == 0
+		CALL EVENTEND_TSUBUYAKI
+		RETURN 1
+	ENDIF
+ENDIF
+RETURN 1
+
+;==================================================
+;自由行動中
+;ARG:1      0=行動中,1=结束时
+;技能类行动在技能等级1以上时发生
+;==================================================
+@M_KOJO_EVENT_K25_32(ARG,ARG:1)
+;--------------------------------------------------
+;启用（=0, 非表示、1, 表示）
+LOCAL = 1
+;-------------
+IF LOCAL
+	SELECTCASE ARG
+	CASE 0
+		;▼思考事情［在思考着什么］
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 1
+		;▼游玩［开始游玩起来了］
+		;※[幼稚]限定
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 2
+		;▼食事,（~正在吃饭。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 3
+		;▼吃小零食～开始吃小零食了）
+		;※[妖精]种族角色、露米娅、古明地恋、幽幽子、紫苑等人会触发这个
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 4
+		;▼掃除,（～麻利地打扫着房间。）
+		;※[掃除係]限定，或者TARGET拥有污臭敏感 -1 或更少
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 5
+		;▼運動,（～干劲十足地运动着。）
+		;※拥有[音楽知識]或者无战斗能力则不会触发
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 6
+		;▼読書,（～默默地看书。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 7
+		;▼料理,
+		IF !ARG:1
+			;行動中
+			IF Activity_Duration:TARGET > 30
+				;料理中（～轻快地做着菜。。）
+				PRINTFORML 
+			ELSE
+				;食事中（～吃着自己做的菜。）
+				PRINTFORML 
+			ENDIF
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 8
+		;▼演奏
+		;※TARGET拥有[音楽知識]（随着TALENT:音楽知識的种类而変化）
+		;1,～愉快地演奏着。
+		;2,随心所欲地唱着歌。
+		;3,～在华丽地跳着舞。
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 9
+		;▼採集,（～在寻找可以使用的素材。。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 10
+		;▼垂钓,（～在悠闲地钓鱼。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 11
+		;▼実験,（～正在进行奇怪的实验。。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 12
+		;▼放松,（～很悠闲地放松着。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 13
+		;▼晩酌,（～悠闲地喝着酒。）
+		;※酒耐性0以上才会触发
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 14
+		;▼买东西（～在随便买东西。）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 15
+		;▼説教,（～静静地听着说教…）
+		;※神霊・蓬莱人は除く
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 16
+		;▼落穴,（～在增加落穴的数量）
+		;※三月精、琪露诺、克劳恩皮丝才会做这种事
+		;除此以外的人全都有可能掉坑里
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时,
+			;（布置人(失败时)，因为谁也不上钩TARGET感觉很没劲…）
+			;（掉落的一方(战斗能力2 ~ 4)，~马上从洞里跳出来东张西望着周围…）
+			PRINTFORML 
+		ENDIF
+	CASE 17
+		;▼制作雪雕（～正在收集雪）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	CASE 18
+		;▼悠闲地缩进被炉（～躲进暖桌里焐着）
+		IF !ARG:1
+			;行動中
+			PRINTFORML 
+		ELSE
+			;结束时
+			PRINTFORML 
+		ENDIF
+	ENDSELECT
 ENDIF
 RETURN 1

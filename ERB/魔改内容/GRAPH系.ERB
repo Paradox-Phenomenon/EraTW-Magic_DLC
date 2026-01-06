@@ -74,7 +74,7 @@ ELSE
 ENDIF
 
 
-IF FLAG:立絵種類 || 表示形式 == "顔絵"
+IF 表示形式 != "立絵" && (FLAG:立絵種類 || 表示形式 == "顔絵")
 	; 颜绘
 	CALL SPIRIT_颜像生成(Version, CHARA, 全图索引:0, 全图索引:1)
 ELSE
@@ -99,10 +99,12 @@ RETURN
 #DIMS DYNAMIC 表情
 #DIMS DYNAMIC 体图索引
 #DIMS DYNAMIC 表情索引
+#DIMS DYNAMIC 通用表情索引
 #DIMS DYNAMIC 全图索引
 
 体图索引 = %SPIRIT_体图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装)%
 表情索引 = %SPIRIT_表情索引(Version, CHARA, 服装, 表情)%
+通用表情索引 = %SPIRIT_通用表情索引(Version, CHARA, 服装, 表情)%
 全图索引 = %SPIRIT_全图索引(Version, CHARA, 妊肚, 乳量, 私处, 服装, 表情)%
 
 IF !RM_リソースチェック(体图索引)
@@ -111,12 +113,20 @@ ENDIF
 IF STRCOUNT(表情,"覆盖")
 	G_ID = 0
 	CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
-	CALL 画像合成(G_ID, 表情索引)
+	IF RM_リソースチェック(表情索引)
+		CALL 画像合成(G_ID, 表情索引)
+	ELSEIF RM_リソースチェック(通用表情索引)
+		CALL 画像合成(G_ID, 通用表情索引)
+	ENDIF
 ELSE
 	G_ID = 0
 	CALL 画像合成(G_ID, "ダミー", 0, 0, 500, 500)
 	CALL 画像合成(G_ID, 体图索引)
-	CALL 画像合成(G_ID, 表情索引)
+	IF RM_リソースチェック(表情索引)
+		CALL 画像合成(G_ID, 表情索引)
+	ELSEIF RM_リソースチェック(通用表情索引)
+		CALL 画像合成(G_ID, 通用表情索引)
+	ENDIF
 ENDIF
 
 SPRITECREATE 全图索引, G_ID
@@ -216,6 +226,14 @@ RETURNF @"%Version%体图_%妊肚%_%乳量%_%私处%_%服装%_{CHARA}"
 #DIMS DYNAMIC 表情
 #DIMS DYNAMIC 服装
 RETURNF @"{CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%表情%"
+@SPIRIT_通用表情索引(Version, CHARA, 服装, 表情)
+#FUNCTIONS
+#DIMS DYNAMIC Version
+#DIM DYNAMIC CHARA
+#DIMS DYNAMIC 表情
+#DIMS DYNAMIC 服装
+RETURNF @"{CHARA}%COND_STR(@"%Version%",Version != "")%_表情_%表情%"
+
 ;}
 
 @SPIRIT_BUILD_体差分(Version, CHARA, 妊肚, 乳量, 私处, 服装)
@@ -438,31 +456,27 @@ RETURNF ""
 #DIMS DYNAMIC 特效 = "照れ", "吐息", "汗"
 #DIM DYNAMIC CHARA
 #DIMS DYNAMIC Version
+#DIMS DYNAMIC 表示形式
 #LOCALSIZE 1
 FOR LOCAL, 0, VARSIZE("特效")
-	IF ARG == 1
-		;PRINTFORML 在处理 別立ち_%特效:LOCAL%_{CHARA}
-		SIF RM_リソースチェック(@"別立ち_%特效:LOCAL%_{CHARA}")
-			CALL SPIRIT_特效切分(Version, CHARA, @"別立ち_%特效:LOCAL%_{CHARA}")
+	IF ARG == 0
+		表示形式 = 立絵
+	ELSEIF ARG == 1
+		表示形式 = 別立ち
 	ELSE
-		;PRINTFORML 在处理 別立ち{ARG}_%特效:LOCAL%_{CHARA}
-		SIF RM_リソースチェック(@"別立ち{ARG}_%特效:LOCAL%_{CHARA}")
-			CALL SPIRIT_特效切分(Version, CHARA, @"別立ち{ARG}_%特效:LOCAL%_{CHARA}")
+		表示形式 = 別立ち{ARG}
 	ENDIF
+	;PRINTFORML 在处理 %表示形式%_%特效:LOCAL%_{CHARA}
+	SIF RM_リソースチェック(@"%表示形式%_%特效:LOCAL%_{CHARA}")
+		CALL SPIRIT_特效切分(Version, CHARA, @"%表示形式%_%特效:LOCAL%_{CHARA}")
 NEXT
 TRYCALLFORM SPIRIT_特效索引_{CHARA}(ARG,LOCALS)
 SIF !RESULT
 	RETURN
 FOR LOCAL, 0, RESULT
-	IF ARG == 1
-		;PRINTFORML 在处理 別立ち_%LOCALS:LOCAL%_{CHARA}
-		SIF RM_リソースチェック(@"別立ち_%LOCALS:LOCAL%_{CHARA}")
-			CALL SPIRIT_特效切分(Version, CHARA, @"別立ち_%LOCALS:LOCAL%_{CHARA}")
-	ELSE
-		;PRINTFORML 在处理 別立ち{ARG}_%LOCALS:LOCAL%_{CHARA}
-		SIF RM_リソースチェック(@"別立ち{ARG}_%LOCALS:LOCAL%_{CHARA}")
-			CALL SPIRIT_特效切分(Version, CHARA, @"別立ち{ARG}_%LOCALS:LOCAL%_{CHARA}")
-	ENDIF
+	;PRINTFORML 在处理 %表示形式%_%LOCALS:LOCAL%_{CHARA}
+	SIF RM_リソースチェック(@"%表示形式%_%LOCALS:LOCAL%_{CHARA}")
+		CALL SPIRIT_特效切分(Version, CHARA, @"%表示形式%_%LOCALS:LOCAL%_{CHARA}")
 NEXT
 
 @SPIRIT_特效切分(Version, CHARA, 全图索引)
@@ -485,7 +499,7 @@ ELSE
 	颜RECT:2 = 300
 	颜RECT:3 = 300
 ENDIF
-颜像索引 = %REPLACE(全图索引, "別立ち", "別顔")%
+颜像索引 = %REPLACE(全图索引, "(立ち|立)", "顔")%
 ;PRINTFORML 在为%全图索引%生成颜像索引：%颜像索引%
 G_ID = 0
 CALL 画像合成(G_ID, "ダミー", 0, 0, 颜RECT:2, 颜RECT:3)
@@ -504,6 +518,9 @@ RETURN
 IF TALENT:CHARA:心情 == -1 || CFLAG:CHARA:ブチギレ
 	RESULTS:0 = 憤怒
 	LOCAL = -1
+ELSEIF ENDURE(CHARA) > 550 && BASE:CHARA:理性 <= 350
+	RESULTS:0 = 発情
+	LOCAL = 1
 ELSEIF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 >= MAXBASE:CHARA:情緒 * 7 / 10 || TCVAR:CHARA:烂醉
 	RESULTS:0 = 笑顔
 	LOCAL = 1
@@ -551,23 +568,23 @@ CASEELSE
 ENDSELECT
 [IF DEBUG]
 PRINTFORML 初步判定表情「%RESULTS:0%/%RESULTS:1%」
-PRINTFORML {NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0% 检测为：{RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%")}
-PRINTFORML {NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1% 检测为：{RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%")}
+PRINTFORML {NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0% 检测为：{(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:0%"))}
+PRINTFORML {NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1% 检测为：{(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:1%"))}
 [ENDIF]
 ;表情がなければ通常
 ;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%")
+SIF !(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:0%"))
 	RESULTS:0 = 通常
 ;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%")
+SIF !(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:1%"))
 	RESULTS:1 = 通常
 
 ;発情用
 ;IF TCVAR:CHARA:発情 && RM_リソースチェック(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-IF TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_発情")
+IF TCVAR:CHARA:発情 && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_発情") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_発情"))
 	RESULTS:0 = 発情
 	RESULTS:1 = 発情
 ENDIF
@@ -575,14 +592,14 @@ ENDIF
 ;睡眠用
 ;IF CFLAG:CHARA:睡眠 && RM_リソースチェック(@"%表示形式%_%服装%_睡眠_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-IF CFLAG:CHARA:睡眠 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_睡眠")
+IF CFLAG:CHARA:睡眠 && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_睡眠") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_睡眠"))
 	RESULTS:0 = 睡眠
 	RESULTS:1 = 睡眠
 ENDIF
-IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_トロ顔")
+IF CFLAG:CHARA:うふふ && GETPALAMLV(PALAM:CHARA:欲情, 10) >= 7 && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_トロ顔") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_トロ顔"))
 	RESULTS:0 = トロ顔
 	RESULTS:1 = トロ顔
-	IF NOWEX:CHARA:TotalEX >= 5 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_イキ顔")
+	IF NOWEX:CHARA:TotalEX >= 5 && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_イキ顔") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_イキ顔"))
 		RESULTS:0 = イキ顔
 		RESULTS:1 = イキ顔
 	ENDIF
@@ -603,7 +620,7 @@ TEMP:1 = %RESULTS:1%
 ;挿入中なら性交表情
 ;SIF IS_SEXING(CHARA) && RM_リソースチェック(@"%表示形式%_%服装%_性交_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF IS_SEXING(CHARA) && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_性交")
+SIF IS_SEXING(CHARA) && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_性交") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_性交"))
 	RESULTS:0 = 性交
 
 SELECTCASE SELECTCOM
@@ -629,16 +646,16 @@ ENDSELECT
 ;表情がなければ戻す
 ;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%")
+SIF !(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:0%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:0%"))
 	RESULTS:0 = %TEMP:0%
 ;SIF !RM_リソースチェック(@"%表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF !RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%")
+SIF !(RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_%RESULTS:1%") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_%RESULTS:1%"))
 	RESULTS:1 = %TEMP:1%
 ;発情時2/3でマウスオーバーと表情交代
 ;SIF RAND:3 && TCVAR:CHARA:発情 && RM_リソースチェック(@"%表示形式%_%服装%_発情_{CHARA}%差分%") ;debloat custom code
 ;addition custom code, duplicated characters
-SIF RAND:3 && TCVAR:CHARA:発情 && RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_発情")
+SIF RAND:3 && TCVAR:CHARA:発情 && (RM_リソースチェック(@"{NO:CHARA}%COND_STR(@"%Version%_%服装%",Version != "")%_表情_発情") || RM_リソースチェック(@"{NO:CHARA}%COND_STR(Version,Version != "")%_表情_発情"))
 	SWAP RESULTS:0, RESULTS:1
 ;専用の特殊表情変化
 CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA, SELECTCOM)
