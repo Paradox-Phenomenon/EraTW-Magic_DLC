@@ -9,48 +9,7 @@
 IF FLAG:推倒 == 2
 	RETURN
 ELSEIF FLAG:推倒
-	被逆推判定 = 0
-	被逆推判定 += ABL:TARGET:戦闘能力 - ABL:MASTER:戦闘能力
-	被逆推判定 += TALENT:TARGET:体型 - TALENT:MASTER:体型
-	IF CFLAG:TARGET:害羞 > 0
-		被逆推判定 += 1
-	ELSEIF CFLAG:TARGET:害羞 < 0
-		被逆推判定 -= 1
-	ENDIF
-	IF CFLAG:TARGET:誘惑 > 0
-		被逆推判定 += 1
-	ELSEIF CFLAG:TARGET:誘惑 < 0
-		被逆推判定 -= 1
-	ENDIF
-	IF CFLAG:TARGET:積極性 > 0
-		被逆推判定 += 1
-	ELSEIF CFLAG:TARGET:積極性 < 0
-		被逆推判定 -= 1
-	ENDIF
-	IF CFLAG:TARGET:攻 > 0
-		被逆推判定 += 1
-	ELSEIF CFLAG:TARGET:攻 < 0
-		被逆推判定 -= 1
-	ENDIF
-	IF GROUPMATCH(CFLAG:TARGET:性格傾向,1,3)
-		被逆推判定 += 1
-	ELSEIF GROUPMATCH(CFLAG:TARGET:性格傾向,2,4)
-		被逆推判定 -= 1
-	ENDIF
-	;被逆推判定 += ABL:TARGET:施虐属性 + ABL:MASTER:受虐属性
-	;被逆推判定 -= TALENT:MASTER:胆量 + TALENT:MASTER:態度 + TALENT:MASTER:応答 + TALENT:MASTER:自尊心 + TALENT:MASTER:難以越過的底線 + TALENT:MASTER:抵抗 + TALENT:MASTER:貞操
-	;被逆推判定 += (CFLAG:TARGET:掌握把柄 * 2) + (TALENT:TARGET:施虐狂 * 3) + (TALENT:MASTER:受虐狂 * 3) + (TCVAR:TARGET:発情 * 3)
-	IF CFLAG:TARGET:积攒度 < 600
-		被逆推判定 = 0
-	ELSEIF CFLAG:TARGET:积攒度 < 800
-		被逆推判定 += 1
-	ELSEIF CFLAG:TARGET:积攒度 < 1000
-		被逆推判定 += 2
-	ELSE
-		被逆推判定 += 3
-	ENDIF
-	SIF FLAG:催眠強度 > 50
-		被逆推判定 -= 1
+	被逆推判定 = 被逆推判定(TARGET)
 ENDIF
 
 IF CFLAG:诶嘿嘿 == 1
@@ -321,6 +280,8 @@ RETURNF 0
 
 ;-----------------------------------------------------------
 @ENDURE(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 ;素質により判定変化
 LOCAL = CFLAG:ARG:合意判定
@@ -444,9 +405,63 @@ SIF TFLAG:パール期限
 RETURNF LOCAL
 
 ;==============================================================
+;被逆推判定
+;==============================================================
+@被逆推判定(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+LOCAL = 0
+LOCAL += ABL:ARG:戦闘能力 - ABL:MASTER:戦闘能力
+LOCAL += TALENT:ARG:体型 - TALENT:MASTER:体型
+IF CFLAG:ARG:害羞 > 0
+	LOCAL += 1
+ELSEIF CFLAG:ARG:害羞 < 0
+	LOCAL -= 1
+ENDIF
+IF CFLAG:ARG:誘惑 > 0
+	LOCAL += 1
+ELSEIF CFLAG:ARG:誘惑 < 0
+	LOCAL -= 1
+ENDIF
+IF CFLAG:ARG:積極性 > 0
+	LOCAL += 1
+ELSEIF CFLAG:ARG:積極性 < 0
+	LOCAL -= 1
+ENDIF
+IF CFLAG:ARG:攻 > 0
+	LOCAL += 1
+ELSEIF CFLAG:ARG:攻 < 0
+	LOCAL -= 1
+ENDIF
+IF GROUPMATCH(CFLAG:ARG:性格傾向,1,3)
+	LOCAL += 1
+ELSEIF GROUPMATCH(CFLAG:ARG:性格傾向,2,4)
+	LOCAL -= 1
+ENDIF
+;LOCAL += ABL:ARG:施虐属性 + ABL:MASTER:受虐属性
+;LOCAL -= TALENT:MASTER:胆量 + TALENT:MASTER:態度 + TALENT:MASTER:応答 + TALENT:MASTER:自尊心 + TALENT:MASTER:難以越過的底線 + TALENT:MASTER:抵抗 + TALENT:MASTER:貞操
+;LOCAL += (CFLAG:ARG:掌握把柄 * 2) + (TALENT:ARG:施虐狂 * 3) + (TALENT:MASTER:受虐狂 * 3) + (TCVAR:ARG:発情 * 3)
+IF CFLAG:ARG:积攒度 < 600
+	LOCAL = 0
+ELSEIF CFLAG:ARG:积攒度 < 800
+	LOCAL += 1
+ELSEIF CFLAG:ARG:积攒度 < 1000
+	LOCAL += 2
+ELSE
+	LOCAL += 3
+ENDIF
+SIF FLAG:催眠強度 > 50
+	LOCAL -= 1
+RETURNF LOCAL
+
+;==============================================================
 ;抱きつき判定
 ;==============================================================
+
 @抱きつき判定(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 ;素質により判定変化
 LOCAL = CFLAG:ARG:合意判定
@@ -535,6 +550,8 @@ RETURNF LOCAL
 ;RETURN	0=使用しない, 1=使用する
 ;==============================================================
 @REVERSE_MIRADA(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM C_ID
 
@@ -564,6 +581,8 @@ RETURNF 0
 @HITOKE(同室チェック)
 ;MASTERの位置から見て他の部屋にだれかいるかどうか
 ;同室チェックの場合、同室に複数人いる場合も真
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM 同室チェック
 SIF 同室チェック && FINDELEMENT(TARGET, 0) - 1 > 1
