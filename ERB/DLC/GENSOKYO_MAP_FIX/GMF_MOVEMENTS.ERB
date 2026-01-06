@@ -28,6 +28,29 @@ ENDIF
 RETURNF 0
 
 ;-----------------------------------------------------------
+;地图内（据点）判定，这里应该是判断地点是否在据点
+;这个判断有两个含义，第一是在家地图上，第二是在据点地图上
+;二者用外出模式来界定似乎可行
+;-----------------------------------------------------------
+@GMF_IN_HOME(ARG)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC MAP_ID
+;外出模式下选用家地图，否则选用玩家所在据点地图
+MAP_ID = GMF_IS_ODEKAKE(-1) ? GMF_HOME_MAP # GET_MAPID(CFLAG:MASTER:現在位置)
+;特殊的，当玩家在家地图启用外出模式时，视为所有地图都不在据点内
+IF GMF_IS_ODEKAKE(-1) && GET_MAPID(CFLAG:MASTER:現在位置) == GMF_HOME_MAP
+	RETURNF 0
+ELSEIF ARG == GMF_MAXROOM:MAP_ID
+	RETURNF 2
+ELSEIF INRANGE(ARG, MAP_ID*100+1, GMF_MAXROOM:MAP_ID)
+	RETURNF 1
+ELSE
+	RETURNF 0
+ENDIF
+
+;-----------------------------------------------------------
 ;约会中，与其说是约会中，不如说是外出中的意思……
 ;我不知道作者怎么想的，估计是因为把所有角色的初始位置都丢隙间，所以约会中锁家地图吧
 ;总之是看“角色外出状态”的意思，需要和“外出地图模式”做区分
@@ -54,6 +77,7 @@ FOR LOCAL, 1, CHARANUM
 	SIF CFLAG:LOCAL:出禁
 		CONTINUE
 	;角色的职场需要转换，神社在住可能也先变换着吧
+	CFLAG:LOCAL:GMF_職場拠点位置 = CFLAG:LOCAL:職場
 	CFLAG:LOCAL:職場 = GETMETH(@"MAP_SEARCH_REPLACEMENT_{CFLAG:LOCAL:職場/100}", CFLAG:LOCAL:職場, CFLAG:LOCAL:職場)
 	CFLAG:LOCAL:神社在住 = (GET_MAPID(CFLAG:LOCAL:初期位置) == MAIN_MAP) ? CFLAG:LOCAL:初期位置 # 0
 	;修正角色位于隙间空间时的状态，即隙间空间情况下角色应该视为处于自宅中
@@ -82,7 +106,7 @@ FOR LOCAL, 1, CHARANUM
 	SIF CFLAG:LOCAL:出禁
 		CONTINUE
 	;角色的职场需要转换，神社在住可能也先变换着吧，这可能得重新设定一遍才能解决，毕竟没有暂存
-	CALL 仕事内容設定(LOCAL)
+	CFLAG:LOCAL:職場 = CFLAG:LOCAL:GMF_職場拠点位置
 	CFLAG:LOCAL:神社在住 = (GET_MAPID(CFLAG:LOCAL:初期位置) == GET_MAPID(CFLAG:MASTER:現在位置)) ? CFLAG:LOCAL:初期位置 # 0
 	IF !CFLAG:LOCAL:GMF_現在拠点位置
 		CALLF GMF_ERROR_INFO_PRINT(@"%CALLNAME:LOCAL%的据点位置为空！角色当前的现在位置为{CFLAG:LOCAL:現在位置}")
@@ -210,8 +234,10 @@ ENDIF
 #LOCALSSIZE 1
 ;没有遭遇位置时，默认设为自宅位置，这里自宅应该就是初期位置
 ;之前现在位置是设为了隙间空间
-CFLAG:ARG:GMF_現在拠点位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
-CFLAG:ARG:現在位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
+IF VISIT(ARG) && CFLAG:ARG:現在位置 != CFLAG:ARG:遭遇位置
+	CFLAG:ARG:GMF_現在拠点位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
+	CFLAG:ARG:現在位置 = CFLAG:ARG:遭遇位置 ? CFLAG:ARG:遭遇位置 # CFLAG:ARG:初期位置
+ENDIF
 
 ;待客室から出る
 @GMF_RECEPTION_ROOM_OUT(ARG)
