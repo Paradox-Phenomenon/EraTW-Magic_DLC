@@ -1,6 +1,6 @@
 ﻿For EraToho The World, Parsee Mizuhashi by Vinumsabbathi
 
-v0.2.2 (February 27, 2025)
+v0.2.3 (December 31, 2025)
 
 DISCLAIMER: There aren't any syntax errors, but I didn't test this dialogue too much. There will probably be bugs. Please report them so I can fix them.
 
@@ -149,7 +149,7 @@ Thanks to:
 - Lesbian Fujoshi in the /egg/ Discord (for feedback, proofreading, and suggesting skill-based wagers for danmaku)
 - Puru in the /egg/ Discord (for the idea to make Parsee keep her socks on during sex)
 - Perdak Perdakov in the /egg/ Discord (for proofreading)
-- Pedy, for lending me his Parsee design doc, for the idea to make Parsee's text change color the more jealous she is, for letting me know about TRYCALLF, for (a shitload of) proofreading, for inspiring me to expand on one of the thick semen lines, and for suggesting the scene where she encounters you on a date for the first time
+- - Pedy, for lending me his Parsee design doc, for the idea to make Parsee's text change color the more jealous she is, for letting me know about TRYCALLF, for (a shitload of) proofreading, for inspiring me to expand on one of the thick semen lines, and for suggesting the scene where she encounters you on a date for the first time
 - Mr Pops Alot, for help with eralang (implementing the "last five Parsee rants" array, etc.), for his debug menu, for some minor fixes, and for writing her config menu
 - Yuu in the /egg/ Discord (for being a fellow man of culture, for giving me permission to reference his Aunn dialogue for inspiration, for proofreading, and for helping me with Parsee's rant about Aunn)
 - Kash in the /egg/ Discord (for bug testing)
