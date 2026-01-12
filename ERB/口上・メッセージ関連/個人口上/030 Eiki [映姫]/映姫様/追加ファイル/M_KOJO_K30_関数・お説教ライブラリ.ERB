@@ -84,8 +84,8 @@ ENDSELECT
 ;-------------------------------------------------
 @K30_TRY_HARASS
 #FUNCTION
-;状態異常・诶嘿嘿時・招待時は通す
-SIF SHIRAHU(30) != 1 || CFLAG:30:诶嘿嘿 || CFLAG:30:招待
+;状態異常・うふふ時・お招き時は通す。変Ｔも状態異常に入る
+SIF SHIRAHU(30) != 1 || CFLAG:30:うふふ || CFLAG:30:お招き || K30_CHECK_HEN_T()
 	RETURNF 1
 ;接吻魔がついたら接吻は全通し
 SIF TALENT:接吻魔 && SELECTCOM == 312
@@ -861,11 +861,24 @@ RETURN 1
 RESETCOLOR
 DRAWLINE
 CALL M_KOJO_COLOR_K30
-RETURN RESULT
+RETURN 1
 ;==================================================
-;诶嘿嘿入る時の準備関数
-;絶頂回数等リセット,掌握把柄保存,
-;さらに意識がある場合、前日行動反映をリセット・诶嘿嘿回数/時間記録・映姫様自室なら描写用フラグ立て
+;ウエイト入れながら地の文で定型３点リーダを表示する関数
+;ARG =１行ごとのウエイト(ms)、1000で１秒
+;ARG:1 =真で表示行入れ替え
+;-------------------------------------------------
+@K30_ELLIPSES(ARG, ARG:1 = 0)
+LOCALS:0 '= "…………", "……", "…"
+SIF ARG:1
+	LOCALS:0 '= "…", "……", "…………"
+RESETCOLOR
+CALL PRINT_GROUP(LOCALS, 3, ARG)
+CALL M_KOJO_COLOR_K30
+RETURN 1
+;==================================================
+;うふふ入る時の準備関数
+;絶頂回数等リセット,弱み握り保存
+;さらに意識がある場合、前日行動反映をリセット・うふふ回数/時間記録・映姫様自室なら描写用フラグ立て
 ;-------------------------------------------------
 @K30_PRESET_UFUFU
 VARSET TCVAR:30:0, 0, 389, 399
@@ -1188,16 +1201,21 @@ SELECTCASE ARG
 		LOOP_C = 3 + (NOWEX:MASTER:射精 > 0) - BLOCK + ((TCVAR:30:357 !=0) * 5) + CLEAN
 		;前ターン咥えて無ければひと舐め
 		IF MASTER_POSE(SET_M, SET_P, 1) != 30 && TALENT:恋慕 && TCVAR:30:357 < 2
+			CALL K30_SOUND_FELLA("始")
 			CALL PRINT_IMAGE("30_start", SIZE, "left")
 			TWAIT 800, 0
 			CLEARLINE SIZE / 100
 		ENDIF
 		;通常パターン
 		IF ARG == 0 || (ARG == 2 && NOWEX:MASTER:射精) || CLEAN
-			WAIT_T = 100 - (NOWEX:MASTER:射精 > 0) * 25
+			WAIT_T = TCVAR:30:357 == 1 ? 75 # 100 - (NOWEX:MASTER:射精 > 0) * 25
+			LOCALS = \@ WAIT_T == 100 ? 遅 # 普 \@
+			CALL K30_SOUND_FELLA(LOCALS)
 			FOR COUNT:1 ,0, LOOP_C
 				FOR COUNT, 1, 7
 					CALL PRINT_IMAGE(@"30_blow{COUNT}", SIZE, "left")
+					SIF (COUNT:1 == LOOP_C - 1) && COUNT == 5 && CLEAN
+						CALL K30_SOUND_FELLA("離")
 					TWAIT WAIT_T, 0
 					CLEARLINE SIZE / 100
 					SIF GETKEY(1) && COUNT:1
@@ -1215,15 +1233,16 @@ SELECTCASE ARG
 			ENDIF
 			$SKIP
 			IF CLEAN
-				;清洁口交で口を離す描写ある(=Counter発生しない)パターン
+				;お掃除フェラで口を離す描写ある(=カウンター発生しない)パターン
 				CALL PRINT_IMAGE(@"30_shower1", SIZE, "left")
 			ELSE
 				;射精直前パターン
 				CALL PRINT_IMAGE(@"30_blow{COUNT}", SIZE, "left")
 			ENDIF
 		;エンドレスパターン
-		;Emuera本体にあるアニメスプライト機能使用、ログ流しても咥えっぱ無にするテスト
-		ELSE		
+		;Emuera本体にあるアニメスプライト機能使用、ログ流しても咥えっぱなしにするテスト
+		ELSE
+			CALL K30_SOUND_FELLA("遅")
 			;不能使用原有的循环动画，否则动画将在历史履历里堆积
 			CALL PRINT_ANIME,"30_おしゃぶり映姫様"
 			;HTML_FORM = <img src='30_おしゃぶり映姫様' height='{SIZE}' width='{SIZE}'>
@@ -1239,9 +1258,12 @@ SELECTCASE ARG
 		SUCCESS = (EXP_UP(15, 30) == NOWEX:MASTER:射精 * 3) || TFLAG:193 == -999 || TCVAR:30:357
 		FAVOR = (TALENT:恋慕 && ABL:精液中毒 > 4 && PALAM:欲情 > PALAMLV:7 && RAND:3) || TCVAR:30:357
 		;スパート
+		CALL K30_SOUND_FELLA("早")
 		FOR LOCAL, 0, 4 + (ARG == 4)
 			FOR COUNT, 1, 7
 				CALL PRINT_IMAGE(@"30_blow{COUNT}", SIZE, "left")
+				SIF (LOCAL == 1 && COUNT == 5 && ARG == 3)
+					CALL K30_SOUND_FELLA("離")
 				TWAIT 55, 0
 				CLEARLINE SIZE / 100
 				SIF GETKEY(1) && LOCAL > 0
@@ -1282,6 +1304,8 @@ SELECTCASE ARG
 		IF !SUCCESS && NOWEX:MASTER:射精 > 1 
 			FOR COUNT, 1, 2 + (TALENT:恋慕 && ABL:精液中毒 > 4)
 				CALL PRINT_IMAGE(@"30_failed{COUNT}", SIZE, "left")
+				SIF COUNT == 2
+					CALL K30_SOUND_FELLA("離")
 				TWAIT 1200, 0
 				CLEARLINE SIZE / 100
 				SIF GETKEY(1)
@@ -1291,6 +1315,8 @@ SELECTCASE ARG
 		ELSEIF !SUCCESS
 			FOR COUNT, 2, 5
 				CALL PRINT_IMAGE(@"30_success{COUNT}", SIZE, "left")
+				SIF COUNT == 3
+					CALL K30_SOUND_FELLA("離")
 				TWAIT 550 , 0
 				CLEARLINE SIZE / 100
 				SIF GETKEY(1)
@@ -1305,7 +1331,12 @@ SELECTCASE ARG
 			NEXT
 		;ごっくんパターン1、陥落高くてMASTER大量射精
 		ELSEIF FAVOR && SUCCESS
+			CALL K30_SOUND_FELLA("飲")
 			FOR COUNT, 0, 17
+				SIF COUNT == 2
+					CALL K30_SOUND_FELLA("噛")
+				SIF COUNT == 14
+					CALL K30_SOUND_FELLA("離")
 				CALL PRINT_IMAGE(@"30_success{PAT:COUNT}", SIZE, "left")
 				TWAIT (G_TIME:COUNT), 0
 				CLEARLINE SIZE / 100
@@ -1314,9 +1345,12 @@ SELECTCASE ARG
 			NEXT
 		;ごっくんパターン2
 		ELSE
+			CALL K30_SOUND_FELLA("飲")
 			LOCAL = 500
 			FOR COUNT, 2, 5
 				CALL PRINT_IMAGE(@"30_success{COUNT}", SIZE, "left")
+				SIF COUNT == 4
+					CALL K30_SOUND_FELLA("離")
 				TWAIT LOCAL, 0
 				CLEARLINE SIZE / 100
 				SIF GETKEY(1)
@@ -1327,6 +1361,7 @@ SELECTCASE ARG
 		$SKIP2
 		;顔射
 		IF ARG == 3
+			CALL K30_SOUND_FELLA("始")
 			CALL PRINT_IMAGE("30_shower6", SIZE, "left")
 		;未陥落
 		ELSEIF BLOCK
@@ -1345,41 +1380,45 @@ SELECTCASE ARG
 		ENDIF
 	CASE 5
 		LOCAL = 300
+		CALL K30_SOUND_FELLA("飲")
 		FOR COUNT, 2, 5
 			CALL PRINT_IMAGE(@"30_success{COUNT}", SIZE, "left")
 			TWAIT LOCAL, 0
 			CLEARLINE SIZE / 100
 			SIF GETKEY(1)
-				GOTO SKIP2
+				BREAK
 			LOCAL += 150
 		NEXT
 		CALL PRINT_IMAGE("30_success5", SIZE, "left")
 	CASE 6
+		CALL K30_SOUND_FELLA("離")
 		FOR COUNT, 1, 3
 			CALL PRINT_IMAGE(@"30_failed{COUNT}", SIZE, "left")
 			TWAIT 500, 0
 			CLEARLINE SIZE / 100
 			SIF GETKEY(1)
-				GOTO SKIP2
+				BREAK
 		NEXT
 		CALL PRINT_IMAGE("30_success5", SIZE, "left")
 	CASE 7
+		CALL K30_SOUND_FELLA("離")
 		FOR COUNT, 1, 5
 			CALL PRINT_IMAGE(@"30_dara{COUNT}", SIZE, "left")
 			TWAIT 600, 0
 			CLEARLINE SIZE / 100
 			SIF GETKEY(1)
-				GOTO SKIP2
+				BREAK
 		NEXT
 		CALL PRINT_IMAGE("30_dara5", SIZE, "left")
 	CASE 8
+		CALL K30_SOUND_FELLA("早")
 		FOR COUNT:1 ,0, 2
 			FOR COUNT, 1, 7
 				CALL PRINT_IMAGE(@"30_blow{COUNT}", SIZE, "left")
 				TWAIT 75, 0
 				CLEARLINE SIZE / 100
 				SIF GETKEY(1) && COUNT:1
-					GOTO SKIP
+					BREAK
 			NEXT
 		NEXT
 		CALL PRINT_IMAGE(@"30_blow7", SIZE, "left")
@@ -1460,7 +1499,7 @@ S_NUM = 1
 セットエフェクト = 腫れ + 濡れ + 白濁 + 装着
 CALL K30_SELECT_PANTS_TYPE(LAYER:2)
 ぱんつ = %RESULTS%
-袖 = _%\@ NUDITYCHECK(30) > 3 && !K30_CHECK_HEN_T() ? WEAR # NUDE \@%
+袖 = %\@ K30_NUDITY() || K30_CHECK_HEN_T() ? _NUDE # _WEAR \@%
 
 ;イベント構文から直接指定時
 IF COM < 0
@@ -1524,17 +1563,17 @@ IF ぱんつ != ""
 	L_NUM ++
 ENDIF
 
-;指令毎に其他レイヤを決定
+;コマンド毎にその他レイヤを決定
 SELECTCASE COM
 	;摸屁股
 	CASE 310
-		SIF CFLAG:诶嘿嘿
-			RETURN
 		;素体を入れ替え
 		SET_RESOURCE:0 = %REPLACE(SET_RESOURCE:0, "BODY_", "BODY_KETSU-TOUCH_")%
+		SIF SET_RESOURCE:0 == "30_BODY_KETSU-TOUCH_NUDE"
+			SET_RESOURCE:0 = 30_BODY_NUDE
 		SET_RESOURCE:1 = 30_SHADOW_KETSU-TOUCH
 		L_NUM =2
-		IF TFLAG:193 < 4 && SHIRAHU(30)
+		IF TFLAG:193 < 4 && SHIRAHU(30) && !CFLAG:うふふ
 			SET_RESOURCE:2 = 30_HAND%袖%_GUARD
 			L_NUM ++
 		ENDIF
@@ -1543,9 +1582,9 @@ SELECTCASE COM
 		;謎の影
 		SET_RESOURCE:L_NUM = 30_SHADOW_%\@ TCVAR:30:364 && TEQUIP:肛用振動棒 ? INST # HAND \@%
 		L_NUM ++
-	;掀裙子
+	;スカートめくり,風チラ
 	CASE 330
-		;素体差分个別設定
+		;素体差分個別設定
 		IF TCVAR:30:364
 			SET_RESOURCE:1 = 30_BASE%\@ たっぷり ? _CREAMPIE # _HOLE \@%
 		ELSEIF たっぷり && 縦割
@@ -1558,7 +1597,6 @@ SELECTCASE COM
 			SET_RESOURCE:L_NUM = 30_SHADOW_LIFT
 			L_NUM ++
 		ENDIF
-		L_NUM ++
 	;アナル舐め
 	CASE 4
 		;映姫様の腕
@@ -1737,7 +1775,7 @@ RETURNF 1
 LOCAL = 0
 RESULTS =
 色 = %COLOR:(DAY % 4)%
-ASIDE = (CFLAG:诶嘿嘿 == 1 || TEQUIP:50 >= 0 || TEQUIP:51 >= 0 || TEQUIP:振動棒 || TEQUIP:肛用振動棒 || 指定 == 2)
+ASIDE = (CFLAG:诶嘿嘿 || TEQUIP:50 >= 0 || TEQUIP:51 >= 0 || TEQUIP:振動棒 || TEQUIP:肛用振動棒 || 指定 == 2)
 ずらし = _%\@ ASIDE ? SHIFT # NORMAL \@% 
 ヌード = %\@ K30_NUDITY() ? _NUDE # _WEAR \@%
 装着 = %\@ TEQUIP:肛用振動棒 ? _VIBE # \@%
@@ -1758,7 +1796,7 @@ SELECTCASE EQUIP:30:下半身内衣２
 			RESULTS = 30_PANTS_HARNESS
 			RETURN
 		ENDIF
-		SIF TCVAR:30:354 > 0
+		SIF TCVAR:30:354 > 0 && !BATHROOM(CFLAG:現在位置)
 			RESULTS = 30_PANTS%ヌード%_TYPE10_NO-PANTS
 		
 	CASE 1, 2, 26
@@ -2021,7 +2059,38 @@ CALL GET_BASE_RESOURCE(30, "顔絵", "", ARGS)
 CALL 画像セット(RESULTS:0, 0, 0, 100, 1)
 CALL 画像一斉表示("LEFT", 0, 1, -1)
 RETURN
-
+;==================================================
+;口上独自の効果音を鳴らす関数
+;簡単にパージできるよう分離して設置、音量はBGMパッチきたら合わせる
+;--------------------------------------------------
+@K30_SOUND_FELLA(TYPE)
+#DIMS TYPE
+;RETURN
+SIF !(FLAG:画像表示 || 顔絵付きメッセージ || FLAG:アニメーション || GETBIT(CFLAG:30:1500, 3))
+	RETURN 1
+STOPSOUND
+SIF TYPE == "止"
+	RETURN 1
+IF ABL:30:精液中毒 < 2 || !TALENT:30:恋慕
+	LOCALS = 映姫様素材/K30_フェラ初{RAND(2)+1}.mp3
+	SIF GROUPMATCH(TYPE, "始", "飲", "離", "噛")
+		RETURN 1
+ELSE
+	LOCALS = 映姫様素材/K30_フェラ%TYPE%{RAND(2)+1}.mp3
+ENDIF
+PLAYSOUND LOCALS
+RETURN 1
+@K30_SOUND_VIBE(TYPE)
+#DIMS TYPE
+;RETURN
+STOPSOUND
+SIF !(TEQUIP:30:アナルバイブ || GROUPMATCH(TCVAR:30:365, 1, 2) || GETBIT(CFLAG:30:1500, 3))
+	RETURN
+SIF TYPE == "自動"
+	TYPE = \@ TCVAR:30:365 != 2 ? 弱 # 強 \@
+LOCALS = 映姫様素材/K30_バイブ%TYPE%.mp3
+PLAYSOUND LOCALS
+RETURN 1
 ;==================================================
 ;汎用説教判定＆実行
 @K30_LECTURE_CHECK(説教長, 理由)
@@ -2804,7 +2873,7 @@ ENDIF
 RETURN
 
 ;==================================================
-;映姫様の尻穴と抵抗を緩くするEXTRASOURCE関数群
+;お尻の穴と抵抗が緩めな映姫様のEXTRASOURCE関数群
 ;豊姫口上参考にしました
 ;--------------------------------------------------
 ;COMF4 舐肛
@@ -2869,8 +2938,8 @@ SOURCE:鬱屈 = SOURCE:鬱屈 / DIVIDED
 SOURCE:反感 = SOURCE:反感 / DIVIDED
 RETURN
 ;==================================================
-;映姫様が仕事中に口交抜きしてくれるEXTRASOURCE関数群
-;本体側改造しない都合で1ターンで你を発射させる仕様
+;仕事中にフェラ抜きしてくれる映姫様のEXTRASOURCE関数群
+;本体側改造しない都合で1ターンであなたを発射させる仕様
 ;仕事中ならどうしても我慢できないのを手早く済ます…というシチュとしてごまかす
 ;--------------------------------------------------
 ;COMF300 会話

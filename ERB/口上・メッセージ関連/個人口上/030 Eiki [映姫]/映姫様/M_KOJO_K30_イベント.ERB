@@ -18,7 +18,7 @@
 ;TCVAR:30:360 IMAGE.ERB受け渡し用フラグ (=TIMEで表情変化) 
 ;TCVAR:30:361 強制攻守交代口上フラグ１
 ;TCVAR:30:362 強制攻守交代口上フラグ２
-;TCVAR:30:363 朝うふふフラグ(=TIME 朝フェラした時間 =-1 妊活の为我慢した -1以下 朝うふふ実行)
+;TCVAR:30:363 朝うふふフラグ(=TIME 朝フェラした時間 =-1 妊活の為我慢した -1以下 朝うふふ実行)
 ;TCVAR:30:364 バイブ挿入デートフラグ(=1 挿入中 =-1 時間停止中)
 ;TCVAR:30:365 バイブ挿入デートリモコン(=1 弱 =2強)
 ;TCVAR;30:366 特殊衰弱中フラグ(=1 ヤリすぎ)
@@ -50,7 +50,7 @@
 ;TCVAR:30:396 あなた射精回数
 ;TCVAR:30:397 五重絶頂
 ;TCVAR:30:398 騎乗位の向き(=0 対面 =1 背面)
-;CFLAG:1500 映姫様おしり画像＆アニメーションスイッチ（Bit0-フェラアニメ 1-おしり画像 2-まばたき）
+;CFLAG:1500 映姫様専用エフェクトフラグ（Bit0-フェラアニメ 1-おしり画像 2-まばたきアニメ 3-効果音）
 ;CFLAG:1501 口上色保存フラグ
 ;CFLAG:1502 妊娠願望関連フラグ
 ;(Bit0-危険日Ｈ解禁 1-子宝願掛け済 2-信頼度到達 3-願望取得済 4-二人目願望)
@@ -109,15 +109,19 @@ RETURN 1
 CFLAG:30:時間停止口上有 = 1
 CFLAG:30:眠姦口上有 = 1
 ;破瓜中止口上有に1を入れると、@M_KOJO_EVENT_KX_LOST_VIRGIN_STOPで中止の成否を操作できます
-;映姬大人はお堅いので处女はなるべく守ろうとするよ
-;推倒禁止に1を入れると、主动推倒てこなくなります
-;映姬大人はお堅いので恋慕か炮友がつくまで推倒てこないよ
+;映姬大人很保守，所以会尽可能地保持贞洁哦
+;押し倒し禁止に1を入れると、自分から押し倒してこなくなります
+;映姬大人很保守，所以直到产生恋慕或成为炮友之前，她都不会主动推倒哦
+;如果没发情的话，就不会在别人的房间里主动推倒哦
 IF CFLAG:30:1801 == 1
 	CFLAG:30:破瓜中止口上有 = 1
-	IF TALENT:30:恋慕 || TALENT:30:炮友 || TALENT:30:愛欲
-		CFLAG:30:推倒禁止 = 0
-	ELSE
-		CFLAG:30:推倒禁止 = 1
+	CFLAG:30:押し倒し禁止 = 1
+	IF !IN_HOME(CFLAG:30:現在位置)
+	ELSEIF TALENT:30:恋慕 || TALENT:30:セフレ || TALENT:30:愛欲
+		SIF GROUPMATCH(PRIVATEROOM:(CFLAG:30:現在位置 % 100), 0, 30)
+			CFLAG:30:押し倒し禁止 = 0
+		SIF TCVAR:30:発情 || CFLAG:30:溜まってる度 >= 850 || TCVAR:30:媚薬
+			CFLAG:30:押し倒し禁止 = 0
 	ENDIF
 ELSE
 	CFLAG:30:推倒禁止 = 0
@@ -126,7 +130,7 @@ ENDIF
 
 ;口上内抱き寄せ判定_初回と口上内抱き寄せ判定_通常に1を入れると、M_KOJO_EVENT_KX_PERMISSIONで押し倒しの成否を操作できます
 ;CFLAG:X:口上内抱き寄せ判定_初回 = 0
-;CFLAG:X:口上内抱き寄せ判定_通常 = 0
+CFLAG:30:口上内抱き寄せ判定_通常 = 1
 
 ;映姬大人は意识がちゃんとある时しか接吻合意を认めないよ
 SIF CFLAG:30:1801 == 1 && CFLAG:30:1602 == 0
@@ -164,7 +168,7 @@ IF FIRSTTIME("魔改回退")
 ENDIF
 ;媚药で搾り取りモードなら溜まってる度減らさない
 SIF GETBIT(TCVAR:30:367, 3)
-	CFLAG:30:积攒度 = MIN(CFLAG:30:积攒度, 666)
+	CFLAG:30:积攒度 = MAX(CFLAG:30:积攒度, 666)
 	
 ;媚药で搾り取りモード中はうふふから逃さない
 SIF COM_STR == "K30_搾り取りモード"
@@ -190,18 +194,22 @@ ENDIF
 SIF !TCVAR:30:354
 	TCVAR:30:354 = CFLAG:30:きょうのぱんつ == 22 ? 1 # -1
 
-;オプション设定＆现在位置が映姬大人と一绪の场合、指令待机时のアニメ描画優先度变更
+;オプション設定＆現在位置が映姫様と一緒の場合、コマンド待機時のアニメ描画優先度変更
 ;SETANIMETIMER 32627
 ;SIF CFLAG:MASTER:現在位置 == CFLAG:30:現在位置 && GETBIT(CFLAG:30:1500, 2)
 ;	SETANIMETIMER 50
+CALL K30_SOUND_FELLA("止")
 
-;振动棒约会フォロー
+;バイブデートフォロー
+SIF TCVAR:30:365 == 2 && TCVAR:30:364 == 1 && !CFLAG:30:うふふ && SHIRAHU(30)
+	CALL K30_SOUND_VIBE("継続")
 SIF TCVAR:30:364 >= 0
 	RETURN 1
 SIF CFLAG:30:诶嘿嘿
 	RETURN 1
 TEQUIP:30:肛用振動棒 = 1
 TCVAR:30:364 = 1
+
 RETURN 1
 
 ;### 来访前フラグ设定 #############################
@@ -230,6 +238,7 @@ RETURN RESULT
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 @M_KOJO_UPDATE_K30
 #DIM TEMP
+#DIM R_TEMP
 ;口上独自のUPDATE用
 ;ENCOUNTER専用に独自分岐フラグを仕込んだ场合等にどうぞ
 ;UPDATE判定でCFLAG等の角色变数を使用场合、角色番号の指定が必要になります
@@ -301,7 +310,7 @@ TARGET = 30
 CALL M_KOJO_COLOR_K30
 
 CALL KOJO_OPTION_ITEM("更改映姬大人的戒备程度", 1, "status:普通:森严", CFLAG:30:1801)
-CALL KOJO_OPTION_ITEM(@"剧本自制图像显示　口交动画：\@ GETBIT(CFLAG:30:1500, 0) ? On # Off\@　臀部图像：\@ GETBIT(CFLAG:30:1500, 1) ? ON # OFF \@　眨眼动画：※已禁用", 2)
+CALL KOJO_OPTION_ITEM(@"剧本追加特效　口交动画：\@ GETBIT(CFLAG:30:1500, 0) ? ON # OFF\@　臀部图像：\@ GETBIT(CFLAG:30:1500, 1) ? ON # OFF \@　眨眼动画：※已禁用　AMSR音效：\@ GETBIT(CFLAG:30:1500, 3) ? ON # OFF \@", 2)
 CALL KOJO_OPTION_ITEM("变更台词颜色", 3)
 CALL KOJO_OPTION_ITEM(@"改变成为恋人后%CALLNAME:30%对%CALLNAME:MASTER%的爱称%COND_STR(@" 现在是：%CSTR:30:80%", CSTR:30:80 != "")%", 4, "cond", TALENT:30:7)
 CALL KOJO_OPTION_ITEM(@"改变%CALLNAME:30%对%CALLNAME:MASTER%的称呼方式%COND_STR(@" 现在是：%MASTERNAME:30%", MASTERNAME:30 != "")%", 5)
@@ -378,25 +387,33 @@ SIF !CFLAG:30:1801
 @KOJO_OPTION_K30_RESULT_2
 #LOCALSIZE 1
 #LOCALSSIZE 1
+#DIMS CONST 试听,9 = "朝","遅","初","離","噛","普","始","飲","早"
 #DIM R_TEMP
 #DIM TEMP
 R_TEMP = CURRENTREDRAW()
 REDRAW 0
-PRINTL 映姬初始剧本特殊图像显示选项
+PRINTL 映姬初始剧本追加特效选项
 PRINTL 
 DO
 	TEMP = LINECOUNT
-	CALL PRINTBUTTON_EX, @"[0] - 口交动画　%\@ GETBIT(CFLAG:30:1500, 0) ? 有 # 没有 \@%　※有运算负担（但是很色）", 0, 0, GETBIT(CFLAG:30:1500, 0)
+	CALL PRINTBUTTON_EX, @"[0] - 口交动画　%\@ GETBIT(CFLAG:30:1500, 0) ? 有 # 没有 \@%　※（对十年前的电脑）有运算负担（但是很色）", 0, 0, GETBIT(CFLAG:30:1500, 0)
 	PRINTL
 	CALL PRINTBUTTON_EX, @"[1] - 臀部图像　%\@ GETBIT(CFLAG:30:1500, 1) ? 有 # 没有 \@%　※包含少许挑人的表现", 1, 0, GETBIT(CFLAG:30:1500, 1)
 	PRINTL
 	CALL PRINTBUTTON_EX, @"[2] - 眨眼动画　%\@ GETBIT(CFLAG:30:1500, 2) ? 有 # 没有 \@%　※实验要素-运算负担高（※非常卡已禁用，不要选）", 2, 0, GETBIT(CFLAG:30:1500, 2)
-	PRINTFORML
+	PRINTL
+	CALL PRINTBUTTON_EX, @"[3] - AMSR音效　%\@ GETBIT(CFLAG:30:1500, 3) ? 有 # 没有 \@%　※实验要素（※加了口交和振动棒音效）", 3, 0, GETBIT(CFLAG:30:1500, 3)
+	PRINTFORML \n
+	PRINTL [8] - 我要听我要听（※先启动选项 ※注意音量）
 	PRINTL [9] - 确定
 	INPUT
 	SELECTCASE RESULT
-		CASE 0 TO 2
+		CASE 0 TO 3
 			INVERTBIT CFLAG:30:1500, RESULT
+		CASE 8
+			LOCALS '= 试听:RAND(9)
+			CALL K30_SOUND_FELLA(LOCALS)
+			PRINTFORMW 试听：K30_フェラ%LOCALS%
 		CASE 9
 			REDRAW R_TEMP
 			BREAK
@@ -1507,6 +1524,7 @@ RETURN 1
 ;朝起きたとき（おはよう口上）
 ;==================================================
 @M_KOJO_EVENT_K30_2(ARG,ARG:1)
+#DIM TEMP
 ;口上主はTARGET
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
@@ -1838,7 +1856,11 @@ IF !CFLAG:诶嘿嘿
 	TIME += 5
 	RESETCOLOR
 	TFLAG:192 = 10
+	;ここの呼び出しで仕事日にデートお誘い→放置プレイ発生するのを酷い手法で回避
+	TEMP = BASE:MASTER:気力
+	BASE:MASTER:気力 = 0
 	CALL AFFAIR_DISCLOSURE(30, 0)
+	BASE:MASTER:気力 = TEMP
 ENDIF
 RETURN 1
 
@@ -3804,13 +3826,13 @@ IF LOCAL && 連打防止 != TIME && CFLAG:30:職種 == 43
 					DATAFORM 「讨厌……衣服上到处都是那些粘粘的……」
 				ENDDATA
 			ENDIF
-		;お澡堂
-		ELSEIF BATHROOM(CFLAG:現在位置)
-			PRINTFORMW 「身体也洗干净了，差不多该去工作了吧」
 		;变Ｔ
 		ELSEIF K30_CHECK_HEN_T()
 			PRINTFORML 「……………%TEXTR("……/想休息一下/唉…/")%」
 			PRINTFORMDW 映姬走向审判庭的脚步似乎很沉重…
+		;お風呂
+		ELSEIF BATHROOM(CFLAG:現在位置)
+			PRINTFORMW 「身体也洗干净了，差不多该去工作了吧」
 		;通常
 		ELSE
 			PRINTDATAW
@@ -3890,7 +3912,6 @@ IF LOCAL && 連打防止 != TIME && CFLAG:30:職種 == 43
 					DATAFORM 「畜生界有奇怪的动向，是吧…」\n「虽然想尽量避免干涉…」
 					DATAFORM 「哇啊…搞什么啊…这份敷衍的报告书…」\n「……谁写的，一目了然呢」
 					DATAFORM 「提交期限严格遵守…字迹也很工整…」\n「但是，关键的内容…遗漏太多了呢…」\n「那孩子要是没有健忘这一点，就完美了…」
-					DATAFORM 「带着强烈怨恨的怨灵来到了冥界…」\n「…再给她们一段时间吧」
 					DATAFORM 「黑水也流到了旧地狱，是吗…」\n「是不是需要稍微调查一下…」
 					DATAFORM 「茨华仙的事情也告一段落了，嗯…」\n「剩下的就是小町的报告书了…没问题吧…」
 					DATAFORM 「哎呀…申请文件，这还得要多少份啊…」\n「死神助人…善后工作也真够麻烦的呢…」
@@ -5644,7 +5665,11 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		IF TALENT:恋慕
+		IF K30_CHECK_HEN_T()
+			PRINTFORML 「是啊，没错……只要能从这身衣服中稍稍解脱出来」
+			PRINTFORMW 「我甚至会乖乖地陪您去泡澡的……」
+		ELSEIF TALENT:恋慕
+		
 			IF TIME:1 - CFLAG:1504 < 30 && ONCE("一起泡澡")
 				PRINTFORML 「嗯，是啊……一起进去吧」
 				PRINTFORMW 「……弄脏了…好多地方，得好好洗洗才行……」
@@ -6137,14 +6162,20 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1
-			;时间停止时
-			IF FLAG:70
+			;時間停止時
+			IF !SHIRAHU(30)
 			;通常
-			ELSEIF TALENT:恋慕
-				IF RAND:2 == 0
-					PRINTFORMW 「………我想只给你一个人看」
+			ELSEIF TALENT:恋慕 
+				IF K30_CHECK_HEN_T() && NUDITYCHECK(30) > 3
+					PRINTDATAW
+						DATAFORM 「………好羞耻，但是」\n「感觉非常，舒爽……」
+						DATAFORM 「平时的话，会有点……不安」\n「但只有今天……感觉很放松……」
+					ENDDATA
 				ELSE
-					PRINTFORMW 「啊……请不要一直盯着看……」
+					PRINTDATAW
+						DATAFORM 「啊……请不要一直盯着我看……」
+						DATAFORM 「……我只会…让你一个人看到。」
+					ENDDATA
 				ENDIF
 			ELSE
 				PRINTFORMW 「……………………」
@@ -6158,14 +6189,17 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1
-			;时间停止时
-			IF FLAG:70
+			;時間停止時
+			IF !SHIRAHU(30)
 			;通常
 			ELSEIF TALENT:恋慕
-				IF RAND:2 == 0
-					PRINTFORMW 「……好害羞……」
+				IF K30_CHECK_HEN_T() && NUDITYCHECK(30) > 3
+					PRINTFORMW 「总觉得……像是被解放了……」
 				ELSE
-					PRINTFORMW 「这样…就行了吧」
+					PRINTDATAW
+						DATAFORM 「好羞耻……」
+						DATAFORM 「这样……可以吗」
+					ENDDATA
 				ENDIF
 			ELSE
 				PRINTFORMW 「……………………」
@@ -6179,15 +6213,14 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1
-			;时间停止时
-			IF FLAG:70
+			;時間停止時
+			IF !SHIRAHU(30)
 			;通常
 			ELSEIF TALENT:恋慕
-				IF RAND:2 == 0
-					PRINTFORMW 「……不能把这身衣服全部脱掉吗？」
-				ELSE
-					PRINTFORMW 「衣服……还穿上吗……？」
-				ENDIF
+				PRINTDATAW
+					DATAFORM 「……可以把这身衣服全都脱掉吗？」
+					DATAFORM 「穿着衣服……吗……？」
+				ENDDATA
 			ELSE
 				PRINTFORMW 「……………………」
 			ENDIF
@@ -6195,9 +6228,8 @@ IF LOCAL
 		ENDIF
 		;-------------------------------------------------
 		CASE 3
-		;胖次ちょうだい
+		;パンツちょうだい
 		;記入チェック（=0, 非表示、1, 表示）
-		;CFLAG:1910 Bit =4 内裤走私者検挙履历
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1
@@ -7118,16 +7150,214 @@ RETURN 0
 
 
 ;-------------------------------------------------
-;仅当CFLAG:口上内抱き寄せ判定_通常开启时有效
-;在同意的情况下推倒时，如果在此处RETURN -1，则强制取消推倒
-;如果RETURN 0，则照常成功
-;适用于即使有同意，也因某种原因希望无法进行“嗯哼”的情况
+;CFLAG:口上内抱き寄せ判定_通常がオンになっている場合のみ有効
+;合意付きで押し倒した時、ここでRETURN -1すると押し倒しを強制的にキャンセルします
+;RETURN 0なら通常通り成功させます
+;合意があっても何らかの理由でうふふできないようにしたいときなどにどうぞ
+;合意があっても映姫様にはなんか面倒くさいことを言わせたい
 ;-------------------------------------------------
 @M_KOJO_EVENT_K30_PERMISSION_2
 ;-------------------------------------------------
-PRINTFORML 
-RETURN 0
-;RETURN -1
+#DIM R_TEMP
+#DIM 分岐
+分岐 = 0
+;ガード力低いorお招き部屋or意識なしなら帰る、複数人は判定面倒なのでパス
+SIF !CFLAG:1801 || CFLAG:現在位置 == OMANEKIBEYA() || !SHIRAHU(30) || GET_TARGETNUM() > 1
+	RETURN 0
+;外出時の連れ込み宿orラブホ,押し倒され履歴なしなら帰る
+SIF (!AT_HOME(MASTER) && (CFLAG:現在位置 == 260 || CFLAG:現在位置 == 950)) || STRFIND(CSTR:30:0, "推倒") == -1
+	RETURN 0
+;溜まってたり発情中は面倒くさくない、
+SIF TCVAR:発情 || CFLAG:溜まってる度 >= 850 || TCVAR:媚薬
+	RETURN 0
+;変Ｔだと判断が狂う
+SIF K30_CHECK_HEN_T()
+	RETURN 0
+
+;非恋慕時で押し倒され判定弾かれる場所ではお断り
+IF !TALENT:恋慕 
+	SIF INROOM(CFLAG:現在位置) && !HITOKE()
+		RETURN 0
+	CALL K30_D_LINE
+	PRINTFORMDL %CALLNAME:MASTER%确认周围没人后，抱住了映姬……但是
+	PRINTFORMDL 映姬露出了不悦的表情，挣脱开了。
+	PRINTFORMW
+	PRINTDATAL
+		DATAFORM 「……我可不会那么轻易地随波逐流。」
+		DATAFORM 「……您到底要玩弄人到什么时候才肯罢休？」
+		DATAFORM 「……请您考虑一下时间和场合。」
+	ENDDATA
+	PRINTFORMW 「在这种地方，我绝对不要。」
+	RETURN -1
+ENDIF
+;CAN_SEE判定
+FOR COUNT, 1, CHARANUM
+	SIF COUNT == 30
+		CONTINUE
+	SIF CAN_SEE(COUNT)
+		分岐 = 6
+NEXT
+;恋慕時はとりあえず理由をつけてイヤとか言わせる
+IF CFLAG:現在位置 == 612
+	CALL K30_D_LINE
+	PRINTFORML 「嗯……请稍等一下。」
+	PRINTFORML 「这里是法庭……所以说。」
+	PRINTFORMW 「如果可以的话，我们……换个地方好吗……？」
+	PRINTFORML 
+	PRINTFORML 「…………对不起。」
+	PRINTDATAL
+		DATAFORM 「在这个地方，如果……太过舒服的话……」\n「工作的时候，也会……不经意地，回想起来……」
+		DATAFORM 「这里是，下达裁决的神圣场所，所以……」\n「如果像平时那样，我的那些……泻得到处都是……的话，有点……」
+		DATAFORM 「即使是现在，一个人……工作的时候，也会想着%K30_C_NAME(MASTER)%……」\n「要是在这里……的话，可能就……什么都做不好了……」
+	ENDDATA
+	PRINTFORMDL 映姬似乎对在工作场所爱爱感到抗拒。
+	分岐 = 1
+ELSEIF !INROOM(CFLAG:MASTER:現在位置) 
+	CALL K30_D_LINE
+	PRINTFORML 「咦！？在这里……吗？」
+	PRINTDATAL
+		DATAFORM 「那个……在外面，亲热的话……果然还是……」\n「太过……不检点，或者说……」
+		DATAFORM 「在外面这种地方……谁知道有没有人看着呢……」\n「无论如何……都太羞耻了……」
+		DATAFORM 「嗯，就算和%K30_C_NAME(MASTER)%……」\n「现在，在这里……还是有点……」
+	ENDDATA
+	PRINTFORMDL 映姬似乎对在户外爱爱感到非常羞耻。
+	分岐 = 2
+ELSEIF ROOMDATA:(CFLAG:MASTER:現在位置 % 100) & 場所_公共の場
+	CALL K30_D_LINE
+	PRINTDATAL
+		DATAFORM 「嗯……这里，大家都会经过的……」
+		DATAFORM 「请等一下……在这里的话，谁会过来……都不知道啊……」
+		DATAFORM 「那个，在这里的话……万一和谁，撞见了……可怎么办……」
+	ENDDATA
+	PRINTDATAL
+		DATAFORM 「我们去，更安静的地方……好吗？」
+		DATAFORM 「稍微，忍一下……在别的地方，好吗？」
+		DATAFORM 「不用，着急……对吧？」
+	ENDDATA
+	PRINTFORMDL 映姬似乎只接受在私人场合求欢。
+	分岐 = 3
+ELSEIF TFLAG:描写中の子供
+	CALL K30_D_LINE
+	PRINTDATAL
+		DATAFORM 「咦！？在%SHOW_CHILDNAME(30)%的，面前啊……」
+		DATAFORM 「等等！%SHOW_CHILDNAME(30)%，还在呢……怎么能那样……」
+		DATAFORM 「不，不可以啦！%SHOW_CHILDNAME(30)%……不是正在看着吗……」
+	ENDDATA
+	PRINTFORMDL 映姬优先考虑自己是%SHOW_CHILDNAME(30)%的母亲。
+	分岐 = 4
+ELSEIF AT_HOME(MASTER) && !GROUPMATCH(PRIVATEROOM:(CFLAG:現在位置 % 100), 0, 30)
+	CALL K30_D_LINE
+	TFLAG:193 = PRIVATEROOM:(CFLAG:現在位置 % 100)
+	PRINTDATAL
+		DATAFORM 「那个……这里是%K30_C_NAME(TFLAG:193)%的房间，不是吗……？」\n「万一她回来了……可就糟了……」
+		DATAFORM 「嗯，在这个房间……还是算了吧……？\n万一……被%K30_C_NAME(TFLAG:193)%发现了……我可没法解释……」
+		DATAFORM 「……等等。\n要和我……要是那样的话，房间……会变得很糟糕的不是吗？\n会被%K30_C_NAME(TFLAG:193)%……骂的哦……」
+	ENDDATA
+	PRINTFORMDL 映姬似乎想避免在%CALLNAME:(TFLAG:193)%的房间里做那件事。
+	分岐 = 5
+ELSEIF 分岐 == 6
+	CALL K30_D_LINE
+	PRINTDATAL
+		DATAFORM 「请等一下。\n这里……从外面看是，一览无余的，对吧？\n呐，还是算了吧……」
+		DATAFORM 「嗯，要是在这里……的话，其他人……会立刻察觉到的吧……？\n换个地方吧……？」
+		DATAFORM 「……这里，不行啊。\n其他人……可能就在，附近……\n我们找个别的地方……好吗？」
+	ENDDATA
+	PRINTFORMDL 映姬似乎很在意可能被来往的人看见。
+ELSE
+	RETURN 0
+ENDIF
+PRINTDATADL
+	DATAFORM 她含糊其辞没有明确拒绝，看来如果坚持下去，很容易就能得逞……
+	DATAFORM 她脸上浮现着情欲，却又找着借口的样子，简直就是欲迎还拒……
+	DATAFORM 她那不像阎魔大人会有的借口，简直就是在说『想被硬来』一样……
+ENDDATA
+PRINTFORML
+RESETCOLOR
+PRINTBUTTON "　[0：抱紧]　", 0
+PRINTBUTTON "　[1：放弃]　", 1
+PRINTFORML
+CALL M_KOJO_COLOR_K30
+R_TEMP = CURRENTREDRAW()
+REDRAW 0
+DO
+	INPUT
+	CLEARLINE 1
+	IF INRANGE(RESULT, 0, 1)
+		LOCAL = RESULT
+		BREAK
+	ENDIF
+LOOP 1
+CLEARLINE 1
+REDRAW R_TEMP
+;ここを通る時点で押し倒し確定→「口では嫌だと言っても身体は正直だねえ」という流れ
+IF !LOCAL
+	TFLAG:194 = 100 + 分岐
+	PRINTFORMDL %CALLNAME:MASTER%没有回答，而是紧紧抱住了映姬，映姬身体微动着，发出了微弱的声音……
+	SIF !HAS_PENIS(MASTER)
+		RETURN 0
+	IF TALENT:恋人
+		CALL COLORMESSAGE(@"仅仅感受到映姬的体温，%CALLNAME:MASTER%就已经是硬邦邦的了！",C_PINK,1)
+		BASE:MASTER:勃起 = MAXBASE:MASTER:勃起
+	ELSEIF CFLAG:溜まってる度 >= 250
+		CALL COLORMESSAGE(@"面对映姬在困惑与情欲之间摇摆的眼神，%CALLNAME:MASTER%再也无法抑制住兴奋",C_PINK,1)
+		BASE:MASTER:勃起 = MAX(BASE:MASTER:勃起, 1000)
+	ENDIF
+	PRINTFORMW
+	RETURN 0
+;如果听从她的话，就会降低允许内射的阈值作为奖励
+ELSE
+	PRINTFORMDW %CALLNAME:MASTER%放开映姬的身体，轻轻拉开了距离。
+	PRINTFORML 
+	PRINTFORML 「谢谢您。」
+	PRINTDATAL
+		DATAFORM 「那个……绝，绝对不是讨厌和%K30_C_NAME(MASTER)%……那样做……但是」
+		DATAFORM 「其实，您……如果希望的话，我是想回应您的……但是」
+		DATAFORM 「明明一直都是我这边……无法自制，虽然现在说这些有点迟了……」
+	ENDDATA
+	SELECTCASE 分岐
+		CASE 1
+			PRINTFORML 「这里是……神圣的场所，果然……还是得自重……」
+		CASE 2
+			PRINTFORML 「毕竟……在外面，还是有点……」
+		CASE 3
+			PRINTFORML 「一想到，会被别人看见……」
+		CASE 4
+			PRINTFORML 「毕竟，在这孩子面前还是得忍耐。」
+			PRINTFORML 「毕竟是在重要的……%SHOW_CHILDNAME(30)%面前啊。」
+		CASE 5
+			PRINTFORML 「因为会给%K30_C_NAME(TFLAG:193)%……添麻烦的……」
+		CASE 5
+			PRINTFORML 「附近的人，也会觉得困扰的吧……」
+	ENDSELECT
+	IF CFLAG:生解禁 == 2 || LOCAL:1 == DAY
+		IF 分岐 == 4
+			PRINTFORMDL 映姬露出了安心的表情……不愧是前地藏菩萨，看来爱护孩子是她最优先的事项。
+			PRINTFORMDL 看来非得稍微强硬一点才行。
+		ELSE
+			PRINTFORMDL 映姬一脸抱歉的样子。
+			PRINTFORMD 虽然不能马上做很令人焦躁，但，
+			IF LOCAL:2 != DAY && LOCAL:1 != DAY
+				PRINTFORMDL 既然获得了映姬的信任，就当是好事吧。
+				CALL CHANGE_CFLAG(4, TARGET, 2)
+			ELSE
+				PRINTFORMDL 看来只要换个地方就没问题了。
+			ENDIF
+		ENDIF
+		LOCAL:2 = DAY
+	ELSE
+		PRINTFORMDW 映姬虽然似乎有些犹豫，但果然还是露出了放松的表情。
+		PRINTFORML 
+		PRINTFORML 「……说实话，%K30_C_NAME(MASTER)%没有坚持下去，让我有些意外，但是」
+		PRINTFORML 「您能好好听我的话，真的非常感谢。」
+		PRINTFORMDL 看来您稍微赢得了映姬的信任。
+		PRINTFORMDL 下次『再加把劲』的时候，应该会派上用场吧。
+		CFLAG:ダメ出し += 1
+		LOCAL:1 = DAY
+	ENDIF
+	;ムード半減処理入るので先に２倍しておく
+	BASE:30:ムード *= 2
+	RETURN -1
+ENDIF
 ;-------------------------------------------------
 
 ;-------------------------------------------------
@@ -7140,6 +7370,8 @@ LOCALS =
 ;诶嘿嘿中
 ;272スレ>>607さんの構文アイデアお借りしました
 IF SHIRAHU(TARGET) && CFLAG:TARGET:诶嘿嘿
+	;SIF RAND:2 == 1
+	;	RETURN
 	SIF INRANGEARRAY(NOWEX, 1, 50, 0 ,4)
 		LOCALS += @"%CALLNAME:TARGET%在高潮中%TEXTR("喘息/陶醉/颤抖")%的甜蜜呻吟音/"
 	SIF TEQUIP:TARGET:振動棒 || TEQUIP:TARGET:肛用振動棒 || TEQUIP:TARGET:陰蒂夾 || TEQUIP:TARGET:乳頭夾
@@ -7269,18 +7501,16 @@ IF ARG == 1
 		CALL HPH_PRINT, "「请您，铭刻在眼中……HPH」", "L"
 		PRINTFORMDL 映姬转过身，大胆地撩起了裙子。
 		PRINTFORMDL 一直插在里面的肛门震动棒还在嗡嗡作响……
+		CALL K30_SOUND_VIBE("自動")
 		CALL K30_PRINT_BUTT_IMAGE(-1, 2, 4, 3, 1, 0)
 		WAIT
 		PRINTFORMDL 映姬确认了%CALLNAME:MASTER%的视线后，慢慢地将插入的震动棒拔了出来……
 		CALL HPH_PRINT, "「～～～～～～～～～HPH」", "L"
-		LOCALS:0 '= "…………", "……", "…"
-		RESETCOLOR
-		CALL PRINT_GROUP(LOCALS, 3, 500)
+		CALL K30_ELLIPSES(500)
 		PRINTFORML 
-		PRINTFORML Ａ经验 ＋2(映姬)
-		PRINTFORML Ａ绝顶经验 ＋6(映姬)
-		PRINTFORMW 绝顶经验 ＋6(映姬)
-		CALL M_KOJO_COLOR_K30
+		PRINTFORMDL Ａ经验 ＋2(映姬)
+		PRINTFORMDL Ａ绝顶经验 ＋6(映姬)
+		PRINTFORMDW 绝顶经验 ＋6(映姬)
 		EXP:30:Ａ経験 += 2
 		EXP:30:Ａ絶頂経験 += 6
 		EXP:30:絶頂経験 += 6
@@ -7403,13 +7633,15 @@ CASE "試合前"
 				IF TCVAR:30:斗虫参加可否 == 3
 					TGT = 0
 				ELSE
-					FOR TGT, 1, CHARANUM
-						SIF TCVAR:TGT:斗虫参加可否 == 2
+					FOR COUNT, 1, CHARANUM
+						IF TCVAR:COUNT:ムシバトル参加可否 == 2
+							TGT = COUNT
 							BREAK
+						ENDIF
 					NEXT
 				ENDIF
 				STRDATA RESULTS
-					DATAFORM 「%K30_C_NAME(TGT)%，我们一起确认对方的虫吗」
+					DATAFORM 「%K30_C_NAME(TGT)%，我们互相确认一下各自的虫可梦吧」
 					DATAFORM 「%K30_C_NAME(TGT)%，有什么作战计划吗？」
 					DATAFORM 「%K30_C_NAME(TGT)%，让我们合力努力」
 				ENDDATA
@@ -7780,6 +8012,7 @@ CALL K30_PRINT_BUTT_IMAGE(330)
 	ENDDATA
 ;震动棒约会中
 ELSEIF TCVAR:30:364
+	CALL K30_SOUND_VIBE("自動")
 	CALL K30_PRINT_BUTT_IMAGE(-1, 0, 0, 3, 0, 0)
 	CALL HPH_PRINT, @"「%TEXTR("嗯～/啊……不、不行/呀！")%……HPH」", "L"
 	PRINTFORMDL 映姬沉浸在快感中，如梦似幻，连按住裙子的动作都来不及。
@@ -7884,25 +8117,35 @@ ELSEIF K30_PUSH_DOWN() > 599 && STRFIND(CSTR:30:0, "推倒") > -1
 	PRINTFORMDW 风停之后，映姬的目光依然时不时地追随着%CALLNAME:MASTER%的裙子……
 ;男你
 ELSEIF TALENT:MASTER:性別 == 2
-	PRINTFORML 「………」
-	PRINTDATAL
-		DATAFORM 「我本来想问，却一直没来得及问……」\n「您为什么穿成那样？」
-		DATAFORM 「退一步说，那种打扮姑且可以接受」\n「但是连那种东西都让我看到，我也很困扰……」
-		DATAFORM 「虽然我知道您不是故意的」\n「但给我看那种东西，您想让我怎么办……？」
-		DATAFORM 「关于您的打扮我不多说什么……」\n「但至少请您保持一点点矜持好吗？」
-		DATAFORM 「您的行为当然不是罪过」\n「但是，对周围缺乏考虑也是事实」
-		DATAFORM 「我也不觉得能对您的奇行做些什么」\n「但请您不要牵连到我和周围的人」
-	ENDDATA
-	PRINTDATADW
-		DATAFORM 映姬无奈地叹了口气。
-		DATAFORM 映姬的表情像吃了苦瓜一样。
-		DATAFORM 映姬摇了摇头，试图将刚才看到的景象从脑海中驱逐出去。
-	ENDDATA
+	PRINTFORMW 「………」
+	IF TALENT:恋慕
+		PRINTFORML 「%K30_C_NAME(MASTER)%……那个啊。」
+		PRINTFORML 「您的那个部位…现在再提醒也无济于事了……」
+		PRINTDATAW
+			DATAFORM 「裙子应该更端庄地穿着才对哦？」
+			DATAFORM 「难道说，您是故意要展示出来吗？」
+			DATAFORM 「也是有人会为那种景象困扰的哦？」
+		ENDDATA
+	ELSE
+		PRINTDATAL
+			DATAFORM 「我本来想问，却一直没来得及问……」\n「您为什么穿成那样？」
+			DATAFORM 「退一步说，那种打扮姑且可以接受」\n「但是连那种东西都让我看到，我也很困扰……」
+			DATAFORM 「虽然我知道您不是故意的」\n「但给我看那种东西，您想让我怎么办……？」
+			DATAFORM 「关于您的打扮我不多说什么……」\n「但至少请您保持一点点矜持好吗？」
+			DATAFORM 「您的行为当然不是罪过」\n「但是，对周围缺乏考虑也是事实」
+			DATAFORM 「我也不觉得能对您的奇行做些什么」\n「但请您不要牵连到我和周围的人」
+		ENDDATA
+		PRINTDATADW
+			DATAFORM 映姬无奈地叹了口气。
+			DATAFORM 映姬的表情像吃了苦瓜一样。
+			DATAFORM 映姬摇了摇头，试图将刚才看到的景象从脑海中驱逐出去。
+		ENDDATA
+	ENDIF
 ELSE
 	PRINTDATAL
 		DATAFORM 「喂！？%K30_C_NAME(MASTER)%！？露出来了哦！」\n「快！藏起来藏起来！」
 		DATAFORM 「%K30_C_NAME(MASTER)%！下面！下・面！」\n「裙子掀起来了哦！」
-		DATAFORM 「%K30_C_NAME(MASTER)%！？」\n「您也太不设防了吧！」
+		DATAFORM 「%K30_C_NAME(MASTER)%！？您有点太没有防备了吧！\n请稍微自重一点！」
 	ENDDATA
 	PRINTFORMDW 不知为何，映姬比被看到\@ !EQUIP:MASTER:下半身下着２ ? 没穿内裤的样子 # 内裤 \@的%CALLNAME:MASTER%还要慌张……
 ENDIF
@@ -7918,34 +8161,39 @@ RETURN 1
 				P612法廷, P712間欠泉地下中樞, P806瀑布背面, P928灼熱地獄跡, P1015砂浜, 0
 }
 TCVAR:30:引力点 = 0
-;变Ｔの日に
+;映姫様とあなたがMAIN_MAPにいる場合
+SIF !ALLSAMES(CFLAG:現在位置 / 100, CFLAG:MASTER:現在位置 / 100, MAIN_MAP)
+	RETURN
+;寝間着でうろうろしないようMAIN_MAPで活動時間外は自室に
+IF (MAIN_MAP == CFLAG:30:初期位置 / 100) && !INRANGE(TIME / 60, 8, 20)
+	TCVAR:30:引力点 = CFLAG:30:初期位置
+	RETURN
+ENDIF
+;変Ｔの日は
 SIF !K30_CHECK_HEN_T()
 	RETURN
-;映姬大人とあなたがMAIN_MAPにいたら
-SIF !GROUPMATCH(CFLAG:現在位置 / 100, CFLAG:MASTER:現在位置 / 100, MAIN_MAP)
-	RETURN
-;MAIN_MAPに映姬大人在住の场合
+;MAIN_MAPに映姫様在住の場合
 IF MAIN_MAP == CFLAG:30:初期位置 / 100
-;活动时间外なら自分の部屋に引きこもる
-	IF !INRANGE(TIME / 60, 9, 20)
+	;活動時間外なら自分の部屋に引きこもる
+	IF !INRANGE(TIME / 60, 9, 19)
 		TCVAR:30:引力点 = CFLAG:30:初期位置
-	;日中は隅っこの方でじっとしている确率が5割
+	;日中は隅っこの方でじっとしている確率が5割
 	ELSEIF CFLAG:今日の運勢 < 500
 		TCVAR:30:引力点 = HIDEOUT:MAIN_MAP
-	;恋人あなたが一人暮らしならあなた自室に逃げ込む确率が3割
-	ELSEIF CFLAG:今日の運勢 > 699 && K30_FIND_LOVER() < 0 && (!PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100))
+	;恋人あなたが一人暮らしならあなた自室に逃げ込むか
+	ELSEIF K30_FIND_LOVER() < 0 && !(PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100))
 		TCVAR:30:引力点 = CFLAG:MASTER:初期位置
-	;もしくは部屋に引きこもる
-	ELSEIF CFLAG:今日の運勢 > 699
+	;部屋に引きこもる
+	ELSE
 		TCVAR:30:引力点 = CFLAG:30:初期位置
 	ENDIF
-;映姬大人がMAIN_MAPに来访の场合
-	;日中は隅っこの方でじっとしている确率が5割
-	IF CFLAG:今日の運勢 < 500
-		TCVAR:30:引力点 = HIDEOUT:MAIN_MAP
-	;恋人あなたが一人暮らしならあなた自室に逃げ込む确率が3割
-	ELSEIF CFLAG:今日の運勢 > 699 && K30_FIND_LOVER() < 0 && (!PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100))
+;映姫様がMAIN_MAPに来訪の場合
+	;恋人あなたが一人暮らしならあなた自室に逃げ込むか
+	IF CFLAG:今日の運勢 > 500 && K30_FIND_LOVER() < 0 && !PRIVATEROOM:(CFLAG:MASTER:初期位置 % 100)
 		TCVAR:30:引力点 = CFLAG:MASTER:初期位置
+	;隅っこの方でじっとしている
+	ELSE
+		TCVAR:30:引力点 = HIDEOUT:MAIN_MAP
 	ENDIF
 ENDIF
 RETURN

@@ -64,7 +64,11 @@ CASE "依頼提示時"
 CASE "依頼非受託時"
 ;●内容だけ見て受託しなかった時
 ;【L ［あなた］は丁重にお断りした】
-PRINTFORML 「…是吗。我不能强求呢」
+PRINTDATAL
+	DATAFORM 「……是吗。我不能强求呢。」
+	DATAFORM 「……很遗憾，不过如果改变主意了，请再告诉我。」
+	DATAFORM 「……如果有事先的安排，那也没办法了。」
+ENDDATA
 ;【W ［彼女］は残念そうな顔をしている】
 	
 CASE "依頼受託時"
@@ -514,18 +518,16 @@ CASE "依頼実行直後"
 	CALL K30_D_LINE
 	PRINTFORML
 	IF K30_CHECK_HEN_T()
-		PRINTDATADL
-			DATAFORM 面对映姬激烈的弹幕，%CALLNAME:MASTER%毫无亮点地输掉了……
-			DATAFORM 映姬毫不留情的攻击，让%CALLNAME:MASTER%被字面意义上地揍得体无完肤……
-			DATAFORM 映姬毫无保留的弹幕，让%CALLNAME:MASTER%迅速落败……
-		ENDDATA
+		PRINTFORM 面对映姬%TEXTR("猛烈的弹幕/毫不留情的攻击/不留情面的弹幕")%，
+		PRINTFORML %CALLNAME:MASTER%便%TEXTR("毫无亮点地败下阵来/被字面意义上的揍得稀烂/迅速落败")%……
+		PRINTFORML
 		PRINTFORML 「……抱歉」
 		PRINTDATAL
 			DATAFORM 「一时……忘了手下留情了」
 			DATAFORM 「今天好像有点……发泄过头了」
 			DATAFORM 「身为阎魔，竟然……连规矩都忘了，使出了全力……」
 		ENDDATA
-		PRINTFORMW 映姬是\@ TALENT:機嫌 == -1 ? 难以抑制地带着焦躁的表情 # 双眼无神地 \@向%CALLNAME:MASTER%简单道了一句歉。
+		PRINTFORMDW 映姬是\@ TALENT:機嫌 == -1 ? 难以抑制地带着焦躁的表情 # 双眼无神地 \@向%CALLNAME:MASTER%简单道了一句歉。
 		RETURN 1
 	ELSEIF RAND:2 == 1
 		PRINTDATADL
@@ -533,7 +535,7 @@ CASE "依頼実行直後"
 			DATAFORM 结果在拉锯般的攻防之后，以%CALLNAME:MASTER%的胜利告终
 			DATAFORM 结果自始至终%CALLNAME:MASTER%都掌控着场面，压倒映姬并取得了胜利
 		ENDDATA
-		PRINTDATAW
+		PRINTDATAL
 			DATAFORM 「我也得更加努力才行呢」
 			DATAFORM 「就算撇开您有多么厉害不谈，我也还是有点不争气呢……」
 			DATAFORM 「您的强大……真是深不可测呢」
@@ -544,13 +546,13 @@ CASE "依頼実行直後"
 			DATAFORM 结果在拉锯般的攻防之后，以映姬的胜利告终
 			DATAFORM 结果自始至终映姬都掌控着场面，压倒%CALLNAME:MASTER%并取得了胜利
 		ENDDATA
-		PRINTDATAW
+		PRINTDATAL
 			DATAFORM 「总算保住了颜面」
 			DATAFORM 「日常表现的差异体现出来了呢……实际上实力并没有差距」
 			DATAFORM 「……下次可不一定会是同样的结果」\n「我也还需要继续努力」
 		ENDDATA
 	ENDIF
-	
+	PRINTFORML 
 	PRINTFORML 「那么，我们从头回顾一下今天的比赛吧」
 	PRINTFORMDW 特训结束后，也和映姬仔细地进行了复盘……
 ;【▼そのまま下の口上へ】
@@ -1079,6 +1081,7 @@ CASE "依頼破棄時"
 	RETURN 0
 CASE "依頼実行直前"
 ;○この依頼では討伐される側の口上です
+;"神霊"の選出確率は極小なのでほぼ死に分岐
 	IF CANNOT_DANMAKU() == 1
 	;屋内のとき（勝負できない）
 	;【◆口上】
@@ -1110,23 +1113,39 @@ CASE "依頼実行直前"
 		
 		RETURN 0
 	ELSE
-	;【◆口上】
+		IF K30_CHECK_HEN_T()
+			PRINTFORMDL ……映姬一言不发，面无表情地迎战%CALLNAME:MASTER%。
+		ELSEIF TCVAR:30:364
+			PRINTFORML 「咦……咦！？现在就……！？」
+		ELSE
+			PRINTFORML 「惩罚……我……？？我完全不记得有什么事啊……」
+			PRINTFORML 「但是，无论理由是什么，我都不会逃避或躲藏。」
+			PRINTFORML 「那场弹幕对决，我会堂堂正正地接受挑战。」
+		ENDIF
 	;【W 勝負開始！！】
 	;【以降はそのまま弾幕口上が呼ばれます】
-		
-		RETURN 0
+		RETURN 1
 	ENDIF
 	;【▼そのまま下の口上へ】
 CASE "依頼実行直後"
 ;○この依頼では討伐される側の口上です
 	IF CFLAG:CLIENT_ID:依頼状況 == 2
 		IF CANNOT_DANMAKU() == 0
-			;败犬
+			;負け犬
 			;【▲上の口上から続き】
 			;【L ［彼女］の討伐に失敗した……】
 			;【W ……こうなったら後日出直すしかない】
-			;【◆口上】
-			RETURN 0
+			IF K30_CHECK_HEN_T()
+				PRINTFORMW 「…………今天没空陪您玩。」
+			ELSE
+				PRINTDATAL
+					DATAFORM 「既然我没有过错，这场胜负的结果是理所当然的。」
+					DATAFORM 「想要惩罚阎魔，无异于向天吐唾沫。」
+					DATAFORM 「虽然只是自保，但果然还是无法释怀呢。」
+				ENDDATA
+				PRINTFORMW 「您也好好反省一下，为何会接受这种请求吧。」
+			ENDIF
+			RETURN 1
 		ELSE
 			;挑めなかった場合
 			;【▲上の口上から続き】
@@ -1245,7 +1264,7 @@ CASE "依頼受託時"
 	ELSE
 		PRINTFORML 「那么，请您认真听好」
 	ENDIF
-	RETURN 0
+	RETURN 1
 CASE "依頼確認時"
 	PRINTFORML 「就算不用特意确认」
 	PRINTFORML 「只是听我说说就好」
@@ -1408,6 +1427,7 @@ ENDSELECT
 #DIMS ROLE     ;キャラの立場、依頼者かそうでないか
 #DIMS SCENE    ;セリフの表示されるタイミング
 #DIM  CLIENT_ID;依頼者IDだけ抜き出したもの
+#DIM TEMP
 #DIMS TEMPS
 ;--------------------------------------------------
 ;RETURN 0 の部分は共通の口上が表示されます
@@ -1437,7 +1457,7 @@ CASE "依頼受託時"
 		PRINTFORML 「我满心期待地等着哦」
 		RETURN 1
 	ENDIF
-	RETURN 1
+	RETURN 0
 CASE "依頼確認時"
 	IF !LOCAL
 		IF TALENT:30:恋慕
@@ -1469,18 +1489,24 @@ CASE "依頼実行直後"
 		;大成功
 		CASE 1000
 			IF LOCALS:0 == "无"
-				PRINTFORML 「咦……！？」
-				PRINTFORML 「您是怎么知道我想要这道菜的……？」
-				PRINTFORML 「……咦？？」
+				IF LOCALS:1 == "地獄拉麺（極辣）"
+					PRINTFORML 「您什么都没问，怎么就知道我想做的料理是什么呢……」
+					PRINTFORML 「……难道说」
+					PRINTFORMW 「您觉得面对我，只要做这个就行了吗？」
+				ELSE
+					PRINTFORML 「咦……！？」
+					PRINTFORML 「您怎么知道我想要这道菜呢……？」
+					PRINTFORMW 「……咦？？」
+				ENDIF
 			ELSEIF TALENT:30:恋慕
 				IF LOCALS:0 == LOCALS:1
 					PRINTFORML 「不愧是%K30_C_NAME(MASTER)%，完美呢」
 					PRINTFORML 「呵呵……」
-					PRINTFORML 「你为我做的%LOCALS:1%，我会好好品尝的……♥」
+					PRINTFORMW 「你为我做的%LOCALS:1%，我会好好品尝的……♥」
 				ELSE
 					PRINTFORML 「虽然%K30_C_NAME(MASTER)%做的事总是让我惊讶不已」
 					PRINTFORML 「但也有这种出其不意的惊喜……真有趣呢」
-					PRINTFORML 「这道%LOCALS:1%，谢谢你」
+					PRINTFORMW 「这道%LOCALS:1%，谢谢你」
 				ENDIF
 			ELSE
 				PRINTFORML 「这……真是做得非常出色的%LOCALS:1%呢」
@@ -1489,25 +1515,26 @@ CASE "依頼実行直後"
 				ELSE
 					PRINTFORML 「这样的话，即使不是%LOCALS:0%，大家也都会满意的吧」
 				ENDIF
-				PRINTFORML 「%K30_C_NAME(MASTER)%，谢谢您」
+				PRINTFORMW 「%K30_C_NAME(MASTER)%，谢谢您」
 			ENDIF
 		;成功
 		CASE 300
 			IF LOCALS:0 == "无"
 				PRINTFORML 「看起来很好吃的%LOCALS:1%呢……」
 				PRINTFORML 「您是怎么想到要做这个的呢？」
-				PRINTFORML 「不，达到预期当然很棒，但总觉得有点不可思议呢……」
+				PRINTFORMW 「不，达到预期当然很棒，但总觉得有点不可思议呢……」
 			ELSEIF TALENT:30:恋慕
 				IF LOCALS:0 == LOCALS:1
 					PRINTFORML 「果然交给%K30_C_NAME(MASTER)%是对的」
-					PRINTFORML 「谢谢你」
+					PRINTFORMW 「谢谢你」
 				ELSE
 					PRINTFORML 「……%LOCALS:1%？」
 					PRINTFORML 「啊，不过……我觉得这样也挺好的」
-					PRINTFORML 「%K30_C_NAME(MASTER)%，谢谢你」
+					PRINTFORMW 「%K30_C_NAME(MASTER)%，谢谢你」
 				ENDIF
 			ELSE
 				IF LOCALS:0 == LOCALS:1
+					PRINTFORML 「%LOCALS:1%，做得很好呢。」
 					PRINTFORML 「承蒙您代劳，帮了大忙」
 				ELSE
 					PRINTFORML 「不方便做%LOCALS:0%吗？」
@@ -1520,29 +1547,33 @@ CASE "依頼実行直後"
 			IF LOCALS:0 == "无"
 				PRINTFORML 「……%K30_C_NAME(MASTER)%，做菜是没关系，但是」
 				PRINTFORML 「您根本没听我说要做什么菜吧？？！」
+				IF LOCALS:1 == "地獄拉麺（極辣）"
+					PRINTFORMW 「而且，到底是怎么做出来的……才能做出这种味道呢……」
+				ELSE
+					PRINTFORMW 「突然递给我%LOCALS:1%，我到底该怎么办……」
+				ENDIF
 			ELSEIF TALENT:30:恋慕
 				PRINTFORML 「呃……这是什么啊……？？」
 				IF LOCALS:0 == LOCALS:1
 					PRINTFORML 「外表看起来像是%LOCALS:0%……之类的东西，但是……」
-					PRINTFORML 「说实话……到底是怎么做才能变成这样的？」
+					PRINTFORMW 「说实话……到底是怎么做才能变成这样的？」
 				ELSE
 					PRINTFORML 「我应该说过是%LOCALS:0%吧，但是……%LOCALS:1%？」
-					PRINTFORML 「是我有什么地方说错了吗……」
+					PRINTFORMW 「是我有什么地方说错了吗……」
 				ENDIF
 			ELSE
 				PRINTFORML 「…虽然我觉得把事情交给我的我也有责任」
 				IF LOCALS:0 == LOCALS:1
 					PRINTFORML 「您是第一次做%LOCALS:1%吗？」
-					PRINTFORML 「如果是不擅长做菜的话，能提前告诉我一声就帮大忙了」
+					PRINTFORMW 「如果是不擅长做菜的话，能提前告诉我一声就帮大忙了」
 				ELSE
 					PRINTFORML 「我应该已经清楚地向您确认过，希望您做%LOCALS:0%了」
 					PRINTFORML 「结果您却做出了%LOCALS:1%……」
-					PRINTFORML 「临时抱佛脚随便做做，是不会得到好评的哦」
+					PRINTFORMW 「临时抱佛脚随便做做，是不会得到好评的哦」
 				ENDIF
 			ENDIF
 	ENDSELECT
 	CALL K30_D_LINE
-	PRINTFORML
 	RETURN 1
 CASE "成功報告時"
 	PRINTFORML 「那么，这是报酬」
