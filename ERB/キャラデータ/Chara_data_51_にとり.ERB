@@ -181,43 +181,44 @@ RETURN 1
 #LOCALSSIZE 1
 #DIM CHARA
 VARSET RESULTS
-
-IF CFLAG:51:差し替え適用 == 1
-	;替换用画像
-	IF CHECK_NUDE(CHARA)
-		;裸
-		IF FLAG:立絵種類
-			;顔絵
+SELECTCASE CFLAG:51:差し替え適用
+	CASE 3
+		IF CHECK_NUDE(CHARA)
 		ELSE
-			;立絵
+			IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+				RESULTS = _下着
+			ELSEIF IS_BUNNY(CHARA)
+				RESULTS = _バニーギャル
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 88
+				RESULTS = _作業服
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 58
+				RESULTS = _テニスウェア
+			ELSEIF IS_SCHOOLUNIFORM(CHARA)
+				RESULTS = _制服
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+				RESULTS = _私服
+			ELSEIF CHECK_CLO("bra_visible", CHARA)
+				RESULTS = _下着
+			ENDIF
 		ENDIF
-	ELSE
-		;服
-		IF FLAG:立絵種類
-			;顔絵
+	CASE 0,2
+		IF CHECK_NUDE(CHARA)
+			;裸
+			SIF BATHROBE_SWITCH && BATHROOM() && !CFLAG:诶嘿嘿
+				RESULTS = _浴袍
 		ELSE
-			;立絵
+			;服
+			IF CURRENT_CLOTHES_SET(CHARA) == 88
+				RESULTS = _作業着
+			;バニー立絵のみ
+			ELSEIF (IS_BUNNY(CHARA)) && !FLAG:立絵種類
+				RESULTS = _バニー
+			ELSE
+				SIF DAY:2 == 2
+					RESULTS = _夏服
+			ENDIF
 		ENDIF
-	ENDIF
-ELSEIF GROUPMATCH(CFLAG:51:差し替え適用,0,2)
-	;通常画像
-	IF CHECK_NUDE(CHARA)
-		;裸
-		SIF BATHROBE_SWITCH && BATHROOM() && !CFLAG:诶嘿嘿
-			RESULTS = _浴袍
-	ELSE
-		;服
-		IF CURRENT_CLOTHES_SET(CHARA) == 88
-			RESULTS = _作業着
-		;バニー立絵のみ
-		ELSEIF (IS_BUNNY(CHARA)) && !FLAG:立絵種類
-			RESULTS = _バニー
-		ELSE
-			SIF DAY:2 == 2
-				RESULTS = _夏服
-		ENDIF
-	ENDIF
-ENDIF
+ENDSELECT
 
 ;IMAGE_I51_体形(CHARA)-----------------------------------------------------------------------
 ;角色特有の体形表示条件
@@ -333,21 +334,35 @@ ENDIF
 #DIM CHARA
 #DIM 指令
 
-IF CFLAG:51:差し替え適用
+SELECTCASE CFLAG:51:差し替え適用
 	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
-	ELSE
-		;立絵
-	ENDIF
-ELSE
-	;通常画像
-	IF FLAG:立絵種類
-		;顔絵
-	ELSE
-		;立絵
-	ENDIF
-ENDIF
+	CASE 3
+		IF CHECK_NUDE(CHARA)
+		ELSE
+			;服
+			IF IS_BUNNY(CHARA)
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 88
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 58
+			ELSEIF IS_SCHOOLUNIFORM(CHARA)
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+			ELSEIF CHECK_CLO("bra_visible", CHARA)
+			ELSE
+				SELECTCASE 指令
+					CASE 305
+						RESULTS = 膝枕覆盖
+					CASE 6,12,313
+						RESULTS = 揉胸覆盖
+				ENDSELECT
+			ENDIF
+		ENDIF
+	CASEELSE
+		;通常画像
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立絵
+		ENDIF
+ENDSELECT
 
 ;IMAGE_I51_差分(CHARA)-----------------------------------------------------------------------
 ;角色特有の差分表示条件
@@ -526,6 +541,29 @@ ELSE
 ENDIF
 
 RETURN エフェクト数
+
+;IMAGE_I51_特殊自慰(CHARA)--------------------------------------------------------------------
+;キャラクター特有の自慰画像表示条件
+;使用時注意点:
+;	RESULTS:0に自慰画像の主体を格納すること
+;	RESULTS:1 ～ 3に自慰エフェクトを格納すること
+;-------------------------------------------------------------------------------------------
+@IMAGE_I51_特殊自慰(CHARA)
+#DIM CHARA
+VARSET RESULTS
+
+SELECTCASE CFLAG:51:差し替え適用
+	;替换用画像
+	CASE 3
+		RESULTS = 51AS06MARKIV_服_表情_自慰覆盖
+	CASEELSE
+		;通常画像
+		IF FLAG:立絵種類
+			;顔絵
+		ELSE
+			;立絵
+		ENDIF
+ENDSELECT
 
 ;IMAGE_I51_自慰エフェクト(CHARA)--------------------------------------------------------------------
 ;角色特有の自慰エフェクト表示条件
