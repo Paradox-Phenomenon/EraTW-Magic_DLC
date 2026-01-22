@@ -353,18 +353,24 @@ RETURNF strOutput
 
 ;--------------------------------------------------------
 ;searches and returns a specified part of a split string if any part matches (greedy)
+;bugfixes-避免污染RESULT
 ;--------------------------------------------------------
 @MATCH_SPLIT(ARGS:0, ARGS:1, ARGS:2 = ":")
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTIONS
-#DIMS DYNAMIC strSplit, 30
+#LOCALSIZE 2
+#LOCALSSIZE 300
+VARSET LOCALS
 
-SPLIT ARGS:0, ARGS:2, strSplit
+LOCAL = RESULT
 
-FOR LOCAL, 0, RESULT
-	SIF STRCOUNT(strSplit:(LOCAL), ARGS:1)
-		RETURNF strSplit:(LOCAL)
+SPLIT ARGS:0, ARGS:2, LOCALS
+
+LOCAL:1 = RESULT
+RESULT = LOCAL
+
+FOR LOCAL, 0, LOCAL:1
+	SIF STRCOUNT(LOCALS:(LOCAL), ARGS:1)
+		RETURNF LOCALS:(LOCAL)
 NEXT
 
 ;In order to avoid having to write stuff like \@(local:1) == 2?%" "%and the others#\@
