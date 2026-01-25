@@ -1,10 +1,19 @@
-﻿@CHECK_ALTER_IMAGE(STR_IMAGE)
+﻿@AAZ_IMAGE_STATE_CHECK(STR_IMAGE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS STR_IMAGE
+CALL CHECK_ALTER_IMAGE(STR_IMAGE)
+RETURN RESULT
+
+@CHECK_ALTER_IMAGE(STR_IMAGE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS STR_IMAGE
 #DIM GID
 #DIM CONST GID_BIAS = 16380000
 #DIM GID_SHIFT = 0
 
-IF SPRITECREATED(STR_IMAGE)
+IF RM_リソースチェック(STR_IMAGE)
 	RETURN 1
 ENDIF
 
@@ -13,6 +22,7 @@ CALL PREPARED_ALTER_IMAGE_SINGLE(STR_IMAGE, GID_BIAS)
 RETURN 1
 
 @PREPARED_ALTER_IMAGE_SINGLE(STR_IMAGE, GID)
+#LOCALSIZE 1
 #DIMS STR_IMAGE
 #DIM GID
 #DIM NUM_STRING
@@ -22,7 +32,7 @@ CALL FIND_EMPTY_GID_WITH_BIAS(GID)
 GID = RESULT
 
 ; CREATE SPACE
-GCREATE GID, 100, 100
+GCREATE GID, 60, 60
 GDRAWSPRITE GID, STR_IMAGE
 CALL リソース登録(STR_IMAGE, GID)
 
@@ -39,9 +49,51 @@ RETURN
 
 
 @FIND_EMPTY_GID_WITH_BIAS(GID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM GID
 WHILE GCREATED(GID)
     ; IF GID IS EXIST THEN CONTINUE
     GID ++
 WEND
 RETURN GID
+
+
+@OVERLAY_IMAGES_BY_STRING(strImgSet, 横幅, 縦幅)
+#LOCALSIZE 1
+    #DIMS strImgSet
+    #DIM G_ID
+    #DIM layers
+    #DIM 横幅
+    #DIM 縦幅 
+    ; check if image exists
+    IF RM_リソースチェック( strImgSet ) || strImgSet == ""
+        RETURN 1
+    ENDIF
+
+    IF 横幅 == 0 || 縦幅 == 0
+        横幅 = 250
+        縦幅 = 250
+    ENDIF
+
+    DEBUGPRINTFORML 开始合成 %strImgSet%
+    ; 图片不存在，开始合成图片
+    SPLIT strImgSet, "," , LOCALS
+    ; 取得图层数量
+    layers = RESULT
+    ; 绘制底图
+    G_ID = 0
+    ; 合成图层
+    FOR LOCAL, 0, layers
+        ;检查图层是否存在
+        IF LOCALS:LOCAL == "" || !RM_リソースチェック_ロード(LOCALS:LOCAL)
+            ; 如果图层不存在，则跳过
+            DEBUGPRINTFORML     跳过图层 {LOCAL} %LOCALS:LOCAL%
+            CONTINUE
+        ENDIF
+        DEBUGPRINTFORML     合成图层 {LOCAL} %LOCALS:LOCAL%
+        CALL 画像合成(G_ID, LOCALS:LOCAL, , , 横幅, 縦幅)
+    NEXT
+    ; 将合成后的GID存成SPRITE
+    SPRITECREATE strImgSet, G_ID
+    RETURN G_ID
