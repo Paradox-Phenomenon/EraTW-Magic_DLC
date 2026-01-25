@@ -193,13 +193,15 @@ SELECTCASE ARGS
 ;指令系KOJO出力処理
 ;------------------------------------------------------------
 	CASE "COMMAND"
+		LOCAL:10 = TARGET
+		TARGET = ARG:2
 		SIF FLAG:情景文本設定 <= 0 && FLAG:口上文本設定 <= 0
 			RETURN -1
 
 		;テキスト設定
 		IF FLAG:口上文本設定 <= 0
-		ELSEIF TEQUIP:(ARG:2):20 && SELECTCOM != 107
-		ELSEIF (FLAG:70 && !CFLAG:(ARG:2):時間停止口上有) || (CFLAG:(ARG:2):恶作剧 >= 1 && !CFLAG:(ARG:2):眠姦口上有) || (FLAG:扮演 && !CFLAG:(ARG:2):扮演口上有)
+		ELSEIF TEQUIP:TARGET:20 && SELECTCOM != 107
+		ELSEIF (FLAG:70 && !CFLAG:TARGET:時間停止口上有) || (CFLAG:TARGET:恶作剧 >= 1 && !CFLAG:TARGET:眠姦口上有) || (FLAG:扮演 && !CFLAG:TARGET:扮演口上有)
 		ELSE
 			CALL KOJO_ACTIVE_INFO(TARGET)
 			KOJO_VALID = RESULT
@@ -249,6 +251,7 @@ SELECTCASE ARGS
 		SIF !KOJO_RESULT && CFLAG:TARGET:自動喘息
 			CALL AUTO_AEGI(TARGET)
 
+		TARGET = LOCAL:10
 		RESETCOLOR
 		RETURN KOJO_RESULT
 ;------------------------------------------------------------
@@ -507,10 +510,12 @@ SELECTCASE ARGS
 		RETURN KOJO_RESULT
 	;コマンド系直接呼び出し
 	CASE "DIRECT"
-		SELECTCASE ARG:1
-			CASE 351
+		LOCAL = TARGET
+		TARGET = ARG:2
+		;SELECTCASE ARG:1
+		;	CASE 351
 				;口球
-				IF TEQUIP:(ARG:2):20 && SELECTCOM != 107 && FLAG:情景文本設定 > 0
+				IF TEQUIP:TARGET:20 && SELECTCOM != 107 && FLAG:情景文本設定 > 0
 					RETURN 1
 				ELSE
 					RESULT = 0
@@ -527,10 +532,11 @@ SELECTCASE ARGS
 						RESETCOLOR
 						RETURN 1
 					ENDIF
-					TRYCALLFORM M_KOJO%RESULTS%_MESSAGE_COM_K{NO:TARGET}_351
+					TRYCALLFORM M_KOJO%RESULTS%_MESSAGE_COM_K{NO:TARGET}_{ARG:1}
 					RESETCOLOR
 				ENDIF
-		ENDSELECT
+		TARGET = LOCAL
+		;ENDSELECT
 	;口上内でソースを追加する処理,TARGET固定
 	CASE "EXTRASOURCE"
 		RESULTS = 
