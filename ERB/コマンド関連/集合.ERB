@@ -227,16 +227,13 @@ C_ID = 集合:対象:0
 TEMP_現在位置 = CFLAG:MASTER:現在位置
 最終目的地 = CFLAG:C_ID:現在位置
 暫定目的地 = 最終目的地
-[IF_DEBUG]
-PRINTFORML 计算%CALLNAME:C_ID%的移动消费
-[ENDIF]
+[SKIPSTART]
 IF CAN_MOVE(TEMP_現在位置, 暫定目的地) & 1
 	移動コスト = 1
 ELSE
 	FOR 移動コスト, 1, 最大寻路深度
 		WHILE !(CAN_MOVE(TEMP_現在位置, 暫定目的地) & 1) && TEMP_現在位置 != 暫定目的地
-			;TRYCALLFORM SKIP_MOVE_{MAIN_MAP}(暫定目的地, TEMP_現在位置)
-			TRYCALLFORM QOL_SKIP_MOVE_INFO(暫定目的地, TEMP_現在位置,MAIN_MAP)
+			TRYCALLFORM SKIP_MOVE_{MAIN_MAP}(暫定目的地, TEMP_現在位置)
 			SIF !暫定目的地
 				THROW 暫定目的地異常
 			[IF_DEBUG]
@@ -250,10 +247,8 @@ ELSE
 		暫定目的地 = 最終目的地
 	NEXT
 ENDIF
-集合:対象:2 = 移動コスト
-[IF_DEBUG]
-PRINTFORML %CALLNAME:C_ID%的移动消费为{移動コスト}
-[ENDIF]
+[SKIPEND]
+集合:対象:2 = QOL_GET_DISTANCE(暫定目的地, TEMP_現在位置,MAIN_MAP)
 
 @AssembleForMeal
 #DIM 集合, 人物数量上限, 3 ;集合:X:Y

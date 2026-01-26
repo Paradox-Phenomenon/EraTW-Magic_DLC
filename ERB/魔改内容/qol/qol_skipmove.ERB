@@ -32,7 +32,6 @@ P_AdjListDone = now_version
 ;-----------------------------------------------------------
 @QOL_SKIP_MOVE_INFO(ARG, ARG:1, map_id)
 #LOCALSIZE 1
-#LOCALSSIZE 最大寻路深度 + 1
 #DIM DYNAMIC queue, MAX_LOCATIONS
 #DIM DYNAMIC parent, MAX_LOCATIONS
 #DIM DYNAMIC visited, MAX_LOCATIONS
@@ -42,20 +41,18 @@ P_AdjListDone = now_version
 #DIM DYNAMIC path_tracer
 #DIM DYNAMIC neighbor
 #DIM DYNAMIC map_id
+#FUNCTION 
+DEBUGPRINTFORM map_id{map_id} {ARG:1} 到 {ARG} 的首个路径算出：
 SIF !ARG:1
 	ARG:1 = CFLAG:MASTER:現在位置
 
 SIF GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1
-	RETURN ARG
+	RETURNF ARG
 SIF ARG == ARG:1
-	RETURN ARG
+	RETURNF ARG
 IF P_AdjList:(ARG:1) == "" && !(GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1)
 	PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，请汇报错误
-	[IF DEBUG]
-	TRYCALLFORM SKIP_MOVE_{MAIN_MAP}(移動先, N_ID)
-	RETURN RESULT
-	[ENDIF]
-	RETURN ARG
+	RETURNF ARG
 ENDIF
 IF ARG:1 / 100 != map_id || ARG / 100 != map_id
 	THROW [警告] 错误的寻路，请汇报错误（map_id：{map_id} 路径：从{ARG:1}到{ARG}）
@@ -73,8 +70,7 @@ WHILE queue_head < queue_tail
 	IF current_location == ARG % 100
 		BREAK
 	ENDIF
-	SPLIT P_AdjList:(current_location + 100 * map_id),"/",LOCALS
-	FOR i, 0, RESULT
+	FOR i, 0, SPLIT_F(P_AdjList:(current_location + 100 * map_id),"/",LOCALS)
 		neighbor = TOINT(LOCALS:I) % 100
 		IF !visited:neighbor
 			visited:neighbor = 1
@@ -86,13 +82,84 @@ WHILE queue_head < queue_tail
 WEND
 path_tracer = ARG % 100
 IF visited:path_tracer == 0
-	RETURN ARG
+	RETURNF ARG
 ENDIF
 WHILE parent:path_tracer != -1 && parent:path_tracer != ARG:1 % 100
 	path_tracer = parent:path_tracer
 WEND
 IF parent:path_tracer == -1
-	RETURN ARG
+	RETURNF ARG
 ELSE
-	RETURN path_tracer + 100 * map_id
+	DEBUGPRINTFORML {path_tracer + 100 * map_id}
+	RETURNF path_tracer + 100 * map_id
 ENDIF
+
+;-----------------------------------------------------------
+; @QOL_GET_DISTANCE(目的地, 出发地, 地图ID)
+; 概  要:使用预先生成的邻接表和BFS算法计算最短距离
+; 参  数:参照@SKIP_MOVE_{地图ID}(目的地, 出发地)的规格
+; 返回值:从“出发地”到“目的地”的最短步数(如果无法到达则返回0)
+;-----------------------------------------------------------
+@QOL_GET_DISTANCE(ARG, ARG:1, map_id)
+#LOCALSIZE 1
+#DIM DYNAMIC queue, MAX_LOCATIONS
+#DIM DYNAMIC dist_map, MAX_LOCATIONS
+#DIM DYNAMIC visited, MAX_LOCATIONS
+#DIM DYNAMIC queue_head
+#DIM DYNAMIC queue_tail
+#DIM DYNAMIC current_location
+#DIM DYNAMIC neighbor
+#DIM DYNAMIC map_id
+#FUNCTION 
+DEBUGPRINTFORM map_id{map_id} {ARG:1} 到 {ARG} 的BFS深度算出：
+
+SIF !ARG:1
+	ARG:1 = CFLAG:MASTER:現在位置
+
+;直连或原地的情况优化
+SIF ARG == ARG:1
+	RETURNF 0
+SIF GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1
+	RETURNF 1
+
+;异常处理保持一致
+IF P_AdjList:(ARG:1) == "" && !(GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1)
+	PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，请汇报错误
+	RETURNF 1
+ENDIF
+IF ARG:1 / 100 != map_id || ARG / 100 != map_id
+	THROW [警告] 错误的寻路，请汇报错误（map_id：{map_id} 路径：从{ARG:1}到{ARG}）
+ENDIF
+
+;BFS 初始化
+queue:queue_tail = ARG:1 % 100
+queue_tail += 1
+visited:(ARG:1 % 100) = 1
+dist_map:(ARG:1 % 100) = 0
+
+WHILE queue_head < queue_tail
+	current_location = queue:queue_head
+	queue_head += 1
+	
+	;返回
+	IF current_location == ARG % 100
+		DEBUGPRINTFORML {dist_map:current_location}
+		RETURNF dist_map:current_location
+	ENDIF
+
+	FOR i, 0, SPLIT_F(P_AdjList:(current_location + 100 * map_id),"/",LOCALS)
+		neighbor = TOINT(LOCALS:I) % 100
+		IF !visited:neighbor
+			visited:neighbor = 1
+			;生长 - 父节点的距离 + 1
+			dist_map:neighbor = dist_map:current_location + 1
+			queue:queue_tail = neighbor
+			queue_tail += 1
+		ENDIF
+	NEXT
+WEND
+
+;队列空了也没找到
+PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，请汇报错误
+;THROW [警告] 错误的寻路，请汇报错误（map_id：{map_id} 路径：从{ARG:1}到{ARG}）
+RETURNF 1
