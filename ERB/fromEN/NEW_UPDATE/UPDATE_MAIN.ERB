@@ -171,7 +171,7 @@ IF GETBIT(TALENT:MASTER:性別, 0)
 ;MASTERが男 MASTER is male
 ELSE
 	;set chest size to flat
-	TALENT:MASTER:胸圍 = -2
+	TALENT:MASTER:胸围 = -2
 ENDIF
 
 ;if MASTER has a penis but doesn't have a size for their tool defined, do so now
@@ -254,7 +254,7 @@ FOR ABL_ID,0,100
 	TALENT:C_ID:伐採Lv = MAX(TALENT:C_ID:伐採Lv, CSVTALENT(NO:C_ID, 46))
 	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "伐採経験"), TALENT:C_ID:伐採Lv)
 	TALENT:C_ID:釣りLv = MAX(TALENT:C_ID:釣りLv, CSVTALENT(NO:C_ID, 47))
-	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "釣魚経験"), TALENT:C_ID:釣りLv)
+	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "釣り経験"), TALENT:C_ID:釣りLv)
 	TALENT:C_ID:採集Lv = MAX(TALENT:C_ID:採集Lv, CSVTALENT(NO:C_ID, 48))
 	CALL SET_MINIMUM_EXP(C_ID, GETNUM(EXP, "採集経験"), TALENT:C_ID:採集Lv)
 	TALENT:C_ID:調合Lv = MAX(TALENT:C_ID:調合Lv, CSVTALENT(NO:C_ID, 49))
@@ -363,19 +363,16 @@ FOR C_ID, 1, CHARANUM - 1
 	NEXT
 
 	;種族系素質を更新 update race identifiers (e.g. Human) according to CSV values
-	FOR LOCAL:1, 190, 199
-		TALENT:C_ID:(LOCAL:1) = CSVTALENT(NO:C_ID, LOCAL:1)
-	NEXT
-
-	;水棲、氷精、種族(未使用？)、半白澤、動物耳も変動しないと思われるので更新 this was added to update some other race-ish talents
-	FOR LOCAL:1, 163, 167
-		TALENT:C_ID:(LOCAL:1) = CSVTALENT(NO:C_ID, LOCAL:1)
+	FOR LOCAL:1, 1, MAP_SIZE("TALENT_RACE_MAP")
+		TALENT:C_ID:(TOINT(MAP_GET("TALENT_RACE_MAP", TOSTR(LOCAL:1)))) = CSVTALENT(NO:C_ID, TOINT((MAP_GET("TALENT_RACE_MAP", TOSTR(LOCAL:1)))))
 	NEXT
 
 	;update pain sensitivity according to CSV; may be undesired
 	TALENT:C_ID:痛覚 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "痛覚"))
 	;update animal ears talent
 	TALENT:C_ID:動物耳 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "動物耳"))
+	SIF !TALENT:C_ID:動物耳 && 全員動物耳化
+		TALENT:C_ID:動物耳 = 1
 	;update recovery speed according to CSV; may be undesired
 	SIF TALENT:C_ID:回復速度 < CSVTALENT(NO:C_ID, GETNUM(TALENT, "回復速度")) && !TALENT:C_ID:妊娠 && CFLAG:C_ID:出産経過日 > 20
 		TALENT:C_ID:回復速度 = CSVTALENT(NO:C_ID, GETNUM(TALENT, "回復速度"))
@@ -402,7 +399,7 @@ FOR C_ID, 1, CHARANUM - 1
 			CFLAG:C_ID:(LOCAL:1) = CSVCFLAG(C_ID, LOCAL:1)
 		CONTINUE
 	NEXT
-	;来訪確率補正を読み込み set visit rate adjustment value, supposedly
+	;来訪確率補正を読み込み set visit rate adjustment value
 	FOR LOCAL:1, 420, 432
 		CFLAG:C_ID:(LOCAL:1) = CSVCFLAG(NO:C_ID, LOCAL:1)
 	NEXT
@@ -432,13 +429,18 @@ FOR C_ID, 1, CHARANUM - 1
 	CFLAG:C_ID:固有指令 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "固有指令"))
 	CFLAG:C_ID:地位 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "地位"))
 	CFLAG:C_ID:初期位置 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "初期位置"))
-	SIF FLAG:一時滞在 == C_ID
+	IF FLAG:一時滞在 == C_ID
 		CFLAG:C_ID:初期位置 = CFLAG:C_ID:神社在住
+	ELSEIF IN_HOME(GET_CHARAHOME(C_ID))
+		CFLAG:C_ID:神社在住 = CFLAG:C_ID:初期位置
+	ELSE
+		CFLAG:C_ID:神社在住 = 0
+	ENDIF
 	CFLAG:C_ID:来訪時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "来訪時間"))
 	CFLAG:C_ID:帰宅時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "帰宅時間"))
 	CFLAG:C_ID:就寝時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "就寝時間"))
 	CFLAG:C_ID:起床時間 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "起床時間"))
-	CFLAG:C_ID:經常去的地方 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "經常去的地方"))
+	CFLAG:C_ID:よく行く地域 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "よく行く地域"))
 	CFLAG:C_ID:自宅位置 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "自宅位置"))
 	CFLAG:C_ID:移動率補正 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "移動率補正"))
 	CFLAG:C_ID:移動節度 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "移動節度"))
@@ -447,7 +449,9 @@ FOR C_ID, 1, CHARANUM - 1
 
 	SIF !CFLAG:C_ID:弾幕特能
 		CALL 弾幕特殊能力設定(C_ID)
+
 	CFLAG:C_ID:口調 = CSVCFLAG (NO:C_ID, GETNUM(CFLAG, "口調"))
+
 	;最大気力体力がCSV値より低い場合CSVに合わせる adjust maximum values for some stats if they are lower than base
 	IF !CFLAG:C_ID:回復速度降低
 		SIF MAXBASE:C_ID:0 < CSVBASE (NO:C_ID, 0)
@@ -1036,8 +1040,8 @@ IF CFLAG:ARG:回復速度降低
 	TALENT:ARG:回復速度 = CFLAG:ARG:回復速度降低 - 2
 	CFLAG:ARG:回復速度降低 = 0
 ENDIF
-IF CFLAG:ARG:乳品质提升 && TALENT:ARG:胸圍 > -2
-	TALENT:ARG:胸圍 -= CFLAG:ARG:乳品质提升
+IF CFLAG:ARG:乳品质提升 && TALENT:ARG:胸围 > -2
+	TALENT:ARG:胸围 -= CFLAG:ARG:乳品质提升
 	CFLAG:ARG:乳品质提升 = 0
 ENDIF
 TALENT:ARG:痛覚 = CSVTALENT(NO:ARG,40)
@@ -1051,7 +1055,7 @@ CFLAG:ARG:初吻喪失記念日 = 0
 CSTR:ARG:童貞喪失履歴 =
 CFLAG:ARG:童貞喪失記念日 = 0
 SIF !EXP:ARG:接吻経験
-	TALENT:ARG:無接吻経験 = 1
+	TALENT:ARG:キス未経験 = 1
 IF !ARG:1
 	FOR LOCAL,0,100
 		ABL:ARG:LOCAL = CSVABL(NO:ARG,LOCAL)

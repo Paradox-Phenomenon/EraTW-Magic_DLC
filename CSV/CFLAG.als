@@ -40,6 +40,7 @@
 43,ヤラせちゃった
 ;合意なしで行為に及んだ場合つく
 
+45,前回の口上実装状況
 
 ;100～139までパンツ管理に使用中（4.600proto現在）
 
@@ -118,7 +119,7 @@
 354,就寝時間
 355,起床時間
 356,よく行く地域
-357,出現位置
+
 358,自宅位置
 ;CFLAG:自宅位置は「おでかけマップ上の自宅位置」を示し、お招き部屋の入り口の判定に使われている
 ;拠点マップでは使えない点に要注意
@@ -176,9 +177,32 @@
 414,依頼対象４
 415,依頼対象５
 
-;420~431は各拠点マップへの来訪補正にする予定
+;各拠点マップへの来訪率補正
+420,来訪補正_博
+421,来訪補正_寺
+422,来訪補正_里
+423,来訪補正_湖
+424,来訪補正_竹
+425,来訪補正_森
+426,来訪補正_冥
+427,来訪補正_山
+428,来訪補正_守
+429,来訪補正_地
+430,来訪補正_月
+;431,来訪補正_XX
 
-;450~461は出現位置に
+450,来訪位置_博
+451,来訪位置_寺
+452,来訪位置_里
+453,来訪位置_湖
+454,来訪位置_竹
+455,来訪位置_森
+456,来訪位置_冥
+457,来訪位置_山
+458,来訪位置_守
+459,来訪位置_地
+460,来訪位置_月
+;461,来訪位置_XX
 
 495,kojo_version
 
@@ -217,6 +241,7 @@
 553,タチ
 
 560,性格傾向
+;(1=気弱系 2=強気系 3=素直系 4=真面目系 5=その他)
 561,オート喘ぎ
 562,別顔有
 563,別立ち有
@@ -302,37 +327,12 @@
 ;997,DIALOGSTATUS - SAVEDATA will be used instead
 ;CFLAG:1000～1999	 口上用確保領域
 
-9100,RANDOM_MENU_EXCLUSION
-9101,REQUEST_GENERATION_DAY,;stores the day on which the request has been generated
-9102,DUPLICATE_CHARACTER,;serves as a duplicate of another character, the value indicates which character they're a duplicate of
-9103,MARKED_FOR_DELETION,
-9104,LEWD_CHECKED
-9105,LAST_SEX_DAY
-9106,BANQUET
-9107,BANQUET_ROLE
-9108,BANQUET_CLEANUP,;used to get the correct banquet term, as BANQUET and BANQUET_ROLE can already be cleared at this point
-9109,PERSISTENT_DUPLICATE,;duplicated character exists outside of sex
+9109,MORNING_TIPS,;does character have night tips, for authors
+9110,MORNING_TIPS_DISABLED,;are their night tips enabled in the settings
+9115,BUTT_SIZE_UPDATED
 
-;custom com filters (range 9110-9119)
-
-;9125,MORNING_TIPS,;does character have night tips, for authors
-;9126,MORNING_TIPS_DISABLED,;are their night tips enabled in the settings
-;9115,BUTT_SIZE_UPDATED
-;9127,IS_DUPLICATE,;is a duplicated character
-;9128,FAVORITE_OVERRIDE_UNDERWEAR,;overrides the underwear for the favorite outfit
-;9129,WIFE_VISITATION,;wives and concubines will try to visit every day
-;
-;9130,PullOutPromiseDenied
-;9131,EXTENDED_TRAITS_SET
-;9132,ALLOW_BATH
-;9133,NO_LEGS
-;
-;9150,Hypno_Orgasm_Denial
-;9151,Morning_Event_Guaranteed
-;9152,Times_Made_Exhibitionist
-;9153,Times_Made_Nudist
-;
-;9170,WithChildCount
-;9171,BirthEventsCount
-;9172,LatestChildCount
-;9173,LatestEggGiftDay
+9128,FAVORITE_OVERRIDE_UNDERWEAR,;overrides the underwear for the favorite outfit
+9170,WithChildCount
+9171,BirthEventsCount
+9172,LatestChildCount
+9173,LatestEggGiftDay
