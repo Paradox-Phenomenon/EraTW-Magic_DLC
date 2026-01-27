@@ -15,7 +15,7 @@ CASE 101
 	CASE "依頼報酬表示"
 		CALLF MAKE_STR(V_NAME, @"%金額表示(3000)%")
 	CASE "依頼実行指令名"
-		CALLF MAKE_STR(V_NAME, "食品报告")
+		CALLF MAKE_STR(V_NAME, "进行美食报道")
 		
 	CASE "依頼内容"
 		;小料理屋(218)が対象
@@ -28,7 +28,7 @@ CASE 101
 	;これは他の固有依頼との相対確率なんで10％ではありません
 		CALLF MAKE_INT(V_NAME, 10)
 	CASE "依頼発生条件"
-	SIF CFLAG:1005 >= 1 && ABL:MASTER:教養 >= 1
+	SIF CFLAG:[[はたて]]:1005 >= 1 && ABL:MASTER:教養 >= 1
 		CALLF MAKE_INT(V_NAME, 1)
 	CASE "依頼受託可能条件"
 	;受託可能は@COM_ABLE366も確認のこと
@@ -80,25 +80,26 @@ CASE "美食报告"
 	;可能な引数は"中止", "実行して成功", "実行して失敗", "実行して未解決"です
 	;独自処理を仕込みたい時は"実行して未解決"で先延ばしするなりしてください
 		DOWNBASE:MASTER:気力 += 50
-		PRINTFORMW %CALLNAME:MASTER%走进了一家小餐馆、向店主请求后拍摄了料理的照片、一边食用一边总结感想…
+		PRINTFORMW %CALLNAME:MASTER%走进小餐馆，向店主打过招呼后拍下了料理的照片，一边吃一边整理着感想……
 		TIME += 120
-		IF (ABL:話術技能 + ABL:教養 + ABL:料理技能 + RAND:5) >= RAND:12
-			PRINTFORML 好照片。也写出了能激起食欲的文章。这样应该就可以了吧
+		TCVAR:MASTER:空腹時刻 = 1440 * DAY + TIME + 120
+		IF (ABL:MASTER:話術技能 + ABL:MASTER:教養 + ABL:MASTER:料理技能 + RAND:5) >= RAND:12
+			PRINTFORML 照片拍得不错。文章也写得令人食欲大增。这样果应该会满意吧
 			PRINTW 
 			RETURN IRAI_CONST_RESULT("実行して成功")
-		ELSEIF (ABL:話術技能 + ABL:教養 + ABL:料理技能 + RAND:5) == RAND:11
+		ELSEIF INRANGE((ABL:MASTER:話術技能 + ABL:MASTER:教養 + ABL:MASTER:料理技能 + RAND:5), 6, 10)
 			SELECTCASE RAND:2
 			CASE 0
-				PRINTFORML 文章还算可以、但照片拍得不算很美味…不想就这么妥协
+				PRINTFORML 文章还行，但是照片拍得不太诱人……不想妥协
 				PRINTW 
 			CASE 1
-				PRINTFORML 照片拍得不错、但感觉文章并没能传达料理的魅力…
+				PRINTFORML 觉得照片拍得不错，但文章感觉没能充分传达出料理的魅力……
 				PRINTW 
 			ENDSELECT
 			RETURN IRAI_CONST_RESULT("実行して未解決")
 		ELSE
-			PRINTFORML 照片很模糊、文章也是写得不知所云…这可不行
-			PRINTFORML 没办法、现在也只能就这样上交了
+			PRINTFORML 照片模糊不清，文章也写得不知所云……这不行啊
+			PRINTFORML 没办法，只能用这个去报告了
 			PRINTW 
 			RETURN IRAI_CONST_RESULT("実行して失敗")
 		ENDIF
