@@ -20,6 +20,8 @@
 #DIM XRAY_LAYER
 ;Better Xray
 #DIM Chara_Xray_Block_by_Better_Xray, 300
+#DIMS L_EFFECTNAME ;画像特殊効果パッチ：画像にかける処理を記録
+
 ARRAYCOPY "TARGET_LIST", "ターゲット"
 
 SIF !(ターゲット || (自机立绘显示 && 自机立绘开关))
@@ -189,16 +191,36 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 			RESULTS:0 = %GET_BASESTYLE_TRANS(CHARA,CHARATRANS)%_服_通常_{CHARATRANS}
 			RESULTS:1 =
 		ENDIF
-    	;時間停止時はマウスオーバー画像を表示しない
+
+		VARSET L_EFFECTNAME
+		;縁取りパッチ：夜間効果あり、特定時間内(19:00～4:59)かつ屋外なら画像を薄暗くする
+		IF 画像特殊効果_夜間効果
+			IF INRANGE(TIME , 1140 , 1439) || INRANGE(TIME , 0 , 299)
+				SIF OUTROOF(CFLAG:MASTER:現在位置)
+					L_EFFECTNAME '= ADD_EFFECT_WORD(L_EFFECTNAME , EFFNAME_夜)
+			ENDIF
+		ENDIF
+		;縁取りパッチ：縁取りありなら画像を縁取りしたものに差し替え
+		IF 画像特殊効果_縁取り
+			L_EFFECTNAME '= ADD_EFFECT_WORD(L_EFFECTNAME , EFFNAME_縁取り)
+		ENDIF
+
+		IF STRLENS(L_EFFECTNAME)
+			RESULTS:0 '= PICTURE_EFFECT(RESULTS:0 , L_EFFECTNAME , CHARA)
+			SIF STRLENS(RESULTS:1)
+				RESULTS:1 '= PICTURE_EFFECT(RESULTS:1 , L_EFFECTNAME , CHARA)
+		ENDIF
+
+		;時間停止時はマウスオーバー画像を表示しない
 		SIF FLAG:時間停止
-		RESULTS:1 =
+			RESULTS:1 =
 
 		[IF_DEBUG]
-			IMAGE_TITLE '= @"%RESULTS:2%"
+			IMAGE_TITLE '= @"%RESULTS:0%<br>%RESULTS:1%"
 		[ENDIF]
 
 		;0番レイヤーに基本画像をセット
-		CALL 画像セット(RESULTS:0, 縦位置, 0, 角色画像表示尺寸比, 0, 1, @"{1000+CHARA}", RESULTS:2, RESULTS:1)
+		CALL 画像セット(RESULTS:0, 縦位置, 0, 角色画像表示尺寸比, 0, 1, @"{1000+CHARA}", IMAGE_TITLE, RESULTS:1)
 
 		;エフェクト画像　表示形式_エフェクト_キャラ番号_差分 (RESULTS配列に格納、RESULTにエフェクト数格納)
 		CALL GET_EFFECT_RESOURCE_TRANS(CHARA,CHARATRANS)
@@ -206,17 +228,36 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 		;基本画像　表示形式_服装_表情_角色番号_差分 (RESULTS:0に格納、RESULTS:1にマウスオーバー画像格納)
 		CALL GET_BASE_RESOURCE(CHARA)
 		;リソースが見つからない場合は通常服状態の通常顔に切り替え
-		RESULTS:2 = %RESULTS:0%
 		IF !RESULT
 			RESULTS:0 = %GET_BASESTYLE(CHARA)%_服_通常_{CHARA}
 			RESULTS:1 =
 		ENDIF
+
+		;縁取りパッチ：夜間効果あり、特定時間内(19:00～4:59)かつ屋外なら画像を薄暗くする
+		VARSET L_EFFECTNAME
+		IF 画像特殊効果_夜間効果
+			IF INRANGE(TIME , 1140 , 1439) || INRANGE(TIME , 0 , 299)
+				SIF OUTROOF(CFLAG:MASTER:現在位置)
+					L_EFFECTNAME '= ADD_EFFECT_WORD(L_EFFECTNAME , EFFNAME_夜)
+			ENDIF
+		ENDIF
+		;縁取りパッチ：縁取りありなら画像を縁取りしたものに差し替え
+		IF 画像特殊効果_縁取り
+			L_EFFECTNAME '= ADD_EFFECT_WORD(L_EFFECTNAME , EFFNAME_縁取り)
+		ENDIF
+
+		IF STRLENS(L_EFFECTNAME)
+			RESULTS:0 '= PICTURE_EFFECT(RESULTS:0 , L_EFFECTNAME , CHARA)
+			SIF STRLENS(RESULTS:1)
+				RESULTS:1 '= PICTURE_EFFECT(RESULTS:1 , L_EFFECTNAME , CHARA)
+		ENDIF
+
 		;時間停止時はマウスオーバー画像を表示しない
 		SIF FLAG:時間停止
 			RESULTS:1 =
 
 		[IF_DEBUG]
-			IMAGE_TITLE '= @"%RESULTS:2%"
+			IMAGE_TITLE '= @"%CALLNAME:CHARA%<br>%RESULTS:0%<br>%RESULTS:1%"
 		[ENDIF]
 
 		;0番レイヤーに基本画像をセット
