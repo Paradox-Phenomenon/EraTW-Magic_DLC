@@ -1,4 +1,6 @@
-﻿;-------------------------------------------------
+﻿;种族相关的硬编码函数
+;但一改动编码，请检查所有判定函数
+;-------------------------------------------------
 ;函数名:GET_TALENTNAME
 ;概　要:素质名获取函数
 ;引　数:ARG:0…TALENT注册编号
@@ -368,8 +370,6 @@ CASE GETNUM(TALENT, "人类")
 	CASE 4
 		RETURNF "月人"
 	CASE 5
-		RETURNF "魔界人"
-	CASE 6
 		RETURNF "外界人"
 	CASEELSE
 		RETURNF "名称不明（人类）"
@@ -472,3 +472,57 @@ CASE GETNUM(TALENT, "追加種族")
 		RETURNF "名称不明（追加种族）"
 	ENDSELECT
 ENDSELECT
+
+;==================================================
+;Returns 3 if the character is a doll
+;Returns 2 if the character is a non-youkai nonhuman
+;Returns 1 if the character is a youkai
+;Returns 0 if the character is a human
+;==================================================
+@IS_NONHUMAN(ARG = -1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF ARG == -1
+	ARG = MASTER
+
+;Human and not Were-Hakutaku
+IF TALENT:ARG:人間 && !TALENT:ARG:半白澤
+	SELECTCASE TALENT:ARG:人間
+		;Human = Human
+		CASE 1
+			RETURNF 0
+		;Celestial, Lunarian = non-youkai non-human
+		CASE 3, 4
+			RETURNF 2
+		;Hermits and Outsiders can be humans, youkai, or neither so we keep checking
+	ENDSELECT
+ENDIF
+
+;hack to ensure Narumi is treated as a youkai
+;Jizo and Magician = youkai
+IF TALENT:ARG:人形 == 3 && TALENT:ARG:追加種族 == 2
+	RETURNF 1
+;Doll
+ELSEIF TALENT:ARG:人形
+	RETURNF 3
+;Jiang-Shi or Yuki-Onna = Youkai
+ELSEIF TALENT:ARG:人形 == 5 || TALENT:ARG:氷精 == 2
+	RETURNF 1
+;Ice Fairy, Fairy, Divine Spirit, Phantom, Doll = non-youkai non-human
+ELSEIF TALENT:ARG:氷精 || TALENT:ARG:妖精 || TALENT:ARG:神霊 || TALENT:ARG:幽霊
+	RETURNF 2
+;Kitsune, Youkai, Youkai, Tsukumogami, Were-Hakutaku, Magician, Animal Ears = youkai
+ELSEIF TALENT:ARG:狐 || TALENT:ARG:妖狐 || TALENT:ARG:妖怪 || TALENT:ARG:付喪神 || TALENT:ARG:半白澤 || TALENT:ARG:追加種族 == 2 || TALENT:ARG:動物耳
+	RETURNF 1
+ENDIF
+;Anything else is human
+RETURNF 0
+
+@IS_VAMPIRE(ARG = -1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF ARG == -1
+	ARG = MASTER
+RETURNF TALENT:ARG:妖怪 == 3
