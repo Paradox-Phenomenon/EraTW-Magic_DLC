@@ -368,7 +368,9 @@ ENDIF
 
 出発地点 = CFLAG:MASTER:現在位置
 直前の目的地 = -1
-
+;---------------------------------------------------
+;现行的BFS
+;[SKIPSTART]
 FOR 中継回数,0,最大寻路深度
 	WHILE !(CAN_MOVE(出発地点, 暫定目的地) & 1) && 出発地点 != 暫定目的地
 		;TRYCALLFORM SKIP_MOVE_{MAIN_MAP}(暫定目的地,出発地点)
@@ -395,6 +397,22 @@ FOR 中継回数,0,最大寻路深度
 	暫定目的地 = 最終目的地
 NEXT
 直前位置 = 暫定目的地
+;[SKIPEND]
+;---------------------------------------------------
+;---------------------------------------------------
+;A*  如有需要，用它
+[SKIPSTART]
+CALL CAN_MOVE_BY_DT(MAIN_MAP , 出発地点 , 最終目的地)
+;このFORはBREAKせずに全部回すこと
+FOR 中継回数 , 0 , MIN(RESULT:3 , 20)
+	SIF TOINT(SPLIT_SINGLE(RESULTS , 中継回数 , ",")) == 最終目的地
+		BREAK
+	中継地点:中継回数 = TOINT(SPLIT_SINGLE(RESULTS , 中継回数 , ","))
+	SIF 中継回数 == MIN(RESULT:1 , 20) - 2
+		直前位置 = 中継地点:中継回数
+NEXT
+[SKIPEND]
+;---------------------------------------------------
 
 FOR RELAY_COUNT,1,中継回数 + 1
 	LOCAL:3 = 0

@@ -220,12 +220,14 @@ NEXT
 #DIM 対象
 #DIM 移動コスト
 #DIM 暫定目的地
+#DIM 初期位置
 #DIM 最終目的地
 #DIM TEMP_現在位置
 #DIM C_ID
 C_ID = 集合:対象:0
 TEMP_現在位置 = CFLAG:MASTER:現在位置
 最終目的地 = CFLAG:C_ID:現在位置
+初期位置 = TEMP_現在位置
 暫定目的地 = 最終目的地
 [SKIPSTART]
 IF CAN_MOVE(TEMP_現在位置, 暫定目的地) & 1
@@ -248,7 +250,25 @@ ELSE
 	NEXT
 ENDIF
 [SKIPEND]
+;---------------------------------------------------
+;现行的BFS
+;[SKIPSTART]
 集合:対象:2 = QOL_GET_DISTANCE(暫定目的地, TEMP_現在位置,MAIN_MAP)
+;[SKIPEND]
+;---------------------------------------------------
+;A*  如有需要，用它
+[SKIPSTART]
+IF CAN_MOVE(初期位置, 最終目的地) & 1
+	RESULT:1 = 1
+ELSE
+	CALL CAN_MOVE_BY_DT(MAIN_MAP , 初期位置 , 最終目的地)
+ENDIF
+集合:対象:2 = RESULT:1
+[IF_DEBUG]
+;PRINTFORML 所要コストはTW={移動コスト}、A*={RESULT:1}だよ
+[ENDIF]
+[SKIPEND]
+;---------------------------------------------------
 
 @AssembleForMeal
 #DIM 集合, 人物数量上限, 3 ;集合:X:Y
