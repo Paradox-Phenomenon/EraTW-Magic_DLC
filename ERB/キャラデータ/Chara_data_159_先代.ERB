@@ -316,6 +316,8 @@ ENDIF
 ;    "自慰","愛撫","性交"は本編で実装済み
 ;-------------------------------------------------------------------------------------------
 @IMAGE_I159_特殊表情COM(CHARA, 指令)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM CHARA
 #DIM 指令
 
@@ -384,3 +386,60 @@ ELSE
         ENDSELECT
     ENDIF
 ENDIF
+
+;IMAGE_I159_特殊エフェクトチェック(CHAR, エフェクト)--------------------------------------------
+;角色特有のエフェクト判定  特殊エフェクトを直接指定したい場合に参照
+;引数 "エフェクト" に固有のエフェクトが含まれるかを判定する
+;例の街道、STRFINDを使用してください
+;-------------------------------------------------------------------------------------------
+@IMAGE_I159_特殊エフェクトチェック(CHARA, エフェクト)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+#DIMS エフェクト
+
+IF CFLAG:159:差し替え適用 == 4
+	;替换用画像
+	SIF STRFIND(エフェクト, "乳头") != -1
+		RETURN 1
+ELSE
+	;通常画像
+ENDIF
+
+RETURN 0
+
+;IMAGE_I159_特殊エフェクト(CHARA)--------------------------------------------------------------------
+;角色特有のエフェクト表示条件
+;使用時注意点:
+;	RESULTS配列に特殊エフェクトを格納
+;	RETURNで追加するエフェクト数を返却すること
+;-------------------------------------------------------------------------------------------
+@IMAGE_I159_特殊エフェクト(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+#DIMS DYNAMIC 服装
+#DIM DYNAMIC エフェクト数 = 0
+VARSET RESULTS
+
+IF CFLAG:159:差し替え適用 == 4
+	CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA)
+	IF STRCOUNT(RESULTS:0, "覆盖") || STRCOUNT(RESULTS:1, "覆盖")
+		VARSET RESULTS
+		RETURN エフェクト数
+	ENDIF
+	IF 0
+		RESULTS:エフェクト数 = 深色乳头
+		エフェクト数 += 1
+	ENDIF
+ELSEIF CFLAG:159:差し替え適用 == 1
+ELSE
+	;通常画像
+	IF FLAG:立絵種類
+		;顔絵
+	ELSE
+		;立絵
+	ENDIF
+ENDIF
+
+RETURN エフェクト数

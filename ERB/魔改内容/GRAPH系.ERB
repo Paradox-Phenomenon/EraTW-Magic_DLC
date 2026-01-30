@@ -27,11 +27,11 @@ ENDIF
 
 ;初步判定
 IF 服装 == ""
-    IF CHECK_NUDE(CHARA)
-        服装 = 裸
-    ELSE
-        服装 = 服
-    ENDIF
+	IF CHECK_NUDE(CHARA)
+		服装 = 裸
+	ELSE
+		服装 = 服
+	ENDIF
 	CALL IMAGE_CHARA_OVERRIDE("特殊服装", CHARA)
 	IF RESULT:1
 		服装 += RESULTS
@@ -43,7 +43,7 @@ TRYCALLFORM SPIRIT_Version{CHARA}
 SIF RESULT
 	Version = %RESULTS%
 
-;妊肚 = %SPIRIT_妊肚判定(CHARA)%
+妊肚 = %SPIRIT_妊肚判定(CHARA)%
 ;乳量 = %SPIRIT_乳量判定(CHARA)%
 TRYCCALLFORM SPIRIT_特殊私处_{CHARA}(服装)
 	SIF RESULT
@@ -271,10 +271,14 @@ SIF RESULT
 ;SIF RESULT
 ;	CALL 画像合成(G_ID, RESULTS)
 ;
-;; 腹部差分
+; 腹部差分
 ;CALL SPIRIT_GET_裸腹差分(Version, CHARA, 妊肚, 乳量)
 ;SIF RESULT
 ;	CALL 画像合成(G_ID, RESULTS)
+
+CALL SPIRIT_GET_腹部差分(Version, CHARA, 妊肚, 乳量, 服装)
+SIF RESULT
+	CALL 画像合成(G_ID, RESULTS)
 
 ; 私处差分
 CALL SPIRIT_GET_私处差分(Version, CHARA, 私处)
@@ -327,6 +331,26 @@ IF 妊肚 != ""
 	ENDIF
 	IF RM_リソースチェック(@"{CHARA}%Version%_裸腹_妊肚")
 		RESULTS = %@"{CHARA}%Version%_裸腹_妊肚"%
+		RETURN 1
+	ENDIF
+ENDIF
+RETURN 0
+
+; SPIRIT{CHARA}_裸腹{_乳量}_妊肚
+; 无 <- 裸腹_妊肚 <- 裸腹{_乳量}_妊肚
+@SPIRIT_GET_腹部差分(Version, CHARA, 妊肚, 乳量, 服装)
+#DIMS DYNAMIC Version
+#DIM DYNAMIC CHARA
+#DIMS DYNAMIC 妊肚
+#DIMS DYNAMIC 乳量
+#DIMS DYNAMIC 服装
+IF 妊肚 != ""
+	IF RM_リソースチェック(@"{CHARA}%Version%_%服装%_%乳量%_妊肚")
+		RESULTS = %@"{CHARA}%Version%_%服装%_%乳量%_妊肚"%
+		RETURN 1
+	ENDIF
+	IF RM_リソースチェック(@"{CHARA}%Version%_%服装%_妊肚")
+		RESULTS = %@"{CHARA}%Version%_%服装%_妊肚"%
 		RETURN 1
 	ENDIF
 ENDIF
@@ -452,8 +476,8 @@ RETURN 1
 #LOCALSSIZE 1
 SIF CFLAG:ARG:妊娠経過日数 >= 40
 	RETURNF "妊肚"
-SIF 充填率(ARG,3) >= 50
-	RETURNF "膨腹"
+;SIF 充填率(ARG,3) >= 50
+;	RETURNF "膨腹"
 RETURNF ""
 
 @SPIRIT_BUILD_特效差分(Version, CHARA, ARG)
