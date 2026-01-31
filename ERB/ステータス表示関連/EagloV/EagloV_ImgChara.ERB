@@ -713,6 +713,68 @@ RESULTS:0 = %LOCALS%
 RESULTS:1 = 
 RETURN 1
 ;}
+; 51 荷取{
+;@SPECIAL_BASE_IMAGE_51
+;#LOCALSIZE 1
+;#LOCALSSIZE 1
+;SIF CFLAG:51:差し替え適用 == 4
+;	RESULTS = EagloV
+;
+@SPECIAL_EFFECT_IMAGE_51
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:51:差し替え適用 == 4
+	RESULTS = EagloV
+
+@EagloV_特殊服装_51(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 51
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == [[作业服套装]]
+	RESULTS = 工装
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊内衣_51
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 51
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
+ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[死库水泳衣]] || TEQUIP:CHARA:SWIMMING
+	RESULTS = 死库水
+	RETURN 2
+ENDIF
+RETURN 0
+
+@EagloV_特殊效果_51
+#LOCALSIZE 1
+#LOCALSSIZE 10
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+SIF !CHARA
+	CHARA = 51
+VARSET LOCALS
+;常驻前景图层
+LOCALS:(エフェクト数*2) = EagloV51_特效_前发
+エフェクト数++
+;杂鱼
+IF 0
+	LOCALS:(エフェクト数*2) = EagloV51_特效_杂鱼
+	エフェクト数++
+ENDIF
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+;}
 
 ; 55 白莲{
 @SPECIAL_BASE_IMAGE_55
@@ -795,146 +857,67 @@ SIF CFLAG:62:差し替え適用 == 1
 SIF CFLAG:62:差し替え適用 == 1
 	RESULTS = EagloV
 
-@EagloV_特殊表情_62
+@EagloV_特殊服装_62(CHARA)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-VARSET RESULTS
-IF NOWEX:62:Ｃ絶頂 || NOWEX:62:Ｂ絶頂 || NOWEX:62:Ｖ絶頂 || NOWEX:62:Ａ絶頂 || NOWEX:62:Ｍ絶頂
-	IF EX:62:TotalEX >= 5
-		RESULTS:0 = 快感急
-		RESULTS:1 = 快感急
+#DIM CHARA
+SIF !CHARA
+	CHARA = 62
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == [[水手服式校服]]
+	RESULTS = 水手服
+	RETURN 1
+ELSEIF CFLAG:CHARA:妊娠経過日数 >= 60
+	IF FLAG:9%2
+		RESULTS = 孕装1
 	ELSE
-		RESULTS:0 = 快感缓
-		RESULTS:1 = 快感急
+		RESULTS = 孕装2
 	ENDIF
 	RETURN 1
 ENDIF
-	
-IF CFLAG:62:睡眠
-	LOCAL = EX:62:無自覚Ｃ絶頂 + EX:62:無自覚Ｖ絶頂 + EX:62:無自覚Ａ絶頂 + EX:62:無自覚Ｂ絶頂 + EX:62:無自覚Ｍ絶頂
-	IF LOCAL >= 5
-		RESULTS:0 = 眯笑
-		RESULTS:1 = 眯笑
-	ELSE
-		RESULTS:0 = 睡眠
-		RESULTS:1 = 睡眠
-	ENDIF
-	RETURN 1
+RETURN 0
+
+@EagloV_特殊内衣_62(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 62
+IF IS_BUNNY(CHARA)
+	RESULTS = 兔女郎
+	RETURN 2
 ENDIF
+RETURN 0
 
-IF CFLAG:62:ブチギレ
-	RESULTS:0 = 怒{RAND:4+1}
-	RESULTS:1 = 怒{RAND:4+1}
-	RETURN 1
-ELSEIF BASE:62:憤怒 > 600 || TALENT:62:心情 < 0 || CFLAG:62:心情不快 == 1
-	RESULTS:0 = 不悦
-	RETURN 1
-ENDIF
-
-IF TALENT:62:恋人
-	IF BASE:62:情緒 >= 100
-		RESULTS:0 = 笑顔
-		RESULTS:1 = 眯笑
-	ELSE
-		RESULTS:0 = 通常
-	ENDIF
-ELSEIF TALENT:62:恋慕 || TALENT:62:愛欲
-	IF BASE:62:情緒 >= 300
-		RESULTS:0 = 笑顔
-		RESULTS:1 = 眯笑
-	ELSE
-		RESULTS:0 = 通常
-	ENDIF
-ELSEIF TALENT:62:思慕 || TALENT:62:炮友
-	IF BASE:62:情緒 >= 600
-		RESULTS:0 = 笑顔
-		RESULTS:1 = 眯笑
-	ELSE
-		RESULTS:0 = 通常
-	ENDIF
-ELSE
-	IF BASE:62:情緒 >= 1200
-		RESULTS:0 = 笑顔
-	ELSE
-		RESULTS:0 = 通常
-	ENDIF
-ENDIF
-
-IF RESULTS:0 == "通常"
-	IF MARK:62:反発刻印 <= 0
-		RESULTS:1 = 微开口
-	ENDIF
-ELSEIF RESULTS:0 == "笑顔"
-	IF PALAM:62:欲情 >= PALAMLV:10 || TCVAR:62:発情 || CFLAG:62:积攒度 >= 900
-		RESULTS:1 = 开口
-	ELSEIF MARK:62:反発刻印 <= 0 && (TFLAG:103==109 || TARGET==109)
-		RESULTS:1 = 貘笑
-	ENDIF
-ENDIF
-
-RETURN 1
-
-@EagloV_特殊效果_62
+@EagloV_特殊效果_62(CHARA)
 #LOCALSIZE 2
 #LOCALSSIZE 1
-#DIMS 气泡名 = "愉悦", "沉默", "羞涩", "疑惑", "不悦", "愤怒", "欲求", "睡眠"
-#DIM 气泡概率, 8
 #DIM DYNAMIC エフェクト数 = 0
+#DIM CHARA
+SIF !CHARA
+	CHARA = 62
 
-;表情
-IF PALAM:62:欲情 >= PALAMLV:10 || TCVAR:62:発情 || CFLAG:62:积攒度 >= 900
-	CALL EagloV_特殊表情_62
-	IF RESULTS:0 != "快感急" && RESULTS:0 != "快感缓" && RESULTS:0 != "眯笑" && RESULTS:0 != "睡眠" && RESULTS:1 != "快感急" && RESULTS:1 != "快感缓" && RESULTS:1 != "眯笑" && RESULTS:1 != "睡眠"
-		RESULTS:エフェクト数 = EagloV62_特效_眼中爱心
+IF EagloV_服装初步判定(CHARA) == "服"
+	IF CURRENT_CLOTHES_SET(CHARA) == [[水手服式校服]]
+		RESULTS:エフェクト数 = EagloV62_特效_蓬莱玉枝全
+		エフェクト数++
+	ELSEIF CFLAG:CHARA:妊娠経過日数 >= 60
+		RESULTS:エフェクト数 = EagloV62_特效_蓬莱玉枝全
+		エフェクト数++
+	ELSEIF CFLAG:CHARA:妊娠経過日数 >= 40
+		RESULTS:エフェクト数 = EagloV62_特效_蓬莱玉枝孕肚常服
+		エフェクト数++
+	ELSE
+		RESULTS:エフェクト数 = EagloV62_特效_蓬莱玉枝常服
 		エフェクト数++
 	ENDIF
 ENDIF
-IF BASE:62:情緒 >= 800 || TCVAR:62:発情 || TCVAR:62:媚薬
-	RESULTS:エフェクト数 = EagloV62_特效_鼻红晕
-	エフェクト数++
-	RESULTS:エフェクト数 = EagloV62_特效_腮红
-	エフェクト数++
-ENDIF
-IF PALAM:62:優越 >= PALAMLV:3
-	RESULTS:エフェクト数 = EagloV62_特效_线状红晕
-	エフェクト数++
-ENDIF
-IF BASE:62:理性 <= 300 || TCVAR:62:発情 || TCVAR:62:媚薬
-	RESULTS:エフェクト数 = EagloV62_特效_眼泪
-	エフェクト数++
-ENDIF
-IF CHECK_EXHALATION(62)
-	RESULTS:エフェクト数 = EagloV62_特效_吐息
-	エフェクト数++
-ENDIF
-
-IF CFLAG:62:膣内射精 == 1 || CFLAG:62:肛門射精
-	LOCAL = NUDITYCHECK(62)
-	IF LOCAL > 3
-		RESULTS:エフェクト数 = EagloV62_特效_精渍外搭
-	ELSEIF LOCAL==3 && IMAGE_I62_別立ち判定_futa()
-		RESULTS:エフェクト数 = EagloV62_特效_精渍扶她内衣
-	ELSEIF LOCAL==3
-		RESULTS:エフェクト数 = EagloV62_特效_精渍内衣
-	ELSE
-		RESULTS:エフェクト数 = EagloV62_特效_精渍裸
-	ENDIF
+IF 充填率(CHARA,3) > 30
+	RESULTS:エフェクト数 = EagloV62_特效_精渍
 	エフェクト数++
 ENDIF
 
 RETURN エフェクト数
-
-@IMAGE_I62_別立ち判定_futa()
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTION
-RETURNF (TALENT:62:性別==3 && NUDITYCHECK(62) <= 3)
-
-@IMAGE_I62_別立ち判定_腹精液()
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTION
-RETURNF (EX:62:膣内精液 + EX:62:子宮内精液*2)
 ;}
 
 ; 72 永琳{
