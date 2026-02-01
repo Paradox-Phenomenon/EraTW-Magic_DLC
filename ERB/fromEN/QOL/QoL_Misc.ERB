@@ -513,8 +513,8 @@ nRemberTsp = BASE:MASTER:TSP
 
 @QoL_UnlockExtraTraitsInfo(ARG, EXPECTED_WIDTH)
 #DIM EXPECTED_WIDTH
-CALL PRINTBUTTON_EX("素质获得",915,TFLAG_HideSkillAcquisition, , , 1, EXPECTED_WIDTH)
-SIF TFLAG_HideSkillAcquisition
+CALL PRINTBUTTON_EX("素质获得",GETNUM(TFLAG, "HideSkillAcquisition"),TFLAG:HideSkillAcquisition, , , 1, EXPECTED_WIDTH)
+SIF TFLAG:HideSkillAcquisition
     RETURN
 PRINTL
 CALL COLORMESSAGE(@"□接吻魔", C_AQUA, 1)
@@ -1009,8 +1009,8 @@ SIF !GIFT_GOT:CHARA:1
 	RETURN
 	
 ;custom code, since there can be 100 gifts and bloat the fuck out
-CALL PRINTBUTTON_EX(@"你送出的礼物", 900, TFLAG_GiftsHide, , , 1)
-SIF TFLAG_GiftsHide
+CALL PRINTBUTTON_EX(@"你送出的礼物", 900, TFLAG:GiftsHide, , , 1)
+SIF TFLAG:GiftsHide
 	RETURN
 
 SIF !MAX_DISPLAY_COUNT
@@ -1056,8 +1056,6 @@ IF START_INDEX2 >= 0
 			CALL PRINT_GIFTDATA(GIFT_GOT:CHARA:LOCAL, CHARA, "角色の")
 	NEXT
 ENDIF
-
-
 
 @QOL_SELECT_CHILD
 #DIM CHARA
@@ -1134,23 +1132,22 @@ PRINTFORML [ 14] - Abbreviate large numbers for values like Stamina and Energy�
 @CUSTOM_OPTION_RESULT_14
 nBaseValuesDisplayMethod = !nBaseValuesDisplayMethod
 
-@CUSTOM_OPTION_34
-PRINTFORML [ 34] - Disable forced contraception during childcare：\@ FLAG:CHILD_LIMIT_BYPASS ? Yes # No \@
+@CUSTOM_OPTION_15
+PRINTFORM [ 15] - Automatically undress when initiating sex：
+SELECTCASE nAutomaticUndress
+	CASE 0
+		PRINTFORML Disabled
+	CASE 1
+		PRINTFORML Only for other characters
+	CASE 2
+		PRINTFORML Only for player
+	CASE 3
+		PRINTFORML Player and other characters
+ENDSELECT
+PRINTFORMDL 　＊This can also be set for individual characters in their character settings
 
-@CUSTOM_OPTION_RESULT_34
-FLAG:CHILD_LIMIT_BYPASS = !FLAG:CHILD_LIMIT_BYPASS
-
-@CUSTOM_OPTION_35
-PRINTFORML [ 35] - Stop the Tennis Club event from spawning：\@ TENNIS_HATE ? Yes # No \@
-
-@CUSTOM_OPTION_RESULT_35
-TENNIS_HATE = !TENNIS_HATE
-
-@CUSTOM_OPTION_37
-PRINTFORML [ 37] - Display number of children and fertility in info bar：\@ HideChildrenAndFertility ? Yes # No \@
-
-@CUSTOM_OPTION_RESULT_37
-HideChildrenAndFertility = !HideChildrenAndFertility
+@CUSTOM_OPTION_RESULT_15
+nAutomaticUndress = (nAutomaticUndress + 3) % 4
 
 ;allows player to check for a mob girl's stats without actually summoning her, mostly frankeistein'd from existing code
 @PRINT_SAVED_GIRL_STATS
@@ -1891,7 +1888,7 @@ RETURNF GETNUM(ITEM, ALC_NAME(ARG))
 #DIM BASE_ID
 #DIM CHARA
 RETURNF MAXBASE:CHARA:BASE_ID - BUFF:CHARA:BASE_ID
-[SKIPSTART]
+
 @QOL_BLOCKED_COM_HIDDEN_SEX(ARG)
 #FUNCTION
 IF CFLAG:MASTER:うふふ && !CFLAG:うふふ && GETBIT(FLAG:潜伏,0)
@@ -1901,7 +1898,7 @@ IF CFLAG:MASTER:うふふ && !CFLAG:うふふ && GETBIT(FLAG:潜伏,0)
     RETURNF 1
 ENDIF
 RETURNF 0
-
+[SKIPSTART]
 ;returns the total frustration for all characters involved in sex
 @QOL_FRUSTRATION_ALL()
 #FUNCTION
@@ -2161,19 +2158,19 @@ IF TARGET != MASTER
 	LOCAL += 15 ;length of [Standing] + 5
 ENDIF
 
+LOCAL:1 = MAXWIDTH() - LOCAL
+PRINTFORM %"=" * LOCAL:1%
 
-CALL PRINTBUTTON_EX("[Pushdown Guard]", -9200, !FLAG:推倒)
+CALL PRINTBUTTON_EX("[Pushdown Guard]", -9200, !FLAG:押し倒し)
 PRINTPLAIN =
 IF TARGET != MASTER
 	CALL PRINTBUTTON_EX("[Automatic Condom]",838,!CFLAG:自動ゴム)
 	PRINTPLAIN =
 	CALL PRINTBUTTON_EX(@"[%LOCALS%]",4000,!CFLAG:オート喘ぎ)
 	PRINTPLAIN =
-	CALL PRINTBUTTON_EX("[Standing]",-9122,!CFLAG:STANDING_TOGGLE)
-	PRINTPLAIN ======
+	CALL PRINTBUTTON_EX("[Standing]",-9112,!CFLAG:STANDING_TOGGLE)
+	PRINTPLAIN =====
 ENDIF
-LOCAL:1 = MAXWIDTH() - LOCAL
-PRINTFORM %"=" * LOCAL:1%
 PRINTL
 
 ;similar to 複数押し倒され
@@ -2597,7 +2594,7 @@ RETURN 1
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #FUNCTION
-RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !FLAG:CHILD_LIMIT_BYPASS && !TALENT:ARG:HYPERFERTILE
+RETURNF INRANGE(CFLAG:ARG:出産経過日, 1, 59) && !FLAG:CHILD_LIMIT_BYPASS && !(FLAG:USE_EXPANDED_PREGNANCY_OPTIONS && TALENT:ARG:HYPERFERTILE)
 [SKIPSTART]
 @QOL_PRINT_NUMBER(ARG)
 #FUNCTIONS
@@ -2721,3 +2718,20 @@ NEXT
 SIF INDEX < 3
 	RETURN -1
 RETURN JUDGES:0, JUDGES:1, JUDGES:2 
+
+@QOL_INITIALIZE_SEX(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;IF CFLAG:ARG:AUTOMATIC_UNDRESS == 2
+;ELSEIF ARG == 0 && GETBIT(nAutomaticUndress, 1)
+;	CALL CTRL_CLOTHES_SET(ARG, "現在衣装の変更_全裸")
+;	CALL CLOTHES_SETTING_TRAIN(ARG)
+;ELSEIF ARG != 0 && (GETBIT(nAutomaticUndress, 0) || CFLAG:ARG:AUTOMATIC_UNDRESS == 1)
+;	CALL CTRL_CLOTHES_SET(ARG, "現在衣装の変更_全裸")
+;	CALL CLOTHES_SETTING_TRAIN(ARG)
+;ENDIF
+
+IF !UFUFU_START_TIME
+	UFUFU_START_TIME = TIME
+	UFUFU_START_DAY = DAY
+ENDIF

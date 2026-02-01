@@ -5,19 +5,19 @@
 ;仁义值额外奖励
 #DIM DYNAMIC BONUS
 [SKIPSTART]
-IF BASE:mCID:病症残余 <= 0
-	LOCAL = BASE:mCID:医疗费
+IF EI_BASE:mCID:病症残余 <= 0
+	LOCAL = EI_BASE:mCID:医疗费
 	SATISFACTION = 100
 ELSE
-	SATISFACTION = (mCID:1 - BASE:mCID:病症残余) * 100 / mCID:1
-	LOCAL = BASE:mCID:医疗费*SATISFACTION/100
+	SATISFACTION = (mCID:1 - EI_BASE:mCID:病症残余) * 100 / mCID:1
+	LOCAL = EI_BASE:mCID:医疗费*SATISFACTION/100
 ENDIF
 [SKIPEND]
 VARSET Drus
 ;求百分比，（历史记录-当前剩余数值）乘100，最后再除以历史记录ERA只能接整数，只有小数点后的情况直接视为0
-SATISFACTION=100*(mCID:1-MAX(BASE:mCID:病症残余,0))/mCID:1
+SATISFACTION=100*(mCID:1-MAX(EI_BASE:mCID:病症残余,0))/mCID:1
 ;按照治疗百分比计算医疗费和满意度
-LOCAL=BASE:mCID:医疗费*SATISFACTION/100
+LOCAL=EI_BASE:mCID:医疗费*SATISFACTION/100
 ;计算仁义值修正奖励，分别对应仁义的正负两种情况
 SIF !MeDf:1
 	LIMIT EP:2,-499,999
@@ -39,7 +39,7 @@ ELSE
 	SIF LOCAL
 		PRINTFORML %CALLNAME:mCID%支付了医疗费，共计：{LOCAL} 和 {BONUS} / 仁义修正
 	MONEY += (LOCAL + BONUS)
-	BASE:mCID:医疗费 -= LOCAL
+	EI_BASE:mCID:医疗费 -= LOCAL
 	PRINTL
 	;历史症状2000以上且非常满意返还部分EP，最低诊金/10，最高诊金/2；同时加声望
 	SIF mCID:1>=2e3&&SATISFACTION>=80
@@ -80,7 +80,7 @@ PRINTL
 PRINTFORML %CALLNAME:0%  名望+{(ARG+ARG:1)/ARG:2/1e3}
 PRINTL 
 SIF !ARG:3
-	BASE:mCID:医疗费 -= ARG
+	EI_BASE:mCID:医疗费 -= ARG
 EP += (ARG+ARG:1)/ARG:2
 EP:1 += (ARG+ARG:1)/ARG:2/1e3
 ;医疗满意度，依据满意度获得奖励ARG:0 = 满意度 ARG:1 = 医疗费 ARG:2 = 仁义修正
@@ -101,7 +101,7 @@ IF ARG:0 >= 80
 	CFLAG:mCID:信賴度 += LOCAL/2
 	TALENT:mCID:心情 = 1
 	BASE:mCID:憤怒 = 0
-	PALAM:mCID:好意 += BASE:mCID:医疗费 * 10
+	PALAM:mCID:好意 += EI_BASE:mCID:医疗费 * 10
 ELSEIF ARG:0 <= 20
 	PRINTFORML %CALLNAME:mCID%对本次治疗特别失望
 	PRINTL
