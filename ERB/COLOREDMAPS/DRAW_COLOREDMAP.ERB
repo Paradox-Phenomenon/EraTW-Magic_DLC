@@ -130,7 +130,7 @@
 	NEXT
 	RESETCOLOR
 	REDRAW PREV_REDRAW
-	BENCHMARKE = GETMILLISECOND()
+	;BENCHMARKE = GETMILLISECOND()
 	;LOCAL = BENCHMARKE - BENCHMARKS
 	;PRINTFORML Time taken: {LOCAL}
 	SETFONT
@@ -185,8 +185,17 @@
 	#DIMS TYPE
 	#DIMS DEFAULT
 	#DIM IS_GET_HTML_STR
+	#DIM DISPLAY_SEASON ;qol custom code
 	COLOR = -1					;This excludes 'bamboo', 'flora', and 'sakura'
 	INCREMENTANIMATION = 1		;Should the animation be played?
+
+	;qol custom code
+	IF GatheringSeason
+		DISPLAY_SEASON = GatheringSeason
+	ELSE
+		DISPLAY_SEASON = DAY:2
+	ENDIF
+
 	IF ANIMATERECOLOREDMAPS
 		;Get the character depending on the animation seed
 		SELECTCASE TYPE
@@ -225,7 +234,7 @@
 			;	;Winter. Water is frozen.
 			;	CHARACTER = 4
 			;	INCREMENTANIMATION = 0
-			IF DAY:2 > 2
+			IF DISPLAY_SEASON > 2 ;qol custom code
 				;Autumn and Winter. No lily pads and the water becomes more quiet.
 				CHARACTER = ((ANIMATION_SEED % 11) + 9)
 				CHARACTER = ((CHARACTER < 12 || CHARACTER > 17)? CHARACTER # 18)
@@ -242,7 +251,7 @@
 			; 	ANIMATION_SEED += 3
 		CASE "ground", "paving"
 			IF ((ANIMATION_SEED & 11) <= 5)
-				IF DAY:2 < 3
+				IF DISPLAY_SEASON < 3 ;qol custom code
 					CHARACTER = ((ANIMATION_SEED % 9) + 21)
 				ELSE
 					CHARACTER = ((ANIMATION_SEED % 6) + 43)
@@ -250,10 +259,10 @@
 
 				IF GETEFFECTCOND(EFFECT_SEED)
 					DEFAULT = %ANIMATIONCHARACTERS:CHARACTER%
-					IF DAY:2 == 2 || MAIN_MAP == 6
+					IF DISPLAY_SEASON == 2 || MAIN_MAP == 6 ;qol custom code
 						CHARACTER = ((CHARACTER > 26)? CHARACTER - 2 # CHARACTER)
 						COLOR = ANIMATIONCOLORS:CHARACTER
-					ELSEIF DAY:2 == 4
+					ELSEIF DISPLAY_SEASON == 4 ;qol custom code
 						COLOR = SNOW:(ANIMATION_SEED % 4)
 					ELSE
 						COLOR = ANIMATIONCOLORS:CHARACTER
@@ -261,7 +270,7 @@
 				ENDIF
 			ENDIF
 		CASE "flower", "flowers"
-			IF DAY:2 == 4
+			IF DISPLAY_SEASON == 4 ;qol custom code
 				COLOR = SNOW:(ANIMATION_SEED % 4)
 			ELSE
 				CHARACTER = ((ANIMATION_SEED % 7) + 30)
@@ -289,7 +298,7 @@
 		IF !FLAG:70 && INCREMENTANIMATION
 			;Limit animation to 20, for modulo operation
 			ANIMATION_SEED ++
-			SIF ANIMATION_SEED > 20
+			SIF ANIMATION_SEED >= 20 ;custom code, limit values to expected 0-19
 				ANIMATION_SEED = ANIMATION_SEED % 20
 		ENDIF
 	ELSE
@@ -366,7 +375,11 @@
 	#DIM REF EFFECT_SEED
 	#DIM EFFECT
 	EFFECT_SEED++
-	EFFECT = CURVER:(DAY:3 - 1)
+	IF GatheringSeason ;qol custom code
+		EFFECT = CURVER:15
+	ELSE
+		EFFECT = CURVER:(DAY:3 - 1)
+	ENDIF
 	IF (EFFECT*EFFECT_SEED/100) > (EFFECT*(EFFECT_SEED-1)/100)
 		RETURNF 1
 	ELSE
@@ -438,7 +451,7 @@
 	ENDSELECT
 
 	;Snow Effect
-	IF (DAY:2 == 4)
+	IF ((GatheringSeason && GatheringSeason == 4) || (!GatheringSeason && DAY:2 == 4)) ;qol custom code
 		IF GETEFFECTCOND(EFFECT_SEED)
 			SELECTCASE TYPE
 				CASE "floral", "bambool", "sakural"
@@ -456,8 +469,9 @@
 	;Day 10, the next season is the current DAY:2
 	;Day 22, the next season is DAY:2 + 1
 	IF OFFSET > -1
-		IF DAY:3 < 11
-			;bugfix custom code, ensure correct gradient is calculated
+		IF GatheringSeason ;qol custom code, override season, always treat as mid-season
+			RETURN SEASONALCOLORS:(GatheringSeason % 4 + OFFSET), -1
+		ELSEIF DAY:3 < 11;custom code, ensure correct gradient is calculated
 			RETURN SEASONALCOLORS:((DAY:2 % 4) + OFFSET), SEASONALCOLORS:(((DAY:2 - 1) % 4) + OFFSET)
 		ELSEIF DAY:3 < 22
 			RETURN SEASONALCOLORS:((DAY:2 % 4) + OFFSET), -1
@@ -505,7 +519,11 @@
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,4,10,17,25,35,45,45
 	}
-	INCREMENT = DAY:3 - 1
+	IF GatheringSeason ;qol custom code
+		INCREMENT = 15
+	ELSE
+		INCREMENT = DAY:3 - 1
+	ENDIF
 
 	IF START < STOP
 		RETURN ((((STOP - START) * CURVEF:INCREMENT) / 100) + START)
