@@ -195,37 +195,26 @@ RETURNF TEMP
 
 
 ;-------------------------------------------------
-;CHECK-and-SET这一类型函数的抽象
-;参 数：ARGS - 需要检查的元素名
-;       ARGS:1 - 需要检查的字符串名
-;       ARG - 设定时，表明字符串变量是charadata，该参数作为其第一下标
-;       ARG:1 - 设定为真时，表明需要向集合增加新的元素
+;函数名：SET_UPDATECHECK
+;概  述：CHECK-and-SET这一类型函数的抽象
+;参  数：ARGS - 需要检查的元素名
+;        ARGS:1 - 需要检查的字符串名
+;        ARG - 设定时，表明字符串变量是charadata，该参数作为其第一下标
+;        ARG:1 - 设定为真时，表明需要向集合增加新的元素
+;返回值：1 = 元素原先已存在, 0 = 元素原先不存在
 ;-------------------------------------------------
 @SET_UPDATECHECK(ARGS, ARGS:1,ARG = -1, ARG:1)
 #FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIM DYNAMIC TEMP
-#DIM DYNAMIC TEMP_RESULT
-#DIMS DYNAMIC TEMP_ENUM
+#DIMS DYNAMIC TEMP_VAR
 #DIMS DYNAMIC TEMP_VARVALUE
-#DIMS DYNAMIC VAR_INDEX,2
 
-;在式中函数中调用会重写RESULT(S)的命令时需要暂存RESULT(S)
-IF STRCOUNT(ARGS:1,":")
-	TEMP_RESULT = RESULT
-	SPLIT ARGS:1, ":", VAR_INDEX
-	RESULT = TEMP_RESULT
-ELSE
-	VAR_INDEX '= ARGS:1
-ENDIF
-
-TEMP_ENUM = %VAR_INDEX:0%%COND_STR(@":{ARG}",ARG != -1)%%COND_STR(@":%VAR_INDEX:1%",VAR_INDEX:1 != "")%
-;DEBUGPRINTFORM TEMP_ENUM = %TEMP_ENUM%  
-TEMP_VARVALUE '= GETVARS(TEMP_ENUM)
+TEMP_VAR '= GET_REF_VARNAME(ARGS:1, ARG)
+TEMP_VARVALUE '= GETVARS(TEMP_VAR)
 SIF TEMP_VARVALUE == ""
 	TEMP_VARVALUE = /
-;DEBUGPRINTFORML TEMP_VARVALUE = %TEMP_VARVALUE%
+DEBUGPRINTFORML TEMP_VARVALUE = %TEMP_VARVALUE%
 IF STRCOUNT(TEMP_VARVALUE,@"/%ARGS%/")
 	LOCAL = 1
 ELSE
@@ -233,9 +222,60 @@ ELSE
 ENDIF
 ;SET_ADD
 IF ARG:1 && LOCAL == 0
-	SETVAR TEMP_ENUM, @"%TEMP_VARVALUE%%ARGS%/"
+	SETVAR TEMP_VAR, @"%TEMP_VARVALUE%%ARGS%/"
 ENDIF
 RETURNF LOCAL
+
+;-------------------------------------------------
+;函数名：SET_DELETE(ARGS, ARGS:1,ARG = -1)
+;概  述：CHECK-and-DELETE这一类型函数的抽象
+;参  数：ARGS - 需要检查的元素名
+;        ARGS:1 - 需要检查的字符串名
+;        ARG - 设定时，表明字符串变量是charadata，该参数作为其第一下标
+;返回值：1 = 元素原先已存在, 0 = 元素原先不存在
+;-------------------------------------------------
+@SET_DELETE(ARGS, ARGS:1,ARG = -1)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS REF CHK_STR
+
+#DIMS DYNAMIC TEMP_VAR
+#DIMS DYNAMIC TEMP_VARVALUE
+
+TEMP_VAR '= GET_REF_VARNAME(ARGS:1, ARG)
+TEMP_VARVALUE '= GETVARS(TEMP_VAR)
+SIF TEMP_VARVALUE == ""
+	TEMP_VARVALUE = /
+DEBUGPRINTFORML TEMP_VARVALUE = %TEMP_VARVALUE%
+IF STRCOUNT(TEMP_VARVALUE,@"/%ARGS%/")
+	SETVAR TEMP_VAR, REPLACE(TEMP_VARVALUE,@"%ARGS%/","")
+	RETURNF 1
+ELSE
+	RETURNF 0
+ENDIF
+
+;-------------------------------------------------
+;函数名：GET_REF_VARNAME
+;概  述：合成变量名字符串
+;          处理如 "CSTR:ONCE" 这样的输入，结合下标生成 "CSTR:1:ONCE"
+;参 数：ARGS - 变量名定义字符串 (例: "CFLAG:属性" 或 "TALENT")
+;       ARG  - CHARADATA的第一下标(角色ID)，为-1时则不插入下标
+;返回值：合成后的变量名字符串
+;-------------------------------------------------
+@GET_REF_VARNAME(ARGS, ARG = -1)
+#FUNCTIONS
+#DIMS DYNAMIC VAR_COMPONENTS, 2
+#DIMS DYNAMIC RESULT_STR
+
+IF STRCOUNT(ARGS,":")
+	CALLF SPLIT_F(ARGS, ":", VAR_COMPONENTS)
+ELSE
+	VAR_COMPONENTS '= ARGS
+ENDIF
+
+RESULT_STR = %VAR_COMPONENTS:0%%COND_STR(@":{ARG}",ARG != -1)%%COND_STR(@":%VAR_COMPONENTS:1%",VAR_COMPONENTS:1 != "")%
+RETURNF RESULT_STR
 
 @GET_IN_BUILDING(P_ID, Q_ID)
 #FUNCTION
