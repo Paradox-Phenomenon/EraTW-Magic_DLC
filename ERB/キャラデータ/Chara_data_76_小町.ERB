@@ -156,23 +156,34 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:76:差し替え適用
-	;替换用画像
-	;IF CHECK_NUDE(CHARA)
-		;裸
-		;IF FLAG:立絵種類
-			;顔絵
-		;ELSE
-			;立絵
-		;ENDIF
-	;ELSE
-		;服
-		;IF FLAG:立絵種類
-			;顔絵
-		;ELSE
-			;立絵
-		;ENDIF
-	;ENDIF
+IF CFLAG:76:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _バニーギャル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			RESULTS = _セーラー服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[舞娘套装]]
+			RESULTS = _エジプト
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[迦勒底制服]]
+			RESULTS = _カルデア制服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[哥特洛丽塔套装]]
+			RESULTS = _ゴシック
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+			RESULTS = _デンジャラス・ビースト
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+			RESULTS = _私服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[岛风制服]]
+			RESULTS = _島風
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[Y字泳衣]] || TEQUIP:CHARA:SWIMMING
+			RESULTS = _水着
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:76:差し替え適用
 ELSE
 	;通常画像
 	IF CHECK_NUDE(CHARA)
@@ -244,13 +255,16 @@ ENDIF
 #LOCALSSIZE 1
 #DIM CHARA
 
-IF CFLAG:76:差し替え適用
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
-	ELSE
-		;立絵
+IF CFLAG:76:差し替え適用 == 3
+	IF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 > MAXBASE:CHARA:情緒 / 2 || TALENT:CHARA:恋慕
+		IF RESULTS:0 == "通常"
+			RESULTS:0 '= "微笑"
+		ENDIF
+		IF RESULTS:1 == "通常"
+			RESULTS:1 '= "微笑"
+		ENDIF
 	ENDIF
+ELSEIF CFLAG:76:差し替え適用
 ELSE
 	;通常画像
 	IF FLAG:立絵種類
@@ -271,8 +285,39 @@ ENDIF
 @IMAGE_I76_特殊表情COM(CHARA, 指令)
 #DIM CHARA
 #DIM 指令
-
-IF CFLAG:76:差し替え適用
+IF CFLAG:76:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[舞娘套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[迦勒底制服]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[哥特洛丽塔套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[岛风制服]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[Y字泳衣]] || TEQUIP:CHARA:SWIMMING
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					IF (CFLAG:CHARA:积攒度 >= 750 || TCVAR:CHARA:発情 == 1) && ABL:CHARA:欲望 >= 5 && CFLAG:CHARA:現在位置 == 616 && GET_TARGETNUM() == 1
+						RESULTS = 膝枕2覆盖
+					ELSEIF IS_半脱(CHARA,1) && ABL:CHARA:欲望 >= 10 && GET_TARGETNUM() == 1
+						RESULTS = 膝枕2覆盖
+					ELSE
+						RESULTS = 膝枕覆盖
+					ENDIF
+				CASE 6,12,313
+					IF IS_半脱(CHARA,1) && ABL:CHARA:欲望 >= 10 && GET_TARGETNUM() == 1
+						RESULTS = 揉胸2覆盖
+					ELSE
+						RESULTS = 揉胸覆盖
+					ENDIF
+			ENDSELECT
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:76:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -475,3 +520,10 @@ ENDIF
 
 RETURN エフェクト数
 ;********************************************************************************************
+@IMAGE_I76_特殊表情COMCHECK
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+IF CFLAG:76:差し替え適用 == 3
+	RETURNF "AS06MARKIV"
+ENDIF
