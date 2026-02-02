@@ -268,8 +268,7 @@ ARGS = %ARGS%\/%ARGS:1%\/%ARGS:2%\/%ARGS:3%\/%ARGS:4%\/%ARGS:5%\/%ARGS:6%
 ;1.//は置換で削る
 ;2.最末尾が/なら削る（SPLITとRANDをそのまま使用都合上）
 ARGS '= REPLACE(ARGS, "\/+", "/")
-SIF CHARATU(ARGS, STRLENSU(ARGS) - 1) == "/"
-	ARGS '= SUBSTRINGU(ARGS, 0, STRLENSU(ARGS) - 1)
+ARGS '= REPLACE(ARGS, "(^/|/$)", "")
 SPLIT ARGS, "/", STR_ARRAY
 CHOICES '= STR_ARRAY:(RAND:RESULT)
 SIF CHOICES == "＿"
@@ -1083,6 +1082,7 @@ ENDSELECT
 [ENDIF]
 UFUFU_START_TIME = 0
 UFUFU_START_DAY = 0
+UFUFU_START_TYPE = 0
 ;時間停止中は服装セットしない
 ;睡眠中分岐などは全部リセット処理側にあります
 SIF !FLAG:時間停止
@@ -4000,6 +4000,21 @@ ARGS '= REPLACE(ARGS, strSplit, ",")
 
 RETURNF ARGS
 
+@LIST_IN_STRING_CN(ARGS, strSplit = "、", strLast = "和")
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIMS strSplit
+#DIMS strLast
+;clear off the last part
+ARGS '= REPLACE(ARGS, strSplit + " $", "")
+;use negative lookahead to replace comma before the last item with "AND"
+ARGS '= REPLACE(ARGS, "(" + strSplit + ")(?!.*" + strSplit + ")", strLast)
+;finally place commas in case splitter wasn't a comma
+ARGS '= REPLACE(ARGS, strSplit, "、")
+
+RETURNF ARGS
+
 ;--------------------------------------------------------
 ;choose only unique non-repeating strings per multiple splits
 ;in case you want to cram things like "hot and soft", "soft and warm" into one split
@@ -4101,22 +4116,11 @@ IF CONDITION
 	RETURNF @"%ARGS%"
 ENDIF
 
-@TWENTY_FOUR_TIME(ARG)
+@TWENTY_FOUR_TIME(ARG,ARGS = "：")
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #FUNCTIONS
-#DIMS HOURS
-#DIMS MINUTES
-HOURS '= @"{ARG / 60}"
-SIF ARG / 60 < 10
-	HOURS '= @"0%HOURS%"
-MINUTES '= @"{ARG % 60}"
-IF ARG % 60 == 0
-	MINUTES = 00
-ELSEIF ARG % 60 < 10
-	MINUTES '= @"0%MINUTES%"
-ENDIF
-RETURNF @"%HOURS%:%MINUTES%"
+RETURNF TOSTR((ARG % 1440) / 60,"D2")+ARGS+TOSTR((ARG % 1440) % 60,"D2")
 
 @VAR_OR_DEFAULT(ARGS, ARG:1 = 0)
 #LOCALSIZE 3
