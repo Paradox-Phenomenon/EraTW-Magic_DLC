@@ -298,19 +298,24 @@ FOR LOCAL, iPrintStart, FLAG:画像表示 + iPrintStart
 	;最大レイヤー数までエフェクトをセット、エフェクトがなければダミーをセット
 	FOR LOCAL:1, 0, 最大レイヤー数 - (FLAG:画像枠表示+FLAG:時間停止)
 		IF RESULTS:(LOCAL:1) == ""
-			CALL 画像セット("im_av_chara", 縦位置, 0 , 角色画像表示尺寸比 , LOCAL:1 + 1)
-			;CALL ダミーセット(縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
-			IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
-				CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
-			ENDIF
-		;custom code, EagloV's alt images
-		ELSEIF RESULTS:((LOCAL:1) + LOCAL:3) != ""
-			CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1, 1, @"{1000+CHARA}", CALLNAME:CHARA, RESULTS:((LOCAL:1) + LOCAL:3))
+			;逻辑上就没有特效 -> 画占位符
+			CALL ダミーセット(縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
 		ELSE
-			CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
-			IF FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
-				CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
+			;逻辑上有特效 -> 尝试画图片			
+			IF RESULTS:((LOCAL:1) + LOCAL:3) != ""
+				CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1, 1, @"{1000+CHARA}", CALLNAME:CHARA, RESULTS:((LOCAL:1) + LOCAL:3))
+			ELSE
+				CALL 画像セット(RESULTS:(LOCAL:1), 縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
 			ENDIF
+			;bugfix：如果图片资源不存在(画像セット函数返回0)，必须补一个占位符，否则右侧的图片会挤过来
+			IF !RESULT
+				CALL ダミーセット(縦位置, 0, 角色画像表示尺寸比, LOCAL:1 + 1)
+			ENDIF
+		ENDIF
+		
+		;XRay处理保持不变
+		IF (RESULTS:(LOCAL:1) == "" || RESULT) && FLAG:XRay_show && Chara_Xray_Block_by_Better_Xray:CHARA != 1
+			CALL 画像セット("im_av_empty", 縦位置, 0 , 角色画像表示尺寸比 /5 , LOCAL:1 + 1)
 		ENDIF
 	NEXT
 
