@@ -572,8 +572,7 @@ CALL TOUCH_SET(0,0,0,1)
 FOR LOCAL,1,CHARANUM
 	起床状况 = 0
 	起床场所 = 0
-	SIF CFLAG:MASTER:現在位置 != CFLAG:LOCAL:現在位置 || LOCAL != DAYEVENT_TARGET
-
+	SIF CFLAG:MASTER:現在位置 != CFLAG:LOCAL:現在位置 && LOCAL != DAYEVENT_TARGET
 		CONTINUE
 	TARGET = LOCAL
 	IF TARGET
@@ -584,7 +583,7 @@ FOR LOCAL,1,CHARANUM
 				起床状况 = 3
 				;RETURN 1
 			;非同居中（因为会离开房间，所以没有起床问候 → 考虑到作为邀请就寝条件的恋慕对象，不明白为何会离开，因此修改为只在潜入或恶作剧时撤退）
-			ELSE
+			ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:現在位置
 				;顺便一提，如果房主先出去了，就会被留在房间里。如果将来实现睡眠奸后就寝的功能，这里需要进行分支处理
 				;如果不是自己的房间，且心虚的话，就移动到可移动的地点
 				SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
@@ -600,7 +599,7 @@ FOR LOCAL,1,CHARANUM
 				;同居中对象醒来了
 				起床状况 = 2
 			;非同居中
-			ELSE
+			ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:現在位置
 				;非同居中对象醒来了
 				起床状况 = 1
 				;在MASTAR的房间起床
@@ -624,6 +623,7 @@ FOR LOCAL,1,CHARANUM
 		IF 起床状况 && 起床场所 != -1
 			SIF DAYEVENT_TARGET == TARGET && DAYEVENT_SCENARIO
 				CALL DAYEVENT_EXECUTE_EVENT()
+			DEBUGPRINTFORML TARGET{TARGET} 起床状况{起床状况} 起床场所{起床场所}
 			CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,起床状况,起床场所)
 		ENDIF
 	ENDIF
