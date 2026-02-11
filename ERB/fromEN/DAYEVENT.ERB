@@ -28,6 +28,18 @@ FOR TARGET, 1, CHARANUM - 1
 NEXT
 DEBUGPRINTFORML ------------------
 
+;[DEBUG] This block lists all candidates and their weights before the final selection.
+DEBUGPRINTFORML [Day Event System] Candidates for '%TYPE%' event:
+IF ARRAY_INDEX
+	FOR LOCAL, 0, ARRAY_INDEX
+		;Displays the character's name (left-aligned, 20 characters wide) and their calculated weight.
+		DEBUGPRINTFORML  - %CALLNAME:(POSSIBLE_EVENTS_CHARA:LOCAL), 20, LEFT% | Weight: {POSSIBLE_EVENTS_WEIGHT:LOCAL}
+	NEXT
+ELSE
+	DEBUGPRINTFORML No eligible candidates found.
+ENDIF
+DEBUGPRINTFORML ------------------
+
 IF ARRAY_INDEX
 	LOCAL = ARRAY_HIT(POSSIBLE_EVENTS_WEIGHT, ARRAY_INDEX)
 	DAYEVENT_TARGET = POSSIBLE_EVENTS_CHARA:LOCAL
@@ -58,7 +70,14 @@ IF RESULT != 2 && (RESULT < 0 || (!RESULT && ENABLE_DAYEVENTS != 2) || !DAYEVENT
 		POSSIBLE_EVENTS_WEIGHT:ARRAY_INDEX = 10
 		ARRAY_INDEX++
 	ENDIF
-	RETURN
+	ELSEIF TYPE == "day" && !AT_HOME(TARGET)
+		; 如果对象太少，比如只有辉夜，那么只要CD就绪辉夜就会来访，无论你在何处，因此需要降低非据点角色的来访率
+		IF !PERCENT(30)
+			DEBUGPRINTFORML %CALLNAME:(TARGET)% Fail: Random visit check failed.
+			RETURN
+		ENDIF
+	ENDIF
+RETURN
 ENDIF
 
 SIF LastHomeVisit:TARGET:LAST_HOME_VISIT_NIGHT > DAY ;failsafe
