@@ -622,25 +622,78 @@ FOR LOCAL:1, 0, 7
 		LOCAL ++
 NEXT
 RETURNF LOCAL
+
 ;----------------------------------------------------------------------
-;Like AddEXP, but unbolded and with the name at the front. Can be spaced out with OutputMode = 1 or hidden with OutputMode = -1.
+;函数名: AddEXPOrdered
+;概　要: AddEXP的变体，消息改为开头显示名字，拥有更灵活的消息输出格式。
+;        可以通过设置OutputMode为1来增加间距，或者设置为-1来隐藏输出。
+;参　数:
+;        VAR_NAME: 经验值变量的名称。
+;        C_ID: 角色的ID。
+;        变动数: 经验值的变动量，可正可负。
+;        OutputMode: 输出模式。
+;                   1: 带制表间距的彩色消息
+;                   0: 普通的彩色消息
+;                  -1: 不输出消息
 ;----------------------------------------------------------------------
-@AddEXPOrdered(VAR_NAME,C_ID,变动数,OutputMode)
+@AddEXPOrdered(ENUM, C_ID, MOD_NUM, OutputMode)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIMS VAR_NAME
-#DIM VAR_ID
+#DIMS DYNAMIC LABEL
+#DIMS ENUM
+#DIMS VARNAME
 #DIM C_ID
-#DIM 变动数
+#DIM MOD_NUM
 #DIM OutputMode
-SIF 变动数 == 0
+
+VARNAME = EXP
+
+; 如果变动数为0或角色ID无效，则直接返回，不执行任何操作
+SIF MOD_NUM == 0 || !INRANGE(C_ID, 0, CHARANUM)
 	RETURN
-VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME,,,1)
-EXP:C_ID:VAR_ID += 变动数
-IF OutputMode == 1
-	CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%EXP_TR(VAR_ID),18,LEFT% ＋{变动数}",C_YELLOW,1)
-ELSEIF OutputMode == 0
-	CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%EXP_TR(VAR_ID)% ＋{变动数}",C_YELLOW,2)
+
+; 使用QOL函数，根据ENUM(经验值类型名)获取其对应的显示名称(LABEL)
+LABEL '= QOL_GETENUMNAME(VARNAME, ENUM)
+; 如果返回"NULL"，说明传入的ENUM无效，报错并返回
+IF LABEL == "NULL"
+	PRINTFORMW [错误] 在@AddEXPOrdered中，参数1 "%ENUM%" 不是合法的[%VARNAME%]类型名称或ID，请保存日志报错
+	RETURN
+ENDIF
+
+; 使用QOL函数，获取角色C_ID当前的ENUM经验值
+LOCAL = QOL_GETVAR(VARNAME, ENUM, C_ID)
+; 如果获取失败，打印警告并返回
+IF LOCAL == 安全失败值
+	DEBUGPRINTFORML [警告] 在@AddEXPOrdered中，尝试读取 %VARNAME%:%ENUM% 失败。
+	RETURN 0
+ENDIF
+
+; 只有在OutputMode不为-1时，才显示消息
+IF OutputMode != -1
+	; 根据经验值是增加还是减少，显示不同颜色和符号的消息
+	IF MOD_NUM > 0
+		; 根据OutputMode选择不同的显示格式
+		IF OutputMode == 1
+			; OutputMode为1，带间距的对齐格式
+			CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%LABEL,18,LEFT% ＋{MOD_NUM}", C_YELLOW, 1)
+		ELSE
+			; OutputMode为0，紧凑的默认格式
+			CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%LABEL% ＋{MOD_NUM}", C_YELLOW, 2)
+		ENDIF
+	ELSE
+		IF OutputMode == 1
+			CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%LABEL,18,LEFT% －{-MOD_NUM}", C_RED, 1)
+		ELSE
+			CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%LABEL% －{-MOD_NUM}", C_RED, 2)
+		ENDIF
+	ENDIF
+ENDIF
+
+; 使用QOL函数设置新的经验值，并用MAX确保经验值不会低于0
+IF QOL_SETVAR(VARNAME, ENUM, MAX(LOCAL + MOD_NUM, 0), C_ID)
+	RETURN 1
+ELSE 
+	DEBUGPRINTFORML 在@AddEXPOrdered中，%VARNAME%:%ENUM% 赋值失败
 ENDIF
 
 ;----------------------------------------------------------------------
