@@ -324,7 +324,9 @@ ELSEIF RESULT == 811 && TALENT:MASTER:居場所察知 && (GETBIT(TALENT:MASTER:�
 	;-----------------------------------
 	;移動範囲外 bug fix re-added to prevent crashes and walking into void
 	;IF IN_HOME(RESULT) != 1 || !AT_HOME(MASTER)
-	IF !AT_HOME(MASTER) || IN_HOME(RESULT) != 1
+	IF IS_GAP_GUEST(MASTER)
+		CALL SKIP_MOVE(CFLAG:MASTER:現在位置, RESULT)
+	ELSEIF !AT_HOME(MASTER) || IN_HOME(RESULT) != 1
 		TFLAG:マップ切り替え = 0
 		PRINTL 没法移动过去
 		;qol custom code
@@ -373,7 +375,9 @@ ELSEIF RESULT == 812 && TALENT:MASTER:汚部屋察知 && AT_HOME(MASTER) && !(CF
 		TFLAG:Info表示中 = 0
 		RETURN 1
 	ENDIF
-	IF !AT_HOME(MASTER) || IN_HOME(RESULT) != 1
+	IF IS_GAP_GUEST(MASTER)
+		CALL SKIP_MOVE(CFLAG:MASTER:現在位置, RESULT)
+	ELSEIF !AT_HOME(MASTER) || IN_HOME(RESULT) != 1
 		TFLAG:マップ切り替え = 0
 		PRINTW 没法移动过去
 	;-----------------------------
@@ -445,7 +449,7 @@ ELSEIF RESULT == 813 && GETBIT(TALENT:MASTER:劣情察知, 1) && !CFLAG:诶嘿�
 				CALL RECOVER(MASTER, -50, "気力", "")
 			ENDIF
 			SIF !FLAG:70
-				TIME += 5
+				TIME += MAGIC_TimeFactor(5)
 			TFLAG:Info表示中 = 0
 			RETURN 1
 	ENDSELECT
@@ -475,6 +479,10 @@ ELSEIF RESULT == -9202
 	QOL演奏 ++
 	SIF QOL演奏 > 6
 		QOL演奏 = 0
+ELSEIF RESULT == -3000
+	GMF_MAP_FORCE_MODE ++
+	SIF GMF_MAP_FORCE_MODE > 2
+		GMF_MAP_FORCE_MODE = -1
 ELSEIF RESULT == 4000
 	CFLAG:自動喘息 ++
 	SIF CFLAG:自動喘息 > 2
@@ -540,7 +548,7 @@ ELSEIF RESULT == 990 && CAN_DATE(TARGET)
 		CFLAG:TARGET:同行 = 60
 		CFLAG:MASTER:同行 = 60
 		IF TARGET == 93 && !GETBIT (FLAG:泳池, 0)
-			TIME += 30
+			TIME += MAGIC_TimeFactor(30)
 			BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - 500,500)
 		ENDIF
 		IF CFLAG:TARGET:败犬 && (!TALENT:TARGET:恋慕 && !TALENT:TARGET:思慕 && !TALENT:TARGET:愛欲)
@@ -807,6 +815,8 @@ ELSEIF Double_Play == 1 && INRANGE(RESULT, 921, 924)
 	ELSEIF RESULT == 924
 		TRYCALL 交互插入
 	ENDIF
+ELSEIF MAGIC_DLC && RESULT == 950
+	CALL MAGIC_USE
 ELSEIF RESULT == 11500
 	CALL Paper_recorded_an_urban_legend
 ELSEIF RESULT == 11501

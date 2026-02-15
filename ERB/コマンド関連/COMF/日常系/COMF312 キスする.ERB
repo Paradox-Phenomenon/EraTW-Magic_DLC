@@ -44,7 +44,7 @@ ELSE
 		ENDIF
 		;好感度変化
 		TFLAG:97 += LOCAL
-		TIME += 10
+		TIME += MAGIC_TimeFactor(10)
 		RETURN 1
 	ENDIF
 
@@ -55,7 +55,7 @@ ELSE
 			LOCAL:1 = 90 + GET_SUCCESS_RATE() / 5
 			SIF LOCAL:1 > 109
 				LOCAL:1 = 109
-			IF LOCAL <= 29
+			IF LOCAL <= 29 + (SQRT(ABL:TARGET:亲密) + MAGIC_SuccessRate(TARGET) / 20) * (MAGIC_DLC_大成功相关 > 0)
 				;10％で大成功
 				TFLAG:193 = 1
 				IF CHK_DATENOW(CFLAG:TARGET:约会中)
@@ -71,7 +71,7 @@ ELSE
 			ENDIF
 		;強制成功or大成功
 		CASE 1
-			IF RAND:110 <= 9
+			IF RAND:110 <= 9 + (SQRT(ABL:TARGET:亲密) + MAGIC_SuccessRate(TARGET) / 20) * (MAGIC_DLC_大成功相关 > 0)
 				TFLAG:193 = 1
 				IF CHK_DATENOW(CFLAG:TARGET:约会中)
 					EXP:MASTER:約會経験 ++
@@ -89,7 +89,8 @@ ELSE
 			TFLAG:193 = -1
 			RETURN 0
 	ENDSELECT
-
+	SIF MAGIC_DLC_大成功相关 > 0
+		M_TFLAG:成功 = TFLAG:193
 	;先制発生時は失敗しない
 	SIF TFLAG:102 == 3 && TFLAG:192 != -1
 		TFLAG:193 = MAX(TFLAG:193,0)
@@ -144,6 +145,9 @@ ELSE
 		SOURCE:露出 += 260 + (ABL:親密 * 17)
 	ENDIF
 
+	SIF MAGIC_DLC_好感亲密重做
+		CFLAG:积攒度 = LIMIT(CFLAG:积攒度 + (ABL:親密 + 2 * ABL:欲望), 0, 积攒度上限(TARGET))
+		
 	;好感度をみる
 	IF CFLAG:2 <= 500
 		SOURCE:情愛 += CFLAG:2
@@ -241,7 +245,7 @@ SIF CFLAG:体目当て
 		TIMES SOURCE:露出 , 1.80
 		TFLAG:情緒BONUS = 100
 	ENDIF
-	TIME += 5
+	TIME += MAGIC_TimeFactor(5)
 	SIF !CFLAG:睡眠
 		EXP:接吻経験 += 1
 	;SOURCE設定してると、SOURCE処理でCVABM経験はプラスされるのでコメントアウト

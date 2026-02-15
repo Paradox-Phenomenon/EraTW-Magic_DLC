@@ -28,7 +28,11 @@ ELSE
 ENDIF
 
 ;调合パワー设定 调合知识と教养、药学教本を持っていると加算
-调合パワーM = TALENT:MASTER:調合Lv * 15 + ABL:MASTER:教養 * 5 + TFLAG:幸運補正 * 5 + TALENT:MASTER:調合知識 * 30
+IF !MAGIC_DLC
+	调合パワーM = TALENT:MASTER:調合Lv * 15 + ABL:MASTER:教養 * 5 + TFLAG:幸運補正 * 5 + TALENT:MASTER:調合知識 * 30
+ELSE
+	调合パワーM = TALENT:MASTER:調合Lv * 15 + ABL:MASTER:教養 * 5 + MAGIC_SuccessRate() / 4 + TALENT:MASTER:調合知識 * 30 + TALENT:MASTER:神性 * 10
+ENDIF
 SIF ITEM:薬学教本
 	调合パワーM += 10
 SIF CHARA
@@ -50,25 +54,27 @@ SIF RESULT == 1000
 调合候补 = RESULT
 
 ;②调合物选择列表内の能力によるレシピ解放・调合可能かを判定
-SELECTCASE PHARMACY_RANK(调合候补)
-	CASE 0
-		CLEARLINE 1
-		GOTO INPUT_LOOP01
-	CASE 1
-		;无条件解放
-	CASE 2, 3
-		IF TALENT:MASTER:調合Lv < (PHARMACY_RANK(调合候补) - 1) && ITEM:109 == 0
+IF !INRANGE(调合候补,261,270)
+	SELECTCASE PHARMACY_RANK(调合候补)
+		CASE 0
 			CLEARLINE 1
 			GOTO INPUT_LOOP01
-		ENDIF
-	CASE 4, 5
-		IF TALENT:MASTER:調合Lv < (PHARMACY_RANK(调合候补) - 1)
-			CLEARLINE 1
-			GOTO INPUT_LOOP01
-		ENDIF
-ENDSELECT
+		CASE 1
+			;无条件解放
+		CASE 2, 3
+			IF TALENT:MASTER:調合Lv < (PHARMACY_RANK(调合候补) - 1) && ITEM:109 == 0
+				CLEARLINE 1
+				GOTO INPUT_LOOP01
+			ENDIF
+		CASE 4, 5
+			IF TALENT:MASTER:調合Lv < (PHARMACY_RANK(调合候补) - 1)
+				CLEARLINE 1
+				GOTO INPUT_LOOP01
+			ENDIF
+	ENDSELECT
+ENDIF
 ;体质变化药は【禁断的知识】所有时のみ可
-IF PHARMA_VOLATILE(调合候补) && !TALENT:MASTER:禁断的知識
+IF PHARMA_VOLATILE(调合候补) && !TALENT:MASTER:禁断的知識 && !INRANGE(调合候补,261,270)
 	CLEARLINE 1
 	GOTO INPUT_LOOP01
 ENDIF
@@ -236,18 +242,54 @@ SIF CHARA
 	EXP:CHARA:調合経験 += PHARMACY_EXP(调合候补, 调合件数, 调合物)
 ;药学教本持っていると追加
 SIF ITEM:109
-	EXP:MASTER:調合経験 += MAX(RAND:(调合件数), 1)
+	EXP:MASTER:調合経験 += MAGIC_DLC_等级重置 ? RANDSF(1,调合件数) # MAX(RAND:(调合件数), 1)
 
 ;能力差で教えてもらう・进行解答
-IF 调合パワーM >= 调合パワーT && CHARA
-	EXP:CHARA:調合経験 ++
-ELSEIF CHARA
-	EXP:MASTER:調合経験 ++
+IF !MAGIC_DLC_等级重置
+	IF 调合パワーM >= 调合パワーT && CHARA
+		EXP:CHARA:調合経験 ++
+	ELSEIF CHARA
+		EXP:MASTER:調合経験 ++
+	ENDIF
+ELSE
+	IF TALENT:MASTER:調合Lv > TALENT:CHARA:調合Lv
+		EXP:CHARA:調合経験 += (TALENT:MASTER:調合Lv - TALENT:CHARA:調合Lv + 2) * 调合件数
+	ELSEIF TALENT:MASTER:調合Lv < TALENT:CHARA:調合Lv
+		EXP:MASTER:調合経験 += (TALENT:CHARA:調合Lv - TALENT:MASTER:調合Lv + 2) * 调合件数
+	ELSE
+		EXP:CHARA:調合経験 += 调合件数
+		EXP:MASTER:調合経験 += 调合件数
+	ENDIF
 ENDIF
 
+IF !GETBIT(M_CFLAG:CHARA:魔法奖励获得, 3) && ABL:CHARA:親密 >= 5 && TALENT:CHARA:調合Lv >= 4 && MAGIC_DLC
+	LOCAL:1 = 0
+	LOCAL:1 = RANDSF((TALENT:CHARA:調合Lv - 2 + MAGIC_LoveFactor(CHARA)),调合件数)
+	M_CFLAG:CHARA:魔法奖励EXP += LOCAL:1 * 10000
+	SIF LOCAL:1
+		PRINTFORML 与%CALLNAME:CHARA%的共同調合让你收获颇丰。
+	IF GET_MAGIC_EXP_BIT(M_CFLAG:CHARA:魔法奖励EXP, 2) >= 15 && TALENT:MASTER:調合Lv >= 3
+		SETBIT M_CFLAG:CHARA:魔法奖励获得, 3 ; 设置调和位
+		ITEM:957 += 1
+		SIF ITEM:957 >=4
+			ITEM:958 = 1
+		CALL COLORMESSAGE(@"灵光一闪",C_GREEN,1)
+		IF ITEM:957 == 2
+			CALL COLORMESSAGE(@"你学会了解酒魔法Lv1!",C_BLUE,1)
+			SIF ABL:MASTER:TSLv < 2
+				CALL COLORMESSAGE(@"升级TSLv至2级,或者使用触媒Lv2后可以使用",C_BLUE,1)
+		ELSEIF ITEM:957 == 4
+			CALL COLORMESSAGE(@"你学会了解酒魔法Lv2!",C_BLUE,1)
+			SIF ABL:MASTER:TSLv < 3
+				CALL COLORMESSAGE(@"升级TSLv至3级,或者使用触媒Lv3后可以使用",C_BLUE,1)
+		ELSEIF ITEM:957 == 6
+			CALL COLORMESSAGE(@"解酒魔法Lv2可以进行群体解酒了!",C_BLUE,1)
+		ENDIF
+	ENDIF
+ENDIF
 
 ;⑨时间经过 调合难易度と调合件数によって补正
-TIME += PHARMACY_TIME(调合候补, 调合件数)
+TIME += MAGIC_TimeFactor(PHARMACY_TIME(调合候补, 调合件数), "调合")
 
 ;⑩体力・气力减少处理
 体力消费 = 30 * SQRT(调合件数)
@@ -388,6 +430,8 @@ RETURN 1
 @PHARMACY_SPOT(ARG)
 #FUNCTION
 
+SIF IS_GAP_GUEST(MASTER)
+	RETURNF 1
 SIF ARG == CFLAG:MASTER:初期位置
 	RETURNF 1
 ;特殊调合スポット、メインMapでの判定
@@ -440,7 +484,18 @@ SIF RECIPE_DATA(R_ID) == -1
 ;SIF RECIPE_DATA(R_ID, 7) && !TFLAG:打水
 SIF RECIPE_DATA(R_ID, 7) && VAR_WATER == "" && !GETBIT(FLAG:プール, 2) ;addition custom code, use faucet
 	RETURNF 0
-
+IF INRANGE(R_ID/10,261,270)
+	SIF !MAGIC_DLC
+		RETURNF 0
+	SIF TSP_GRADE_MODIFICATION() <= ABL:MASTER:TSLv 
+		RETURNF 0
+ENDIF
+IF INRANGE(R_ID/10,271,276)
+	SIF !MAGIC_DLC
+		RETURNF 0
+	SIF TSP_GRADE_MODIFICATION() <= ABL:MASTER:TSLv 
+		RETURNF 0
+ENDIF
 ;特定角色の亲密依存道具を弹く
 ;SELECTCASE R_ID / 10
 ;	CASE 513 
@@ -510,6 +565,8 @@ PRINTL 要调合什么？
 PRINTL ■调合Lv1===========================================================================================================
 LOCAL:1 = 999
 FOR LOCAL:0 ,0, 1000
+	SIF INRANGE(LOCAL:0,261,270)
+		CONTINUE
 	SELECTCASE PHARMACY_RANK(LOCAL:0)
 		CASE 1
 			CALL PHARMACY_LIST_BUTTON(LOCAL:0, LOCAL:1)
@@ -522,6 +579,8 @@ PRINTL ■调合Lv2=============================================================
 IF TALENT:MASTER:調合Lv >= 1 || ITEM:薬学教本
 	LOCAL:1 = 999
 	FOR LOCAL:0 ,0, 1000
+		SIF INRANGE(LOCAL:0,261,270)
+			CONTINUE
 		SELECTCASE PHARMACY_RANK(LOCAL:0)
 			CASE 2
 				CALL PHARMACY_LIST_BUTTON(LOCAL:0, LOCAL:1)
@@ -539,6 +598,8 @@ PRINTL ■调合Lv3=============================================================
 IF TALENT:MASTER:調合Lv >= 2 || ITEM:薬学教本
 	LOCAL:1 = 999
 	FOR LOCAL:0 ,0, 1000
+		SIF INRANGE(LOCAL:0,261,270)
+			CONTINUE
 		SELECTCASE PHARMACY_RANK(LOCAL:0)
 			CASE 3
 				CALL PHARMACY_LIST_BUTTON(LOCAL:0, LOCAL:1)
@@ -555,6 +616,8 @@ PRINTL ■调合Lv4=============================================================
 IF TALENT:MASTER:調合Lv >= 3
 	LOCAL:1 = 999
 	FOR LOCAL:0 ,0, 1000
+		SIF INRANGE(LOCAL:0,261,270)
+			CONTINUE
 		SELECTCASE PHARMACY_RANK(LOCAL:0)
 			CASE 4
 				;体质变化药は【禁断的知识】がない场合はスキップ
@@ -574,6 +637,8 @@ PRINTL ■调合Lv5=============================================================
 IF TALENT:MASTER:調合Lv >= 4
 	LOCAL:1 = 999
 	FOR LOCAL:0 ,0, 1000
+		SIF INRANGE(LOCAL:0,261,270)
+			CONTINUE
 		SELECTCASE PHARMACY_RANK(LOCAL:0)
 			CASE 5
 				SIF PHARMA_VOLATILE(LOCAL:0) && !TALENT:MASTER:禁断的知識
@@ -588,6 +653,100 @@ ELSE
 	RESETCOLOR
 ENDIF
 PRINTL 
+IF MAGIC_DLC
+	PRINTL ■晋升魔药=================================================================================================
+	SIF ABL:MASTER:TSLv == 5
+		PRINTL 晋升半神（TSLv6）需要获得全部魔法
+	LOCAL:1 = 999
+	IF ABL:MASTER:TSLv < 10
+		FOR LOCAL:0 ,0, 1000
+			; 根据当前ABL:MASTER:TSLv显示对应的晋升魔药，并检查调合等级要求
+			SELECTCASE LOCAL:0
+				; 0级对应晋升魔药Lv1（需要调合等级1）
+				CASE 261
+					IF ABL:MASTER:TSLv == 0 && TALENT:MASTER:調合Lv >= 0
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [261] 晋升魔药Lv1
+						LOCAL:1 = RESULT
+					ENDIF
+				; 1级对应晋升魔药Lv2（需要调合等级1）
+				CASE 262
+					IF ABL:MASTER:TSLv == 1 && TALENT:MASTER:調合Lv >= 0
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [262] 晋升魔药Lv2
+						LOCAL:1 = RESULT
+					ENDIF
+				; 2级对应晋升魔药Lv3（需要调合等级2）
+				CASE 263
+					IF ABL:MASTER:TSLv == 2 && TALENT:MASTER:調合Lv >= 1
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [263] 晋升魔药Lv3
+						LOCAL:1 = RESULT
+					ENDIF
+				; 3级对应晋升魔药Lv4（需要调合等级2）
+				CASE 264
+					IF ABL:MASTER:TSLv == 3 && TALENT:MASTER:調合Lv >= 2
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [264] 晋升魔药Lv4
+						LOCAL:1 = RESULT
+					ENDIF
+				; 4级对应晋升魔药Lv5（需要调合等级3）
+				CASE 265
+					IF ABL:MASTER:TSLv == 4 && TALENT:MASTER:調合Lv >= 3
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [265] 晋升魔药Lv5
+						LOCAL:1 = RESULT
+					ENDIF
+				; 5级对应晋升魔药Lv6（需要调合等级3）
+				CASE 266
+					IF ABL:MASTER:TSLv == 5 && TALENT:MASTER:調合Lv >= 4
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [266] 晋升魔药Lv6
+						LOCAL:1 = RESULT
+					ENDIF
+				; 6级对应晋升魔药Lv7（需要调合等级4）
+				CASE 267
+					IF ABL:MASTER:TSLv == 6 && TALENT:MASTER:調合Lv >= 5
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [267] 晋升魔药Lv7
+						LOCAL:1 = RESULT
+					ENDIF
+				; 7级对应晋升魔药Lv8（需要调合等级4）
+				CASE 268
+					IF ABL:MASTER:TSLv == 7 && TALENT:MASTER:調合Lv >= 6
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [268] 晋升魔药Lv8
+						LOCAL:1 = RESULT
+					ENDIF
+				; 8级对应晋升魔药Lv9（需要调合等级5）
+				CASE 269
+					IF ABL:MASTER:TSLv == 8 && TALENT:MASTER:調合Lv >= 7
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [269] 晋升魔药Lv9
+						LOCAL:1 = RESULT
+					ENDIF
+				; 9级对应晋升魔药Lv10（需要调合等级5）
+				CASE 270
+					IF ABL:MASTER:TSLv == 9 && TALENT:MASTER:調合Lv >= 8
+						SIF !CAN_PHARMA(LOCAL:0 * 10 + 1)
+							SETCOLOR 0x606060
+						PRINTL [270] 晋升魔药Lv10
+						LOCAL:1 = RESULT
+					ENDIF
+			ENDSELECT
+			RESETCOLOR
+		NEXT
+	ENDIF
+ENDIF
 DRAWLINE
 PRINTL 　　[1000] 放弃
 
@@ -961,6 +1120,174 @@ SELECTCASE ARG:0
 				PRINTFORML %CALLNAME:(LOCAL:1)%的%GET_TALENTNAME(GETNUM(TALENT, "動物耳"), TALENT:(LOCAL:1):動物耳)%消失了
 				TALENT:(LOCAL:1):動物耳 = 0
 		ENDSELECT
+	CASE 261
+		PRINTFORML 你服用了【晋升魔药Lv1】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 0 && TSP_GRADE_MODIFICATION() >= 1
+			ABL:MASTER:TSLv += 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv1！
+		ELSEIF ABL:MASTER:TSLv > 0
+			PRINTFORML 你已经服用过晋升魔药Lv1，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 1
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 262
+		PRINTFORML 你服用了【晋升魔药Lv2】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 1 && TSP_GRADE_MODIFICATION() >= 2
+			ABL:MASTER:TSLv += 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv2！
+		ELSEIF ABL:MASTER:TSLv > 1
+			PRINTFORML 你已经服用过晋升魔药Lv2，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 2
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 263
+		PRINTFORML 你服用了【晋升魔药Lv3】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 2 && TSP_GRADE_MODIFICATION() >= 3
+			ABL:MASTER:TSLv += 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv3！
+		ELSEIF ABL:MASTER:TSLv > 2
+			PRINTFORML 你已经服用过晋升魔药Lv3，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 3
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 264
+		PRINTFORML 你服用了【晋升魔药Lv4】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 3 && TSP_GRADE_MODIFICATION() >= 4
+			ABL:MASTER:TSLv += 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv4！
+		ELSEIF ABL:MASTER:TSLv > 3
+			PRINTFORML 你已经服用过晋升魔药Lv4，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 3
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 265
+		PRINTFORML 你服用了【晋升魔药Lv5】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 4 && TSP_GRADE_MODIFICATION() >= 5
+			ABL:MASTER:TSLv += 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv5！
+		ELSEIF ABL:MASTER:TSLv > 4
+			PRINTFORML 你已经服用过晋升魔药Lv5，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 4
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 266
+		PRINTFORML 你服用了【晋升魔药Lv6】！
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 5 && TSP_GRADE_MODIFICATION() > 5 && 全魔法检测()
+			ABL:MASTER:TSLv += 1
+			TALENT:MASTER:神性 = 6
+			PRINTFORML 感受到体内的时间之力正在觉醒…
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv6！
+		ELSEIF ABL:MASTER:TSLv > 5
+			PRINTFORML 你已经服用过晋升魔药Lv6，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 5
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF !全魔法检测()
+			PRINTFORML 你需要使用全魔法才能晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 267
+		PRINTFORML 你服用了【晋升魔药Lv7】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 6 && TSP_GRADE_MODIFICATION() > 6
+			ABL:MASTER:TSLv += 1
+			TALENT:MASTER:神性 = 7
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv7！
+		ELSEIF ABL:MASTER:TSLv > 6
+			PRINTFORML 你已经服用过晋升魔药Lv7，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 6
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 268
+		PRINTFORML 你服用了【晋升魔药Lv8】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 7 && TSP_GRADE_MODIFICATION() > 7
+			ABL:MASTER:TSLv += 1
+			TALENT:MASTER:神性 = 8
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv8！
+		ELSEIF ABL:MASTER:TSLv > 7
+			PRINTFORML 你已经服用过晋升魔药Lv8，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 7
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 269
+		PRINTFORML 你服用了【晋升魔药Lv9】！
+		PRINTFORML 感受到体内的时间之力正在觉醒…
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 8 && TSP_GRADE_MODIFICATION() > 8
+			ABL:MASTER:TSLv += 1
+			TALENT:MASTER:神性 = 9
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv9！
+		ELSEIF ABL:MASTER:TSLv > 8
+			PRINTFORML 你已经服用过晋升魔药Lv9，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 8
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
+	CASE 270
+		PRINTFORML 你服用了【晋升魔药Lv10】！
+		PRINTFORML 感受到体内的时间之力完全觉醒，你已经完全掌握了时空的权柄。
+		; 直接作用于MASTER，提升TSLv等级相关的TALENT
+		IF ABL:MASTER:TSLv == 9 && TSP_GRADE_MODIFICATION() > 9
+			ABL:MASTER:TSLv += 1
+			TALENT:MASTER:神性 = 10
+			CLEARBIT EXTRA_TSP_EXPANDING, 1
+			CLEARBIT EXTRA_TSP_EXPANDING, 3
+			PRINTFORML TSLv成功晋升到Lv10！
+		ELSEIF ABL:MASTER:TSLv > 9
+			PRINTFORML 你已经服用过晋升魔药Lv10，无法再次晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ELSEIF TSP_GRADE_MODIFICATION() <= 9	
+			PRINTFORML 你尚未消化之前的魔药，无法晋升！
+			PRINTFORML 使用失败、结果还是浪费掉了…
+		ENDIF
 ENDSELECT
 
 @PHARMACY_LIST_BUTTON(ARG,改行用)

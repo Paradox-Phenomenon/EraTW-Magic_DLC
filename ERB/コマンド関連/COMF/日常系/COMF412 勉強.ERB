@@ -62,31 +62,67 @@ IF TARGET > 0 && !CFLAG:睡眠 && CFLAG:行動 != 5
 	ENDIF
 	SIF SOURCE:歓楽 < 0
 		SOURCE:歓楽 = 0
-	EXP:MASTER:学習経験 ++
-	EXP:学習経験 ++
+	IF !MAGIC_DLC_等级重置 
+		EXP:MASTER:学習経験 ++
+		EXP:学習経験 ++
+	ELSE
+		IF ABL:MASTER:教養 > ABL:TARGET:教養
+			EXP:TARGET:学習経験 += ABL:MASTER:教養 - ABL:TARGET:教養
+			EXP:MASTER:学習経験 += 1
+		ELSEIF ABL:MASTER:教養 < ABL:TARGET:教養
+			EXP:MASTER:学習経験 += ABL:TARGET:教養 - ABL:MASTER:教養
+			EXP:TARGET:学習経験 += 1
+		ELSE
+			EXP:TARGET:学習経験 += 2
+			EXP:MASTER:学習経験 += 2
+		ENDIF
+		IF CHK_DATENOW(CFLAG:TARGET:约会中) && TARGET
+			EXP:MASTER:約會経験 ++
+			EXP:TARGET:約會経験 ++
+		ENDIF
+	ENDIF
+	IF MAGIC_DLC
+		IF !GETBIT(M_CFLAG:TARGET:魔法奖励获得, 2) && ABL:TARGET:親密 >= 5 && ABL:TARGET:43 >= 5
+			LOCAL:1 = 0
+			LOCAL:1 = RANDSF(1,ABL:TARGET:43 - 3 + MAGIC_LoveFactor(TARGET))
+				M_CFLAG:TARGET:魔法奖励EXP += LOCAL:1 * 100
+				SIF LOCAL:1
+					PRINTFORML 与%CALLNAME:TARGET%的共同学习让你收获颇丰。
+				IF GET_MAGIC_EXP_BIT(M_CFLAG:TARGET:魔法奖励EXP, 1) >= 15 && ABL:MASTER:43 >= 3
+				SETBIT M_CFLAG:TARGET:魔法奖励获得, 2 ; 设置学习位
+				ITEM:975 += 1
+				CALL COLORMESSAGE(@"灵光一闪",C_GREEN,1)
+				IF ITEM:975 == 3
+					CALL COLORMESSAGE(@"你学会了博识魔法",C_BLUE,1)
+					SIF ABL:MASTER:TSLv < 3 
+						CALL COLORMESSAGE(@"升级TSLv至3级,或者使用触媒Lv3后可以使用",C_BLUE,1)
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
 ENDIF
 
 ;(天候パッチ)大雨・豪雨・大雪・ひょう・暴風のときには効率上昇
 IF (TIME:5 == 13 && GET_HEAT_THUNDERSTORM() == 1) || TIME:5 == 14 || TIME:5 == 15
 	PRINTFORML 多亏了雨声，集中力增加，学习效率提高了
-	TIME += 30
+	TIME += MAGIC_TimeFactor(30,"学习")
 ELSEIF WIND_VELOCITY >= 2
 	PRINTFORML 多亏了风声，集中力增加，学习效率提高了
-	TIME += 30
+	TIME += MAGIC_TimeFactor(30,"学习")
 ELSEIF TIME:5 == 9
 	PRINTFORML 多亏了雪的静谧，集中力增加，学习效率提高了
-	TIME += 30
+	TIME += MAGIC_TimeFactor(30,"学习")
 ELSEIF TIME:5 == 5
 	PRINTFORML 多亏了雨声，集中力增加，学习效率提高了
-	TIME += 45
+	TIME += MAGIC_TimeFactor(45,"学习")
 ELSEIF WIND_VELOCITY >= 1
 	PRINTFORML 多亏了风声，集中力增加，学习效率提高了
-	TIME += 45
+	TIME += MAGIC_TimeFactor(45,"学习")
 ELSEIF IS_WISEMAN()
 	PRINTFORML 由于烦恼消失了、学习的效率提高了
-	TIME += 45
+	TIME += MAGIC_TimeFactor(45,"学习")
 ELSE
-	TIME += 60
+	TIME += MAGIC_TimeFactor(60,"学习")
 ENDIF
 SIF CFLAG:同行
 	CFLAG:同行 += 60
@@ -114,7 +150,7 @@ SIF GLOBAL_COMABLE(412)
 SIF FLAG:70 == 1
 	RETURN 0
 ;勉強出来る部屋か
-IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置 && ITEM:榉木桌椅
+IF (CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置 && ITEM:榉木桌椅) || IS_GAP_GUEST(MASTER)
 	;上の条件を満たしたら処理を飛ばす
 ELSEIF !勉強可(CFLAG:MASTER:現在位置)
 	RETURN 0

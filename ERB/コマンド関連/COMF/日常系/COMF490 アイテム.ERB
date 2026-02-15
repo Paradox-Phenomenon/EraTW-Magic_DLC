@@ -192,6 +192,80 @@ SELECTCASE 使用道具
 		ENDIF
 			TCVAR:対象:糖 = 20
 			LOCAL:1 ++
+	CASE 271	;触媒lv1
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			PRINTL 使用了触媒lv1，今日内可以使用TSLv1的魔法了
+			SETBIT M_TFLAG:代替魔法等级, 1
+			LOCAL:1 ++
+		ENDIF
+	CASE 272	;触媒lv2
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			PRINTL 使用了触媒lv2，今日内可以使用TSLv2的魔法了
+			SETBIT M_TFLAG:代替魔法等级, 2
+			LOCAL:1 ++
+		ENDIF
+	CASE 273	;触媒lv3
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			PRINTL 使用了触媒lv3，今日内可以使用TSLv3的魔法了
+			SETBIT M_TFLAG:代替魔法等级, 3
+			LOCAL:1 ++
+		ENDIF
+	CASE 274	;触媒lv4
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			PRINTL 使用了触媒lv4，今日内可以使用TSLv4的魔法了
+			SETBIT M_TFLAG:代替魔法等级, 4
+			LOCAL:1 ++
+		ENDIF
+	CASE 275	;触媒lv5
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			PRINTL 使用了触媒lv5，今日内可以使用TSLv5的魔法了
+			SETBIT M_TFLAG:代替魔法等级, 5
+			LOCAL:1 ++
+		ENDIF
+	CASE 276	;符咒
+		IF !TALENT:MASTER:禁断的知識
+			PRINTL 理解不了这种东西的运作原理
+			GOTO LOOP
+		ELSE
+			CALL BUFF_BASE(対象, BASE_法力, 50, 1)
+			CALL RECOVER(対象, 50 +SQRT(MAXBASE:対象:法力), "法力","符咒的回复")
+			LOCAL:1 ++
+		ENDIF
+	CASE 277
+		PRINTFORML 要开启几个宝藏袋？
+		PRINTFORML [1] 开启1个
+		SIF ITEM:宝藏袋 >= 5
+			PRINTFORML [5] 开启5个
+		SIF ITEM:宝藏袋 >= 10
+			PRINTFORML [10] 开启10个
+		SIF ITEM:宝藏袋 < 10
+			PRINTFORML [998] 开启剩余所有
+		PRINTFORML [999] 放棄
+		INPUT
+		IF RESULT == 999
+			GOTO LOOP
+		ELSEIF RESULT >= 1 && RESULT <= 10
+			CALL GACHAPON(RESULT)
+			LOCAL:1 ++
+		ELSEIF RESULT == 998
+			CALL GACHAPON(ITEM:宝藏袋)
+			LOCAL:1 ++
+		ENDIF
 	CASE 352	;草莓
 		PRINTFORML 吃%ITEMNAME_TR(使用道具)%
 		食品特徴 = %ITEMNAME:使用道具%/野菜/果物/甜/
@@ -256,6 +330,8 @@ SELECTCASE 使用道具
 		PRINTL 干劲满满、状态十足！
 		CALL RECOVER(対象, 薬の知識(500), "体力", "大恢复药的恢复")
 		CALL RECOVER(対象, 薬の知識(300), "気力", "大恢复药的恢复")
+		SIF MAGIC_DLC
+			CALL RECOVER(対象, 薬の知識(400), "法力", "大回復薬的回復")
 		CFLAG:対象:清醒劑 = MAX(薬の知識(60), CFLAG:対象:清醒劑)
 		TCVAR:対象:薬 = 1
 		LOCAL:1 ++
@@ -295,6 +371,11 @@ SELECTCASE 使用道具
 		PRINTFORML 喝%ITEMNAME_TR(使用道具)%
 		CALL RECOVER(対象, 薬の知識(150), "気力", "药水的恢复")
 		CALL RECOVER(対象, 薬の知識(150), "TSP", "药水的恢复")
+		IF MAGIC_DLC
+			CALL RECOVER(対象, 薬の知識(150), "法力", "薬水的回復")
+			CALL BUFF_BASE(対象, BASE_TSP, 薬の知識(SQRT(MAXBASE:対象:TSP))/3,1)
+			CALL BUFF_BASE(対象, BASE_法力, 薬の知識(SQRT(MAXBASE:対象:法力))/3,1)
+		ENDIF
 		TCVAR:対象:薬 = 1
 		LOCAL:1 ++
 	CASE 508	;魔法薬水
@@ -302,6 +383,11 @@ SELECTCASE 使用道具
 		PRINTL 充盈着魔力…
 		CALL RECOVER(対象, 薬の知識(300), "気力", "魔法药水的恢复")
 		CALL RECOVER(対象, 薬の知識(600), "TSP", "魔法药水的恢复")
+		IF MAGIC_DLC
+			CALL RECOVER(対象, 薬の知識(600), "法力", "薬水的回復")
+			CALL BUFF_BASE(対象, BASE_TSP, 薬の知識(SQRT(MAXBASE:対象:TSP)),1)
+			CALL BUFF_BASE(対象, BASE_法力, 薬の知識(SQRT(MAXBASE:対象:法力)),1)
+		ENDIF
 		TCVAR:対象:薬 = 1
 		LOCAL:1 ++
 	CASE 509	;破眠薬水
@@ -323,15 +409,19 @@ SELECTCASE 使用道具
 		CALL RECOVER(対象, MAX(9999, MAXBASE:対象:気力), "気力", "万能药的恢复")
 		CALL RECOVER(対象, MAX(9999, MAXBASE:対象:精力), "精力", "万能药的恢复")
 		CALL RECOVER(対象, MAX(9999, MAXBASE:対象:TSP),  "TSP",  "万能药的恢复")
+		SIF MAGIC_DLC
+			CALL RECOVER(対象, MAX(9999, MAXBASE:対象:法力), "法力", "万能药的回復")
 		CFLAG:対象:清醒劑 = MAX(300, CFLAG:対象:清醒劑)
 		TCVAR:対象:薬 = 1
 		LOCAL:1 ++
 	CASE 512	;仙丹
 		PRINTFORML 吃下%ITEMNAME_TR(使用道具)%
 		PRINTL 非同寻常的力量……！
-		CALL BUFF_BASE(対象, BASE_体力, MAX(MAXBASE:対象:体力 / 5, 500))
-		CALL BUFF_BASE(対象, BASE_気力, MAX(MAXBASE:対象:気力 / 5, 500))
-		CALL BUFF_BASE(対象, BASE_精力, MAX(MAXBASE:対象:精力 / 5, 500))
+		CALL BUFF_BASE(対象, BASE_体力, MAX(MAXBASE:対象:体力 / 5, 500),MAGIC_DLC)
+		CALL BUFF_BASE(対象, BASE_気力, MAX(MAXBASE:対象:気力 / 5, 500),MAGIC_DLC)
+		CALL BUFF_BASE(対象, BASE_精力, MAX(MAXBASE:対象:精力 / 5, 500),MAGIC_DLC)
+		SIF MAGIC_DLC
+			CALL BUFF_BASE(対象, BASE_法力, MAX(MAXBASE:対象:法力 / 5, 500),1)
 		LOCAL:1 ++
 	CASE 514	;仙香玉兎
 		IF TFLAG:仙香玉兎 > 0
@@ -347,8 +437,8 @@ SELECTCASE 使用道具
 		PRINTFORML 喝%ITEMNAME_TR(使用道具)%
 		IF TCVAR:対象:国士無双の薬 < 3
 			PRINTL 力量涌了上来……！
-			CALL BUFF_BASE(対象, BASE_体力, MAX(MAXBASE:対象:体力 / 15, 150))
-			CALL BUFF_BASE(対象, BASE_精力, MAX(MAXBASE:対象:精力 / 10, 150))
+			CALL BUFF_BASE(対象, BASE_体力, MAX(MAXBASE:対象:体力 / 15, 150),MAGIC_DLC)
+			CALL BUFF_BASE(対象, BASE_精力, MAX(MAXBASE:対象:精力 / 10, 150),MAGIC_DLC)
 			TCVAR:対象:国士無双の薬 ++
 			LOCAL:1 ++
 		ELSE
@@ -357,8 +447,8 @@ SELECTCASE 使用道具
 			PRINTFORMW ！！
 			PRINTFORML ……爆发到遍体鳞伤了……是喝太多了吗……
 			RESETCOLOR
-			CALL BUFF_BASE(対象, BASE_体力, MIN((-1 * (MAXBASE:対象:体力 / 5)), -450))
-			CALL BUFF_BASE(対象, BASE_精力, MIN((-1 * (MAXBASE:対象: 精力 / 3)), -450))
+			CALL BUFF_BASE(対象, BASE_体力, MIN((-1 * (MAXBASE:対象:体力 / 5)), -450),MAGIC_DLC)
+			CALL BUFF_BASE(対象, BASE_精力, MIN((-1 * (MAXBASE:対象: 精力 / 3)), -450),MAGIC_DLC)
 			TCVAR:対象:国士無双の薬 = 0
 			LOCAL:1 ++
 		ENDIF
@@ -473,7 +563,7 @@ SELECTCASE 使用道具
 					PRINTFORMW %CALLNAME:MASTER%感到了巨大的成就感……
 					PRINTFORML 另一方面指甲突然变短的易者显得十分困惑……
 					CALL RECOVER_PERMIL(対象,40,"気力")
-					BASE:MASTER:TSP -= 20
+					BASE:MASTER:TSP -= MAGIC_TimeFactor(20,"TSLv")
 				CASE 3
 					PRINTFORML 要解除谁的效果？
 					FOR LOCAL,1,CHARANUM
@@ -489,7 +579,7 @@ SELECTCASE 使用道具
 					ELSEIF CFLAG:RESULT:体目当て
 						PRINTFORML 「我觉得还是不要用这种道具比较好」
 						PRINTFORMW 易者进行了某些复杂的仪式、奇迹之石的逐渐失去了光芒、化为了飞灰
-						TIME += 25
+						TIME += MAGIC_TimeFactor(25)
 						CFLAG:RESULT:体目当て = 0
 						MONEY:2 -= 100
 					ENDIF
@@ -500,7 +590,14 @@ SELECTCASE 使用道具
 					GOTO EKISYA
 				CASE 5
 					PRINTFORML %CALLNAME:MASTER%停止了时间、脱掉了易者的衣服、把胖次拿走给神献上了
-					CALL BUFF_BASE(MASTER,BASE_TSP,100,1)
+					IF MAGIC_DLC
+						LOCAL:2 = MIN(MAXBASE:MASTER:TSP / 10, SQRT(MAXBASE:MASTER:TSP)*2)
+						CALL BUFF_BASE(MASTER,BASE_TSP,LOCAL:2,1)
+						LOCAL:2 = MIN(MAXBASE:MASTER:法力 / 10, SQRT(MAXBASE:MASTER:法力)*2)
+						CALL CALL BUFF_BASE(MASTER,BASE_法力,LOCAL:2,1)
+					ELSE
+						CALL BUFF_BASE(MASTER,BASE_TSP,100,1)
+					ENDIF
 					PRINTFORMW 在不知不觉间被脱掉内裤的易者看上去好像很不安
 			ENDSELECT
 			PRINTFORMW 
@@ -573,11 +670,11 @@ SELECTCASE 使用道具
 		IF CFLAG:诶嘿嘿
 			PRINTFORML 和%CALLNAME:TARGET%分食了%ITEMNAME_TR(使用道具)%
 			PRINTL 一股莫名的力量涌上全身…！
-			CALL BUFF_BASE(MASTER, BASE_体力, MAXBASE:MASTER:体力 * 2)
-			CALL BUFF_BASE(MASTER, BASE_気力, MAXBASE:MASTER:気力 * 2)
-			CALL BUFF_BASE(MASTER, BASE_精力, MAXBASE:MASTER:精力 * 2)
-			CALL BUFF_BASE(TARGET, BASE_体力, MAXBASE:TARGET:体力 * 2)
-			CALL BUFF_BASE(TARGET, BASE_気力, MAXBASE:TARGET:気力 * 2)		
+			CALL BUFF_BASE(MASTER, BASE_体力, MAXBASE:MASTER:体力 * 2,MAGIC_DLC)
+			CALL BUFF_BASE(MASTER, BASE_気力, MAXBASE:MASTER:気力 * 2,MAGIC_DLC)
+			CALL BUFF_BASE(MASTER, BASE_精力, MAXBASE:MASTER:精力 * 2,MAGIC_DLC)
+			CALL BUFF_BASE(TARGET, BASE_体力, MAXBASE:TARGET:体力 * 2,MAGIC_DLC)		
+			CALL BUFF_BASE(TARGET, BASE_気力, MAXBASE:TARGET:気力 * 2,MAGIC_DLC)		
 			CFLAG:TARGET:积攒度 = 10000
 			CFLAG:MASTER:清醒劑 = MAX(300, CFLAG:MASTER:清醒劑)
 			CFLAG:TARGET:清醒劑 = MAX(300, CFLAG:TARGET:清醒劑)
@@ -588,8 +685,8 @@ SELECTCASE 使用道具
 		ELSE
 			PRINTFORML 吃%ITEMNAME_TR(使用道具)%
 			PRINTL 一股莫名的力量涌上全身…！
-			CALL BUFF_BASE(対象, BASE_体力, MAXBASE:対象:体力)
-			CALL BUFF_BASE(対象, BASE_気力, MAXBASE:対象:気力)
+			CALL BUFF_BASE(対象, BASE_体力, MAXBASE:対象:体力,MAGIC_DLC)
+			CALL BUFF_BASE(対象, BASE_気力, MAXBASE:対象:気力,MAGIC_DLC)
 			CFLAG:対象:清醒劑 = MAX(200, CFLAG:対象:清醒劑)
 			TCVAR:対象:薬 = 1
 			CFLAG:対象:大运蘑菇 = 2	
@@ -606,7 +703,7 @@ IF LOCAL:1
 	IF !FLAG:70
 		TIME += 5
 	ELSE
-		BASE:MASTER:TSP -= 5
+		BASE:MASTER:TSP -= MAGIC_TimeFactor(5,"TSLv")
 	ENDIF
 	ITEM:使用道具 -= 1
 	SIF 虚無への回帰
@@ -747,7 +844,7 @@ SIF GROUPMATCH(ITEMNAME:ARG, "草莓", "西瓜", "青汁", "树莓", "木通果"
 @ITEMTYPE_ETCETERA(ARG)
 #FUNCTION
 ;SIF GROUPMATCH(ARG, 215, 510, 514, 516, 517, 520, 521, 530)
-SIF GROUPMATCH(ITEMNAME:ARG, "紅茶", "糖", "姜黄飲料", "仙香玉兎", "毒气花园", "劇毒身軀", "绷帯", "易書", "奇跡之石")
+SIF GROUPMATCH(ITEMNAME:ARG, "紅茶", "糖", "姜黄飲料", "仙香玉兎", "毒气花园", "劇毒身軀", "绷帯", "易書", "宝藏袋", "符咒", "触媒lv1", "触媒lv2", "触媒lv3", "触媒lv4", "触媒lv5", "奇跡之石")
 	RETURNF 1
 
 @PRINT_ITEM_EXPLANATION(ARG)

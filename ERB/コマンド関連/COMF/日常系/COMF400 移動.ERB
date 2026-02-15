@@ -312,7 +312,26 @@ SIF CFLAG:MASTER:陪睡中
 ;GMF 现在全地图可以移动
 SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER) == 0
 	RETURN 0
+SIF GMF_MAP_FORCE_MODE == 1
+	RETURN 0
+SIF GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) != GMF_HOME_MAP
+	RETURN 0
 RETURN 1
+
+@INSTANT_MOVE(ARG = 0)
+IF !ARG
+	SIF !M_TFLAG:瞬移中 || !(GET_MAPID(M_TFLAG:瞬移中) == GET_MAPID(CFLAG:MASTER:現在位置) || M_TFLAG:瞬移中 == OMANEKIBEYA())
+		RETURN
+ELSE
+	M_TFLAG:瞬移中 = ARG
+ENDIF
+CFLAG:MASTER:現在位置 = M_TFLAG:瞬移中
+FOR LOCAL ,1, CHARANUM
+	IF CFLAG:LOCAL:同行
+		CFLAG:LOCAL:現在位置 = M_TFLAG:瞬移中
+	ENDIF
+NEXT
+M_TFLAG:瞬移中 = 0
 
 @SKIP_MOVE(ARG, 最終目的地)
 #LOCALSIZE 5
@@ -329,6 +348,8 @@ RETURN 1
 #DIM 直前の目的地
 #DIM TSP消費倍率
 
+SIF MAGIC_DLC && M_TFLAG:瞬移中
+	CALL INSTANT_MOVE()
 ;ARG:0	出発位置
 ;ARG:1	最終目的地
 VARSET LOCAL
@@ -339,6 +360,14 @@ VARSET 中継地点
 TFLAG:地圖切換 = 0
 
 出発地点 = CFLAG:MASTER:現在位置
+IF 出発地点 == OMANEKIBEYA() && M_FLAG:隙间标记
+	M_TFLAG:瞬移中 = 最終目的地
+	CALL COM699
+	RETURN
+ENDIF
+IF 最終目的地 == OMANEKIBEYA()
+	RETURN
+ENDIF
 FLAG:自室施錠 = 0
 ;幻想乡大地图，GMF调用函数修改MAIN_MAP后获得对应地图返回值
 IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "SKIP_MOVE"
@@ -554,15 +583,15 @@ SIF TALENT:MASTER:100 < -4
 SIF TFLAG:運搬
 	TSP消費倍率 += 3
 IF FLAG:70 == 1 || (GETBIT(FLAG:瞬間移動, 1) && !CFLAG:MASTER:同行 && BASE:MASTER:TSP > TSP消費倍率 * 経過時間)
-	BASE:MASTER:TSP -= TSP消費倍率 * 経過時間
+	BASE:MASTER:TSP -= MAGIC_TimeFactor(TSP消費倍率 * 経過時間)
 	SIF TFLAG:運搬
 		CFLAG:(TFLAG:運搬):現在位置 = CFLAG:MASTER:現在位置
 ELSE
 	SIF TALENT:MASTER:100 < -4 && !CFLAG:MASTER:同行
-		TIME += 7 * 経過時間
-	TIME += 2 * 経過時間
+		TIME += MAGIC_TimeFactor(7 * 経過時間)
+	TIME += MAGIC_TimeFactor(2 * 経過時間)
 	IF CFLAG:93:同行 && !GETBIT (FLAG:泳池, 0)
-		TIME += 2 * 経過時間
+		TIME += MAGIC_TimeFactor(2 * 経過時間)
 		BASE:MASTER:体力 = MAX(BASE:MASTER:体力 - (5 * 経過時間), 500)
 	ENDIF
 ENDIF

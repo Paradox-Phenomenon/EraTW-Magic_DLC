@@ -56,7 +56,10 @@ ELSE
 	ENDSELECT
 	;所要時間
 	IF JOBTYPE == JOB_宴会準備 || JOBTYPE == JOB_宴会の片づけ || JOBTYPE == JOB_清掃
-		TIME += 30
+		SIF JOBTYPE == JOB_宴会準備
+			TIME += MAGIC_TimeFactor(30,"料理")
+		SIF JOBTYPE == JOB_宴会の片づけ || JOBTYPE == JOB_清掃
+			TIME += MAGIC_TimeFactor(30,"清扫")
 	ELSE
 		SELECTCASE TARGET
 		CASE [[慧音]]
@@ -65,23 +68,44 @@ ELSE
 			;慧音の寺子屋授業善后工作手伝い14時20分～14時30分まで
 			;順番的に時短処理が機能していなかったので修正
 			IF INRANGE(TIME, CLOCK_TO_TIME(14, 20), CLOCK_TO_TIME(14, 30))
-				TIME += 10
+				TIME += MAGIC_TimeFactor(10,"教养")
 			ELSEIF INRANGE(TIME, CLOCK_TO_TIME(14, 10), CLOCK_TO_TIME(14, 30))
-				TIME += 20
+				TIME += MAGIC_TimeFactor(20,"教养")
 			ELSEIF INRANGE(TIME, CLOCK_TO_TIME(14, 00), CLOCK_TO_TIME(14, 30))
-				TIME += 30
+				TIME += MAGIC_TimeFactor(30,"教养")
 			ELSE
-				TIME += 60
+				TIME += MAGIC_TimeFactor(60,"教养")
 			ENDIF
 		;艾伦の呼び込み手伝い
 		CASE [[艾伦]]
 			IF TCVAR:TARGET:354 < 25
-				TIME += 30
+				TIME += MAGIC_TimeFactor(30)
 			ELSE
-				TIME += 60
+				TIME += MAGIC_TimeFactor(60)
 			ENDIF
 		CASEELSE
-			TIME += 60
+			SELECTCASE JOBTYPE
+				CASE JOB_家事
+					TIME += MAGIC_TimeFactor(60,"料理")
+				CASE JOB_会話, JOB_商売, JOB_お酒
+					TIME += MAGIC_TimeFactor(60,"话术")
+				CASE JOB_戦闘
+					TIME += MAGIC_TimeFactor(60,"战斗")
+				CASE JOB_教養
+					TIME += MAGIC_TimeFactor(60,"教养")
+				CASE JOB_料理
+					TIME += MAGIC_TimeFactor(60,"料理")
+				CASE JOB_音楽
+					TIME += MAGIC_TimeFactor(60,"音乐")
+				CASE JOB_採集
+					TIME += MAGIC_TimeFactor(60,"采集")
+				CASE JOB_釣り
+					TIME += MAGIC_TimeFactor(60,"钓鱼")
+				CASE JOB_調合
+					TIME += MAGIC_TimeFactor(60,"调合")
+				CASEELSE
+					TIME += MAGIC_TimeFactor(60)
+			ENDSELECT
 		ENDSELECT
 	ENDIF
 	DOWNBASE:気力 += 10
@@ -188,8 +212,9 @@ IF GROUPMATCH(ARG, JOB_清掃, JOB_会話, JOB_戦闘, JOB_教養, JOB_料理, J
 		;通常
 		CASE 0
 			LOCAL = RAND:100
-			LOCAL:1 = 75 + ABILITY * 5
-			IF LOCAL <= 10 + ABILITY * 2
+			LOCAL:1 = 75 + ABILITY * 5 + MAGIC_SuccessRate(TARGET) / 20 *(MAGIC_DLC_大成功相关 > 0)
+			LOCAL:2 = 10 + ABILITY * 2 + MAGIC_SuccessRate(TARGET) / 20 *(MAGIC_DLC_大成功相关 > 0)
+			IF LOCAL <= LOCAL:2
 				;技能次第で大成功
 				TFLAG:193 = 1
 				WorkP = (50 + (ABILITY) * 75) * 2
@@ -207,7 +232,8 @@ IF GROUPMATCH(ARG, JOB_清掃, JOB_会話, JOB_戦闘, JOB_教養, JOB_料理, J
 			ENDIF
 		;強制成功or大成功
 		CASE 1
-			IF RAND:100 <= 10 + ABILITY * 2
+			LOCAL:2 = 10 + ABILITY * 2 + MAGIC_SuccessRate(TARGET) / 20 *(MAGIC_DLC_大成功相关 > 0)
+			IF RAND:100 <= LOCAL:2
 				;技能次第で大成功
 				TFLAG:193 = 1
 				WorkP = (50 + (ABILITY) * 75) * 2
@@ -233,10 +259,13 @@ ELSEIF ARG == JOB_遊び
 		CASE 0
 			LOCAL = RAND:100
 			LOCAL:1 = 90 + GET_SUCCESS_RATE() / 5
+			LOCAL:2 = 9
+			SIF MAGIC_DLC_大成功相关
+				LOCAL:2 = 9 + MAGIC_SuccessRate(TARGET) / 20
 			SIF LOCAL:1 > 99
 				LOCAL:1 = 99
 			WorkP = 0
-			IF LOCAL <= 9
+			IF LOCAL <= LOCAL:2
 				;10％で大成功
 				TFLAG:193 = 1
 				TFLAG:信頼度管理 = 2
@@ -252,7 +281,9 @@ ELSEIF ARG == JOB_遊び
 			ENDIF
 		;強制成功or大成功
 		CASE 1
-			IF RAND:100 <= 9
+			SIF MAGIC_DLC_大成功相关
+				LOCAL:2 = 9 + MAGIC_SuccessRate(TARGET) / 20
+			IF RAND:100 <= LOCAL:2
 				;10％で大成功
 				TFLAG:193 = 1
 				TFLAG:信頼度管理 = 2

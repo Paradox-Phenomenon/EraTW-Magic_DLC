@@ -32,13 +32,13 @@ IF ITEM:青竹 > 9 && FLAG:最後に材木商に訪れた日 != 0
 	RETURN -1
 ENDIF
 ;夕方～夜の伐採はやめる
-IF TIME:2 >= 5 && !FLAG:70 && !(ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_Flashlight))
+IF !(TALENT:MASTER:神性 && MAGIC_DLC) && TIME:2 >= 5 && !FLAG:70 && !(ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_Flashlight))
 	DRAWLINE
 	PRINTFORML 这个时间伐木的话太黑了…
 	RETURN -1
 ENDIF
 ;大雨、吹雪のときはやめる(天候パッチ)強風時もやめる
-IF GROUPMATCH(天候, 5, 9) || GROUPMATCH(FLAG:異常気象, 9, 10) || WIND_VELOCITY >= 1
+IF !(TALENT:MASTER:神性 && MAGIC_DLC) && (GROUPMATCH(天候, 5, 9) || GROUPMATCH(FLAG:異常気象, 9, 10) || WIND_VELOCITY >= 1)
 	DRAWLINE
 	PRINTFORML 这个天气下采伐太危险了
 	RETURN -1
@@ -70,7 +70,7 @@ ENDIF
 TFLAG:情緒上昇抑制 = 1
 
 ;先に伐採パワー算出
-伐採パワー = 1 + (TALENT:MASTER:伐採Lv * 2) + ABL:MASTER:教養
+伐採パワー = 1 + (TALENT:MASTER:伐採Lv * 2) + ABL:MASTER:教養 + TALENT:MASTER:神性 * MAGIC_DLC
 ;参加者判定
 IF FLAG:约会的对象 && (!FLAG:70 || CFLAG:TARGET:344 == 1)
 	;Group date stuff, prioritize target date instead of lastest date invite
@@ -183,9 +183,9 @@ PRINTL
 		$GIVEUP
 		PRINTFORMW ……你失去了兴致，决定暂时停下。
 		IF !FLAG:70
-			TIME += 探索回数 * 5
+			TIME += MAGIC_TimeFactor(探索回数 * 5)
 		ELSE
-			BASE:MASTER:TSP -= 探索回数 * 5
+			BASE:MASTER:TSP -= MAGIC_TimeFactor(探索回数 * 5,"采伐")
 		ENDIF
 		RETURN 1 ;tweaked to show time spent
 	ELSE
@@ -211,9 +211,9 @@ ELSEIF RESULT == 1
 	IF 探索回数 > 10
 		PRINTFORMW ……你感觉如果太投入的话可能会迷路，所以你决定暂时就到此为止。
 		IF !FLAG:70
-			TIME += 探索回数 * 5
+			TIME += MAGIC_TimeFactor(探索回数 * 5)
 		ELSE
-			BASE:MASTER:TSP -= 探索回数 * 5
+			BASE:MASTER:TSP -= MAGIC_TimeFactor(探索回数 * 5,"采伐")
 		ENDIF
 		RETURN 1 ;tweaked to show time spent
 	ENDIF
@@ -241,7 +241,7 @@ CALL DQPRINT("……", 1)
 
 ;時間経過と体力消費
 IF FLAG:70
-	BASE:MASTER:TSP -= (伐採時間 * 10) + (探索回数 * 5)
+	BASE:MASTER:TSP -= MAGIC_TimeFactor(伐採時間 * 10 + 探索回数 * 5,"采伐")
 ELSE
 	DOWNBASE:MASTER:体力 = 減少値
 	DOWNBASE:MASTER:気力 = 減少値
@@ -250,7 +250,7 @@ ELSE
 		CALL RECOVER_PERMIL(MASTER, 伐採時間, "体力", 1, "清爽的水") ;water recovery tweak
 		CALL RECOVER_PERMIL(MASTER, 伐採時間, "気力", 1, "清爽的水")
 	ENDIF
-	TIME += 伐採時間 + (探索回数 * 10)
+	TIME += MAGIC_TimeFactor(伐採時間 + (探索回数 * 10),"采伐")
 	;logging tweak
 	IF PERCENT(nLuck)
 		LOCAL:0 = RAND:5 + RAND:5 + RAND:3
@@ -762,7 +762,7 @@ IF !RESULT
 			ENDIF
 		ENDIF
 		IF FLAG:70
-			BASE:MASTER:TSP -= 減少値
+			BASE:MASTER:TSP -= MAGIC_TimeFactor(減少値,"采伐")
 		ELSE
 			DOWNBASE:MASTER:体力 += 減少値 ;tweaked to stack with chopping cost
 			IF ITEM:チェーンソー
@@ -772,7 +772,7 @@ IF !RESULT
 			ELSE
 				DOWNBASE:MASTER:気力 += 減少値 - 25
 			ENDIF
-			TIME += 伐採時間
+			TIME += MAGIC_TimeFactor(伐採時間,"采伐")
 			;logging tweak
 			IF PERCENT(nLuck)
 				LOCAL:0 = RAND:5 + RAND:5 + RAND:3

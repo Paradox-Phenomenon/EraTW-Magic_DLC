@@ -6,14 +6,14 @@
 抜け出せない = 0
 IF GETBIT(TCVAR:随便,0)
 	PRINTFORMW %CALLNAME:MASTER%手忙脚乱的挣扎着
-	IF RAND:100 < RAND:(50 + ABL:施虐属性 * 20 + ABL:戦闘能力 * 20) 
+	IF RAND:100 < RAND:(50 + ABL:施虐属性 * 20 + ABL:戦闘能力 * 20) && !(TALENT:MASTER:神性 && MAGIC_DLC)
 		PRINTFORMW 但是徒劳告终
 		CALL KOJO_MESSAGE_SEND("EVENT",10,TARGET,3,1)
 		DOWNBASE:MASTER:気力 += 50
 		DOWNBASE:MASTER:体力 += 50
 		SOURCE:加虐 += 100
 		TCVAR:嗜虐フラグ = 1
-		TIME += 5
+		TIME += MAGIC_TimeFactor(5)
 		RETURN 1
 	ENDIF
 ELSEIF TFLAG:泡風呂
@@ -39,8 +39,13 @@ ELSEIF TFLAG:抱住模式
 ELSE
 	FOR LOCAL,1,CHARANUM
 		IF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置 && CFLAG:LOCAL:积攒度 >= 500
-			なだめ判定 = LOCAL
-			BREAK
+			IF MAGIC_DLC && TALENT:MASTER:神性
+				;神性强行抚慰精神
+				CFLAG:LOCAL:积攒度 = 0
+			ELSE
+				なだめ判定 = LOCAL
+				BREAK
+			ENDIF
 		ENDIF
 	NEXT
 	IF !なだめ判定
@@ -55,7 +60,7 @@ ELSE
 			PRINTFORMW %CALLNAME:なだめ判定%无论如何都想要%CALLNAME:MASTER%的第一次
 			CFLAG:なだめ判定:积攒度 += 50
 			BASE:なだめ判定:気力 -= 200
-			TIME += 5
+			TIME += MAGIC_TimeFactor(5)
 			RETURN 1
 		ELSEIF TALENT:MASTER:処女 || TALENT:なだめ判定:処女
 			PRINTFORMW %CALLNAME:なだめ判定%有些难为情的放过了%CALLNAME:MASTER%
@@ -66,7 +71,7 @@ ELSE
 			CALL KOJO_MESSAGE_SEND("EVENT",10,なだめ判定,3,2)
 			DOWNBASE:MASTER:気力 += 100
 			DOWNBASE:MASTER:体力 += 50
-			TIME += 5
+			TIME += MAGIC_TimeFactor(5)
 			RETURN 1
 		ENDIF
 	ENDIF
@@ -115,5 +120,5 @@ FOR LOCAL,0,CHARANUM
 NEXT
 [SKIPEND]
 
-TIME += 5
+TIME += MAGIC_TimeFactor(5)
 RETURN 1

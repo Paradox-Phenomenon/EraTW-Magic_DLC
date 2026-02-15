@@ -121,7 +121,7 @@ ELSEIF 特殊ワープ && RESULT == 特殊ワープ
 	ELSEIF 時間停止ジャンプ
 		BASE:MASTER:TSP -= 30
 	ELSE
-		TIME += 10
+		TIME += MAGIC_TimeFactor(10)
 	ENDIF
 	PRINTFORML %CALLNAME:MASTER%踏入了空间的扭曲后
 	PRINTFORMW 不知不觉间便到达了%NAME_FROM_PLACE(特殊ワープ)%…
@@ -154,14 +154,14 @@ ELSEIF INRANGE(RESULT, 1, 9) && NAME_FROM_PLACE(P_ID) != ""
 		CFLAG:MASTER:現在位置 = P_ID
 		IF FLAG:约会的对象
 			CFLAG:(FLAG:约会的对象):現在位置 = P_ID
-			TIME += 所要時間
+			TIME += MAGIC_TimeFactor(所要時間)
 		ELSEIF FLAG:時間停止 && BASE:MASTER:TSP < 所要時間
 			PRINTW TSP不足
 			RESTART
 		ELSEIF 時間停止ジャンプ
 			BASE:MASTER:TSP -= 所要時間
 		ELSE
-			TIME += 所要時間
+			TIME += MAGIC_TimeFactor(所要時間)
 		ENDIF
 		RETURN 1
 	ENDIF
@@ -179,7 +179,9 @@ SIF TFLAG:妄想中
 SIF GLOBAL_COMABLE(604)
 	RETURN RESULT
 ;约会中以外 GMF 现在全地图可以移动
-SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER)
+SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER) && !IS_GAP_GUEST(MASTER)
+	RETURN 0
+SIF GMF_MAP_FORCE_MODE == 2 || (GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) == GMF_HOME_MAP)
 	RETURN 0
 SIF CFLAG:MASTER:現在位置 == OMANEKIBEYA()
 	RETURN 0
