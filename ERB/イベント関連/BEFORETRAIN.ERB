@@ -63,6 +63,8 @@ ENDIF
 
 FLAG:每日变更事件 = RAND:1000
 FLAG:70 = 0
+FIGURE_STARTLINE = 0
+FIGURE_ENDLINE = 0
 ;(天候パッチ)時刻・天候に応じて背景色を変更    根据时间和天气更改背景色
 CALL SET_MAP_WEATHER_BGCOLOR
 CFLAG:MASTER:陪睡中 = 0
@@ -575,60 +577,64 @@ CALL TOUCH_SET(0,0,0,1)
 FOR LOCAL,1,CHARANUM
 	起床状况 = 0
 	起床场所 = 0
-	SIF CFLAG:MASTER:現在位置 != CFLAG:LOCAL:現在位置 || LOCAL != DAYEVENT_TARGET
-
-		CONTINUE
 	TARGET = LOCAL
-	IF TARGET
-		IF 睡眠時間(TARGET)
-			;同居中
-			IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
-				;同居中对象还在睡
-				起床状况 = 3
-				;RETURN 1
-			;非同居中（因为会离开房间，所以没有起床问候 → 考虑到作为邀请就寝条件的恋慕对象，不明白为何会离开，因此修改为只在潜入或恶作剧时撤退）
-			ELSE
-				;顺便一提，如果房主先出去了，就会被留在房间里。如果将来实现睡眠奸后就寝的功能，这里需要进行分支处理
-				;如果不是自己的房间，且心虚的话，就移动到可移动的地点
-				SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
-					CALL GETOUT(MASTER)
-				;潜行OFF
-				CALL SET_SNEAK(0,TARGET,2)
-				;恶作剧OFF
-				CALL SET_PRANK(0,TARGET,2)
-			ENDIF
+	IF CFLAG:MASTER:現在位置 != CFLAG:LOCAL:現在位置
+		;如果角色不在场，则只检查他/她是否是特殊事件目标
+		IF LOCAL == DAYEVENT_TARGET && DAYEVENT_SCENARIO
+			; 是一个不在场的特殊事件目标，直接执行特殊事件然后跳过本轮循环的其余部分
+			CALL DAYEVENT_EXECUTE_EVENT()
+		ENDIF
+		; 无论是哪种情况，只要不在场，就没必要进行下面的常规早安逻辑了
+		CONTINUE
+	ENDIF
+	;如果在场，则进行常规的早安逻辑
+	IF 睡眠時間(TARGET)
+		;同居中
+		IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
+			起床状况 = 3 ;同居中对象还在睡
+		;非同居中（潜入或恶作剧）
 		ELSE
-			;同居中
-			IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
-				;同居中对象醒来了
-				起床状况 = 2
-			;非同居中
+			;如果房主先出去了，就会被留在房间里。如果将来实现睡眠奸后就寝的功能，这里需要进行分支处理
+			;如果不是自己的房间，且心虚的话，就移动到可移动的地点
+			SIF (CFLAG:TARGET:隠密中 || CFLAG:TARGET:恶作剧) && CFLAG:MASTER:現在位置 != CFLAG:MASTER:初期位置
+				CALL GETOUT(MASTER)
+			;潜行OFF
+			CALL SET_SNEAK(0,TARGET,2)
+			;恶作剧OFF
+			CALL SET_PRANK(0,TARGET,2)
+		ENDIF
+	ELSE
+		;同居中
+		IF CFLAG:MASTER:初期位置 == CFLAG:TARGET:初期位置
+			起床状况 = 2 ;同居中对象醒来了
+		;非同居中
+		ELSE
+			起床状况 = 1 ;非同居中对象醒来了
+			;在MASTER的房间起床
+			IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
+				起床场所 = 1
+			;在TARGET的自己房间里起床了（应该只发生在与同居对象同床共枕后就寝时）
+			ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:初期位置
+				起床场所 = 0
+			;兜底情况
 			ELSE
-				;非同居中对象醒来了
-				起床状况 = 1
-				;在MASTAR的房间起床
-				IF CFLAG:MASTER:現在位置 == CFLAG:MASTER:初期位置
-					起床场所 = 1
-				;在TARGET的自己房间里起床了（应该只发生在与同居对象同床共枕后就寝时）
-				ELSEIF CFLAG:MASTER:現在位置 == CFLAG:TARGET:初期位置
-					起床场所 = 0
-				;兜底情况
-				ELSE
-					起床场所 = -1
-				ENDIF
-				;潜行OFF
-				CALL SET_SNEAK(0,TARGET,2)
-				;恶作剧OFF
-				CALL SET_PRANK(0,TARGET,2)
+				起床场所 = -1
 			ENDIF
+			;潜行OFF
+			CALL SET_SNEAK(0,TARGET,2)
+			;恶作剧OFF
+			CALL SET_PRANK(0,TARGET,2)
 		ENDIF
-		SIF 起床状况 == 0 || 起床场所 == -1
-			CALL MESSAGE_GOODMONING(起床状况, 起床场所)
-		IF 起床状况 && 起床场所 != -1
-			SIF DAYEVENT_TARGET == TARGET && DAYEVENT_SCENARIO
-				CALL DAYEVENT_EXECUTE_EVENT()
-			CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,起床状况,起床场所)
-		ENDIF
+	ENDIF
+
+	SIF 起床状况 == 0 || 起床场所 == -1
+		CALL MESSAGE_GOODMONING(起床状况, 起床场所)
+
+	IF 起床状况 && 起床场所 != -1
+		; 检查当前这个在场的角色是否“也”是特殊事件目标
+		SIF DAYEVENT_TARGET == TARGET && DAYEVENT_SCENARIO
+			CALL DAYEVENT_EXECUTE_EVENT()
+		CALL KOJO_MESSAGE_SEND("EVENT",2,TARGET,起床状况,起床场所)
 	ENDIF
 NEXT
 

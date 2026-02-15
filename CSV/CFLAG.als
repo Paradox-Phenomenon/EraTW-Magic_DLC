@@ -327,8 +327,6 @@
 ;997,DIALOGSTATUS - SAVEDATA will be used instead
 ;CFLAG:1000～1999	 口上用確保領域
 
-9109,MORNING_TIPS,;does character have night tips, for authors
-9110,MORNING_TIPS_DISABLED,;are their night tips enabled in the settings
 9115,BUTT_SIZE_UPDATED
 
 9128,FAVORITE_OVERRIDE_UNDERWEAR,;overrides the underwear for the favorite outfit
