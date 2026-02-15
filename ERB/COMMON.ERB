@@ -2633,26 +2633,29 @@ RETURNF STR_CNT
 
 
 ;----------------------------------------------------------------------------------------------------
-;カウント機能つきSPLIT関数
+;带计数功能的 SPLIT 函数
 ;----------------------------------------------------------------------------------------------------
-;・RESULTを汚染せず、F関数中でも使用可能
-;・CALLFで使用のこと、REFを使用して変数を直接書き換える
-;・引数必须、単語列表/出現个数列表の配列上限に注意！
-;・区切り文字は"/"で固定
-;・STR用の配列変数と別に、各単語の出現回数列表を追加
-;・戻り値１）STR_LIST、"/"で分割され出力される単語列表
-;・戻り値２）CNT_LIST、各単語の出現回数列表
-;・戻り値３）STR_NUM、単語の種類の総数
-;・TARGET_STRで一度に渡す単語の種類は100種類未満、語群は1000个未満にすること
-;動作例)
-;TARGET_STR："霊夢/霊夢/霊夢/霊夢/魔理沙/魔理沙/早苗/"
-;　STR_LIST:0 == "霊夢"
-;　STR_LIST:1 == "魔理沙"
-;　STR_LIST:2 == "早苗"
-;　CNT_LIST:0 == 4   ;"霊夢"の出現回数は4回
-;　CNT_LIST:1 == 2   ;"魔理沙"の出現回数は2回
-;　CNT_LIST:2 == 1   ;"早苗"の出現回数は1回
-;　STR_NUM    == 3   ;"霊夢"、"魔理沙"、"早苗"で合計3種類
+;・特性：不会污染 RESULT 变量，可以在 #FUNCTION (式中函数) 中安全使用
+;・用法：必须使用 CALLF 调用，通过 REF (引用传递) 直接修改传入的数组变量
+;・注意：参数是必须的，请注意传入数组(单语列表/出现个数列表)的大小上限！
+;・分隔符：固定为 "/"
+;・数据结构：除了用于存储字符串的数组外，还需要一个额外的数值数组来存储各单词的出现次数
+;
+;・返回值1 (REF参数) STR_LIST：被 "/" 分割并去重后的单词列表
+;・返回值2 (REF参数) CNT_LIST：各单词对应的出现回数列表
+;・返回值3 (REF参数) STR_NUM ：不重复的单词种类总数
+;
+;・限制：TARGET_STR 一次传递的单词种类建议 <100 种，单词总数建议 <1000 个 (受限于函数内临时数组大小)
+;
+; 动作示例)
+; TARGET_STR："灵梦/灵梦/灵梦/灵梦/魔理沙/魔理沙/早苗/"
+;   STR_LIST:0 == "灵梦"
+;   STR_LIST:1 == "魔理沙"
+;   STR_LIST:2 == "早苗"
+;   CNT_LIST:0 == 4   ;"灵梦"出现了4次
+;   CNT_LIST:1 == 2   ;"魔理沙"出现了2次
+;   CNT_LIST:2 == 1   ;"早苗"出现了1次
+;   STR_NUM    == 3   ;"灵梦"、"魔理沙"、"早苗" 合计3个种类
 ;----------------------------------------------------------------------------------------------------
 @CNT_SPLIT(TARGET_STR, STR_LIST, CNT_LIST, STR_NUM)
 #FUNCTION
@@ -2686,72 +2689,6 @@ FOR TEMP_ID, 0, TEMP_NUM
 	STR_NUM ++
 NEXT
 RESULT = TEMP_RESULT
-
-;----------------------------------------------------------------------------------------------------
-; 获取并排序计数分割结果的函数
-;作者：狂气小白兔----------------------------------------------------------------------------------------------------
-; 调用 @CNT_SPLIT 获取原始数据，然后根据 Sort 参数进行排序
-;・CALLFで使用のこと、REFを使用して变量を直接书き换える
-;・参数必须、单语列表/出现个数列表の配列上限に注意！
-;・区切り文字は"/"で固定 (由 @CNT_SPLIT 决定)
-;・返回值１）STR_LIST、排序后的单语列表
-;・返回值２）CNT_LIST、排序后的各单语的出现回数列表
-;・返回值３）STR_NUM、单语的种类总数
-;・返回值４）Sort、排序方式 (0:不变, 1:计数升序, 2:计数降序)
-;----------------------------------------------------------------------------------------------------
-@GET_SORTED_CNT_SPLIT(TARGET_STR, STR_LIST, CNT_LIST, STR_NUM, Sort)
-#FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIMS         TARGET_STR     ;分割对象STR
-#DIMS REF     STR_LIST       ;单语列表 (输出)
-#DIM  REF     CNT_LIST       ;各单语の出现个数列表 (输出)
-#DIM  REF     STR_NUM        ;单语の种类の总数 (输出)
-#DIM          Sort           ;排序方式 (0:不变, 1:计数升序, 2:计数降序)
-
-; 排序所需的临时变量
-#DIM          temp_i           ; 排序循环用
-#DIM          temp_j          ; 排序循环用
-#DIM          should_swap
-#DIM          temp_cnt       ; 计数交换用临时变量
-#DIMS         temp_str       ; 字符串交换用临时变量
-
-CALLF CNT_SPLIT(TARGET_STR, STR_LIST, CNT_LIST, STR_NUM)
-
-;根据 Sort 参数对获取到的数据进行排序
-IF Sort
-	; 使用冒泡排序对 CNT_LIST 进行排序，同时交换对应的 STR_LIST 元素
-	; 排序范围是已经填充的 0 到 STR_NUM-1
-	FOR temp_i, 0, STR_NUM - 1
-		FOR temp_j, 0, STR_NUM - 1 - temp_i
-			SIF temp_j + 1 >= STR_NUM
-				CONTINUE
-
-			should_swap = 0
-			IF Sort == 1 ; 升序 (如果当前比下一个大，则交换)
-				IF CNT_LIST:temp_j > CNT_LIST:(temp_j+1)
-					should_swap = 1
-				ENDIF
-			ELSEIF Sort == 2 ; 降序 (如果当前比下一个小，则交换)
-				IF CNT_LIST:temp_j < CNT_LIST:(temp_j+1)
-					should_swap = 1
-				ENDIF
-			ENDIF
-
-			IF should_swap
-				; 交换 CNT_LIST 中的元素
-				temp_cnt = CNT_LIST:temp_j
-				CNT_LIST:temp_j = CNT_LIST:(temp_j+1)
-				CNT_LIST:(temp_j+1) = temp_cnt
-
-				; 交换 STR_LIST 中的对应元素
-				temp_str '= STR_LIST:temp_j
-				STR_LIST:temp_j '= STR_LIST:(temp_j+1)
-				STR_LIST:(temp_j+1) '= temp_str
-			ENDIF
-		NEXT
-	NEXT
-ENDIF
 
 ;----------------------------------------------------------------------------------------------------
 ;同行中の人数を返す函数
