@@ -545,19 +545,19 @@ RETURN 1
 #DIM DEBUG
 
 #FUNCTION
+;未使用
+SIF ABLNAME:argAbl == ""
+	RETURNF 1
 ;個別処理
-SELECTCASE ABLNAME:argAbl
-	;未使用
-	CASE ""
-		RETURNF 1
+SELECTCASE argAbl
 	;時間停止
-	CASE "TSLv"
+	CASE ABL_TSLv
 		RETURNF 1
 	;同性愛関係
-	CASE "百合属性", "百合中毒"
+	CASE ABL_百合属性, ABL_百合中毒
 		SIF !(TALENT:ARG:2 & 1)
 			RETURNF 1
-	CASE "断袖属性", "断袖中毒"
+	CASE ABL_断袖属性, ABL_断袖中毒
 		SIF TALENT:ARG:2 & 1
 			RETURNF 1
 ENDSELECT
@@ -595,25 +595,25 @@ FOR LOCAL, 0, 200
 		GOTO SKIP
 	ENDIF
 	SETCOLOR 150, 150, 150
+	;TALENT.CSVに登録されていない
 	SIF TALENTNAME:LOCAL == ""
 		CONTINUE
-	SELECTCASE NAME_TR(TALENTNAME:LOCAL)
-	;TALENT.CSVに登録されていない
-	CASE ""
-		CONTINUE
-	;exceptions for listing
-	CASE NAME_TR("氷精"), NAME_TR("人类"), NAME_TR("妖怪"), NAME_TR("神霊"), NAME_TR("幽霊"), NAME_TR("人形"), NAME_TR("人妻"), NAME_TR("音感"), NAME_TR("動物耳")
-		GOTO LIST
 	;オンオフ型の素質(TALENTNAMEと素質表示が一致)
-	CASE GET_TALENTNAME(LOCAL,1)
+	IF GET_TALENTNAME(LOCAL,1) == NAME_TR(TALENTNAME:LOCAL)
 		SIF TALENT:ARG:LOCAL
 			SETCOLOR C_AQUA
 		LOCALS = [{LOCAL,3}]%TALENT_TR(LOCAL)%
-	CASE NAME_TR("非童貞")
+		CONTINUE
+	ENDIF
+	SELECTCASE LOCAL
+	;exceptions for listing
+	CASE TALENT_氷精, TALENT_人类, TALENT_妖怪, TALENT_神霊, TALENT_幽霊, TALENT_人形, TALENT_人妻, TALENT_音感, TALENT_動物耳
+		GOTO LIST
+	CASE TALENT_非童貞
 		SIF !TALENT:ARG:LOCAL
 			SETCOLOR C_AQUA
 		LOCALS = [{LOCAL,3}]童贞
-	CASE NAME_TR("キス未経験")
+	CASE TALENT_キス未経験
 		SIF !TALENT:ARG:LOCAL
 			SETCOLOR C_AQUA
 		LOCALS = [{LOCAL,3}]%TALENT_TR(LOCAL)%
@@ -624,7 +624,7 @@ FOR LOCAL, 0, 200
 		IF STRLENS(GET_TALENTNAME(LOCAL, TALENT:ARG:LOCAL))
 			LOCALS:1 = 【%GET_TALENTNAME(LOCAL, TALENT:ARG:LOCAL)%】
 			SETCOLOR C_AQUA
-		ELSEIF TALENTNAME:LOCAL == "性別"
+		ELSEIF LOCAL == TALENT_性別
 			LOCALS:1 = 【女性】
 			SETCOLOR C_AQUA
 		ELSE
@@ -663,9 +663,9 @@ SIF TALENTNAME:inputed == ""
 SIF CUSTOM_選べない素質(inputed, chara, DEBUG)
 	RETURN 0
 
-SELECTCASE TALENTNAME:inputed
+SELECTCASE inputed
 	;addition custom code, but this looks like it should be on JP as well
-	CASE "氷精" ;female only for yuki onna
+	CASE TALENT_氷精 ;female only for yuki onna
 		IF !IS_FEMALE(CHARA)
 			TALENT:chara:inputed = !TALENT:chara:inputed
 		ELSE
@@ -675,25 +675,25 @@ SELECTCASE TALENTNAME:inputed
 				TALENT:chara:inputed ++
 			ENDIF
 		ENDIF
-	CASE "人类" ;button handling
+	CASE TALENT_人类 ;button handling
 		IF TALENT:chara:inputed == 6
 			TALENT:chara:inputed = 0
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "人妻" ;button handling
+	CASE TALENT_人妻 ;button handling
 		IF TALENT:chara:inputed == 2
 			TALENT:chara:inputed = 0
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "幽霊" ;button handling
+	CASE TALENT_幽霊 ;button handling
 		IF TALENT:chara:inputed == 4
 			TALENT:chara:inputed = 0
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "妖怪" ;skip vampire
+	CASE TALENT_妖怪 ;skip vampire
 		IF TALENT:chara:inputed == 2
 			TALENT:chara:inputed = 4
 		ELSEIF TALENT:chara:inputed == 12
@@ -702,19 +702,19 @@ SELECTCASE TALENTNAME:inputed
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "神霊" ;前两个可以扮演
+	CASE TALENT_神霊 ;前两个可以扮演
 		IF TALENT:chara:inputed == 2
 			TALENT:chara:inputed = 0
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "人形" ;skip puppet maiden
+	CASE TALENT_人形 ;skip puppet maiden
 		IF TALENT:chara:inputed == 5
 			TALENT:chara:inputed = 0
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "追加種族" ;female only for shrine maiden/maid, skip hourai
+	CASE TALENT_追加種族 ;female only for shrine maiden/maid, skip hourai
 		IF TALENT:chara:inputed == 0 && !IS_FEMALE(CHARA)
 			TALENT:chara:inputed = 2
 		ELSEIF TALENT:chara:inputed == 2 && !IS_FEMALE(CHARA)
@@ -725,19 +725,19 @@ SELECTCASE TALENTNAME:inputed
 			TALENT:chara:inputed ++
 		ENDIF
 
-	CASE "処女"
+	CASE TALENT_処女
 		IF TALENT:chara:処女 == 1
 			TALENT:chara:処女 = 0
 		ELSE
 			TALENT:chara:処女++
 		ENDIF
-	CASE "Ｍ感度"
+	CASE TALENT_Ｍ感度
 		IF TALENT:chara:Ｍ感度 == 1
 			TALENT:chara:Ｍ感度 = -1
 		ELSE
 			TALENT:chara:Ｍ感度++
 		ENDIF
-	CASE "動物耳"
+	CASE TALENT_動物耳
 		IF TALENT:chara:動物耳 == 4
 			TALENT:chara:動物耳 = 0
 		ELSE
@@ -745,20 +745,20 @@ SELECTCASE TALENTNAME:inputed
 		ENDIF
 	
 	;先に例外処理
-	CASE "性別"
+	CASE TALENT_性別
 		IF TALENT:chara:性別 == 3
 			TALENT:chara:性別 = 1
 		ELSE
 			TALENT:chara:性別 ++
 		ENDIF
 		CALL CUSTOM_INIT(chara)
-	CASE "性別嗜好"
+	CASE TALENT_性別嗜好
 		IF TALENT:chara:inputed == 3
 			TALENT:chara:inputed = -1
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "体型"
+	CASE TALENT_体型
 		;体型が「小人(-5)」と「巨人(3)」の場合を独立処理
 		IF TALENT:chara:inputed == -5
 			TALENT:chara:inputed = -2
@@ -769,9 +769,9 @@ SELECTCASE TALENTNAME:inputed
 		ELSE
 			TALENT:chara:inputed ++
 		ENDIF
-	CASE "非童貞", "キス未経験"
+	CASE TALENT_非童貞, TALENT_キス未経験
 		TALENT:chara:inputed = !TALENT:chara:inputed
-	CASE "母乳体質"
+	CASE TALENT_母乳体質
 		TALENT:chara:母乳体質 = !TALENT:chara:母乳体質
 		IF TALENT:chara:母乳体質
 			MAXBASE:chara:母乳 = 2000
@@ -833,50 +833,50 @@ SELECTCASE ARG
 	CASE IS >= 157
 		RETURNF 1
 	;你は選べない１
-	CASE GETNUM(TALENT, "習得速度") TO GETNUM(TALENT, "擅長用針"), GETNUM(TALENT, "薬毒耐性"), GETNUM(TALENT, "容易高潮"), GETNUM(TALENT, "盲信"), GETNUM(TALENT, "小悪魔")
+	CASE TALENT_習得速度 TO TALENT_擅長用針, TALENT_薬毒耐性, TALENT_容易高潮, TALENT_盲信, TALENT_小悪魔
 		SIF CHARA == NO:MASTER
 			RETURNF 1
 	;你は選べない２
-	CASE GETNUM(TALENT, "魅力") TO GETNUM(TALENT, "謎之魅力"), GETNUM(TALENT, "回復速度") TO GETNUM(TALENT, "不可思議的根"), GETNUM(TALENT, "狂気"), GETNUM(TALENT, "人気")
+	CASE TALENT_魅力 TO TALENT_謎之魅力, TALENT_回復速度 TO TALENT_不可思議的根, TALENT_狂気, TALENT_人気
 		SIF CHARA == NO:MASTER
 			RETURNF 1
 	;你は選べず、女性器がないと選べない
-	CASE GETNUM(TALENT, "母乳体質"), GETNUM(TALENT, "妊娠願望") 
+	CASE TALENT_母乳体質, TALENT_妊娠願望 
 		SIF CHARA == NO:MASTER
 			RETURNF 1
 		SIF !IS_FEMALE(CHARA)
 			RETURNF 2
 	;女性器がないと選べない
-	CASE GETNUM(TALENT, "処女"), GETNUM(TALENT, "風騷"), GETNUM(TALENT, "Ｖ感度"), GETNUM(TALENT, "胸围")
+	CASE TALENT_処女, TALENT_風騷, TALENT_Ｖ感度, TALENT_胸围
 		SIF !IS_FEMALE(CHARA)
 			RETURNF 2
 	;男性器がないと選べない
-	CASE GETNUM(TALENT, "非童貞")
+	CASE TALENT_非童貞
 		SIF !GETBIT(TALENT:CHARA:性別, 1)
 			RETURNF 2
 	;男性器があると選べない
-	CASE GETNUM(TALENT, "具現")
+	CASE TALENT_具現
 		SIF GETBIT(TALENT:CHARA:性別, 1)
 			RETURNF 2
 	;你以外は選べない
-	CASE GETNUM(TALENT, "年齢")
+	CASE TALENT_年齢
 		SIF CHARA != NO:MASTER
 			RETURNF 1
 	;全員選べないが表示はする
-	CASE GETNUM(TALENT, "キス未経験")
+	CASE TALENT_キス未経験
 		RETURNF 2
 	;全員選べない１
-	CASE GETNUM(TALENT, "恋慕") TO GETNUM(TALENT, "思慕"), GETNUM(TALENT, "心情"), GETNUM(TALENT, "容姿"), GETNUM(TALENT, "把柄"), GETNUM(TALENT, "調合知識"), GETNUM(TALENT, "調合Lv"), GETNUM(TALENT, "採集Lv"), GETNUM(TALENT, "釣りLv"), GETNUM(TALENT, "伐採Lv")
+	CASE TALENT_恋慕 TO TALENT_思慕, TALENT_心情, TALENT_容姿, TALENT_把柄, TALENT_調合知識, TALENT_調合Lv, TALENT_採集Lv, TALENT_釣りLv, TALENT_伐採Lv
 		SIF DEBUG
 			RETURNF 0
 		RETURNF 1
 	;全員選べない２
-	CASE GETNUM(TALENT, "自慰狂") TO GETNUM(TALENT, "子宮口性感"), GETNUM(TALENT, "迷信"), GETNUM(TALENT, "嫉妬"), GETNUM(TALENT, "濃厚精液"), GETNUM(TALENT, "精愛味覚"), GETNUM(TALENT, "禁断的知識"), GETNUM(TALENT, "精力超群") TO GETNUM(TALENT, "母性")
+	CASE TALENT_自慰狂 TO TALENT_子宮口性感, TALENT_迷信, TALENT_嫉妬, TALENT_濃厚精液, TALENT_精愛味覚, TALENT_禁断的知識, TALENT_精力超群 TO TALENT_母性
 		SIF DEBUG
 			RETURNF 0
 		RETURNF 1
 	;女性器があって幼児か幼稚がないと選べない
-	CASE GETNUM(TALENT, "初潮")
+	CASE TALENT_初潮
 		SIF !IS_FEMALE(CHARA)
 			RETURNF 2
 		SIF DEBUG
@@ -1037,26 +1037,28 @@ RETURN 1
 #DIM argChara
 #DIM DEBUG
 
-SIF EXPNAME:argExp != "" && DEBUG
+SIF EXPNAME:argExp == ""
+	RETURNF 1
+SIF DEBUG
 	RETURNF 0
 
-SELECTCASE EXPNAME:argExp
-	CASE "", "肛射経験", "膣射経験"
+SELECTCASE argExp
+	CASE EXP_肛射経験, EXP_膣射経験
 		RETURNF 1
 	;女性器無は不可
-	CASE "百合経験", "Ｖ経験", "Ｖ絶頂経験", "Ｖ性交経験", "Ｖ拡張経験", "子宮口開発経験", "噴乳経験", "乳交経験"
+	CASE EXP_百合経験, EXP_Ｖ経験, EXP_Ｖ絶頂経験, EXP_Ｖ性交経験, EXP_Ｖ拡張経験, EXP_子宮口開発経験, EXP_噴乳経験, EXP_乳交経験
 		SIF !(TALENT:argChara:性別 & 1)
 			RETURNF 1
 	;女性器ありは不可
-	CASE "断袖経験"
+	CASE EXP_断袖経験
 		SIF TALENT:argChara:性別 & 1
 			RETURNF 1
 	;男性器無は不可
-	CASE "挿入経験", "射精経験"
+	CASE EXP_挿入経験, EXP_射精経験
 		SIF !HAS_PENIS(argChara)
 			RETURNF 1
 	;時間停止がらみは不可
-	CASE "時姦経験", "無自覚Ｃ経験", "無自覚Ｖ経験", "無自覚Ａ経験", "無自覚Ｂ経験", "無自覚Ｍ経験", "無自覚絶頂経験"
+	CASE EXP_時姦経験, EXP_無自覚Ｃ経験, EXP_無自覚Ｖ経験, EXP_無自覚Ａ経験, EXP_無自覚Ｂ経験, EXP_無自覚Ｍ経験, EXP_無自覚絶頂経験
 		RETURNF 1
 ENDSELECT
 SELECTCASE argExp

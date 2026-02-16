@@ -675,21 +675,23 @@ SIF ARG != MASTER
 #FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF GETNUM(BASE, ARGS) < 0
+#DIM DYNAMIC L_ID
+L_ID = GETNUM(BASE, ARGS)
+IF L_ID < 0
 	PRINTFORML 没有找到%ARGS%，请保存日志报错
 	RETURNF 0
 ENDIF
-SELECTCASE ARGS
-	CASE "体力", "気力"
+SELECTCASE L_ID
+	CASE BASE_体力, BASE_气力
 	;竿無ならスキップ
-	CASE "精力", "勃起", "射精"
+	CASE BASE_精力, BASE_勃起, BASE_射精
 		SIF !HAS_PENIS(ARG)
 			RETURNF 0
 	;你以外TSPスキップ
-	CASE "TSP"
+	CASE BASE_TSP
 		SIF ARG != MASTER
 			RETURNF 0
-	CASE "母乳"
+	CASE BASE_母乳
 		SIF !TALENT:ARG:母乳体質
 			RETURNF 0
 ENDSELECT
@@ -702,9 +704,9 @@ RETURNF 1
 #DIM 变动值
 #DIM 强化能力
 #DIM info
+SIF !CHECK_BASE(ARG, BASENAME:强化能力)
+	RETURN
 IF MAGIC_DLC
-	SIF !CHECK_BASE(ARG, BASENAME:强化能力)
-		RETURN
 	SIF 变动值 < 0 && ABS(变动值) > MAXBASE:ARG:强化能力
 		变动值 = (MAXBASE:ARG:强化能力 -1) * -1
 	SIF (MAXBASE:ARG:强化能力 + 变动值) > 9999999
@@ -715,6 +717,7 @@ IF MAGIC_DLC
 ELSE
 	MAXBASE:ARG:强化能力 += 变动值
 ENDIF
+
 ;-------------------------------------------------
 ;関数名:BUFF_BASE
 ;概　要:特定BASEを一時的に強化
@@ -725,14 +728,14 @@ ENDIF
 #DIM 変動値
 #DIM 強化能力
 #DIM メッセージ
+SIF MAXBASE:ARG:強化能力 <= 0
+	RETURN
 IF !MAGIC_DLC
-	SIF !CHECK_BASE(ARG, BASENAME:強化能力)
-		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 
 	MAXBASE:ARG:強化能力 += 変動値
-		BASE:ARG:強化能力 += 変動値
+	BASE:ARG:強化能力 += 変動値
 	BUFF:ARG:強化能力 += 変動値
 	;failsafe
 	MAXBASE:ARG:強化能力 = MAX(0, MAXBASE:ARG:強化能力)
@@ -740,8 +743,6 @@ IF !MAGIC_DLC
 	SIF メッセージ
 		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
 ELSE
-	SIF !CHECK_BASE(ARG, BASENAME:強化能力)
-		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 	SIF (MAXBASE:ARG:強化能力 + 変動値) > 9999999
@@ -1169,7 +1170,7 @@ IF CFLAG:睡眠
 			IF MAGIC_DLC
 				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度上限(ARG))
 			ELSE
-				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度的上限)
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,MAX_积攒度)
 			ENDIF
 		ELSEIF ABL:ARG:精液中毒 > 4
 			SETCOLOR C_YELLOW
@@ -1178,7 +1179,7 @@ IF CFLAG:睡眠
 			IF MAGIC_DLC
 				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度上限(ARG))
 			ELSE
-				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度的上限)
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,MAX_积攒度)
 			ENDIF
 		ELSEIF ABL:ARG:精液中毒 > 2
 			SETCOLOR C_AQUA
