@@ -11,7 +11,7 @@ SELECTCASE TFLAG:192
 		LOCAL:1 = 90 + GET_SUCCESS_RATE() / 5
 		SIF LOCAL:1 > 99
 			LOCAL:1 = 99
-		IF LOCAL <= 9
+		IF LOCAL <= 9 + (ABL:MASTER:話術技能 + MAGIC_SuccessRate(TARGET) / 20)*MAGIC_DLC_大成功相关
 			;10％で大成功
 			TFLAG:193 = 1
 			TFLAG:信頼度管理 = 2
@@ -30,7 +30,7 @@ SELECTCASE TFLAG:192
 		ENDIF
 	;強制成功or大成功
 	CASE 1
-		IF RAND:100 <= 9
+		IF RAND:100 <= 9 + (ABL:MASTER:話術技能 + MAGIC_SuccessRate(TARGET) / 20)*MAGIC_DLC_大成功相关
 			;10％で大成功
 			TFLAG:193 = 1
 			TFLAG:信頼度管理 = 2
@@ -53,8 +53,23 @@ SELECTCASE TFLAG:192
 		RETURN 0
 ENDSELECT
 
+SIF MAGIC_DLC_大成功相关
+	M_TFLAG:成功 = TFLAG:193
 
-EXP:MASTER:会話経験 ++
+IF !MAGIC_DLC_等级重置 
+	EXP:MASTER:会話経験 ++
+ELSE
+	IF ABL:MASTER:話術技能 > ABL:TARGET:話術技能
+		EXP:TARGET:会話経験 += ABL:MASTER:話術技能 - ABL:TARGET:話術技能
+		EXP:MASTER:会話経験 += 1
+	ELSEIF ABL:MASTER:話術技能 < ABL:TARGET:話術技能
+		EXP:MASTER:会話経験 += ABL:TARGET:話術技能 - ABL:MASTER:話術技能
+		EXP:TARGET:会話経験 += 1
+	ELSE
+		EXP:TARGET:会話経験 += 2
+		EXP:MASTER:会話経験 += 2
+	ENDIF
+ENDIF
 
 IF !(TALENT:酒耐性 == -2 || CFLAG:妊娠自覚状態 == 1)
 	LOCAL:3 = (MAXBASE:酒気 + MAXBASE:MASTER:酒気) * (LOCAL:2 + RAND:41) / 2000

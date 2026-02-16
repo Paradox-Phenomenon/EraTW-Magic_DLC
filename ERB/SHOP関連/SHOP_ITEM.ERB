@@ -24,7 +24,11 @@ DRAWLINE
 CALL SHOW_SHOPPING("通信販売", TYPE)
 LCOUNT = RESULT
 DRAWLINE
-PRINTL [990] - 全部显示　[991] - 调教道具　[992] - 消耗品　[993] - 日用品　[994] - 食材　[995] - 酒　[996] - 素质
+IF MAGIC_DLC
+	PRINTL [990] - 全部显示　[991] - 調教道具　[992] - 消耗品　[993] - 日用品　[994] - 食材　[995] - 酒　[996] - 素質　[997] - 魔法
+ELSE
+	PRINTL [990] - 全部显示　[991] - 调教道具　[992] - 消耗品　[993] - 日用品　[994] - 食材　[995] - 酒　[996] - 素质
+ENDIF
 PRINT [999] - 返回
 INPUT
 
@@ -32,7 +36,7 @@ INPUT
 IF RESULT == 999
 	ループ = 0
 	RETURN
-ELSEIF INRANGE(RESULT, 990, 996)
+ELSEIF INRANGE(RESULT, 990, 996+MAGIC_DLC)
 	SELECTCASE RESULT
 	CASE 990
 		TYPE = 
@@ -48,6 +52,8 @@ ELSEIF INRANGE(RESULT, 990, 996)
 		TYPE = 酒
 	CASE 996
 		TYPE = 素質
+	CASE 997
+		TYPE = 魔法
 	ENDSELECT
 ELSEIF INRANGE(RESULT, 0, 1000)
 	SELECT_ITEM = RESULT
@@ -159,6 +165,7 @@ CASE "全て"
 	CALL LIST_ITEM("書物")
 	CALL LIST_ITEM("特殊")
 	CALL LIST_ITEM("其他")
+	CALL LIST_ITEM("魔法")
 	
 	;logging custom code, show current stock of lumber
 	CALL LIST_ITEM("製材")
@@ -377,27 +384,45 @@ RESETCOLOR
 ;	高级食材は+5、お店の最大在庫は10です
 ;----------------------------------------------------------------------
 @SHOP_EVENTTURNEND
-CALL お店に入荷(GETNUM(ITEM, "平价食材"), 10, 20)
-CALL お店に入荷(GETNUM(ITEM, "优质食材"), 7, 15)
-CALL お店に入荷(GETNUM(ITEM, "高级食材"), 5, 10)
-CALL お店に入荷(GETNUM(ITEM, "甜味料"), 5, 10)
-CALL お店に入荷(GETNUM(ITEM, "獣肉"), 5, 10)
-CALL お店に入荷(GETNUM(ITEM, "鳥肉"), 5, 10)
-CALL お店に入荷(GETNUM(ITEM, "卵"), 5, 10)
+IF !MAGIC_DLC	
+	CALL お店に入荷(GETNUM(ITEM, "平价食材"), 10, 20)
+	CALL お店に入荷(GETNUM(ITEM, "优质食材"), 7, 15)
+	CALL お店に入荷(GETNUM(ITEM, "高级食材"), 5, 10)
+	CALL お店に入荷(GETNUM(ITEM, "甜味料"), 5, 10)
+	CALL お店に入荷(GETNUM(ITEM, "獣肉"), 5, 10)
+	CALL お店に入荷(GETNUM(ITEM, "鳥肉"), 5, 10)
+	CALL お店に入荷(GETNUM(ITEM, "卵"), 5, 10)
+	CALL お店に入荷(GETNUM(ITEM, "肥料"), 1, 3)
+ELSE
+	CALL お店に入荷(GETNUM(ITEM, "平价食材"), RANDSF(10,10), 200)
+	CALL お店に入荷(GETNUM(ITEM, "优质食材"), RANDSF(7,10), 150)
+	CALL お店に入荷(GETNUM(ITEM, "高级食材"), RANDSF(5,10), 100)
+	CALL お店に入荷(GETNUM(ITEM, "甜味料"), RANDSF(5,10), 100)
+	CALL お店に入荷(GETNUM(ITEM, "獣肉"), RANDSF(5,10), 100)
+	CALL お店に入荷(GETNUM(ITEM, "鳥肉"), RANDSF(5,10), 100)
+	CALL お店に入荷(GETNUM(ITEM, "卵"), RANDSF(5,10), 100)
+	CALL お店に入荷(GETNUM(ITEM, "肥料"), RANDSF(1,10), 30)
+ENDIF
 ;酒屋は独自に入荷
 CALL 酒屋の在庫
 
-CALL お店に入荷(GETNUM(ITEM, "肥料"), 1, 3)
 ; 苗は1種1日1つ入荷、最大在庫も3です
 ;	苗を粗末にするとゆうかりんに怒られますよ？
 FOR LOCAL, 0, 1000
 	IF STRCOUNT(ITEMNAME:LOCAL, "苗")
-		CALL お店に入荷(LOCAL, 1, 3)
+		IF !MAGIC_DLC
+			CALL お店に入荷(LOCAL, 1, 3)
+		ELSE
+			CALL お店に入荷(LOCAL, RANDSF(2,5), 20)
+		ENDIF
 	ELSE
 		;ついでに八百屋,入荷しないこともある
 		CALL ITEMDATA(LOCAL, "SHOP:八百屋")
-		SIF RESULT
+		IF RESULT && !MAGIC_DLC
 			CALL お店に入荷(LOCAL, RAND:2, 5)
+		ELSEIF RESULT && MAGIC_DLC
+			CALL お店に入荷(LOCAL, RANDSF(4,5), 50)
+		ENDIF
 	ENDIF
 NEXT
 

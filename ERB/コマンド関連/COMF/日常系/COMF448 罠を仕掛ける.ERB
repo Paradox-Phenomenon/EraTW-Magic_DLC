@@ -46,13 +46,13 @@ RETURN RESULT
 探索回数 = 0
 
 ;夕方～夜の狩猟は放弃
-IF TIME:2 >= 5 && !FLAG:70
+IF TIME:2 >= 5 && !FLAG:70 && !(MAGIC_DLC && TALENT:MASTER:神性)
 	DRAWLINE
 	PRINTFORML 这个时间开始狩猎的话很快就会天黑了…
 	RETURN -1
 ENDIF
 ;大雨、吹雪のときは放弃(天候パッチ)強風時も放弃
-IF GROUPMATCH(天候, 5, 9) || GROUPMATCH(FLAG:異常気象, 9, 10) || WIND_VELOCITY >= 1
+IF (GROUPMATCH(天候, 5, 9) || GROUPMATCH(FLAG:異常気象, 9, 10) || WIND_VELOCITY >= 1) && !(MAGIC_DLC && TALENT:MASTER:神性)
 	DRAWLINE
 	PRINTFORML 在这种天候下诱捕太危险了
 	RETURN -1
@@ -228,7 +228,9 @@ ELSE
 		;①先に各種係数を算出
 		;基礎パワー １～１１０程度
 		Hunt_Power = MAX((ABL:MASTER:教養 * 2) + (ABL:MASTER:戦闘能力 * 2) + (TFLAG:幸運補正 * 10) + (CFLAG:MASTER:今日の運勢 / 20), 1)
-
+		
+		SIF MAGIC_DLC
+			Hunt_Power += 10 * TALENT:MASTER:神性
 		;参加者がいる場合は狩猟パワー追加　２人のほうが単純に目が２倍なので、良い結果を引きやすい
 		SIF CHARA && !FLAG:70
 		Hunt_Power += MAX((ABL:CHARA:教養 * 2) + (ABL:CHARA:戦闘能力 * 2) + (FLAG:每日变更事件 / 20), 1)
@@ -252,7 +254,7 @@ ELSE
 		REND
 
 		;③狩猟パワーからサーチ値を固定・生息密度をセットし、フィールドサインの文本（ヒント）を流す
-		Serch = RAND:Hunt_Power
+		Serch = MAGIC_DLC_大成功相关 ? RANDSF(5,Hunt_Power/5) # RAND:Hunt_Power
 		IF Serch
 			生息密度 = Serch / 10
 		ELSE
@@ -355,7 +357,7 @@ IF FLAG:70
 	ELSE
 		;罠を仕掛けた
 		IF TP_TO_PLACE()
-			BASE:MASTER:TSP -= (探索回数 * 6) + 180
+			BASE:MASTER:TSP -= (探索回数 * 6 + 180)
 		;探索しただけ
 		ELSE
 			BASE:MASTER:TSP -= 探索回数 * 6
@@ -366,6 +368,7 @@ ELSE
 		DOWNBASE:MASTER:体力 = MAX((CritterEffort * 3) - (ABL:MASTER:戦闘能力 * 10), 40)
 		DOWNBASE:MASTER:気力 = CritterEffort * 2
 		TIME += CritterEffort
+		M_TFLAG:时间因子类型 = TimeFactor_战斗
 		TCVAR:MASTER:空腹時刻 -= 25
 		IF CHARA
 			TCVAR:CHARA:空腹時刻 -= 25
@@ -375,6 +378,7 @@ ELSE
 		DOWNBASE:MASTER:体力 = 100
 		DOWNBASE:MASTER:気力 = 50
 		TIME += 45
+		M_TFLAG:时间因子类型 = TimeFactor_教养
 		TCVAR:MASTER:空腹時刻 -= 10
 		IF CHARA
 			TCVAR:CHARA:空腹時刻 -= 10
@@ -385,10 +389,12 @@ ELSE
 			DOWNBASE:MASTER:体力 = 120 + 探索回数 * 5
 			DOWNBASE:MASTER:気力 = 60 + 探索回数 * 3
 			TIME += 30 + 探索回数 * 6
+			M_TFLAG:时间因子类型 = TimeFactor_教养
 		ELSE
 			DOWNBASE:MASTER:体力 = 探索回数 * 5
 			DOWNBASE:MASTER:気力 = 探索回数 * 3
 			TIME += 探索回数 * 6
+			M_TFLAG:时间因子类型 = TimeFactor_教养
 		ENDIF
 	ENDIF
 ENDIF
@@ -1327,6 +1333,7 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
 				BASE:MASTER:TSP -= 20
 			ELSE
 				TIME += 5
+				M_TFLAG:时间因子类型 = TimeFactor_采集
 			ENDIF
 		ELSE
 			RETURN -1
@@ -1348,6 +1355,7 @@ IF GROUPMATCH(CFLAG:MASTER:現在位置, GET_MUSHIDATA(MUSHI_TRAP, "場所"))
 			BASE:MASTER:TSP -= 20
 		ELSE
 			TIME += 5
+			M_TFLAG:时间因子类型 = TimeFactor_采集
 		ENDIF
 	ENDIF
 ;昆虫诱捕装置を仕掛ける
@@ -1376,6 +1384,7 @@ ELSE
 			DOWNBASE:MASTER:体力 = 50
 			DOWNBASE:MASTER:気力 = 50
 			TIME += 20
+			M_TFLAG:时间因子类型 = TimeFactor_采集
 		ENDIF
 	ELSE
 		RETURN -1

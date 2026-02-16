@@ -11,7 +11,17 @@
 #LOCALSSIZE 1
 SIF TIME + DAY * 1440 < ARG
 	RETURNF 0
-RETURNF TIME + DAY * 1440 - ARG
+IF MAGIC_DLC
+	;分两部分处理, 超出当前时间的部分乘以时间因子, 不超出的部分返回时间差
+	IF ARG < TIME:1
+		LOCAL = TIME:1 - ARG + MAGIC_TimeFactor2(TIME + 1440 * DAY - TIME:1)
+	ELSE
+		LOCAL = MAGIC_TimeFactor2(TIME + DAY * 1440 - ARG)
+	ENDIF
+	RETURNF LOCAL
+ELSE
+	RETURNF TIME + DAY * 1440 - ARG
+ENDIF 
 
 ;FileName_MOVEMENT.ERB ----------------------------- Rev1.01
 ;角色帰宅処理
@@ -144,6 +154,8 @@ SIF GMF_GETBIT("幻想乡大地图")
 #LOCALSIZE 1
 #LOCALSSIZE 1
 ;非主地图、没有目标角色、玩家目标寝室位置不同、非睡眠、非意识、隐秘中或有寝室许可时不会赶人
+SIF IS_GAP_GUEST(MASTER)
+	RETURN
 SIF !AT_HOME(MASTER)
 	RETURN
 SIF !ARG

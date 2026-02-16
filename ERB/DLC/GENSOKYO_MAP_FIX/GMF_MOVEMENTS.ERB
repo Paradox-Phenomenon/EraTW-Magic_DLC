@@ -26,7 +26,18 @@ ELSE
 		RETURNF 1
 ENDIF
 RETURNF 0
-
+;-----------------------------------------------------------
+;获取当前主地图ID
+;-----------------------------------------------------------
+@GMF_GET_BASE_MAPID()
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF GMF_IS_ODEKAKE(-1)
+	RETURNF GMF_HOME_MAP
+ELSE
+	RETURNF GET_MAPID(CFLAG:MASTER:現在位置)
+ENDIF
 ;-----------------------------------------------------------
 ;地图内（据点）判定，这里应该是判断地点是否在据点
 ;这个判断有两个含义，第一是在家地图上，第二是在据点地图上
@@ -691,8 +702,12 @@ FOR LOCAL, 0, MAXHOME
 	IF DAY:2 == 季节_冬 && DAY:3 == 31
 		LOCAL:2 *= 2
 	ENDIF
-	MONEY += LOCAL:2
 	PRINTFORML 今日在%GET_MAPNAME(LOCAL,1)%扫除了{GMF_MAP_SWEEP_VALUE:LOCAL}的垃圾，获得了%金額表示(LOCAL:2)%的\@(DAY:2 == 季节_冬 && DAY:3 == 31) ? 年底大扫除 # 清扫\@额外奖励！
+	IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && LOCAL:2 > 4
+		LOCAL:2 *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+		CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(LOCAL:2 * 3 / 10)%!")
+	ENDIF
+	MONEY += LOCAL:2
 	;拠点の主の好感度と信赖度が上昇
 	LOCAL:3 = MIN(10, GMF_MAP_SWEEP_VALUE:LOCAL / 2000)
 	IF LOCAL:3
@@ -710,6 +725,11 @@ PRINTL
 LOCAL:4 = TCVAR:MASTER:帮忙工作量
 SIF LOCAL:4 > 0
 	PRINTFORML 帮忙干活得到的额外奖励 %金額表示(LOCAL:4)%
+
+IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && LOCAL:2 > 4
+	LOCAL:4 *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+	CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(LOCAL:4 * 3 / 10)%!", C_YELLOW)
+ENDIF
 MONEY += LOCAL:4
 ;好感度上昇
 IF FLAG:本日の累計好感度上昇量 && MONEY:2 < CM_LIMIT
