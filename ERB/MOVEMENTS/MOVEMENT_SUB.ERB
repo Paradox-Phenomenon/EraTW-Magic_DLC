@@ -11,8 +11,6 @@ SIF FLAG:守矢神簽约会的对象 == ARG && !AT_HOME(MASTER)
 	RETURNF 1
 SIF CFLAG:ARG:出禁
 	RETURNF 1
-SIF IS_GAP_GUEST(ARG)
-	RETURNF 1
 RETURNF 0
 
 ;----------------------------
@@ -306,9 +304,20 @@ RETURNF 0
 @主人公物件へ向かう(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+#DIM 地图判断
 ;来訪不能（口上用）
 IF CFLAG:ARG:来訪不能
 	CFLAG:ARG:拠点来訪 = 0
+	RETURN
+ENDIF
+;不打开幻想乡大地图时，地图判断为main_map
+IF !GMF_GETBIT("幻想乡大地图")
+	地图判断 = MAIN_MAP
+;打开幻想乡大地图时，如果当前地图模式为大地图, 则地图判断为当前地图id
+ELSEIF (GMF_MAP_MODE == 1 && GET_MAPID(CFLAG:ARG:現在位置) != MAIN_MAP) || (GMF_MAP_MODE == 0 && GET_MAPID(CFLAG:ARG:現在位置) == MAIN_MAP)
+	地图判断 = GET_MAPID(CFLAG:ARG:現在位置)
+;若处于小地图模式，提前终止函数
+ELSE
 	RETURN
 ENDIF
 ;お泊まりすると起きる現象    入住后会出现的现象
@@ -366,8 +375,8 @@ IF CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置 && !CHK_DATENOW(CFLAG:ARG
 		ENDIF
 	ENDIF
 ELSE
-	IF CFLAG:ARG:(450 + MAIN_MAP)
-		CFLAG:ARG:現在位置 = CFLAG:ARG:(450 + MAIN_MAP)
+	IF CFLAG:ARG:(450 + 地图判断)
+		CFLAG:ARG:現在位置 = CFLAG:ARG:(450 + 地图判断)
 	;後戸組特殊処理
 	ELSEIF GROUPMATCH(ARG, [[舞]], [[里乃]], [[隠岐奈]]) && AT_HOME(MASTER) && MAP_CAN_MOVE(CFLAG:MASTER:現在位置, ARG) && !CFLAG:MASTER:诶嘿嘿
 		CFLAG:ARG:現在位置 = CFLAG:MASTER:現在位置
@@ -377,7 +386,8 @@ ELSE
 	IF CFLAG:ARG:現在位置 == MAXROOM ;qol custom code, choose random destination
 		CALL QOL_VISITOR_LOCATION_SELECTION(ARG)
 	ENDIF
-	SIF GETBIT(TALENT:MASTER:居場所察知, 1) && AT_HOME(MASTER) == 1 && !CFLAG:MASTER:睡眠 && !CFLAG:MASTER:诶嘿嘿
+	;新增判断条件. 不止需要在主地图上, 而且要求不是GMF的特殊据点模式
+	SIF GETBIT(TALENT:MASTER:居場所察知, 1) && AT_HOME(MASTER) == 1 && !CFLAG:MASTER:睡眠 && !CFLAG:MASTER:诶嘿嘿 && GMF_MAP_MODE == 0
 		PRINTFORMW 【%CALLNAME:ARG%来访了】
 ENDIF
 CALL EX_COSTUME(ARG, "おうちデート")
