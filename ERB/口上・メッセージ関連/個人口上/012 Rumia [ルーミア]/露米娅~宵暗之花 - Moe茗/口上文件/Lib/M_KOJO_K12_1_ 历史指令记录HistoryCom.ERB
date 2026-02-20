@@ -1,0 +1,290 @@
+﻿;-------------------------------------------------
+;Eratoho The World 4.920用 露米娅Moe版口上  
+;-------------------------------------------------
+;
+;查看的开关在口上自定义按钮那里
+;
+;==================================================
+;每回合记录部分
+;MOE_RUMIA_COM_RECORD，以字符串形式记录每日，最大天数100000
+;MOE_RUMIA_COM_RECORD_NOW_DAY ,整形数组，记录当日指令次数 1000 
+;MOE_RUMIA_COM_RECORD_HISTORY ,整形数组，记录总共指令次数 1000 
+
+;==================================================
+@EVENTCOM 
+VARSET LOCALS 
+;-------------------------------------------------
+;做好严格限制，避免随意调用
+SIF !CFLAG:12:998
+RETURN 0 
+TRYCALLFORM M_KOJO_K12_{CFLAG:12:998}
+SIF RESULTS:1 != "Moe版"
+RETURN 0
+;-------------------------------------------------
+SIF MOE_RUMIA_COM_RECORD:(DAY:0) == ""
+	MOE_RUMIA_COM_RECORD:(DAY:0) = /
+SIF ONCE("COM_RECORD_NOW_DAY_CLEAN")
+    VARSET MOE_RUMIA_COM_RECORD_NOW_DAY
+IF TFLAG:104 == 12 
+    ;给当日使用次数赋值
+    MOE_RUMIA_COM_RECORD_NOW_DAY:(TFLAG:3) ++ 
+    ;给总使用次数赋值
+    MOE_RUMIA_COM_RECORD_HISTORY:(TFLAG:3) ++ 
+    ;字符串化指令编号
+    LOCALS = %TOSTR(TFLAG:3)% 
+    ;给当日字符串记录某日情况
+    MOE_RUMIA_COM_RECORD:(DAY:0) += @"/%LOCALS%/"  
+ENDIF 
+
+;==================================================
+;主菜单部分
+;默认只显示当日的结果
+;DAY:0 为当日天数
+;============================
+;LOCAL:0是轮询用变量
+;LOCAL:1是一行内输入了多少个按钮
+;LOCAL:2是清除行数用的
+;LOCAL:3用于记录有没有隐藏
+@M_KOJO_MOE_RUMIA_COM_RECORD_MAIN_MENU
+#LOCALSIZE 700
+PRINTL 
+;轮询700个指令的记录情况
+LOCAL:2 = LINECOUNT
+WHILE RESULT != 4 
+    FOR LOCAL , 0 , 700 
+        VARSET LOCALS 
+        ;跳过屏蔽的指令
+        SIF TRAINNAME:LOCAL == ""
+            CONTINUE
+        ;跳过主动隐藏的指令
+        SIF MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL == 0 && LOCAL:3 
+            CONTINUE
+        ;计入字符串 
+        LOCALS =【{LOCAL}_%TRAINNAME:LOCAL%】{MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL}
+        ;颜色设定
+        IF MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL > 25
+            SETCOLOR C_V_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL > 10
+            SETCOLOR C_H_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL > 5
+            SETCOLOR C_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_NOW_DAY:LOCAL > 0 
+            SETCOLOR C_S_BLUE
+        ENDIF 
+        ;补足空位,每个留
+        PRINTFORMC %ARRANGE_STRLENS(LOCALS),25,LEFT%
+        LOCAL:1 += 1 
+        IF LOCAL:1 == 5 
+            PRINTL 
+            LOCAL:1 = 0 
+        ENDIF 
+        RESETCOLOR 
+    NEXT 
+    ;重置换行
+    LOCAL:1 = 0 
+    PRINTL 
+    PRINTL 
+    PRINTFORMDL 以上是今日内各指令使用的次数
+    PRINTFORMDL 
+    CALL M_Moe_K12_ASK_M("查看某一天的指令记录",1,"查看历史指令记录",1,@"\@ LOCAL:3 ? 显示未使用指令 # 隐藏未使用指令 \@",1,"退出",1) 
+    SELECTCASE RESULT 
+        CASE 0 
+            CALL M_KOJO_MOE_RUMIA_COM_RECORD_SHOW_ONE_DAY
+        CASE 1 
+            CALL M_KOJO_MOE_RUMIA_COM_RECORD_SHOW_HISTORY
+        CASE 2
+            IF LOCAL:3 == 0 
+                LOCAL:3 = 1 
+            ELSEIF LOCAL:3 == 1
+                LOCAL:3 = 0
+            ENDIF  
+        CASE 3 
+            RETURN 1 
+    ENDSELECT 
+WEND 
+CLEARLINE LINECOUNT - LOCAL:2
+
+;==================================================
+;某日选择部分
+;默认只显示当日的结果
+;DAY 为当日天数
+;==================================================
+;LOCAL:0是轮询用变量
+;LOCAL:1是一行内输入了多少个按钮
+;LOCAL:2是清除行数用的
+;LOCAL:3用于记录有没有隐藏
+;LOCAL:4是保存指定的天数
+@M_KOJO_MOE_RUMIA_COM_RECORD_SHOW_ONE_DAY
+#LOCALSIZE 7 
+LOCAL:2 = LINECOUNT
+PRINTL 
+PRINTFORMDL 这里可以查看过去某一天内，你对露米娅使用过的指令
+PRINTFORMDL 请在下方输入你想查看的总日数
+PRINTL 
+INPUT 
+LOCAL:4 = RESULT 
+WHILE RESULT != -1
+    PRINTFORML %MOE_RUMIA_COM_RECORD:(LOCAL:4)% 
+    PRINTFORML 以上是当日内对露米娅执行指令的顺序
+    DRAWLINE 
+    IF RESULT > DAY 
+        PRINTW 不是，还没到这天你急什么 
+        PRINTL 
+        PRINTFORMDL 请在下方输入你想查看的总日数
+        INPUT 
+        CONTINUE
+    ELSEIF RESULT < 0 
+        PRINTW 不是，你时停都不够了还想时间倒流呢
+        PRINTL 
+        PRINTFORMDL 请在下方输入你想查看的总日数
+        INPUT 
+        CONTINUE
+    ENDIF 
+    FOR LOCAL , 1 , 700 
+        VARSET LOCALS 
+        ;跳过屏蔽的指令
+        SIF TRAINNAME:LOCAL == ""
+            CONTINUE
+        ;跳过主动隐藏的指令
+        SIF M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL) == 0 && LOCAL:3 
+            CONTINUE
+        ;计入字符串 
+        LOCALS =【{LOCAL}_%TRAINNAME:LOCAL%】{M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL)}
+        ;补足空位
+        IF M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL) > 20
+            SETCOLOR C_V_PINK 
+        ELSEIF M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL) > 10
+            SETCOLOR C_H_PINK 
+        ELSEIF M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL) > 3
+            SETCOLOR C_PINK 
+        ELSEIF M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(LOCAL:4,LOCAL) > 0 
+            SETCOLOR C_S_BLUE
+        ENDIF 
+        PRINTFORMC %ARRANGE_STRLENS(LOCALS),25,LEFT%
+        LOCAL:1 += 1 
+        IF LOCAL:1 == 5 
+            PRINTL 
+            LOCAL:1 = 0 
+        ENDIF 
+        RESETCOLOR 
+    NEXT 
+    PRINTL 
+    LOCAL:1 = 0 ;重置换行
+    PRINTL 
+    PRINTFORMDL 以上是第{LOCAL:4}天内各指令使用的次数
+    PRINTFORMDL 
+    CALL M_Moe_K12_ASK_M(@"\@ LOCAL:3 ? 显示未使用指令 # 隐藏未使用指令 \@",1,"退出",1) 
+    SELECTCASE RESULT 
+        CASE 0
+            IF LOCAL:3 == 0 
+                LOCAL:3 = 1 
+            ELSEIF LOCAL:3 == 1
+                LOCAL:3 = 0
+            ENDIF  
+            CONTINUE 
+        CASE 1 
+            RETURN 1 
+    ENDSELECT 
+WEND 
+CLEARLINE LINECOUNT - LOCAL:2
+
+;==================================================
+;显示历史部分
+;DAY:0 为当日天数
+;============================
+;LOCAL:0是轮询用变量
+;LOCAL:1是一行内输入了多少个按钮
+;LOCAL:2是清除行数用的
+;LOCAL:3用于记录有没有隐藏
+@M_KOJO_MOE_RUMIA_COM_RECORD_SHOW_HISTORY
+#LOCALSIZE 700
+LOCAL:2 = LINECOUNT
+PRINTL 
+WHILE RESULT != 4 
+    ;轮询700个指令的记录情况
+    FOR LOCAL , 0 , 700 
+        VARSET LOCALS 
+        ;跳过屏蔽的指令
+        SIF TRAINNAME:LOCAL == ""
+            CONTINUE
+        ;跳过主动隐藏的指令
+        SIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL == 0 && LOCAL:3 
+            CONTINUE
+        ;计入字符串 
+        LOCALS =【{LOCAL}_%TRAINNAME:LOCAL%】{MOE_RUMIA_COM_RECORD_HISTORY:LOCAL}
+        ;颜色设定
+        IF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 1750
+            SETCOLOR C_V_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 750
+            SETCOLOR C_H_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 150
+            SETCOLOR C_PINK 
+        ELSEIF MOE_RUMIA_COM_RECORD_HISTORY:LOCAL > 25
+            SETCOLOR C_S_BLUE
+        ENDIF 
+        ;补足空位,每个留
+        PRINTFORMC %ARRANGE_STRLENS(LOCALS),25,LEFT%
+        LOCAL:1 += 1 
+        IF LOCAL:1 == 5 
+            PRINTL 
+            LOCAL:1 = 0 
+        ENDIF 
+        RESETCOLOR 
+    NEXT 
+    ;重置换行
+    LOCAL:1 = 0 
+    PRINTL 
+    PRINTL 
+    PRINTFORMDL 以上是历史上各指令使用的次数
+    PRINTFORMDL 
+    CALL M_Moe_K12_ASK_M(@"\@ LOCAL:3 ? 显示未使用指令 # 隐藏未使用指令 \@",1,"退出并查看当日指令记录",1) 
+    SELECTCASE RESULT 
+        CASE 0
+            IF LOCAL:3 == 0 
+                LOCAL:3 = 1 
+            ELSEIF LOCAL:3 == 1
+                LOCAL:3 = 0
+            ENDIF  
+        CASE 1
+            RETURN 1 
+    ENDSELECT 
+WEND 
+CLEARLINE LINECOUNT - LOCAL:2
+;
+;==================================================
+;单日检查用式中函数
+;值为某个指令的数量
+;ARG是检查的天数，ARG:1是检查的指令编号
+;==================================================
+@M_KOJO_MOE_RUMIA_COM_RECORD_CHECK_ONE_DAY(ARG,ARG:1)
+#FUNCTION
+;转为字符串
+LOCALS = %TOSTR(ARG:1)%
+;计数
+STRCOUNT MOE_RUMIA_COM_RECORD:ARG , @"/%LOCALS%/"
+;返回值
+RETURNF RESULT 
+;
+;-------------------------------------------------
+;ARGSの長さがARGを超えている場合、最後の3文字を...にして返す
+;-------------------------------------------------
+@ARRANGE_STRLENS(ARGS, ARG)
+#FUNCTIONS
+IF STRLENS(ARGS) > ARG
+	ARGS = %SUBSTRING(ARGS , 0 , ARG - 3)%
+ENDIF
+RETURNF ARGS
+
+
+
+
+
+
+
+
+
+
+
+
+
+

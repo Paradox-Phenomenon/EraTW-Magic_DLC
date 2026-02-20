@@ -1,0 +1,801 @@
+﻿;-------------------------------------------------
+;Eratoho The World 4.920用 露米娅Moe版口上  
+;-------------------------------------------------
+;
+
+;==================================================
+;换页函数？
+;不知道有什么用，先留着
+@MOE_RUMIA_CHANGE_PAGE
+#DIM  PAGE
+PAGE = 1
+SELECTCASE PAGE
+	CASE 1
+		PRINTFORML 这是第一页
+	CASE 2
+		PRINTFORML 这是第二页
+ENDSELECT
+PRINTBUTTON "[10] - 　　条件変更　", "10"
+PRINTFORML
+IF RESULT == 10
+	PAGE ++
+ENDIF
+;==================================================
+;获取系统时间函数
+;用于很久不见面的情况
+@MOE_RUMIA_GET_TIME_DATA
+#DIM 年
+#DIM 月
+#DIM 日
+#DIM 记录年
+#DIM 记录月
+#DIM 记录日
+#DIM 日期差
+GETTIME
+年 = RESULT:0 / 10000000000000
+月 = (RESULT:0 % 10000000000000) / 100000000000
+日 = (RESULT:0 % 100000000000) / 1000000000
+记录年 = CFLAG:12:K12C_1_现实时间保存 / 10000000000000
+记录月 = (CFLAG:12:K12C_1_现实时间保存 % 10000000000000) / 100000000000
+记录日 = (CFLAG:12:K12C_1_现实时间保存 % 100000000000) / 1000000000
+日期差 = (年 - 记录年) * 365 + (月 - 记录月) *30 + (日 - 记录日) 
+RETURN 日期差
+;==================================================
+;咬一口函数
+;用于对应口上内容，轻微减少体力
+;什么池沼逐字翻译
+@MOE_RUMIA_BITE_ONE_MOUTH
+IF !CFLAG:12:K12C_1_温柔启用与否 
+    CALL RECOVER(MASTER, -10, "体力", "被露米娅咬了一口")
+    CALL RECOVER(MASTER, -10, "気力", "被露米娅咬了一口")
+ELSE 
+    PRINTFORMDW 一点都不疼呢……
+ENDIF 
+
+;==================================================
+;成为朋友后的处理
+;代表玩家关注露米娅酱了
+@M_KOJO_MOE_K12_BECOME_FRIEND_DATA_PROCESS
+
+PRINTL 
+PRINTL ……
+PRINTL 
+CALL COLORMESSAGE("【与露米娅成为朋友了】",MOE_YELLOW,2,1)
+PRINTL 
+CFLAG:12:K12C_1_朋友 = 1 
+;角色名简中化处理
+IF CALLNAME:12 == "露米亜"
+	PRINTL 请问需要修改露米娅在游戏内的显示名称吗？
+	PRINTL 这会让本口上角色在系统内的称呼与全名，从"露米亜"变成"露米娅"
+	CALL ASK_YN 
+	SELECTCASE RESULT 
+		CASE 0
+			CALLNAME:12 = 露米娅 
+			NAME:12 = 露米娅 
+			PRINTW 已修改
+		CASE 1
+			PRINTW 未进行修改
+	ENDSELECT
+ENDIF 
+PRINTL 
+;口上色设定
+IF !FLAG:K12C_1_自定义颜色设置 
+	PRINTFORMW 要启用本口上的颜色设定吗？
+	PRINTFORML 
+	PRINTFORMDL 启用后，这个口上内的台词，均会有对应的口上色区分
+	PRINTFORMDW 不启用的话，大部分时候都会使用默认颜色
+	PRINTFORML 
+	CALL M_Moe_K12_ASK_M("启用",1,"不启用",1)
+	SELECTCASE RESULT 
+		CASE 0 
+			CFLAG:12:K12C_1_自定义颜色设置 = 1
+			CALL M_KOJO_Moe_COLOR_K12_SET(RESULT)
+			PRINTFORML 
+			PRINTFORMW 已启用
+			PRINTFORMW 日后如果想要更改，还请通过UPDATE菜单进行更改
+			PRINTFORML 
+		CASE 1 
+			CFLAG:12:K12C_1_自定义颜色设置 = 0 
+			CALL M_KOJO_Moe_COLOR_K12_SET(RESULT)
+			PRINTFORML 
+			PRINTFORMW 那么不启用口上色设定
+			PRINTFORMW 日后如果想要更改，还请通过UPDATE菜单进行更改
+			PRINTFORML 
+	ENDSELECT
+ENDIF 		
+
+;==================================================
+;有人在 函数
+;用于检测旁边有没有人
+@K12_Moe_BE_SEEN()
+#FUNCTION
+SIF GET_TARGETNUM() > 1 || DATE_HITOGOMI(CFLAG:PLAYER:300) || WITH_MOB()
+	RETURNF 1
+RETURNF 0 
+;==================================================
+;愤怒抑制用函数
+;用于抑制部分指令之后的愤怒
+;在指令完成后，若愤怒过高，则调整愤怒至20%
+;好像没什么用？
+@MOE_RUMIA_WOULD_NOT_ANGRY
+IF 	BASE:12:12 > (MAXBASE:12:12  / 10) * 6 
+	BASE:12:12 = (MAXBASE:12:12  / 10) * 2 
+ELSE
+ENDIF 
+SIF TCVAR:12:132
+TCVAR:12:132 = 0 
+SIF TALENT:12:15 == -1
+TALENT:12:15 = 0
+;==================================================
+;绝顶经验检查用 函数
+;用于检测每日开始时绝顶经验变化
+;将露米娅绝顶经验存入TCVAR：12：380中
+;将自机起飞经验存入TCVAR：12：381中
+;虽然不知道什么时候才会沾百合
+@MOE_RUMIA_HIGH_EXP_CHECK
+TCVAR:12:K12T_1_当日初始绝顶经验 = EXP:12:10
+IF TALENT:0:2 & 1
+	TCVAR:12:K12T_1_当日初始自机高潮经验 = EXP:0:10
+ELSE 
+	TCVAR:12:K12T_1_当日初始自机高潮经验 = EXP:0:11
+ENDIF 
+;==================================================
+;更衣等待 函数
+;用于429少女更衣
+@RUMIA_MOE_CHANGE_CLOTHES
+	SETCOLOR MOE_PINK
+	PRINTFORMD <少女更衣中> 
+	AWAIT 111
+	PRINTFORMD .
+	AWAIT 111
+	PRINTFORMD .
+	AWAIT 111
+	PRINTFORMD .
+	AWAIT 111
+	PRINTFORMD .
+	AWAIT 111
+	PRINTFORMD .
+	AWAIT 111
+	PRINTFORMDL .
+	AWAIT 111
+	SETCOLOR MOE_RUMIA 
+;==================================================
+;强制约会函数
+;强制进入约会状态和可约会状态
+;用于初见约会分支以及外出时带上露米娅
+@K12_Moe_SET_APPOINTMENT
+IF GET_MAPID(CFLAG:MASTER:300) != MAIN_MAP
+	CFLAG:MASTER:320 = 60
+	CFLAG:12:320 = 60
+	CFLAG:12:12 = CFLAG:MASTER:300 / 100
+	FLAG:73 = 12
+	CFLAG:12:352 = 0
+	CFLAG:12:353 = 0
+	CFLAG:12:354 = 0
+	CFLAG:12:355 = 0
+	CFLAG:12:300 = CFLAG:0:300
+;メインMap時は最大三時間まで
+ELSE
+	CFLAG:12:12 = CFLAG:MASTER:300 / 100
+	CFLAG:MASTER:320 = 180
+	CFLAG:12:320 = 180
+	FLAG:73 = 12
+	CFLAG:12:300 = CFLAG:0:300
+ENDIF
+;==================================================
+;约会结束用 函数
+;强制结束约会状态，用于初见当天结束
+@K12_ENDAPPOINTMENT
+CFLAG:MASTER:320 = 0
+CFLAG:12:320 = 0
+CFLAG:12:12 = MAIN_MAP
+FLAG:73 = 0
+CFLAG:12:352 = 0
+CFLAG:12:353 = 0
+CFLAG:12:354 = 0
+CFLAG:12:355 = 0
+;==================================================
+;设置名字用 函数
+;设置名字的额外改一改写这边了
+@RUMIA_NAME_SET
+PRINTFORML 「嗯，那，%MASTERNAME:12%想让露米娅怎么叫你呢？」
+$INPUT_LOOP_ONAMAE
+PRINTFORMDL （请在下方输入名字）
+IF CALLNAME:MASTER == "你"
+	LOCALS = %NAME:MASTER%
+ELSE
+	LOCALS = %CALLNAME:MASTER%
+ENDIF
+PRINTBUTTON @"[%LOCALS%と名乗る]", @"%LOCALS%"
+PRINTL 　
+;名前を入力するループ
+INPUTS
+; 行頭行尾の空白文字削除
+LOCALS = %RESULTS%
+REPLACE LOCALS, "\(\^\\s\+\|\\s\+\$)", ""
+;10文字以上は受け付けない
+IF STRLENS(LOCALS) > 10
+	PRINTW 「名字太长了啦……」
+	CLEARLINE 4 
+	GOTO INPUT_LOOP_ONAMAE
+;空白は受け付けない
+ELSEIF RESULTS == ""
+	PRINTW 「这不是什么都没说嘛……」  
+	CLEARLINE 4 
+	GOTO INPUT_LOOP_ONAMAE
+;啧……我在写什么啊……我自己也不见得会用这些名儿啊
+ELSEIF (RESULTS == "老公") || (RESULTS ==  "亲爱的") || (RESULTS == "宝宝") || (RESULTS == "达令") 
+	IF TALENT:12:7 && TALENT:12:3
+		PRINTFORMW 「%RESULTS%……诶嘿嘿%UNICODE(0x2764)%，%RESULTS%%UNICODE(0x2764)%～……」
+		PRINTFORMW 「这样叫着，真的好满足啊……露米娅真的能这样叫你嘛！%MASTERNAME:12%！」 		
+		CLEARLINE 2 		
+		GOTO RUMIA_CALL_CONFIRM
+	ELSEIF TALENT:12:7 && TALENT:12:8
+		PRINTFORMW 「%RESULTS%……%RESULTS%%UNICODE(0x2764)%！……呜……有些害羞呢……」
+		PRINTFORMW 「%MASTERNAME:12%很喜欢的话，%RESULTS%，也不是不可以啦～」 		
+		CLEARLINE 2 		
+		GOTO RUMIA_CALL_CONFIRM
+	ELSE 
+		PRINTFORMW 「%RESULTS%……呜！怎么可以这么叫嘛……%MASTERNAME:12%真是坏蛋……」
+		PRINTFORMW 「不行不行！%MASTERNAME:12%换一个！」 
+		CLEARLINE 2 		
+		GOTO INPUT_LOOP_ONAMAE
+	ENDIF 
+ELSE
+	;可以整点特殊的名字彩蛋
+	PRINTFORML 「%RESULTS%？……好，记住啦！确定要让露米娅这样叫你吗？%RESULTS%？」
+	$RUMIA_CALL_CONFIRM
+	PRINTL [0] 是的
+	PRINTL [1] 不是
+	;入力した名前を確定するループ
+	$INPUT_LOOP_KAKUTEI_1
+	INPUT
+	CLEARLINE 3 
+	IF RESULT == 0
+		;你の名前を%MASTERNAME:100%に格納 
+		;可以整点特殊的名字彩蛋
+			MASTERNAME:12 = %RESULTS%
+		CLEARLINE 3
+	ELSEIF RESULT == 1
+		CLEARLINE 2 
+		GOTO INPUT_LOOP_ONAMAE
+	ELSE
+		CLEARLINE 2 
+		GOTO RUMIA_CALL_CONFIRM
+	ENDIF
+ENDIF
+
+;==================================================
+;素质变更部分
+;用于变更素质……
+@MOE_RUMIA_TALENT_CHANGE 
+	CALL K12_Moe_TALANT_CHECK 
+	SIF TALENT:12:30 
+		TALENT:12:30 = 0
+	;去除不重视贞操
+	SIF TALENT:12:33 
+		TALENT:12:33 = 0
+	;去除不知羞耻
+	SIF TALENT:12:24 == 0  
+		TALENT:12:24 = 1
+	;增加开朗
+	SIF TALENT:12:12 == 0  
+		TALENT:12:12 = -1
+	;增加老实
+
+;素质检测部分
+;此后依靠MOE_RUMIA_INITAL_TALENT即可检测某素质初期的变量
+@K12_Moe_TALANT_CHECK 
+FOR LOCAL , 0 , 350 
+	SIF TALENT:12:LOCAL == 0 
+		CONTINUE 
+	MOE_RUMIA_INITAL_TALENT:LOCAL = TALENT:12:LOCAL 
+NEXT 
+
+;==================================================
+;好意获得修正
+@MOE_FAVOR_FIX_FOR_RUMIA_IN_EVENT31
+#DIM 乘数
+#DIM 除数
+	IF TALENT:12:7 && TALENT:12:3
+		;不必限制
+			乘数 = 1
+			除数 = 1
+	ELSEIF TALENT:12:7 && TALENT:12:8
+			乘数 = 15
+			除数 = 20
+	ELSEIF TALENT:12:3
+			乘数 = 13
+			除数 = 20
+	ELSEIF TALENT:12:184 || TALENT:12:185 
+			乘数 = 7
+			除数 = 10
+	ELSEIF TALENT:12:8
+		IF ABL:12:9 < 7
+			乘数 = 5
+			除数 = 20
+		ELSEIF ABL:12:9 < 9
+			乘数 = 6
+			除数 = 20
+		ELSE 
+			乘数 = 7
+			除数 = 20
+		ENDIF 
+	ELSE
+		IF ABL:12:9 < 1 	;避免开局一路狂奔亲密4
+			乘数 = 2
+			除数 = 15
+		ELSEIF ABL:12:9 < 3
+			乘数 = 3
+			除数 = 15
+		ELSE 
+			乘数 = 3
+			除数 = 10
+		ENDIF 
+	ENDIF 
+;DEBUGPRINTFORML 现在PALAM好意的值为{PALAM:12:20}
+;PRINTFORMW 现在PALAM好意的值为{PALAM:12:20}
+PALAM:12:10 *= 乘数
+PALAM:12:11 *= 乘数
+PALAM:12:12 *= 乘数
+PALAM:12:13 *= 乘数
+PALAM:12:14 *= 乘数
+PALAM:12:20 *= 乘数
+PALAM:12:21 *= 乘数
+PALAM:12:10 /= 除数
+PALAM:12:11 /= 除数
+PALAM:12:12 /= 除数
+PALAM:12:13 /= 除数
+PALAM:12:14 /= 除数
+PALAM:12:20 /= 除数
+PALAM:12:21 /= 除数
+;DEBUGPRINTFORML 现在PALAM好意的值为{PALAM:12:20}
+;PRINTFORMW 现在PALAM好意的值为{PALAM:12:20}
+;为避免版本不同导致的报错，自己从原版里面掏的充填率判别
+@充填率_OF_RUMIA(角色登録番号, 身体部位)
+#FUNCTION
+#DIM 角色登録番号
+#DIM 身体部位
+#DIM 精液量
+#DIM 身体容量
+VARSET 精液量
+;該当部位の精液量の取得
+SELECTCASE 身体部位
+	CASE 1
+		精液量 = EX:角色登録番号:14
+	CASE 2
+		精液量 = EX:角色登録番号:15
+	CASE 3
+		;------ ALTER 精液填充加算
+		精液量 = EX:角色登録番号:14 + EX:角色登録番号:15 + (EX:角色登録番号:18)
+		;------ END
+		;精液量 = EX:角色登録番号:14 + EX:角色登録番号:15
+	CASE 4
+		精液量 = EX:角色登録番号:18
+ENDSELECT
+;該当部位の容量を取得，TALENT100是角色体型
+SELECTCASE TALENT:角色登録番号:100
+	CASE -5
+		身体容量 = 300
+	CASE -4 TO -2
+		身体容量 = 600
+	CASE -1
+		身体容量 = 1000
+	CASE 0
+		身体容量 = 1200
+	CASE IS > 0
+		身体容量 = 1500
+ENDSELECT
+;子宮ならば容量半減
+IF 身体部位 == 4
+	身体容量 /= 2
+ENDIF
+RETURNF 100 * 精液量 / 身体容量
+;==================================================
+;获得物品函数
+;为了适配不同的版本所制作，用ID直接指代物品
+;ITEM_ID	物品的编号
+;ITEM_NUM	物品数量
+;PRINT_TYPE ;表示形式　0=通常　1=L　2=W
+;==================================================
+@GET_ITEM_ID_FOR_RUMIA(ITEM_ID, ITEM_NUM = 1, PRINT_TYPE)
+#DIMS ITEM_NAME
+#DIM ITEM_ID
+#DIM ITEM_NUM
+#DIM PRINT_TYPE;表示形式　0=通常　1=L　2=W
+;ITEM_ID = GETNUM(ITEM, ITEM_NAME)
+IF ITEM_ID == -1
+	PRINTFORML 不存在这个物品
+ENDIF
+DEBUGPRINTFORML 给予了{ITEM_ID}个%ITEMNAME:ITEM_ID%
+IF ITEM:ITEM_ID + ITEM_NUM >= 100
+	CALL COLORMESSAGE(@"%ITEMNAME:ITEM_ID%已经拿不下了", C_YELLOW, PRINT_TYPE)
+	ITEM:ITEM_ID = MAX(ITEM:ITEM_ID, 99)
+ELSE
+	CALL COLORMESSAGE(@"得到了{ITEM_NUM}个%ITEMNAME:ITEM_ID%", C_YELLOW, PRINT_TYPE)
+	ITEM:ITEM_ID += ITEM_NUM
+ENDIF
+;
+;==================================================
+;获得经验函数
+;为了适配不同的版本所制作，用ID直接指代对应经验
+;==================================================
+@AddEXP_FOR_RUMIA(VAR_ID,C_ID,変動数)
+#DIM VAR_ID
+#DIM C_ID
+#DIM 変動数
+
+SIF 変動数 == 0
+	RETURN
+
+EXP:C_ID:VAR_ID += 変動数
+CALL COLORMESSAGE(@"%EXPNAME:VAR_ID%＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
+
+@JUEL_UP_SPECIAL_FOR_RUMIA(ARG,増やす珠,参照能力,PERCENTAGE,表示,PATTERN)
+#DIM 増やす珠
+#DIM 参照能力
+#DIM UP_JL
+#DIM UP_ABL
+#DIM PERCENTAGE
+#DIM 表示
+#DIM PATTERN
+#DIM 上昇量
+;特殊なイベントで珠を増やすための関数
+;ARGのJUEL:UP_JLの珠をABL:UP_ABLを上げるために必要なPERCENTAGEパーセントだけ増やすよ
+
+;使用例:快Ｃ(0)を自慰中毒(30)上げるのに必要な量の50%だけ上げる、メッセージ表示する
+;CALL JUEL_UP_SPECIAL_FOR_RUMIA(ARG,0,30,50,1)
+
+
+;UP_ABL = FINDELEMENT(ABLNAME, 参照能力)
+UP_ABL = 参照能力
+;UP_JL = FINDELEMENT(PALAMNAME, 増やす珠)
+UP_JL = 増やす珠
+
+SELECTCASE UP_ABL
+	CASE 0
+		LOCAL = JUEL_DEMAND_0(PATTERN,UP_JL,ARG)
+		LOCAL = LOCAL * (2 + TALENT:ARG:Ｃ感度) / 2
+	CASE 1
+		LOCAL = JUEL_DEMAND_1(PATTERN,UP_JL,ARG)
+		LOCAL = LOCAL * (2 + TALENT:ARG:Ｖ感度) / 2
+	CASE 2
+		LOCAL = JUEL_DEMAND_2(PATTERN,UP_JL,ARG)
+		LOCAL = LOCAL * (2 + TALENT:ARG:Ａ感度) / 2
+	CASE 3
+		LOCAL = JUEL_DEMAND_3(PATTERN,UP_JL,ARG)
+		LOCAL = LOCAL * (2 + TALENT:ARG:Ｂ感度) / 2
+	CASE 4
+		LOCAL = JUEL_DEMAND_4(PATTERN,UP_JL,ARG)
+		LOCAL = LOCAL * (2 + TALENT:ARG:Ｍ感度) / 2
+	CASE 10
+		LOCAL = JUEL_DEMAND_10(PATTERN,UP_JL,ARG)
+	CASE 11
+		LOCAL = JUEL_DEMAND_11(PATTERN,UP_JL,ARG)
+	CASE 12
+		LOCAL = JUEL_DEMAND_12(PATTERN,UP_JL,ARG)
+	CASE 13
+		LOCAL = JUEL_DEMAND_13(PATTERN,UP_JL,ARG)
+	CASE 14
+		LOCAL = JUEL_DEMAND_14(PATTERN,UP_JL,ARG)
+	CASE 15
+		LOCAL = JUEL_DEMAND_15(PATTERN,UP_JL,ARG)
+	CASE 16
+		LOCAL = JUEL_DEMAND_16(PATTERN,UP_JL,ARG)
+	CASE 17
+		LOCAL = JUEL_DEMAND_17(PATTERN,UP_JL,ARG)
+	CASE 18
+		LOCAL = JUEL_DEMAND_18(PATTERN,UP_JL,ARG)
+	CASE 30
+		LOCAL = JUEL_DEMAND_30(PATTERN,UP_JL,ARG)
+	CASE 31
+		LOCAL = JUEL_DEMAND_31(PATTERN,UP_JL,ARG)
+	CASE 32
+		LOCAL = JUEL_DEMAND_32(PATTERN,UP_JL,ARG)
+	CASE 33
+		LOCAL = JUEL_DEMAND_33(PATTERN,UP_JL,ARG)
+	CASE 34
+		LOCAL = JUEL_DEMAND_34(PATTERN,UP_JL,ARG)
+	CASE 35
+		LOCAL = JUEL_DEMAND_35(PATTERN,UP_JL,ARG)
+ENDSELECT
+上昇量 = MAX(LOCAL * PERCENTAGE / 100, PERCENTAGE)
+JUEL:ARG:UP_JL += 上昇量
+;PRINTFORML %PALAMNAME:UP_JL%の珠 ＋{LOCAL * PERCENTAGE / 100} （%CALLNAME:ARG%）
+IF 表示
+	CALL COLORMESSAGE(@"%PALAMNAME:UP_JL%の珠 ＋{上昇量} （%CALLNAME:ARG%）",C_PINK,1)
+ELSE
+	[IF_DEBUG]
+	CALL COLORMESSAGE(@"%PALAMNAME:UP_JL%の珠 ＋{上昇量} （%CALLNAME:ARG%）",C_PINK,1)
+	[ENDIF]
+ENDIF
+;==================================================
+;特定台词输出函数
+;==================================================
+@MOE_RUMIA_LINES_PRINT(ARGS,ARG)
+
+IF ARG == 11
+	PRINTFORMDW %ARGS%
+ELSEIF ARG == 10 
+	PRINTFORMDL %ARGS%
+ELSEIF ARG 
+	PRINTFORMW %ARGS%
+ELSE 
+	PRINTFORML %ARGS%
+ENDIF 
+;
+;==================================================
+;检测其他恋人/恋慕角色数量
+;==================================================
+;ARG = 1 时检测恋慕
+;ARG:1 = 1时，不排除当前目标,默认不计入当前目标
+;这是一个式中函数，返回值为恋人/恋慕角色的数量
+;默认会排除12
+@MOE_RUMIA_CHECK_ANY_OTHER_LOVER(ARG=0,ARG:1=0)
+#FUNCTION 
+VARSET RESULT 
+FOR LOCAL , 1 , CHARANUM 
+	IF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == 12) && ARG:1)
+		RESULT ++ 
+	ENDIF 
+NEXT 
+RETURNF RESULT 
+
+;==================================================
+;输出其他恋人恋慕角色的名称
+;==================================================
+;ARG = 1 时检测恋慕
+;ARG:1 = 1时，不排除当前目标,默认不计入当前目标
+;这是一个式中函数，返回值为恋人/恋慕角色的并列名字
+;默认会排除12
+@MOE_RUMIA_PRINT_ANY_OTHER_LOVER(ARG=0,ARG:1=0)
+#FUNCTIONS
+RESULTS = 
+FOR LOCAL ,1 ,CHARANUM 
+	SIF TALENT:LOCAL:(7-ARG*4) && ((LOCAL == 12)&& ARG:1)
+		RESULTS += @"%CALLNAME:LOCAL%、"
+NEXT 
+STRLENS RESULTS  
+;切去最后一位顿号
+SUBSTRING RESULTS , 0 , (RESULT - 1)
+RETURNF RESULTS 
+
+;==================================================
+;首次事件检测函数
+;不写入，仅检测对应字符串有没有触发过
+;使用原版FIRSTTIME才能写入
+;-------------------------------------------------
+@FIRSTTIME_OF_Moe_K12(ARGS,ARG,ARG:1)
+#FUNCTION
+;ARG:1の変換
+ARG:1 = ARG:1 ? ARG:1 # TARGET
+ARG:1 = ARG:1 == -1 ? MASTER # ARG:1
+SIF CSTR:(ARG:1):0 == ""
+	CSTR:(ARG:1):0 = /
+;
+LOCALS = /%ARGS%/
+IF STRCOUNT(CSTR:(ARG:1):0,LOCALS)
+	RETURNF 0
+ELSEIF ARG
+	RETURNF 1
+ENDIF
+RETURNF 1 
+;==================================================
+;首次事件检测函数
+;不写入，仅检测对应字符串有没有触发过
+;使用原版FIRSTTIME才能写入
+;-------------------------------------------------
+@ONCE_OF_Moe_K12(ARGS,ARG, ARG:1)
+#FUNCTION
+;ARG:2の変換
+ARG:1 = ARG:1 ? ARG:1 # TARGET
+ARG:1 = ARG:1 == -1 ? MASTER # ARG:1
+
+SIF CSTR:(ARG:1):1 == ""
+	CSTR:(ARG:1):1 = /
+
+LOCALS = /%ARGS%/
+IF STRCOUNT(CSTR:(ARG:1):1,LOCALS)
+	RETURNF 0
+ELSEIF ARG
+	RETURNF 1
+ENDIF
+RETURNF 1
+;
+;-------------------------------------------------
+;基于原版的M_Moe_K12_ASK_M
+;增加了保持原有字体和颜色的功能
+;-------------------------------------------------
+@M_Moe_K12_ASK_M(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8, ARGS:9, ARG:9)
+#LOCALSIZE 7
+#DIM CONST 選択肢上限 = 9
+#DIM PREV_REDRAW
+PREV_REDRAW = CURRENTREDRAW()
+REDRAW 0
+LOCAL:1 = GETCOLOR()
+LOCAL:2 = GETSTYLE()
+LOCALS = %GETFONT()%
+FOR LOCAL:0, 0, (選択肢上限 + 1)
+	IF ARGS:(LOCAL:0) != ""
+		IF ARG:(LOCAL:0)
+			PRINTBUTTON @"{LOCAL:0, 2, RIGHT}[%ARGS:(LOCAL:0)%]", LOCAL:0
+		ELSE
+			SETCOLOR 0x606060
+			PRINTPLAINFORM {LOCAL:0, 2, RIGHT}[%ARGS:(LOCAL:0)%]
+			RESETCOLOR
+		ENDIF
+		PRINTL
+	ENDIF
+NEXT
+$INPUT_LOOP
+INPUT
+IF RESULT < 0 || RESULT > 選択肢上限 || ARGS:RESULT == "" || !ARG:RESULT
+	CLEARLINE 1
+	GOTO INPUT_LOOP
+ENDIF
+REDRAW PREV_REDRAW
+SETCOLOR LOCAL:1
+FONTSTYLE LOCAL:2 
+SETFONT LOCALS 
+RETURN RESULT
+;-------------------------------------------------
+;破处与失贞（确信）
+;-------------------------------------------------
+@M_KOJO_Moe_K12_Custom_Event_VIRGIN_LOST(主动=0,修饰语="",场所="",)
+#DIM 主动
+#DIMS 修饰语
+#DIMS 场所
+;记录逆推状态
+LOCAL = CFLAG:12:317 
+;
+IF TALENT:12:27 == 1 
+	TALENT:12:27 = 0
+	CFLAG:12:K12C_1_无知破处地文控制 = 1  
+ENDIF 
+;
+EXP:12:1 += 1
+;IF TALENT:12:0 == 1 && GETBIT(TALENT:12:2,0)
+CALL COLORMESSAGE("【処女喪失】",0xF7ABA6,2,1)
+IF TALENT:12:7
+	CALL COLORMESSAGE(@"%CALLNAME:12%因为能让%MASTERNAME:12%成为第一次的对象而感到无上的幸福感的様子……",MOE_FADED_RED,2,1)
+	CFLAG:12:処女喪失対象 |= 喪失_恋慕
+ELSEIF TALENT:12:3
+	CALL COLORMESSAGE(@"%CALLNAME:12%因为把处女献给了%MASTERNAME:12%而感到幸福的様子……",MOE_PINK,2,1)
+	CFLAG:12:処女喪失対象 |= 喪失_恋慕
+ELSE 
+	CFLAG:12:処女喪失対象 |= 喪失_思慕
+ENDIF 
+CFLAG:12:処女喪失記念日 = DAY
+TALENT:12:処女 = 0
+TCVAR:12:破瓜 = 1
+CFLAG:12:処女喪失对手 = PLAYER
+
+;触发献上的修饰词
+SIF 场所 == " "
+	场所 = %PLACE_NAME(12)%
+TARGET = 12
+SIF 主动
+	CFLAG:12:317 = 2 
+CSTR:12:処女喪失履歴 = %HISTORY_LOST_TEXT(12,MASTER,"阴茎",场所,修饰语,"処女")%
+;还原逆推状态
+CFLAG:12:317 = LOCAL 
+
+IF !TALENT:0:1 && TALENT:0:2 & 2
+	TCVAR:0:61 = 1
+	SETCOLOR MOE_PINK 
+	PRINTFORMW 童貞喪失(%CALLNAME:0%)
+	SETCOLOR MOE_RUMIA
+	TALENT:0:1 = 1
+ENDIF
+IF !TALENT:12:156 && MOE_RUMIA_INITAL_TALENT:27 && CFLAG:12:K12C_1_无知破处地文控制
+	TALENT:12:27 = 1    
+	CFLAG:12:K12C_1_无知破处地文控制 = 0  
+ENDIF        
+SIF TALENT:12:0 && (TALENT:12:3)
+	EXP:12:41 += 5
+SIF TALENT:12:0 && (TALENT:12:7)
+	EXP:12:41 += 15
+[SKIPSTART]
+IF CFLAG:12:311 == CFLAG:0:300
+	CALL SET_HISTORY_LOST_V(12, MASTER, "阴茎", "自室", "")
+ELSE 
+	CALL SET_HISTORY_LOST_V(12, MASTER, "阴茎", "自室", "")
+ENDIF 
+[SKIPEND]
+@童貞無接吻経験喪失_RUMIA(ARG)
+;适配未翻译的版本
+TRYCCALLFORM 童貞無接吻経験喪失(0)
+CATCH 
+    TRYCALL 童貞キス未経験喪失(0)
+ENDCATCH 
+
+
+;==================================================
+;主动掀裙子描述函数、
+;避免重复使用文本造成虚胖
+;函数内自带胖次辨别，所以应该不用主动赋给arg
+;ARG:1 是自定义体位
+;ARG:2 是描述V还是A，0是V 1是A
+
+;==================================================
+@MOE_RUMIA_PANTS_OR_PUxxY_DESCRIPTION(ARG=0,ARG:1=0,ARG:2=0)
+;自动判别胖次
+IF !ARG 
+	IF EQUIP:12:5 || EQUIP:12:6 
+		ARG = 1 
+	ELSE 
+		ARG = 0 
+	ENDIF 
+ENDIF 
+;
+IF ARG:1 ;设置自定义体位描述
+	LOCAL = TEQUIP:110
+	TEQUIP:110 = ARG:1 
+ENDIF 
+SELECTCASE TEQUIP:110 
+	CASE 1 
+		LOCALS = 张开双腿躺了下去
+	CASE 2
+		LOCALS = 挺起了屁股
+	CASE 3 ,4
+		LOCALS = 张开双腿坐了上来
+	CASE 5
+		LOCALS = 在你的腿上坐下
+ENDSELECT
+IF ARG:1 ;取消自定义体位描述
+	TEQUIP:110 = LOCAL 
+ENDIF 
+;无胖次的情况
+IF ARG == 1 
+	IF 充填率_OF_RUMIA(TARGET,1) > 77
+		PRINTFORMDL 直接裸露出的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@黏满了白浊，还在不断向外喷着精液
+		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，大股大股地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
+		PRINTFORMDL 裸露着的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@黏满了白浊，从中汩汩地流着精液
+		PRINTFORMDL 流淌着的精液随着女孩%LOCALS%，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF PALAM:12:9 > 10000
+		PRINTFORMDL 直接裸露的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@，已经湿得一塌糊涂
+		PRINTFORMDL 从微微张开的穴口流淌出的蜜液，啪哒啪哒地滴落在\@ !BEDROOM(CFLAG:PLAYER:300) && !(BATHROOM() && ITEM:20)	? 地 # 床 \@上……
+	ELSEIF PALAM:12:9 > 2000
+		PRINTFORMDL 随着女孩%LOCALS%，被蜜液微微濡湿的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@吸引着你的目光……
+	ELSE 
+		PRINTFORMDL 随着女孩%LOCALS%，微微张开的幼小\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@吸引着你的目光……
+	ENDIF
+ELSE
+	IF 充填率_OF_RUMIA(TARGET,1) > 77
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL 被精液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%中间不断地漫出刚刚射进去的精液……
+	ELSEIF 充填率_OF_RUMIA(TARGET,1) > 10
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@的部分被你射进去的精液浸染了……
+	ELSEIF PALAM:12:9 >= 10000
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL 被蜜液完全浸染的%PANTSNAME(EQUIP:6, TARGET)%，散发出阵阵诱人的蜜香……
+	ELSEIF PALAM:12:9 >= 1000
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+		PRINTFORMDL %PANTSNAME(EQUIP:6, TARGET)%靠近\@ ARG:2==0 ? %TEXTR("蜜缝/蜜穴/肉缝")% # %TEXTR("菊穴/菊花/屁穴")% \@的部分被蜜液浸染了……
+	ELSE
+		PRINTFORMDL 随着女孩%LOCALS%，那柔嫩股间穿着的%PANTS_DESCRIPTION(EQUIP:TARGET:6, TARGET)%%PANTSNAME(EQUIP:6, TARGET)%吸引着你的目光……
+	ENDIF
+ENDIF 
+
+
+;==================================================
+;检查某个日记差分被触发的情况
+;原理是遍历当前所有已经被设置的页数，寻找到对应差分，并输出日期
+;大概只能检查事件系日记
+;-------------------------------------------------
+@M_KOJO_Moe_K12_CHECK_DIARY_PAGE_DATE(CHARA,NO_DIARY)
+#FUNCTION
+#DIM CHARA
+#DIM NO_DIARY
+FOR LOCAL , 1 , (RUMIA_MAX_DIARY_PAGE:CHARA:0 + 1)
+	IF RUMIA_PAGESET:CHARA:LOCAL == NO_DIARY
+		RETURNF RUMIA_DIARY_DATE:CHARA:LOCAL
+	ELSEIF RUMIA_PAGESET:CHARA:LOCAL == 0 
+		BREAK 
+	ELSE
+		CONTINUE
+	ENDIF 
+NEXT 
+RETURNF 0 

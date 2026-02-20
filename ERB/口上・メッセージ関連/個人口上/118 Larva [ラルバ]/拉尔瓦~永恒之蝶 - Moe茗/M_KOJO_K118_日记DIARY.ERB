@@ -1,0 +1,896 @@
+﻿
+;使用本日记模板之前，请先将KXXXX全局替换为您的角色名，然后将XXX更换为您的口上标志，再然后将XX更换成角色编号
+;如果是初期版，可以将_XXX全都清除
+
+;如果希望日记发生在特定事件以及命令的时候，请直接在相应的语句中添加CALL M_KOJO_Moe_DIARYSETTING_K118(NO_DIARY,1)	
+
+;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+;运行原理
+;※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※※
+;本日记模板，是基于原版日记的变量设置有感而发，制作完成的……
+;顺带一提，我只是用露米娅的名字命名这个模板
+;目前的话，由于自己使用了一些危险系数很高的玩意，所以……本日记的功能，尚还不能完全地触发
+;
+;
+;全局变量说明
+;
+;LARVA_MAX_DIARY_PAGE	最大允许页数，已经自定义为一百年的分量
+;用法是LARVA_MAX_DIARY_PAGE:CHARA:0 = 最大页数
+;
+;LARVA_DIARY	单条日记的参数
+;用法是LARVA_DIARY:CHARA:118	，值为1代表已读，值为2代表等待大喇叭播报，值为3代表无需播报且未读
+;
+;LARVA_PAGESET		日记某页书写的日记编号
+;用法是LARVA_PAGESET:CHARA:PAGENUM = NO_DIARY，NO_DIARY是对应的日记编号
+;
+;LARVA_DIARY_DATE		日记某页的天数
+;用法如LARVA_DIARY_DATE:CHARA:PAGENUM = DAY ，日记系文本内有自动计算日期的函数，不改天数就没问题）
+;
+;LARVA_DIARY_SETTING		日记某页的差分条件
+;LARVA_DIARY_SETTING:CHARA:PAGENUM = ARG，具体的差分请写在日记正文之中……
+;
+;触发流程说明
+;
+;原版中，每晚在EVENT31之后，都会触发BEFORE_CHECK，然后是大喇叭播报，最后是AFTERCHECK
+;原版那个屎一样的代码，居然不会CALL别人版的日记，而且，日记最大页数只有100页啊啊啊！
+;所以更换了自己的变量与触发流程，适配的版本是4881了
+;
+;每晚的部分
+;==========================================================
+;EVENT31(事件系)：这一部分用于测定当日条件，然后触发事件或日常日记，会在这边CALL一个统一触发的函数
+;
+;BEFORE_CHECK：
+;设置值为2的日记，然后用大喇叭播报日记
+;CHARA_DIARY_PAGESETTING：
+;原版AFTER_TRAIN中的内容，本口上已经弃用，设置日记的功能集成到了BEFORE_CHECK中
+;AFTER_CHECK：
+;因为每晚和每次读日记都会触发，能提供一个比EVENT31晚的时间点，所以设置得较晚的事件都放里面了
+;由于面识之前不会触发EVENT31，所以在初见之前，这里会强行为露米娅CALL一下EVENT31，用于黑球日记
+;
+;BEFORE_TRAIN(事件系)：这一部分用于检测起床，第二天日记，制作早起喇叭等
+;==========================================================
+;
+;自定义的部分
+;==========================================================
+;M_KOJO_Moe_EVENT_AFTER_TRAIN_DIARYSETTING_K118
+	;当天事件日记触发的条件函数，在日常日记之前触发
+	;需要在事件系EVENT31里面CALL
+;M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K118
+	;第二天事件日记触发的条件函数，;目前是无论如何都会触发的日记……呜……所以需要用CFLAG之类的检测一下……
+	;需要在事件系EVENTTRAIN里面CALL
+;M_KOJO_Moe_DAYIY_DIARYSETTING_K118(ARG)
+	;当天日常日记触发的条件函数，在当天事件日记之后
+	;需要在事件系EVENT31里面，在事件日记中CALL
+	;可以根据TCVAR:今天有否见面来设定差分
+;==========================================================
+
+;==========================================================
+;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩最重要的函数
+;K118_DIARY_PAGESETTING
+;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩最重要的函数
+	; 日记页数设置的函数
+	; 将最新的日记页数指定为 CHARA 的日记编号 （NO_DIARY）
+
+;LARVA_Moe_K118_COM406
+	;自定义的指令，使用自定义的全局变量才可以读自定义的日记，所以自定义了
+
+;M_KOJO_Moe_K118_DIARY_COM(C_ID)
+	;读日记，读露米娅日记的部分
+;==========================================================
+
+;==========================================================
+;存在判定
+;值为0则代表没有日记
+;响应原版的调用，需要启用的话，请将 0 改成 1 就好
+;==========================================================
+@DIARY_Moe_K118_EXIST
+RETURN 1
+
+;==========================================================
+;读日记前判定
+;每次阅读和每夜都会触发
+;==========================================================
+@DIARY_Moe_BEFORE_CHECK_K118
+#DIM CHARA
+#DIM DCOUNT
+#DIM PAGECOUNT
+CHARA = 118
+LARVA_MAX_DIARY_PAGE:CHARA:0 = 12400 	;要在一起一百年哦
+;
+;每夜触发的部分
+IF CFLAG:0:313
+	DCOUNT = 0 
+	;筛选一下最大页数
+	FOR DCOUNT,1,LARVA_MAX_DIARY_PAGE:CHARA:0 + 1
+
+		;每个编号为2的日记都将进入该循环，用于事件系
+		IF LARVA_DIARY:CHARA:DCOUNT == 2			;寻找等于该编号的页码
+			FOR PAGECOUNT, 1, LARVA_MAX_DIARY_PAGE:CHARA:0 + 1
+				;找到页码之后，call一下	对应的日记文本，然后即可
+				IF LARVA_PAGESET:CHARA:PAGECOUNT == DCOUNT
+					CALLFORM DIARY_Moe_TEXT_K{CHARA}(LARVA_PAGESET:CHARA:PAGECOUNT,"デイリー", PAGECOUNT)
+					PRINTFORMW 
+					;给对应的日记值赋1，以表示已经看过了
+					LARVA_DIARY:CHARA:DCOUNT = 1
+					BREAK  
+				ENDIF
+			NEXT
+		ELSE
+			CONTINUE
+		ENDIF
+	NEXT
+ENDIF 
+;原版有一个打开日记再匆匆写的东西，甚至读取不了别人版……
+;
+;==========================================================
+;在每日日记结算，与每次读完之后处理。
+;用途不是很大……不如说，很难用……
+;不过用来写什么自定义事件挺好的
+;==========================================================
+@DIARY_Moe_AFTER_CHECK_K118
+;
+SIF TALENT:118:156 && ( TALENT:118:3 || MOE_LARVA_SEX_FRIEND() || TALENT:118:8 ) && FIRSTTIME("Custom_EVENT_K118_MENARCHE")	;初潮 
+CALL M_KOJO_Moe_Custom_EVENT_K118_MENARCHE
+
+;=============================
+;当天事件日记触发的条件函数
+
+;需要在EVENT31里面CALL
+;是触发完就会马上被大喇叭播报的函数
+;请设置FIRSTTIME以避免重复触发
+;=============================
+@M_KOJO_Moe_EVENT_AFTER_TRAIN_DIARYSETTING_K118
+
+;例子，破处的情况
+;	SIF !TALENT:118:0 && FIRSTTIME("GIVE_VIRGIN_TO_YOU_DIARY") && TCVAR:118:破瓜
+;	CALL M_KOJO_Moe_DIARYSETTING_K118(日记编号,1)
+
+;=============================
+;第二天事件日记触发的条件函数
+;触发的位置在eventtrain里面
+;是无论如何都会触发的日记……呜……所以需要额外变量来做限制
+;实现的方式，是在EVENTTRAIN里面确认值为2，然后当夜触发
+;;如果希望日记发生在特定事件的第二天早上，请在相应的语句中添加CALL M_KOJO_Moe_EVENT_EVENTTRAIN_TRIGGER_SET_K118(ARG)，以设置第二天日记
+;=============================
+@M_KOJO_Moe_EVENT_EVENTTRAIN_DIARYSETTING_K118
+#DIM TRIGGER_NUM
+;从100开始倒序检测
+FOR TRIGGER_NUM , 100 , 0 , -1 
+	IF LARVA_DIARY_TRIGGER:TRIGGER_NUM 
+		CALL M_KOJO_Moe_DIARYSETTING_K118(  LARVA_DIARY_TRIGGER:TRIGGER_NUM  , 1 )
+		LARVA_DIARY_TRIGGER:TRIGGER_NUM = 0
+	ELSE 
+	ENDIF 
+NEXT
+;=============================
+;第二天事件日记触发的设置函数
+;在想要触发的位置CALL这个函数即可
+;ARG	想要触发的日记编号
+;=============================
+@M_KOJO_Moe_EVENT_EVENTTRAIN_TRIGGER_SET_K118(ARG)
+#DIM TRIGGER_NUM
+FOR TRIGGER_NUM , 1 , 100
+	;如果当前数组位置存在变量
+	SIF LARVA_DIARY_TRIGGER:TRIGGER_NUM 
+		CONTINUE 
+	;如果当前数组位置不存在变量
+	IF !LARVA_DIARY_TRIGGER:TRIGGER_NUM
+		LARVA_DIARY_TRIGGER:TRIGGER_NUM = ARG 
+		BREAK
+	ENDIF 
+NEXT
+;
+;
+;
+;=============================
+;日常日记触发的统一管理函数
+
+;需要在EVENT31 CALL本函数
+;未来更新需要补充的话，补充在对应的分组下面，然后增加随机数即可
+;=============================
+[SKIPSTART]
+@M_KOJO_Moe_DAYIY_DIARYSETTING_K118(ARG)
+IF TCVAR:118:今天有否见面
+	CALL M_KOJO_Moe_DIARYSETTING_K118
+ELSE 
+	CALL M_KOJO_Moe_DIARYSETTING_K118
+ENDIF 
+[SKIPEND]
+;===========================================================================
+;日記计数用函数
+;可以返回目前日记的页数，括号内填角色代号，只有露米娅版日记才会触发
+;===========================================================================
+[SKIPSTART]
+@LARVA_SEARCH_DIARY(ARG)
+#FUNCTION
+LOCAL = 0 
+FOR LOCAL , 1 , LARVA_MAX_DIARY_PAGE:ARG:0 + 1
+	;检测到首页空页即可
+	SIF !LARVA_PAGESET:LOCAL
+		BREAK
+NEXT 
+LOCAL -= 1 
+RETURNF LOCAL 
+[SKIPEND]
+;
+;=============================
+;设置日记函数
+;ARG为设置的日记编号，ARG:1为1时设置为大喇叭，ARG:2为正值时设置为不可重复触发
+;=============================
+@M_KOJO_Moe_DIARYSETTING_K118(ARG,ARG:1,ARG:2)
+;日记变量设置
+IF ARG:1
+	LARVA_DIARY:118:ARG = 2
+ELSE 
+	LARVA_DIARY:118:ARG = 3
+ENDIF 
+;如需避免触发日常的日记，请占用一个TCVAR以避免重复触发
+;	TCVAR:118:400 += 1 
+
+CALL K118_DIARY_PAGESETTING(118, ARG)		
+
+;===========================================================================
+;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
+; 日记页数设置的函数
+;⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩⑩
+; 将最新的日记页数指定为 CHARA 的日记编号 （NO_DIARY）
+;===========================================================================
+@K118_DIARY_PAGESETTING(CHARA, NO_DIARY)
+#DIM CHARA
+#DIM NO_DIARY
+
+FOR LOCAL, 1, LARVA_MAX_DIARY_PAGE:CHARA:0 + 1
+	;这里是页数的区分……
+	IF !LARVA_PAGESET:CHARA:LOCAL
+
+		;检测多少页是第多少号日记并记录
+		LARVA_PAGESET:CHARA:LOCAL = NO_DIARY
+
+		;日记日期和日记页数绑定
+		LARVA_DIARY_DATE:CHARA:LOCAL = DAY 
+
+		;在设置日记页数的时候，就记录好日记的差分格式……
+		CALLFORM DIARY_Moe_K{CHARA}_{NO_DIARY}_EDIT
+		SIF RESULT
+		LARVA_DIARY_SETTING:CHARA:LOCAL = RESULT 
+		RETURN LOCAL 
+	ENDIF
+NEXT
+
+
+;=============================
+;406,日記を読む
+;TFLAG:194（在读谁的日记）
+;TFLAG:194如果不是角色，那就是别人的日记，所以要小心
+;SHIRAHU(118)是角色的状态是否正常，没有睡着，时间停止或者烂醉那些
+;DOKU_COMF_FAIL_FOR_LARVA是强制终止原版的日记……
+;=============================
+@M_KOJO_Moe_SUCCESS_COM_K118_406
+IF TALENT:TARGET:3 && ( CFLAG:TARGET:300 == CFLAG:0:300 ) && SHIRAHU(TARGET)
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_406_1
+	CALL LARVA_Moe_K118_COM406
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_406_2
+	TARGET = 0 
+	CALL DOKU_COMF_FAIL_FOR_LARVA
+ELSEIF  ( CFLAG:TARGET:300 == CFLAG:0:300 ) && SHIRAHU(TARGET) && (TFLAG:194 == TARGET )
+	CALL M_KOJO_Moe_MESSAGE_COM_K118_406_1
+	RETURN RESULT
+	TARGET = 0 
+	CALL DOKU_COMF_FAIL_FOR_LARVA
+ELSE 
+	CALL LARVA_Moe_K118_COM406
+	TARGET = 0 
+	CALL DOKU_COMF_FAIL_FOR_LARVA
+ENDIF 
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+;读之前的口上
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@M_KOJO_Moe_MESSAGE_COM_K118_406_1
+
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+;读完后的口上
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@M_KOJO_Moe_MESSAGE_COM_K118_406_2
+
+
+;===========================================================================
+;読日記
+;自定义指令，用于使用自定义全局变量
+;在角色在场时，阅读的日记才是正确的日记（确信）
+;===========================================================================
+@LARVA_Moe_K118_COM406
+#DIM 同棲
+#DIM OWNER
+RESETCOLOR
+IF TARGET > 0 && CFLAG:TARGET:311 == CFLAG:MASTER:311
+	同棲 = 1
+ELSE
+	同棲 = 0
+ENDIF
+
+OWNER = COM406_CHECK_OWNER()
+
+LOCAL = 50 + ABL:MASTER:41 * 5 + ABL:TARGET:9 * 2	;话术技能 亲密
+SIF BASE:TARGET:酒気 > MAXBASE:TARGET:酒気 / 2		;酒气
+	LOCAL -= 15
+
+SELECTCASE TFLAG:192
+	;通常
+	CASE 0
+		SELECTCASE RAND:LOCAL
+			CASE IS < 20
+				TFLAG:193 = 1
+			CASE 20 TO 50
+				TFLAG:193 = 2
+			CASEELSE
+				TFLAG:193 = 3
+		ENDSELECT
+	;強制成功or大成功
+	CASE 1
+		SELECTCASE RAND:LOCAL
+			CASE IS < 50
+				TFLAG:193 = 2
+			CASEELSE
+				TFLAG:193 = 3
+		ENDSELECT
+	;強制失敗
+	CASE -1
+		TFLAG:193 = 1
+	;指令終了
+	CASE -2
+		TFLAG:193 = -1
+		RETURN 0
+ENDSELECT
+
+TFLAG:194 = OWNER
+TARGET = 118
+
+IF CFLAG:MASTER:300 == CFLAG:MASTER:311
+	PRINTFORML 书桌上放着\@ 同棲 ? 两本 # 一本 \@日记。
+	PRINTFORML 要做什么？
+	VARSET LOCALS, "？？？？"
+	IF TARGET > 0
+		LOCALS:0 = 让%CALLNAME:TARGET%读日记
+		LOCALS:1 = 读%CALLNAME:TARGET%的日記
+	ENDIF
+	{
+	CALL ASK_M("写日記",1,"読日記",1,@"%LOCALS:0%", TARGET > 0,
+	@"%LOCALS:1%", 同棲 && (!SHIRAHU(TARGET) || TALENT:TARGET:3 ),
+	"保存日记簿",1, "读取日记簿",1,
+	"什么也不做",1)
+	}
+	SELECTCASE RESULT
+		CASE 0
+			IF STRCOUNT(SAVESTR:1,"//") >= 100
+				PRINTFORML 这本日记簿已经写满了。
+				PRINTFORMW 更换另一个日记簿吧。
+			ELSE
+				PRINTFORML 请直接输入日记内容。
+				PRINTFORML 日期由系统自動记录、故不需要手动输入。
+				PRINTL
+				CALL MASTER_DIARY_INPUT
+				SIF RESULTS != ""
+					CALL MASTER_DIARY_WRITE,RESULTS
+				PRINTL
+			ENDIF
+		CASE 1
+			CALL READ_MASTER_DIARY
+		CASE 2
+			IF ABL:TARGET:9 >= 5
+				PRINTFORMW %CALLNAME:TARGET%拿起了%CALLNAME:MASTER%的日記…
+				CALL SHARE_MASTER_DIARY
+			ELSE
+				PRINTFORMW %CALLNAME:TARGET%似乎不感兴趣…
+			ENDIF
+		CASE 3
+			CALL M_KOJO_Moe_K118_DIARY_COM(TARGET)
+		CASE 4
+			CALL WRITE_MASTER_DIARY_FILE
+		CASE 5
+			CALL READ_MASTER_DIARY_FILE
+		CASE 6
+	ENDSELECT
+	GOTO SKIP
+ELSEIF TALENT:OWNER:3 && CFLAG:MASTER:300 != CFLAG:MASTER:311
+	PRINTFORML 枕头旁边放置着日記本。
+	PRINTFORML %CALLNAME:OWNER%似乎愿意分享日記的内容。
+	PRINTFORML 该怎么做呢？
+	CALL ASK_YN("読日記","不读")
+	IF !RESULT
+		CALL M_KOJO_Moe_K118_DIARY_COM(OWNER)
+	ENDIF
+ELSEIF CFLAG:OWNER:300 != CFLAG:MASTER:300 && TARGET && !(FLAG:70 || !SHIRAHU(TARGET))
+	PRINTFORML 枕头下放置着%CALLNAME:OWNER%的日記本。
+	PRINTFORML 然而…%CALLNAME:TARGET%就在旁边…
+	PRINTFORML 该怎么做呢？
+	CALL ASK_YN("一起偷看日記","不读")
+	IF !RESULT && TFLAG:193 > 0
+		CALL M_KOJO_Moe_K118_DIARY_COM(OWNER)
+	ELSE
+		PRINTFORML 还是算了吧…
+	ENDIF
+ELSE
+	PRINTFORML 枕头下面放置着日記本。
+	PRINTFORML 怎么做？
+	CALL ASK_YN("偷看","不读")
+	IF !RESULT
+		CALL M_KOJO_Moe_K118_DIARY_COM(OWNER)
+	ENDIF
+ENDIF
+
+$SKIP
+IF !FLAG:70
+	TIME += 5
+ELSE
+	BASE:MASTER:TSP -= 10
+ENDIF
+
+IF SHIRAHU(TARGET) && TARGET > 0
+	;固定で獲得するソース
+	;歓楽
+	SOURCE:歓楽 = 200
+
+	;ABL:9をみる
+	IF ABL:9 <= 1
+		SOURCE:歓楽 += (ABL:9 * 30)
+	ELSEIF ABL:9 <= 3
+		SOURCE:歓楽 += 200 + (ABL:9 * 30)
+	ELSEIF ABL:9 <= 5
+		SOURCE:歓楽 += 500 + (ABL:9 * 30)
+	ELSEIF ABL:9 <= 8
+		SOURCE:歓楽 += 750 + (ABL:9 * 50)
+	ELSEIF ABL:9 <= 10
+		SOURCE:歓楽 += 1000 + (ABL:9 * 50)
+	ELSE
+		SOURCE:歓楽 += 1600 + (ABL:9 * 30)
+	ENDIF
+
+
+	SOURCE:歓楽 = LIMIT(SOURCE:歓楽,0,5000)
+
+
+	SOURCE:受動 = 100 + 100 * ABL:10
+	SOURCE:征服 = 100 + 100 * ABL:16
+
+	IF TFLAG:193 == -1 || TFLAG:193 == -2
+		TIMES SOURCE:歓楽 , 0.10
+		TIMES SOURCE:征服 , 0.50
+		TIMES SOURCE:受動 , 0.50
+	ELSEIF TFLAG:193 == 0
+		TIMES SOURCE:歓楽 , 1.00
+		TIMES SOURCE:征服 , 1.00
+		TIMES SOURCE:受動 , 1.00
+	ELSE
+		TIMES SOURCE:歓楽 , 2.00
+		TIMES SOURCE:征服 , 2.00
+		TIMES SOURCE:受動 , 2.00
+	ENDIF
+	SELECTCASE ABL:MASTER:41	;话术技能
+		CASE 0
+			TIMES SOURCE:歓楽 , 0.20
+			TIMES SOURCE:征服 , 0.20
+			TIMES SOURCE:受動 , 0.20
+		CASE 1
+			TIMES SOURCE:歓楽 , 0.40
+			TIMES SOURCE:征服 , 0.40
+			TIMES SOURCE:受動 , 0.40
+		CASE 2
+			TIMES SOURCE:歓楽 , 0.70
+			TIMES SOURCE:征服 , 0.70
+			TIMES SOURCE:受動 , 0.70
+		CASE 3
+			TIMES SOURCE:歓楽 , 1.00
+			TIMES SOURCE:征服 , 1.00
+			TIMES SOURCE:受動 , 1.00
+		CASE 4
+			TIMES SOURCE:歓楽 , 1.20
+			TIMES SOURCE:征服 , 1.20
+			TIMES SOURCE:受動 , 1.20
+		CASEELSE
+			TIMES SOURCE:歓楽 , 1.50
+			TIMES SOURCE:征服 , 1.50
+			TIMES SOURCE:受動 , 1.50
+	ENDSELECT
+ENDIF
+RETURN 1
+
+;-------------------------------------------------
+;读日记，读角色日记的部分
+;-------------------------------------------------
+
+@M_KOJO_Moe_K118_DIARY_COM(C_ID)
+#DIM DCOUNT
+#DIM PAGENUM
+#DIM C_ID
+#DIM CLOSE
+RESULT = 0
+PAGENUM = 0
+CLOSE = 0
+DCOUNT = 0 
+
+TRYCALL LARVA_Moe_K118__DIARY_MEMORY_EXIST_ENSURE_ALL
+
+;指令で呼び出されたとき
+CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, 0, 0, "EXIST")
+IF !RESULT
+	PRINTFORMW 然而好像还什么都没有写…
+	RETURN
+ENDIF
+
+FOR DCOUNT, 1, LARVA_MAX_DIARY_PAGE:C_ID:0 + 1
+	SIF GROUPMATCH(LARVA_DIARY:C_ID:DCOUNT, 1 , 3)	;修改原有的判定……，如果把2加进去，会让准备当天大喇叭的也播报出来
+		PAGENUM ++
+NEXT
+
+IF PAGENUM == 0
+	PRINTFORMW 然而好像还什么都没有写…
+	RETURN
+ENDIF
+
+FOR DCOUNT, 1, LARVA_MAX_DIARY_PAGE:C_ID:0 + 1
+	CALL KOJO_MESSAGE_SEND("DIARY", 0, C_ID, LARVA_PAGESET:C_ID:DCOUNT, DCOUNT, "TEXT", "指令")
+	;未読(3)だったら既読(1)にする
+	SIF LARVA_DIARY:C_ID:(LARVA_PAGESET:C_ID:DCOUNT) == 3
+		LARVA_DIARY:C_ID:(LARVA_PAGESET:C_ID:DCOUNT) = 1
+		CALL ASK_M("察看回想",LARVA_Moe_K118_DIARY_MEMORY_EXIST_ENSURE(LARVA_PAGESET:C_ID:DCOUNT),"察看下一頁 ", DCOUNT < PAGENUM, " 向前翻5页", DCOUNT + 5 <= PAGENUM, "向前翻10页", DCOUNT + 10 <= PAGENUM, "察看前一頁", DCOUNT > 1,"察看前⑩頁",DCOUNT > 11, "閉合日記", 1)
+		IF RESULT == 0 
+			TRYCALL LARVA_Moe_K118_DIARY_MEMORY_COMFIRM(LARVA_PAGESET:C_ID:DCOUNT,1)
+			DCOUNT -= 1 
+			CONTINUE 
+		ELSEIF RESULT == 1
+			CONTINUE
+		ELSEIF RESULT == 2
+			DCOUNT += 4
+		ELSEIF RESULT == 3
+			DCOUNT += 9
+		ELSEIF RESULT == 4
+			DCOUNT += -2
+		ELSEIF RESULT == 5
+			DCOUNT -= 11 
+		ELSEIF RESULT == 6
+			CLOSE = 1
+			BREAK
+		ENDIF
+NEXT
+
+;==========================================================
+;日记内容输出函数
+;NO_DIARY 	=	日记的编号
+;MODE	=	当日日记是否显示头像，"デイリー"则显示，"コマンド":则使用 [Read Diary] 命令输出
+;PAGECOUNT = 输出的是哪一页的日记
+;
+;
+;==========================================================
+@DIARY_Moe_TEXT_K118(NO_DIARY, MODE, PAGECOUNT)
+#DIM NO_DIARY
+#DIMS MODE
+#DIM PAGECOUNT
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+;将日记的 ID 放在组匹配中，并显示要显示的人脸图片。
+; 面部表情、服装和特殊图像显示为选项（可选）
+;可参考\resources\顔.CSV中的形式
+;以下はサンプル
+[SKIPSTART]
+IF MODE == "デイリー"
+	IF GROUPMATCH(NO_DIARY, 1) 
+		CALL PRINT_FACE, 118, "発情", "裸", "_1"
+	ELSEIF GROUPMATCH(NO_DIARY, 2)
+		CALL PRINT_FACE, 118, "笑顔", "服1"
+	ELSEIF GROUPMATCH(NO_DIARY, 3)
+		CALL PRINT_FACE, 118, "怒り"
+	ELSE
+		CALL PRINT_FACE, 118
+	ENDIF
+ENDIF
+[SKIPEND]
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+PRINTFORMDL - ラルバの日記　%M_KOJO_Moe_K118_漢数字変換(PAGECOUNT)%=====================
+PRINTFORML 
+CALL M_KOJO_Moe_K118_適当日期設定(LARVA_DIARY_DATE:118:PAGECOUNT)
+PRINTFORML 
+PRINTL 
+;▼在简化版中，它将从这里自动显示
+CALLFORM DIARY_Moe_K118_{NO_DIARY}(LARVA_DIARY_SETTING:118:PAGECOUNT)
+PRINTFORML 
+
+;==========================================================
+
+
+;==========================================================
+;日記の発生条件差分（@DIARY_Moe_K118_YY_EDIT()）
+
+;LARVA_DIARY_SETTING:118:YY：可将第118个角色的第yy条日记的条件值返回到RESULT中
+;在写入日记时就会更改，所以不用担心会不会随着攻略进度变化，用于永久的日记差分
+
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+;日記の内容（@DIARY_Moe_K118_YY）
+
+
+;例子，节选自露米娅日记
+;@DIARY_Moe_K118_1_EDIT
+;SIF DAY > 30 
+;	RETURN 2 
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+;@DIARY_Moe_K118_1(ARG)
+
+;PRINTFORML 今天遇见了%CALLNAME:MASTER%，吃到了好吃的饭团！
+;PRINTFORML 不过还是有点怕……
+;IF ARG == 2 
+;	PRINTFORML 看样子……已经被接纳成为幻想乡的人类了……
+;	PRINTFORML 希望，今天的事情，%CALLNAME:MASTER%不要说出去……
+;ELSE 
+;	PRINTFORML 如果是外界人的话……应该，没问题的吧？
+;ENDIF 
+
+;==========================================================
+;日记一
+;==========================================================
+@DIARY_Moe_K118_1_EDIT
+
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@DIARY_Moe_K118_1(ARG)
+ 
+
+;==========================================================
+;日记二
+;==========================================================
+@DIARY_Moe_K118_2_EDIT
+
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@DIARY_Moe_K118_2(ARG)
+
+ ;==========================================================
+;日记三
+;==========================================================
+@DIARY_Moe_K118_3_EDIT
+
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@DIARY_Moe_K118_3(ARG)
+
+
+;需要增加更多，请以以下模板增加
+[SKIPSTART]
+;==========================================================
+@DIARY_Moe_K118_YYY_EDIT
+ 
+;－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+@DIARY_Moe_K118_YYY(ARG)
+
+PRINTFORML 
+;==========================================================
+[SKIPEND]
+;=============================
+;检测当前日记模板有无回想
+;不安装回想DLC也可使用
+;=============================
+@LARVA_Moe_K118_DIARY_MEMORY_EXIST_ENSURE(ARG)
+#FUNCTION
+RESULT = 0
+SIF LARVA_DIARY_MEMORY:118:ARG 
+	RESULT = LARVA_DIARY_MEMORY:118:ARG 
+RETURNF RESULT 
+;
+;=============================
+;日记多少页的输出
+;1～99まで
+;最大支持10000页……
+;=============================
+@M_KOJO_Moe_K118_漢数字変換(ARG)
+#FUNCTIONS
+
+LOCALS = 
+
+	LOCALS += "第"
+
+SELECTCASE ARG / 1000
+CASE 1
+	LOCALS += "一千"
+CASE 2
+	LOCALS += "两千"
+CASE 3
+	LOCALS += "三千"
+CASE 4
+	LOCALS += "四千"
+CASE 5
+	LOCALS += "五千"
+CASE 6
+	LOCALS += "六千"
+CASE 7
+	LOCALS += "七千"
+CASE 8
+	LOCALS += "八千"
+CASE 9
+	LOCALS += "九千"
+ENDSELECT
+
+SIF (( ARG % 1000 ) < 100) && ( ARG / 1000 > 1 )
+	LOCALS += "零"
+
+SELECTCASE ARG / 100 
+CASE 1
+	LOCALS += "一百"
+CASE 2
+	LOCALS += "两百"
+CASE 3
+	LOCALS += "三百"
+CASE 4
+	LOCALS += "四百"
+CASE 5
+	LOCALS += "五百"
+CASE 6
+	LOCALS += "六百"
+CASE 7
+	LOCALS += "七百"
+CASE 8
+	LOCALS += "八百"
+CASE 9
+	LOCALS += "九百"
+ENDSELECT
+
+SIF (( ARG % 100 ) < 10 ) && ( ARG / 100 > 1 )
+	LOCALS += "零"
+
+SELECTCASE ARG / 10
+CASE 1
+	LOCALS += "十"
+CASE 2
+	LOCALS += "二十"
+CASE 3
+	LOCALS += "三十"
+CASE 4
+	LOCALS += "四十"
+CASE 5
+	LOCALS += "五十"
+CASE 6
+	LOCALS += "六十"
+CASE 7
+	LOCALS += "七十"
+CASE 8
+	LOCALS += "八十"
+CASE 9
+	LOCALS += "九十"
+ENDSELECT
+
+SELECTCASE ARG % 10
+CASE 1
+	LOCALS += "一"
+CASE 2
+	LOCALS += "二"
+CASE 3
+	LOCALS += "三"
+CASE 4
+	LOCALS += "四"
+CASE 5
+	LOCALS += "五"
+CASE 6
+	LOCALS += "六"
+CASE 7
+	LOCALS += "七"
+CASE 8
+	LOCALS += "八"
+CASE 9
+	LOCALS += "九"
+ENDSELECT
+	LOCALS += "页"
+RETURNF LOCALS
+
+;=============================
+;日记用，记载当日日期
+;最大支持100年哦，要永远永远都在一起哟
+;=============================
+@M_KOJO_Moe_K118_適当日期設定(ARG)
+
+PRINT 第
+IF ARG > 1116
+	SELECTCASE ARG / 1240 
+		CASE 0
+			PRINT 十
+		CASE 1
+			PRINT 二十
+		CASE 2
+			PRINT 三十
+		CASE 3
+			PRINT 四十
+		CASE 4
+			PRINT 五十
+		CASE 5
+			PRINT 六十
+		CASE 6
+			PRINT 七十
+		CASE 7
+			PRINT 八十
+		CASE 8
+			PRINT 九十
+	ENDSELECT
+ENDIF 
+SELECTCASE ((ARG / 124) + 1) % 10 
+CASE 1
+	PRINT 一
+CASE 2
+	PRINT 二
+CASE 3
+	PRINT 三
+CASE 4
+	PRINT 四
+CASE 5
+	PRINT 五
+CASE 6
+	PRINT 六
+CASE 7
+	PRINT 七
+CASE 8
+	PRINT 八
+CASE 9
+	PRINT 九
+ENDSELECT
+PRINT 年 
+SELECTCASE (ARG % 124) / 31 
+CASE 0
+	PRINT 春月
+CASE 1
+	PRINT 夏月
+CASE 2
+	PRINT 秋月
+CASEELSE
+	PRINT 冬月
+ENDSELECT
+SELECTCASE ((ARG + 1) % 124) / 10 
+	CASE 0 
+		PRINT 
+	CASE 1 
+		PRINT 十
+	CASE 2 
+		PRINT 二十
+	CASE 3
+		PRINT 三十
+ENDSELECT
+SELECTCASE ((ARG + 1) % 124) % 10 
+	CASE 0
+		PRINT 日	
+	CASE 1
+		PRINT 一日
+	CASE 2
+		PRINT 二日
+	CASE 3
+		PRINT 三日
+	CASE 4
+		PRINT 四日
+	CASE 5
+		PRINT 五日
+	CASE 6
+		PRINT 六日
+	CASE 7
+		PRINT 七日
+	CASE 8
+		PRINT 八日
+	CASE 9
+		PRINT 九日
+ENDSELECT
+
+;=============================
+;来自于DOKU的神奇妙妙工具
+;用于强行终止原版的日记调用
+;=============================
+@DOKU_FAVOR_TRUST_CALC_FIX_FOR_LARVA(ARG,ARG:1=0,ARG:2=0)
+TFLAG:97 += ARG:1
+TFLAG:98 += ARG:2
+TFLAG:99 += ARG:2
+;SIF ARG:1>0
+;TFLAG:193 = MAX(TFLAG:193,DOKU_GET_HOW_MOOD(ARG))
+RETURN 1
+
+@DOKU_COMF_FAIL_FOR_LARVA
+;指令强制失败，只用在m_kojo%%success系
+IF SELECTCOM < 200
+	IF FLAGNAME:233 == "一分时间" && FLAG:233
+	TIME --
+	ELSE
+	TIME -=5
+	ENDIF
+ENDIF
+TFLAG:192 = -2
+CALL DOKU_FAVOR_TRUST_CALC_FIX_FOR_LARVA(TARGET,-99999,-99999)
+SELECTCOM = -1
+SIF PREVCOM == SELECTCOM
+	SELECTCOM = -2
+RETURN 1
