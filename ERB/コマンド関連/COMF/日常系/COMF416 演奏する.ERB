@@ -1,4 +1,4 @@
-﻿;-------------------------------------------------
+;-------------------------------------------------
 ;演奏
 ;日常系指令、レベル1
 ;-------------------------------------------------
@@ -71,11 +71,11 @@ FOR LOCAL,1,CHARANUM
 		CALL THROW_STONE(LOCAL)
 	ELSEIF CFLAG:LOCAL:職種 == JOB_宴会参加 && !ACCOMPANY_ABLE(LOCAL)
 		EXP:MASTER:演奏経験 ++
-		SIF ABL:LOCAL:戦闘能力 >= 4
+		SIF (MAGIC_DLC_大成功相关 ? ABL:LOCAL:戦闘能力 # ABL:LOCAL:教養) >= 4 
 			EXP:MASTER:演奏経験 ++
-		IF ABL:MASTER:音楽技能 + TALENT:LOCAL:心情 >= ABL:LOCAL:戦闘能力
+		IF ABL:MASTER:音楽技能 + TALENT:LOCAL:心情 >= (MAGIC_DLC_大成功相关 ? ABL:LOCAL:戦闘能力 # ABL:LOCAL:教養)
 			PRINTFORML %CALLNAME:LOCAL%%TEXTR("陶醉于你的演奏/双眼闪着光/称赞了你的演奏")%
-			OHINERI = MAX(RAND:(ABL:LOCAL:戦闘能力 + 1), 1)
+			OHINERI = MAX(RAND:((MAGIC_DLC_大成功相关 ? ABL:LOCAL:戦闘能力 # ABL:LOCAL:教養) + 1), 1)
 			MONEY:2 += OHINERI
 			PRINTPLAIN *叮啷*
 			CALL COLORMESSAGE(@"被投了{OHINERI}个筹码过来！",C_YELLOW,1)
@@ -108,9 +108,12 @@ SELECTCASE TFLAG:192
 	CASE 0
 		LOCAL = RAND:100
 		LOCAL:1 = 90 + GET_SUCCESS_RATE() / 5
+		LOCAL:2 = 9 + ABL:MASTER:音楽技能
+		SIF MAGIC_DLC_大成功相关
+			LOCAL:2 += MAGIC_SuccessRate(TARGET)
 		SIF LOCAL:1 > 99
 			LOCAL:1 = 99
-		IF LOCAL <= (9 + ABL:MASTER:音楽技能)
+		IF LOCAL <= LOCAL:2
 			;10％で大成功
 			EXP:MASTER:演奏経験 ++
 			EXP:MASTER:演奏経験 += 5
@@ -125,7 +128,10 @@ SELECTCASE TFLAG:192
 		ENDIF
 	;強制成功or大成功
 	CASE 1
-		IF RAND:100 <= (9 + ABL:MASTER:音楽技能)
+		LOCAL:1 = 9 + ABL:MASTER:音楽技能
+		SIF MAGIC_DLC_大成功相关
+			LOCAL:1 += MAGIC_SuccessRate(TARGET)
+		IF RAND:100 <= LOCAL:1
 			;10％で大成功
 			EXP:MASTER:演奏経験 ++
 			EXP:MASTER:演奏経験 += 5
@@ -143,7 +149,7 @@ SELECTCASE TFLAG:192
 		TFLAG:193 = -1
 		RETURN 0
 ENDSELECT
-
+M_TFLAG:成功 = TFLAG:193
 
 DOWNBASE:MASTER:体力 = 300
 DOWNBASE:MASTER:気力 = 300
@@ -165,7 +171,8 @@ FOR LOCAL, 1, NUM_TARGET + 1
 		DANCE_BONUS += ABL:音楽技能
 	ENDSELECT
 NEXT
-
+SIF M_TFLAG:约会临时标记
+	EXP:MASTER:約會経験 ++
 BAND_BONUS = CMATCH(TCVAR:演奏参加, 1, 1) + CMATCH(TCVAR:演奏参加, 2, 1)
 IF TFLAG:193 < 0
 	FOR LOCAL, 1, NUM_TARGET + 1
@@ -218,6 +225,10 @@ RETURN 1
 
 @COM416_1
 
+IF CHK_DATENOW(CFLAG:TARGET:约会中) && MAGIC_DLC_等级重置
+	EXP:TARGET:約會経験 ++
+	M_TFLAG:约会临时标记 = 1
+ENDIF
 DOWNBASE:気力 += 100
 
 ;歓楽強度

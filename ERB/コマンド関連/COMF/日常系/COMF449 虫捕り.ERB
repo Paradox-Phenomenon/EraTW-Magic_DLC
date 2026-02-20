@@ -30,7 +30,7 @@ ENDIF
 SIF CHARA
 	ラックT = MAX(CFLAG:CHARA:今日の運勢 + 1, 10)
 ;最低1,最大10
-パワーM = LIMIT(ラックM / 200 + TALENT:MASTER:採集Lv, 1, 10)
+パワーM = LIMIT(ラックM / 200 + TALENT:MASTER:採集Lv + (MAGIC_DLC * TALENT:MASTER:神性), 1, 10)
 SIF CHARA
 	パワーT = LIMIT(ラックT / 200 + TALENT:CHARA:採集Lv, 1, 10)
 
@@ -69,7 +69,7 @@ IF MUSHI_CAGE
 	ENDIF
 ENDIF
 ;約會経験
-IF CHK_DATENOW(CFLAG:CHARA:约会中) && CHARA
+IF IS_DATING_WITH_PLAYER(CHARA) && CHARA
 	EXP:MASTER:約會経験 ++
 	EXP:CHARA:約會経験 ++
 ENDIF
@@ -143,7 +143,7 @@ IF CHARA
 		SOURCE:CHARA:歓楽 += 1600 + (ABL:従順 * 30)
 		SOURCE:CHARA:情愛 += 1000 + (ABL:親密 * 20)
 	ENDIF
-	SIF (!MOREDATE && CHARA != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(CHARA)) 
+	SIF (!(MOREDATE && NumberOfDates > 1) && CHARA != FLAG:デート相手) || ((MOREDATE && NumberOfDates > 1) && !IS_IN_GROUP_DATE(CHARA)) 
 		SOURCE:CHARA:情愛 = 0
 	
 	SOURCE:CHARA:受動 = 200 + 100 * ABL:従順
@@ -236,6 +236,7 @@ ENDIF
 
 ;時間経過
 TIME += 40
+M_TFLAG:时间因子类型 = TimeFactor_采集
 
 ;フラグ引き渡し
 TFLAG:194 = CHARA
@@ -263,7 +264,7 @@ SIF !MUSHITORI_SPOT(CFLAG:MASTER:現在位置)
 SIF GET_MONTH() == "冬之月"
 	RETURN 0
 ;约会中は约会的对象とだけ
-SIF FLAG:デート相手 && ((!MOREDATE && TARGET != FLAG:デート相手) || (MOREDATE && !IS_IN_GROUP_DATE(TARGET)))
+SIF !IS_DATING_WITH_PLAYER(TARGET)
 	RETURN 0
 ;陪睡中
 SIF CFLAG:MASTER:陪睡中

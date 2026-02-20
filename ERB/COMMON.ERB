@@ -260,7 +260,6 @@ SIF 条件:5
 #DIM  L_RESULT               ;RESULT退避用
 #DIMS DYNAMIC CHOICES        ;結果
 #DIMS DYNAMIC STR_ARRAY, 300 ;選択肢格納用の一時変数
-L_RESULT = RESULT
 ;まず一つにまとめる
 ARGS = %ARGS%\/%ARGS:1%\/%ARGS:2%\/%ARGS:3%\/%ARGS:4%\/%ARGS:5%\/%ARGS:6%
 ;不要な"/"を削る作業
@@ -269,11 +268,10 @@ ARGS = %ARGS%\/%ARGS:1%\/%ARGS:2%\/%ARGS:3%\/%ARGS:4%\/%ARGS:5%\/%ARGS:6%
 ;2.最末尾が/なら削る（SPLITとRANDをそのまま使用都合上）
 ARGS '= REPLACE(ARGS, "\/+", "/")
 ARGS '= REPLACE(ARGS, "(^/|/$)", "")
-SPLIT ARGS, "/", STR_ARRAY
-CHOICES '= STR_ARRAY:(RAND:RESULT)
+SPLIT ARGS, "/", STR_ARRAY, L_RESULT
+CHOICES '= STR_ARRAY:(RAND:L_RESULT)
 SIF CHOICES == "＿"
 	CHOICES =
-RESULT = L_RESULT
 RETURNF CHOICES
 ;-------------------------------------------------
 ;未読判定関数@ONCE
@@ -303,20 +301,6 @@ ENDIF
 ;初回判定更新
 CSTR:(ARG:1):1 = %CSTR:(ARG:1):1%%ARGS%/
 RETURNF 1
-
-;FileName_COMMON.ERB ------------------------------- Rev1.00
-;フラグリセット処理
-;CALL		SYSTEM
-;ARG		VOID
-;RETURN		VOID
-;COMMENT
-;-----------------------------------------------------------
-; @EVENTTRAIN
-; SIF SaveDataInTrain
-; 	RETURN
-; FOR LOCAL,0,CHARANUM
-; 	CSTR:LOCAL:1 =
-; NEXT
 
 ;-------------------------------------------------
 ;未読判定関数@FIRSTTIME
@@ -621,6 +605,16 @@ RETURNF 1 + (ABL:PLAYER:ARG - 2) / 10
 SIF 回復量 == 0 || !CHECK_BASE(ARG, ARGS)
 	RETURN
 ;回復処理
+IF MAGIC_DLC 
+	IF (ARGS == "TSP" || ARGS == "法力") && 回復量 < 0 
+		SIF ARGS == "TSP"
+			MONEY:1 -= 回復量
+		SIF TALENT:ARG:大魔法师
+			回復量 = 回復量 * 7 / 10
+		SIF TALENT:ARG:昨日重现
+			回復量 = 回復量 * (20 - TALENT:ARG:昨日重现) / 20
+	ENDIF
+ENDIF
 BASE:ARG:(ARGS) = LIMIT(BASE:ARG:(ARGS) + 回復量, 0, MAXBASE:ARG:(ARGS))
 ;表示処理
 SIF 回復量 > 0 && 回復量 < 100 && ARGS:1 == ""
@@ -681,25 +675,48 @@ SIF ARG != MASTER
 #FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
-IF GETNUM(BASE, ARGS) < 0
+#DIM DYNAMIC L_ID
+L_ID = GETNUM(BASE, ARGS)
+IF L_ID < 0
 	PRINTFORML 没有找到%ARGS%，请保存日志报错
 	RETURNF 0
 ENDIF
-SELECTCASE ARGS
-	CASE "体力", "気力"
+SELECTCASE L_ID
+	CASE BASE_体力, BASE_气力
 	;竿無ならスキップ
-	CASE "精力", "勃起", "射精"
+	CASE BASE_精力, BASE_勃起, BASE_射精
 		SIF !HAS_PENIS(ARG)
 			RETURNF 0
 	;你以外TSPスキップ
-	CASE "TSP"
+	CASE BASE_TSP
 		SIF ARG != MASTER
 			RETURNF 0
-	CASE "母乳"
+	CASE BASE_母乳
 		SIF !TALENT:ARG:母乳体質
 			RETURNF 0
 ENDSELECT
 RETURNF 1
+;-------------------------------------------------
+;関数名:CHANGE_MAXBASE(魔法DLC)
+;概要:特定BASE的永久变化
+;-------------------------------------------------
+@CHANGE_MAXBASE(ARG,强化能力,变动值,info = 0)
+#DIM 变动值
+#DIM 强化能力
+#DIM info
+SIF !CHECK_BASE(ARG, BASENAME:强化能力)
+	RETURN
+IF MAGIC_DLC
+	SIF 变动值 < 0 && ABS(变动值) > MAXBASE:ARG:强化能力
+		变动值 = (MAXBASE:ARG:强化能力 -1) * -1
+	SIF (MAXBASE:ARG:强化能力 + 变动值) > 9999999
+		变动值 = 9999999 - MAXBASE:ARG:强化能力
+	MAXBASE:ARG:强化能力 += 变动值
+	SIF (info == 1 || (info == 2 && ARG == MASTER))&& 变动值 != 0
+		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASENAME:强化能力%永久\@ 变动值 > 0? 上升了# 下降了\@{ABS(变动值)}",C_YELLOW,1)
+ELSE
+	MAXBASE:ARG:强化能力 += 变动值
+ENDIF
 
 ;-------------------------------------------------
 ;関数名:BUFF_BASE
@@ -711,19 +728,31 @@ RETURNF 1
 #DIM 変動値
 #DIM 強化能力
 #DIM メッセージ
-SIF !CHECK_BASE(ARG, BASENAME:強化能力)
+SIF MAXBASE:ARG:強化能力 <= 0
 	RETURN
-SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
-	変動値 = (MAXBASE:ARG:強化能力 -1) * -1
+IF !MAGIC_DLC
+	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
+		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 
-MAXBASE:ARG:強化能力 += 変動値
+	MAXBASE:ARG:強化能力 += 変動値
 	BASE:ARG:強化能力 += 変動値
-BUFF:ARG:強化能力 += 変動値
-;failsafe
-MAXBASE:ARG:強化能力 = MAX(0, MAXBASE:ARG:強化能力)
-BASE:ARG:強化能力 = MAX(0, BASE:ARG:強化能力)
-SIF メッセージ
-	CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
+	BUFF:ARG:強化能力 += 変動値
+	;failsafe
+	MAXBASE:ARG:強化能力 = MAX(0, MAXBASE:ARG:強化能力)
+	BASE:ARG:強化能力 = MAX(0, BASE:ARG:強化能力)
+	SIF メッセージ
+		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
+ELSE
+	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
+		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
+	SIF (MAXBASE:ARG:強化能力 + 変動値) > 9999999
+		変動値 = 9999999 - MAXBASE:ARG:強化能力
+	MAXBASE:ARG:強化能力 += 変動値
+	BASE:ARG:強化能力 += 変動値
+	BUFF:ARG:強化能力 += 変動値
+	SIF (メッセージ == 1 || (メッセージ == 2 && ARG == MASTER))&& 変動値 != 0
+		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASENAME:強化能力%暂时的\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
+ENDIF
 ;-------------------------------------------------
 ;関数名:BUFF_RESET
 ;概　要:Buffを完全にリセット
@@ -1113,6 +1142,11 @@ TEQUIP:ARG:拘束 = 0
 TCVAR:ARG:强行 = 0
 TCVAR:ARG:随便 = 0
 TCVAR:ARG:次回Counter = 0
+;魔法DLC的魅惑发情解除
+IF TCVAR:ARG:魅惑发情
+	TCVAR:ARG:発情 = 0
+	TCVAR:ARG:魅惑发情 = 0
+ENDIF
 ;一応MASTERも初期化（しとかないと、終了後も○○装着中が表示される可能性があるので
 IF CFLAG:MASTER:诶嘿嘿
 	CFLAG:MASTER:诶嘿嘿 = 0
@@ -1133,12 +1167,20 @@ IF CFLAG:睡眠
 			PRINTFORML ❤～
 			PRINTFORML 梦中的%CALLNAME:ARG%自然的饮下了%CALLNAME:MASTER%赠与的白浊，随后就像触发了什么开关一样缓缓将手移到身下，满面红潮
 			TCVAR:ARG:発情 = 1
-			CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,1000)
+			IF MAGIC_DLC
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度上限(ARG))
+			ELSE
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,MAX_积攒度)
+			ENDIF
 		ELSEIF ABL:ARG:精液中毒 > 4
 			SETCOLOR C_YELLOW
 			PRINTFORML 嗯～
 			PRINTFORML %CALLNAME:ARG%在美梦中熟练的吞下了%CALLNAME:MASTER%留在口中的罪恶，但似乎没能满足似的舔舐着口中残存的味道
-			CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,1000)
+			IF MAGIC_DLC
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,积攒度上限(ARG))
+			ELSE
+				CFLAG:ARG:积攒度 += LIMIT((10 + RAND:20 + RAND:20 + RAND:20) * ABL:ARG:欲望,200,MAX_积攒度)
+			ENDIF
 		ELSEIF ABL:ARG:精液中毒 > 2
 			SETCOLOR C_AQUA
 			PRINTFORML 唔...
@@ -1187,15 +1229,9 @@ IF !FLAG:時間停止
 ENDIF
 
 CALL ADD_TOUCH_CLEAR_CHARA(ARG) ;addition custom code
-
 ;潜伏モード解除
-SIF GETBIT(FLAG:潜伏,0)
-	CALL 潜伏モード終了処理
-;----------推倒补丁测试----------
-;时停合意模式解除
-SIF GETBIT(FLAG:潜伏,3)
-	FLAG:潜伏 = 0
-;----------推倒补丁测试----------
+	SIF GETBIT(CFLAG:ARG:潜伏状態,0)
+		CLEARBIT CFLAG:ARG:潜伏状態,0
 
 ;-------------------------------------------------
 ;関数名:ENDUFUFU_ALL
@@ -1214,8 +1250,17 @@ FOR LOCAL, 0, CHARANUM
 		LOCAL:1 ++
 	ENDIF
 NEXT
+;潜伏モード解除
+SIF GETBIT(FLAG:潜伏,0)
+	CALL 潜伏モード終了処理
+;----------推倒补丁测试----------
+;时停合意模式解除
+SIF GETBIT(FLAG:潜伏,3)
+	FLAG:潜伏 = 0
+;----------推倒补丁测试----------
 UFUFU_START_TIME = 0
 UFUFU_START_DAY = 0
+EXTRA_UFUFU_TIME = 0
 UFUFU_START_TYPE = 0
 WITHDRAWN_LIST = /
 TFLAG:MASTERのＰ挿入中 = 0
@@ -1737,7 +1782,7 @@ CASE "育児中"
 	RETURNF TALENT:C_ID:育児中
 CASE "扶她"
 	RETURNF TALENT:C_ID:性別 == 3
-CASE "ケモミミ"
+CASE "ケモミミ","動物耳","兽耳"
 	RETURNF TALENT:C_ID:動物耳 != 0
 CASE "人类耳"
 	RETURNF TALENT:C_ID:動物耳 == 0
@@ -2012,28 +2057,53 @@ CASE "MAX_50000"
 CASE "MAX_20000"
 ;信赖度用
 	RANK_NUM = 10
-	SELECTCASE VAR_VALUE
-	CASE IS >= 20000
-		RANK = 0
-	CASE IS >= 10000
-		RANK = 1
-	CASE IS >=  3000
-		RANK = 2
-	CASE IS >=  1000
-		RANK = 3
-	CASE IS >=   500
-		RANK = 4
-	CASE IS >=   150
-		RANK = 5
-	CASE IS >=   100
-		RANK = 6
-	CASE IS >=    50
-		RANK = 7
-	CASE IS >=    10
-		RANK = 8
-	CASEELSE
-		RANK = 9
-	ENDSELECT
+	IF !MAGIC_DLC_好感亲密重做
+		SELECTCASE VAR_VALUE
+		CASE IS >= 20000
+			RANK = 0
+		CASE IS >= 10000
+			RANK = 1
+		CASE IS >=  3000
+			RANK = 2
+		CASE IS >=  1000
+			RANK = 3
+		CASE IS >=   500
+			RANK = 4
+		CASE IS >=   150
+			RANK = 5
+		CASE IS >=   100
+			RANK = 6
+		CASE IS >=    50
+			RANK = 7
+		CASE IS >=    10
+			RANK = 8
+		CASEELSE
+			RANK = 9
+		ENDSELECT
+	ELSE
+		SELECTCASE VAR_VALUE
+			CASE IS >= 20000
+				RANK = 0
+			CASE IS >= 8000
+				RANK = 1
+			CASE IS >=  3000
+				RANK = 2
+			CASE IS >=  1500
+				RANK = 3
+			CASE IS >=   700
+				RANK = 4
+			CASE IS >=   250
+				RANK = 5
+			CASE IS >=   100
+				RANK = 6
+			CASE IS >=    50
+				RANK = 7
+			CASE IS >=    10
+				RANK = 8
+			CASEELSE
+				RANK = 9
+		ENDSELECT
+	ENDIF
 CASE "MAX_99"
 ;技術系以外のABL
 	;数字が縦に並ぶと非常に見にくかったんで意図的にインデントずらしてます
@@ -2188,7 +2258,11 @@ IF !STRCOUNT(OP, "「数字表記無し」")
 	ELSEIF BUFF:C_ID:BASE_ID < 0
 		SETCOLOR C_YELLOW
 	ENDIF
-	PRINTFORM  ({BASE:C_ID:BASE_ID,5}/{MAXBASE:C_ID:BASE_ID,5})
+	IF !MAGIC_DLC
+		PRINTFORM ({BASE:C_ID:BASE_ID,5}/{MAXBASE:C_ID:BASE_ID,5})
+	ELSE
+		PRINTFORM  ({BASE:C_ID:BASE_ID,7}/{MAXBASE:C_ID:BASE_ID,7})
+	ENDIF
 	RESETCOLOR
 ENDIF
 SIF STRCOUNT(OP, "「改行」")
@@ -2209,13 +2283,13 @@ SIF STRCOUNT(OP, "「改行」")
 BASE_ID = GETNUM(BASE, BASE_NAME)
 SIF BASE_ID < 0
 	THROW 存在しないBASE_NAME %BASE_NAME%
-IF BASE_NAME == "精力" && TALENT:C_ID:濃厚精液
+IF BASE_ID == GETNUM(BASE, "精力") && TALENT:C_ID:濃厚精液
 	FONTBOLD
 	SETCOLOR C_CREAM
 	PRINTFORM %BASE_NAME_SHORT%
 	FONTREGULAR
 	RESETCOLOR
-ELSEIF C_ID == MASTER && BASE_NAME == "酒気" && TFLAG:酔い止め
+ELSEIF C_ID == MASTER && BASE_ID == GETNUM(BASE, "酒気") && TFLAG:酔い止め
 	FONTBOLD
 	SETCOLOR C_D_RED
 	PRINTFORM %BASE_NAME_SHORT%
@@ -2237,7 +2311,11 @@ IF BUFF:C_ID:BASE_ID > 0
 ELSEIF BUFF:C_ID:BASE_ID < 0
 	SETCOLOR C_YELLOW
 ENDIF
-PRINTFORM ({BASE:C_ID:BASE_ID, 5})
+IF !MAGIC_DLC
+	PRINTFORM ({BASE:C_ID:BASE_ID, 5})
+ELSE
+	PRINTFORM ({BASE:C_ID:BASE_ID, 7})
+ENDIF
 RESETCOLOR
 
 ;-------------------------------------------------
@@ -2617,18 +2695,14 @@ RETURNF LOCALS
 #DIM  DYNAMIC STR_CNT        ;カウント个数
 #DIMS DYNAMIC TEMP_STR, 1000 ;SPLIT用一次配列
 #DIM  DYNAMIC TEMP_NUM       ;一次配列で使用した要素数
-#DIM          TEMP_RESULT    ;RESULT退避
 ;念のため
 TARGET_STR '= REPLACE(TARGET_STR, "\/+", "/")
 CALLF CNT_SPLIT(KEY_STR, KEY_LIST, KEY_CNT, KEY_NUM)
 
-TEMP_RESULT = RESULT
-SPLIT TARGET_STR, "/", TEMP_STR
-TEMP_NUM = RESULT
+SPLIT TARGET_STR, "/", TEMP_STR, TEMP_NUM
 FOR KEY_ID, 0, KEY_NUM
 	STR_CNT += MATCH(TEMP_STR, KEY_LIST:KEY_ID, 0, TEMP_NUM) * KEY_CNT:KEY_ID
 NEXT
-RESULT = TEMP_RESULT
 RETURNF STR_CNT
 
 
@@ -2668,15 +2742,12 @@ RETURNF STR_CNT
 #DIM  REF     STR_NUM        ;単語の種類の総数
 #DIMS DYNAMIC TEMP_STR, 1000 ;SPLIT用一次配列
 #DIM  DYNAMIC TEMP_NUM       ;一次配列で使用した要素数
-#DIM          TEMP_RESULT    ;RESULT退避
 #DIM          TEMP_ID        ;ループ用
 VARSET STR_LIST
 VARSET CNT_LIST
 STR_NUM = 0
 
-TEMP_RESULT = RESULT
-SPLIT TARGET_STR, "/", TEMP_STR
-TEMP_NUM = RESULT
+SPLIT TARGET_STR, "/", TEMP_STR, TEMP_NUM
 FOR TEMP_ID, 0, TEMP_NUM
 	;文字長判定
 	SIF !STRLENS(TEMP_STR:TEMP_ID)
@@ -2688,7 +2759,6 @@ FOR TEMP_ID, 0, TEMP_NUM
 	CNT_LIST:STR_NUM  = MATCH(TEMP_STR, TEMP_STR:TEMP_ID)
 	STR_NUM ++
 NEXT
-RESULT = TEMP_RESULT
 
 ;----------------------------------------------------------------------------------------------------
 ;同行中の人数を返す函数
@@ -2789,6 +2859,10 @@ CALL QOL_SHOW_SET_ITEM(ITEM_NAME, -ITEM_NUM, PRINT_TYPE)
 SIF VALUE <= 0
 	RETURN
 CALL COLORMESSAGE(@"得到了%金額表示(VALUE)%", C_YELLOW, PRINT_TYPE)
+IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && VALUE > 4
+	VALUE *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+	CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(VALUE * 3 / 10)%!", C_YELLOW, PRINT_TYPE)
+ENDIF
 MONEY += VALUE
 
 @GET_SPELL_CARD_BONUS_YEN(VALUE, PRINT_TYPE)
@@ -2801,6 +2875,10 @@ CALL COLORMESSAGE(@"SpEll ", 0xC8FFFF, 0)
 CALL COLORMESSAGE(@"CARd ", 0x64FFDC, 0)
 CALL COLORMESSAGE(@"BONUS!!", 0x00FFB4, 1)
 CALL COLORMESSAGE(@"        %金額表示(VALUE)%", C_YELLOW, PRINT_TYPE)
+IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && VALUE > 4
+	VALUE *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+	CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(VALUE * 3 / 10)%!", C_YELLOW, PRINT_TYPE)
+ENDIF
 MONEY += VALUE
 
 @GET_MONEY_CM(VALUE, PRINT_TYPE)
@@ -3998,19 +4076,11 @@ RETURNF strOutput
 
 @SPLIT_G(ARGS, ARGS:1 = ":")
 #FUNCTIONS
-#LOCALSIZE 2
+#LOCALSIZE 1
 #LOCALSSIZE 300
-
 VARSET LOCALS
-
-LOCAL = RESULT
-
-SPLIT ARGS, ARGS:1, LOCALS
-
-LOCAL:1 = RESULT
-RESULT = LOCAL
-
-RETURNF LOCALS:(RAND:(LOCAL:1))
+SPLIT ARGS, ARGS:1, LOCALS, LOCAL
+RETURNF LOCALS:(RAND:LOCAL)
 
 ;--------------------------------------------------------
 ;searches and returns a specified part of a split string if any part matches (greedy)
@@ -4021,13 +4091,7 @@ RETURNF LOCALS:(RAND:(LOCAL:1))
 #LOCALSIZE 2
 #LOCALSSIZE 300
 VARSET LOCALS
-
-LOCAL = RESULT
-
-SPLIT ARGS:0, ARGS:2, LOCALS
-
-LOCAL:1 = RESULT
-RESULT = LOCAL
+SPLIT ARGS:0, ARGS:2, LOCALS, LOCAL:1
 
 FOR LOCAL, 0, LOCAL:1
 	SIF STRCOUNT(LOCALS:(LOCAL), ARGS:1)
@@ -4050,6 +4114,7 @@ ENDIF
 #FUNCTIONS
 RETURNF TOSTR((ARG % 1440) / 60,"D2")+ARGS+TOSTR((ARG % 1440) % 60,"D2")
 
+;禁用
 @VAR_OR_DEFAULT(ARGS, ARG:1 = 0)
 #LOCALSIZE 3
 #LOCALSSIZE 2
@@ -4120,6 +4185,7 @@ ELSE
 ENDIF
 RETURNF ARG:1
 
+;禁用
 @VARS_OR_DEFAULT(ARGS, ARGS:1 = "")
 #LOCALSIZE 3
 #LOCALSSIZE 2

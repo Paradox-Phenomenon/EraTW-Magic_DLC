@@ -150,6 +150,8 @@ FOR LOCAL, 0, CHARANUM
 	ELSEIF CFLAG:LOCAL:風呂 > 120 && !CFLAG:LOCAL:诶嘿嘿
 		STAIN:LOCAL:Ａ |= 汚渍_肛門
 	ENDIF
+	SIF M_TFLAG:无垢 && MAGIC_DLC
+		CALL SWEEPCHARA
 	SIF 充填率(LOCAL, 1) - RAND(40, 201) > 0 && !(STAIN:LOCAL:膣内 & 污渍_精液)
 		STAIN:LOCAL:膣内 |= 污渍_精液
 	SIF 充填率(LOCAL, 1) - RAND(80, 201) > 0 && (STAIN:LOCAL:膣内 & 污渍_精液) > 0 && !(STAIN:LOCAL:Ｖ & 污渍_精液)
@@ -184,6 +186,9 @@ SIF CFLAG:MASTER:うふふ
 TFLAG:192 = 0
 TFLAG:193 = 0
 TFLAG:194 = 0
+M_TFLAG:成功 = 0
+M_TFLAG:约会临时标记 = 0
+M_TFLAG:魔导书 = 0
 TSTR:2 = 
 
 
@@ -274,6 +279,7 @@ ENDIF
 
 @诶嘿嘿中特殊事件
 #DIM 夺主导权概率
+#DIM 满足判断条件
 VARSET LOCAL
 LOCAL:2 = GET_TARGETNUM()
 ;你主导 bugfix：角色必须清醒才能攻守逆转
@@ -326,6 +332,13 @@ IF CFLAG:TARGET:诶嘿嘿 == 1 && SHIRAHU(TARGET)
 	ENDIF
 ;对方主導
 ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
+	IF !Setting_满足终了
+		满足判断条件 = !TCVAR:TARGET:随便
+	ELSEIF Setting_满足终了 == 2
+		满足判断条件 = 1
+	ELSEIF Setting_满足终了 == 1
+		满足判断条件 = 0
+	ENDIF
 	IF TARGET == RANDOM_CHARANUM && TALENT:TARGET:風俗嬢 && (BASE:気力 <= 0 || CFLAG:积攒度 <= 0)
 		PRINTFORML %CALLNAME:TARGET%\@ BASE:気力 <= 0 ? 有些疲惫地 # 满足地 \@让出了主导权
 		CFLAG:TARGET:诶嘿嘿 = 1
@@ -334,7 +347,7 @@ ELSEIF CFLAG:TARGET:诶嘿嘿 == 2
 	ELSEIF BASE:気力 <= 0 && (TEQUIP:眼罩 == 0 || Eye_mask_Blessing == 0)
 		PRINTFORML %CALLNAME:TARGET%似乎有点疲劳、放开了%CALLNAME:MASTER%
 		CALL 被逆推終了("疲惫")
-	ELSEIF CFLAG:积攒度 <= 0 && !TCVAR:TARGET:随便
+	ELSEIF CFLAG:积攒度 <= 0 && 满足判断条件
 		PRINTFORML %CALLNAME:TARGET%好像已经满足了
 		CALL KIGEN_CHANGE(TARGET,100,1)
 		BASE:憤怒 = 0

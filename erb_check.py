@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 # 语法检查器 for ERA BASIC 脚本文件 (.ERB)
 # 用法：在终端中输入 python erb_check.py ./文件夹名 （可选：--fix，强制缩进）
-
+# python erb_check.py ./check --fix
 import sys
 import os
 import re

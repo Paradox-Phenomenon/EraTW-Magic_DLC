@@ -1,7 +1,24 @@
 ﻿;-------------------------------
 ;HELPER FUNCTIONS
 ;-------------------------------
-
+;-------------------------------------
+;检查ARG是否与玩家约会中(不管有没有开启多人约会补丁都将纳入考虑)
+;-------------------------------------
+@IS_DATING_WITH_PLAYER(ARG)
+#FUNCTION
+;如果ARG为MASTER, 则返回0
+SIF ARG == MASTER
+	RETURNF 0
+;如果没有约会的对象, 则返回0
+SIF !FLAG:デート相手
+	RETURNF 0
+;如果不是多人约会, 且约会对象不为ARG, 则返回0
+SIF (!MOREDATE || NumberOfDates == 0) && ARG != FLAG:デート相手
+	RETURNF 0
+;如果是多人约会, 检查发现对象不在约会者组中, 则返回0
+SIF MOREDATE && NumberOfDates > 0 && !IS_IN_GROUP_DATE(ARG)
+	RETURNF 0
+RETURNF 1
 ;-------------------------------------
 ; Check if given character is inside the date array
 ;
@@ -167,7 +184,7 @@ IF P_ID >= MAXHOME
 		;addition custom code
 		IF TCVAR:(C_IDS:LOCAL):本来の服装 && !TCVAR:Exhibitionist_Nudist_Sense ;custom code
 			CALL OKIGAE((C_IDS:LOCAL),100 + (C_IDS:LOCAL))
-			PRINTFORMW %CALLNAME:(C_IDS:LOCAL)% changed back to %HIS_HER((C_IDS:LOCAL))% original clothing.
+			PRINTFORMW %CALLNAME:(C_IDS:LOCAL)%换回了便服
 			TCVAR:(C_IDS:LOCAL):本来の服装 = 0
 		ENDIF
 	NEXT

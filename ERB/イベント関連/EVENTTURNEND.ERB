@@ -6,11 +6,21 @@ CALL SHOP_EVENTTURNEND
 ;宴会当日に一日が終わると宴会フラグOFF
 IF TIME + 1440 * DAY >= FLAG:開始時間 + 1440 * FLAG:開始日 && FLAG:宴会開催FLAG
 	CALL ENKAI_END()
+CALL MAGIC_FLAG_CLEAR
 ENDIF
 ;霊廟フラグOFF
 FLAG:17 = 0
 ;催眠フラグOFF
 FLAG:催眠強度 = 0
+M_TFLAG:时间循环 = 0
+M_TFLAG:无垢 = 0
+M_TFLAG:不眠 = 0
+M_TFLAG:代替魔法等级 = 0
+M_TFLAG:魔导书 = 0
+M_TFLAG:约会临时标记 = 0
+M_TFLAG:神清气爽 = 0
+M_TFLAG:魅力魔法 = 0
+M_TFLAG:转运魔法CD = 0
 DRAWLINE
 PRINTFORML 
 ;SETCOLOR C_PINK
@@ -18,7 +28,14 @@ PRINTFORML
 FOR LOCAL,0,CHARANUM
 	TALENT:LOCAL:反発抑制 = 0
 	TALENT:LOCAL:合意誤認 = 0
-	
+	IF MAGIC_DLC_好感亲密重做 
+		LOCAL:1 = ABL:LOCAL:親密
+		IF CFLAG:LOCAL:2 >= 1000000 && SQRT(CFLAG:LOCAL:4)/8 > LOCAL:1
+			ABL:LOCAL:親密 = SQRT(CFLAG:LOCAL:4)/8
+			PRINTFORMW %CALLNAME:LOCAL%的亲密等级由于满好感+信赖度的补正，从 {LOCAL:1} 级变成了 {ABL:LOCAL:親密} 级
+		ENDIF
+		LOCAL:1 = 0
+	ENDIF
 	;この3つは你も取得可能
 	IF EXP:LOCAL:接吻経験 > 300 && ABL:LOCAL:Ｍ感覚 > 5 && !TALENT:LOCAL:接吻魔
 		PRINTFORML 在多次的接吻中找到了自己灵魂的归宿的%CALLNAME:LOCAL%、一旦停止接吻便会感到不安和焦躁…
@@ -324,8 +341,9 @@ LOCAL:4 = TCVAR:MASTER:帮忙工作量
 
 SIF LOCAL:4 > 0
 	PRINTFORML 帮忙干活得到的额外奖励 %金額表示(LOCAL:4)%
-
-MONEY += LOCAL:2 + LOCAL:4
+SIF TALENT:MASTER:黄金律 && MAGIC_DLC_魔法成就
+	PRINTFORML 黄金律让你获得的金钱额外增加了 %金額表示(TALENT:MASTER:黄金律 * 3/10)%。
+MONEY += (LOCAL:2 + LOCAL:4) * (10 + TALENT:MASTER:黄金律 * 3)/ 10
 
 ;好感度上昇
 IF FLAG:12 && MONEY:2 < CM_LIMIT

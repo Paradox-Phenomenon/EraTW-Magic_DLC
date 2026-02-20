@@ -18,8 +18,8 @@ ENDIF
 SIF ARG:1
 	RETURN
 ;戦闘能力の差でメッセージ分岐
-SELECTCASE ABL:ARG:戦闘能力 - ABL:MASTER:戦闘能力
-	CASE -6 TO -4
+SELECTCASE ABL:ARG:戦闘能力 - ABL:MASTER:戦闘能力 - TALENT:MASTER:神性 * MAGIC_DLC_弹幕战相关
+	CASE IS < -4
 		PRINTFORML 闭着眼睛躺着打都能赢。
 	CASE -4 TO -2
 		PRINTFORML 闭着眼睛都能赢。
@@ -147,9 +147,17 @@ ENDIF
 
 BONUS_DANMAKU_LIVES = 0 ;addition custom code
 CALL KOJO_MESSAGE_SEND("DANMAKU", 相手残機, OPPONENT, ENEMY, -1, "INITIALIZE") ;addition custom code
-
-プレイヤー残機 = 3
-相手残機 = 3
+IF !MAGIC_DLC_弹幕战相关
+	プレイヤー残機 = 3
+	相手残機 = 3
+	B_min = ABL:MASTER:戦闘能力 * 7 * (ABL:MASTER:戦闘能力 / 2 + 1)
+	B_Max = ABL:MASTER:戦闘能力 * 11 * (ABL:MASTER:戦闘能力 / 2 + 1) + 6
+ELSE
+	プレイヤー残機 = MAX(3,2 + ABL:MASTER:戦闘能力/2) + (TALENT:MASTER:神性 + ABL:MASTER:TSLv) / 2
+	相手残機 = MAX(3,2 + ABL:OPPONENT:戦闘能力/2)
+	B_min = ABL:MASTER:戦闘能力 * MAX(ABL:MASTER:TSLv * 2,7) * (ABL:MASTER:戦闘能力 / 2 + 1) + ABL:MASTER:TSLv * ABL:MASTER:TSLv * (TALENT:MASTER:神性 / 3 + 4)
+	B_Max = ABL:MASTER:戦闘能力 * MAX(ABL:MASTER:TSLv * 3,11) * (ABL:MASTER:戦闘能力 / 2 + 1) + 6 + ABL:MASTER:TSLv * ABL:MASTER:TSLv * (TALENT:MASTER:神性 / 2 + 4)
+ENDIF
 相手強さ = ABL:OPPONENT:戦闘能力
 残りHP = MAXBASE:MASTER:体力
 残りＢ回数 = 2
@@ -158,8 +166,6 @@ CALL KOJO_MESSAGE_SEND("DANMAKU", 相手残機, OPPONENT, ENEMY, -1, "INITIALIZE
 慢心フラグ = 0
 Pichun = 0
 Charge = 0
-B_min = ABL:MASTER:戦闘能力 * 7 * (ABL:MASTER:戦闘能力 / 2 + 1)
-B_Max = ABL:MASTER:戦闘能力 * 11 * (ABL:MASTER:戦闘能力 / 2 + 1) + 6
 
 IF PANGCI
 	プレイヤー残機 += 己残机
@@ -203,7 +209,11 @@ RESULT:10 = 0
 
 WHILE プレイヤー残機 > 0 && 相手残機 > 0
 	;骰子数計算
-	プレイヤーダイス数 = (ABL:MASTER:戦闘能力 + RAND:5) * 2 + (ABL:MASTER:戦闘能力 + RAND:3) / 2
+	IF !MAGIC_DLC_弹幕战相关
+		プレイヤーダイス数 = (ABL:MASTER:戦闘能力 + RAND:5) * 2 + (ABL:MASTER:戦闘能力 + RAND:3) / 2
+	ELSE
+		プレイヤーダイス数 = ABL:MASTER:戦闘能力 * 5/2 + RANDSF(2,5) + MAX(TALENT:MASTER:神性,1) * ABL:MASTER:TSLv / 2
+	ENDIF
 	相手ダイス数 = (相手強さ + RAND:4 + 1) * 2 + 相手強さ / 2 * RAND:3
 	SELECTCASE 相手残機
 		CASE IS > 2
@@ -218,7 +228,11 @@ WHILE プレイヤー残機 > 0 && 相手残機 > 0
 	ENDSELECT
 
 	;骰子面計算
-	プレイヤーダイス面 = (ABL:MASTER:戦闘能力 + 1) * (6 + RAND:8) + RAND:(15 + TFLAG:幸運補正) * ABL:MASTER:戦闘能力 / 2
+	IF !MAGIC_DLC_弹幕战相关
+		プレイヤーダイス面 = (ABL:MASTER:戦闘能力 + 1) * (6 + RAND:8) + RAND:(15 + TFLAG:幸運補正) * ABL:MASTER:戦闘能力 / 2
+	ELSE
+		プレイヤーダイス面 = (ABL:MASTER:戦闘能力 + 1) * (6 + RAND:8) + RAND:(15 + TFLAG:幸運補正) * ABL:MASTER:戦闘能力 / 2 + (TALENT:MASTER:神性 * 5 + 10) * ABL:MASTER:TSLv / 2
+	ENDIF
 	相手ダイス面 = (相手強さ + 1) * (9 + RAND:7) + RAND:10 - (相手残機 - 1) * 相手強さ
 	;修正値計算
 	IF (相手強さ - ABL:MASTER:戦闘能力) < 0
@@ -305,7 +319,8 @@ WHILE プレイヤー残機 > 0 && 相手残機 > 0
 		相手修正値 -= ABL:MASTER:戦闘能力 * RAND:3 + RAND:3
 	SIF TCVAR:OPPONENT:加護
 		プレイヤー修正値 -= 相手強さ * RAND:3 + RAND:3
-
+	SIF TALENT:MASTER:神性 && MAGIC_DLC_弹幕战相关
+		プレイヤー修正値 += TALENT:MASTER:神性 * ABL:MASTER:TSLv * ABL:MASTER:戦闘能力
 	;弾幕勝負補助道具の効果
 	CALL DANMAKU_ITEM_EFFECT(持ち込み道具)
 	プレイヤーダイス面 += RESULT:0

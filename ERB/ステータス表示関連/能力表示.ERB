@@ -1494,45 +1494,75 @@ ENDIF
 RESETCOLOR
 ;ここだけBASE基本表示で独立させてもいいかもって感じに使い勝手良さそう
 PRINTL 　
-CALL BASE_BAR(C_ID, "体力", 28, "緑")
-PRINTFORM 　　
-CALL BASE_BAR(C_ID, "気力", 28, "青", "「改行」")
-SIF BASE:C_ID:酒気
-	CALL BASE_BAR(C_ID, "酒気", 28, "赤", "「改行」")
+IF !MAGIC_DLC
+	CALL BASE_BAR(C_ID, "体力", 28, "緑")
+	PRINTFORM 　　
+	CALL BASE_BAR(C_ID, "気力", 28, "青", "「改行」")
+	SIF BASE:C_ID:酒気
+		CALL BASE_BAR(C_ID, "酒気", 28, "赤", "「改行」")
 
-IF C_ID == MASTER
-	CALL BASE_BAR(MASTER, "精力", 28, "黄")
-	PRINTFORM 　　
-	CALL BASE_BAR(C_ID, "TSP", 28, "水色", "「改行」")
-ELSE
-	IF NOTICE_LUST(C_ID)
-		;記述が整理できるという理由で微妙に閾値変更
-		SELECTCASE CFLAG:C_ID:积攒度
-		CASE IS >= 665
-			SETCOLOR C_RED
-		CASE IS >= 332
-			SETCOLOR C_YELLOW
-		ENDSELECT
-		PRINTFORMD 欲求不满度：
-		PRINTFORM {CFLAG:C_ID:积攒度 / 10}
-		PRINTFORMD ％
-		RESETCOLOR
+	IF C_ID == MASTER
+		CALL BASE_BAR(MASTER, "精力", 28, "黄")
+		PRINTFORM 　　
+		CALL BASE_BAR(C_ID, "TSP", 28, "水色", "「改行」")
+	ELSE
+		GOTO 其他角色信息表示
 	ENDIF
+ELSE
+	CALL BASE_BAR(C_ID, "体力", 28, "緑")
 	PRINTFORM 　　
-	SIF CFLAG:(C_ID):弾幕勝負勝利 == 1
-		PRINTFORM ★已赢得弹幕对决胜利　
-	SIF CFLAG:(C_ID):斗虫直接勝利 == 1
-		PRINTFORM ★已赢得直接斗虫胜利　
-	SIF CFLAG:(C_ID):料理勝負勝利 == 1
-		PRINTFORM ★已赢得料理对决胜利　
-	;qol custom code, show currently used dialogue
-	;first see if we have something on the current line to determine if we want to add extra spacing
-	SIF CFLAG:(C_ID):弾幕勝負勝利 || CFLAG:(C_ID):斗虫直接勝利 == 1 || CFLAG:(C_ID):料理勝負勝利 == 1
-		PRINTFORM 　　　　
-	CALL QoL_DetailedInfo(Qol_Info_Dialogue, C_ID)
+	CALL BASE_BAR(C_ID, "気力", 28, "青", "「改行」")
+	IF HAS_PENIS(C_ID)
+		CALL BASE_BAR(C_ID, "精力", 28, "黄")
+		PRINTFORM 　　
+	ENDIF
+	CALL BASE_BAR(C_ID, "酒気", 28, "赤", "「改行」")
+	IF MAXBASE:C_ID:法力 > 0
+		CALL BASE_BAR(C_ID, "法力", 28, "橙")
+		PRINTFORM 　　
+	ENDIF
+	IF MAXBASE:C_ID:TSP > 0
+		CALL BASE_BAR(C_ID, "TSP", 28, "水色", "「改行」")
+	ELSE
+		PRINTFORML
+	ENDIF
+	SIF C_ID != MASTER
+		GOTO 其他角色信息表示
+ENDIF
+GOTO 其他角色信息表示结束
+$其他角色信息表示
+IF NOTICE_LUST(C_ID)
+	;記述が整理できるという理由で微妙に閾値変更
+	SELECTCASE CFLAG:C_ID:积攒度
+	CASE IS >= 665
+		SETCOLOR C_RED
+	CASE IS >= 332
+		SETCOLOR C_YELLOW
+	ENDSELECT
+	PRINTFORMD 欲求不满度：
+	PRINTFORM {CFLAG:C_ID:积攒度 / 10}
+	PRINTFORMD ％
+	RESETCOLOR
+ENDIF
+PRINTFORM 　　
+SIF CFLAG:(C_ID):弾幕勝負勝利 == 1
+	PRINTFORM ★已赢得弹幕对决胜利　
+SIF CFLAG:(C_ID):斗虫直接勝利 == 1
+	PRINTFORM ★已赢得直接斗虫胜利　
+SIF CFLAG:(C_ID):料理勝負勝利 == 1
+	PRINTFORM ★已赢得料理对决胜利　
+IF MAGIC_DLC_好感亲密重做
+	PRINTFORM 当前好意珠：{JUEL:C_ID:20}/{JUEL_DEMAND_9(0,20,C_ID)}|
+	PRINTFORM 当前欲情珠：{JUEL:C_ID:21}/{JUEL_DEMAND_11(1,21,C_ID)}|
 	PRINTFORML
 ENDIF
-
+;qol custom code, show currently used dialogue
+;first see if we have something on the current line to determine if we want to add extra spacing
+SIF CFLAG:(C_ID):弾幕勝負勝利 || CFLAG:(C_ID):斗虫直接勝利 == 1 || CFLAG:(C_ID):料理勝負勝利 == 1
+	PRINTFORM 　　　　
+CALL QoL_DetailedInfo(Qol_Info_Dialogue, C_ID)
+PRINTFORML
+$其他角色信息表示结束
 ;角色情報表示関数
 ;登録番号と页番号、オプションを指定して情報を表示する
 @CHARA_STATE(C_ID, PAGE, OP)
