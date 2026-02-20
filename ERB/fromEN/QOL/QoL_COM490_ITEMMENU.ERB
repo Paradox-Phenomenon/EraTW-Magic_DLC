@@ -6,7 +6,9 @@
 #DIM nPageSize = 40 ;total lines allowed per page
 #DIM nPageElementCount, 10 ;elements per page
 #DIM DYNAMIC nPrintCount
-#DIMS strPrintRange
+;#DIMS DYNAMIC strPrintRange
+;性能优化：用标记数组替代字符串模拟链表，提高渲染速度
+#DIM DYNAMIC Printed_ITEM, 1000
 #DIM nLineCnt_Head
 #DIM DYNAMIC 表示道具種別
 ;CALL COLORMESSAGE(@"Drugs",C_ORANGE)
@@ -24,7 +26,9 @@ DO
 	LOCAL:6 = 0 ;element count for current page
 	LOCAL:9 = 0 ;line count for current page
 	VARSET nPageElementCount	
-	strPrintRange = 
+	;strPrintRange = 
+	;性能优化：用标记数组替代字符串模拟链表，提高渲染速度
+	VARSET Printed_ITEM
 	nPageLength = 0
 	FOR LOCAL,0, 1000
 		SIF 表示道具種別 != 0 && ITEMTYPE(LOCAL) != 表示道具種別
@@ -37,7 +41,8 @@ DO
 				CONTINUE
 		ENDIF
 
-		strPrintRange += TOSTR(LOCAL) + ":"
+		;strPrintRange += TOSTR(LOCAL) + ":"
+		Printed_ITEM:LOCAL = 1
 		;lines required
 		;LOCAL:8 = STRCOUNT(BREAKENG(ITEM_EXPLANATION(LOCAL), 0, "\n  "), "\n") + 2
 		LOCAL:8 = 1
@@ -57,7 +62,8 @@ DO
 	nPrintCount = 0
 	LOCAL:7 = LINECOUNT
 	FOR LOCAL,0, 1000
-		SIF !SPLIT_CHECK(strPrintRange, LOCAL:0) ;show only those who are in the list
+		;SIF !SPLIT_CHECK(strPrintRange, LOCAL:0) ;show only those who are in the list
+		SIF !Printed_ITEM:LOCAL ;性能优化：用标记数组替代字符串模拟链表，提高渲染速度
 			CONTINUE
 
 		nPrintCount ++
