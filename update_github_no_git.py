@@ -3,6 +3,7 @@ import sys
 import subprocess
 import shutil
 import urllib.request
+import urllib3
 from datetime import datetime
 from pathlib import Path
 
@@ -150,6 +151,8 @@ if not check_and_install_dependencies():
 
 import requests
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 class GitHubUpdaterNoGit:
     def __init__(self):
         self.repo_owner = "Paradox-Phenomenon"
@@ -164,7 +167,7 @@ class GitHubUpdaterNoGit:
     def make_api_request(self, endpoint):
         try:
             url = f"{self.api_base}{endpoint}"
-            response = requests.get(url, timeout=30)
+            response = requests.get(url, timeout=30, verify=False)
             if response.status_code == 200:
                 return response.json()
             else:
@@ -177,7 +180,7 @@ class GitHubUpdaterNoGit:
     def check_network_connection(self):
         print("\n检查网络连接...")
         try:
-            response = requests.get("https://api.github.com", timeout=10)
+            response = requests.get("https://api.github.com", timeout=10, verify=False)
             if response.status_code == 200:
                 print("✓ 网络连接正常")
                 return True
@@ -223,7 +226,7 @@ class GitHubUpdaterNoGit:
     def download_file(self, file_path, branch):
         raw_url = f"{self.raw_base}/{self.repo_owner}/{self.repo_name}/{branch}/{file_path}"
         try:
-            response = requests.get(raw_url, timeout=30)
+            response = requests.get(raw_url, timeout=30, verify=False)
             if response.status_code == 200:
                 return response.content
             else:
@@ -362,6 +365,7 @@ class GitHubUpdaterNoGit:
         print("EraTW Magic DLC 自动更新工具（无Git版本）")
         print("="*60)
         print(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("\n注意：SSL证书验证已禁用（用于解决证书问题）")
         
         if not self.check_network_connection():
             return
