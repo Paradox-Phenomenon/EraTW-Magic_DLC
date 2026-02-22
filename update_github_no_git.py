@@ -1,9 +1,154 @@
 import os
-import json
-import requests
+import sys
+import subprocess
 import shutil
+import urllib.request
 from datetime import datetime
 from pathlib import Path
+
+def install_pip():
+    print("\n检查pip...")
+    
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "--version"],
+            capture_output=True,
+            timeout=10
+        )
+        print("✓ pip已安装")
+        return True
+    except:
+        print("❌ pip未找到")
+        print("\n正在尝试自动安装pip...")
+        
+        try:
+            get_pip_url = "https://bootstrap.pypa.io/get-pip.py"
+            print(f"下载get-pip.py...")
+            
+            with urllib.request.urlopen(get_pip_url, timeout=30) as response:
+                get_pip_content = response.read()
+            
+            get_pip_path = os.path.join(os.path.dirname(sys.executable), "get-pip.py")
+            with open(get_pip_path, 'wb') as f:
+                f.write(get_pip_content)
+            
+            print("运行get-pip.py安装pip...")
+            result = subprocess.run(
+                [sys.executable, get_pip_path],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            
+            if result.returncode == 0:
+                print("✓ pip安装成功")
+                os.remove(get_pip_path)
+                return True
+            else:
+                print("❌ pip安装失败")
+                print(f"错误信息：{result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ pip安装过程出错: {str(e)}")
+            print("\n请手动安装pip：")
+            print("1. 访问: https://bootstrap.pypa.io/get-pip.py")
+            print("2. 保存为get-pip.py")
+            print(f"3. 运行: {sys.executable} get-pip.py")
+            return False
+
+def check_and_install_dependencies():
+    print("检查依赖库...")
+    print(f"当前Python路径: {sys.executable}")
+    print(f"当前Python版本: {sys.version}")
+    
+    try:
+        import requests
+        print("✓ requests库已安装")
+        return True
+    except ImportError:
+        print("❌ requests库未找到")
+        
+        if not install_pip():
+            input("\n按回车键退出...")
+            sys.exit(1)
+        
+        print("\n正在尝试自动安装requests库...")
+        print(f"使用Python: {sys.executable}")
+        
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "requests"],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            print(f"安装返回码: {result.returncode}")
+            if result.stdout:
+                print(f"输出: {result.stdout[-200:]}")
+            if result.stderr:
+                print(f"错误: {result.stderr[-200:]}")
+            
+            if result.returncode == 0:
+                print("✓ requests库安装成功")
+                print("\n请重新运行程序")
+                return False
+            else:
+                print("❌ requests库安装失败")
+                print(f"\n完整错误信息：")
+                print(result.stderr)
+                print("\n可能的原因：")
+                print("1. pip未安装或未添加到PATH")
+                print("2. 网络连接问题")
+                print("3. 权限不足")
+                print("4. 多个Python版本冲突")
+                print("\n请尝试以下方法：")
+                print("\n方法1：使用国内镜像安装")
+                print(f"  {sys.executable} -m pip install requests -i https://pypi.tuna.tsinghua.edu.cn/simple")
+                print("\n方法2：手动下载并安装")
+                print("  访问: https://pypi.org/project/requests/")
+                print("  下载requests-*.whl文件")
+                print(f"  运行: {sys.executable} -m pip install requests-*.whl")
+                print("\n方法3：使用管理员权限运行")
+                print("  右键点击bat文件，选择'以管理员身份运行'")
+                print("\n方法4：检查Python版本")
+                print(f"  当前Python: {sys.executable}")
+                print("  请确认这是您想使用的Python版本")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            print("❌ 安装超时（60秒）")
+            print("\n可能的原因：")
+            print("1. 网络连接缓慢")
+            print("2. pip源响应慢")
+            print("\n建议：")
+            print("  使用国内镜像：")
+            print(f"  {sys.executable} -m pip install requests -i https://pypi.tuna.tsinghua.edu.cn/simple")
+            return False
+        except FileNotFoundError:
+            print("❌ 未找到pip")
+            print(f"\nPython路径：{sys.executable}")
+            print("\n请检查：")
+            print("1. Python是否正确安装")
+            print("2. pip是否包含在Python安装包中")
+            print("\n手动安装pip：")
+            print("  访问: https://bootstrap.pypa.io/get-pip.py")
+            print("  下载get-pip.py")
+            print(f"  运行: {sys.executable} get-pip.py")
+            return False
+        except Exception as e:
+            print(f"❌ 安装过程出错: {type(e).__name__}")
+            print(f"错误详情: {str(e)}")
+            print("\n请尝试手动安装：")
+            print(f"  {sys.executable} -m pip install requests")
+            return False
+
+if not check_and_install_dependencies():
+    input("\n按回车键退出...")
+    sys.exit(1)
+
+import requests
 
 class GitHubUpdaterNoGit:
     def __init__(self):
