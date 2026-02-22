@@ -386,11 +386,13 @@ RETURNF C_ID
 ;COUNTER_MESSAGE.ERB内の@DATUI_MESSAGEが使用例になってるのでピンとこない人は見てね
 ;-------------------------------------------------
 @SHOW_BOTTOM(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 5 = "", "裙子", "ずらし可", "ずらし不可", "下身衣服ずらし不可"
 #DIMS PARTS
 #DIM EQUIP_TARGET
-
+RETURNF QOL_视觉优先度服装描写(ARG, @"下半身服装描写_qol")
 ;引数1とTEQUIP:0を照らし合わせて表示するものを選ぶ
 IF ARG:1
 	EQUIP_TARGET = ARG:1 & TEQUIP:ARG:0
@@ -417,7 +419,14 @@ PARTS '= COVER_CLOTHES(ARG, @"下半身服装描写_%TYPE:LOCAL%")
 SIF STRLENS(PARTS)
 	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
-
+@SHOW_DRESS(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIMS PARTS
+PARTS '= COVER_CLOTHES(ARG, @"裙子描写_qol")
+SIF STRLENS(PARTS)
+	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
 ;-------------------------------------------------
 ;関数名:SHOW_下半身内衣
@@ -433,11 +442,13 @@ SIF STRLENS(PARTS)
 ;COUNTER_MESSAGE.ERB内の@DATUI_MESSAGEが使用例になってるのでピンとこない人は見てね
 ;-------------------------------------------------
 @SHOW_下半身内衣(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 5 = "", "裙子", "ずらし可", "ずらし不可", "下身衣服ずらし不可"
 #DIMS PARTS
 #DIM EQUIP_TARGET
-
+RETURNF QOL_视觉优先度服装描写(ARG, @"下半身内衣描写_qol")
 ;引数1とTEQUIP:0を照らし合わせて表示するものを選ぶ
 IF ARG:1
 	EQUIP_TARGET = ARG:1 & TEQUIP:ARG:0
@@ -476,9 +487,12 @@ SIF STRLENS(PARTS)
 ;TEQUIP:1に対応して一番上に着ている衣装の種類を返す
 ;-------------------------------------------------
 @SHOW_TOP(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 3 = "", "はだけ可", "はだけ不可"
 #DIMS PARTS
+RETURNF QOL_视觉优先度服装描写(ARG, @"上半身服装描写_qol")
 IF ARG:1
 	LOCAL = ARG:1
 ELSEIF TEQUIP:ARG:1 & 2
@@ -502,9 +516,12 @@ SIF STRLENS(PARTS)
 ;TEQUIP:1に対応して一番上に着ている衣装の種類を返す
 ;-------------------------------------------------
 @SHOW_上半身内衣(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 3 = "", "はだけ可", "はだけ不可"
 #DIMS PARTS
+RETURNF QOL_视觉优先度服装描写(ARG, @"上半身内衣描写_qol")
 LOCAL = 0
 IF ARG:1
 	LOCAL = ARG:1
@@ -522,10 +539,37 @@ SIF STRLENS(PARTS)
 
 ;最も露出を妨げている衣装の装備部位を返す
 ;@SHOW_装備系の判定が煩わしかったので簡略化用に
+@QOL_视觉优先度服装描写(CID,TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC TYPE
+#DIM DYNAMIC CID
+#DIMS PARTS
+#FUNCTIONS
+PARTS '= COVER_CLOTHES(CID, TYPE)
+SIF STRLENS(PARTS)
+	RETURNF CLOTHES_TR(GET_STR(CID, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:CID:PARTS, "名前"))
+
 @COVER_CLOTHES(ARG, TYPE)
 #FUNCTIONS
 #DIMS TYPE
+#DIM CONST 上半身服装描写顺序 = EQUIP_外衣, EQUIP_上身衣服２, EQUIP_和服, EQUIP_ボディースーツ,EQUIP_上身衣服１,EQUIP_ワンピース,EQUIP_レオタード,EQUIP_上半身下着１,EQUIP_上半身下着２
+#DIM CONST 下半身服装描写顺序 = EQUIP_裤子, EQUIP_ボディースーツ, EQUIP_和服, EQUIP_裙子,EQUIP_ワンピース,EQUIP_レオタード,EQUIP_下半身内衣１,EQUIP_下半身内衣２
+#DIM CONST 裙子描写顺序 = EQUIP_裙子,EQUIP_和服, EQUIP_ワンピース
+#DIM CONST 上半身内衣描写顺序 = EQUIP_レオタード,EQUIP_上半身下着１,EQUIP_上半身下着２,EQUIP_ボディースーツ
+#DIM CONST 下半身内衣描写顺序 = EQUIP_ボディースーツ,EQUIP_レオタード,EQUIP_下半身内衣１,EQUIP_下半身内衣２
+
 SELECTCASE TYPE
+CASE "上半身服装描写_qol"
+	FOR LOCAL, 0, VARSIZE("上半身服装描写顺序")
+		SIF EQUIP:ARG:(上半身服装描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(上半身服装描写顺序:LOCAL)
+	NEXT
+CASE "裙子描写_qol"
+	FOR LOCAL, 0, VARSIZE("裙子描写顺序")
+		SIF EQUIP:ARG:(裙子描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(裙子描写顺序:LOCAL)
+	NEXT
 CASE "上半身服装描写_はだけ不可"
 	SIF EQUIP:ARG:上身衣服１
 		RETURNF "上身衣服１"
@@ -547,7 +591,11 @@ CASE "上半身服装描写_はだけ可"
 		RETURNF "上半身内衣２"
 	RETURNF
 
-
+CASE "上半身内衣描写_qol"
+	FOR LOCAL, 0, VARSIZE("上半身内衣描写顺序")
+		SIF EQUIP:ARG:(上半身内衣描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(上半身内衣描写顺序:LOCAL)
+	NEXT
 CASE "上半身内衣描写_はだけ不可"
 	SIF EQUIP:ARG:レオタード
 		RETURNF "レオタード"
@@ -562,6 +610,11 @@ CASE "上半身内衣描写_はだけ可"
 	RETURNF
 
 
+CASE "下半身内衣描写_qol"
+	FOR LOCAL, 0, VARSIZE("下半身内衣描写顺序")
+		SIF EQUIP:ARG:(下半身内衣描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(下半身内衣描写顺序:LOCAL)
+	NEXT
 CASE "下半身内衣描写_下身衣服ずらし不可"
 	SIF EQUIP:ARG:ボディースーツ
 		RETURNF "ボディースーツ"
@@ -592,12 +645,11 @@ CASE "下半身内衣描写_裙子"
 	RETURNF
 
 
-CASE "下半身服装描写_全身衣"
-	SIF EQUIP:ARG:ボディースーツ
-		RETURNF "ボディースーツ"
-	SIF EQUIP:ARG:レオタード
-		RETURNF "レオタード"
-	RETURNF
+CASE "下半身服装描写_qol"
+	FOR LOCAL, 0, VARSIZE("下半身服装描写顺序")
+		SIF EQUIP:ARG:(下半身服装描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(下半身服装描写顺序:LOCAL)
+	NEXT
 CASE "下半身服装描写_下身衣服ずらし不可"
 	SIF EQUIP:ARG:裤子
 		RETURNF "裤子"
@@ -631,8 +683,6 @@ CASE "下半身服装描写_裙子"
 		RETURNF "連衣裙"
 	SIF EQUIP:ARG:和服
 		RETURNF "和服"
-	SIF EQUIP:ARG:連衣裙
-		RETURNF "連衣裙"
 	RETURNF
 ENDSELECT
 
