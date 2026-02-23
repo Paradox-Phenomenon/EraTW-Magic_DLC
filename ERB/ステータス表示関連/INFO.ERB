@@ -854,12 +854,14 @@ ENDSELECT
 ;TOSTR関数チックに、引数の数値を漢数字の文字列で返します
 ;変数の最大値は約922京であるため、一、万、億、兆、京の5回処理します
 ;-------------------------------------------------
-@TOKANJI(ARG)
+@TOKANJI(ARG,ARG:1)
 #FUNCTIONS
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM LCOUNT, 1
 VARSET LOCALS
+SIF ARG:1 && ARG == 2
+	RETURNF "两"
 FOR LCOUNT, 0, 5
 	LOCAL = ARG/POWER(10000, (4-LCOUNT))
 	ARG %= POWER(10000, (4-LCOUNT))
@@ -881,8 +883,10 @@ RETURNF \@ LOCALS != "" ? %LOCALS% # 零 \@
 
 ;内部用or簡易用
 ;四桁以内の漢字変換。万以上与えるとバグ
-@TOKANJIT(ARG)
+@TOKANJIT(ARG,ARG:1)
 #FUNCTIONS
+SIF ARG:1 && ARG == 2
+	RETURNF "两"
 SIF ARG >= 10000
 	RETURNF "ＢＵＧ"
 LOCALS = \@ ARG/1000 ? %TOKANJIS(ARG/1000)%千 # \@
@@ -894,8 +898,10 @@ ARG %= 10
 RETURNF LOCALS + TOKANJIS(ARG)
 
 ;一桁の変換。引数1を真にすると一を省略する。2以上にすると零を表示する
-@TOKANJIS(ARG, ARG:1)
+@TOKANJIS(ARG, ARG:1,ARG:2)
 #FUNCTIONS
+SIF ARG:2 && ARG == 2
+	RETURNF "两"
 SELECTCASE ARG
 	CASE 0
 		RETURNF \@ ARG:1 > 1 ? 零 #  \@
@@ -1502,7 +1508,7 @@ IF FLAG:约会的对象
 	SETCOLOR 255,51,153
 	IF MOREDATE && NumberOfDates > 1
 		IF IS_GAP_GUEST(MASTER)
-			CALL COLORMESSAGE(@"　<与%TOKANJI(NumberOfDates)%人进行多人约会> 隙间待客室中", 0xFF3399)
+			CALL COLORMESSAGE(@"　<与%TOKANJI(NumberOfDates,1)%人进行多人约会> 隙间待客室中", 0xFF3399)
 		ELSE
 			CALL MOREDATES_HUD_INFO
 		ENDIF
