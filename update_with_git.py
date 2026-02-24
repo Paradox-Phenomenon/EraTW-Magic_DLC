@@ -1,16 +1,66 @@
 import os
 import subprocess
+import fnmatch
 from datetime import datetime
 
 class GitUpdater:
     def __init__(self):
         self.repo_path = os.path.dirname(os.path.abspath(__file__))
         self.nightly_branch = "nightly-build"
-        self.developing_branch = "master"
+        self.developing_branch = "developing"
         self.update_folder = os.path.join(self.repo_path, "更新文件")
         self.backup_folder = os.path.join(self.repo_path, "备份_" + datetime.now().strftime("%Y%m%d_%H%M%S"))
         self.remote_prefix = "main"
+        self.gitignore_patterns = self.load_gitignore()
         
+    def load_gitignore(self):
+        """加载并解析.gitignore文件"""
+        gitignore_path = os.path.join(self.repo_path, ".gitignore")
+        patterns = []
+        
+        if os.path.exists(gitignore_path):
+            print("\n加载.gitignore文件...")
+            try:
+                with open(gitignore_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        line = line.strip()
+                        # 跳过空行和注释
+                        if not line or line.startswith('#') or line.startswith(';'):
+                            continue
+                        # 移除转义的反斜杠
+                        line = line.replace('\\', '')
+                        patterns.append(line)
+                print(f"  ✓ 加载了 {len(patterns)} 个忽略模式")
+            except Exception as e:
+                print(f"  ❌ 加载.gitignore失败: {str(e)}")
+        
+        return patterns
+    
+    def is_ignored(self, filepath):
+        """检查文件是否被.gitignore忽略"""
+        for pattern in self.gitignore_patterns:
+            # 处理目录模式（以/开头的目录）
+            if pattern.startswith('/') and not pattern.endswith('/'):
+                pattern_dir = pattern[1:]
+                if filepath == pattern_dir or filepath.startswith(pattern_dir + '/'):
+                    return True
+            # 处理目录模式（以/结尾的目录）
+            elif pattern.endswith('/'):
+                pattern_dir = pattern.rstrip('/')
+                if filepath == pattern_dir or filepath.startswith(pattern_dir + '/'):
+                    return True
+            # 处理普通目录模式
+            elif '/' in pattern and not pattern.endswith('*'):
+                # 检查是否是目录匹配
+                if filepath == pattern or filepath.startswith(pattern + '/'):
+                    return True
+            # 处理文件模式
+            elif fnmatch.fnmatch(filepath, pattern):
+                return True
+            elif fnmatch.fnmatch(os.path.basename(filepath), pattern):
+                return True
+        return False
+    
     def detect_remote_branches(self):
         print("\n检测远程分支...")
         
@@ -184,10 +234,14 @@ class GitUpdater:
                 'C': 'copied'
             }
             
-            files_list.append({
-                'filename': filename,
-                'status': status_map.get(status, 'modified')
-            })
+            # 检查文件是否被gitignore忽略
+            if not self.is_ignored(filename):
+                files_list.append({
+                    'filename': filename,
+                    'status': status_map.get(status, 'modified')
+                })
+            else:
+                print(f"  ⚠️  跳过被.gitignore忽略的文件: {filename}")
         
         print(f"  ✓ 共找到 {len(files_list)} 个变更文件")
         return files_list
@@ -263,7 +317,63 @@ class GitUpdater:
         print(f"  - 失败: {fail_count} 个文件")
         print(f"  - 保存位置: {self.update_folder}")
         
+        self.generate_file_list(files_to_copy)
+        
         return success_count > 0
+    
+    def generate_file_list(self, files_list):
+        print("\n" + "="*60)
+        print("生成文件变更列表")
+        print("="*60)
+        
+        list_file_path = os.path.join(self.update_folder, "文件变更列表.txt")
+        
+        with open(list_file_path, 'w', encoding='utf-8') as f:
+            f.write("="*60 + "\n")
+            f.write("文件变更列表\n")
+            f.write("="*60 + "\n\n")
+            
+            added_files = [f for f in files_list if f['status'] == 'added']
+            modified_files = [f for f in files_list if f['status'] == 'modified']
+            removed_files = [f for f in files_list if f['status'] == 'removed']
+            renamed_files = [f for f in files_list if f['status'] == 'renamed']
+            
+            f.write(f"【新增文件】({len(added_files)} 个)\n")
+            f.write("-"*60 + "\n")
+            for file_info in sorted(added_files, key=lambda x: x['filename']):
+                f.write(f"+ {file_info['filename']}\n")
+            
+            f.write("\n")
+            f.write(f"【修改文件】({len(modified_files)} 个)\n")
+            f.write("-"*60 + "\n")
+            for file_info in sorted(modified_files, key=lambda x: x['filename']):
+                f.write(f"~ {file_info['filename']}\n")
+            
+            if renamed_files:
+                f.write("\n")
+                f.write(f"【重命名文件】({len(renamed_files)} 个)\n")
+                f.write("-"*60 + "\n")
+                for file_info in sorted(renamed_files, key=lambda x: x['filename']):
+                    f.write(f"R {file_info['filename']}\n")
+            
+            if removed_files:
+                f.write("\n")
+                f.write(f"【删除文件】({len(removed_files)} 个)\n")
+                f.write("-"*60 + "\n")
+                for file_info in sorted(removed_files, key=lambda x: x['filename']):
+                    f.write(f"- {file_info['filename']}\n")
+            
+            f.write("\n")
+            f.write("="*60 + "\n")
+            f.write(f"总计: {len(files_list)} 个文件变更\n")
+            f.write(f"  - 新增: {len(added_files)} 个\n")
+            f.write(f"  - 修改: {len(modified_files)} 个\n")
+            f.write(f"  - 删除: {len(removed_files)} 个\n")
+            if renamed_files:
+                f.write(f"  - 重命名: {len(renamed_files)} 个\n")
+            f.write("="*60 + "\n")
+        
+        print(f"  ✓ 文件列表已生成: {list_file_path}")
     
     def show_comparison(self):
         print("\n" + "="*60)
