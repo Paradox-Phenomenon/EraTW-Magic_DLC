@@ -334,6 +334,7 @@ RETURN 1
 #DIM Price
 #DIM QTY
 #DIM 代入
+#DIM sizeLevel
 
 Price = 0
 代入 = 0
@@ -378,10 +379,29 @@ SIF Price < 1
 	Price = 1
 
 ;巨木・大木補正
-IF FLAG_L > 200
-	TIMES Price, 5.0
-ELSEIF FLAG_L > 100
-	TIMES Price, 3.0
+
+IF 增强的伐木系统开关 == 0
+	;原始逻辑：根据编号简单倍增
+	IF FLAG_L > 200
+		TIMES Price, 5.0
+	ELSEIF FLAG_L > 100
+		TIMES Price, 3.0
+	ENDIF
+ELSE
+	;修改后逻辑：基于尺寸等级的高倍数（与制材产量一致）
+	sizeLevel = FLAG_TO_LOGSIZE(FLAG_L)
+	SELECTCASE sizeLevel
+		CASE 1 ; 大木（高度比例 3.125 倍，体积 30.5 倍）
+			TIMES Price, 30.5
+		CASE 2 ; 巨木（高度比例 3.875 倍，体积 58.2 倍）
+			TIMES Price, 58.2
+		CASE 3 ; 庞木（高度比例 7.5 倍，体积 421.875 倍）
+			TIMES Price, 421.875
+		CASE 4 ; 参天木（高度比例 10.625 倍，体积 1199.2 倍）
+			TIMES Price, 1199.2
+		CASEELSE
+			; 普通树木，不乘
+	ENDSELECT
 ENDIF
 
 ;口八丁補正
