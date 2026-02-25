@@ -11,6 +11,8 @@
 #DIM 探索回数
 #DIM nLuck ;logging tweak
 nLuck = CFLAG:MASTER:今日の運勢 / 20 - 25
+SIF 增强的伐木系统开关
+	nLuck += TALENT:MASTER:伐採Lv * 10 - 30
 SIF ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_TreeSeeker) ;addition custom code
 	nLuck += 20
 
@@ -540,14 +542,26 @@ SIZE = W_ID
 SIF STRCOUNT(WoodTribe, "サイズ無視/")
 	RETURNF W_ID
 ;logging tweak
-IF PERCENT(20 + nLuck)
-	SIZE += 100
-	SIF PERCENT(33 + nLuck)
-		SIZE += 100
-	SIF PERCENT(5 + nLuck)
-		SIZE += 100
-	SIF PERCENT(1 + nLuck)
-		SIZE += 100
+IF 增强的伐木系统开关 == 0
+    IF PERCENT(20 + nLuck)
+        SIZE += 100
+        SIF PERCENT(33 + nLuck)
+            SIZE += 100
+        SIF PERCENT(5 + nLuck)
+            SIZE += 100
+        SIF PERCENT(1 + nLuck)
+            SIZE += 100
+    ENDIF
+ELSE
+    IF PERCENT(22 + nLuck)
+        SIZE += 100
+        SIF PERCENT(35 + nLuck)
+            SIZE += 100
+        SIF PERCENT(8 + nLuck)
+            SIZE += 100
+        SIF PERCENT(3 + nLuck)
+            SIZE += 100
+    ENDIF
 ENDIF
 RETURNF SIZE
 
@@ -645,30 +659,78 @@ RETURNF FLAG_L % 100
 ;-----------------------------------------------------------
 ;原木・青竹の伐採にかかる体力・気力を返す関数
 ;-----------------------------------------------------------
-@WOOD_EFFORT(木材種, nChainsawBonus) ;logging tweak
+@WOOD_EFFORT(木材種, nChainsawBonus)
 #FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM 木材種
 #DIM 消費
 #DIM nChainsawBonus
+#DIM sizeLevel
+#DIM lv
+#DIM heightRatio
+#DIM factor_int
 
-消費 = WoodEffort
-SELECTCASE 木材種
-	CASE IS > 100;大木
-		消費 += 700
-	CASE IS > 200;巨木
-		消費 += 1000
-	CASE IS > 300 ;logging tweak
-		消費 += 1500
-	CASE IS > 400 ;logging tweak
-		消費 += 1800
-ENDSELECT
+IF 增强的伐木系统开关 == 0
+    ;===== 原始逻辑 =====
+    消費 = WoodEffort
+    SELECTCASE 木材種
+        CASE IS > 100 ;大木
+            消費 += 700
+        CASE IS > 200 ;巨木
+            消費 += 1000
+        CASE IS > 300 ;庞木
+            消費 += 1500
+        CASE IS > 400 ;参天
+            消費 += 1800
+    ENDSELECT
 
-IF ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_KickBack) && nChainsawBonus ;logging tweak
-	消費 = MULTIPLY(WoodEffort, 75)
-	SIF 消費 >= 1000
-		消費 /= 2
+    IF ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_KickBack) && nChainsawBonus
+        消費 = MULTIPLY(WoodEffort, 75)
+        SIF 消費 >= 1000
+            消費 /= 2
+    ENDIF
+ELSE
+    ;===== 修改后逻辑 =====
+    ; 玩家伐木等级减免
+    lv = TALENT:MASTER:伐採Lv
+    factor_int = 100 - 15 * lv
+    IF factor_int < 10
+        factor_int = 10
+    ENDIF
+
+    ; 提取尺寸等级
+    sizeLevel = FLAG_TO_LOGSIZE(木材種)
+
+    ; 根据尺寸等级设置高度比例（普通8米为基准）
+    SELECTCASE sizeLevel
+        CASE 0 ; 普通
+            heightRatio = 100
+        CASE 1 ; 大木 (25米)
+            heightRatio = 312
+        CASE 2 ; 巨木 (31米)
+            heightRatio = 387
+        CASE 3 ; 庞木 (60米)
+            heightRatio = 750
+        CASE 4 ; 参天木 (85米)
+            heightRatio = 1062
+        CASEELSE
+            heightRatio = 100
+    ENDSELECT
+
+    ; 基础消耗
+    消費 = WoodEffort
+    ; 应用高度比例和等级减免
+    消費 = 消費 * heightRatio / 100
+    消費 = 消費 * factor_int / 100
+    消費 = MAX(消費, 1)
+
+    ; 电锯魔改 KickBack 效果（基于原始 WoodEffort）
+    IF ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_KickBack) && nChainsawBonus
+        消費 = MULTIPLY(WoodEffort, 75)
+        SIF 消費 >= 1000
+            消費 /= 2
+    ENDIF
 ENDIF
 
 RETURNF 消費
@@ -706,7 +768,11 @@ VARSET WoodItem
 #DIM 減少値
 #DIM 伐採時間
 #DIM nLuck ;logging tweak
-nLuck = CFLAG:MASTER:今日の運勢 / 20 - 25
+IF 增强的伐木系统开关
+    nLuck = CFLAG:MASTER:今日の運勢 / 20 - 55 + TALENT:MASTER:伐採Lv * 10
+ELSE
+    nLuck = CFLAG:MASTER:今日の運勢 / 20 - 25
+ENDIF
 SIF ITEM:チェーンソー && GETBIT(nChainSawMods, ChainSaw_TreeSeeker) ;addition custom code
 	nLuck += 20
 
