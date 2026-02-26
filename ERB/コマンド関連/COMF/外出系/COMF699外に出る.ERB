@@ -7,7 +7,7 @@
 FLAG:自室施錠 = 0
 IF IS_GAP_GUEST(MASTER)
 	IF !M_TFLAG:瞬移中
-		IF !(CHK_DATENOW(CFLAG:MASTER:约会中) && FLAG:约会的对象) && M_FLAG:隙间标记/100 == GMF_HOME_MAP
+		IF !IS_DATING_WITH_PLAYER(FLAG:约会的对象) && M_FLAG:隙间标记/100 == MAIN_MAP
 			DRAWLINE
 			PRINTL 出口选择: 
 			PRINTLC [1] 返回私室
@@ -19,7 +19,7 @@ IF IS_GAP_GUEST(MASTER)
 				CASE 2
 					出口 = M_FLAG:隙间标记
 			ENDSELECT
-		ELSEIF M_FLAG:隙间标记/100 != GMF_HOME_MAP
+		ELSEIF M_FLAG:隙间标记/100 != MAIN_MAP
 			PRINTL 返回到了原地
 			出口 = M_FLAG:隙间标记
 		ELSE
@@ -65,6 +65,11 @@ IF M_FLAG:隙间标记 && MAGIC_DLC
 			PRINTFORMW 送%CALLNAME:LOCAL%回去了。
 		ELSE
 			CFLAG:LOCAL:現在位置 = 出口
+			;防止带过来的角色直接离开
+			IF 出口/100 == MAIN_MAP && !CFLAG:LOCAL:神社在住 && VISIT(LOCAL)
+				CFLAG:LOCAL:拠点来訪 = 1
+				CFLAG:LOCAL:约会中 = MAIN_MAP
+			ENDIF
 			PRINTFORMW %CALLNAME:LOCAL%与你一同离开了隙间。
         ENDIF
 	NEXT
