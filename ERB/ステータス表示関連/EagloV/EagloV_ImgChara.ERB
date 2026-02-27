@@ -893,6 +893,7 @@ RETURN 0
 #LOCALSIZE 2
 #LOCALSSIZE 20
 #DIM DYNAMIC エフェクト数 = 0
+#DIM 精渍部位 = 0,1,3,5
 #DIM CHARA
 SIF !CHARA
 	CHARA = 62
@@ -912,10 +913,12 @@ IF EagloV_服装初步判定(CHARA) == "服"
 		エフェクト数++
 	ENDIF
 ENDIF
-IF GETBIT(STAIN:CHARA:口, 2) && GETBIT(STAIN:CHARA:手, 2) && GETBIT(STAIN:CHARA:Ｂ, 2)
-	LOCALS:(エフェクト数*2) = EagloV62_特效_精渍
-	エフェクト数++
-ENDIF
+FOR LOCAL, 0, 4
+	IF GETBIT(STAIN:CHARA:(精渍部位:LOCAL), 2)
+		LOCALS:(エフェクト数*2) = EagloV62_特效_%STAINNAME:(精渍部位:LOCAL)%精渍
+		エフェクト数++
+	ENDIF
+NEXT
 
 VARSET RESULTS
 ARRAYCOPY "LOCALS", "RESULTS"
@@ -1292,4 +1295,216 @@ IF IS_BUNNY(CHARA)
 	RETURN 2
 ENDIF
 RETURN 0
+;}
+
+;HIDENORI{
+
+; 30 映姬{
+@SPECIAL_BASE_IMAGE_30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:30:差し替え適用 == 4
+	RESULTS = EagloV
+
+@SPECIAL_EFFECT_IMAGE_30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF CFLAG:30:差し替え適用 == 4
+	RESULTS = EagloV
+
+@EagloV_特殊服装_30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 30
+RESULTS = 
+IF CURRENT_CLOTHES_SET(CHARA) == [[超棒的Ｔ恤衬衫套]]
+	RESULTS = 怪T
+	RETURN 1
+ENDIF
+RETURN 0
+
+@EagloV_特殊表情_30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC 表情,2
+#DIMS DYNAMIC 表情_眉
+#DIMS DYNAMIC 表情_目,2
+#DIMS DYNAMIC 表情_口,2
+#DIMS DYNAMIC 表情_鼻
+#DIMS DYNAMIC 表情索引
+#DIM DYNAMIC G_ID
+#DIM CHARA
+SIF !CHARA
+	CHARA = 30
+
+IF EagloV_心眼判定(CHARA)
+	VARSET RESULTS
+	CALL EagloV_表情判定(CHARA,,1)
+	表情:0 = %RESULTS:0%
+	表情:1 = %RESULTS:1%
+	FOR LOCAL, 0, 2
+		SIF 表情:LOCAL == ""
+			CONTINUE
+		CALL EagloV_GET_表情差分(表情:LOCAL)
+		表情_眉 = %RESULTS:0%
+		表情_目:LOCAL = %RESULTS:1%
+		表情_口:LOCAL = %RESULTS:2%
+		表情_鼻 = %RESULTS:3%
+		IF 表情_目:LOCAL == "单目"
+			表情索引 = %EagloV_表情索引(, CHARA, 表情:LOCAL+"2")%
+			IF !RM_RESOURCECHECK(表情索引)
+				G_ID = 0
+				CALL 画像合成(G_ID, "ダミー", 0, 0, 576, 576)
+				;EagloV{CHARA}_眉_{眉}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_眉_%表情_眉%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_眉_%表情_眉%")
+
+				;EagloV{CHARA}_目_{目}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_目_单目爱心")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_目_单目爱心")
+
+				;EagloV{CHARA}_口_{口}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_口_%表情_口%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_口_%表情_口%")
+
+				;EagloV{CHARA}_鼻_{鼻}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_鼻_%表情_鼻%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_鼻_%表情_鼻%")
+
+				; 合成体图
+				SPRITECREATE 表情索引, G_ID
+			ENDIF
+		ENDIF
+	NEXT
+	RESULTS:0 '= 表情:0 != ""&& 表情_目:0 == "单目" ? @"%表情:0%2" # 表情:0
+	RESULTS:1 '= 表情:1 != ""&& 表情_目:1 == "单目" ? @"%表情:1%2" # 表情:1
+ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[超棒的Ｔ恤衬衫套]]
+	VARSET RESULTS
+	CALL EagloV_表情判定(CHARA,,1)
+	表情:0 = %RESULTS:0%
+	表情:1 = %RESULTS:1%
+	FOR LOCAL, 0, 2
+		SIF 表情:LOCAL == ""
+			CONTINUE
+		CALL EagloV_GET_表情差分(表情:LOCAL)
+		表情_眉 = %RESULTS:0%
+		表情_目:LOCAL = %RESULTS:1%
+		表情_口:LOCAL = %RESULTS:2%
+		表情_鼻 = %RESULTS:3%
+		IF 表情_目:LOCAL == "常目"
+			表情索引 = %EagloV_表情索引(, CHARA, 表情:LOCAL+"怪T")%
+			IF !RM_RESOURCECHECK(表情索引)
+				G_ID = 0
+				CALL 画像合成(G_ID, "ダミー", 0, 0, 576, 576)
+				;EagloV{CHARA}_眉_{眉}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_眉_%表情_眉%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_眉_%表情_眉%")
+
+				;EagloV{CHARA}_目_{目}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_目_暗目")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_目_暗目")
+
+				;EagloV{CHARA}_口_{口}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_口_%表情_口%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_口_%表情_口%")
+
+				;EagloV{CHARA}_鼻_{鼻}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_鼻_%表情_鼻%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_鼻_%表情_鼻%")
+
+				; 合成体图
+				SPRITECREATE 表情索引, G_ID
+			ENDIF
+		ELSEIF 表情_目:LOCAL == "笑目"
+			表情索引 = %EagloV_表情索引(, CHARA, 表情:LOCAL+"怪T")%
+			IF !RM_RESOURCECHECK(表情索引)
+				G_ID = 0
+				CALL 画像合成(G_ID, "ダミー", 0, 0, 576, 576)
+				;EagloV{CHARA}_眉_{眉}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_眉_%表情_眉%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_眉_%表情_眉%")
+
+				;EagloV{CHARA}_目_{目}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_目_闭目")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_目_闭目")
+
+				;EagloV{CHARA}_口_{口}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_口_%表情_口%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_口_%表情_口%")
+
+				;EagloV{CHARA}_鼻_{鼻}
+				SIF RM_RESOURCECHECK(@"EagloV{CHARA}_鼻_%表情_鼻%")
+					CALL 画像合成(G_ID, @"EagloV{CHARA}_鼻_%表情_鼻%")
+
+				; 合成体图
+				SPRITECREATE 表情索引, G_ID
+			ENDIF
+		ENDIF
+	NEXT
+	RESULTS:0 '= 表情:0 != ""&& GROUPMATCH(表情_目:0, "常目","笑目") ? @"%表情:0%怪T" # 表情:0
+	RESULTS:1 '= 表情:1 != ""&& GROUPMATCH(表情_目:1, "常目","笑目") ? @"%表情:1%怪T" # 表情:1
+
+ENDIF
+RETURN 1
+
+@EagloV_特殊效果_30
+#LOCALSIZE 1
+#LOCALSSIZE 20
+#DIM DYNAMIC エフェクト数 = 0
+#DIM CONST 精渍部位 = 0,1,5
+#DIM CHARA
+SIF !CHARA
+	CHARA = 30
+VARSET LOCALS
+IF 仕事中チェック(CHARA) || IS_ANGRY(CHARA) || !IS_FALLEN(CHARA)
+	;拿着悔悟棒
+	SELECTCASE EagloV_服装初步判定(CHARA)
+		CASE "服"
+			IF CURRENT_CLOTHES_SET(CHARA) == [[超棒的Ｔ恤衬衫套]]
+				LOCALS:(エフェクト数*2) = EagloV30_特效_怪T悔悟
+			ELSE
+				LOCALS:(エフェクト数*2) = EagloV30_特效_常服悔悟
+			ENDIF
+		CASE "胸罩","内衣"
+			LOCALS:(エフェクト数*2) = EagloV30_特效_内衣悔悟
+		CASEELSE
+			LOCALS:(エフェクト数*2) = EagloV30_特效_裸悔悟
+	ENDSELECT
+	エフェクト数++
+ELSE
+	;不拿悔悟棒
+ENDIF
+FOR LOCAL, 0, 3
+	IF GETBIT(STAIN:CHARA:(精渍部位:LOCAL), 2)
+		LOCALS:(エフェクト数*2) = EagloV30_特效_%STAINNAME:(精渍部位:LOCAL)%精渍
+		エフェクト数++
+	ENDIF
+NEXT
+IF 仕事中チェック(CHARA)
+	LOCALS:(エフェクト数*2) = EagloV30_特效_帽子
+	エフェクト数++
+ELSEIF EagloV_服装初步判定(CHARA) == "服" && !(CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA) || CFLAG:CHARA:诶嘿嘿)
+	LOCALS:(エフェクト数*2) = EagloV30_特效_帽子
+	エフェクト数++
+ENDIF
+
+VARSET RESULTS
+ARRAYCOPY "LOCALS", "RESULTS"
+RETURN エフェクト数
+
+@EagloV_特殊内衣_30
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+SIF !CHARA
+	CHARA = 30
+;IF IS_BUNNY(CHARA)
+;	RESULTS = 兔女郎
+;	RETURN 2
+;ENDIF
+RETURN 0
+;}
+
 ;}

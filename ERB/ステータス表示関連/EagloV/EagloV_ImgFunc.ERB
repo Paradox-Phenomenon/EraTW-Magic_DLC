@@ -417,6 +417,12 @@ SIF !ARG:1
 #LOCALSSIZE 1
 #FUNCTION
 RETURNF CFLAG:ARG:积攒度 > 600 && (TCVAR:ARG:発情 || TCVAR:ARG:媚薬)
+
+@EagloV_心眼判定(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+RETURNF EagloV_発情判定(ARG) || ((GETPALAMLV(PALAM:ARG:欲情, 5) >= 4 && (CFLAG:ARG:积攒度 + (TCVAR:ARG:発情 + TCVAR:ARG:媚薬) * 100 > 700)))
 ;}
 
 
@@ -707,7 +713,12 @@ CALL EagloV_GET_表情差分(表情)
 表情_鼻 = %RESULTS:3%
 
 ;EagloV{CHARA}_眉_{眉}
-DEBUGPRINTFORML %Version%EagloV{CHARA}_眉_%表情_眉% IS {RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_眉_%表情_眉%")}
+;DEBUGPRINTFORML %Version%EagloV{CHARA}_眉_%表情_眉% IS {RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_眉_%表情_眉%")}
+;无 <- 皱眉 <- 怒眉
+IF 表情_眉 == "怒眉"
+	SIF !RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_眉_%表情_眉%")
+		表情_目 = 皱眉
+ENDIF
 SIF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_眉_%表情_眉%")
 	CALL 画像合成(G_ID, @"%Version%EagloV{CHARA}_眉_%表情_眉%")
 
@@ -838,15 +849,15 @@ CASE "不悦1"
 	RESULTS:1 = 单目
 	RESULTS:2 = 大口
 CASE "不悦绝顶"
-	RESULTS:0 = 皱眉
+	RESULTS:0 = 怒眉
 	RESULTS:1 = 白目
 	RESULTS:2 = 撇口
 CASE "坏心情"
-	RESULTS:0 = 皱眉
+	RESULTS:0 = 怒眉
 	RESULTS:1 = 暗目
 	RESULTS:2 = 撇口
 CASE "坏心情1"
-	RESULTS:0 = 皱眉
+	RESULTS:0 = 怒眉
 	RESULTS:1 = 闭目
 	RESULTS:2 = 闭口
 CASE "発情"
@@ -1836,9 +1847,7 @@ RETURN RESULTS:0 != ""
 #DIMS 目1
 #DIMS 目2
 
-LOCAL = EagloV_発情判定(CHARA) 
-LOCAL = LOCAL || (GETPALAMLV(PALAM:CHARA:欲情, 5) >= 4 && (CFLAG:CHARA:积攒度 + (TCVAR:CHARA:発情 + TCVAR:CHARA:媚薬) * 100 > 700))
-SIF !LOCAL
+SIF !EagloV_心眼判定(CHARA)
 	RETURN 0
 SIF !RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_颜效_心眼")
 	RETURN 0
