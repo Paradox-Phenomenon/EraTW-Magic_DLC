@@ -22,10 +22,10 @@ IF CFLAG:ARG:現在位置 != CFLAG:MASTER:現在位置
 ELSEIF CFLAG:ARG:現在位置 != CFLAG:MASTER:現在位置 && MAGIC_DLC && M_TFLAG:时间循环
 ELSE
 	IF IsCharmValid(ARG)
-		BASE:ARG:情緒 += Lapse * MAGIC_CharmFactor(2) * 3
-		BASE:ARG:情緒 = MIN(BASE:ARG:情緒 , MAXBASE:ARG:情緒)
-		BASE:ARG:理性 -= Lapse * MAGIC_CharmFactor(2) * 2 / 3
-		BASE:ARG:憤怒 -= Lapse * MAGIC_CharmFactor(1)
+		BASE:ARG:情緒 += Lapse * MAGIC_CharmFactor(2) * 3 * MAX(Lapse * (100/MAGIC_TimeFactor2(100)-1),0)
+		BASE:ARG:情緒 = MIN(BASE:ARG:情緒 , MAXBASE:ARG:情緒) * MAX(Lapse * (100/MAGIC_TimeFactor2(100)-1),0)
+		BASE:ARG:理性 -= Lapse * MAGIC_CharmFactor(2) * 2 / 3 * MAX(Lapse * (100/MAGIC_TimeFactor2(100)-1),0)
+		BASE:ARG:憤怒 -= Lapse * MAGIC_CharmFactor(1) * MAX(Lapse * (100/MAGIC_TimeFactor2(100)-1),0)
 		IF TALENT:ARG:心情 < 0
 			CALL KIGEN_CHANGE(ARG, Lapse * MAGIC_CharmFactor(2)/3, 1)
 		ELSE
@@ -106,7 +106,11 @@ IF CFLAG:ARG:行動 == 5
 		BASE:ARG:酒気 += Lapse * (RAND:3 * (4 - TALENT:ARG:酒耐性))
 ENDIF
 ;憤怒は常に減少する    愤怒总是减少
-BASE:ARG:憤怒 = BASE:ARG:憤怒 - Lapse * 5 / (CFLAG:ARG:ブチギレ + 1)
+IF MAGIC_DLC && CFLAG:ARG:現在位置 == CFLAG:MASTER:現在位置
+	BASE:ARG:憤怒 = BASE:ARG:憤怒 - Lapse * 5 / (CFLAG:ARG:ブチギレ + 1) * MAX(Lapse * (100/MAGIC_TimeFactor2(100)-1),0)
+ELSE
+	BASE:ARG:憤怒 = BASE:ARG:憤怒 - Lapse * 5 / (CFLAG:ARG:ブチギレ + 1)
+ENDIF
 ;合意誤認
 SIF TALENT:ARG:合意誤認
 	BASE:ARG:憤怒 -= Lapse * 10 / (CFLAG:ARG:ブチギレ + 1)
