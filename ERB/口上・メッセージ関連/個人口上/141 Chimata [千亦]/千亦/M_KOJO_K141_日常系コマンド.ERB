@@ -40,6 +40,12 @@ IF LOCAL
 		IF CFLAG:[[千亦]]:1502 || MARK:[[千亦]]:反発刻印 >= 1
 			PRINTFORML 「……%CALLNAME:MASTER%。你是不是有什么该向我道歉的事？」
 			PRINTFORMDW 没法说自己完全没头绪……
+		ELSEIF CFLAG:[[千亦]]:1501 == 1
+			PRINTFORML 「……对不起，总觉得心里有点烦躁……」
+			PRINTFORMDW
+		ELSE
+			PRINTFORML 「啊……抱歉，现在有点忙得不可开交」
+			PRINTFORMDW 虽然努力在掩饰，不过看起来心情真的不太好
 		ENDIF
 	;ELSEIF RAND:3 == 0
 
@@ -51,7 +57,7 @@ IF LOCAL
 	;ELSEIF RAND:3 == 0	
 	;どれにも該当しない時の汎用会話/キャラへの言及はここでまとめる
 	ELSE
-		SELECTCASE RAND:7
+		SELECTCASE RAND:8
 		CASE 0 ;龍への言及
 			IF ( TALENT:[[龍]]:3 == 1 || TALENT:[[龍]]:8 == 1 ) && RAND:10 < 8 ;恋慕/思慕かつ80％
 			PRINTFORML 「龙把\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@评价得相当高呢。」
@@ -93,6 +99,10 @@ IF LOCAL
 			PRINTFORML 「有个不守规矩的妖怪开了卡片的黑市呢」
 			PRINTFORML 「等我注意到的时候，人妖们已经玩得热火朝天……我一个人根本收拾不下来」
 			PRINTFORMW 「最后总算收归我管理了……不过，会不会其实是被排挤了啊？」
+		CASE 7 ;ｷｬｰｲｸｻｰﾝ
+			PRINTFORML 「天人身边不是黏着个妖怪吗？」
+			PRINTFORML 「看到她摆着超帅的姿势在打弹幕战呢～」
+			PRINTFORMW 「下次要好好欣赏一番才行呢」
 		ENDSELECT
 	ENDIF
 ENDIF
@@ -301,11 +311,79 @@ IF LOCAL
 	IF CFLAG:318 == 1 || TALENT:機嫌 == -1 
 	PRINTFORML 「……\@ CFLAG:[[千亦]]:1001 >= 1 ? 干嘛？ # 你想干什么？ \@」
 	PRINTFORMDW 看起来心情很差……被她把脸扭到一边去了……
+
+		[SKIPSTART]
+	ELSEIF TALENT:[[千亦]]:恋慕 && RAND:100 < 80
+		SELECTCASE RAND:3
+			CASE 0 
+				SIF DAY:2 == 4 ;冬
+					PRINTFORML 「%CALLNAME:MASTER%」
+				SIF !(DAY:2 == 4) ;それ意外
+					PRINTFORML 「%CALLNAME:MASTER%」
+				CALL HPH_PRINT ,@"「…HPH」","L"
+			CASE 1
+
+		ENDSELECT
+		[SKIPEND]
 	
-	ELSEIF CFLAG:[[千亦]]:1001 == 1 ;好感度分岐
-	;CFLAG:1001为1时，实际上相当于好感度500～，但CFLAG的更新时机是当天第一次见面时，所以就算当天超过500也不会选中这个分支
-	;考虑到突然态度大变可能会显得不自然，所以做了这样的处理。可以理解成一种“隐形的陷落资质”之类的东西……
-	
+	ELSEIF (TALENT:[[千亦]]:思慕 || TALENT:[[千亦]]:恋慕)&& RAND:100 < 80
+		SELECTCASE RAND:2
+			CASE 0 
+				PRINTFORMDL 握住了千亦的手……
+				PRINTFORMW 「怎么啦？突然觉得寂寞了？」
+				SIF DAY:2 == 4 ;冬
+					PRINTFORML 「该不会……是在帮我取暖吧？」
+			CASE 1
+				PRINTFORMDL 往千亦身边靠了过去……
+				IF DAY:2 == 4 ;冬
+					PRINTFORML 「好冷哦，再靠近一点也没关系啦」
+					CALL ASK_YN("毫不客气地紧贴上去","有分寸地靠过去")
+					IF RESULT ;こっちが1
+						PRINTFORML 「对对，就是这样，再靠近一点都行哦」
+						PRINTFORMDW %TEXTR("和千亦微微互相取暖了……/千亦的脸颊微微染上朱红……")%
+					ELSE ;0
+						PRINTFORMDL 完全不客气，像挤馒头一样把身体贴了过去
+						PRINTFORML 「喂喂……我可没想让你贴这么近啊……」
+					ENDIF
+				ELSE
+					PRINTFORMW 「哎呀？找我有事？」
+					IF TALENT:MASTER:性別 == 2
+						CALL ASK_YN("突然凑近闻她的头发","没什么事")
+					ELSE
+						CALL ASK_YN("突然凑近闻她的头发","没什么特别的")
+					ENDIF
+					IF RESULT ;こっちが1
+						PRINTFORML 「也就是说你闲得发慌了呢」
+						PRINTFORML 「真是没办法，那就陪你打发时间吧」
+						PRINTFORMDW 和千亦悠闲地待了一会儿……
+					ELSE ;0
+						PRINTFORMDL 凑近闻了闻千亦的后颈……
+						PRINTFORMW 「嗯……这种事，至少先说一声好不好呀」
+					ENDIF
+				ENDIF
+		ENDSELECT
+		
+	ELSEIF CFLAG:[[千亦]]:1001 == 1 && RAND:100 < 80 ;好感度分岐 
+		SELECTCASE RAND:2
+			CASE 0 
+				PRINTFORMDL 握住了千亦的手……
+				PRINTFORMW 「啊……突然怎么了？」
+			CASE 1
+				PRINTFORMDL 往千亦身边靠了过去……
+				PRINTFORMW 「嗯……怎么啦？」
+				IF TALENT:MASTER:性別 == 2
+					CALL ASK_YN("凑近闻她的头发","没什么")
+				ELSE
+					CALL ASK_YN("凑近闻她的头发","没什么啦")
+				ENDIF
+				IF RESULT ;こっちが1=なんでもない
+					PRINTFORML 「……？是这样吗？」
+					PRINTFORMDW 之后什么也没做，就这么悠闲地待在一起了……
+				ELSE ;嗅ぐ
+					PRINTFORML 「！！？突、突然干什么啊，变态！」
+					PRINTFORMDW 好像行动太过着急了点……
+				ENDIF
+		ENDSELECT
 
 	ELSE ;关系还没好到能随便碰身体的阶段
 		SELECTCASE RAND:3 ;都不符合时的通用肢体接触统一放在这里
@@ -347,7 +425,7 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_303_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	SELECTCASE TFLAG:193
@@ -2266,13 +2344,63 @@ IF LOCAL
 			PRINTW
 		;400点未満（BAD）
 		CASE 1
-		
+			PRINTFORML 「又买了什么奇怪的东西呢……这次打算拿来干嘛？」
+			PRINTFORMW 「欸？给我的礼物……？这个？欸～……」
+			PRINTFORML 「嗯、嗯嘛……至少促进了经济活动，这点还是值得肯定的……」
+			PRINTW
+
 		;400点～699点（NOMAL）
 		CASE 2
+		IF CFLAG:[[千亦]]:1051 >= 2
+			PRINTFORML 「这么棒的礼物……不管收到多少次都会开心呢」
+			SIF TALENT:[[千亦]]:恋慕
+				PRINTFORML 「这是\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@送给我的特别之物。我会好好珍惜的哦。」
+			PRINTFORML 「谢谢你，%CALLNAME:MASTER%」
+			PRINTW
+		ELSEIF CFLAG:[[千亦]]:1051 == 1 ;信仰をくれると書いてかいものをしてくれると読みます
+			PRINTFORML 「对我来说，光是得到信仰就已经很开心了。\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@也差不多该明白了吧？」
+			PRINTFORMW 「明明已经明白了……这么漂亮的东西，真的可以收下吗？」
+			PRINTFORML 「……也是呢。既然是\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@送的，拒绝反而显得不解风情了」
+			PRINTFORML 「谢谢你，%CALLNAME:MASTER%」
+			PRINTFORML 千亦露出一副终于想通了的表情……
+			CFLAG:[[千亦]]:1051 += 1
+			PRINTW
+		ELSE 
+		;初プレ
+			PRINTFORML 「哎呀，买了个好东西呢。……欸？是给我的礼物？」
+			PRINTFORMDW \@ TALENT:MASTER:性別 == 2 ? 觉得很适合千亦所以～ # 觉得很适合你所以……。 \@
+			PRINTFORML 「……原来是这样啊。谢谢，我收下了哦」
+			PRINTFORML 
+			PRINTW
+			CFLAG:[[千亦]]:1051 += 1
+		ENDIF
 		
 		;700点以上（GOOD）
+		;無主物の神は貢物に慣れていないようです
 		CASE 3
-		
+		IF CFLAG:[[千亦]]:1051 >= 2
+			PRINTFORML 「这么棒的礼物……不管收到多少次都会开心呢」
+			SIF TALENT:[[千亦]]:恋慕
+				PRINTFORML 「这是\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@送给我的重要之物。我会好好珍惜的哦。」
+			PRINTFORML 「谢谢你，%CALLNAME:MASTER%」
+			PRINTW
+		ELSEIF CFLAG:[[千亦]]:1051 == 1 ;信仰をくれると書いてかいものをしてくれると読みます
+			PRINTFORML 「对我来说，光是得到信仰就已经很开心了。\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@也差不多该明白了吧？」
+			PRINTFORMW 「明明已经明白了……这么漂亮的东西，真的可以收下吗？」
+			PRINTFORML 「……也是呢。既然是\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@送的，拒绝反而显得不解风情了」
+			PRINTFORML 「谢谢你，%CALLNAME:MASTER%」
+			PRINTFORML 露出一副终于想通了的表情……
+			CFLAG:[[千亦]]:1051 += 1
+			PRINTW
+		ELSE 
+		;初プレ
+			PRINTFORML 「哎呀，买了个好东西呢。……欸？是给我的礼物？」
+			PRINTFORMDW \@ TALENT:MASTER:性別 == 2 ? 觉得很适合千亦所以～ # 觉得很适合你所以……。 \@
+			PRINTFORML 「……原来是这样啊。谢谢，我收下了哦」
+			PRINTFORML 
+			PRINTW
+			CFLAG:[[千亦]]:1051 += 1
+		ENDIF
 	ENDSELECT
 ENDIF
 RETURN 1
