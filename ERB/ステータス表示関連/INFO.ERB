@@ -1,4 +1,4 @@
-﻿;FileName_INFO.ERB --------------------------------- Rev1.01
+;FileName_INFO.ERB --------------------------------- Rev1.01
 ;ターン処理
 ;CALL		SYSTEM
 ;ARG		VOID
@@ -235,13 +235,18 @@ PRINTL
 
 @SAVEINFO
 ;場所は妖怪之山（山麓）で半角16文字分、名前は克勞恩皮絲で14文字分必要
+#LOCALSIZE 1
+#LOCALSSIZE 1
 PUTFORM %createSaveInfo(0)%
 
 ;生成存档信息
 @createSaveInfo(qSave = 0)
 	#FUNCTIONS
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
 	#DIM qSave
-	RETURNF @"%GETTIMES()% 第{DAY,3,RIGHT}日(%GET_MONTH()%{DAY:3}日) %GET_MAPNAME(MAIN_MAP),16,LEFT% %NAME:MASTER,14,LEFT% Ver %SAVESTR:本体バージョン,9,LEFT% \@ qSave == 1 ? ⭐即时存档⭐ # \@\@ qSave == 2 ? *自动存档* # \@"
+	LOCALS = %eraTW_Version% - %eraTW_SubVersion%
+	RETURNF @"%GETTIMES()% 第{DAY,3,RIGHT}日(%GET_MONTH()%{DAY:3}日) %GET_MAPNAME(MAIN_MAP),16,LEFT% %NAME:MASTER,14,LEFT% Ver %LOCALS,9,LEFT% \@ qSave == 1 ? ⭐即时存档⭐ # \@\@ qSave == 2 ? *自动存档* # \@"
 
 ;FileName_INFO.ERB --------------------------------- Rev1.00
 ;プレイ状態表示処理
@@ -1886,6 +1891,11 @@ IF TARGET
 	ELSE
 		PRINTFORM %CSTR:TARGET:職場%
 	ENDIF
+	IF BASE:TARGET:工作量 && WORKING(TARGET)
+		SETCOLOR 0xFFA488
+		PRINTFORM 工作量：{BASE:TARGET:工作量}
+		RESETCOLOR
+	ENDIF
 	PRINTFORM 　%ABL_TR(42)%:
 	CALL PRINT_RANK(ABL:TARGET:42, "MAX_6")
 	PRINTFORM  {ABL:TARGET:42} 
@@ -1943,10 +1953,10 @@ IF TARGET
 	CALL INFO_EMOTION
 	SIF NOTICE_CYCLE(TARGET) ;bugfix
 		CALL CYCLE_PRINT(TARGET)
-	SIF EX:TARGET:膣内精液 > 0
-		PRINTFORM 膣内精液量:{EX:TARGET:膣内精液,5,LEFT}
-	SIF EX:TARGET:肛門内精液 > 0
-		PRINTFORM 肛内精液量:{EX:TARGET:肛門内精液,5,LEFT}
+	SIF EX:TARGET:精液残量 > 0
+		PRINTFORM 膣内精液量:{EX:TARGET:精液残量,5,LEFT}
+	SIF EX:TARGET:アナル精液残量 > 0
+		PRINTFORM 肛内精液量:{EX:TARGET:アナル精液残量,5,LEFT}
 	PRINTL
 ENDIF
 ;魔改功能
@@ -2132,6 +2142,16 @@ ELSE
 ENDIF
 RESETCOLOR
 
+LOCAL = AFTERGLOW_LEVEL(BASE:TARGET:絶頂余韻)
+IF LOCAL >= 1
+	PRINTFORM 高潮余韵:
+	CALL HEARTMARK(LOCAL)
+	IF BASE:TARGET:絶頂余韻 > 420
+		CALL COLORMESSAGE,@"…%" " * (12 - LOCAL * 2)%",C_H_PINK
+	ELSE
+		PRINTFORM %" " * (15 - LOCAL * 2)%
+	ENDIF
+ENDIF
 
 ;射精/母乳ゲージ表示関数
 @INFO_GAUGEGROUP
@@ -2189,7 +2209,11 @@ SIF !HAS_PENIS(ARG)
 	RETURN
 CALL INFO_GAUGE_BAR(ARG, "射精", "水色")
 IF TCVAR:ARG:要去了
-	SETCOLOR C_RED
+	IF BASE:MASTER:射精 < 17500
+		SETCOLOR C_ORGASM
+	ELSE
+		SETCOLOR C_RED
+	ENDIF
 	PRINTFORM [！要去了！]
 	RESETCOLOR
 ELSE

@@ -1,4 +1,4 @@
-﻿@SOURCE_CHECK
+@SOURCE_CHECK
 #DIM 接吻マーク反感
 #DIM 欲求不満度上昇
 #DIM 経験増加量
@@ -33,7 +33,10 @@ nTrainMessageCalled = 0
 ;-------------------------------------------------
 ;身体接触の継続、解除
 ;-------------------------------------------------
-CALL TOUCH_SUCCESSION(TARGET)
+TRYCCALLFORM COM{SELECTCOM}_TOUCH(TARGET)
+CATCH
+	CALL TOUCH_SUCCESSION(TARGET)
+ENDCATCH
 
 ;-------------------------------------------------
 ;TRYCALLFORM TOUCH_SUCCESSION_{SELECTCOM}(TARGET)
@@ -74,24 +77,24 @@ FOR LOCAL,0,CHARANUM
 
 	[SKIPSTART]
 	IF TEQUIP:LOCAL:Ｖ接触部位 == 1
-		TEQUIP:LOCAL:50 = MASTER
+		TEQUIP:LOCAL:Ｖセックス = MASTER
 	ELSE
-		TEQUIP:LOCAL:50 = -1
+		TEQUIP:LOCAL:Ｖセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ａ接触部位 == 1
-		TEQUIP:LOCAL:51 = MASTER
+		TEQUIP:LOCAL:Ａセックス = MASTER
 	ELSE
-		TEQUIP:LOCAL:51 = -1
+		TEQUIP:LOCAL:Ａセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ｐ接触部位 == 6
-		TEQUIP:PLAYER:50 = LOCAL
+		TEQUIP:PLAYER:Ｖセックス = LOCAL
 	ELSE
-		TEQUIP:PLAYER:50 = -1
+		TEQUIP:PLAYER:Ｖセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ｐ接触部位 == 7
-		TEQUIP:PLAYER:51 = LOCAL
+		TEQUIP:PLAYER:Ａセックス = LOCAL
 	ELSE
-		TEQUIP:PLAYER:51 = -1
+		TEQUIP:PLAYER:Ａセックス = -1
 	ENDIF
 	[SKIPEND]
 NEXT
@@ -100,14 +103,14 @@ FOR LOCAL,0,CHARANUM
 	SIF CFLAG:LOCAL:現在位置 != CFLAG:MASTER:現在位置
 		CONTINUE
 	;Ｐが入ってないなら体位リセット
-	IF TEQUIP:LOCAL:50 < 0 && TEQUIP:LOCAL:51 < 0
+	IF TEQUIP:LOCAL:Ｖセックス < 0 && TEQUIP:LOCAL:Ａセックス < 0
 		TEQUIP:LOCAL:体位 = 0
 	;Ｖ性交中かつ前回Ｖ性交ならTEQUIPは復帰
-	ELSEIF TEQUIP:LOCAL:50 >= 0 && TEQUIP:LOCAL:116
+	ELSEIF TEQUIP:LOCAL:Ｖセックス >= 0 && TEQUIP:LOCAL:116
 		SIF TEQUIP:LOCAL:116 != 3	;指挿入でない場合のみ適用
 			TEQUIP:LOCAL:106 = TEQUIP:LOCAL:116
 	;Ａ性交中かつ前回Ａ性交ならTEQUIPは復帰
-	ELSEIF TEQUIP:LOCAL:51 >= 0 && TEQUIP:LOCAL:117
+	ELSEIF TEQUIP:LOCAL:Ａセックス >= 0 && TEQUIP:LOCAL:117
 		SIF TEQUIP:LOCAL:117 != 3	;指挿入でない場合のみ適用
 			TEQUIP:LOCAL:107 = TEQUIP:LOCAL:117
 	ENDIF
@@ -341,6 +344,15 @@ NEXT
 ;-------------------------------------------------
 ;要検討
 CALL EVENT_SHOOT
+
+;-------------------------------------------------
+;精液の漏出処理
+;-------------------------------------------------
+FOR LOCAL,0,CHARANUM
+	SIF CFLAG:LOCAL:現在位置 != CFLAG:MASTER:現在位置
+		CONTINUE
+	CALL CAVITY_FLUID_SPILL(LOCAL, "PASSIVE")
+NEXT
 
 FOR LOCAL,0,CHARANUM
 	SIF CFLAG:LOCAL:現在位置 == SUKIMA()
