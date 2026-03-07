@@ -1,0 +1,471 @@
+;-------------------------------------------------
+;抜く/外出し
+;-------------------------------------------------
+;非常不明白
+;@COM26_DEFINITION(GET_DEFAULT_DEFINITION = 0)
+;#LOCALSIZE 1
+;#LOCALSSIZE 1
+;#FUNCTIONS
+;#DIM GET_DEFAULT_DEFINITION
+;
+;SIF GET_DEFAULT_DEFINITION
+;	RETURNF "拔出来"
+;SIF TCVAR:PLAYER:イきそう
+;	RETURNF "射在外面"
+;RETURNF "拔出来"
+
+@COM26_DISPLAY
+#FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;e.g. #000000 or C_WHITE
+;TEMP_COM_DISPLAY_COLOR =
+;0 = normal, -1 = unselectable
+;TEMP_COM_DISPLAY_BEHAVIOR =
+
+IF TCVAR:PLAYER:イきそう
+	IF BASE:MASTER:射精 >= 17500
+		;设计意图是：如果忍耐过头，就没法及时拔出来了。但是实际上玩家可以换侍奉系指令体外射精，而且也有联动的描述，因此这个限制显得毫无意义；如果设计者为此反而要将其他那些指令禁用来限制玩家无法拔出，就更显得沉浸在自己的艺术之中
+		;TEMP_COM_DISPLAY_BEHAVIOR这个新机制就是为了这碟醋包的饺子
+		;TEMP_COM_DISPLAY_BEHAVIOR = -1
+		TEMP_COM_DISPLAY_COLOR = C_RED
+	ELSE
+		TEMP_COM_DISPLAY_COLOR = C_ORGASM
+	ENDIF
+	;RETURNF "外出し"
+	RETURNF ""
+ENDIF
+SIF TEQUIP:TARGET:Ｖ接触部位 == SET_P
+	RETURNF "抜く（Ｖ）"
+SIF TEQUIP:TARGET:Ａ接触部位 == SET_P
+	RETURNF "抜く（Ａ）"
+RETURNF "抜く"
+
+;TODO despite having multiple tags the command disappears when V filter is off
+;likely due to functions in OPTION_COM_FILTER returning early
+;if we don't want to mess with that behavior, may as well add unique filter conditions defined by com, helps with COM314 and COM316 as well
+@COM26_TAGS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+LOCAL = 0
+SETBIT LOCAL, BIT_V使用コマンド
+SETBIT LOCAL, BIT_A使用コマンド
+RETURNF LOCAL
+
+@COM26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;行為者
+TCVAR:116 = PLAYER
+
+IF TCVAR:PLAYER:イきそう
+	;奉仕快楽フラグ
+	TCVAR:MASTER:奉仕フラグ = 1
+
+	CSTR:MASTER:射精判定用 += @"{TARGET}/"
+	IF INRANGE(COM_ALTER_26, 1, 10)
+		RESULT = COM_ALTER_26 - 1
+	ELSEIF COM_ALTER_26 == 11
+		; 随机部位
+		RESULT = RAND:10
+	ELSE
+		PRINTFORML 要射在%CALLNAME:TARGET%身上哪里呢？
+		CALL ASK_M("正面", 1, "背上", 1, "脸蛋", 1, "舌头", 1, "胸部", 1, "大腿", 1, "脚丫", 1, "手掌", 1, "腋下", 1, "蜜唇", 1)
+	ENDIF
+	SELECTCASE RESULT
+		CASE 1
+			STAIN:Ａ |= 4
+		CASE 0,4
+			STAIN:Ｂ |= 4
+		CASE 2,3
+			STAIN:口 |= 4
+			SIF RESULT == 3
+				EXP:精飲経験 ++
+		CASE 5,9
+			STAIN:Ｖ |= 4
+	ENDSELECT
+	SETBIT TCVAR:MASTER:射精体表箇所, RESULT
+	TCVAR:MASTER:射精箇所 = 8
+	TCVAR:MASTER:童貞喪失 = 1
+	TCVAR:MASTER:射精快感強度 = 300
+
+	CSTR:TARGET:射精判定用 += @"{PLAYER}/"
+	;強度
+	TCVAR:TARGET:射精快感強度 = 300
+	DOWNBASE:MASTER:体力 += 30
+	DOWNBASE:MASTER:気力 += 30
+ENDIF
+
+;have to record some states here for the MESSAGE_COM since TOUCH_SUCCESSION is called way before messages
+;temporary solution until we add universal trackers, TODO
+;also can I just say that multi-penis is a psychotic concept to entertain
+IF TEQUIP:MASTER:コンドーム
+	COM26_MESSAGE_FLAG '= "CONDOM_ON/"
+	IF TFLAG:ゴム内 >= 100
+		COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "CONDOM_BIGLOAD/"
+	ELSEIF TFLAG:ゴム内
+		COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "CONDOM_SOMELOAD/"
+	ENDIF
+	;removes condom to ejaculate outside
+	IF TCVAR:MASTER:イきそう
+		TEQUIP:MASTER:コンドーム = 0
+		TFLAG:ゴム内 = 0
+		COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "CONDOM_REMOVED/"
+	ENDIF
+ENDIF
+
+TIME += 1
+RETURN 1
+
+@COM26_TOUCH(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM CHARA
+IF TEQUIP:CHARA:Ｖセックス == PLAYER
+	COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "VAGINAL/"
+	IF EX:CHARA:精液残量 > 0
+		COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "EJACULATED/"
+		IF EX:CHARA:精液残量 >= 100
+			COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "LARGE_LOAD/"
+		ENDIF
+	ENDIF
+	CALL CAVITY_FLUID_SPILL(CHARA, "PULLOUT")
+	CALL TOUCH_SET(SET_FROM_V,0,CHARA)
+ENDIF
+IF TEQUIP:CHARA:Ａセックス == PLAYER
+	COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "ANAL/"
+	IF EX:CHARA:アナル精液残量 > 0
+		COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "EJACULATED/"
+		IF EX:CHARA:アナル精液残量 >= 100
+			COM26_MESSAGE_FLAG '= COM26_MESSAGE_FLAG + "LARGE_LOAD/"
+		ENDIF
+	ENDIF
+	CALL CAVITY_FLUID_SPILL(CHARA, "PULLOUT")
+	CALL TOUCH_SET(SET_FROM_A,0,CHARA)
+ENDIF
+
+@MESSAGE_COM26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;DEBUGPRINTFORML COM26_MESSAGE_FLAG = %COM26_MESSAGE_FLAG%
+IF !TCVAR:PLAYER:イきそう
+	IF STRCOUNT(COM26_MESSAGE_FLAG, "ANAL")
+		PRINTFORML 从%CALLNAME:TARGET%的后穴中拔出了%TINKO(PLAYER)%……
+		IF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_ON")
+			IF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_BIGLOAD")
+				PRINTFORML 装满了大量精液的避孕套卡在菊腔里从肉棒上滑落下来
+				PRINTFORMW 耷拉在菊穴口的避孕套缓缓地淌出白浊液……
+			ELSEIF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_SOMELOAD")
+				PRINTFORMW 积存着子种的避孕套前端，从肛门『滋溜』一声被拔了出来……
+			ELSE
+				IF AFTERGLOW_LEVEL(BASE:TARGET:Ａ絶頂余韻)
+					SELECTCASE ABL:TARGET:アナル
+						CASE 0,1,2,3
+							PRINTFORMW %CALLNAME:TARGET%还沉浸在高潮的余韵里……
+						CASEELSE
+							IF CFLAG:TARGET:溜まってる度 / 10 < 20
+								PRINTFORMW 被尽情疼爱过后穴的%CALLNAME:TARGET%，正『咕叽咕叽』地收缩着菊穴，沉醉在快感中……
+							ELSEIF CFLAG:TARGET:溜まってる度 / 10 >= 20
+								PRINTFORMW 还远远不够满足的%CALLNAME:TARGET%，用眼神拼命恳求着『还要更多』……
+							ENDIF
+					ENDSELECT
+				ELSE
+					SELECTCASE ABL:TARGET:アナル
+						CASE 0,1
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 还不习惯的%CALLNAME:TARGET%，不安地抬头看过来……
+							ELSE
+								IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+									PRINTFORMW %CALLNAME:TARGET%一脸疑惑地望过来……
+								ELSE
+									PRINTFORMW %CALLNAME:TARGET%露出松了一口气的表情……
+								ENDIF
+							ENDIF
+						CASE 2,3,4
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 正在进行中却突然停下，%CALLNAME:TARGET%不安地凝视过来……
+							ELSE
+								PRINTFORMW 在高潮前被打断的%CALLNAME:TARGET%一脸不满……
+							ENDIF
+						CASEELSE
+							PRINTFORMW 刚还紧紧吸吮肉棒的肠壁，依依不舍地淌下肠液
+							PRINTFORMW 在高潮前被吊着胃口的%CALLNAME:TARGET%，用近乎哀求的眼神望过来……
+					ENDSELECT
+				ENDIF
+			ENDIF
+		ELSE
+			IF STRCOUNT(COM26_MESSAGE_FLAG, "EJACULATED")
+				
+				SELECTCASE ABL:TARGET:アナル
+					CASE 0,1
+						PRINTFORML %CALLNAME:TARGET%的嫩菊恢复插入前的紧致
+					CASE 2,3,4
+						IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+							PRINTFORML %CALLNAME:TARGET%的后穴依依不舍般翕动
+						ELSE
+							PRINTFORML %CALLNAME:TARGET%敏感的菊穴保持着张开状态一收一缩着
+						ENDIF
+					CASEELSE
+						PRINTFORML 被拔出的雄枪拖拽着肠壁，%CALLNAME:TARGET%的后穴『啵啾』一声发出下流的响声
+				ENDSELECT
+				IF STRCOUNT(COM26_MESSAGE_FLAG, "LARGE_LOAD")
+					PRINTFORMW 喷射在直肠深处的大量精液开始逆流出来……
+					IF ABL:TARGET:精液中毒 >= 10
+						PRINTFORMW %CALLNAME:TARGET%像是觉得太浪费似的，用手指抹起溢出的精液，送进嘴里舔干净……
+					ELSEIF ABL:TARGET:精液中毒 >= 5 && TALENT:TARGET:恋慕
+						PRINTFORMW %CALLNAME:TARGET%满怀爱意地，用指尖拭起溢出的精液，温柔地舔舐干净……
+					ENDIF
+				ELSE
+					PRINTFORMW 直肠里射出的精液，正缓缓淌了出来……
+					IF ABL:TARGET:精液中毒 >= 10
+						PRINTFORMW %CALLNAME:TARGET%像是舍不得浪费，用手指抹起溢出的精液，一口含住舔干净……
+					ELSEIF ABL:TARGET:精液中毒 >= 5 && TALENT:TARGET:恋慕
+						PRINTFORMW %CALLNAME:TARGET%一脸珍惜地，用指尖拭起溢出的精液，温柔地舔舐干净……
+					ENDIF
+				ENDIF
+			ELSE
+				IF AFTERGLOW_LEVEL(BASE:TARGET:Ａ絶頂余韻)
+					SELECTCASE ABL:TARGET:アナル
+						CASE 0,1,2,3
+							PRINTFORMW %CALLNAME:TARGET%还沉浸在高潮的余韵中……
+						CASEELSE
+							IF CFLAG:TARGET:溜まってる度 / 10 < 20
+								PRINTFORMW 被尽情疼爱过后穴的%CALLNAME:TARGET%，正『咕叽咕叽』地收缩着菊穴，沉醉在快感中……
+							ELSEIF CFLAG:TARGET:溜まってる度 / 10 >= 20
+								PRINTFORMW 还远远不够满足的%CALLNAME:TARGET%，用眼神拼命恳求着『还要更多』……
+							ENDIF
+					ENDSELECT
+				ELSE
+					SELECTCASE ABL:TARGET:アナル
+						CASE 0,1
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 还不习惯的%CALLNAME:TARGET%，不安地抬头看过来……
+							ELSE
+								IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+									PRINTFORMW %CALLNAME:TARGET%一脸疑惑地望过来……
+								ELSE
+									PRINTFORMW %CALLNAME:TARGET%露出松了一口气的表情……
+								ENDIF
+							ENDIF
+						CASE 2,3,4
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 正在进行中却突然停下，%CALLNAME:TARGET%不安地凝视过来……
+							ELSE
+								PRINTFORMW 在高潮前被打断的%CALLNAME:TARGET%一脸不满……
+							ENDIF
+						CASEELSE
+							PRINTFORMW 刚还紧紧吸吮肉棒的肠壁，依依不舍地淌下肠液
+							PRINTFORMW 在高潮前被吊着胃口的%CALLNAME:TARGET%，用近乎哀求的眼神望过来……
+					ENDSELECT
+				ENDIF
+			ENDIF
+		ENDIF
+	ELSE
+		PRINTFORMDL 从%CALLNAME:TARGET%的%SLIT(TARGET)%中拔出了%TINKO(PLAYER)%……
+		IF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_ON")
+			IF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_BIGLOAD")
+				PRINTFORMDL 装满了大量精液的避孕套卡在膣腔中，从肉棒上滑落下来
+				PRINTFORMDW 避孕套从蜜穴口耷拉下来，缓缓地淌出白浊液……
+			ELSEIF STRCOUNT(COM26_MESSAGE_FLAG, "CONDOM_SOMELOAD")
+				PRINTFORMDW 盛着子种的避孕套前端，从蜜唇口『滋溜』一声被拔了出来……
+			ELSE
+				IF AFTERGLOW_LEVEL(BASE:TARGET:Ｖ絶頂余韻)
+					SELECTCASE ABL:TARGET:膣
+						CASE 0,1,2,3
+							PRINTFORMW %CALLNAME:TARGET%还沉浸在高潮的余韵里……
+						CASEELSE
+							IF CFLAG:TARGET:溜まってる度 / 10 < 20
+								PRINTFORMW 被尽情疼爱的%CALLNAME:TARGET%，正沉醉在雌性的欢愉中……
+							ELSEIF CFLAG:TARGET:溜まってる度 / 10 >= 20
+								SELECTCASE RAND:3
+									CASE 0
+										PRINTFORMW %CALLNAME:TARGET%食髓知味的蜜穴，仿佛还在说『还没够呢』，想要紧紧吸住抽出的肉棒……
+									CASE 1
+										PRINTFORMW %CALLNAME:TARGET%的雌穴像是意犹未尽般，淌着爱液，『噗叽噗叽』地抽搐着……
+									CASE 2
+										PRINTFORMW 还远远不够满足的%CALLNAME:TARGET%，用眼神拼命恳求着『还要更多』……
+								ENDSELECT
+							ENDIF
+					ENDSELECT
+				ELSE
+					SELECTCASE ABL:TARGET:膣
+						CASE 0,1
+							IF TALENT:TARGET:恋慕
+								PRINTFORMDW 还不习惯的%CALLNAME:TARGET%，因为交合突然中断而不安地看过来……
+							ELSE
+								IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+									PRINTFORMW 交合被打断，%CALLNAME:TARGET%一脸疑惑地望过来……
+								ELSE
+									PRINTFORMW %CALLNAME:TARGET%露出松了一口气的表情……
+								ENDIF
+							ENDIF
+						CASE 2,3,4
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 交合被中断，%CALLNAME:TARGET%不安地望过来……
+							ELSE
+								PRINTFORMW 在高潮前被打断的%CALLNAME:TARGET%，一脸不满……
+							ENDIF
+						CASEELSE
+							PRINTFORMW 媚肉像是不舍离别般，紧紧缠住套着避孕套的肉棒
+							PRINTFORMW 在高潮前被吊着胃口的%CALLNAME:TARGET%，用近乎哀求的眼神望过来……
+					ENDSELECT
+				ENDIF
+			ENDIF
+		ELSE
+			IF STRCOUNT(COM26_MESSAGE_FLAG, "EJACULATED")
+				SELECTCASE ABL:TARGET:膣
+					CASE 0,1
+						PRINTFORML %CALLNAME:TARGET%的嫩穴恢复插入前的紧致
+					CASE 2,3,4
+						IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+							PRINTFORML %CALLNAME:TARGET%的蜜穴依依不舍般翕动
+						ELSE
+							PRINTFORML %CALLNAME:TARGET%敏感的蜜穴保持着张开状态一收一缩着
+						ENDIF
+					CASEELSE
+						PRINTFORML 被拔出的雄枪拖拽着肠壁，%CALLNAME:TARGET%的蜜穴『啵啾』一声发出下流的响声
+				ENDSELECT
+				IF STRCOUNT(COM26_MESSAGE_FLAG, "LARGE_LOAD")
+					PRINTFORMW 射在肉壶深处的大量精液开始逆流出来……
+					IF ABL:TARGET:精液中毒 >= 5
+						PRINTFORMW %CALLNAME:TARGET%像是觉得太浪费，用手指抹起溢出的精液，送进嘴里舔干净……
+					ELSEIF ABL:TARGET:精液中毒 >= 3 && TALENT:TARGET:恋慕
+						PRINTFORMW %CALLNAME:TARGET%满怀爱意地，用指尖拭起溢出的精液，温柔地舔舐干净……
+					ENDIF
+				ELSE
+					PRINTFORMW 射在小穴中的精液缓缓淌了出来……
+					IF ABL:TARGET:精液中毒 >= 5
+						PRINTFORMW %CALLNAME:TARGET%像是舍不得浪费，用手指抹起溢出的精液，一口含住舔干净……
+					ELSEIF ABL:TARGET:精液中毒 >= 3 && TALENT:TARGET:恋慕
+						PRINTFORMW %CALLNAME:TARGET%一脸珍惜地，用指尖拭起溢出的精液，温柔地舔舐干净……
+					ENDIF
+				ENDIF
+			ELSE
+				IF AFTERGLOW_LEVEL(BASE:TARGET:Ｖ絶頂余韻)
+					SELECTCASE ABL:TARGET:膣
+						CASE 0,1,2,3
+							PRINTFORMW %CALLNAME:TARGET%还沉浸在高潮的余韵中……
+						CASEELSE
+							IF CFLAG:TARGET:溜まってる度 / 10 < 20
+								PRINTFORMW 被尽情疼爱的%CALLNAME:TARGET%，正沉醉在雌性的欢愉里……
+							ELSEIF CFLAG:TARGET:溜まってる度 / 10 >= 20
+								SELECTCASE RAND:3
+									CASE 0
+										PRINTFORMW %CALLNAME:TARGET%食髓知味的蜜穴，仿佛还在说『还没够呢』，想要紧紧吸住抽出的肉棒……
+									CASE 1
+										PRINTFORMW %CALLNAME:TARGET%的雌穴像是意犹未尽般，淌着爱液，『噗叽噗叽』地抽搐着……
+									CASE 2
+										PRINTFORMW 还远远不够满足的%CALLNAME:TARGET%，用眼神拼命恳求着『还要更多』……
+								ENDSELECT
+							ENDIF
+					ENDSELECT
+				ELSE
+					SELECTCASE ABL:TARGET:膣
+						CASE 0,1
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 不习惯的%CALLNAME:TARGET%，不安地抬头看过来……
+							ELSE
+								IF TALENT:MASTER:形状 == 1 || TALENT:MASTER:形状 == 2
+									PRINTFORMW %CALLNAME:TARGET%一脸疑惑地望过来……
+								ELSE
+									PRINTFORMW %CALLNAME:TARGET%露出松了一口气的表情……
+								ENDIF
+							ENDIF
+						CASE 2,3,4
+							IF TALENT:TARGET:恋慕
+								PRINTFORMW 交合被中断，%CALLNAME:TARGET%不安地望过来……
+							ELSE
+								PRINTFORMW 在高潮前被打断的%CALLNAME:TARGET%，一脸不满……
+							ENDIF
+						CASEELSE
+							PRINTFORML 媚肉像是不舍离别般，紧紧缠住火热的雄枪
+							PRINTFORMW 在高潮前被吊着胃口的%CALLNAME:TARGET%，用近乎哀求的眼神望过来……
+				ENDSELECT
+				ENDIF
+			ENDIF
+		ENDIF
+	ENDIF
+ELSEIF TCVAR:PLAYER:イきそう
+;TODO
+ENDIF
+VARSET COM26_MESSAGE_FLAG
+
+;-------------------------------------------------
+;実行判定
+;-------------------------------------------------
+@COM_ABLE26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF !TARGET
+	RETURN 0
+SIF !TFLAG:100
+	RETURN 0
+SIF CFLAG:うふふ == 0
+	RETURN 0
+SIF TEQUIP:Ｖセックス != PLAYER && TEQUIP:Ａセックス != PLAYER
+	RETURN 0
+
+RETURN 1
+
+@COM_HAS_OPTION26
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+; 0=默认询问, 1~10=具体部位, 11=随机，共12个选项
+RETURNF 12
+
+;-------------------------------------------------
+;具体的子选项是否可用
+;-------------------------------------------------
+@COM_OPTION_ABLE26(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+; 所有部位默认都可以直接射，所以全都返回 1
+RETURN 1
+
+;-------------------------------------------------
+; 决定按钮属性
+;-------------------------------------------------
+@COM_OPTION_COLOR26(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF COM_ALTER_26 == ARG
+	RETURN C_AQUA
+ENDIF
+RETURN -1
+
+@COM_NAME26(ARG = -1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF ARG == -1
+	ARG = COM_ALTER_26
+
+SELECTCASE ARG
+	CASE 0
+		RESULTS = 射在身上（询问）
+	CASE 1
+		RESULTS = 射在正面
+	CASE 2
+		RESULTS = 射在背上
+	CASE 3
+		RESULTS = 射在脸蛋
+	CASE 4
+		RESULTS = 射在舌头
+	CASE 5
+		RESULTS = 射在胸部
+	CASE 6
+		RESULTS = 射在大腿
+	CASE 7
+		RESULTS = 射在脚丫
+	CASE 8
+		RESULTS = 射在手心
+	CASE 9
+		RESULTS = 射在腋下
+	CASE 10
+		RESULTS = 射在蜜唇
+	CASE 11
+		RESULTS = 随心情发射
+	CASEELSE
+		RESULTS = 体外射精
+ENDSELECT
