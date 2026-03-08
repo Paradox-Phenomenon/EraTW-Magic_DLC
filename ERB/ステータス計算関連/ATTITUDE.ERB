@@ -139,7 +139,7 @@ ENDSELECT
 ;TCVAR:初次拥抱　1=普通に合意ゲット　2=先に接吻ぐらいしろよ　3=媚薬or発情には勝てなかったよお…　4=悔しい…刻印さえなければﾋﾞｸﾋﾞｸﾝ　5=強引に迫られると断れぬ
 ;6=まんざらでもない　7=駄目　8=論外　9=挿入禁止 10= 守矢神簽约会的对象
 
-@抱き寄せ(ARG)
+@抱き寄せ(ARG,ARG:1) ;qol代码，剥离状态干涉，只传递态度值
 #DIM 好意判定値
 #DIM 理性判定値
 #DIM 合意つかない
@@ -173,9 +173,11 @@ IF 好意判定値 >= 理性判定値
 	ELSE
 		TCVAR:ARG:初次拥抱 = 1
 	ENDIF
-	;補正無で押し倒さないと合意がつかない
-	SETBIT CFLAG:ARG:既成事實 , 1
-	CALL COLORMESSAGE(@"获得了和%CALLNAME:ARG%的合意",C_YELLOW,2)
+	IF !ARG:1
+		;補正無で押し倒さないと合意がつかない
+		SETBIT CFLAG:ARG:既成事實 , 1
+		CALL COLORMESSAGE(@"获得了和%CALLNAME:ARG%的合意",C_YELLOW,2)
+	ENDIF
 ELSE
 	IF TCVAR:ARG:発情
 		理性判定値  -= 50
@@ -236,12 +238,14 @@ ENDIF
 
 SELECTCASE TCVAR:ARG:初次拥抱
 	CASE 1 TO 5
-		CFLAG:ARG:诶嘿嘿 = 1
-		CFLAG:MASTER:诶嘿嘿 = 1
-		SIF TCVAR:ARG:初次拥抱 == 5
-			SOURCE:ARG:恐怖 += 1000
-		SIF !GETBIT(CFLAG:ARG:既成事實, 1)
-			CFLAG:ARG:ヤラせちゃった = 1
+		IF !ARG:1
+			CFLAG:ARG:诶嘿嘿 = 1
+			CFLAG:MASTER:诶嘿嘿 = 1
+			SIF TCVAR:ARG:初次拥抱 == 5
+				SOURCE:ARG:恐怖 += 1000
+			SIF !GETBIT(CFLAG:ARG:既成事實, 1)
+				CFLAG:ARG:ヤラせちゃった = 1
+		ENDIF
 	CASE 6
 		SOURCE:ARG:情愛 += 500
 		TFLAG:不让推倒 ++
@@ -255,9 +259,11 @@ SELECTCASE TCVAR:ARG:初次拥抱
 	CASE 20
 		SOURCE:ARG:反感 += 1000
 		TFLAG:信頼度管理 = -10
-		TCVAR:ARG:强行 = 1
-		CFLAG:ARG:诶嘿嘿 = 1
-		CFLAG:MASTER:诶嘿嘿 = 1
+		IF !ARG:1
+			TCVAR:ARG:强行 = 1
+			CFLAG:ARG:诶嘿嘿 = 1
+			CFLAG:MASTER:诶嘿嘿 = 1
+		ENDIF
 	CASE 8
 		SOURCE:ARG:反感 += 3000
 		TFLAG:不让推倒 ++

@@ -2,6 +2,12 @@
 ;固有指令
 ;日常系指令、レベルX
 ;-------------------------------------------------
+@COM443_DISPLAY
+#FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+RETURNF NAME_UNIQUE_COM(TARGET)
+
 @COM443
 TRYCALLFORM UNIQUE_COM_%NAME_UNIQUE_COM(TARGET)%
 SIF RESULT == -1
@@ -10,6 +16,8 @@ TIME += 3
 RETURN 1
 
 @COM_ABLE443
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;停止中は不可
 SIF FLAG:70 == 1
 	RETURN 0
@@ -1812,3 +1820,353 @@ SELECTCASE RESULT
 		GOTO INPUT_LOOP01
 ENDSELECT
 
+;-------------------------------------------------
+;模组纳兹琳用
+;-------------------------------------------------
+@UNIQUE_COM_与纳兹琳对话
+#DIM 学费
+PRINTFORML 「找我有什么事吗？」
+CALL ASK_M("灵摆查找",1,"学习采集",1,"没事",1)
+SELECTCASE RESULT
+	CASE 0
+		CALL UNIQUE_COM_灵摆查找
+	CASE 1
+		PRINTFORML 「这样吗····」
+		PRINTFORML 「既然这样，你需要付一笔费用给我，带你练习期间采集到的材料也全部归我」
+		PRINTFORMW 「贵？带你在野外跑一天很累的好吗」
+		PRINTFORMW 「这种特殊的训练方式贵是正常的、不爽不要买。」
+		IF TALENT:恋人
+			学费 = 10000
+			PRINTFORMW 「不过，和你一起出门采集很开心呢，你就象征性给我一万吧」
+		ELSEIF TALENT:恋慕
+			学费 = 35000
+			PRINTFORMW 「这次就算你三万五好了，毕竟我也拿了材料」
+		ELSEIF TALENT:思慕
+			学费 = 50000
+			PRINTFORMW 「熟客啊、%CALLNAME:MASTER%、这次便宜你了、五万元就行。」
+		ELSEIF MAIN_MAP == 1
+			学费 = 80000
+			PRINTFORML 「既然是住在寺里的话、那么便宜点、算你八万就好了」
+		ELSE
+			学费 = 100000
+		ENDIF
+		CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+		SIF RESULT
+			RETURN -1
+		PRINTFORMW 「那么……我们走吧」
+		MONEY -= 学费
+		CALL AddEXP("採集経験", MASTER, 50)
+		CALL RECOVER(MASTER, -1200, "体力", "和纳兹琳一起采集训练")
+		CALL RECOVER(MASTER, -1200, "気力", "和纳兹琳一起采集训练")
+	CASE 2
+		RETURN -1
+ENDSELECT
+;-------------------------------------------------
+;模组萃香用
+;-------------------------------------------------
+@UNIQUE_COM_学习采伐的技巧
+#DIM 学费
+PRINTFORML 「伐木技巧？额，鬼族的伐木技巧不就是直接创过去嘛····」
+PRINTFORML 「非要我教你的话也可以，不过你要请我喝居酒屋里那瓶我想要很久了的酒」
+PRINTFORMW 「怎么样？求人办事至少要有这点诚意吧？」
+PRINTFORMW 「那瓶酒也就·····」
+IF TALENT:恋人
+	学费 = 10000
+	PRINTFORMW 「一万元而已，不过你要陪我喝完才行」
+ELSEIF TALENT:恋慕
+	学费 = 35000
+	PRINTFORMW 「三万五千块。我们也是熟悉的酒友了，不会舍不得吧？」
+ELSEIF TALENT:思慕
+	学费 = 50000
+	PRINTFORMW 「区区五万元而已，要一起喝吗？」
+ELSEIF !MAIN_MAP
+	学费 = 80000
+	PRINTFORML 「八万元，老板对于神社住客有优惠」
+ELSE
+	学费 = 100000
+	PRINTFORML 「十万元而已，你意下如何？」
+ENDIF
+CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+SIF RESULT
+	RETURN -1
+PRINTFORMW 「那么……就拿出根性跟我冲起来吧！」
+MONEY -= 学费
+CALL AddEXP("伐採経験", MASTER, 50)
+CALL RECOVER(MASTER, -1200, "体力", "跟随萃香学习如何伐木？")
+CALL RECOVER(MASTER, -1200, "気力", "跟随萃香学习如何伐木？")
+;-------------------------------------------------
+;模组咲夜用
+;-------------------------------------------------
+@UNIQUE_COM_与咲夜对话
+#DIM 学费
+CALL SET_KOJO_COLOR([[咲夜]]) ;custom code
+PRINTFORML 「嗯？%CALLNAME:MASTER%有什么需求是我能帮上忙的吗？」
+CALL ASK_M("红魔馆出差服务",1,"请教清扫的秘诀",1,"没事",1)
+SELECTCASE RESULT
+	CASE 0
+		IF TFLAG:上门清扫 && (FLAG:澆水代行 || !ITEM:150)
+		ELSEIF MAIN_MAP == MAP湖
+		ELSE
+			CALL UNIQUE_COM_红魔馆出差服务
+		ENDIF
+	CASE 1
+		PRINTFORML 「我了解了。」
+		PRINTFORML 「既然您诚心诚意地请教了，我作为红魔馆的女仆长可以亲手指导你」
+		PRINTFORMW 「不过相应的，您需要向红魔馆捐献一笔费用」
+		PRINTFORMW 「这笔费用会用于红魔馆的日常开销，以及弥补我个人休息时间的损失。」
+		IF TALENT:恋人
+			学费 = 10000
+			PRINTFORMW 「当然，既然是%CALLNAME:MASTER%的话，就给我一万好了，我会存起来用于我们下次出门约会的时候~」
+		ELSEIF TALENT:恋慕
+			学费 = 35000
+			PRINTFORMW 「三万五千块，加上下次休息时间陪我一起出门，如何？」
+		ELSEIF TALENT:思慕
+			学费 = 50000
+			PRINTFORMW 「朋友的话，就给红魔馆捐五万元吧，我个人的下次再说好了」
+		ELSEIF MAIN_MAP == 3
+			学费 = 80000
+			PRINTFORML 「既然是红魔馆的一份子的话，你就捐出八万好了」
+		ELSE
+			学费 = 100000
+			PRINTFORML 「捐献十万元，我们马上开始今天的课程」
+		ENDIF
+		CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+		SIF RESULT
+			RETURN -1
+		PRINTFORMW 「好的···快点动起来！清扫工作可不能拖拖拉拉的！」
+		MONEY -= 学费
+		CALL AddEXP("清掃経験", MASTER, 50)
+		CALL RECOVER(MASTER, -400, "体力", "在咲夜的指导下扫了大半个红魔馆")
+		CALL RECOVER(MASTER, -700, "気力", "在咲夜的指导下扫了大半个红魔馆")
+		IF RAND:9 == 1
+			PRINTFORML 「话说扫地经验完全没有必要花钱来学才对···」
+		ELSEIF RAND:9 == 2
+			PRINTFORML 「试着打开设置里的睡前扫地补丁，每天都能涨不少经验」
+		ENDIF
+	CASE 2
+		RETURN -1
+ENDSELECT
+;-------------------------------------------------
+;模组露娜萨用
+;-------------------------------------------------
+@UNIQUE_COM_学习演奏
+#DIM 学费
+PRINTFORML 「找我上私教课吗？」
+PRINTFORML 「也不是不行，不过按照人类的规矩，一对一音乐课要收不低的学费」
+PRINTFORMW 「我们要钱干什么这个你就少管了」
+PRINTFORMW 「一节课收你···」
+IF TALENT:恋人
+	学费 = 10000
+	PRINTFORMW 「一万元好了，这是特~别~的价格」
+ELSEIF TALENT:恋慕
+	学费 = 35000
+	PRINTFORMW 「三万五千块。给忠实粉丝的特别价格」
+ELSEIF TALENT:思慕
+	学费 = 50000
+	PRINTFORMW 「五万块吧，毕竟是粉丝，要给点优惠」
+ELSEIF MAIN_MAP == 3
+	学费 = 80000
+	PRINTFORML 「八万元好了，每天抬头不见低头见的」
+ELSE
+	学费 = 100000
+	PRINTFORML 「十万元，怎样？还要追求演奏的艺术吗？」
+ENDIF
+CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+SIF RESULT
+	RETURN -1
+PRINTFORMW 「好的，摆正姿势，要开始了！」
+MONEY -= 学费
+CALL AddEXP("演奏経験", MASTER, 50)
+CALL RECOVER(MASTER, -800, "体力", "跟着露娜萨学了一段时间的乐器演奏")
+CALL RECOVER(MASTER, -800, "気力", "跟着露娜萨学了一段时间的乐器演奏")
+;-------------------------------------------------
+;模组神子用
+;-------------------------------------------------
+
+@UNIQUE_COM_学习演讲
+#DIM 学费
+PRINTFORML 「想找我学习演讲的技巧？哈哈，真有眼光」
+PRINTFORML 「这样吧，你先为我的事业捐献一笔小小的费用」
+PRINTFORMW 「怎么，不会以为能白嫖我的独门秘籍吧？」
+IF TALENT:恋人
+	学费 = 10000
+	PRINTFORMW 「话虽如此，但既然是%CALLNAME:MASTER%，就给个一万元意思一下好了」
+ELSEIF TALENT:恋慕
+	学费 = 35000
+	PRINTFORMW 「嗯~就收你三万五千元好了，怎么，促销没听过吗？」
+ELSEIF TALENT:思慕
+	学费 = 50000
+	PRINTFORMW 「五万块吧，看在你每天都过来找我的份上」
+ELSEIF MAIN_MAP == 1
+	学费 = 80000
+	PRINTFORML 「八万元好了，毕竟是寺里的人」
+ELSE
+	学费 = 100000
+	PRINTFORML 「只要微不足道的十万元就可以学习我的独门秘技，这还不划算吗」
+ENDIF
+CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+SIF RESULT
+	RETURN -1
+PRINTFORMW 「开始之前先清清嗓子，来跟我念·····」
+MONEY -= 学费
+CALL AddEXP("会話経験", MASTER, 50)
+CALL RECOVER(MASTER, -400, "体力", "跟着神子学习演讲")
+CALL RECOVER(MASTER, -800, "気力", "跟着神子学习演讲")
+
+;-------------------------------------------------
+;模组永琳用
+;-------------------------------------------------
+@UNIQUE_COM_与永琳对话
+#DIM 学费
+PRINTFORML 「嗯?不是来看病的？那你有什么事？」
+CALL ASK_M("贩卖生药",1,"请教调和的诀窍",1,"没事",1)
+SELECTCASE RESULT
+	CASE 0
+		CALL UNIQUE_COM_贩卖生药
+	CASE 1
+		PRINTFORML 「想要学习制药吗」
+		PRINTFORML 「我倒是可以教你，不过这种事情教学必须在实践中才行」
+		PRINTFORMW 「这其中的消耗，以及拜师学艺的费用」
+		PRINTFORMW 「想必你已经做好准备了吧？」
+		IF TALENT:恋人
+			学费 = 10000
+			PRINTFORMW 「一万块就足够了，不用担心，永远亭里多的是低价收购上来的药材，我不会亏本的」
+		ELSEIF TALENT:恋慕
+			学费 = 35000
+			PRINTFORMW 「三万五千块，如果能把你培养成和我一个水平的医师就好了呢」
+		ELSEIF TALENT:思慕
+			学费 = 50000
+			PRINTFORMW 「五万块，我按照药材的成本价给你优惠了呢」
+		ELSEIF MAIN_MAP == 4
+			学费 = 80000
+			PRINTFORML 「住在这里的话，就给八万块好了」
+		ELSE
+			学费 = 100000
+			PRINTFORML 「给我十万元我们就开始」
+		ENDIF
+		CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+		SIF RESULT
+			RETURN -1
+		PRINTFORMW 「那么，我就指点你几句吧」
+		MONEY -= 学费
+		CALL AddEXP("調合経験", MASTER, 50)
+		CALL RECOVER(MASTER, -800, "体力", "和永琳一起学习调和")
+		CALL RECOVER(MASTER, -1600, "気力", "和永琳一起学习调和")
+	CASE 2
+		RETURN -1
+ENDSELECT
+
+;-------------------------------------------------
+;模组丰姬用
+;-------------------------------------------------
+
+@UNIQUE_COM_寻求知识
+#DIM 学费
+PRINTFORML 「想要寻求月都的知识?」
+PRINTFORML 「你不会是来套取月都的机密的吧？」
+PRINTFORMW 「算了，只要不涉及月都的机密，数据库里的那些知识教给你也无妨。」
+PRINTFORMW 「说起来，我有的时候去地上逛逛的时候也会用到钱这种东西，你就拿一些给我吧」
+IF TALENT:恋人
+	学费 = 10000
+	PRINTFORMW 「一万元，加上下次陪我一起去地上，如何？」
+ELSEIF TALENT:恋慕
+	学费 = 35000
+	PRINTFORMW 「嗯~就收你三万五千元好了，那种东西我也用不上太多」
+ELSEIF TALENT:思慕
+	学费 = 50000
+	PRINTFORMW 「拿五万来，我就告诉你一些有~趣~的东西」
+ELSEIF MAIN_MAP == 10
+	学费 = 80000
+	PRINTFORML 「既然是月都的一份子，那拿八万给我就行了」
+ELSE
+	学费 = 100000
+	PRINTFORML 「十万元而已，对比你接下来可以听见的宝贵知识而言微不足道」
+ENDIF
+CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+SIF RESULT
+	RETURN -1
+PRINTFORMW 「那么，接下来你就仔细听好·····」
+MONEY -= 学费
+CALL AddEXP("学習経験", MASTER, 50)
+CALL RECOVER(MASTER, -200, "体力", "向丰姬请教")
+CALL RECOVER(MASTER, -1600, "気力", "向丰姬请教")
+
+;-------------------------------------------------
+;模组润美用
+;-------------------------------------------------
+@UNIQUE_COM_与润美对话
+#DIM 学费
+PRINTFORML 「请问找我有什么事吗？」
+CALL ASK_M("鱼的交换",1,"请教钓鱼的诀窍",1,"没事",1)
+SELECTCASE RESULT
+	CASE 0
+		CALL UNIQUE_COM_鱼的交换
+	CASE 1
+		PRINTFORML 「想要学习钓鱼？」
+		PRINTFORML 「说的也是呢，授人以鱼不如授人以渔」
+		PRINTFORMW 「不过，有两点你需要记住，第一，就算是大师也不能保证不会空军」
+		PRINTFORMW 「第二，这是我看家的本领，想学你得交钱」
+		IF TALENT:恋人
+			学费 = 10000
+			PRINTFORMW 「都已经是这种关系了，你给一万就好了」
+		ELSEIF TALENT:恋慕
+			学费 = 35000
+			PRINTFORMW 「三万五千块，今天算你特别的优惠」
+		ELSEIF TALENT:思慕
+			学费 = 50000
+			PRINTFORMW 「五万块，交个朋友」
+		ELSEIF MAIN_MAP == 6
+			学费 = 80000
+			PRINTFORML 「住在这里的话，就给八万块好了」
+		ELSE
+			学费 = 100000
+			PRINTFORML 「给我十万元我们就开始」
+		ENDIF
+		CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+		SIF RESULT
+			RETURN -1
+		PRINTFORMW 「那么，首先要选好钓点····」
+		MONEY -= 学费
+		CALL AddEXP("釣り経験", MASTER, 50)
+		CALL RECOVER(MASTER, -400, "体力", "和润美一起学习钓鱼")
+		CALL RECOVER(MASTER, -1600, "気力", "和润美一起学习钓鱼")
+	CASE 2
+		RETURN -1
+ENDSELECT
+;-------------------------------------------------
+;模组美宵用
+;-------------------------------------------------
+
+@UNIQUE_COM_学习烹饪
+#DIM 学费
+CALL SET_KOJO_COLOR([[美宵]]) ;custom code
+PRINTFORML 「想请我指导您烹饪吗？您能认可我的手艺真是太好了。」
+PRINTFORML 「我其实也有想过要开一个新X方那样的烹饪学校呢」
+PRINTFORMW 「不过，我们这一行拜师学艺是有规矩的，既然你不加入鯢呑亭的话呢」
+PRINTFORMW 「就需要额外出一笔费用，过程中消耗的材料也包含在其中」
+IF TALENT:恋人
+	学费 = 10000
+	PRINTFORMW 「嗨~~就给我一万元好了，请不要忘记我哦」
+ELSEIF TALENT:恋慕
+	学费 = 35000
+	PRINTFORMW 「嗯~就收你三万五千元好了，我可以用剩下的边角料来教学」
+ELSEIF TALENT:思慕
+	学费 = 50000
+	PRINTFORMW 「如果是%CALLNAME:MASTER%您的话，只收您五万元好了」
+ELSEIF MAIN_MAP == 2
+	学费 = 80000
+	PRINTFORML 「住在人里的话，给您打八折哦~」
+ELSE
+	学费 = 100000
+	PRINTFORML 「需要十万元哦~不好意思有些贵~~」
+ENDIF
+CALL ASK_M("拜托了",MONEY >= 学费,"不用了",1)
+SIF RESULT
+	RETURN -1
+PRINTFORMW 「那么，我们就开始吧~」
+MONEY -= 学费
+CALL AddEXP("料理経験", MASTER, 50)
+CALL RECOVER(MASTER, -1200, "体力", "和美宵一起学习料理")
+CALL RECOVER(MASTER, -1200, "気力", "和美宵一起学习料理")
+CALL RECOVER(MASTER, (100 + RAND:101) * 6, "体力", "吃掉了练习用的料理")
+CALL RECOVER(MASTER, (100 + RAND:101) * 6, "気力", "吃掉了练习用的料理")
