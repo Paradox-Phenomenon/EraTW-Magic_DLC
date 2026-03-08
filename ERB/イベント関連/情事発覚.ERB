@@ -602,8 +602,13 @@ SIF !CHARA_HOLIDAY(ARG)
 	RETURN
 SIF GROUPMATCH(TIME:5, 5, 9)
 	RETURN
-SIF !AT_HOME(MASTER)
-	RETURN
+IF GMF_GETBIT("幻想乡大地图")
+	SIF !GMF_AT_LARGE_MAP(MASTER)
+		RETURN
+ELSE
+	SIF !AT_HOME(MASTER)
+		RETURN
+ENDIF
 
 ;IF ADD_BANQUET_DATE_CHECK(ARG) ;addition custom code, new banquet system
 IF (TALENT:ARG:恋慕 || TALENT:ARG:思慕) && CFLAG:ARG:宴会参加 && TFLAG:宴会場 / 100 != MAIN_MAP && TFLAG:宴会場 / 100 != 现在地域 && (FLAG:開始日 - DAY) == 0
@@ -648,8 +653,13 @@ IF TALENT:ARG:恋慕 && !RAND:5 && !CFLAG:ARG:宴会参加
 		目的地 = CFLAG:ARG:よく行く地域
 	ELSE
 		目的地 = RAND:10
-		SIF 目的地 == MAIN_MAP
-			RETURN
+		IF GMF_GETBIT("幻想乡大地图")
+			SIF 目的地 == GMF_LARGE_MAP_ID()
+				RETURN
+		ELSE
+			SIF 目的地 == MAIN_MAP
+				RETURN
+		ENDIF
 	ENDIF
 	;要求移动时间が60以上だと不发
 	IF TIME_REQUIRED(现在地域, 目的地) >= 60 || !BETWEENTIME(CFLAG:ARG:起床時間, CFLAG:ARG:就寝時間 + CFLAG:ARG:眠気覚まし - 180) ;bugfix, don't invite just to fall asleep immediately
