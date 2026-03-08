@@ -859,63 +859,139 @@ SELECTCASE ARG/120
 ENDSELECT
 
 ;-------------------------------------------------
-;数値→漢数字変換関数@TOKANJI
+;数值→汉字数字转换函数 @TOKANJI
 ;TOSTR関数チックに、引数の数値を漢数字の文字列で返します
 ;変数の最大値は約922京であるため、一、万、億、兆、京の5回処理します
 ;-------------------------------------------------
-@TOKANJI(ARG,ARG:1)
+;-------------------------------------------------
+;数值→汉字数字转换函数 @TOKANJI
+;-------------------------------------------------
+@TOKANJI(ARG, ARG:1)
 #FUNCTIONS
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM LCOUNT, 1
-VARSET LOCALS
-SIF ARG:1 && ARG == 2
+#DIMS L_RESULT
+#DIM IS_FIRST_BLOCK ;标记是否为首个数字块
+
+VARSET L_RESULT
+IS_FIRST_BLOCK = 1
+
+SIF ARG == 0
+	RETURNF "零"
+IF ARG:1 && ARG == 2
 	RETURNF "两"
+ENDIF
+
 FOR LCOUNT, 0, 5
-	LOCAL = ARG/POWER(10000, (4-LCOUNT))
-	ARG %= POWER(10000, (4-LCOUNT))
-	IF LOCAL
-		LOCALS += TOKANJIT(LOCAL)
+	; 这里的除数是 10^16, 10^12, 10^8, 10^4, 1
+	LOCAL = ARG / POWER(10000, (4 - LCOUNT))
+	ARG %= POWER(10000, (4 - LCOUNT))
+	
+	IF LOCAL > 0
+		; 如果不是块首，且当前块小于1000，说明前面有空位，需要补“零”
+		; 例如 10001 -> 一万 零 一
+		SIF !IS_FIRST_BLOCK && LOCAL < 1000
+			L_RESULT += "零"
+		
+		; 调用转换，传入 IS_FIRST_BLOCK 以判断是否需要把 1x 读作 十x
+		L_RESULT += TOKANJIT(LOCAL, ARG:1, IS_FIRST_BLOCK)
+		
 		SELECTCASE LCOUNT
 			CASE 0
-				LOCALS += "京"
+				L_RESULT += "京"
 			CASE 1
-				LOCALS += "兆"
+				L_RESULT += "兆"
 			CASE 2
-				LOCALS += "亿"
+				L_RESULT += "亿"
 			CASE 3
-				LOCALS += "万"
+				L_RESULT += "万"
 		ENDSELECT
+		
+		; 只要出现过非0块，后面的就都不是首块了
+		IS_FIRST_BLOCK = 0
+	ELSEIF !IS_FIRST_BLOCK
+		; 如果当前块是0，但前面已经有数字了（比如一亿零一万），这里的0由下一轮的 <1000 判断处理，或者无需处理
+		; 此处不需要额外操作
 	ENDIF
 NEXT
-RETURNF \@ LOCALS != "" ? %LOCALS% # 零 \@
 
-;内部用or簡易用
-;四桁以内の漢字変換。万以上与えるとバグ
-@TOKANJIT(ARG,ARG:1)
+RETURNF L_RESULT
+
+;-------------------------------------------------
+;内部用：四位以内汉字转换
+;ARG:0 = 数值 (0-9999)
+;ARG:1 = 计数数词
+;ARG:2 = 是否为整个大数值的开头（决定10是读“十”还是“一十”）
+;-------------------------------------------------
+@TOKANJIT(ARG, ARG:1, ARG:2)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
-SIF ARG:1 && ARG == 2
-	RETURNF "两"
+#DIMS L_STR
+#DIM L_DIGIT
+#DIM HAS_PREV ; 标记当前块内是否已经输出了数字
+
 SIF ARG >= 10000
 	RETURNF "ＢＵＧ"
-LOCALS = \@ ARG/1000 ? %TOKANJIS(ARG/1000)%千 # \@
-ARG %= 1000
-LOCALS += \@ ARG/100 ? %TOKANJIS(ARG/100)%百 # %COND_STR("零",LOCALS != "" && !STRCOUNT(LOCALS,"零"))% \@
-ARG %= 100
-LOCALS += \@ ARG/10 ? %TOKANJIS(ARG/10)%十 # %COND_STR("零",LOCALS != "" && !STRCOUNT(LOCALS,"零"))% \@
-ARG %= 10
-RETURNF LOCALS + TOKANJIS(ARG)
 
-;一桁の変換。引数1を真にすると一を省略する。2以上にすると零を表示する
-@TOKANJIS(ARG, ARG:1,ARG:2)
+L_STR = 
+HAS_PREV = 0
+
+;--- 千位 ---
+L_DIGIT = ARG / 1000
+IF L_DIGIT > 0
+	L_STR += \@ L_DIGIT == 2 && ARG:1 ? 两 # %TOKANJIS(L_DIGIT)% \@ + "千"
+	HAS_PREV = 1
+ENDIF
+
+;--- 百位 ---
+L_DIGIT = (ARG / 100) % 10
+IF L_DIGIT > 0
+	L_STR += \@ L_DIGIT == 2 && ARG:1 ? 两 # %TOKANJIS(L_DIGIT)% \@ + "百"
+	HAS_PREV = 1
+ELSEIF HAS_PREV && (ARG % 100) > 0
+	; 如果前面有千位，且百位是0，且后面还有数字（比如 1010），补零
+	L_STR += "零"
+ENDIF
+
+;--- 十位 ---
+L_DIGIT = (ARG / 10) % 10
+IF L_DIGIT > 0
+	; 如果是“十”，且前面没有千/百位(HAS_PREV=0)，且是整个数值的开头(ARG:2=1) -> 读“十”
+	; 否则读“一十”
+	IF L_DIGIT == 1 && !HAS_PREV && ARG:2
+		L_STR += "十"
+	ELSE
+		L_STR += TOKANJIS(L_DIGIT) + "十"
+	ENDIF
+	HAS_PREV = 1
+ELSEIF HAS_PREV && (ARG % 10) > 0
+	; 处理类似 101 的中间那个零，或者 8009 的零
+	; 检查字符串末尾是否已经是零，避免重复（比如千位补了一次，这里不需要再补）
+	SIF SUBSTRING(L_STR, STRLENS(L_STR)-2) != "零"
+		L_STR += "零"
+ENDIF
+
+;--- 个位 ---
+L_DIGIT = ARG % 10
+IF L_DIGIT > 0
+	L_STR += \@ L_DIGIT == 2 && ARG:1 && !HAS_PREV ? 两 # %TOKANJIS(L_DIGIT)% \@
+ENDIF
+
+RETURNF L_STR
+
+;-------------------------------------------------
+;内部函数
+;个位数转换
+;-------------------------------------------------
+@TOKANJIS(ARG,ARG:1)
 #FUNCTIONS
-SIF ARG:2 && ARG == 2
-	RETURNF "两"
 SELECTCASE ARG
 	CASE 0
-		RETURNF \@ ARG:1 > 1 ? 零 #  \@
+		RETURNF \@ ARG:1 ? 零 #  \@
 	CASE 1
-		RETURNF \@ ARG:1 ?  # 一 \@
+		RETURNF "一"
 	CASE 2
 		RETURNF "二"
 	CASE 3
@@ -932,12 +1008,9 @@ SELECTCASE ARG
 		RETURNF "八"
 	CASE 9
 		RETURNF "九"
-	CASE 10
-		RETURNF "十"
 	CASEELSE
 		RETURNF "ＢＵＧ"
 ENDSELECT
-
 
 
 ;-------------------------------------------------
