@@ -3,8 +3,8 @@
 VARSET RESULTS
 RESULTS:1 = 当前人物:%NAME:CHARA%
 RESULTS:2 = 当前行动:%TRAINNAME_TR(SELECTCOM)%
-RESULTS:3 = 当前状态:%状态_INFO(CHARA)%
-RESULTS:4 = 当前装备:%装备_INFO(CHARA)%
+RESULTS:3 = 行动信息:%行动信息_INFO()%
+RESULTS:4 = 当前状态:%状态_INFO(CHARA)%
 RESULTS:5 = 关系信息:%关系_INFO(CHARA)%
 RESULTS:6 = 身体信息:%身体_INFO(CHARA)%
 RESULTS:7 = 能力信息:%能力_INFO(CHARA)%
@@ -13,7 +13,10 @@ RESULTS:9 = 性格信息:%性格_INFO(CHARA)%
 RESULTS:10 = 当前同一位置的人:%同室人_INFO(CHARA)%
 RESULTS:11 = 成否判定:%成否判定()%
 RESULTS:12 = 环境信息:%环境信息_INFO()%
-FOR LOCAL, 0, 13
+RESULTS:13 = 性特质信息:%性特质_INFO(CHARA)%
+RESULTS:14 = 当前装备:%装备_INFO(CHARA)%
+
+FOR LOCAL, 0, 15
     PRINTFORML %RESULTS:LOCAL%
 NEXT
 @成否判定()
@@ -39,23 +42,33 @@ RETURNF LOCALS
 
 @状态_INFO(ARG)
 #FUNCTIONS
-LOCALS =
+LOCALS = %NAME:ARG%
 IF TALENT:ARG:心情 == 1
 	LOCALS += "・好心情"
 ELSEIF TALENT:ARG:心情 == -1
 	LOCALS += "・不高兴"
 ENDIF
-IF CHECK_HEHAI(ARG)
-    SELECTCASE KEHAI
-        CASE 1
-            LOCALS += "什么都没在做"
-        CASE 2
-            LOCALS += "工作中"
-        CASE 3
-            LOCALS += "睡眠中"
-        CASE 4
-            LOCALS += "自由行动中"
-    ENDSELECT
+IF CFLAG:ARG:诶嘿嘿 == 1
+    LOCALS += "・性交中-玩家主导"
+ELSEIF CFLAG:ARG:诶嘿嘿 == 2
+    IF TFLAG:抱住模式
+        LOCALS += @"・单独二人的亲密接触-对方主导"
+    ELSE
+        LOCALS += @"・性交中-对方主导"
+    ENDIF
+ELSE
+    IF CHECK_HEHAI(ARG)
+        SELECTCASE KEHAI
+            CASE 1
+                LOCALS += "什么都没在做"
+            CASE 2
+                LOCALS += "工作中"
+            CASE 3
+                LOCALS += "睡眠中"
+            CASE 4
+                LOCALS += "自由行动中"
+        ENDSELECT
+    ENDIF
 ENDIF
 SIF TCVAR:ARG:発情
     LOCALS += "・发情中"
@@ -249,8 +262,6 @@ SIF TALENT:ARG:感情缺乏
     性格信息 += @"%GET_TALENTNAME(TALENT_感情缺乏, TALENT:ARG:感情缺乏)%/"
 SIF TALENT:ARG:性的兴趣
     性格信息 += @"%GET_TALENTNAME(TALENT_性的兴趣, TALENT:ARG:性的兴趣)%/"
-SIF TALENT:ARG:無知
-    性格信息 += @"%GET_TALENTNAME(TALENT_無知, TALENT:ARG:無知)%/"
 SIF TALENT:ARG:开朗／阴郁
     性格信息 += @"%GET_TALENTNAME(TALENT_开朗／阴郁, TALENT:ARG:开朗／阴郁)%/"
 SIF TALENT:ARG:难以越过的底线
@@ -264,6 +275,34 @@ SIF TALENT:ARG:献身的
 RETURNF 性格信息
 
 @性特质_INFO(ARG)
+#FUNCTIONS
+#DIMS 性特质信息
+性特质信息 = 
+SIF TALENT:ARG:胸围
+    性特质信息 += @"%GET_TALENTNAME(TALENT_胸围, TALENT:ARG:胸围)%/"
+SIF TALENT:ARG:臀围
+    性特质信息 += @"%GET_TALENTNAME(TALENT_臀围, TALENT:ARG:臀围)%/"
+SIF TALENT:ARG:母乳体质
+    性特质信息 += @"%GET_TALENTNAME(TALENT_母乳体质, TALENT:ARG:母乳体质)%/"
+SIF TALENT:ARG:無知
+    性特质信息 += @"%GET_TALENTNAME(TALENT_無知, TALENT:ARG:無知)%/"
+SIF TALENT:ARG:漏尿癖
+    性特质信息 += @"%GET_TALENTNAME(TALENT_漏尿癖, TALENT:ARG:漏尿癖)%/"
+SIF TALENT:ARG:自慰狂
+    性特质信息 += @"%GET_TALENTNAME(TALENT_自慰狂, TALENT:ARG:自慰狂)%/"
+SIF TALENT:ARG:淫壺
+    性特质信息 += @"%GET_TALENTNAME(TALENT_淫壺, TALENT:ARG:淫壺)%/"
+SIF TALENT:ARG:淫乳
+    性特质信息 += @"%GET_TALENTNAME(TALENT_淫乳, TALENT:ARG:淫乳)%/"
+SIF TALENT:ARG:接吻魔
+    性特质信息 += @"%GET_TALENTNAME(TALENT_接吻魔, TALENT:ARG:接吻魔)%/"
+SIF TALENT:ARG:尻穴狂
+    性特质信息 += @"%GET_TALENTNAME(TALENT_尻穴狂, TALENT:ARG:尻穴狂)%/"
+SIF TALENT:ARG:子宮口性感
+    性特质信息 += @"%GET_TALENTNAME(TALENT_子宮口性感, TALENT:ARG:子宮口性感)%/"
+RETURNF 性特质信息
+
+
 
 @同室人_INFO(ARG)
 #FUNCTIONS
@@ -271,15 +310,19 @@ RETURNF 性格信息
 同室人信息 = 
 FOR LOCAL, 1, CHARANUM
     SIF CFLAG:ARG:现在位置 == CFLAG:LOCAL:现在位置 && LOCAL != ARG
-        同室人信息 += @"%NAME:LOCAL%:%状态_INFO(LOCAL)%/"
+        同室人信息 += @"%状态_INFO(LOCAL)%/"
 NEXT
 RETURNF 同室人信息
 
 @环境信息_INFO
 #FUNCTIONS
 #DIMS 环境信息
-环境信息 = 季节:
-环境信息 += @"%GET_MONTH()%/"
+IF FLAG:70
+    环境信息 = 时间停止/
+ELSE
+    环境信息 = 
+ENDIF
+环境信息 += @"季节:%GET_MONTH()%/"
 环境信息 += @"天气:%GET_WEATHER()%/"
 环境信息 += "时间:"
 SELECTCASE TIME
@@ -315,6 +358,25 @@ IF FESTIVAL() != ""
 ENDIF
 环境信息 += @"地点:%GET_MAPNAME(GET_MAPID(CFLAG:MASTER:现在位置))%-%NAME_FROM_PLACE(CFLAG:MASTER:现在位置)%/"
 RETURNF 环境信息
+
+@行动信息_INFO
+#FUNCTIONS
+#DIMS 行动信息
+SELECTCASE SELECTCOM
+    CASE 0 TO 200, 316 TO 323, 500 TO 520
+        行动信息 += "性交系指令"
+    CASE 300 TO 304, 331 TO 335, 337, 351, 352, 365 TO 368, 381, 400 TO 430, 432 TO 450, 452 TO 500, 580
+        行动信息 += "日常系指令"
+    CASE 305 TO 311, 336, 354, 431
+        行动信息 += "亲密接触指令"
+    CASE 312 TO 315, 330, 350, 353, 560 TO 562
+        行动信息 += "性骚扰指令"
+    CASE 364
+        行动信息 += "冒犯指令"
+    CASE 451
+        行动信息 += "其他指令"
+ENDSELECT
+RETURNF 行动信息
 
 @CALC_RANKF(VAR_VALUE, RANK_SCALE)
 #LOCALSIZE 1
@@ -436,7 +498,7 @@ SELECTCASE RANK_SCALE
 ENDSELECT
 SELECTCASE RANK
     CASE 0
-        RANKS = "Ex"
+        RANKS = Ex
     CASE 1
         RANKS = SS
     CASE 2
