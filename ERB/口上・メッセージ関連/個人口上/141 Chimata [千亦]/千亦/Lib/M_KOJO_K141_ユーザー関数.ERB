@@ -59,11 +59,11 @@ CFLAG:[[千亦]]:1901 += 1
 
 
 ;==================================================
-; @F_KOJO_K141_PRINTS_RAINBOW("文字列",彩度 = 65,明度 = 100 ,表示形式(0=改行無し,1=改行ありウェイト無し,2=改行ありウェイトあり))
+; @F_KOJO_K141_PRINTS_RAINBOW("文字列",彩度 = 65%,明度 = 100% ,表示形式(0=改行無し,1=改行ありウェイト無し,2=改行ありウェイトあり))
 ;==================================================
 
 ; 1文字ごとに虹色（色相環を一周）させて表示する
-@F_KOJO_K141_PRINTS_RAINBOW(L_PRINTS,彩度 = 65,明度 = 100 ,L_表示形式)
+@F_KOJO_K141_PRINTS_RAINBOW(L_PRINTS,彩度 = 165,明度 = 255 ,L_表示形式)
 #DIMS L_PRINTS ;表示文字列
 #DIM L_表示形式
 #DIM L_COUNT ;ループカウンタ
@@ -90,7 +90,8 @@ FOR L_COUNT, 0, L_P_STR
 ;ARG:1=彩度(0～100)
 ;ARG:2=明度(0～100)
 ;-------------------------------------------------
-    L_N_COLOR = HSV_TO_RGB(色相, 彩度, 明度)
+    ;L_N_COLOR = HSV_TO_RGB(色相, 彩度, 明度)
+    L_N_COLOR = HSV_TO_RGB((LIMIT(色相, 0, 360) << 16) | (LIMIT(彩度, 0, 255) << 8) | LIMIT(明度, 0, 255))
     
 
 
@@ -172,8 +173,6 @@ ABL:[[千亦]]:戦闘能力 = L_素の戦闘能力
 CLEARBIT CFLAG:[[千亦]]:弾幕特能,9
 TCVAR:[[千亦]]:361 = 0 ;千亦怒りの弾幕戦フラグ解消
 TCVAR:[[千亦]]:362 = 0 ;命のカード使用フラグ解除 
-SIF TALENT:[[千亦]]:機嫌 == -1
-	TALENT:[[千亦]]:機嫌 = 0 ;おこだったらスッキリ
 CALL COLORMESSAGE("千亦的战斗力和技能复原了！",C_YELLOW,2)
 
 
@@ -585,7 +584,6 @@ L_TEXTLIST:6 = 呵呵呵，不☆行
 L_TEXTLIST:7 = 要加热吗？
 L_TEXTLIST:8 = 我最喜欢的是……价格
 L_TEXTLIST:9 = 加了好多添加剂，绝对不会坏掉哦～☆
-L_TEXTLIST:10 =
 
 LOCAL:10 = FINDELEMENT(L_TEXTLIST,"",0,VARSIZE("L_TEXTLIST"),1) 
 ;リスト配列の実質長
@@ -616,10 +614,10 @@ ENDSELECT
 		BREAK
 	SELECTCASE LOCAL:1 ;左右判定
 		CASE 0 ;左
-			PRINTFORML ＜ %L_TEXTLIST:(LOCAL:20) %
+			PRINTFORML ＜ %L_TEXTLIST:(LOCAL:20)%
 			LOCAL:1 = 1 ;次の行は左右反転
 		CASE 1 ;右
-			LOCALS = %L_TEXTLIST:(LOCAL:20) % ＞
+			LOCALS = %L_TEXTLIST:(LOCAL:20)% ＞
 			LOCAL:2 = ( STRLENS(DRAWLINESTR) - STRLENS(LOCALS) )/ 3
 			PRINTFORM %" " * MAX(0,LOCAL:2)%
 			PRINTFORML %LOCALS% 
@@ -631,7 +629,7 @@ WEND
 		CASE 0 ;左
 			PRINTFORML ＜ %L_TEXTLIST:(LOCAL:30) %
 		CASE 1 ;右
-			LOCALS = %L_TEXTLIST:(LOCAL:30) % ＞
+			LOCALS = %L_TEXTLIST:(LOCAL:30)% ＞
 			LOCAL:2 = ( STRLENS(DRAWLINESTR) - STRLENS(LOCALS) )/ 3
 			PRINTFORM %" " * MAX(0,LOCAL:2)%
 			PRINTFORML %LOCALS% 
@@ -640,13 +638,34 @@ RESETCOLOR
 
 ;==================================================
 ;@F_KOJO_K141_WHAT_THE_FUTACHIN
-;ふたなりちんぽ初確認関数
-;未実装
+;ふたなりちんぽ認知関数
+;お風呂メインの汎用
 ;==================================================
-[SKIPSTART]
+
 @F_KOJO_K141_WHAT_THE_FUTACHIN
 
-IF CFLAG:[[千亦]]:1601
-ELSE
+IF TALENT:MASTER:性別 == 3 && CFLAG:[[千亦]]:1601 == 0 && CFLAG:[[千亦]]:1602 == 0 ;第一次看到ふたなり的时候
+	PRINTFORML 「……欸？……你……胯下那个东西是……」
+	PRINTFORMDL 千亦盯着我的股间，惊得目瞪口呆……
+	PRINTFORMDW 经过一番曲折，向千亦坦白了自己是扶她……
+	PRINTFORML 「是……是这样吗？嘛，在幻想乡好像也挺常见的……」
+	IF TALENT:[[千亦]]:処女 == 1 && TFLAG:5 == 0
+		PRINTFORML （话说回来……原来男人的那里是这种形状啊……）
+		PRINTFORMDL 感觉到她偷偷瞄向股间的视线……
+	ENDIF
+	CFLAG:[[千亦]]:1601 = 1
+ELSEIF TALENT:MASTER:性別 == 3 && CFLAG:[[千亦]]:1601 == 0 && CFLAG:[[千亦]]:1602 == 1
+	PRINTFORML 「……咦。又长出来了？」
+	PRINTFORMDW 又因为某些原因需要扶她肉棒，所以重新长出来了——向千亦说明了情况……
+	PRINTFORML 「啊，这样啊……」
+	PRINTFORML 「……你差不多已经完全是妖怪了吧……」
+	CFLAG:[[千亦]]:1601 = 1
+
+ELSEIF CFLAG:[[千亦]]:1601 == 1 && !(TALENT:MASTER:性別 == 3) ;ふたなり消失的时候
+	PRINTFORML 「……喂，%CALLNAME:MASTER%……那个……好像不见了？」
+	PRINTFORML 「如果我没记错的话……你之前是扶她对吧？」
+	PRINTFORMDW 由于种种原因，不小心弄丢了……向千亦说明了……
+	PRINTFORML 「这样啊……嗯……节哀顺变……」
+	CFLAG:[[千亦]]:1601 = 0
+	CFLAG:[[千亦]]:1602 = 1
 ENDIF
-[SKIPEND]
