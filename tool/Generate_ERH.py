@@ -9,7 +9,7 @@
 #
 #    - [你的游戏项目根目录]/
 #      ├─ tool/
-#      │  └─ Generate_ERH.py  (<- 将本脚本放在这里)
+#      │  └─ Generate_ERH.py  (<- 本脚本)
 #      │
 #      ├─ CSV/
 #      │  ├─ Item.csv
@@ -23,14 +23,14 @@
 #
 # 3. 如何运行:
 #    - 确保你的电脑安装了 Python。
-#    - 直接双击运行此 .py 文件,或者在 tool 文件夹内打开命令行/终端,
+#    - 在项目根目录下打开命令行/终端,
 #      输入 `python tool/Generate_ERH.py` 后按回车。
-#    - 脚本会读取 ../CSV/ 目录下的文件,并将生成的头文件写入到
-#      ../ERB/Headers/ 目录下。
+#    - 脚本会读取 CSV/ 目录下的文件,并将生成的头文件写入到
+#      ERB/Headers/ 目录下。
 #
 # 4. 自定义配置:
-#    - 你可以修改下方的【配置区域】来自定义输入/输出目录、需要排除的文件
-#      以及文件的编码格式。
+#    - 你可以修改下方的【配置区域】来自定义需要排除的文件
+#      以及文件的编码格式。路径现在是自动计算的。
 #
 # ==========================================================================
 
@@ -40,11 +40,17 @@ import glob
 import re
 from fnmatch import fnmatch
 
+# ================= 路径自动计算 =================
+# 获取本脚本(Generate_ERH.py)所在的目录 (即 tool/ 文件夹)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取项目根目录 (tool/ 文件夹的上一级目录)
+project_root = os.path.dirname(script_dir)
+
 # ================= 配置区域 =================
-# CSV文件夹路径 (从tool文件夹向上退一级,再进入CSV)
-CSV_DIR = '../CSV'
-# 生成的ERH头文件存放路径 (从tool文件夹向上退一级,再进入ERB/Headers)
-OUTPUT_DIR = '../ERB/Headers'
+# CSV文件夹路径 (自动计算项目根目录下的CSV文件夹)
+CSV_DIR = os.path.join(project_root, 'CSV')
+# 生成的ERH头文件存放路径 (自动计算项目根目录下的ERB/Headers文件夹)
+OUTPUT_DIR = os.path.join(project_root, 'ERB', 'Headers')
 # 需要排除的文件名（支持通配符 *）
 EXCLUDE_FILES = [
     'Train.csv',       # 指令定义，非枚举
