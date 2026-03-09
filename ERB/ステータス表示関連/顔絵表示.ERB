@@ -63,23 +63,29 @@ ENDIF
 CALL 画像一斉表示(0, 0, 1, -1)
 FLAG:立ち絵種類 = PREV_立ち絵種類
 
+;已分离为图片名索引函数和图文混排模块，图文混排部分重构为HTML实现。
+;IMG_TALK处理图片与HTML格式字符串的排版，支持任意图片与文字混排，QOL_SPTALK是集成立绘索引功能、专门调用立绘的混排
+;本功能的示例函数是@神签打印(ARG)，这两处优化是一起完成的，也就是说通过QOL_SPTALK或IMG_TALK就可以做到神签打印的效果
 @SPTALK,CID,表情="",デフォルト=0,MESSAGE,整形=0,CUSTOMFONTCOLOR
 ;CIDが0の時別途定義のMOB角色を表示するように
 ;例）CALL SPTALK, 0, "笑顔", 1, @"「この記述で」/「路人が喋ります」",1
-#DIM CID
-#DIMS 表情
-#DIM デフォルト
-#DIMS MESSAGE
-#DIM 整形
-#DIMS 服装
-#DIMS MESSAGE_PRINT,50
-#DIMS FONTCOLOR
-#DIMS ツールチップ
-#DIM TEMP_COLOR
-#DIM DYNAMIC PREV_立ち絵種類
+#DIM  DYNAMIC CID
+#DIMS DYNAMIC 表情
+#DIM  DYNAMIC デフォルト
+#DIMS DYNAMIC MESSAGE
+#DIM  DYNAMIC 整形
+;#DIMS 服装
+;#DIMS MESSAGE_PRINT,50
+;#DIMS FONTCOLOR
+;#DIMS ツールチップ
+;#DIM TEMP_COLOR
+;#DIM DYNAMIC PREV_立ち絵種類
 
-#DIMS CUSTOMFONTCOLOR
+#DIMS DYNAMIC CUSTOMFONTCOLOR
 
+CALL QOL_SPTALK(CID, 表情, デフォルト, CONVERT_STR_TO_HTML(MESSAGE), 整形, CUSTOMFONTCOLOR)
+RETURN
+[SKIPSTART]
 角色画像表示尺寸比 = 100
 TEMP_COLOR = GETCOLOR()
 
@@ -212,6 +218,7 @@ ELSE
 	RESETCOLOR
 ENDIF
 SETCOLOR TEMP_COLOR
+[SKIPEND]
 
 ;SPTALKに渡す文を整形
 @SPTALK整形(ARGS,画像行幅 = 0)
