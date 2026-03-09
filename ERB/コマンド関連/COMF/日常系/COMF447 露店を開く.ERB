@@ -1,4 +1,14 @@
-﻿;路边摆摊
+﻿;売却可能なアイテム番号
+@ITEM_SELLABLE(ARG)
+#FUNCTION
+SELECTCASE ARG
+    CASE 271 TO 276, 351 TO 398, 500 TO 512, 600, 611, 616, 626 TO 629, 700 TO 708
+        RETURNF 1
+    CASEELSE
+        RETURNF 0
+ENDSELECT
+
+;路边摆摊
 @COM447
 #DIM 候補个数
 #DIM 商人パワーM
@@ -115,43 +125,38 @@ Lineup = 1
 $SELECT_LOOP
 ;LinesToErase は消去行数の計算に利用
 LinesToErase = 1
-;所持している道具の売却可能物・个数を列表化
+;所持しているアイテムの売却可能物・個数をリスト化
 LOCAL:10 = 999
-FOR LOCAL, 270, 710
-	SELECTCASE LOCAL
-	;★売れる道具を下のCASEに追加
-		CASE 351 TO 398, 500 TO 512, 600, 602, 611, 616, 621, 626 TO 631, 636, 638, 639, 700 TO 708, 271 TO 276
+FOR LOCAL, 0, 999
+	SIF !ITEM_SELLABLE(LOCAL)
+		CONTINUE
 		;GoodsIDに売りに出す道具の番号を流し込む
-			IF ITEM:(LOCAL) > 0 || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))
-				
-				LOCALS:0 = [{LOCAL}] %ITEMNAME:(LOCAL), 20, LEFT%×{ITEM:(LOCAL),3} 
-				LOCAL:10 += STRLENS(LOCALS:0)
-				IF LOCAL:10 > 120
-					IF LOCAL:10 >= 999
-					;最初のみ改行しない
-					ELSE
-						LinesToErase ++
-						PRINTL 
-					ENDIF
-					LOCAL:10 = 0
-					PRINT 　　
-				ENDIF
-				IF GROUPMATCH(LOCAL, GoodsID:1, GoodsID:2, GoodsID:3, GoodsID:4, GoodsID:5, GoodsID:6, GoodsID:7, GoodsID:8, GoodsID:9)
-					SETCOLOR 0x666666
-					PRINTPLAINFORM [{LOCAL}] %ITEMNAME_TR((LOCAL)), 20, LEFT%×{ITEM:(LOCAL),3} 
-					RESETCOLOR
-				ELSE
-					; 擺攤擴展
-					SIF CHECK_ITEM_BONUS_PRICE(LOCAL)
-					SETCOLOR C_AQUA
-					PRINTFORM [{LOCAL}] %ITEMNAME_TR((LOCAL)), 20, LEFT%×{ITEM:(LOCAL),3} 
-					RESETCOLOR
-				ENDIF
-				PRINT 　　
+	IF ITEM:(LOCAL) > 0 || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))	
+		LOCALS:0 = [{LOCAL}] %ITEMNAME:(LOCAL), 20, LEFT%×{ITEM:(LOCAL),3} 
+		LOCAL:10 += STRLENS(LOCALS:0)
+		IF LOCAL:10 > 120
+			IF LOCAL:10 >= 999
+			;最初のみ改行しない
+			ELSE
+				LinesToErase ++
+				PRINTL 
 			ENDIF
-		CASEELSE
-			CONTINUE
-	ENDSELECT
+			LOCAL:10 = 0
+			PRINT 　　
+		ENDIF
+		IF GROUPMATCH(LOCAL, GoodsID:1, GoodsID:2, GoodsID:3, GoodsID:4, GoodsID:5, GoodsID:6, GoodsID:7, GoodsID:8, GoodsID:9)
+			SETCOLOR 0x666666
+			PRINTPLAINFORM [{LOCAL}] %ITEMNAME_TR((LOCAL)), 20, LEFT%×{ITEM:(LOCAL),3} 
+			RESETCOLOR
+		ELSE
+			; 擺攤擴展
+			SIF CHECK_ITEM_BONUS_PRICE(LOCAL)
+			SETCOLOR C_AQUA
+			PRINTFORM [{LOCAL}] %ITEMNAME_TR((LOCAL)), 20, LEFT%×{ITEM:(LOCAL),3} 
+			RESETCOLOR
+		ENDIF
+		PRINT 　　
+	ENDIF
 NEXT
 PRINTL 
 DRAWLINE
@@ -235,73 +240,75 @@ SELECTCASE RESULT
 			GOTO INPUT_LOOP01
 		ENDIF
 	;★売れる道具を下のCASEに追加
-	CASE 351 TO 398, 500 TO 512, 600, 602, 611, 616, 621, 626 TO 631, 636, 638, 639, 700 TO 708, 271 TO 276
-		;GoodsIDに売りに出す道具の番号を流し込む
-		GoodsID:Lineup = RESULT
-		;道具名が無名の場合、道具を所持してない場合、永遠亭での薬品販売はやり直し
-		IF ITEMNAME:(GoodsID:Lineup) == "" || ITEM:(GoodsID:Lineup) <= 0  || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))
-			CLEARLINE 1
-			GoodsID:Lineup = 0
-			GOTO INPUT_LOOP01
-		ENDIF
-		;重複選択防止
-		IF Lineup > 1
-			FOR LOCAL, 1, Lineup
-				IF GoodsID:Lineup == GoodsID:LOCAL
-					CLEARLINE 1
-					GoodsID:Lineup = 0
-					GOTO INPUT_LOOP01
-				ENDIF
-			NEXT
-		ENDIF
-		候補个数 = ITEM:(GoodsID:Lineup)
-		SETCOLOR 0x777777
-		PRINTFORML 　要卖多少%ITEMNAME_TR((GoodsID:Lineup))%？(输入1～{候補个数}的个数、0为返回)
-		RESETCOLOR
-		PRINTL   
-		PRINTBUTTON "[0] 放弃", 0
-		PRINT        
-		IF 候補个数 > 5
-			PRINTBUTTON @"[5] 5%数え方(GoodsID:Lineup, 5)%", 5
-			PRINT     
-		ENDIF
-		IF 候補个数 > 10
-			PRINTBUTTON @"[10] 10%数え方(GoodsID:Lineup, 10)%", 10
-			PRINT    
-		ENDIF
-		IF 候補个数 > 20
-			PRINTBUTTON @"[20] 20%数え方(GoodsID:Lineup, 20)%", 20
-			PRINT    
-		ENDIF
-		IF 候補个数 > 100
-			PRINTBUTTON @"[100] 100%数え方(GoodsID:Lineup, 100)%", 100
-			PRINT    
-		ENDIF
-		IF 候補个数 > 1
-			PRINTBUTTON @" [{候補个数}] 所持全部", 候補个数
-		ENDIF
-		LinesToErase += 3
-		$INPUT_LOOP02
-		INPUT
-		SELECTCASE RESULT
-			; 擺攤擴展
-			CASE 0
-				CLEARLINE 3
-				LinesToErase -= 3
-				Lineup -= 1
-			CASE 1 TO 候補个数
-				CLEARLINE (LinesToErase + 1)
-				;GoodsQtyに売りに出す个数を流し込む
-				GoodsQty:Lineup = RESULT
-			CASEELSE
-				CLEARLINE 3
-				LinesToErase -= 3
-				GoodsID:Lineup = 0
-				RETURN -1
-		ENDSELECT
 	CASEELSE
-		CLEARLINE 1
-		GOTO INPUT_LOOP01
+		IF !ITEM_SELLABLE(RESULT)
+			CLEARLINE 1
+			GOTO INPUT_LOOP01
+		ELSE
+		;GoodsIDに売りに出す道具の番号を流し込む
+			GoodsID:Lineup = RESULT
+			;道具名が無名の場合、道具を所持してない場合、永遠亭での薬品販売はやり直し
+			IF ITEMNAME:(GoodsID:Lineup) == "" || ITEM:(GoodsID:Lineup) <= 0  || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))
+				CLEARLINE 1
+				GoodsID:Lineup = 0
+				GOTO INPUT_LOOP01
+			ENDIF
+			;重複選択防止
+			IF Lineup > 1
+				FOR LOCAL, 1, Lineup
+					IF GoodsID:Lineup == GoodsID:LOCAL
+						CLEARLINE 1
+						GoodsID:Lineup = 0
+						GOTO INPUT_LOOP01
+					ENDIF
+				NEXT
+			ENDIF
+			候補个数 = ITEM:(GoodsID:Lineup)
+			SETCOLOR 0x777777
+			PRINTFORML 　要卖多少%ITEMNAME_TR((GoodsID:Lineup))%？(输入1～{候補个数}的个数、0为返回)
+			RESETCOLOR
+			PRINTL   
+			PRINTBUTTON "[0] 放弃", 0
+			PRINT        
+			IF 候補个数 > 5
+				PRINTBUTTON @"[5] 5%数え方(GoodsID:Lineup, 5)%", 5
+				PRINT     
+			ENDIF
+			IF 候補个数 > 10
+				PRINTBUTTON @"[10] 10%数え方(GoodsID:Lineup, 10)%", 10
+				PRINT    
+			ENDIF
+			IF 候補个数 > 20
+				PRINTBUTTON @"[20] 20%数え方(GoodsID:Lineup, 20)%", 20
+				PRINT    
+			ENDIF
+			IF 候補个数 > 100
+				PRINTBUTTON @"[100] 100%数え方(GoodsID:Lineup, 100)%", 100
+				PRINT    
+			ENDIF
+			IF 候補个数 > 1
+				PRINTBUTTON @" [{候補个数}] 所持全部", 候補个数
+			ENDIF
+			LinesToErase += 3
+			$INPUT_LOOP02
+			INPUT
+			SELECTCASE RESULT
+				; 擺攤擴展
+				CASE 0
+					CLEARLINE 3
+					LinesToErase -= 3
+					Lineup -= 1
+				CASE 1 TO 候補个数
+					CLEARLINE (LinesToErase + 1)
+					;GoodsQtyに売りに出す个数を流し込む
+					GoodsQty:Lineup = RESULT
+				CASEELSE
+					CLEARLINE 3
+					LinesToErase -= 3
+					GoodsID:Lineup = 0
+					RETURN -1
+			ENDSELECT
+		ENDIF
 ENDSELECT
 
 IF Lineup < 9
@@ -1062,14 +1069,8 @@ RETURNF 0
 IF ARG:0 <= 0
 	ARG:0 = 1
 ENDIF
-
-;擺攤拓展_商人パワー修正
-IF ARG:0 > 200
-	利率 = MAX(RAND:(ARG:0), (ARG:0 / 3))
-ELSE
-	;利率を道具価格の（商人パワーの半分～商人パワー）％に設定
-	利率 = MAX(RAND:(ARG:0), (ARG:0 / 2))
-ENDIF
+;利率をアイテム価格の（商人パワーの半分～商人パワー）％に設定
+利率 = MAX(RAND:(ARG:0), (ARG:0 / 2))
 補正価格 = ITEMPRICE:(ARG:1) / 2
 
 ;補正価格の決定
