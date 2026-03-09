@@ -2,79 +2,273 @@
 ;-------------------------------------------------
 ;函数名:IMG_TALK
 ;概　要:简单图文混排
+; 核心函数：IMG_TALK
+; 参  数：
+;   IMG_RES   : 图片资源名
+;   HTML_TEXT : 纯 HTML 文本串
+;   CID       : 角色ID (用于自动取色)
+;   AUTO_FMT  : 是否开启自动垂直居中整形 (默认1)
+;   IMG_H_PX  : 图片高度
+;   CUSTOM_C  : 强制覆盖的字体颜色Hex
 ;引　用：SPTALK,CID,表情="",默认=0,MESSAGE,整形=0
-;K63_PRINT_FACE与SPTALK的功能融合版，为了简单图片与对话混排，默认整形
+;K63_PRINT_FACE与SPTALK的功能融合，处理图文混排的HTML底层，默认居中
 ;-------------------------------------------------
-@IMG_TALK(基本画像, MESSAGE, 整形=1, CID, PATTERN,尺寸)
-#DIMS DYNAMIC RESOURCENAME
-#DIMS DYNAMIC 基本画像
-#DIMS DYNAMIC MESSAGE
-#DIMS DYNAMIC MESSAGE_PRINT,50
-#DIMS DYNAMIC FONTCOLOR
-#DIM DYNAMIC TEMP_COLOR
-#DIM DYNAMIC CID
-#DIM DYNAMIC 整形
-#DIM DYNAMIC 尺寸
-#DIM DYNAMIC PATTERN
+@IMG_TALK(IMG_RES, HTML_TEXT, CID = 0, AUTO_FMT = 1, IMG_H_PX = 180, CUSTOM_C = "")
 #LOCALSIZE 1
 #LOCALSSIZE 1
-SIF !尺寸
-	尺寸 = 角色画像表示尺寸比
-TEMP_COLOR = GETCOLOR()
+#DIMS DYNAMIC IMG_RES
+#DIMS DYNAMIC HTML_TEXT
+#DIM  DYNAMIC CID
+#DIM  DYNAMIC AUTO_FMT
+#DIMS DYNAMIC CUSTOM_C
+#DIMS DYNAMIC FONTCOLOR
+#DIM  DYNAMIC TEMP_COLOR
+#DIM  DYNAMIC IMG_H_PX
+#DIM  DYNAMIC IMG_W_PX
+#DIM  DYNAMIC DIV_W_PX
+#DIM  DYNAMIC LINE_H
+#DIM  DYNAMIC ACTUAL_LINES
+#DIM  DYNAMIC PADDING_TOP
+#DIMS DYNAMIC HTML_STR
 
-;口上色取得判定:通常角色
-IF CID
+; 1. 解析字体颜色
+TEMP_COLOR = GETCOLOR()
+IF CUSTOM_C != ""
+	FONTCOLOR '= CUSTOM_C
+	SIF !STRING_STARTS_IN(FONTCOLOR, "0x", "0X") && !STRING_STARTS_IN(FONTCOLOR, "#")
+		FONTCOLOR '= "#" + FONTCOLOR
+	SIF STRING_STARTS_IN(FONTCOLOR, "0x", "0X")
+		FONTCOLOR '= "#" + SUBSTRING(FONTCOLOR, 2, -1)
+ELSEIF CID > 0
 	CALL SET_KOJO_COLOR(CID)
 	IF GETCOLOR() == 12632256 || !FLAG:口上色
-		FONTCOLOR = 0xD5DEDF
+		FONTCOLOR = #D5DEDF
 	ELSE
-		FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
+		FONTCOLOR '= "#" + TOSTR(GETCOLOR(), "X6")
 	ENDIF
 ELSE
-	FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
-ENDIF
-VARSET MESSAGE_PRINT
-IF 顔絵付きメッセージ == 1
-	;向后兼容@K63_PRINT_IMG
-	RESOURCENAME = K{CID}_%基本画像%_{PATTERN}
-	;SIF !SPRITECREATED(RESOURCENAME)
-	SIF !RM_RESOURCECHECK(RESOURCENAME)
-		RESOURCENAME =  K{CID}_%基本画像%
-	;SIF !SPRITECREATED(RESOURCENAME)
-	SIF !RM_RESOURCECHECK(RESOURCENAME)
-		RESOURCENAME =  %基本画像%
-	;IF !SPRITECREATED(RESOURCENAME) 
-	IF !RM_RESOURCECHECK(RESOURCENAME) 
-		PRINTFORMDL 资源「%RESOURCENAME%」未设置
-		GOTO 图形错误
-	ELSE
-		CALL 画像セット(RESOURCENAME, 0, 0, 尺寸, 0)
-	ENDIF
-
-	;オプション指定で行送りを揃える
-	SIF 整形
-		MESSAGE = %SPTALK整形(MESSAGE)%
-
-	SPLIT MESSAGE,"/",MESSAGE_PRINT
-	FOR LOCAL,0,RESULT
-		SIF LOCAL != 0
-			CALL ダミーセット(0, 0, 尺寸 * RM_SPRITEHEIGHT(RESOURCENAME)/RM_SPRITEHEIGHT(RESOURCENAME), LOCAL)
-		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%MESSAGE_PRINT:LOCAL%</font>"
-	NEXT
-	CALL 画像一斉表示(0, 0, 1, -1)
-	PRINTL
-ELSE
-	$图形错误
-	;顔絵メッセージOFF時は通常街道に表示させる
-	SIF CID
-		PRINTFORML －%CALLNAME:CID%－
-	SPLIT MESSAGE,"/",MESSAGE_PRINT
-	FOR LOCAL,0,RESULT
-		SIF MESSAGE_PRINT:LOCAL != ""
-			PRINTFORML %MESSAGE_PRINT:LOCAL%
-	NEXT
+	FONTCOLOR '= "#" + TOSTR(GETCOLOR(), "X6")
 ENDIF
 SETCOLOR TEMP_COLOR
+
+
+; 2. 图像校验与降级打印
+IF IMG_RES == "" || !RM_RESOURCECHECK_LOAD(IMG_RES)
+	SIF CID > 0
+		PRINTFORMDL －%CALLNAME:CID%－
+	HTML_PRINT @"<font color='%FONTCOLOR%'>%HTML_TEXT%</font>"
+	DEBUGPRINTFORML 找不到%IMG_RES%
+	RETURN
+ENDIF
+
+; 3. 提取真实的像素尺寸
+LINE_H = GETCONFIG("一行の高さ")
+IMG_W_PX = RM_SPRITEWIDTH(IMG_RES) * IMG_H_PX / RM_SPRITEHEIGHT(IMG_RES)
+DIV_W_PX = CLIENTWIDTH() - IMG_W_PX - 30 ; 自适应剩余屏幕宽度
+
+; 4. 计算垂直居中对齐所需的 Padding
+IF AUTO_FMT
+	ACTUAL_LINES = STRCOUNT(HTML_TEXT, "<br>") + 1
+	PADDING_TOP = MAX(0, (IMG_H_PX - ACTUAL_LINES * LINE_H) / 2)
+ELSE
+	PADDING_TOP = 0
+ENDIF
+
+HTML_STR '= @"<nonbutton><img src='%IMG_RES%' width='{IMG_W_PX}px' height='{IMG_H_PX}px' ypos='0'></nonbutton>"
+; 将 DIV 向右推移并向上拉拽，实现与图片完美并排，并且文本在盒子内垂直居中
+HTML_STR += @"<div xpos='{20}px' ypos='0px' width='{DIV_W_PX}px' height='{IMG_H_PX}px' padding='{PADDING_TOP}px, 0, 0, 0'>"
+HTML_STR += @"<font color='%FONTCOLOR%'>%HTML_TEXT%</font>"
+HTML_STR += @"</div>"
+
+HTML_PRINT HTML_STR
+
+FOR LOCAL, 0, (IMG_H_PX / LINE_H)
+	PRINTL
+NEXT
+
+;-------------------------------------------------
+; 衍生函数：QOL_SPTALK (立绘表情对话)
+; デフォルト是路人角色使用的硬编码索引值，因为这个函数是路人立绘系统的配套函数，对于角色而言无意义
+;-------------------------------------------------
+@QOL_SPTALK(CID, 表情="通常", デフォルト=0, MESSAGE="", 整形=1, CUSTOMFONTCOLOR="")
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM  DYNAMIC CID
+#DIMS DYNAMIC 表情
+#DIM  DYNAMIC デフォルト
+#DIMS DYNAMIC MESSAGE
+#DIM  DYNAMIC 整形
+#DIMS DYNAMIC CUSTOMFONTCOLOR
+
+#DIMS DYNAMIC 服装
+#DIMS DYNAMIC RES_NAME
+#DIM  DYNAMIC PREV_立ち絵種類
+
+PREV_立ち絵種類 = FLAG:立ち絵種類
+
+IF 顔絵付きメッセージ == 1
+	; 拆解服装与表情标签
+	服装 '= SPLIT_SINGLE(表情, 1)
+	表情 '= SPLIT_SINGLE(表情)
+	SIF 表情 == ""
+		表情 '= "通常"
+
+	; -- 处理有名角色 --
+	IF CID > 0
+		SIF !STRLENS(服装)
+			服装 '= デフォルト == 1 ? "服" # ""
+			
+		FLAG:立ち絵種類 = 1
+		IF TALENT:CID:行きずり && !GCREATED(CFLAG:CID:路人子素材CFLAG開始位置)
+			CALL 路人子生成(CID, 0)
+			CALL 路人子生成(CID, 1)
+		ENDIF
+		
+		; 获取立绘资源名
+		CALL GET_BASE_RESOURCE(CID, "顔絵", 服装, 表情)
+		RES_NAME '= RESULT ? RESULTS # @"%GET_BASESTYLE(CID, "顔絵")%_服_通常_{CID}"
+		
+	; -- 处理路人/店员 (MOB) --
+	ELSE
+		SIF !STRLENS(服装)
+			服装 '= "服"
+		RES_NAME '= @"顔絵_%服装%_%表情%_MOB_{デフォルト}"
+		SIF !RM_RESOURCECHECK(RES_NAME)
+			CALL 路人店員画像作成(デフォルト)
+			
+		; MOB 的特殊口上色默认设定
+		IF CUSTOMFONTCOLOR == ""
+			IF デフォルト == 90
+				CUSTOMFONTCOLOR '= "C8C9CF"
+			ELSEIF デフォルト == 95
+				CUSTOMFONTCOLOR '= "D37CD0"
+			ELSE
+				CUSTOMFONTCOLOR '= TOSTR(路人子店員口上色:デフォルト, "X")
+			ENDIF
+		ENDIF
+	ENDIF
+
+	CALL IMG_TALK(RES_NAME, MESSAGE, CID, 整形, (默认角色画像横幅 * 角色画像表示尺寸比) / 100, CUSTOMFONTCOLOR)
+	
+	FLAG:立ち絵種類 = PREV_立ち絵種類
+ELSE
+	CALL IMG_TALK("", MESSAGE, CID, 0, 100, CUSTOMFONTCOLOR)
+ENDIF
+
+;-------------------------------------------------
+; 工具函数：CONVERT_STR_TO_HTML
+; 概  述：将@PRINT_STR 专用的 @ 语法分割文本，转译为标准 HTML 标签
+; 返回值：纯 HTML 文本
+;-------------------------------------------------
+@CONVERT_STR_TO_HTML(ARGS)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIMS DYNAMIC L_TOKENS, 300
+#DIM  DYNAMIC L_TOKEN_CNT
+#DIMS DYNAMIC RES
+#DIMS DYNAMIC TAG_OPEN
+#DIMS DYNAMIC TAG_CLOSE
+#DIMS DYNAMIC L_PARAMS, 5
+#DIM  DYNAMIC L_COLOR
+
+ARGS '= REPLACE(ARGS, "/", "<br>")
+SPLIT ARGS, "@", L_TOKENS, L_TOKEN_CNT
+
+FOR LOCAL, 0, L_TOKEN_CNT
+	SELECTCASE L_TOKENS:LOCAL
+		CASE "CALLNAME:TARGET"
+			RES += CALLNAME:TARGET + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "CALLNAME:PLAYER"
+			RES += CALLNAME:PLAYER + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "CALLNAME:ASSI"
+			RES += CALLNAME:ASSI + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "CALLNAME:MASTER"
+			RES += CALLNAME:MASTER + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+			
+		; --- 按钮控制 ---
+		CASE "BUTTON"
+			LOCAL++
+			RES += @"<button value='%L_TOKENS:LOCAL%'>%L_TOKENS:LOCAL%</button>" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "BUTTONS"
+			LOCAL++
+			SPLIT L_TOKENS:LOCAL, "|", L_PARAMS
+			RES += @"<button value='%L_PARAMS:1%'>%L_PARAMS:0%</button>" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "BUTTONNUM"
+			LOCAL++
+			SPLIT L_TOKENS:LOCAL, "|", L_PARAMS
+			RES += @"<button value='%L_PARAMS:1%'>%L_PARAMS:0%</button>" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "NOBUTTON"
+			LOCAL++
+			RES += L_TOKENS:LOCAL + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+			
+		; --- 样式与颜色 ---
+		CASE "-", "STRIKE"
+			RES += "<s>"
+			TAG_CLOSE '= "</s>" + TAG_CLOSE
+			CONTINUE
+		CASE "L"
+			RES += "<br>" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "W", "WAIT", "FORCEWAIT"
+			; HTML内联不支持等待指令，直接忽略
+			CONTINUE
+		CASE "H", "HEART", "HPH"
+			RES += "<font color='#FFC0CB'>&#x2764;</font>" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "／／／", "BPB"
+			RES += "///" + TAG_CLOSE
+			TAG_CLOSE '= ""
+			CONTINUE
+		CASE "RGB"
+			LOCAL++
+			SPLIT L_TOKENS:LOCAL, "//", L_PARAMS
+			L_COLOR = TOINT(L_PARAMS:0)*65536 + TOINT(L_PARAMS:1)*256 + TOINT(L_PARAMS:2)
+			RES += @"<font color='#%TOSTR(L_COLOR, "X6")%'>"
+			TAG_CLOSE '= "</font>" + TAG_CLOSE
+			CONTINUE
+		CASE "HEX"
+			LOCAL++
+			RES += @"<font color='#%TOSTR(TOINT(L_TOKENS:LOCAL), "X6")%'>"
+			TAG_CLOSE '= "</font>" + TAG_CLOSE
+			CONTINUE
+		CASE "Ｂ", "BOLD"
+			RES += "<b>"
+			TAG_CLOSE '= "</b>" + TAG_CLOSE
+			CONTINUE
+		CASE "UNDER"
+			RES += "<u>"
+			TAG_CLOSE '= "</u>" + TAG_CLOSE
+			CONTINUE
+		CASE "ITALIC"
+			RES += "<i>"
+			TAG_CLOSE '= "</i>" + TAG_CLOSE
+			CONTINUE
+	ENDSELECT
+
+	RES += L_TOKENS:LOCAL + TAG_CLOSE
+	TAG_CLOSE '= ""
+NEXT
+
+RETURNF RES
 
 ;-------------------------------------------------
 ;函数名:PRINT_ANIME
