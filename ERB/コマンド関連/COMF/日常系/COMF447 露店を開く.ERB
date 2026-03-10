@@ -1,6 +1,8 @@
 ﻿;売却可能なアイテム番号
 @ITEM_SELLABLE(ARG)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE ARG
     CASE 271 TO 276, 351 TO 398, 500 TO 512, 600, 611, 616, 626 TO 629, 700 TO 708
         RETURNF 1
@@ -131,7 +133,7 @@ FOR LOCAL, 0, 999
 	SIF !ITEM_SELLABLE(LOCAL)
 		CONTINUE
 		;GoodsIDに売りに出す道具の番号を流し込む
-	IF ITEM:(LOCAL) > 0 || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))	
+	IF ITEM:(LOCAL) > 0 || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))
 		LOCALS:0 = [{LOCAL}] %ITEMNAME:(LOCAL), 20, LEFT%×{ITEM:(LOCAL),3} 
 		LOCAL:10 += STRLENS(LOCALS:0)
 		IF LOCAL:10 > 120
@@ -245,7 +247,7 @@ SELECTCASE RESULT
 			CLEARLINE 1
 			GOTO INPUT_LOOP01
 		ELSE
-		;GoodsIDに売りに出す道具の番号を流し込む
+			;GoodsIDに売りに出す道具の番号を流し込む
 			GoodsID:Lineup = RESULT
 			;道具名が無名の場合、道具を所持してない場合、永遠亭での薬品販売はやり直し
 			IF ITEMNAME:(GoodsID:Lineup) == "" || ITEM:(GoodsID:Lineup) <= 0  || (STALL_SPOT(CFLAG:MASTER:現在位置) == 5 && INRANGE(LOCAL, 501, 516))
@@ -1069,8 +1071,14 @@ RETURNF 0
 IF ARG:0 <= 0
 	ARG:0 = 1
 ENDIF
-;利率をアイテム価格の（商人パワーの半分～商人パワー）％に設定
-利率 = MAX(RAND:(ARG:0), (ARG:0 / 2))
+
+;擺攤拓展_商人パワー修正
+IF ARG:0 > 200
+	利率 = MAX(RAND:(ARG:0), (ARG:0 / 3))
+ELSE
+	;利率をアイテム価格の（商人パワーの半分～商人パワー）％に設定
+	利率 = MAX(RAND:(ARG:0), (ARG:0 / 2))
+ENDIF
 補正価格 = ITEMPRICE:(ARG:1) / 2
 
 ;補正価格の決定
