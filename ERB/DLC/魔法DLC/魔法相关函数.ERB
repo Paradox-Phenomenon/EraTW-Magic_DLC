@@ -1671,6 +1671,96 @@ M_TFLAG:魅力魔法 = 0
 M_TFLAG:转运魔法CD = 0
 M_TFLAG:BUFF标记 = 0
 
+
+@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
+#DIM Efficiency
+SIF BASE:ARG:法力 <= 0 && Efficiency > 0
+	RETURN
+IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
+	CALL RECOVER(ARG, -ARG:1, "法力")
+	CALL RECOVER(ARG, ARG:1, "体力")
+	CALL RECOVER(ARG, ARG:1, "気力")
+ELSE
+	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
+ENDIF
+
+@GAP_TRAVEL
+#DIM ANIMATION_SEED
+#DIM 目的地MAPID
+#DIM 現在地MAPID
+#DIM 隙间位置
+ANIMATION_SEED = 0
+SIF ANIMATERECOLOREDMAPS && !FLAG:70
+	ANIMATION_SEED ++
+CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
+PRINTL 要去哪里呢？
+現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
+FOR 目的地MAPID, 0, MAXHOME
+	SIF !GET_EXISTMAP(目的地MAPID)
+		CONTINUE
+	IF 目的地MAPID == 現在地MAPID
+		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
+		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
+	ELSE
+		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
+	ENDIF
+	SIF 目的地MAPID % 2 == 1
+		PRINTL
+NEXT
+PRINT [100] - 返回
+INPUT
+目的地MAPID = RESULT
+隙间位置 = 98 + 目的地MAPID * 100
+IF 目的地MAPID == 100
+	RETURN
+ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
+	;切换地图
+	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
+	;隙间的出口设置为目的地的entrance
+	M_FLAG:隙间标记 = RESULT
+	FOR LOCAL, 0, CHARANUM
+		;通过初期记录的有无判断其是否应该处于隙间待客室
+		IF M_CFLAG:LOCAL:初期记录
+			CFLAG:LOCAL:現在位置 = 隙间位置
+			CFLAG:LOCAL:初期位置 = 隙间位置
+		ENDIF
+	NEXT
+ENDIF
+
+@SET_HISTORY_MAGIC()
+FOR LOCAL, 1, (CHARANUM - 1)
+	IF MARK:LOCAL:反発取得履歴
+		LOCAL:1 ++
+	ENDIF
+	IF MARK:LOCAL:時姦刻印
+		LOCAL:1 ++
+	ENDIF
+	IF !CFLAG:LOCAL:清い交際
+		LOCAL:1 ++
+		PRINTFORML {LOCAL}, 3
+	ENDIF
+NEXT
+LOCALS:1 =
+LOCALS:2 =
+SIF TALENT:MASTER:高难开局
+	LOCALS:1 += @"曾是没有任何能力的普通人的 %NAME:MASTER% ，"
+SIF DEBUG_HISTORY == 0 && 催眠_HISTORY == 0 && LOCAL:1 == 0
+	LOCALS:1 += @"坚守着自己的信条，"
+IF !TALENT:MASTER:非童貞 && (TALENT:MASTER:性別 == 2 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以童子之身、"
+ELSEIF TALENT:MASTER:处女 && (TALENT:MASTER:性別 == 1 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以处子之身、"
+ENDIF
+IF ABL:MASTER:TSLv >= 10 && 旧日取得履历 == "尚未取得"
+	旧日取得履历 = %LOCALS:1%在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了旧日。
+ELSEIF ABL:MASTER:TSLv >= 6 && 半神取得履历 == "尚未取得"
+	半神取得履历 = %LOCALS:1%在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了半神。
+ENDIF
+
+
+
 ;-----------------------------------------------------------
 ;函数作用:新增的额外设置功能
 ;-----------------------------------------------------------
@@ -1740,61 +1830,3 @@ ELSEIF RESULT == 999
 	RETURN 
 ENDIF
 GOTO LOOP
-
-
-@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
-#DIM Efficiency
-SIF BASE:ARG:法力 <= 0 && Efficiency > 0
-	RETURN
-IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
-	CALL RECOVER(ARG, -ARG:1, "法力")
-	CALL RECOVER(ARG, ARG:1, "体力")
-	CALL RECOVER(ARG, ARG:1, "気力")
-ELSE
-	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
-ENDIF
-
-@GAP_TRAVEL
-#DIM ANIMATION_SEED
-#DIM 目的地MAPID
-#DIM 現在地MAPID
-#DIM 隙间位置
-ANIMATION_SEED = 0
-SIF ANIMATERECOLOREDMAPS && !FLAG:70
-	ANIMATION_SEED ++
-CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
-PRINTL 要去哪里呢？
-現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
-FOR 目的地MAPID, 0, MAXHOME
-	SIF !GET_EXISTMAP(目的地MAPID)
-		CONTINUE
-	IF 目的地MAPID == 現在地MAPID
-		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
-		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
-	ELSE
-		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
-	ENDIF
-	SIF 目的地MAPID % 2 == 1
-		PRINTL
-NEXT
-PRINT [100] - 返回
-INPUT
-目的地MAPID = RESULT
-隙间位置 = 98 + 目的地MAPID * 100
-IF 目的地MAPID == 100
-	RETURN
-ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
-	;切换地图
-	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
-	;隙间的出口设置为目的地的entrance
-	M_FLAG:隙间标记 = RESULT
-	FOR LOCAL, 0, CHARANUM
-		;通过初期记录的有无判断其是否应该处于隙间待客室
-		IF M_CFLAG:LOCAL:初期记录
-			CFLAG:LOCAL:現在位置 = 隙间位置
-			CFLAG:LOCAL:初期位置 = 隙间位置
-		ENDIF
-	NEXT
-ENDIF
