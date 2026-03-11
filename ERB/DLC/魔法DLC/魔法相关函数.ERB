@@ -1086,46 +1086,46 @@ ELSE
 		CASE IS >=157
 			RETURNF 1
 		;你は選べない１
-		CASE GETNUM(TALENT, "習得速度") TO GETNUM(TALENT, "擅長用針"), GETNUM(TALENT, "薬毒耐性"), GETNUM(TALENT, "容易高潮"), GETNUM(TALENT, "盲信"), GETNUM(TALENT, "小悪魔")
+		CASE TALENT_習得速度 TO TALENT_擅長用針, TALENT_薬毒耐性, TALENT_容易高潮, TALENT_盲信, TALENT_小悪魔
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 		;你は選べない２
-		CASE GETNUM(TALENT, "魅力") TO GETNUM(TALENT, "謎之魅力"), GETNUM(TALENT, "回復速度") TO GETNUM(TALENT, "不可思議的根"), GETNUM(TALENT, "狂気"), GETNUM(TALENT, "人気")
+		CASE TALENT_魅力 TO TALENT_謎之魅力, TALENT_回復速度 TO TALENT_不可思議的根, TALENT_狂気, TALENT_人気
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 		;你は選べず、女性器がないと選べない
-		CASE GETNUM(TALENT, "母乳体質"), GETNUM(TALENT, "妊娠願望") 
+		CASE TALENT_妊娠願望 ,TALENT_風騷
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 		;女性器がないと選べない
-		CASE GETNUM(TALENT, "処女"), GETNUM(TALENT, "風騷"), GETNUM(TALENT, "Ｖ感度")
+		CASE TALENT_処女, TALENT_Ｖ感度, TALENT_母乳体質
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 		;男性器がないと選べない
-		CASE GETNUM(TALENT, "非童貞")
+		CASE TALENT_非童貞
 			SIF !GETBIT(TALENT:CHARA:性別, 1)
 				RETURNF 2
 		;男性器があると選べない
-		CASE GETNUM(TALENT, "具現")
+		CASE TALENT_具現
 			SIF GETBIT(TALENT:CHARA:性別, 1)
 				RETURNF 2
 		;你以外は選べない
-		CASE GETNUM(TALENT, "年齢")
+		CASE TALENT_年齢
 			SIF CHARA != NO:MASTER
 				RETURNF 1
 		;全員選べないが表示はする
-		CASE GETNUM(TALENT, "キス未経験")
+		CASE TALENT_キス未経験
 			RETURNF 2
 		;全員選べない１
-		CASE GETNUM(TALENT, "恋慕") TO GETNUM(TALENT, "思慕"), GETNUM(TALENT, "心情"), GETNUM(TALENT, "容姿"), GETNUM(TALENT, "把柄"), GETNUM(TALENT, "調合知識"), GETNUM(TALENT, "調合Lv"), GETNUM(TALENT, "採集Lv"), GETNUM(TALENT, "釣魚Lv"), GETNUM(TALENT, "伐採Lv")
+		CASE TALENT_恋慕 TO TALENT_思慕, TALENT_心情, TALENT_容姿, TALENT_把柄, TALENT_調合知識, TALENT_調合Lv, TALENT_採集Lv, TALENT_釣りLv, TALENT_伐採Lv
 			RETURNF 1
 		;全員選べない２
-		CASE GETNUM(TALENT, "自慰狂") TO GETNUM(TALENT, "子宮口性感"), GETNUM(TALENT, "迷信"), GETNUM(TALENT, "嫉妬"), GETNUM(TALENT, "濃厚精液"), GETNUM(TALENT, "精愛味覚"), GETNUM(TALENT, "禁断的知識"), GETNUM(TALENT, "精力超群") TO GETNUM(TALENT, "母性")
+		CASE TALENT_自慰狂 TO TALENT_子宮口性感, TALENT_迷信, TALENT_嫉妬, TALENT_濃厚精液, TALENT_精愛味覚, TALENT_禁断的知識, TALENT_精力超群 TO TALENT_母性
 			RETURNF 1
 		;女性器があって幼児か幼稚がないと選べない
-		CASE GETNUM(TALENT, "初潮")
+		CASE TALENT_初潮
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 			SIF !TALENT:CHARA:幼児／幼児退行 && !TALENT:CHARA:幼稚
@@ -1671,6 +1671,96 @@ M_TFLAG:魅力魔法 = 0
 M_TFLAG:转运魔法CD = 0
 M_TFLAG:BUFF标记 = 0
 
+
+@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
+#DIM Efficiency
+SIF BASE:ARG:法力 <= 0 && Efficiency > 0
+	RETURN
+IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
+	CALL RECOVER(ARG, -ARG:1, "法力")
+	CALL RECOVER(ARG, ARG:1, "体力")
+	CALL RECOVER(ARG, ARG:1, "気力")
+ELSE
+	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
+ENDIF
+
+@GAP_TRAVEL
+#DIM ANIMATION_SEED
+#DIM 目的地MAPID
+#DIM 現在地MAPID
+#DIM 隙间位置
+ANIMATION_SEED = 0
+SIF ANIMATERECOLOREDMAPS && !FLAG:70
+	ANIMATION_SEED ++
+CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
+PRINTL 要去哪里呢？
+現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
+FOR 目的地MAPID, 0, MAXHOME
+	SIF !GET_EXISTMAP(目的地MAPID)
+		CONTINUE
+	IF 目的地MAPID == 現在地MAPID
+		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
+		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
+	ELSE
+		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
+	ENDIF
+	SIF 目的地MAPID % 2 == 1
+		PRINTL
+NEXT
+PRINT [100] - 返回
+INPUT
+目的地MAPID = RESULT
+隙间位置 = 98 + 目的地MAPID * 100
+IF 目的地MAPID == 100
+	RETURN
+ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
+	;切换地图
+	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
+	;隙间的出口设置为目的地的entrance
+	M_FLAG:隙间标记 = RESULT
+	FOR LOCAL, 0, CHARANUM
+		;通过初期记录的有无判断其是否应该处于隙间待客室
+		IF M_CFLAG:LOCAL:初期记录
+			CFLAG:LOCAL:現在位置 = 隙间位置
+			CFLAG:LOCAL:初期位置 = 隙间位置
+		ENDIF
+	NEXT
+ENDIF
+
+@SET_HISTORY_MAGIC()
+FOR LOCAL, 1, (CHARANUM - 1)
+	IF MARK:LOCAL:反発取得履歴
+		LOCAL:1 ++
+	ENDIF
+	IF MARK:LOCAL:時姦刻印
+		LOCAL:1 ++
+	ENDIF
+	IF !CFLAG:LOCAL:清い交際
+		LOCAL:1 ++
+		PRINTFORML {LOCAL}, 3
+	ENDIF
+NEXT
+LOCALS:1 =
+LOCALS:2 =
+SIF TALENT:MASTER:高难开局
+	LOCALS:1 += @"曾是没有任何能力的普通人的 %NAME:MASTER% ，"
+SIF DEBUG_HISTORY == 0 && 催眠_HISTORY == 0 && LOCAL:1 == 0
+	LOCALS:1 += @"坚守着自己的信条，"
+IF !TALENT:MASTER:非童貞 && (TALENT:MASTER:性別 == 2 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以童子之身、"
+ELSEIF TALENT:MASTER:处女 && (TALENT:MASTER:性別 == 1 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以处子之身、"
+ENDIF
+IF ABL:MASTER:TSLv >= 10 && 旧日取得履历 == "尚未取得"
+	旧日取得履历 = %LOCALS:1%在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了旧日。
+ELSEIF ABL:MASTER:TSLv >= 6 && 半神取得履历 == "尚未取得"
+	半神取得履历 = %LOCALS:1%在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了半神。
+ENDIF
+
+
+
 ;-----------------------------------------------------------
 ;函数作用:新增的额外设置功能
 ;-----------------------------------------------------------
@@ -1740,61 +1830,3 @@ ELSEIF RESULT == 999
 	RETURN 
 ENDIF
 GOTO LOOP
-
-
-@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
-#DIM Efficiency
-SIF BASE:ARG:法力 <= 0 && Efficiency > 0
-	RETURN
-IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
-	CALL RECOVER(ARG, -ARG:1, "法力")
-	CALL RECOVER(ARG, ARG:1, "体力")
-	CALL RECOVER(ARG, ARG:1, "気力")
-ELSE
-	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
-ENDIF
-
-@GAP_TRAVEL
-#DIM ANIMATION_SEED
-#DIM 目的地MAPID
-#DIM 現在地MAPID
-#DIM 隙间位置
-ANIMATION_SEED = 0
-SIF ANIMATERECOLOREDMAPS && !FLAG:70
-	ANIMATION_SEED ++
-CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
-PRINTL 要去哪里呢？
-現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
-FOR 目的地MAPID, 0, MAXHOME
-	SIF !GET_EXISTMAP(目的地MAPID)
-		CONTINUE
-	IF 目的地MAPID == 現在地MAPID
-		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
-		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
-	ELSE
-		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
-	ENDIF
-	SIF 目的地MAPID % 2 == 1
-		PRINTL
-NEXT
-PRINT [100] - 返回
-INPUT
-目的地MAPID = RESULT
-隙间位置 = 98 + 目的地MAPID * 100
-IF 目的地MAPID == 100
-	RETURN
-ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
-	;切换地图
-	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
-	;隙间的出口设置为目的地的entrance
-	M_FLAG:隙间标记 = RESULT
-	FOR LOCAL, 0, CHARANUM
-		;通过初期记录的有无判断其是否应该处于隙间待客室
-		IF M_CFLAG:LOCAL:初期记录
-			CFLAG:LOCAL:現在位置 = 隙间位置
-			CFLAG:LOCAL:初期位置 = 隙间位置
-		ENDIF
-	NEXT
-ENDIF
