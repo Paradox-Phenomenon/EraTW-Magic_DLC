@@ -211,11 +211,29 @@ class GitUpdater:
                 else:
                     i += 1
                     continue
-            elif status == 'R':
-                parts = entry.split('\0')
-                if len(parts) >= 3:
-                    filename = parts[2]
-                    i += 1
+            elif status.startswith('R') or status.startswith('C'):
+                # 重命名或复制：R100 old_path new_path
+                # 需要取两个路径：old_path（用于记录删除），new_path（用于复制）
+                if i + 2 < len(entries):
+                    old_filename = entries[i + 1]
+                    new_filename = entries[i + 2]
+                    i += 3
+                    
+                    # 对于重命名，旧文件视为删除
+                    if status.startswith('R'):
+                        if not self.is_ignored(old_filename):
+                            files_list.append({
+                                'filename': old_filename,
+                                'status': 'removed'
+                            })
+                    
+                    # 新文件视为新增/修改（这里标记为renamed以便区分）
+                    if not self.is_ignored(new_filename):
+                        files_list.append({
+                            'filename': new_filename,
+                            'status': 'renamed'
+                        })
+                    continue
                 else:
                     i += 1
                     continue
@@ -248,8 +266,11 @@ class GitUpdater:
     
     def copy_file_from_git(self, file_path, branch):
         try:
+            # 使用列表形式的命令，避免shell注入，且无需转义
+            cmd = ["git", "cat-file", "-p", f"{self.remote_prefix}/{branch}:{file_path}"]
+            
             result = subprocess.run(
-                ["git", "show", f"{self.remote_prefix}/{branch}:{file_path}"],
+                cmd,
                 cwd=self.repo_path,
                 capture_output=True,
                 timeout=30
@@ -257,13 +278,32 @@ class GitUpdater:
             
             if result.returncode == 0:
                 return result.stdout
+            else:
+                # 尝试使用 show 命令作为备选，同样使用列表形式
+                cmd2 = ["git", "show", f"{self.remote_prefix}/{branch}:{file_path}"]
+                result2 = subprocess.run(
+                    cmd2,
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    timeout=30
+                )
+                if result2.returncode == 0:
+                    return result2.stdout
+            
+            print(f"  ❌ Git读取失败 ({file_path}): {result.stderr.decode('utf-8', errors='ignore').strip()}")
             return None
         except Exception as e:
-            print(f"  ❌ Git show错误: {str(e)}")
+            print(f"  ❌ Git命令异常: {str(e)}")
             return None
     
     def copy_files_to_update_folder(self, files_to_copy, branch):
         print(f"\n准备复制文件到更新文件夹...")
+        
+        # 创建详细日志文件
+        log_path = os.path.join(self.repo_path, "update_debug_log.txt")
+        self.log_file = open(log_path, 'w', encoding='utf-8')
+        self.log(f"开始更新流程: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.log(f"目标分支: {branch}")
         
         if os.path.exists(self.update_folder):
             import shutil
@@ -273,23 +313,20 @@ class GitUpdater:
         total_files = len(files_to_copy)
         success_count = 0
         fail_count = 0
+        removed_files = []
+        
+        to_copy = [f for f in files_to_copy if f['status'] != 'removed']
+        to_clear = [f['filename'] for f in files_to_copy if f['status'] == 'removed']
         
         print(f"共需复制 {total_files} 个文件\n")
+        self.log(f"总计文件: {total_files}, 需复制: {len(to_copy)}, 需清理: {len(to_clear)}")
         
-        for i, file_info in enumerate(files_to_copy, 1):
+        for i, file_info in enumerate(to_copy, 1):
             file_path = file_info['filename']
             status = file_info['status']
             
-            if status == 'removed':
-                removed_file_path = os.path.join(self.update_folder, "需要删除的文件.txt")
-                with open(removed_file_path, 'a', encoding='utf-8') as f:
-                    f.write(f"{file_path}\n")
-                print(f"  [{int(i/total_files*100):3d}%] ({i}/{total_files}) 标记删除: {file_path}")
-                success_count += 1
-                continue
-            
             content = self.copy_file_from_git(file_path, branch)
-            if content:
+            if content is not None:
                 local_file_path = os.path.join(self.update_folder, file_path)
                 local_dir = os.path.dirname(local_file_path)
                 
@@ -299,27 +336,136 @@ class GitUpdater:
                 with open(local_file_path, 'wb') as f:
                     f.write(content)
                 
-                progress = int((i / total_files) * 100)
+                progress = int((i / max(len(to_copy), 1)) * 100)
+                msg = ""
                 if status == 'added':
-                    print(f"  [{progress:3d}%] ({i}/{total_files}) 新增: {file_path}")
+                    msg = f"  [{progress:3d}%] ({i}/{total_files}) 新增: {file_path}"
                 elif status == 'modified':
-                    print(f"  [{progress:3d}%] ({i}/{total_files}) 更新: {file_path}")
+                    msg = f"  [{progress:3d}%] ({i}/{total_files}) 更新: {file_path}"
                 elif status == 'renamed':
-                    print(f"  [{progress:3d}%] ({i}/{total_files}) 重命名: {file_path}")
+                    msg = f"  [{progress:3d}%] ({i}/{total_files}) 重命名: {file_path}"
                 
+                print(msg)
+                self.log(msg.strip())
                 success_count += 1
             else:
                 fail_count += 1
-                print(f"  [{int(i/total_files*100):3d}%] ({i}/{total_files}) ❌ 复制失败: {file_path}")
+                msg = f"  [{int(i/total_files*100):3d}%] ({i}/{total_files}) ❌ 复制失败: {file_path}"
+                print(msg)
+                self.log(msg.strip())
+        
+        if to_clear:
+            removed_file_path = os.path.join(self.update_folder, "需要删除的文件.txt")
+            with open(removed_file_path, 'w', encoding='utf-8') as f:
+                for fp in to_clear:
+                    f.write(f"{fp}\n")
+            
+            for j, file_path in enumerate(to_clear, 1):
+                ext_lower = os.path.splitext(file_path)[1].lower()
+                if ext_lower in ('.erb', '.erh'):
+                    local_file_path = os.path.join(self.update_folder, file_path)
+                    local_dir = os.path.dirname(local_file_path)
+                    if not os.path.exists(local_dir):
+                        os.makedirs(local_dir)
+                    
+                    self.log(f"检查是否需要保留: {file_path}")
+                    content_removed = self.copy_file_from_git(file_path, branch)
+                    
+                    if content_removed is None:
+                        open(local_file_path, 'w', encoding='utf-8').close()
+                        msg = f"  [{int((len(to_copy)+j)/total_files*100):3d}%] 置空ERB/ERH: {file_path}"
+                        print(msg)
+                        self.log(msg.strip())
+                    else:
+                        with open(local_file_path, 'wb') as f:
+                            f.write(content_removed)
+                        msg = f"  [{int((len(to_copy)+j)/total_files*100):3d}%] 保留ERB/ERH: {file_path}"
+                        print(msg)
+                        self.log(msg.strip() + " (目标分支仍存在内容)")
+                    success_count += 1
+                else:
+                    removed_files.append(file_path)
+                    msg = f"  [{int((len(to_copy)+j)/total_files*100):3d}%] 标记删除: {file_path}"
+                    print(msg)
+                    self.log(msg.strip())
+                    success_count += 1
+        
+        if removed_files:
+            self.generate_delete_script(removed_files)
+        
+        self.log(f"更新完成. 成功: {success_count}, 失败: {fail_count}")
+        self.log_file.close()
         
         print(f"\n✓ 复制完成！")
         print(f"  - 成功: {success_count} 个文件")
         print(f"  - 失败: {fail_count} 个文件")
         print(f"  - 保存位置: {self.update_folder}")
+        print(f"  - 调试日志: {log_path}")
         
         self.generate_file_list(files_to_copy)
         
         return success_count > 0
+
+    def log(self, message):
+        if hasattr(self, 'log_file') and self.log_file:
+            self.log_file.write(message + "\n")
+            self.log_file.flush()
+
+    def generate_delete_script(self, removed_files):
+        """生成删除文件的批处理脚本"""
+        script_path = os.path.join(self.update_folder, "一键删除旧文件.bat")
+        
+        try:
+            with open(script_path, 'w', encoding='utf-8') as f:
+                f.write("@echo off\n")
+                f.write("chcp 65001 >nul\n")
+                
+                f.write("echo ==========================================\n")
+                f.write("echo      EraTW Magic DLC 一键删除旧文件脚本\n")
+                f.write("echo ==========================================\n")
+                f.write("echo.\n")
+                f.write("echo 本脚本将自动把旧文件移动到备份文件夹中\n")
+                f.write("echo 请确保本脚本在游戏根目录或更新文件夹中运行\n")
+                f.write("echo.\n")
+                f.write("pause\n\n")
+                
+                # 创建备份文件夹名称 (使用时间戳)
+                f.write("set \"TIMESTAMP=%date:~0,4%%date:~5,2%%date:~8,2%_%time:~0,2%%time:~3,2%%time:~6,2%\"\n")
+                f.write("set \"TIMESTAMP=%TIMESTAMP: =0%\"\n")
+                f.write("set \"BACKUP_ROOT=backup_deleted_%TIMESTAMP%\"\n\n")
+                
+                f.write("echo 创建备份文件夹: %BACKUP_ROOT%\n")
+                f.write("if not exist \"%BACKUP_ROOT%\" mkdir \"%BACKUP_ROOT%\"\n\n")
+                
+                for file_path in removed_files:
+                    # 转换路径分隔符
+                    win_path = file_path.replace('/', '\\')
+                    
+                    f.write(f"if exist \"{win_path}\" (\n")
+                    f.write(f"    echo [删除] {win_path}\n")
+                    
+                    # 创建目标目录结构
+                    dir_name = os.path.dirname(win_path)
+                    if dir_name:
+                        f.write(f"    if not exist \"%BACKUP_ROOT%\\{dir_name}\" mkdir \"%BACKUP_ROOT%\\{dir_name}\" >nul\n")
+                    
+                    # 移动文件
+                    f.write(f"    move \"{win_path}\" \"%BACKUP_ROOT%\\{win_path}\" >nul\n")
+                    f.write(f") else (\n")
+                    f.write(f"    echo [跳过] 文件不存在: {win_path}\n")
+                    f.write(f")\n")
+                
+                f.write("\necho.\n")
+                f.write("echo ==========================================\n")
+                f.write("echo 操作完成！\n")
+                f.write("echo 所有被删除的文件已移动到: %BACKUP_ROOT%\n")
+                f.write("echo ==========================================\n")
+                f.write("pause\n")
+                
+            print(f"  ✓ 已生成删除脚本: {script_path}")
+        except Exception as e:
+            print(f"  ❌ 生成删除脚本失败: {str(e)}")
+
     
     def generate_file_list(self, files_list):
         print("\n" + "="*60)
@@ -459,7 +605,7 @@ class GitUpdater:
             print("\n请按照以下步骤更新:")
             print("1. 打开 '更新文件' 文件夹")
             print("2. 将文件夹中的文件复制到游戏目录")
-            print("3. 如果有 '需要删除的文件.txt'，请删除其中列出的文件")
+            print("3. 运行 '一键删除旧文件.bat' 自动备份并清理旧文件（如果有）")
             print("4. 完成后可以删除 '更新文件' 文件夹")
             print("\n或者运行 '应用更新.bat' 自动应用更新")
         else:
