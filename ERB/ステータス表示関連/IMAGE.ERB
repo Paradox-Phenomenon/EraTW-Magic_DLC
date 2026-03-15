@@ -735,119 +735,111 @@ ENDIF
 ;PRINTFORML %RESULTS%
 RETURN RESULT
 
-@GET表情体形完整(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量 = "")
+@GET表情体形完整(CHARA, 表示形式, 服装, EX_BASE, EX_HOVER, 差分, 乳量 = "", VIS_C = -1)
 #DIM CHARA
+#DIM VIS_C
 #DIMS 表示形式
 #DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
+#DIMS EX_BASE
+#DIMS EX_HOVER
 #DIMS 差分
 #DIMS 乳量
 #DIMS TEMP_服装
+SIF VIS_C == -1
+	VIS_C = (CFLAG:CHARA:変化先 > 0) ? CFLAG:CHARA:変化先 # CHARA
 
 TEMP_服装 = %服装%
 服装 = %乳量%%服装%
-CALL IMAGE_CHARA_OVERRIDE("体形", CHARA)
+	;DEBUGPRINTFORML 传入{CHARA}, %表示形式%, %服装%, %差分%, %乳量%
+CALL IMAGE_CHARA_OVERRIDE("体形", VIS_C, 0, "", CHARA)
 IF RESULT:1
 	服装 = %RESULTS%%服装%
 	TEMP_服装 = %RESULTS%%TEMP_服装%
+	;DEBUGPRINTFORML 传入体型{CHARA}, %表示形式%, %服装%, %差分%, %乳量% TEMP_服装%TEMP_服装%
 ENDIF
 
-;表情(RESULTSに格納)
-IF 表情 == ""
-	CALL GET_FACETYPE(CHARA, 表示形式, TEMP_服装, 差分)
+IF EX_BASE == ""
+	CALL GET_FACETYPE(CHARA, 表示形式, TEMP_服装, 差分, VIS_C)
 ELSE
-	RESULTS:0 = %表情%
-	RESULTS:1 = %表情%
+	RESULTS:0 = %EX_BASE%
+	RESULTS:1 = %EX_BASE%
 ENDIF
-SIF 表情_マウスオーバー != ""
-	RESULTS:1 = %表情_マウスオーバー%
-;PRINTFORML get传入表情「%RESULTS:0%/%RESULTS:1%」
+SIF EX_HOVER != ""
+	RESULTS:1 = %EX_HOVER%
+;DEBUGPRINTFORML get传入表情「%RESULTS:0%/%RESULTS:1%」
 
-RESULTS:0 = %表示形式%_%服装%_%RESULTS:0%_{CHARA}%差分%
-RESULTS:1 = %表示形式%_%服装%_%RESULTS:1%_{CHARA}%差分%
+RESULTS:0 = %表示形式%_%服装%_%RESULTS:0%_{NO:VIS_C}%差分%
+RESULTS:1 = %表示形式%_%服装%_%RESULTS:1%_{NO:VIS_C}%差分%
 
-;基本画像のリソースをチェック前に別途合成があるかをチェック
-TRYCCALLFORM IMAGE_EX_I{CHARA}_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
+TRYCCALLFORM IMAGE_EX_I{NO:VIS_C}_PREリソースチェック(VIS_C, 表示形式, 服装, EX_BASE, EX_HOVER, 差分, 乳量)
 CATCH
 ENDCATCH
-;リソースのチェック 見つからない場合は0を返す
-;IF !SPRITECREATED(RESULTS:0) ;debloat custom code
 IF !RM_RESOURCECHECK(RESULTS:0)
-;	PRINTFORML リソース「%RESULTS:0%」が見つからない
+	;DEBUGPRINTFORML リソース0「%RESULTS:0%」が見つからない
 	RETURN 0
 ENDIF
-;IF !SPRITECREATED(RESULTS:1) ;debloat custom code
 IF !RM_RESOURCECHECK(RESULTS:1)
+	;DEBUGPRINTFORML リソース1「%RESULTS:1%」が見つからない
 	RETURN 0
 ENDIF
 RETURN 1
 
-@GET表情体形拆分组合(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
+@GET表情体形拆分组合(CHARA, 表示形式, 服装, EX_BASE, EX_HOVER, 差分, 乳量, VIS_C = -1)
 #DIM GID
 #DIM CHARA
+#DIM VIS_C
 #DIMS 表示形式
 #DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
+#DIMS EX_BASE
+#DIMS EX_HOVER
 #DIMS 差分
 #DIMS 乳量
 #DIMS SET_RESOURCE = "BASE巨乳拆分", "マウスオーバー巨乳拆分", "BASE", "マウスオーバー", "BASE巨乳", "マウスオーバー巨乳"
+SIF VIS_C == -1
+	VIS_C = (CFLAG:CHARA:変化先 > 0) ? CFLAG:CHARA:変化先 # CHARA
 
 SET_RESOURCE:4 = %乳量%%服装%
-CALL IMAGE_CHARA_OVERRIDE("体形", CHARA)
+CALL IMAGE_CHARA_OVERRIDE("体形", VIS_C, 0, "", CHARA)
 IF RESULT:1
 	服装 = %RESULTS%%服装%
 	SET_RESOURCE:4 = %RESULTS%%SET_RESOURCE:4%
 ENDIF
 
-;表情(RESULTSに格納)
-IF 表情 == ""
-	CALL GET_FACETYPE(CHARA, 表示形式, 服装, 差分)
-	SET_RESOURCE:2 = %RESULTS:0%
-	SET_RESOURCE:3 = %RESULTS:1%
+IF EX_BASE == ""
+	CALL GET_FACETYPE(CHARA, 表示形式, 服装, 差分, VIS_C)
+	SET_RESOURCE:2 '= RESULTS:0
+	SET_RESOURCE:3 '= RESULTS:1
 ELSE
-	SET_RESOURCE:2 = %表情%
-	SET_RESOURCE:3 = %表情%
+	SET_RESOURCE:2 '= EX_BASE
+	SET_RESOURCE:3 '= EX_BASE
 ENDIF
-SIF 表情_マウスオーバー != ""
-	SET_RESOURCE:3 = %表情_マウスオーバー%
+SIF EX_HOVER != ""
+	SET_RESOURCE:3 '= EX_HOVER
 
-;get 巨乳拆分
-SET_RESOURCE:0 = %表示形式%_%服装%_%SET_RESOURCE:2%_%乳量%拆分_{CHARA}%差分%
-
-TRYCCALLFORM IMAGE_EX_I{CHARA}_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
+SET_RESOURCE:0 = %表示形式%_%服装%_%SET_RESOURCE:2%_%乳量%拆分_{NO:VIS_C}%差分%
+TRYCCALLFORM IMAGE_EX_I{NO:VIS_C}_PREリソースチェック(VIS_C, 表示形式, 服装, EX_BASE, EX_HOVER, 差分, 乳量)
 CATCH
 ENDCATCH
 
-;IF !SPRITECREATED(SET_RESOURCE:0) ;debloat custom code
 IF !RM_RESOURCECHECK(SET_RESOURCE:0)
-	;addition custom code, duplicated characters
-	SET_RESOURCE:0 = %表示形式%_%服装%_%乳量%拆分_{NO:CHARA}%差分%
-	;SIF !SPRITECREATED(SET_RESOURCE:0)
+	SET_RESOURCE:0 = %表示形式%_%服装%_%乳量%拆分_{NO:VIS_C}%差分%
 	SIF !RM_RESOURCECHECK(SET_RESOURCE:0)
 		RETURN 0
 ENDIF
-;addition custom code, duplicated characters
-SET_RESOURCE:1 = %表示形式%_%服装%_%SET_RESOURCE:3%_%乳量%拆分_{NO:CHARA}%差分%
-;F !SPRITECREATED(SET_RESOURCE:1) ;debloat custom code
+
+SET_RESOURCE:1 = %表示形式%_%服装%_%SET_RESOURCE:3%_%乳量%拆分_{NO:VIS_C}%差分%
 IF !RM_RESOURCECHECK(SET_RESOURCE:1)
-	;addition custom code, duplicated characters
-	SET_RESOURCE:1 = %表示形式%_%服装%_%乳量%拆分_{NO:CHARA}%差分%
-	;SIF !SPRITECREATED(SET_RESOURCE:1) ;debloat custom code
+	SET_RESOURCE:1 = %表示形式%_%服装%_%乳量%拆分_{NO:VIS_C}%差分%
 	SIF !RM_RESOURCECHECK(SET_RESOURCE:1)
 		RETURN 0
 ENDIF
 
-;name of combined image
-SET_RESOURCE:5 = %表示形式%_%SET_RESOURCE:4%_%SET_RESOURCE:3%_{CHARA}%差分%
-SET_RESOURCE:4 = %表示形式%_%SET_RESOURCE:4%_%SET_RESOURCE:2%_{CHARA}%差分%
+SET_RESOURCE:5 = %表示形式%_%SET_RESOURCE:4%_%SET_RESOURCE:3%_{NO:VIS_C}%差分%
+SET_RESOURCE:4 = %表示形式%_%SET_RESOURCE:4%_%SET_RESOURCE:2%_{NO:VIS_C}%差分%
 
-;get body
-SET_RESOURCE:2 = %表示形式%_%服装%_%SET_RESOURCE:2%_{CHARA}%差分%
-SET_RESOURCE:3 = %表示形式%_%服装%_%SET_RESOURCE:3%_{CHARA}%差分%
+SET_RESOURCE:2 = %表示形式%_%服装%_%SET_RESOURCE:2%_{NO:VIS_C}%差分%
+SET_RESOURCE:3 = %表示形式%_%服装%_%SET_RESOURCE:3%_{NO:VIS_C}%差分%
 
-;SIF !SPRITECREATED(SET_RESOURCE:2) || !SPRITECREATED(SET_RESOURCE:3) ;debloat custom code
 SIF !RM_RESOURCECHECK(SET_RESOURCE:2) || !RM_RESOURCECHECK(SET_RESOURCE:3)
 	RETURN 0
 
@@ -863,39 +855,41 @@ CALL リソース登録(SET_RESOURCE:5, GID)
 
 RESULTS:0 = %SET_RESOURCE:4%
 RESULTS:1 = %SET_RESOURCE:5%
-
 RETURN 1
 
 
 ;表示形式を返却する
-@GET_BASESTYLE(CHARA, 表示形式 = "")
+@GET_BASESTYLE(CHARA, 表示形式 = "", VIS_C = -1)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
 #DIMS 表示形式
-	
-LOCAL = CFLAG:CHARA:差し替え適用
+#DIM VIS_C
+
+SIF VIS_C == -1
+	VIS_C = (CFLAG:CHARA:変化先 > 0) ? CFLAG:CHARA:変化先 # CHARA	
+LOCAL = CFLAG:VIS_C:差し替え適用
 
 IF 表示形式=="顔絵" || (FLAG:立絵種類 && 表示形式=="")
-	SIF CFLAG:CHARA:差し替え適用 > CFLAG:CHARA:別顔有
-		CFLAG:CHARA:差し替え適用 = 0
-	IF CFLAG:CHARA:差し替え適用 && CFLAG:CHARA:別顔有 && HAS_FACE(CHARA)
-		表示形式 = %\@CFLAG:CHARA:差し替え適用 >= 2 ?別顔{CFLAG:CHARA:差し替え適用}#別顔\@%
+	SIF CFLAG:VIS_C:差し替え適用 > CFLAG:VIS_C:別顔有
+		CFLAG:VIS_C:差し替え適用 = 0
+	IF CFLAG:VIS_C:差し替え適用 && CFLAG:VIS_C:別顔有 && HAS_FACE(VIS_C)
+		表示形式 = %\@CFLAG:VIS_C:差し替え適用 >= 2 ?別顔{CFLAG:VIS_C:差し替え適用}#別顔\@%
 	ELSE
 		表示形式 = 顔絵
 	ENDIF
 ELSEIF 表示形式=="立絵" || (!FLAG:立絵種類 && 表示形式=="")
-	SIF CFLAG:CHARA:差し替え適用 > CFLAG:CHARA:別立ち有
-		CFLAG:CHARA:差し替え適用 = 0
-	IF CFLAG:CHARA:差し替え適用 && CFLAG:CHARA:別立ち有 && HAS_STANDING(CHARA)
-		表示形式 = %\@CFLAG:CHARA:差し替え適用 >= 2 ?別立ち{CFLAG:CHARA:差し替え適用}#別立ち\@%
+	SIF CFLAG:VIS_C:差し替え適用 > CFLAG:VIS_C:別立ち有
+		CFLAG:VIS_C:差し替え適用 = 0
+	IF CFLAG:VIS_C:差し替え適用 && CFLAG:VIS_C:別立ち有 && HAS_STANDING(VIS_C)
+		表示形式 = %\@CFLAG:VIS_C:差し替え適用 >= 2 ?別立ち{CFLAG:VIS_C:差し替え適用}#別立ち\@%
 	ELSE
 		表示形式 = 立絵
 	ENDIF
 ENDIF
 
-CFLAG:CHARA:差し替え適用 = LOCAL
+CFLAG:VIS_C:差し替え適用 = LOCAL
 
 RETURNF 表示形式
 
@@ -921,16 +915,17 @@ RETURNF 0
 ;		将资源存储在 RETURNS:0 中，将鼠标悬停资源存储在 RETURNS:1 中
 ; 已重构
 ;=========================================================
-@GET_FACETYPE(CHARA, 表示形式, 服装, 差分)
+@GET_FACETYPE(CHARA, 表示形式, 服装, 差分 ,VIS_C = -1)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM CHARA
+#DIM VIS_C
 #DIMS 表示形式
 #DIMS 服装
 #DIMS 差分
 #DIMS TEMP, 2
 ;跳转新接口
-CALL CALC_EXPRESSION_CORE(CHARA, 表示形式, 服装, 差分, GRAPH_SYSTEM_STATIC, LOCALS) ; 传入一个傀儡数组以满足语法要求
+CALL CALC_EXPRESSION_CORE(CHARA, 表示形式, 服装, 差分, GRAPH_SYSTEM_STATIC, LOCALS, VIS_C) ; 传入一个傀儡数组以满足语法要求
 RETURN
 
 IF TALENT:CHARA:心情 == -1 || CFLAG:CHARA:ブチギレ
@@ -1084,9 +1079,11 @@ CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA, SELECTCOM)
 ;		CHARA 传入角色编号，エフェクト 传入特效名称
 ;		参数省略或输入空字符串时，根据当前状态自动决定
 ;	如果存在资源则返回特效数量，否则返回 0
+;	合并变身系统的复制逻辑。但是特殊合成系统不兼容
 ;=========================================================
-@GET_EFFECT_RESOURCE(CHARA, エフェクト = "", 表示形式 = "", 差分 = "", 服装 = "")
+@GET_EFFECT_RESOURCE(CHARA, エフェクト = "", 表示形式 = "", 差分 = "", 服装 = "", VIS_C = -1)
 #DIM CHARA
+#DIM VIS_C
 #DIMS 表示形式
 #DIMS エフェクト
 #DIMS 差分
@@ -1095,96 +1092,92 @@ CALL IMAGE_CHARA_OVERRIDE("特殊表情COM", CHARA, SELECTCOM)
 #DIMS DYNAMIC リソース, 100
 #DIMS DYNAMIC エフェクト名
 
+SIF VIS_C == -1
+	VIS_C = (CFLAG:CHARA:変化先 > 0) ? CFLAG:CHARA:変化先 # CHARA
 SIF !FLAG:追加エフェクト
 	RETURN 0
 VARSET RESULTS
 
 ; 特殊合成系统
-TRYCCALLFORM SPECIAL_EFFECT_IMAGE_{NO:CHARA}
-	IF RESULTS != ""
-		TRYCCALLFORM %RESULTS%_GET_EFFECT_RESOURCE(CHARA, エフェクト)
-		CATCH
-			VARSET RESULTS
-		ENDCATCH
-		RETURN RESULT
-	ENDIF
+TRYCCALLFORM SPECIAL_EFFECT_IMAGE_{NO:VIS_C}
+IF RESULTS != ""
+	TRYCCALLFORM %RESULTS%_GET_EFFECT_RESOURCE(VIS_C, エフェクト)
+	CATCH
+		VARSET RESULTS
+	ENDCATCH
+	RETURN RESULT
+ENDIF
 CATCH
 ENDCATCH
 
-表示形式 = %GET_BASESTYLE(CHARA, 表示形式)%
+表示形式 = %GET_BASESTYLE(VIS_C, 表示形式)%
 IF 差分 == ""
-	CALL IMAGE_CHARA_OVERRIDE("差分", CHARA)
-	IF RESULT:1
+	CALL IMAGE_CHARA_OVERRIDE("差分", VIS_C, , , CHARA)
+	SIF RESULT:1
 		差分 = %RESULTS%
-	ENDIF
 ENDIF
 
-;照れ
-IF STRFIND(エフェクト, "照れ") != -1 || (エフェクト == "" && CHECK_BLUSH(CHARA, 表示形式, 差分))
+; 照れ
+IF STRFIND(エフェクト, "照れ") != -1 || (エフェクト == "" && CHECK_BLUSH(CHARA, 表示形式, 差分, VIS_C))
 	エフェクト名 = 照れ
-	CALL IMAGE_CHARA_OVERRIDE("特殊照れ", CHARA)
-	IF RESULT:1
+	CALL IMAGE_CHARA_OVERRIDE("特殊照れ", VIS_C, , , CHARA)
+	SIF RESULT:1
 		エフェクト名 '= RESULTS + エフェクト名
-	ENDIF
-	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:CHARA}%差分%") 
+	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:VIS_C}%差分%")
 		エフェクト名 '= "裸" + エフェクト名
-		
-	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:CHARA}%差分%")
-		リソース:(エフェクト数) = %表示形式%_%エフェクト名%_{NO:CHARA}%差分%
+	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:VIS_C}%差分%")
+		リソース:エフェクト数 = %表示形式%_%エフェクト名%_{NO:VIS_C}%差分%
 		エフェクト数 += 1
 	ENDIF
 ENDIF
 
-;吐息
+; 吐息
 IF STRFIND(エフェクト, "吐息") != -1 || (エフェクト == "" && CHECK_EXHALATION(CHARA))
 	エフェクト名 = 吐息
-	CALL IMAGE_CHARA_OVERRIDE("特殊吐息", CHARA)
-	IF RESULT:1
+	CALL IMAGE_CHARA_OVERRIDE("特殊吐息", VIS_C, , , CHARA)
+	SIF RESULT:1
 		エフェクト名 '= RESULTS + エフェクト名
-	ENDIF
-	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:CHARA}%差分%") 
+	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:VIS_C}%差分%")
 		エフェクト名 '= "裸" + エフェクト名
-	;DEBUGPRINTFORML %表示形式%_%エフェクト名%_{NO:CHARA}%差分%：判定为{RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:CHARA}%差分%")}
-	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:CHARA}%差分%")
-		リソース:(エフェクト数) = %表示形式%_%エフェクト名%_{NO:CHARA}%差分%
+	;DEBUGPRINTFORML %表示形式%_%エフェクト名%_{NO:VIS_C}%差分%：判定为{RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:VIS_C}%差分%")}
+	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:VIS_C}%差分%")
+		リソース:エフェクト数 = %表示形式%_%エフェクト名%_{NO:VIS_C}%差分%
 		エフェクト数 += 1
 	ENDIF
 ENDIF
 
-;汗
+; 汗
 IF STRFIND(エフェクト, "汗") != -1 || (エフェクト == "" && CHECK_SWEAT(CHARA))
 	エフェクト名 = 汗
-	CALL IMAGE_CHARA_OVERRIDE("特殊汗", CHARA)
-	IF RESULT:1
+	CALL IMAGE_CHARA_OVERRIDE("特殊汗", VIS_C, , , CHARA)
+	SIF RESULT:1
 		エフェクト名 '= RESULTS + エフェクト名
-	ENDIF
-	;addition custom code, duplicated characters
-	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:CHARA}%差分%")
+	SIF ((CHECK_NUDE(CHARA) && 服装 == "") || 服装 == "裸") && RM_RESOURCECHECK(@"%表示形式%_裸%エフェクト名%_{NO:VIS_C}%差分%")
 		エフェクト名 '= "裸" + エフェクト名
-	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:CHARA}%差分%")
-		リソース:(エフェクト数) = %表示形式%_%エフェクト名%_{NO:CHARA}%差分%
+	IF RM_RESOURCECHECK(@"%表示形式%_%エフェクト名%_{NO:VIS_C}%差分%")
+		リソース:エフェクト数 = %表示形式%_%エフェクト名%_{NO:VIS_C}%差分%
 		エフェクト数 += 1
 	ENDIF
 ENDIF
 
-;特殊
+; 特殊
 RESULT = 0
-CALL IMAGE_CHARA_OVERRIDE("特殊エフェクトチェック", CHARA,,エフェクト)
+CALL IMAGE_CHARA_OVERRIDE("特殊エフェクトチェック", VIS_C, , エフェクト, CHARA)
 IF RESULT || エフェクト == ""
-	CALL IMAGE_CHARA_OVERRIDE("特殊エフェクト", CHARA)
+	CALL IMAGE_CHARA_OVERRIDE("特殊エフェクト", VIS_C, , , CHARA)
 	FOR LOCAL, 0, RESULT
-		;DEBUGPRINTFORML RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:CHARA}%差分%") IS {RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:CHARA}%差分%")}
-		;IF SPRITECREATED(@"%表示形式%_%RESULTS:LOCAL%_{CHARA}%差分%") ;debloat custom code
-		IF RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:CHARA}%差分%")
-			リソース:(エフェクト数) = %表示形式%_%RESULTS:LOCAL%_{NO:CHARA}%差分%
+		;DEBUGPRINTFORML RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:VIS_C}%差分%") IS {RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:VIS_C}%差分%")}
+		IF RM_RESOURCECHECK(@"%表示形式%_%RESULTS:LOCAL%_{NO:VIS_C}%差分%")
+			リソース:エフェクト数 = %表示形式%_%RESULTS:LOCAL%_{NO:VIS_C}%差分%
 			エフェクト数 += 1
 		ENDIF
 	NEXT
 ENDIF
+
 ; 泛用特效
-IF CSTR:(NO:CHARA):汎用エフェクト != ""
-	IF RM_RESOURCECHECK(@"汎用エフェクト_%CSTR:(NO:CHARA):汎用エフェクト%")
-		リソース:(エフェクト数) = 汎用エフェクト_%CSTR:(NO:CHARA):汎用エフェクト%
+IF CSTR:VIS_C:汎用エフェクト != ""
+	IF RM_RESOURCECHECK(@"汎用エフェクト_%CSTR:VIS_C:汎用エフェクト%")
+		リソース:エフェクト数 = 汎用エフェクト_%CSTR:VIS_C:汎用エフェクト%
 		エフェクト数 += 1
 	ENDIF
 ENDIF
@@ -1193,18 +1186,18 @@ ARRAYCOPY "リソース", "RESULTS"
 RETURN エフェクト数
 
 ;照れの条件
-@CHECK_BLUSH(CHARA, 表示形式, 差分)
+@CHECK_BLUSH(CHARA, 表示形式, 差分, VIS_C = -1)
 #FUNCTION
 #DIM CHARA
+#DIM VIS_C
 #DIMS 表示形式
-#DIMS エフェクト
 #DIMS 差分
 
-;SIF SPRITECREATED(@"%表示形式%_裸_発情_{CHARA}%差分%") && TCVAR:CHARA:発情 ;debloat custom code
-;addition custom code, duplicated characters
-SIF RM_RESOURCECHECK(@"%表示形式%_裸_発情_{NO:CHARA}%差分%") && TCVAR:CHARA:発情
-	RETURNF 0
+SIF VIS_C == -1
+	VIS_C = (CFLAG:CHARA:変化先 > 0) ? CFLAG:CHARA:変化先 # CHARA
 
+SIF RM_RESOURCECHECK(@"%表示形式%_裸_発情_{NO:VIS_C}%差分%") && TCVAR:CHARA:発情
+	RETURNF 0
 SIF TCVAR:CHARA:烂醉 || TCVAR:CHARA:媚薬 || TCVAR:CHARA:発情
 	RETURNF 1
 SIF GETPALAMLV(PALAM:CHARA:好意, 15) >= 10
