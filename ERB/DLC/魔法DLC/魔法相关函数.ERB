@@ -47,7 +47,7 @@ FOR r_index ,1, 6
 	VARSET LOCAL
 	LOCAL:2 = (ABL:MASTER:TSLv >= m_index || TALENT:MASTER:昨日重现 || GETBIT(M_TFLAG:代替魔法等级, m_index))
 	LOCAL:1 = 999
-	FOR LOCAL:0 ,0, 1000
+	FOR LOCAL:0 ,900, 1000
 		IF MAGIC_RANK(LOCAL:0) == m_index
 			IF MAGIC_OTHERCONDITION(LOCAL:0) && (MAGIC_GENERALCONDITION(LOCAL:0) || TALENT:MASTER:昨日重现 >= m_index) && (!MAGIC_MASTERONLY(LOCAL:0) || 对象 == MASTER)     
 				CALL MAGIC_LIST_BUTTON(LOCAL:0, LOCAL:1,LOCAL:2)
@@ -73,6 +73,77 @@ IF TARGET
 	RESETCOLOR
 ENDIF
 PRINTL [0] 返回
+
+
+@SPELL_LIST_BUTTON(ARG,改行用,ARG:1 = 1)
+#DIMS 符咒名
+#DIM 改行用
+
+符咒名 = [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 18, LEFT% 
+改行用 += STRLENS(符咒名)
+SIF LOCAL:0 < 100
+	改行用 ++
+IF 改行用 > 116
+	IF 改行用 >= 999
+	ELSE
+		PRINTL 
+	ENDIF
+	改行用 = STRLENS(符咒名)
+	SIF LOCAL:0 < 100
+		改行用 ++
+	PRINT 　　
+ENDIF
+
+IF ARG:1 
+	PRINTFORM [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 18, LEFT%
+ELSE
+	SETCOLOR 0x606060
+	PRINTPLAINFORM [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 18, LEFT%
+	RESETCOLOR
+ENDIF
+SIF ARG < 1000  ; 魔法ID从950开始
+	PRINT  
+PRINT 　　
+RETURN 改行用
+
+@SPELL_LEVEL_RESET
+M_SPELL:恢复符咒:等级 = 1
+M_SPELL:追踪符咒:等级 = 1
+M_SPELL:千里眼符咒:等级 = 3
+M_SPELL:旅行符咒:等级 = 5
+M_SPELL:幸运符咒:等级 = 2
+M_SPELL:奇迹符咒:等级 = 5
+M_SPELL:解密符咒:等级 = 2
+M_SPELL:时之蠹符咒:等级 = 5
+M_SPELL:清醒符咒:等级 = 2
+M_SPELL:晴空符咒:等级 = 4
+M_SPELL:雨符咒:等级 = 4
+M_SPELL:风暴符咒:等级 = 4
+M_SPELL:加护符咒:等级 = 3
+M_SPELL:避孕符咒:等级 = 1
+M_SPELL:聚灵符咒:等级 = 3
+M_SPELL:丰穰符咒:等级 = 4
+M_SPELL:清扫符咒:等级 = 2
+M_SPELL:解酒符咒:等级 = 1
+SPELL_LEVEL_RESETED = 1
+
+@SPELL_LIST
+#DIM r_index
+#DIM m_index
+FOR r_index ,1, 6
+	m_index = 6 - r_index
+	PRINTFORM ■符咒Lv{m_index} 
+	PRINTL ===========================================================================================================
+	VARSET LOCAL
+	LOCAL:2 = M_SPELL:LOCAL:数量 > 0
+	FOR LOCAL:0 ,0, 100
+		IF M_SPELL:LOCAL:等级 == m_index
+			CALL SPELL_LIST_BUTTON(LOCAL:0, LOCAL:1, LOCAL:2)
+		ENDIF
+	NEXT
+	PRINTL 
+NEXT
+DRAWLINE
 
 @MAGIC_AVALIABLE(ARG,ARG:1)
 #FUNCTION
@@ -1138,6 +1209,16 @@ ELSE
 ENDIF
 RETURNF 0
 
+@MAGIC_IS_CLAIR
+#FUNCTION
+SIF !MAGIC_DLC
+	RETURNF 0
+SIF MAGIC_AVALIABLE(ITEM_察知之眼)
+	RETURNF 1
+SIF M_TFLAG:千里眼
+	RETURNF 1
+RETURNF 0
+
 ;-----------------------------------------------------------
 ;函数作用:察知之眼用的函数
 ;-----------------------------------------------------------
@@ -1673,10 +1754,16 @@ M_TFLAG:约会临时标记 = 0
 M_TFLAG:神清气爽 = 0
 M_TFLAG:魅力魔法 = 0
 M_TFLAG:转运魔法CD = 0
-M_TFLAG:BUFF标记 = 0
 M_TFLAG:时之蠹 = 0
 M_TFLAG:聚灵 = 0
 M_TFLAG:千里眼 = 0
+M_TFLAG:解密 = 0
+
+;-----------------------------------------------------------
+;函数作用:每回合M_TFLAG置零
+;-----------------------------------------------------------
+@EVENTCOMEND
+M_TFLAG:BUFF标记 = 0
 
 @MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
 #DIM Efficiency
@@ -1723,16 +1810,20 @@ IF 目的地MAPID == 100
 	RETURN
 ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
 	;切换地图
-	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
-	;隙间的出口设置为目的地的entrance
-	M_FLAG:隙间标记 = RESULT
-	FOR LOCAL, 0, CHARANUM
-		;通过初期记录的有无判断其是否应该处于隙间待客室
-		IF M_CFLAG:LOCAL:初期记录
-			CFLAG:LOCAL:現在位置 = 隙间位置
-			CFLAG:LOCAL:初期位置 = 隙间位置
-		ENDIF
-	NEXT
+	IF M_FLAG:隙间标记
+		CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
+		;隙间的出口设置为目的地的entrance
+		M_FLAG:隙间标记 = RESULT
+		FOR LOCAL, 0, CHARANUM
+			;通过初期记录的有无判断其是否应该处于隙间待客室
+			IF M_CFLAG:LOCAL:初期记录
+				CFLAG:LOCAL:現在位置 = 隙间位置
+				CFLAG:LOCAL:初期位置 = 隙间位置
+			ENDIF
+		NEXT
+	ELSE
+		CALL QUICK_SWITCH_MAP(目的地MAPID)
+	ENDIF
 ENDIF
 
 @SET_HISTORY_MAGIC()
