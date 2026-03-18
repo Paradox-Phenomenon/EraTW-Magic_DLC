@@ -5,8 +5,6 @@ CALL RELINE(1,1)
 $LOOP
 CALL RELINE(1)
 PRINTFORML 请选择要使用的符咒
-SIF !SPELL_LEVEL_RESETED
-	CALL SPELL_LEVEL_RESET
 CALL SPELL_LIST
 PRINTFORML [ 0] 返回
 INPUT
@@ -20,6 +18,7 @@ SELECTCASE SPELL_ID
 		LOCAL:1 ++
 	CASE 2
 		PRINTFORM 要寻找谁的位置?
+		PRINTL
 		DRAWLINEFORM －
 		FOR LOCAL,1,CHARANUM
 			SIF !CFLAG:LOCAL:出禁 && !TALENT:LOCAL:路人
@@ -92,11 +91,13 @@ SELECTCASE SPELL_ID
 		TIME:天気 = 天气_晴	
 		FORBIDDEN_CHANGE_WEATHER = 1
 		PRINTFORML 符咒使用后, 天空变得晴朗, 万里无云
+		CALL qol_FORCESET_REGION_WEATHER_SYSTEM
 		LOCAL:1 ++
 	CASE 11
 		TIME:天気 = 天气_雨	
 		FORBIDDEN_CHANGE_WEATHER = 1
 		PRINTFORML 符咒使用后, 雨滴开始轻轻落下...
+		CALL qol_FORCESET_REGION_WEATHER_SYSTEM
 		LOCAL:1 ++
 	CASE 12
 		TIME:天気 = 天气_大雨	
@@ -104,6 +105,8 @@ SELECTCASE SPELL_ID
 		SIF WIND_VELOCITY < 1
 			WIND_VELOCITY = 1
 		PRINTFORML 符咒使用后, 大雨倾盆而下...
+		CALL qol_FORCESET_REGION_WEATHER_SYSTEM
+		CALL qol_FORCESET_REGION_WIND_VE_SYSTEM
 		LOCAL:1 ++
 	CASE 13
 		TCVAR:MASTER:加護 = 1
@@ -161,4 +164,242 @@ ENDIF
 RETURN
 
 @SPELL_ENGRAVE
-
+#DIM 选择位
+#DIM 获得符咒数
+#DIM TMP_符咒选择
+#DIM TMP_触媒序号
+#DIM TMP_投入符咒数
+#DIM TMP_投入触媒数
+CALL RELINE(1,1)
+$LOOP
+CALL RELINE(1)
+FOR LOCAL,1,10
+	IF 符咒铭刻位:LOCAL:符咒种类 == 0
+		IF LOCAL > 3 + ABL:MASTER:教养
+			SETCOLOR C_GRAY
+			PRINTPLAINFORM [{LOCAL}] -------------------
+			RESETCOLOR
+		ELSE
+			PRINTFORM [{LOCAL}] -------------------
+		ENDIF
+	ELSE
+		IF TIME - 符咒铭刻位:LOCAL:铭刻时间 >= 360
+			SETCOLOR C_GREEN
+			PRINTFORM [{LOCAL}] %ERDNAME(M_SPELL,符咒铭刻位:LOCAL:符咒种类,1), 13, LEFT% 符咒投入:{符咒铭刻位:LOCAL:符咒数,5,LEFT} 触媒投入:{符咒铭刻位:LOCAL:触媒数,5,LEFT} 
+			SETCOLOR 0x2196f3
+			PRINTFORM 可收获
+			RESETCOLOR
+		ELSE
+			PRINTPLAINFORM [{LOCAL}] %ERDNAME(M_SPELL,符咒铭刻位:LOCAL:符咒种类,1), 13, LEFT% 符咒投入:{符咒铭刻位:LOCAL:符咒数,5,LEFT} 触媒投入:{符咒铭刻位:LOCAL:触媒数,5,LEFT} 剩余所需时间:{360 - (TIME - 符咒铭刻位:LOCAL:铭刻时间)}
+		ENDIF
+	ENDIF
+	PRINTL
+NEXT
+DRAWLINE
+PRINTLC [0] 返回
+PRINTLC [99] 操纵时间加速符咒制作(-1000 TSP)
+INPUT
+选择位 = RESULT
+IF 选择位 == 99 
+	IF BASE:MASTER:TSP >= 1000
+		FOR LOCAL,1,10
+			符咒铭刻位:LOCAL:铭刻时间 -= 60
+		NEXT
+		CALL RECOVER(MASTER, -1000, "TSP", "操纵时间的TSP消耗")
+		PRINTFORMW
+	ELSE
+		PRINTFORMW 没有足够的TSP
+	ENDIF
+	GOTO LOOP
+ELSEIF 选择位 == 0
+	CALL RELINE(1)
+	CALL MAGIC_USE
+ELSEIF 选择位 > 3 + ABL:MASTER:教养
+	PRINTFORMW 提升教养等级以解锁更多的符咒铭刻位
+	GOTO LOOP
+ELSEIF INRANGE(选择位,1,9)
+	IF 符咒铭刻位:选择位:符咒种类 == 0
+		PRINTL 请选择要铭刻的符咒
+		CALL SPELL_LIST(2)
+		PRINTFORML [0] 返回
+		INPUT
+		SIF RESULT == 0
+			GOTO LOOP
+		TMP_符咒选择 = RESULT
+		TMP_触媒序号 = 270 + M_SPELL:TMP_符咒选择:等级
+		IF !CAN_ENGRAVE(TMP_符咒选择)
+			PRINTFORMW 不合规的符咒选择
+			GOTO LOOP
+		ELSEIF ITEM:符咒 <= 0 || ITEM:(TMP_触媒序号) <= 0
+			PRINTFORMW 没有足够的符咒或触媒
+			GOTO LOOP
+		ENDIF
+		CALL RELINE(2,1)
+		$LOOP2
+		CALL RELINE(2)
+		PRINTFORML 请选择要投入的符咒数（1-10）当前:{TMP_投入符咒数}
+		PRINTLC [1] -5
+		PRINTLC [2] -1
+		SIF ITEM:符咒 < TMP_投入符咒数 + 1
+			SETCOLOR C_GRAY
+		PRINTLC [3] +1
+		SIF ITEM:符咒 < TMP_投入符咒数 + 5
+			SETCOLOR C_GRAY
+		PRINTLC [4] +5
+		RESETCOLOR
+		SIF INRANGE(TMP_投入符咒数,1,10)
+			PRINTL [5] 确认
+		INPUT
+		SELECTCASE RESULT
+			CASE 1
+				IF TMP_投入符咒数 >= 5
+					TMP_投入符咒数 -= 5
+				ELSE
+					TMP_投入符咒数 = 0
+				ENDIF
+				GOTO LOOP2
+			CASE 2
+				IF TMP_投入符咒数 >= 1
+					TMP_投入符咒数 -= 1
+				ELSE
+					TMP_投入符咒数 = 0
+				ENDIF
+				GOTO LOOP2
+			CASE 3
+				IF ITEM:符咒 >= TMP_投入符咒数 + 1
+					IF TMP_投入符咒数 <= 9
+						TMP_投入符咒数 += 1
+					ELSE
+						TMP_投入符咒数 = 10
+					ENDIF
+				ENDIF
+				GOTO LOOP2
+			CASE 4
+				IF ITEM:符咒 >= TMP_投入符咒数 + 5
+					IF TMP_投入符咒数 <= 5
+						TMP_投入符咒数 += 5
+					ELSE
+						TMP_投入符咒数 = 10
+					ENDIF
+				ENDIF
+				GOTO LOOP2
+			CASE 5
+				SIF !INRANGE(TMP_投入符咒数,1,10)
+					GOTO LOOP2
+				CALL RELINE(2)
+			CASEELSE
+				GOTO LOOP2
+		ENDSELECT
+		CALL RELINE(2,1)
+		$LOOP3
+		CALL RELINE(2)
+		PRINTFORML 请选择要投入的触媒数（1-10）当前:{TMP_投入触媒数}
+		PRINTLC [1] -5
+		PRINTLC [2] -1
+		SIF ITEM:(TMP_触媒序号) < TMP_投入触媒数 + 1
+			SETCOLOR C_GRAY
+		PRINTLC [3] +1
+		SIF ITEM:(TMP_触媒序号) < TMP_投入触媒数 + 5
+			SETCOLOR C_GRAY
+		PRINTLC [4] +5
+		RESETCOLOR
+		SIF INRANGE(TMP_投入触媒数,1,10)
+			PRINTL [5] 确认
+		INPUT
+		SELECTCASE RESULT
+			CASE 1
+				IF TMP_投入触媒数 >= 5
+					TMP_投入触媒数 -= 5
+				ELSE
+					TMP_投入触媒数 = 0
+				ENDIF
+				GOTO LOOP3
+			CASE 2
+				IF TMP_投入触媒数 >= 1
+					TMP_投入触媒数 -= 1
+				ELSE
+					TMP_投入触媒数 = 0
+				ENDIF
+				GOTO LOOP3
+			CASE 3
+				IF ITEM:(TMP_触媒序号) >= TMP_投入触媒数 + 1
+					IF TMP_投入触媒数 <= 9
+						TMP_投入触媒数 += 1
+					ELSE
+						TMP_投入触媒数 = 10
+					ENDIF
+				ENDIF
+				GOTO LOOP3
+			CASE 4
+				IF ITEM:(TMP_触媒序号) >= TMP_投入触媒数 + 5
+					IF TMP_投入触媒数 <= 5
+						TMP_投入触媒数 += 5
+					ELSE
+						TMP_投入触媒数 = 10
+					ENDIF
+				ENDIF
+				GOTO LOOP3
+			CASE 5
+				SIF !INRANGE(TMP_投入触媒数,1,10)
+					GOTO LOOP3
+			CASEELSE
+				GOTO LOOP3
+		ENDSELECT
+		PRINTFORML 铭刻 %ERDNAME(M_SPELL,TMP_符咒选择,1)% ,投入了 {TMP_投入符咒数} 个符咒和 {TMP_投入触媒数} 个触媒lv{TMP_触媒序号-270}, 确认吗?
+		CALL ASK_YN
+		IF RESULT == 0
+			ITEM:符咒 -= TMP_投入符咒数
+			ITEM:(TMP_触媒序号) -= TMP_投入触媒数
+			符咒铭刻位:选择位:符咒种类 = TMP_符咒选择
+			符咒铭刻位:选择位:符咒数 = TMP_投入符咒数
+			符咒铭刻位:选择位:触媒数 = TMP_投入触媒数
+			符咒铭刻位:选择位:铭刻时间 = TIME
+			PRINTFORMW 符咒开始制作, 等待6个小时吸收环境魔力后即可收获
+			M_TFLAG:时间因子类型 = TimeFactor_TSLv
+		ENDIF
+		TMP_投入触媒数 = 0
+		TMP_投入符咒数 = 0
+		TMP_符咒选择 = 0
+		TMP_触媒序号 = 0
+		GOTO LOOP
+	ELSE
+		TMP_符咒选择 = 符咒铭刻位:选择位:符咒种类
+		IF TIME - 符咒铭刻位:选择位:铭刻时间 >= 360
+			获得符咒数 = 1 + RANDSF(-100/符咒铭刻位:选择位:触媒数, 符咒铭刻位:选择位:符咒数 * 10 + ABL:MASTER:战斗能力 * 5 + MAGIC_SuccessRate()/2)
+			IF TMP_符咒选择 == 51
+				M_SPELL:晴空符咒:数量 += 获得符咒数/3 + 获得符咒数%3
+				M_SPELL:雨符咒:数量 += 获得符咒数/3
+				M_SPELL:风暴符咒:数量 += 获得符咒数/3
+				SETCOLOR C_GREEN
+				PRINTFORML 获得了 {获得符咒数/3 + 获得符咒数%3} 个 %ERDNAME(M_SPELL,10,1)%！
+				PRINTFORML 获得了 {获得符咒数/3} 个 %ERDNAME(M_SPELL,11,1)%！
+				PRINTFORML 获得了 {获得符咒数/3} 个 %ERDNAME(M_SPELL,12,1)%！
+				RESETCOLOR
+			ELSEIF TMP_符咒选择 == 52
+				LOCAL = RANDSF(-10,获得符咒数)
+				M_SPELL:奇迹符咒:数量 += LOCAL
+				M_SPELL:幸运符咒:数量 += 获得符咒数 - LOCAL
+				SETCOLOR C_GREEN
+				PRINTFORML 获得了 {LOCAL} 个 %ERDNAME(M_SPELL,6,1)%！
+				PRINTFORML 获得了 {获得符咒数 - LOCAL} 个 %ERDNAME(M_SPELL,5,1)%！
+				RESETCOLOR
+			ELSEIF CAN_ENGRAVE(TMP_符咒选择) 
+				M_SPELL:(TMP_符咒选择):数量 += 获得符咒数
+				SETCOLOR C_GREEN
+				PRINTFORML 获得了 {获得符咒数} 个 %ERDNAME(M_SPELL,TMP_符咒选择,1)%！
+				RESETCOLOR
+			ENDIF
+			PRINTFORMW
+			符咒铭刻位:选择位:符咒种类 = 0
+			符咒铭刻位:选择位:符咒数 = 0
+			符咒铭刻位:选择位:触媒数 = 0
+			符咒铭刻位:选择位:铭刻时间 = 0
+			GOTO LOOP
+		ELSE
+			SETCOLOR 0xf5632a
+			PRINTFORMW 这批符咒还需要吸收环境魔力 {360 - (TIME - 符咒铭刻位:选择位:铭刻时间)} 分钟后才能收获
+			RESETCOLOR
+			GOTO LOOP
+		ENDIF
+	ENDIF
+ENDIF
