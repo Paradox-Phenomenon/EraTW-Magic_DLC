@@ -155,7 +155,7 @@ FOR r_index ,1, 6
 				LOCAL:2 = -1
 		ENDIF
 		IF M_SPELL:LOCAL:等级 == m_index
-			SIF ITEM:符咒 <= 0 || ITEM:(270 + m_index) <= 0
+			SIF (ITEM:符咒 <= 0 || ITEM:(270 + m_index) <= 0) && ARG == 2
 				SETCOLOR C_GRAY
 			CALL SPELL_LIST_BUTTON(LOCAL:0, LOCAL:1, LOCAL:2)
 			RESETCOLOR
@@ -623,10 +623,7 @@ IF GETBIT(MAGIC_DLC_时间因子,1) && TALENT:MASTER:神性
 	ELSE
 		LOCAL = 100 - 6*TALENT:MASTER:神性
 	ENDIF
-ELSEIF M_TFLAG:时之蠹
-	LOCAL = 50
 ENDIF
-
 SIF ARGS == "教养" && !GETBIT(MAGIC_DLC_时间因子,0)
 	LOCAL = LOCAL * (10-ABL:MASTER:教養)/10
 SIF ARGS == "话术" && !GETBIT(MAGIC_DLC_时间因子,0)
@@ -681,7 +678,8 @@ IF GETBIT(MAGIC_DLC_时间因子,1)
 ELSE
 	LOCAL = ARG
 ENDIF
-
+SIF M_TFLAG:时之蠹 && LOCAL > ARG/2
+	LOCAL = ARG/2
 SIF M_TFLAG:时间因子类型 == TimeFactor_教养 && GETBIT(MAGIC_DLC_时间因子,0)
 	LOCAL = LOCAL * (10-ABL:MASTER:教養)/10
 SIF M_TFLAG:时间因子类型 == TimeFactor_话术 && GETBIT(MAGIC_DLC_时间因子,0)
@@ -1885,9 +1883,9 @@ ENDIF
 
 @RESET_HISTORY_MAGIC()
 SIF 旧日取得履历 == ""
-	旧日取得履历 = "尚未取得"
+	旧日取得履历 = 尚未取得
 SIF 半神取得履历 == ""
-	半神取得履历 = "尚未取得"
+	半神取得履历 = 尚未取得
 
 ;-----------------------------------------------------------
 ;函数作用:新增的额外设置功能
@@ -1935,6 +1933,14 @@ SELECTCASE Setting_外出时可以带出去
 ENDSELECT
 CALL PRINTBUTTON_EX(@"[%LOCALS%]", 4, !Setting_外出时可以带出去)
 PRINTL
+SELECTCASE Setting_单独一人吃饭
+	CASE 0
+		LOCALS =  单独一人吃饭:禁用
+	CASE 1
+		LOCALS =  单独一人吃饭:启用
+ENDSELECT
+CALL PRINTBUTTON_EX(@"[%LOCALS%]", 5, !Setting_单独一人吃饭)
+PRINTL
 CALL PRINTBUTTON_EX("[确认]", 999)
 PRINTFORML
 INPUT
@@ -1954,6 +1960,8 @@ ELSEIF RESULT == 3
 	Setting_主动权转移禁止 = !Setting_主动权转移禁止
 ELSEIF RESULT == 4 && GMF_GETBIT("幻想乡大地图")
 	Setting_外出时可以带出去 = !Setting_外出时可以带出去
+ELSEIF RESULT == 5
+	Setting_单独一人吃饭 = !Setting_单独一人吃饭
 ELSEIF RESULT == 999
 	RETURN 
 ENDIF

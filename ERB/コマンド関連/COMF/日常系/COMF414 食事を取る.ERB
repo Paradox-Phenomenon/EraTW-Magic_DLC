@@ -91,46 +91,48 @@ IF TARGET
 	ENDSELECT
 	NOW_TARGET = TARGET
 	;まず現在的TARGET以外が食べる
-	FOR LOCAL, 1, GET_TARGETNUM() + 1
-		TARGET = TARGET:LOCAL
-		SIF TARGET == NOW_TARGET
-			CONTINUE
-		;口上側による制御
-		CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
-		SELECTCASE TFLAG:192
-		CASE 1
-			LOCAL:1 = 9
-			SIF MAGIC_DLC_大成功相关
-				LOCAL:1 += MAGIC_SuccessRate(TARGET)
-			IF RAND:(100 - ABL:MASTER:料理技能 * 2) <= LOCAL:1
+	IF !Setting_单独一人吃饭
+		FOR LOCAL, 1, GET_TARGETNUM() + 1
+			TARGET = TARGET:LOCAL
+			SIF TARGET == NOW_TARGET
+				CONTINUE
+			;口上側による制御
+			CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
+			SELECTCASE TFLAG:192
+			CASE 1
+				LOCAL:1 = 9
+				SIF MAGIC_DLC_大成功相关
+					LOCAL:1 += MAGIC_SuccessRate(TARGET)
+				IF RAND:(100 - ABL:MASTER:料理技能 * 2) <= LOCAL:1
+					IF MAGIC_DLC_料理相关
+						TCVAR:TARGET:料理评价补正 = 200
+						TCVAR:TARGET:料理評価値 = 0
+					ELSE
+						TCVAR:TARGET:料理評価値 = 700
+					ENDIF
+				ELSE
+					IF MAGIC_DLC_料理相关
+						TCVAR:TARGET:料理評価値 = 0
+					ELSE
+						TCVAR:TARGET:料理評価値 = 500
+					ENDIF
+				ENDIF
+			CASE -1
 				IF MAGIC_DLC_料理相关
-					TCVAR:TARGET:料理评价补正 = 200
+					TCVAR:TARGET:料理评价补正 = -200
 					TCVAR:TARGET:料理評価値 = 0
 				ELSE
-					TCVAR:TARGET:料理評価値 = 700
+					TCVAR:TARGET:料理評価値 = 300
 				ENDIF
-			ELSE
-				IF MAGIC_DLC_料理相关
-					TCVAR:TARGET:料理評価値 = 0
-				ELSE
-					TCVAR:TARGET:料理評価値 = 500
-				ENDIF
-			ENDIF
-		CASE -1
-			IF MAGIC_DLC_料理相关
-				TCVAR:TARGET:料理评价补正 = -200
+			CASE -2
+				CONTINUE
+			CASEELSE
 				TCVAR:TARGET:料理評価値 = 0
-			ELSE
-				TCVAR:TARGET:料理評価値 = 300
-			ENDIF
-		CASE -2
-			CONTINUE
-		CASEELSE
-			TCVAR:TARGET:料理評価値 = 0
-		ENDSELECT
-		;実食
-		CALL COM414_実食(TARGET, EAT_TIME, TARGET == DISH_ASSI || CFLAG:TARGET:行動 == 5)
-	NEXT
+			ENDSELECT
+			;実食
+			CALL COM414_実食(TARGET, EAT_TIME, TARGET == DISH_ASSI || CFLAG:TARGET:行動 == 5)
+		NEXT
+	ENDIF
 	;その後にTARGETが食べる
 	TARGET = NOW_TARGET
 	;現在的TARGETはBONUS確定
@@ -247,8 +249,15 @@ ELSE
 ENDIF
 
 ;評価値の影響強め
-SOURCE:CHARA:歓楽 = (100 * 評価点係数 + 500 * 好感度係数 + 30 * ABL:CHARA:親密) * 時間係数
-SOURCE:CHARA:受動 = (20 * 評価点係数 + 300 * 従順係数 + 30 * ABL:CHARA:従順) * 時間係数
+IF MAGIC_DLC_料理相关
+	SOURCE:CHARA:歓楽 = (100 * 評価点係数 + 500 * 好感度係数 + 30 * ABL:CHARA:親密) * 時間係数
+	SOURCE:CHARA:受動 = (20 * 評価点係数 + 300 * 従順係数 + 30 * ABL:CHARA:従順) * 時間係数
+	SIF STRCOUNT(DISH_TASTE, "适合拍照/")
+		SOURCE:CHARA:歓楽 *= 2
+ELSE
+	SOURCE:CHARA:歓楽 = (100 * 評価点係数 + 500 * 好感度係数 + 30 * ABL:CHARA:親密) * 時間係数
+	SOURCE:CHARA:受動 = (20 * 評価点係数 + 300 * 従順係数 + 30 * ABL:CHARA:従順) * 時間係数
+ENDIF
 SIF CHARA == DISH_ASSI
 	SOURCE:CHARA:征服 = (10 * 評価点係数 + ABL:CHARA:施虐属性 * 30) * 時間係数
 SOURCE:CHARA:不潔 = STRCOUNT(DISH_TASTE, "劣化/") * (100 - TCVAR:CHARA:料理評価値 / 10) * 2
@@ -435,7 +444,7 @@ IF MAGIC_DLC_料理相关
 		CALL BUFF_BASE(ARG, BASE_法力, 5*SQRT(MAXBASE:ARG:法力),2)
 	ENDIF
 	;高级词条
-	LOCAL:1 = STRCOUNT(DISH_TASTE, "台風炸丸子/") + STRCOUNT(DISH_TASTE, "伊奘诺/") + STRCOUNT(DISH_TASTE, "縁起物/") * 2
+	LOCAL:1 = STRCOUNT(DISH_TASTE, "台風炸丸子/") + STRCOUNT(DISH_TASTE, "伊奘诺/") + STRCOUNT(DISH_TASTE, "縁起物/") * 2 + STRCOUNT(DISH_TASTE, "不可思议/")
 	IF LOCAL:1
 		CALL CHANGE_MAXBASE(ARG, BASE_気力, SQRT(MAXBASE:ARG:体力) * LOCAL:1,2)
 		CALL CHANGE_MAXBASE(ARG, BASE_体力, SQRT(MAXBASE:ARG:気力) * LOCAL:1,2)
@@ -443,7 +452,14 @@ IF MAGIC_DLC_料理相关
 		CALL CHANGE_MAXBASE(ARG, BASE_酒气, SQRT(MAXBASE:ARG:酒気) * LOCAL:1,2)
 		CALL CHANGE_MAXBASE(ARG, BASE_法力, SQRT(MAXBASE:ARG:法力) * LOCAL:1,2)
 	ENDIF
-
+	IF STRCOUNT(DISH_TASTE, "力量涌现/")
+		EXP:ARG:戦闘経験 += 5
+		CALL CHANGE_MAXBASE(ARG, BASE_体力, SQRT(MAXBASE:ARG:体力)/2,2)
+	ENDIF
+	IF STRCOUNT(DISH_TASTE, "文化底蕴/")
+		EXP:ARG:学習経験 += 5
+		CALL CHANGE_MAXBASE(ARG, BASE_法力, SQRT(MAXBASE:ARG:法力)/2,2)
+	ENDIF 
 	SIF STRCOUNT(DISH_TASTE, "清醒/")
 		CFLAG:ARG:清醒劑 += 180
 	SIF STRCOUNT(DISH_TASTE, "仙桃/")
