@@ -54,7 +54,7 @@ ELSEIF DISH_NAME == "银吉獣料理"
 ENDIF
 
 ;まずMASTER以外から
-IF TARGET
+IF TARGET && !Setting_单独一人吃饭
 	;口上側による制御
 	CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
 	SELECTCASE TFLAG:192
@@ -91,48 +91,46 @@ IF TARGET
 	ENDSELECT
 	NOW_TARGET = TARGET
 	;まず現在的TARGET以外が食べる
-	IF !Setting_单独一人吃饭
-		FOR LOCAL, 1, GET_TARGETNUM() + 1
-			TARGET = TARGET:LOCAL
-			SIF TARGET == NOW_TARGET
-				CONTINUE
-			;口上側による制御
-			CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
-			SELECTCASE TFLAG:192
-			CASE 1
-				LOCAL:1 = 9
-				SIF MAGIC_DLC_大成功相关
-					LOCAL:1 += MAGIC_SuccessRate(TARGET)
-				IF RAND:(100 - ABL:MASTER:料理技能 * 2) <= LOCAL:1
-					IF MAGIC_DLC_料理相关
-						TCVAR:TARGET:料理评价补正 = 200
-						TCVAR:TARGET:料理評価値 = 0
-					ELSE
-						TCVAR:TARGET:料理評価値 = 700
-					ENDIF
-				ELSE
-					IF MAGIC_DLC_料理相关
-						TCVAR:TARGET:料理評価値 = 0
-					ELSE
-						TCVAR:TARGET:料理評価値 = 500
-					ENDIF
-				ENDIF
-			CASE -1
+	FOR LOCAL, 1, GET_TARGETNUM() + 1
+		TARGET = TARGET:LOCAL
+		SIF TARGET == NOW_TARGET
+			CONTINUE
+		;口上側による制御
+		CALL KOJO_MESSAGE_SEND("SUCCESS",-1,TARGET,-1,-1)
+		SELECTCASE TFLAG:192
+		CASE 1
+			LOCAL:1 = 9
+			SIF MAGIC_DLC_大成功相关
+				LOCAL:1 += MAGIC_SuccessRate(TARGET)
+			IF RAND:(100 - ABL:MASTER:料理技能 * 2) <= LOCAL:1
 				IF MAGIC_DLC_料理相关
-					TCVAR:TARGET:料理评价补正 = -200
+					TCVAR:TARGET:料理评价补正 = 200
 					TCVAR:TARGET:料理評価値 = 0
 				ELSE
-					TCVAR:TARGET:料理評価値 = 300
+					TCVAR:TARGET:料理評価値 = 700
 				ENDIF
-			CASE -2
-				CONTINUE
-			CASEELSE
+			ELSE
+				IF MAGIC_DLC_料理相关
+					TCVAR:TARGET:料理評価値 = 0
+				ELSE
+					TCVAR:TARGET:料理評価値 = 500
+				ENDIF
+			ENDIF
+		CASE -1
+			IF MAGIC_DLC_料理相关
+				TCVAR:TARGET:料理评价补正 = -200
 				TCVAR:TARGET:料理評価値 = 0
-			ENDSELECT
-			;実食
-			CALL COM414_実食(TARGET, EAT_TIME, TARGET == DISH_ASSI || CFLAG:TARGET:行動 == 5)
-		NEXT
-	ENDIF
+			ELSE
+				TCVAR:TARGET:料理評価値 = 300
+			ENDIF
+		CASE -2
+			CONTINUE
+		CASEELSE
+			TCVAR:TARGET:料理評価値 = 0
+		ENDSELECT
+		;実食
+		CALL COM414_実食(TARGET, EAT_TIME, TARGET == DISH_ASSI || CFLAG:TARGET:行動 == 5)
+	NEXT
 	;その後にTARGETが食べる
 	TARGET = NOW_TARGET
 	;現在的TARGETはBONUS確定
