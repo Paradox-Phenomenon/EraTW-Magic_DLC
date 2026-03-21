@@ -972,6 +972,7 @@ ENDSELECT
 
 RETURNF LOCALS
 
+[SKIPSTART]
 @Gathering_Drawing(採集位置, 採集パワー, Modification)
 ;RESULT:0	採集道具
 ;RESULT:1	採集量
@@ -1060,7 +1061,7 @@ FOR LOCAL:0, start, end, difference
 			CASE 7001 TO 9999
 				QTY = MAX((RAND:(SQRT(採集パワー)) - 4), 1)
 			CASEELSE
-				QTY = 1
+				QTY = MAX((RAND:(SQRT(採集パワー)) - 5), 1)
 		ENDSELECT
 	ELSE
 		SELECTCASE LOCAL:5
@@ -1079,3 +1080,150 @@ FOR LOCAL:0, start, end, difference
 	BREAK
 NEXT
 RETURN Chosen, QTY
+[SKIPEND]
+
+
+
+
+@Gathering_Drawing(採集位置, 採集パワー, Modification)
+;RESULT:0	採集道具
+;RESULT:1	採集量
+#DIM 採集位置
+#DIM 採集パワー
+#DIM Chosen
+#DIM QTY
+#DIM Modification
+#DIM start			;抽選開始値
+#DIM end			;抽選終了値
+#DIM difference		;加算or減算
+#DIM 采集力
+#DIM Chose_Level
+Chosen = 0
+QTY = 0
+采集力 = POWER(採集パワー + Modification,2) + 1000
+SELECTCASE 采集力
+	CASE IS > 10000
+		Chose_Level = RAND:6
+	CASE 7000 TO 9999
+		Chose_Level = RAND:5
+	CASE 4000 TO 6999
+		Chose_Level = RAND:4
+	CASE 2000 TO 3999
+		Chose_Level = RAND:3
+	CASE 0 TO 2000
+		Chose_Level = RAND:2
+	CASEELSE
+		Chose_Level = 0
+ENDSELECT
+LOCAL:2 = 0
+$LOOP
+IF LOCAL:2 >= 1000
+	RETURN 0,0
+ENDIF
+Chosen = 素材_TO_ITEM(RAND:54)
+IF 可采集(Chosen, 採集位置) == 0
+	LOCAL:2 ++
+	GOTO LOOP
+ENDIF
+IF 採集パワー + Modification < 获取难度(Chosen)
+	LOCAL:2 ++
+	GOTO LOOP
+ENDIF
+SELECTCASE Chose_Level
+	CASE 5
+		SIF ITEMPRICE:(Chosen) <= 9999
+			GOTO LOOP
+	CASE 4
+		SIF ITEMPRICE:(Chosen) <= 6999
+			GOTO LOOP
+	CASE 3
+		SIF ITEMPRICE:(Chosen) <= 3999
+			GOTO LOOP
+	CASE 2
+		SIF ITEMPRICE:(Chosen) <= 1999
+			GOTO LOOP
+	CASE 1
+		SIF ITEMPRICE:(Chosen) <= 499
+			GOTO LOOP
+	CASEELSE
+ENDSELECT
+
+IF !MAGIC_DLC_等级重置
+	SELECTCASE ITEMPRICE:(Chosen)
+		CASE 0 TO 2000
+			QTY = MAX((RAND:(SQRT(採集パワー)) - 1), 1)
+		CASE 2001 TO 4000
+			QTY = MAX((RAND:(SQRT(採集パワー)) - 2), 1)
+		CASE 4001 TO 7000
+			QTY = MAX((RAND:(SQRT(採集パワー)) - 3), 1)
+		CASE 7001 TO 9999
+			QTY = MAX((RAND:(SQRT(採集パワー)) - 4), 1)
+		CASEELSE
+			QTY = MAX((RAND:(SQRT(採集パワー)) - 5), 1)
+	ENDSELECT
+ELSE
+	SELECTCASE ITEMPRICE:(Chosen)
+		CASE 0 TO 2000
+			QTY = MAX((RANDSF(1, SQRT(採集パワー) - 1)), 1)
+		CASE 2001 TO 4000
+			QTY = MAX((RANDSF(1, SQRT(採集パワー) - 2)), 1)
+		CASE 4001 TO 7000
+			QTY = MAX((RANDSF(1, SQRT(採集パワー) - 3)), 1)
+		CASE 7001 TO 9999
+			QTY = MAX((RANDSF(1, SQRT(採集パワー) - 4)), 1)
+		CASEELSE
+			QTY = 1
+	ENDSELECT
+ENDIF
+RETURN Chosen, QTY
+
+@可采集(ARG, 採集位置)
+#FUNCTION
+#DIM 採集位置
+SIF ITEMNAME:(ARG) == ""
+	RETURNF 0
+IF ITEM:(ARG) >= 999
+	DEBUGPRINTFORML 所持上限のため%ITEMNAME:(ARG)%をスキップ
+	RETURNF 0
+ENDIF
+IF !GATHERING_SEASON(ARG)
+	DEBUGPRINTFORML 过季のため%ITEMNAME:(ARG)%をスキップ
+	RETURNF 0
+ENDIF
+IF  GATHERING_PRODUCT(ARG, 採集位置) < 1
+	DEBUGPRINTFORML 位置が不適切なため%ITEMNAME:(ARG)%をスキップ
+	RETURNF 0
+ENDIF
+RETURNF 1
+
+@获取难度(ARG)
+#FUNCTION
+#DIMS 低気圧位置
+#DIMS 積乱雲位置
+低気圧位置 = %GET_LOCATION_LOW()%
+積乱雲位置 = %GET_LOCATION_CUMULUS()%
+LOCAL = ITEMPRICE:(ARG) + 1000
+IF GROUPMATCH(ARG, 606, 625, 634, 647) && ((低気圧位置 == "台風一過" && IS_TYPHOON:1 >= 5) || 低気圧位置 == "二つ玉低気圧通過" || (積乱雲位置 == "積乱雲通過" && CAN_CUMULUS:0 == 5))
+	LOCAL:1 = SQRT(LOCAL)/2
+ELSEIF ARG == 609 && (低気圧位置 == "寒冷渦通過" || 低気圧位置 == "二つ玉低気圧通過")
+	LOCAL:1 = SQRT(LOCAL)/2
+ELSE
+	LOCAL:1 = SQRT(LOCAL)
+ENDIF
+RETURNF LOCAL:1
+
+@素材_TO_ITEM(ARG)
+#FUNCTION
+IF INRANGE(ARG, 0, 45)
+	RETURNF ARG+600
+ELSEIF ARG == 46
+	RETURNF 647
+ELSEIF INRANGE(ARG, 47, 50)
+	RETURNF ARG+604
+ELSEIF ARG == 51
+	RETURNF 665
+ELSEIF ARG == 52
+	RETURNF 666
+ELSEIF ARG == 53
+	RETURNF 706
+ENDIF
