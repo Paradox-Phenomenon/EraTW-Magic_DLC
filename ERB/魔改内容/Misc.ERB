@@ -352,6 +352,51 @@ ENDIF
 RETURNF LOCAL * RESULT_SIGN
 
 ;-------------------------------------------------
+;函数名:RAND_ADVANTAGE(MAX_VAL, ROLLS)
+;概　要:优势掷骰
+;		正数ROLLS = Advantage（投多次取最高值，偏向高结果）
+;		负数ROLLS = Disadvantage（投多次取最低值，偏向低结果）
+;		0或1 = 普通随机
+;参　数:MAX_VAL = 随机范围上限（返回 0 ~ MAX_VAL-1 与RAND行为一致）
+;		ROLLS   = 投掷次数（可正可负，绝对值决定次数）
+;返回值:带优势/劣势偏移的投掷结果
+;备　注:D&D5e的Advantage/Disadvantage Rolls机制，即使是掷双骰，立马产生非常强力的优劣势，切勿将层数设计得太高
+;-------------------------------------------------
+@RAND_ADVANTAGE(MAX_VAL, ROLLS = 1)
+#FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC MAX_VAL
+#DIM DYNAMIC ROLLS
+#DIM DYNAMIC BEST_VAL
+#DIM DYNAMIC CURRENT_ROLL
+#DIM DYNAMIC ROLL_COUNT
+SIF MAX_VAL <= 0
+	RETURNF 0
+
+ROLL_COUNT = ABS(ROLLS)
+SIF ROLL_COUNT < 1
+	ROLL_COUNT = 1
+
+IF ROLLS >= 0
+	BEST_VAL = 0
+	FOR LOCAL, 0, ROLL_COUNT
+		CURRENT_ROLL = RAND:MAX_VAL
+		SIF CURRENT_ROLL > BEST_VAL
+			BEST_VAL = CURRENT_ROLL
+	NEXT
+ELSE
+	BEST_VAL = MAX_VAL - 1
+	FOR LOCAL, 0, ROLL_COUNT
+		CURRENT_ROLL = RAND:MAX_VAL
+		SIF CURRENT_ROLL < BEST_VAL
+			BEST_VAL = CURRENT_ROLL
+	NEXT
+ENDIF
+
+RETURNF BEST_VAL
+
+;-------------------------------------------------
 ;概　要：用于@ORGASM_ADD取代先前的各体位绝顶经验算法
 ;新性交模块绝顶经验对应表
 ;101~110 旧的5个体位
