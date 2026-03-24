@@ -252,9 +252,15 @@ ENDIF
 SELECTCASE EVENT_DATA
 	CASE "Z", "z", "X", "x"
 		IF TALENT:MASTER:居場所察知 && (EVENT_DATA == "Z" || EVENT_DATA == "z")
-			CALL HITOSAGASI(,1)
+			CALL QOL_HITOSAGASI(, 1)
 		ELSEIF TALENT:MASTER:汚部屋察知 && (EVENT_DATA == "X" || EVENT_DATA == "x")
-			CALL OHEYA_CHECK
+			CALL OHEYA_CHECK()
+		ELSE
+			RETURN 2
+		ENDIF
+		IF RESULT > 0
+			NUM_RES = RESULT
+			GOTO PROCESS_MOVE_LOGIC
 		ENDIF
 		RETURN 2
 	CASE "Y", "y"
@@ -309,6 +315,7 @@ ENDSELECT
 SIF INRANGE(NUM_RES, 1, 99)
 	NUM_RES += MAIN_MAP * 100
 
+$PROCESS_MOVE_LOGIC
 ; 移动判定
 IF NUM_RES == CFLAG:MASTER:現在位置
 	RETURN -1
@@ -931,24 +938,77 @@ ENDIF
 RETURN 1
 
 ;-------------------------------------------------
-;函数名:@QOL_CANNOT_MOVE_MESSAGE
-;概　要:非阻塞的移动失败文本获取
-;参　数:ARG = 目标地点ID
-;返回值:文本字符串
+; 函数名: QOL_CANNOT_MOVE_MESSAGE
+; 概要:   获取「当前无法移动到该地点」的提示文本（非阻塞式）
+; 参数:
+;   P_ID     - 目标地点ID
+; 返回值: 文字列（失败原因的提示文本）
 ;-------------------------------------------------
-@QOL_CANNOT_MOVE_MESSAGE(ARG)
+@QOL_CANNOT_MOVE_MESSAGE(P_ID)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+#DIM DYNAMIC P_ID
 #FUNCTIONS
-IF !ARG || NAME_FROM_PLACE(ARG) == "" || TFLAG:移動不能メッセージ == 998
-	LOCALS = 错误的输入({ARG})
+IF !P_ID || NAME_FROM_PLACE(P_ID) == "" || TFLAG:移動不能メッセージ == 998
+	LOCALS = 错误的输入({P_ID})
 ELSEIF TFLAG:移動不能メッセージ == 999
 	LOCALS = 锁上了
 ELSE
-	LOCALS = 无法向[%NAME_FROM_PLACE(ARG)%]移动
+	LOCALS = 无法向[%NAME_FROM_PLACE(P_ID)%]移动
 ENDIF
 TFLAG:移動不能メッセージ = 0
 RETURNF LOCALS
+
+;-------------------------------------------------
+; 函数名: QOL_HITOSAGASI
+; 概要:   显示寻人界面，让玩家选择一个房间/地点，返回选择的房间编号
+; 参数:
+;   DEF_ROOM   - 默认选中的房间编号（可选，0表示无默认）
+;   SHOW_OTHER_AREA - 是否显示「查看其他区域」按钮（0=否，1=是）
+; 返回值:
+;   ≥ MINROOM() 的房间编号   → 玩家选择了该房间
+;   -1                        → 玩家按了返回/取消
+;-------------------------------------------------
+@QOL_HITOSAGASI(DEF_ROOM = 0, SHOW_OTHER_AREA = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC DEF_ROOM
+#DIM DYNAMIC SHOW_OTHER_AREA
+#DIM DYNAMIC INPUT_LOOP_LINE
+#DIM DYNAMIC MAP_LOOP_LINE
+
+; 幻想乡大地图的特殊跳转处理
+IF GMF_GETBIT("幻想乡大地图") && GMF_METHOD_STACK != "QOL_HITOSAGASI"
+	JUMP GMF_MAP_METHOD(-1, 2, "QOL_HITOSAGASI", DEF_ROOM, SHOW_OTHER_AREA)
+ENDIF
+MAP_LOOP_LINE = LINECOUNT
+$MAP_LOOP
+CLEARLINE LINECOUNT - MAP_LOOP_LINE
+CALL HITOSAGASI_2(1)
+CALL HITOSAGASI_2(2)
+PRINTBUTTON "[返回]", 0
+IF SHOW_OTHER_AREA == 1
+	PRINTL
+	PRINTBUTTON "[查看其他区域]", -1
+	PRINTL
+ENDIF
+INPUT_LOOP_LINE = LINECOUNT
+$INPUT_LOOP
+	CLEARLINE LINECOUNT - INPUT_LOOP_LINE
+	INPUTS
+	IF RESULTS == "0" || RESULTS == "ESC" || RESULTS == "MOUSE_R"
+		RETURN -1
+	ELSEIF RESULTS == "-1" && SHOW_OTHER_AREA == 1
+		CALL BROAD_HITOSAGASI
+		GOTO MAP_LOOP
+	ENDIF
+	IF ISNUMERIC(RESULTS)
+		RESULT = TOINT(RESULTS)
+		IF RESULT >= MINROOM() && RESULT <= MAXROOM
+			RETURN RESULT
+		ENDIF
+	ENDIF
+GOTO INPUT_LOOP
 
 ;-------------------------------------------------
 ;函数名:@AWAIT_UI_INPUT
@@ -1151,3 +1211,49 @@ IF ADD_KEYS != ""
 ENDIF
 
 RETURNF FINAL_CONF
+
+;-------------------------------------------------
+;函数名:@UI_EXECUTE_MOVE
+;概　要:处理从菜单、对话框等UI界面发起的瞬时移动请求
+;参　数:TARGET_ROOM = 目标房间ID
+;返回值:1=移动成功，0=移动失败
+;-------------------------------------------------
+@UI_EXECUTE_MOVE(TARGET_ROOM)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM TARGET_ROOM
+
+; 已经在目的地
+SIF TARGET_ROOM == CFLAG:MASTER:現在位置
+	RETURN 0
+; 间隙内直接移动
+IF IS_GAP_GUEST(MASTER)
+	CALL SKIP_MOVE(CFLAG:MASTER:現在位置, TARGET_ROOM)
+	RETURN 1
+ENDIF
+; 不在主地图
+IF !AT_HOME(MASTER) || IN_HOME(TARGET_ROOM) != 1
+	TFLAG:マップ切り替え = 0
+	PRINTW 没法移动过去
+	RETURN 0
+ENDIF
+; 移动限制检查
+IF MAP_CAN_MOVE(TARGET_ROOM) == 0
+	IF TFLAG:移動不能メッセージ == 999
+		IF LOCKPICK_SYSTEM > 0
+			; 调用开锁系统
+			CALL LOCKPICK_INFO(TARGET_ROOM)
+			RETURN RESULT
+		ELSE
+			PRINTFORMW 锁上了 可恶
+		ENDIF
+	ELSE
+		; 打印原本的不可移动文本
+		TRYCALLFORM MAP_CANNOT_WORD_{MAIN_MAP}(TARGET_ROOM)
+	ENDIF
+	TFLAG:移動不能メッセージ = 0
+	RETURN 0
+ENDIF
+; 正常移动
+CALL SKIP_MOVE(CFLAG:MASTER:現在位置, TARGET_ROOM)
+RETURN 1
