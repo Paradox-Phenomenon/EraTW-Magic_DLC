@@ -1142,6 +1142,37 @@ SELECTCASE ARGS
 		KOJO_RESULT = RESULT
 		TARGET = LOCAL
 		RETURN KOJO_RESULT
+	;覆写/劫持指令本体逻辑
+	CASE "OVERRIDE_COMMAND"
+		RESULT = 0
+		RESULTS =
+		CALL KOJO_ACTIVE_INFO(TARGET)
+		SIF !RESULT
+			RETURN 安全失败值
+
+		IF TFLAG:50
+			LOCAL = TFLAG:50
+			LOCALS = SCOM
+		ELSE
+			LOCAL = SELECTCOM
+			LOCALS = COM
+		ENDIF
+		
+		; 优先尝试拦截器
+		RESULT = 安全失败值
+		TRYCCALLFORM M_KOJO%RESULTS%_OVERRIDE_%LOCALS%_K{NO:TARGET}_PRI_GENERAL(LOCAL)
+		CATCH
+			RESULT = 安全失败值
+		ENDCATCH
+		; 如果拦截器未激活，尝试单独的覆写函数
+		IF RESULT == 安全失败值
+			TRYCCALLFORM M_KOJO%RESULTS%_OVERRIDE_%LOCALS%_K{NO:TARGET}_{LOCAL}
+			CATCH
+				RESULT = 安全失败值
+			ENDCATCH
+		ENDIF
+		
+		RETURN RESULT
 ENDSELECT
 
 ;COUNTER has been split from the others because it is called through TRAIN_MESSAGE, which would lead to the local variables being overwritten in KOJO_MESSAGE_SEND
