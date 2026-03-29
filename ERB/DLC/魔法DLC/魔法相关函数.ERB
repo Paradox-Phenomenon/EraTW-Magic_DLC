@@ -47,7 +47,7 @@ FOR r_index ,1, 6
 	VARSET LOCAL
 	LOCAL:2 = (ABL:MASTER:TSLv >= m_index || TALENT:MASTER:昨日重现 || GETBIT(M_TFLAG:代替魔法等级, m_index))
 	LOCAL:1 = 999
-	FOR LOCAL:0 ,0, 1000
+	FOR LOCAL:0 ,900, 1000
 		IF MAGIC_RANK(LOCAL:0) == m_index
 			IF MAGIC_OTHERCONDITION(LOCAL:0) && (MAGIC_GENERALCONDITION(LOCAL:0) || TALENT:MASTER:昨日重现 >= m_index) && (!MAGIC_MASTERONLY(LOCAL:0) || 对象 == MASTER)     
 				CALL MAGIC_LIST_BUTTON(LOCAL:0, LOCAL:1,LOCAL:2)
@@ -74,6 +74,97 @@ IF TARGET
 ENDIF
 PRINTL [0] 返回
 
+
+@SPELL_LIST_BUTTON(ARG,改行用,ARG:1 = 1)
+#DIMS 符咒名
+#DIM 改行用
+SIF ARG:1 < 0
+	RETURN
+符咒名 = [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 18, LEFT% 
+改行用 += STRLENS(符咒名)
+SIF LOCAL:0 < 100
+	改行用 ++
+IF 改行用 > 116
+	IF 改行用 >= 999
+	ELSE
+		PRINTL 
+	ENDIF
+	改行用 = STRLENS(符咒名)
+	SIF LOCAL:0 < 100
+		改行用 ++
+	PRINT 　　
+ENDIF
+
+IF ARG:1 > 0
+	PRINTFORM [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 10, LEFT% （{M_SPELL:ARG:数量,3,LEFT}）
+ELSEIF ARG:1 == 0
+	SETCOLOR 0x606060
+	PRINTPLAINFORM [{ARG,2,RIGHT}] %ERDNAME(M_SPELL,ARG,1), 10, LEFT% （{M_SPELL:ARG:数量,3,LEFT}）
+	RESETCOLOR
+ENDIF
+SIF ARG < 1000  ; 魔法ID从950开始
+	PRINT  
+PRINT 　　
+RETURN 改行用
+
+@SPELL_LEVEL_RESET
+M_SPELL:恢复符咒:等级 = 1
+M_SPELL:追踪符咒:等级 = 1
+M_SPELL:千里眼符咒:等级 = 3
+M_SPELL:旅行符咒:等级 = 5
+M_SPELL:幸运符咒:等级 = 2
+M_SPELL:奇迹符咒:等级 = 2
+M_SPELL:解密符咒:等级 = 2
+M_SPELL:时之蠹符咒:等级 = 5
+M_SPELL:清醒符咒:等级 = 2
+M_SPELL:晴空符咒:等级 = 4
+M_SPELL:雨符咒:等级 = 4
+M_SPELL:风暴符咒:等级 = 4
+M_SPELL:加护符咒:等级 = 3
+M_SPELL:避孕符咒:等级 = 1
+M_SPELL:聚灵符咒:等级 = 3
+M_SPELL:丰穰符咒:等级 = 4
+M_SPELL:清扫符咒:等级 = 2
+M_SPELL:解酒符咒:等级 = 1
+
+M_SPELL:天气符咒:等级 = 4
+M_SPELL:运势符咒:等级 = 2
+
+SPELL_LEVEL_RESETED = 1
+
+@SPELL_LIST(ARG)
+#DIM r_index
+#DIM m_index
+SIF !SPELL_LEVEL_RESETED
+	CALL SPELL_LEVEL_RESET
+FOR r_index ,1, 6
+	m_index = 6 - r_index
+	PRINTFORM ■符咒Lv{m_index} 
+	PRINTL ======================================================================================================================
+	VARSET LOCAL
+	FOR LOCAL:0 ,0, 100
+		IF ARG == 2
+			IF !CAN_ENGRAVE(LOCAL:0)
+				LOCAL:2 = -1
+			ELSE
+				LOCAL:2 = 1
+			ENDIF
+		ELSE
+			LOCAL:2 = M_SPELL:(LOCAL:0):数量 > 0
+			SIF LOCAL:0 > 50
+				LOCAL:2 = -1
+		ENDIF
+		IF M_SPELL:LOCAL:等级 == m_index
+			SIF (ITEM:符咒 <= 0 || ITEM:(270 + m_index) <= 0) && ARG == 2
+				SETCOLOR C_GRAY
+			CALL SPELL_LIST_BUTTON(LOCAL:0, LOCAL:1, LOCAL:2)
+			RESETCOLOR
+		ENDIF
+	NEXT
+	PRINTL 
+NEXT
+DRAWLINE
+
 @MAGIC_AVALIABLE(ARG,ARG:1)
 #FUNCTION
 SIF MAGIC_RANK(ARG) > ABL:MASTER:TSLv && !TALENT:MASTER:昨日重现 && !GETBIT(M_TFLAG:代替魔法等级, MAGIC_RANK(ARG))
@@ -86,6 +177,21 @@ SIF ARG:1 != MASTER && MAGIC_MASTERONLY(ARG:1)
 	RETURNF 0
 RETURNF 1
 
+
+@CAN_ENGRAVE(ARG)
+#FUNCTION
+;运势符咒
+SIF GROUPMATCH(ARG, 5, 6)
+	RETURNF 0
+;天气符咒
+SIF GROUPMATCH(ARG, 10, 11, 12)
+	RETURNF 0
+;其余符咒
+SIF !INRANGE(ARG,1,18) && !INRANGE(ARG,51,52)
+	RETURNF 0
+;SIF M_SPELL:ARG:配方 == 0
+;	RETURNF 0
+RETURNF 1
 ;-----------------------------------------------------------
 ;函数作用:用于判断魔法释放所需等级的函数
 ;-----------------------------------------------------------
@@ -163,7 +269,9 @@ ELSE
 			RETURNF 0
 	ENDSELECT
 ENDIF
-SIF ARG:0 == 979 && M_TFLAG:转运魔法CD
+SIF ARG:0 == ITEM_转运魔法 && M_TFLAG:转运魔法CD
+	RETURNF 0
+SIF INRANGE(ARG:0,ITEM_时间转化Lv1,ITEM_时间转化Lv3) && TALENT:MASTER:高难开局 && !(M_FLAG:理解时间 || TALENT:MASTER:神性 || TALENT:MASTER:昨日重现)
 	RETURNF 0
 RETURNF 1
 
@@ -340,11 +448,7 @@ IF ARG == 0
 			TIMES LOCAL:1, 0.8
 		SIF TALENT:LOCAL:人形 && !GROUPMATCH(TALENT:LOCAL:追加種族,1,2)
 			TIMES LOCAL:1, 0.4
-		IF !TALENT:LOCAL:高难开局
-			LOCAL:1 += RANDSF(5, 20)
-		ELSE
-			LOCAL:1 = 0
-		ENDIF
+		LOCAL:1 = 0
 		MAXBASE:LOCAL:法力 = LOCAL:1
 		BASE:LOCAL:法力 = LOCAL:1
 		BUFF:LOCAL:7 = 0
@@ -372,11 +476,7 @@ ELSE
 		TIMES LOCAL:1, 0.8
 	SIF TALENT:ARG:人形 && !GROUPMATCH(TALENT:ARG:追加種族,1,2)
 		TIMES LOCAL:1, 0.4
-	IF !TALENT:ARG:高难开局
-		LOCAL:1 += RANDSF(5, 20)
-	ELSE
-		LOCAL:1 = 0
-	ENDIF
+	LOCAL:1 += RANDSF(5, 20)
 	MAXBASE:ARG:法力 = LOCAL:1
 	BASE:ARG:法力 = LOCAL:1
 	BUFF:ARG:7 = 0
@@ -388,8 +488,6 @@ RETURN
 ;-----------------------------------------------------------
 @MP_FACTOR(ARG)
 #FUNCTION
-SIF ARG == MASTER && TALENT:MASTER:高难开局
-	RETURNF 0
 IF GROUPMATCH(TALENT:ARG:追加種族,1,2)
 	RETURNF 160
 ELSEIF TALENT:ARG:追加種族 != 4 && GROUPMATCH(TALENT:ARG:人类,1,6)
@@ -519,14 +617,13 @@ ENDIF
 SIF !MAGIC_DLC
 	RETURNF ARG
 
-IF GETBIT(MAGIC_DLC_时间因子,1)
+IF GETBIT(MAGIC_DLC_时间因子,1) && TALENT:MASTER:神性
 	IF ARGS == ""
 		LOCAL = 100 - 8*TALENT:MASTER:神性
 	ELSE
 		LOCAL = 100 - 6*TALENT:MASTER:神性
 	ENDIF
 ENDIF
-
 SIF ARGS == "教养" && !GETBIT(MAGIC_DLC_时间因子,0)
 	LOCAL = LOCAL * (10-ABL:MASTER:教養)/10
 SIF ARGS == "话术" && !GETBIT(MAGIC_DLC_时间因子,0)
@@ -571,17 +668,18 @@ SIF !MAGIC_DLC || M_TFLAG:时间因子类型 == TimeFactor_无加速
 
 IF GETBIT(MAGIC_DLC_时间因子,1)
 	IF M_TFLAG:时间因子类型 == 0
-		LOCAL = (100 - 8*(TALENT:MASTER:神性 - 神性时间影响削弱)) * ARG / 100
+		LOCAL = (100 - (8+无限TSP)*(TALENT:MASTER:神性 - 神性时间影响削弱)) * ARG / 100
 	ELSEIF M_TFLAG:时间因子类型 == TimeFactor_TSLv
 		LOCAL = ARG * (10 - ABL:MASTER:TSLv + 神性时间影响削弱) / 10
 		RETURNF LOCAL
 	ELSE
-		LOCAL = (100 - 6*(TALENT:MASTER:神性 - 神性时间影响削弱)) * ARG / 100
+		LOCAL = (100 - (6+无限TSP)*(TALENT:MASTER:神性 - 神性时间影响削弱)) * ARG / 100
 	ENDIF
 ELSE
 	LOCAL = ARG
 ENDIF
-
+SIF M_TFLAG:时之蠹 && LOCAL > ARG/2
+	LOCAL = ARG/2
 SIF M_TFLAG:时间因子类型 == TimeFactor_教养 && GETBIT(MAGIC_DLC_时间因子,0)
 	LOCAL = LOCAL * (10-ABL:MASTER:教養)/10
 SIF M_TFLAG:时间因子类型 == TimeFactor_话术 && GETBIT(MAGIC_DLC_时间因子,0)
@@ -1086,52 +1184,62 @@ ELSE
 		CASE IS >=157
 			RETURNF 1
 		;你は選べない１
-		CASE GETNUM(TALENT, "習得速度") TO GETNUM(TALENT, "擅長用針"), GETNUM(TALENT, "薬毒耐性"), GETNUM(TALENT, "容易高潮"), GETNUM(TALENT, "盲信"), GETNUM(TALENT, "小悪魔")
+		CASE TALENT_習得速度 TO TALENT_擅長用針, TALENT_薬毒耐性, TALENT_容易高潮, TALENT_盲信, TALENT_小悪魔
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 		;你は選べない２
-		CASE GETNUM(TALENT, "魅力") TO GETNUM(TALENT, "謎之魅力"), GETNUM(TALENT, "回復速度") TO GETNUM(TALENT, "不可思議的根"), GETNUM(TALENT, "狂気"), GETNUM(TALENT, "人気")
+		CASE TALENT_魅力 TO TALENT_謎之魅力, TALENT_回復速度 TO TALENT_不可思議的根, TALENT_狂気, TALENT_人気
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 		;你は選べず、女性器がないと選べない
-		CASE GETNUM(TALENT, "母乳体質"), GETNUM(TALENT, "妊娠願望") 
+		CASE TALENT_妊娠願望 ,TALENT_風騷
 			SIF CHARA == NO:MASTER
 				RETURNF 1
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 		;女性器がないと選べない
-		CASE GETNUM(TALENT, "処女"), GETNUM(TALENT, "風騷"), GETNUM(TALENT, "Ｖ感度")
+		CASE TALENT_処女, TALENT_Ｖ感度, TALENT_母乳体質
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 		;男性器がないと選べない
-		CASE GETNUM(TALENT, "非童貞")
+		CASE TALENT_非童貞
 			SIF !GETBIT(TALENT:CHARA:性別, 1)
 				RETURNF 2
 		;男性器があると選べない
-		CASE GETNUM(TALENT, "具現")
+		CASE TALENT_具現
 			SIF GETBIT(TALENT:CHARA:性別, 1)
 				RETURNF 2
 		;你以外は選べない
-		CASE GETNUM(TALENT, "年齢")
+		CASE TALENT_年齢
 			SIF CHARA != NO:MASTER
 				RETURNF 1
 		;全員選べないが表示はする
-		CASE GETNUM(TALENT, "キス未経験")
+		CASE TALENT_キス未経験
 			RETURNF 2
 		;全員選べない１
-		CASE GETNUM(TALENT, "恋慕") TO GETNUM(TALENT, "思慕"), GETNUM(TALENT, "心情"), GETNUM(TALENT, "容姿"), GETNUM(TALENT, "把柄"), GETNUM(TALENT, "調合知識"), GETNUM(TALENT, "調合Lv"), GETNUM(TALENT, "採集Lv"), GETNUM(TALENT, "釣魚Lv"), GETNUM(TALENT, "伐採Lv")
+		CASE TALENT_恋慕 TO TALENT_思慕, TALENT_心情, TALENT_容姿, TALENT_把柄, TALENT_調合知識, TALENT_調合Lv, TALENT_採集Lv, TALENT_釣りLv, TALENT_伐採Lv
 			RETURNF 1
 		;全員選べない２
-		CASE GETNUM(TALENT, "自慰狂") TO GETNUM(TALENT, "子宮口性感"), GETNUM(TALENT, "迷信"), GETNUM(TALENT, "嫉妬"), GETNUM(TALENT, "濃厚精液"), GETNUM(TALENT, "精愛味覚"), GETNUM(TALENT, "禁断的知識"), GETNUM(TALENT, "精力超群") TO GETNUM(TALENT, "母性")
+		CASE TALENT_自慰狂 TO TALENT_子宮口性感, TALENT_迷信, TALENT_嫉妬, TALENT_濃厚精液, TALENT_精愛味覚, TALENT_禁断的知識, TALENT_精力超群 TO TALENT_母性
 			RETURNF 1
 		;女性器があって幼児か幼稚がないと選べない
-		CASE GETNUM(TALENT, "初潮")
+		CASE TALENT_初潮
 			SIF !GETBIT(TALENT:CHARA:性別, 0)
 				RETURNF 2
 			SIF !TALENT:CHARA:幼児／幼児退行 && !TALENT:CHARA:幼稚
 				RETURNF 2
 	ENDSELECT
 ENDIF
+RETURNF 0
+
+@MAGIC_IS_CLAIR
+#FUNCTION
+SIF !MAGIC_DLC
+	RETURNF 0
+SIF MAGIC_AVALIABLE(ITEM_察知之眼)
+	RETURNF 1
+SIF M_TFLAG:千里眼
+	RETURNF 1
 RETURNF 0
 
 ;-----------------------------------------------------------
@@ -1514,6 +1622,34 @@ SIF CFLAG:CHARA:現在位置 == OMANEKIBEYA() && M_FLAG:隙间标记
 	RETURNF 1
 RETURNF 0
 
+@INFINITE_TSP_MANA_SET
+SIF !MAGIC_DLC
+	RETURN 0
+IF MAXBASE:MASTER:TSP >= 9999999
+	无限TSP = 1
+ELSEIF 无限TSP
+	MAXBASE:MASTER:TSP = 9999999
+ELSE
+	无限TSP = 0
+ENDIF
+IF MAXBASE:MASTER:法力 >= 9999999
+	无限法力 = 1
+ELSEIF 无限法力
+	MAXBASE:MASTER:法力 = 9999999
+ELSE
+	无限法力 = 0
+ENDIF
+IF 无限TSP
+	BASE:MASTER:TSP = 9999999
+	MAXBASE:MASTER:TSP = 9999999
+	BUFF:MASTER:BASE_TSP = 0
+ENDIF
+IF 无限法力
+	BASE:MASTER:法力 = 9999999
+	MAXBASE:MASTER:法力 = 9999999
+	BUFF:MASTER:BASE_法力 = 0
+ENDIF
+
 ;-----------------------------------------------------------
 ;函数作用:检查是否为旧魔法版存档, 判断依据是法强
 ;-----------------------------------------------------------
@@ -1669,7 +1805,122 @@ M_TFLAG:约会临时标记 = 0
 M_TFLAG:神清气爽 = 0
 M_TFLAG:魅力魔法 = 0
 M_TFLAG:转运魔法CD = 0
+M_TFLAG:时之蠹 = 0
+M_TFLAG:聚灵 = 0
+M_TFLAG:千里眼 = 0
+M_TFLAG:解密 = 0
+
+;-----------------------------------------------------------
+;函数作用:每日法力补满
+;-----------------------------------------------------------
+@MP_RESTORE
+FOR LOCAL, 0, CHARANUM
+	BASE:LOCAL:法力 = MAXBASE:LOCAL:法力
+NEXT
+;-----------------------------------------------------------
+;函数作用:每回合M_TFLAG置零
+;-----------------------------------------------------------
+@EVENTCOMEND
 M_TFLAG:BUFF标记 = 0
+
+@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
+#DIM Efficiency
+SIF BASE:ARG:法力 <= 0 && Efficiency > 0
+	RETURN
+IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
+	CALL RECOVER(ARG, -ARG:1, "法力")
+	CALL RECOVER(ARG, ARG:1, "体力")
+	CALL RECOVER(ARG, ARG:1, "気力")
+ELSE
+	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
+	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
+ENDIF
+
+@GAP_TRAVEL
+#DIM ANIMATION_SEED
+#DIM 目的地MAPID
+#DIM 現在地MAPID
+#DIM 隙间位置
+ANIMATION_SEED = 0
+SIF ANIMATERECOLOREDMAPS && !FLAG:70
+	ANIMATION_SEED ++
+CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
+PRINTL 要去哪里呢？
+現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
+FOR 目的地MAPID, 0, MAXHOME
+	SIF !GET_EXISTMAP(目的地MAPID)
+		CONTINUE
+	IF 目的地MAPID == 現在地MAPID
+		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
+		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
+	ELSE
+		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
+	ENDIF
+	SIF 目的地MAPID % 2 == 1
+		PRINTL
+NEXT
+PRINT [100] - 返回
+INPUT
+目的地MAPID = RESULT
+隙间位置 = 98 + 目的地MAPID * 100
+IF 目的地MAPID == 100
+	RETURN
+ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
+	;切换地图
+	IF M_FLAG:隙间标记
+		CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
+		;隙间的出口设置为目的地的entrance
+		M_FLAG:隙间标记 = RESULT
+		FOR LOCAL, 0, CHARANUM
+			;通过初期记录的有无判断其是否应该处于隙间待客室
+			IF M_CFLAG:LOCAL:初期记录
+				CFLAG:LOCAL:現在位置 = 隙间位置
+				CFLAG:LOCAL:初期位置 = 隙间位置
+			ENDIF
+		NEXT
+	ELSE
+		CALL QUICK_SWITCH_MAP(目的地MAPID)
+	ENDIF
+ENDIF
+
+@SET_HISTORY_MAGIC()
+FOR LOCAL, 1, (CHARANUM - 1)
+	IF MARK:LOCAL:反発取得履歴
+		LOCAL:1 ++
+	ENDIF
+	IF MARK:LOCAL:時姦刻印
+		LOCAL:1 ++
+	ENDIF
+	IF MARK:LOCAL:時姦刻印 || CFLAG:LOCAL:睡眠姦 || CFLAG:LOCAL:烂酔奸
+		LOCAL:1 ++
+	ENDIF
+NEXT
+LOCALS:1 =
+LOCALS:2 =
+IF TALENT:MASTER:高难开局
+	LOCALS:1 += @"曾是没有任何能力的普通人的 %NAME:MASTER% ，"
+ELSE
+	LOCALS:1 += @"拥有时停能力的 %NAME:MASTER% ，"
+ENDIF
+SIF DEBUG_HISTORY == 0 && 催眠_HISTORY == 0 && LOCAL:1 == 0
+	LOCALS:1 += @"坚守着自己的信条，"
+IF !TALENT:MASTER:非童貞 && (TALENT:MASTER:性別 == 2 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以童子之身、"
+ELSEIF TALENT:MASTER:处女 && (TALENT:MASTER:性別 == 1 || TALENT:MASTER:性別 == 3)
+	LOCALS:2 += @"以处子之身、"
+ENDIF
+IF ABL:MASTER:TSLv >= 10 && 旧日取得履历 == "尚未取得"
+	旧日取得履历 = %LOCALS:1%不断成长，最终，在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了旧日。
+ELSEIF ABL:MASTER:TSLv >= 6 && 半神取得履历 == "尚未取得"
+	半神取得履历 = %LOCALS:1%不断成长，终于，在%PRINT_DATE_F(DAY)%、%LOCALS:2%成为了半神。
+ENDIF
+
+@RESET_HISTORY_MAGIC()
+SIF 旧日取得履历 == ""
+	旧日取得履历 = 尚未取得
+SIF 半神取得履历 == ""
+	半神取得履历 = 尚未取得
 
 ;-----------------------------------------------------------
 ;函数作用:新增的额外设置功能
@@ -1717,8 +1968,26 @@ SELECTCASE Setting_外出时可以带出去
 ENDSELECT
 CALL PRINTBUTTON_EX(@"[%LOCALS%]", 4, !Setting_外出时可以带出去)
 PRINTL
-CALL PRINTBUTTON_EX("[确认]", 999)
-CALL LEVEL_RESET
+SELECTCASE Setting_单独一人吃饭
+	CASE 0
+		LOCALS =  单独一人吃饭:禁用
+	CASE 1
+		LOCALS =  单独一人吃饭:启用
+ENDSELECT
+CALL PRINTBUTTON_EX(@"[%LOCALS%]", 5, !Setting_单独一人吃饭)
+PRINTL
+IF Real_Time_Save
+	SELECTCASE Setting_即时重载
+		CASE 0
+			LOCALS =  即时重载:禁用
+		CASE 1
+			LOCALS =  即时重载:允许
+	ENDSELECT
+	CALL PRINTBUTTON_EX(@"[%LOCALS%]", 6, !Setting_即时重载)
+	PRINTL
+ENDIF
+CALL PRINTBUTTON_EX(@"[确认]", 999)
+PRINTFORML
 INPUT
 IF RESULT == 1
 	IF Setting_五重绝顶 < 2
@@ -1737,66 +2006,10 @@ ELSEIF RESULT == 3
 ELSEIF RESULT == 4 && GMF_GETBIT("幻想乡大地图")
 	Setting_外出时可以带出去 = !Setting_外出时可以带出去
 ELSEIF RESULT == 5
-	音乐补丁开关 = 1
+	Setting_单独一人吃饭 = !Setting_单独一人吃饭
+ELSEIF RESULT == 6 && Real_Time_Save
+	Setting_即时重载 = !Setting_即时重载
 ELSEIF RESULT == 999
 	RETURN 
 ENDIF
 GOTO LOOP
-
-
-@MP_RECOVERY(ARG,ARG:1,Efficiency = 100)
-#DIM Efficiency
-SIF BASE:ARG:法力 <= 0 && Efficiency > 0
-	RETURN
-IF ARG:1 <= BASE:ARG:法力 * Efficiency / 100
-	CALL RECOVER(ARG, -ARG:1, "法力")
-	CALL RECOVER(ARG, ARG:1, "体力")
-	CALL RECOVER(ARG, ARG:1, "気力")
-ELSE
-	CALL RECOVER(ARG, -BASE:ARG:法力 * Efficiency / 100, "法力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "体力")
-	CALL RECOVER(ARG, BASE:ARG:法力 * Efficiency / 100, "気力")
-ENDIF
-
-@GAP_TRAVEL
-#DIM ANIMATION_SEED
-#DIM 目的地MAPID
-#DIM 現在地MAPID
-#DIM 隙间位置
-ANIMATION_SEED = 0
-SIF ANIMATERECOLOREDMAPS && !FLAG:70
-	ANIMATION_SEED ++
-CALL DRAW_COLOREDMAP(ANIMATION_SEED, "GLOBAL")
-PRINTL 要去哪里呢？
-現在地MAPID = GET_MAPID(CFLAG:MASTER:現在位置)
-FOR 目的地MAPID, 0, MAXHOME
-	SIF !GET_EXISTMAP(目的地MAPID)
-		CONTINUE
-	IF 目的地MAPID == 現在地MAPID
-		PRINTPLAINFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 18, LEFT%
-		CALL COLORMESSAGE(@"　现在地　　", C_GREEN, 3)
-	ELSE
-		PRINTFORM [{目的地MAPID, 3}] - %GET_MAPNAME(目的地MAPID), 30, LEFT%
-	ENDIF
-	SIF 目的地MAPID % 2 == 1
-		PRINTL
-NEXT
-PRINT [100] - 返回
-INPUT
-目的地MAPID = RESULT
-隙间位置 = 98 + 目的地MAPID * 100
-IF 目的地MAPID == 100
-	RETURN
-ELSEIF INRANGE(目的地MAPID, 0, MAXHOME)
-	;切换地图
-	CALL QUICK_SWITCH_MAP(目的地MAPID, 1)
-	;隙间的出口设置为目的地的entrance
-	M_FLAG:隙间标记 = RESULT
-	FOR LOCAL, 0, CHARANUM
-		;通过初期记录的有无判断其是否应该处于隙间待客室
-		IF M_CFLAG:LOCAL:初期记录
-			CFLAG:LOCAL:現在位置 = 隙间位置
-			CFLAG:LOCAL:初期位置 = 隙间位置
-		ENDIF
-	NEXT
-ENDIF
