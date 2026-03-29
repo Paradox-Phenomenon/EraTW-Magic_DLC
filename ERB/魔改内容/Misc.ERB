@@ -14,19 +14,30 @@ ARG:1 = ARG:1 ? ARG:1 # TARGET
 ARG:1 = ARG:1 == -1 ? MASTER # ARG:1
 TRYCALLFORM KOJO_OPTION_K{ARG:1}_WALKTHROUGH_{ARG}(ARG)
 
-@RELINE(ARG,ARG:1)
-;ARG，存行栏位，0~9；1，存行开关
+
+;**不推荐增添该函数的新调用，请使用私有变量，避免使用全局变量以及需要自行管理堆栈变量序列的函数**
+;-------------------------------------------------
+;用于重绘行数记录与清行，0~9号位
+;
+;0号位临时位，用于函数栈末端，通常为输入确认小循环
+;其它按函数栈执行顺序编号即可
+;复杂多层函数栈建议自行整理记录栏位，混淆存在UI错位风险
+;不同函数栈相互独立互不干扰，函数栈执行结束即可覆写栏位
+;请务必在循环前或函数调用前记录，于开头清行
+;否则需要在所有结尾清行
+;--------------------
+@Reline(LineCountTag,ClearOrStore)
 #LOCALSIZE 10
 #LOCALSSIZE 1
-;自机喜好，4；OPTIONDLC，5、6
-;无ARG:1与存行，记录；否则清行
-IF !LOCAL:ARG || ARG:1
-	LOCAL:ARG=LINECOUNT
+#DIM DYNAMIC LineCountTag;存行记录编号
+#DIM DYNAMIC ClearOrStore;存行/清行开关，0清1存
+;未记录或Store
+IF !LOCAL:LineCountTag || ClearOrStore
+	LOCAL:LineCountTag=LINECOUNT
+;存在记录且Clear
 ELSE
-	CLEARLINE LINECOUNT-LOCAL:ARG
+	CLEARLINE LINECOUNT-LOCAL:LineCountTag
 ENDIF
-RETURN RESULT
-
 ;-------------------------------------------------
 ;概　要:优化并调整过的TSP升级
 ;-------------------------------------------------
