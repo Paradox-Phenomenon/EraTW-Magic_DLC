@@ -5,6 +5,32 @@
 ;==============================================================================
 
 ;-------------------------------------------------
+;最大宽度定义函数
+;（注：略窄于窗口宽度 例如，默认窗口1800宽度、字体尺寸18的情况下，理论上正好200个半角字符，但实际上只能打印199个）
+;-------------------------------------------------
+@MAXWIDTH
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+RETURNF HTML_STRINGLEN(DRAWLINESTR)
+
+@MAXWIDTH_PX
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+RETURNF HTML_STRINGLEN(DRAWLINESTR,1)
+
+;-------------------------------------------------
+;将以半角字符（空格）数量为单位的宽度转换为像素宽度
+;-------------------------------------------------
+@TO_PXWIDTH(L_W)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC L_W
+#FUNCTION
+RETURNF L_W * GETCONFIG("フォントサイズ") / 2
+
+;-------------------------------------------------
 ; 函数名：CENTER
 ; 概  述：为字符串两侧填充空格，使其在指定宽度内居中
 ; 参  数：L_STR   - 需要居中的字符串
@@ -16,20 +42,26 @@
 #LOCALSSIZE 1
 #FUNCTIONS
 #DIMS DYNAMIC L_STR
-#DIM DYNAMIC L_WIDTH
-#DIM DYNAMIC L_PAD_LEFT
-#DIM DYNAMIC L_PAD_RIGHT
-#DIM DYNAMIC L_STR_LEN
+#DIM  DYNAMIC L_WIDTH
+#DIM  DYNAMIC SPACE_PX
+#DIM  DYNAMIC PAD_PX
+#DIM  DYNAMIC LEFT_PAD_NUM
+#DIM  DYNAMIC TARGET_PX
+#DIM  DYNAMIC STR_PX
+#DIMS DYNAMIC RES_STR
 
-L_STR_LEN = STRLENS(L_STR)
-IF L_WIDTH <= L_STR_LEN
+TARGET_PX = L_WIDTH * GETCONFIG("フォントサイズ") / 2
+STR_PX = HTML_STRINGLEN(L_STR, 1)
+
+IF TARGET_PX <= STR_PX
 	RETURNF L_STR
 ENDIF
 
-L_PAD_LEFT = (L_WIDTH - L_STR_LEN) / 2
-L_PAD_RIGHT = L_WIDTH - L_STR_LEN - L_PAD_LEFT
+SPACE_PX = HTML_STRINGLEN(" ", 1)
+PAD_PX = TARGET_PX - STR_PX
+LEFT_PAD_NUM = (PAD_PX / 2) / SPACE_PX
 
-RETURNF @"%"", L_PAD_LEFT%%L_STR%%"", L_PAD_RIGHT%"
+RETURNF @"%" " * LEFT_PAD_NUM%%L_STR%%" " * LEFT_PAD_NUM%"
 
 ;-------------------------------------------------
 ; 函数名：CENTERSCREEN
@@ -73,10 +105,23 @@ RETURNF CENTER(L_STR, MAXWIDTH())
 ; 备  注：
 ;     属于排版辅助函数，不做截断处理。
 ;-------------------------------------------------
-@UNITCELL(ARGS, ARG)
+@UNITCELL(L_STR, CELL_WIDTH)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
-RETURNF @"%ARGS+(" "*(ARG-(STRLENS(ARGS)%ARG)))%"
+#DIMS DYNAMIC L_STR
+#DIM  DYNAMIC CELL_WIDTH
+#DIM  DYNAMIC UNIT_PX
+#DIM  DYNAMIC STR_PX
+#DIM  DYNAMIC TARGET_PX
 
+UNIT_PX = MAX(CELL_WIDTH * GETCONFIG("フォントサイズ") / 2, 1)
+STR_PX = HTML_STRINGLEN(L_STR, 1)
+
+; 计算距离[下一个]单元格边界所需的目标总像素长度
+TARGET_PX = STR_PX + UNIT_PX - (STR_PX % UNIT_PX)
+
+RETURNF HTML_FILL_LINE(L_STR, " ", TARGET_PX)
 ;-------------------------------------------------
 ; 函数名：FIXEDCELL
 ; 概  述：固定宽度单元格函数。
@@ -105,10 +150,23 @@ RETURNF @"%ARGS+(" "*(ARG-(STRLENS(ARGS)%ARG)))%"
 ; 备  注：
 ;     适用于“必须等宽”的场景，但可能丢失部分文本内容。
 ;-------------------------------------------------
-@FIXEDCELL(ARGS, ARG)
+@FIXEDCELL(L_STR, CELL_WIDTH)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
-RETURNF \@ STRLENS(ARGS) > ARG ? %SUBSTRING(ARGS, 0, ARG-2)%… # %ARGS+" "*(ARG-(STRLENS(ARGS)))% \@
+#DIMS DYNAMIC L_STR
+#DIM  DYNAMIC CELL_WIDTH
+#DIM  DYNAMIC TARGET_PX
+#DIM  DYNAMIC STR_PX
 
+TARGET_PX = CELL_WIDTH * GETCONFIG("フォントサイズ") / 2
+STR_PX = HTML_STRINGLEN(L_STR, 1)
+
+IF STR_PX > TARGET_PX
+	RETURNF HTML_SUBSTRING(L_STR, MAX(CELL_WIDTH - 2, 0)) + "…"
+ELSE
+	RETURNF HTML_FILL_LINE(L_STR, " ", TARGET_PX)
+ENDIF
 ;-------------------------------------------------
 ; 函数名：FULLWIDTH_LB
 ; 概  述：自动全角行换行（适配日文/中文）

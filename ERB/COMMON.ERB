@@ -172,7 +172,7 @@ RETURNF num
 ;10000, 50, 100, 200なら124
 
 
-
+[SKIPSTART]
 ;-------------------------------------------------
 ;関数名:PRINT_BASE
 ;概　要:汎用補正値取得関数
@@ -217,7 +217,8 @@ IF ARG == 1
 ELSE
 	PRINTSINGLEFORMS "== %ARGS% " + "%(EQUAL * 150)%"
 ENDIF
-;-------------------------------------------------
+[SKIPEND]
+ ;-------------------------------------------------
 ;絶頂時など、ＡとＢとＤと…みたいな感じで「と」でつないで列挙するための関数
 ;引数に表示する文字列と条件(0で無効、非0で有効)を指定。最大5个まで
 ;-------------------------------------------------
@@ -1452,6 +1453,8 @@ ENDIF
 REDRAW PREV_REDRAW
 SETCOLOR LOCAL:1
 RETURN RESULT
+
+[SKIPSTART]
 ;-------------------------------------------------
 ;特殊な機能を持つボタンを作成する関数
 ;ARGは入力される数字、ARG:1に1を設定すると灰色に、
@@ -1501,6 +1504,7 @@ ELSE
 	PRINTBUTTONC @"%ARGS:0%", ARG
 ENDIF
 RESETCOLOR
+[SKIPEND]
 ;-------------------------------------------------
 ;Fisher-Yatesアルゴリズムによるシャッフル配列の作成
 ;専用配列SHAFFLE_ARRAYを使用
@@ -3503,6 +3507,17 @@ SIF ARG == -1
 	ARG = TARGET
 CALL ADD_KISS(ARG, ARG:1, ARG:2)
 
+;性交中判定
+@IS_SEXING(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF !ARG
+	ARG = TARGET
+SIF TEQUIP:ARG:Ｖ性交 == MASTER || TEQUIP:ARG:Ａ性交 == MASTER || TEQUIP:MASTER:Ｖ性交 == ARG || TEQUIP:MASTER:Ａ性交 == ARG
+	RETURNF 1
+RETURNF 0
+
 ;==================================================================
 ;Return 1 if the target is under the effect of an aphrodisiac or in heat
 ;Borrowed from Kaguya's dialogue
@@ -3746,30 +3761,26 @@ RETURNF iNumOfPeople
 [ENDIF]
 RETURNF 0
 
+[SKIPSTART]
 ;-------------------------------------------------
 ;最大幅の定義関数
 ;-------------------------------------------------
 @MAXWIDTH
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTION
 RETURNF STRLENS(DRAWLINESTR)
 
 ;-------------------------------------------------
 ;Make a start of a section (non-button)
 ;-------------------------------------------------
-@PRINTLINE, ARGS, ARGS:1 = "-",ARG
-#LOCALSIZE 1
-#LOCALSSIZE 1
-LOCALS '= ARGS
-SIF !ARG
-	LOCALS '= @"□ %ARGS:0% □"
+@PRINTLINE, ARGS, ARGS:1 = "-"
+LOCALS '= @"□ %ARGS:0% □"
 PRINTFORM %LOCALS%
 IF GETBIT(GETSTYLE(), 0) ;assume bold font allows for ~10.5% less characters on a line (currenly only used by Scouter)
 	PRINTFORML %ARGS:1*((MAXWIDTH()-STRLENS(LOCALS)) * 895 / 1000)%
 ELSE
 	PRINTFORML %ARGS:1*(MAXWIDTH()-STRLENS(LOCALS))%
 ENDIF
+[SKIPEND]
 
 @PALAM_NUM(ARG, ARG:1)
 #LOCALSIZE 1
@@ -4017,6 +4028,7 @@ RETURNF ARGS
 #DIMS strLast
 ;clear off the last part
 ARGS '= REPLACE(ARGS, strSplit + " $", "")
+ARGS '= REPLACE(ARGS, strSplit + "$", "")
 ;use negative lookahead to replace comma before the last item with "AND"
 ARGS '= REPLACE(ARGS, "(" + strSplit + ")(?!.*" + strSplit + ")", strLast)
 ;finally place commas in case splitter wasn't a comma
@@ -4323,6 +4335,8 @@ RETURNF GETBIT(GETMETH(@"COM{COM_ID}_TAGS", 0), TAG)
 RETURNF GETMETH(@"COM{COM_ID}_TAGS", 0)
 
 @ACTIVITY_TAGS_CHECK(ACTIVITY_ID = 0, TAG = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM ACTIVITY_ID
 #DIM TAG
@@ -4330,6 +4344,8 @@ RETURNF GETMETH(@"COM{COM_ID}_TAGS", 0)
 RETURNF GETBIT(GETMETH(@"ACTIVITY{ACTIVITY_ID}_TAGS", 0), TAG)
 
 @GET_ACTIVITY_TAGS(ACTIVITY_ID = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM ACTIVITY_ID
 #DIM TAG

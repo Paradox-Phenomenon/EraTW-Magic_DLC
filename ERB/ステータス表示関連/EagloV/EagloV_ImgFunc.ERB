@@ -93,6 +93,7 @@ ELSEIF 服装 == "内衣" || 服装 == "胸罩" || 服装 == "胖次"
 	IF RESULT
 		特服 = %RESULTS%
 		特服种类 = RESULT
+		DEBUGPRINTFORML 特服 = %RESULTS% 特服种类 = {RESULT}
 	ENDIF
 	CATCH
 	ENDCATCH
@@ -178,11 +179,16 @@ ELSE
 	立绘尺寸:1 = 300
 ENDIF
 
-G_ID = 0
-CALL 画像合成(G_ID, "ダミー", 0, 0, 立绘尺寸:0, 立绘尺寸:1)
-CALL 画像合成(G_ID, 体图索引)
-CALL 画像合成(G_ID, 表情索引)
-
+IF STRCOUNT(表情,"覆盖")
+	G_ID = 0
+	CALL 画像合成(G_ID, "ダミー", 0, 0, 立绘尺寸:0, 立绘尺寸:1)
+	CALL 画像合成(G_ID, 表情索引)
+ELSE
+	G_ID = 0
+	CALL 画像合成(G_ID, "ダミー", 0, 0, 立绘尺寸:0, 立绘尺寸:1)
+	CALL 画像合成(G_ID, 体图索引)
+	CALL 画像合成(G_ID, 表情索引)
+ENDIF
 SPRITECREATE 全图索引, G_ID
 RETURN
 ;}
@@ -225,7 +231,24 @@ RETURN
 #DIM 颜RECT,4
 #DIM 立绘尺寸,2
 
-IF RM_RESOURCECHECK_LOAD(@"%Version%EagloV{CHARA}_颜像范围")
+IF STRCOUNT(全图索引,"覆盖")
+	IF RM_RESOURCECHECK_LOAD(@"%Version%EagloV{CHARA}_覆盖范围")
+		颜RECT:0 = SPRITEPOSX(@"%Version%EagloV{CHARA}_覆盖范围")
+		颜RECT:1 = SPRITEPOSY(@"%Version%EagloV{CHARA}_覆盖范围")
+		颜RECT:2 = SPRITEWIDTH(@"%Version%EagloV{CHARA}_覆盖范围")
+		颜RECT:3 = SPRITEHEIGHT(@"%Version%EagloV{CHARA}_覆盖范围")
+	ELSE
+		颜RECT:0 = 0
+		颜RECT:1 = 0
+		IF RM_RESOURCECHECK_LOAD(@"%Version%EagloV{CHARA}_立绘尺寸")
+			颜RECT:2 = SPRITEWIDTH(@"%Version%EagloV{CHARA}_立绘尺寸")
+			颜RECT:3 = SPRITEHEIGHT(@"%Version%EagloV{CHARA}_立绘尺寸")
+		ELSE
+			颜RECT:2 = 300
+			颜RECT:3 = 300
+		ENDIF
+	ENDIF
+ELSEIF RM_RESOURCECHECK_LOAD(@"%Version%EagloV{CHARA}_颜像范围")
 	颜RECT:0 = SPRITEPOSX(@"%Version%EagloV{CHARA}_颜像范围")
 	颜RECT:1 = SPRITEPOSY(@"%Version%EagloV{CHARA}_颜像范围")
 	颜RECT:2 = SPRITEWIDTH(@"%Version%EagloV{CHARA}_颜像范围")
@@ -586,6 +609,13 @@ CALL EagloV_GET_裸腹差分(Version, CHARA, 妊肚, 乳量)
 SIF RESULT
 	CALL 画像合成(G_ID, RESULTS)
 
+; 裸躯特效差分
+TRYCALLFORM EagloV_裸躯特效%Version%_{CHARA}
+DEBUGPRINTFORML %RESULTS% IS {RESULT}
+IF RESULT
+	CALL 画像合成(G_ID, RESULTS)
+ENDIF
+
 ; 内衣差分
 SIF 内衣差分暂存:0 != ""
 	CALL 画像合成(G_ID, 内衣差分暂存:0)
@@ -597,12 +627,6 @@ CALL EagloV_GET_丁日差分(Version, CHARA, 丁日)
 SIF RESULT
 	CALL 画像合成(G_ID, RESULTS)
 	
-; 裸躯特效差分
-TRYCALLFORM EagloV_裸躯特效%Version%_{CHARA}
-DEBUGPRINTFORML %RESULTS% IS {RESULT}
-IF RESULT
-	CALL 画像合成(G_ID, RESULTS)
-ENDIF
 
 ; 合成体图
 SPRITECREATE 体图索引, G_ID
@@ -1213,10 +1237,18 @@ IF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_连体内衣_%乳量%")
 	RESULTS:0 = %@"%Version%EagloV{CHARA}_连体内衣_%乳量%"%
 	RETURN 1
 ENDIF
-IF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胸罩_%乳量%") && RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胖次_%乳量%")
-	RESULTS:1 = %@"%Version%EagloV{CHARA}_胸罩_%乳量%"%
-	RESULTS:0 = %@"%Version%EagloV{CHARA}_胖次_%乳量%"%
-	RETURN 1
+IF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胸罩_%乳量%")
+	RESULTS:1 = %Version%EagloV{CHARA}_胸罩_%乳量%
+	IF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胖次_%乳量%")
+		RESULTS:0 = %Version%EagloV{CHARA}_胖次_%乳量%
+		RETURN 1
+	ELSEIF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胖次")
+		RESULTS:0 = %Version%EagloV{CHARA}_胖次
+		RETURN 1
+	ENDIF
+ELSEIF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胸罩") && RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_胖次_%乳量%")
+	RESULTS:0 = %Version%EagloV{CHARA}_胖次_%乳量%
+	RESULTS:1 = %Version%EagloV{CHARA}_胸罩
 ENDIF
 IF 妊肚 != ""
 	IF RM_RESOURCECHECK(@"%Version%EagloV{CHARA}_连体内衣_膨腹")

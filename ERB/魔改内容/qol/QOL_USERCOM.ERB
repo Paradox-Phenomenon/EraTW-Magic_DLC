@@ -5,36 +5,17 @@
 #DIM DYNAMIC HIGHLIGHT_SCOM
 #DIM DYNAMIC L_CURRENT_POSE
 #DIMS DYNAMIC L_SCOM_NAME
-
-#DIMS DYNAMIC L_HTML_LINE
-#DIM  DYNAMIC L_CURRENT_LEN_PX   ; 当前行已积累的像素长度
-#DIM  DYNAMIC L_CELL_WIDTH_PX    ; 单个标准单元格的像素宽度
-#DIM  DYNAMIC L_MAX_WIDTH_PX     ; 单行最大像素宽度
 #DIMS DYNAMIC L_COM_TEXT
 #DIMS DYNAMIC L_COM_COLOR
-#DIM  DYNAMIC L_HAS_OPTION
 #DIMS DYNAMIC L_OPTION_NAME
 #DIMS DYNAMIC L_BTN_HTML
-#DIM  DYNAMIC L_BTN_WIDTH_PX     ; 按钮渲染后的实际像素宽度
-#DIM  DYNAMIC L_COLS_NEEDED      ; 按钮需要占用的单元格数量
-#DIM  DYNAMIC L_CONSUMED_PX      ; 按钮及其补齐空白共消耗的像素
-#DIM  DYNAMIC L_PAD_PX           ; 需要补齐的空白像素
-
-; 半角字体宽度为字号的一半，乘上PRINTCLENGTH即为每个单元格的标准像素宽度
-L_CELL_WIDTH_PX = PRINTCLENGTH() * GETCONFIG("フォントサイズ") / 2
-; 单行最大宽度等于填充满行的"-"的标准像素宽度
-L_MAX_WIDTH_PX = MAXWIDTH() * GETCONFIG("フォントサイズ") / 2
 
 FOR LOCAL,0,800
 	;-----------------------------------------------------------
 	;1 强制换行
 	;-----------------------------------------------------------
 	IF (LOCAL == 200 && TFLAG:102 == 2) || (LOCAL == 300 && printKojoCom) || (LOCAL == 350 && TFLAG:102 != 2) || (LOCAL == 400 && TFLAG:102 != 2)
-		IF L_HTML_LINE != ""
-			HTML_PRINT L_HTML_LINE
-			L_HTML_LINE '= ""
-			L_CURRENT_LEN_PX = 0
-		ENDIF
+		CALL HTML_PRINTC_FLUSH()
 	ENDIF
 
 	;-----------------------------------------------------------
@@ -129,59 +110,12 @@ FOR LOCAL,0,800
 	;-----------------------------------------------------------
 	;4 生成按钮HTML
 	;-----------------------------------------------------------
-	L_BTN_HTML '= ""
-	
-	IF L_OPTION_NAME != ""
-		L_BTN_HTML += @"<button value='{-LOCAL}' title='点击切换指令'>[+]</button>"
-	ENDIF
-	
-	IF TEMP_COM_DISPLAY_BEHAVIOR == -1
-		L_BTN_HTML += @"<nonbutton title='不可用'>%L_COM_TEXT%[ - ]</nonbutton>"
-	ELSE
-		L_BTN_HTML += @"<button value='{LOCAL}'>%L_COM_TEXT%[{LOCAL,3}]</button>"
-	ENDIF
-
-	; 包装样式与颜色
-	; SIF TEMP_COM_DISPLAY_STYLE != ""
-	; 	L_BTN_HTML '= HTMLSTYLE(L_BTN_HTML, TEMP_COM_DISPLAY_STYLE)
-	SIF TEMP_COM_DISPLAY_COLOR
-		L_COM_COLOR '= HEX_TO_HTML_COLOR(TEMP_COM_DISPLAY_COLOR)		
-	IF L_COM_COLOR != ""
-		L_BTN_HTML '= @"<font color='%L_COM_COLOR%'>%L_BTN_HTML%</font>"
-	ENDIF
-
+	L_BTN_HTML '= BUILD_COM_BUTTON_HTML(LOCAL, L_COM_TEXT, L_OPTION_NAME, L_COM_COLOR)
 	;-----------------------------------------------------------
 	;5 制表控制
 	;-----------------------------------------------------------
-	L_BTN_WIDTH_PX = HTML_STRINGLEN(L_BTN_HTML, 1)
-
-	L_COLS_NEEDED = MAX((L_BTN_WIDTH_PX + L_CELL_WIDTH_PX - 1) / L_CELL_WIDTH_PX, 1)
-	L_CONSUMED_PX = L_COLS_NEEDED * L_CELL_WIDTH_PX
-	L_PAD_PX = L_CONSUMED_PX - L_BTN_WIDTH_PX
-	;处理换行
-	IF L_CURRENT_LEN_PX + L_CONSUMED_PX > L_MAX_WIDTH_PX
-		HTML_PRINT L_HTML_LINE
-		L_HTML_LINE '= ""
-		L_CURRENT_LEN_PX = 0
-	ENDIF
-
-	IF L_PAD_PX > 0
-		L_HTML_LINE += @"<shape type='space' param='{L_PAD_PX}px'>" + L_BTN_HTML
-	ELSE
-		L_HTML_LINE += L_BTN_HTML
-	ENDIF
-	
-	; 累加目前本行占用的逻辑像素
-	L_CURRENT_LEN_PX += L_CONSUMED_PX
+	CALL HTML_PRINTC_MANAGER(L_BTN_HTML, 0, "C")
 NEXT
-
-;-----------------------------------------------------------
-;6 清空缓存
-;-----------------------------------------------------------
-IF L_HTML_LINE != ""
-	HTML_PRINT L_HTML_LINE
-	L_HTML_LINE '= ""
-ENDIF
 
 ;-------------------------------------------------
 ;子选单的便利切换
