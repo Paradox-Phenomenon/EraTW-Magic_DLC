@@ -608,12 +608,16 @@ SIF 回復量 == 0 || !CHECK_BASE(ARG, ARGS)
 ;回復処理
 IF MAGIC_DLC 
 	IF (ARGS == "TSP" || ARGS == "法力") && 回復量 < 0 
-		SIF ARGS == "TSP"
+		SIF ARGS == "TSP" || (ARGS == "法力" && M_TFLAG:时之蠹)
 			MONEY:1 -= 回復量
 		SIF TALENT:ARG:大魔法师
 			回復量 = 回復量 * 7 / 10
 		SIF TALENT:ARG:昨日重现
 			回復量 = 回復量 * (20 - TALENT:ARG:昨日重现) / 20
+		SIF 无限TSP && ARGS == "TSP"
+			回復量 = 0
+		SIF 无限法力 && ARGS == "法力"
+			回復量 = 0
 	ENDIF
 ENDIF
 BASE:ARG:(ARGS) = LIMIT(BASE:ARG:(ARGS) + 回復量, 0, MAXBASE:ARG:(ARGS))
@@ -729,9 +733,9 @@ ENDIF
 #DIM 変動値
 #DIM 強化能力
 #DIM メッセージ
-SIF MAXBASE:ARG:強化能力 <= 0
-	RETURN
 IF !MAGIC_DLC
+	SIF MAXBASE:ARG:強化能力 <= 0
+		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 
@@ -744,6 +748,12 @@ IF !MAGIC_DLC
 	SIF メッセージ
 		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
 ELSE
+	SIF 強化能力 == BASE_TSP && 无限TSP
+		RETURN
+	SIF 強化能力 == BASE_法力 && 无限法力
+		RETURN
+	SIF MAXBASE:ARG:強化能力 <= 0 && ARG != MASTER
+		RETURN
 	SIF (強化能力 == BASE_TSP || 強化能力 == BASE_法力) && TALENT:MASTER:高难开局 && !M_TFLAG:BUFF标记 && !TALENT:MASTER:神性
 		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
@@ -2320,7 +2330,12 @@ ENDIF
 IF !MAGIC_DLC
 	PRINTFORM ({BASE:C_ID:BASE_ID, 5})
 ELSE
-	PRINTFORM ({BASE:C_ID:BASE_ID, 7})
+	IF BASE:C_ID:BASE_ID > 100000
+		LOCALS = {BASE:C_ID:BASE_ID/1000}k
+	ELSE
+		LOCALS = {BASE:C_ID:BASE_ID}
+	ENDIF
+	PRINTFORM (%LOCALS, 5%)
 ENDIF
 RESETCOLOR
 

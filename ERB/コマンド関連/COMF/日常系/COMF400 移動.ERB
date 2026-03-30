@@ -130,19 +130,35 @@ PRINTBUTTON "＜]", BUTTON切替左
 PRINTBUTTON "地图切换", BUTTON切替中
 PRINTFORM ({TFLAG:地圖切換})
 PRINTBUTTON "[＞", BUTTON切替右
-SIF TALENT:MASTER:居場所察知 || TALENT:MASTER:汚部屋察知
-	PRINTBUTTON "　　[Y] - 察觉模式", "Y"
-IF FLAG:察知模式 == 1
-	PRINT (居)　
-ELSEIF FLAG:察知模式 == 2
-	PRINT (污)　
+IF !MAGIC_DLC
+	SIF TALENT:MASTER:居場所察知 || TALENT:MASTER:汚部屋察知
+		PRINTBUTTON "　　[Y] - 察觉模式", "Y"
+	IF FLAG:察知模式 == 1
+		PRINT (居)　
+	ELSEIF FLAG:察知模式 == 2
+		PRINT (污)　
+	ELSE
+		PRINT 　　
+	ENDIF
+	SIF TALENT:MASTER:居場所察知 && FLAG:察知模式 == 1
+		PRINTBUTTON "[Z] - 所在地察觉　 ", "Z"
+	SIF TALENT:MASTER:汚部屋察知 && FLAG:察知模式 == 2
+		PRINTBUTTON "[X] - 脏房间察觉　 ", "X"
 ELSE
-	PRINT 　　
+	SIF TALENT:MASTER:居場所察知 || TALENT:MASTER:汚部屋察知 || MAGIC_IS_CLAIR()
+		PRINTBUTTON "　　[Y] - 察觉模式", "Y"
+	IF FLAG:察知模式 == 1
+		PRINT (居)　
+	ELSEIF FLAG:察知模式 == 2
+		PRINT (污)　
+	ELSE
+		PRINT 　　
+	ENDIF
+	SIF (TALENT:MASTER:居場所察知 || MAGIC_IS_CLAIR()) && FLAG:察知模式 == 1
+		PRINTBUTTON "[Z] - 所在地察觉　 ", "Z"
+	SIF (TALENT:MASTER:汚部屋察知 || MAGIC_IS_CLAIR()) && FLAG:察知模式 == 2
+		PRINTBUTTON "[X] - 脏房间察觉　 ", "X"
 ENDIF
-SIF TALENT:MASTER:居場所察知 && FLAG:察知模式 == 1
-	PRINTBUTTON "[Z] - 所在地察觉　 ", "Z"
-SIF TALENT:MASTER:汚部屋察知 && FLAG:察知模式 == 2
-	PRINTBUTTON "[X] - 脏房间察觉　 ", "X"
 PRINTBUTTON "[C] - 切换目的地显示", "C"
 IF TALENT:MASTER:体型 < -4 ;&& !CFLAG:MASTER:同行
 	IF CFLAG:MASTER:同行
@@ -173,10 +189,18 @@ DO
 		BREAK
 	;察知系
 	CASE "Z", "z", "X", "x"
-		IF TALENT:MASTER:居場所察知 && (RESULTS == "Z" || RESULTS == "z")
-			CALL HITOSAGASI(,1) ;qol custom code
-		ELSEIF TALENT:MASTER:汚部屋察知 && (RESULTS == "X" || RESULTS == "x")
-			CALL OHEYA_CHECK
+		IF !MAGIC_DLC
+			IF TALENT:MASTER:居場所察知 && (RESULTS == "Z" || RESULTS == "z")
+				CALL HITOSAGASI(,1) ;qol custom code
+			ELSEIF TALENT:MASTER:汚部屋察知 && (RESULTS == "X" || RESULTS == "x")
+				CALL OHEYA_CHECK
+			ENDIF
+		ELSE
+			IF (TALENT:MASTER:居場所察知 || MAGIC_IS_CLAIR()) && (RESULTS == "Z" || RESULTS == "z")
+				CALL HITOSAGASI(,1) ;qol custom code
+			ELSEIF (TALENT:MASTER:汚部屋察知 || MAGIC_IS_CLAIR()) && (RESULTS == "X" || RESULTS == "x")
+				CALL OHEYA_CHECK
+			ENDIF
 		ENDIF
 		$INPUT_LOOP
 		INPUT
@@ -210,14 +234,26 @@ DO
 		ENDIF
 	;察知切り替え
 	CASE "Y", "y"
-		IF TALENT:MASTER:居場所察知 && TALENT:MASTER:汚部屋察知
-			FLAG:察知模式 += 1
-			SIF FLAG:察知模式 >= 3
-				FLAG:察知模式 = 0
-		ELSEIF TALENT:MASTER:居場所察知
-			FLAG:察知模式 = !FLAG:察知模式
-		ELSEIF TALENT:MASTER:汚部屋察知
-			FLAG:察知模式 = (!FLAG:察知模式) * 2
+		IF !MAGIC_DLC
+			IF TALENT:MASTER:居場所察知 && TALENT:MASTER:汚部屋察知
+				FLAG:察知模式 += 1
+				SIF FLAG:察知模式 >= 3
+					FLAG:察知模式 = 0
+			ELSEIF TALENT:MASTER:居場所察知
+				FLAG:察知模式 = !FLAG:察知模式
+			ELSEIF TALENT:MASTER:汚部屋察知
+				FLAG:察知模式 = (!FLAG:察知模式) * 2
+			ENDIF
+		ELSE
+			IF (TALENT:MASTER:居場所察知 && TALENT:MASTER:汚部屋察知) || MAGIC_IS_CLAIR()
+				FLAG:察知模式 += 1
+				SIF FLAG:察知模式 >= 3
+					FLAG:察知模式 = 0
+			ELSEIF (TALENT:MASTER:居場所察知 || MAGIC_IS_CLAIR())
+				FLAG:察知模式 = !FLAG:察知模式
+			ELSEIF (TALENT:MASTER:汚部屋察知 || MAGIC_IS_CLAIR())
+				FLAG:察知模式 = (!FLAG:察知模式) * 2
+			ENDIF
 		ENDIF
 		RESTART
 	;表示切り替え
@@ -320,12 +356,15 @@ SIF CFLAG:MASTER:陪睡中
 SIF TFLAG:约会道中
 	RETURN 0
 ;GMF 现在全地图可以移动
-SIF !GMF_GETBIT("幻想乡大地图") && AT_HOME(MASTER) == 0
-	RETURN 0
-SIF GMF_MAP_FORCE_MODE == 1
-	RETURN 0
-SIF GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) != GMF_HOME_MAP
-	RETURN 0
+IF GMF_GETBIT("幻想乡大地图")
+	SIF GMF_MAP_FORCE_MODE == 1
+		RETURN 0
+	SIF GMF_MAP_FORCE_MODE == -1 && GET_MAPID(CFLAG:MASTER:現在位置) != GMF_HOME_MAP
+		RETURN 0
+ELSE
+	SIF !AT_HOME(MASTER)
+		RETURN 0
+ENDIF
 RETURN 1
 
 @INSTANT_MOVE(ARG = 0)
