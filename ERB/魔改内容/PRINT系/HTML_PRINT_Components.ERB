@@ -286,6 +286,22 @@ STYLED_STR '= HTMLWRAP(L_STR)
 HTML_PRINT HTML_FILL_LINE(STYLED_STR, FILL_CHAR)
 
 ;-------------------------------------------------
+; 函数名：HTML_PRINTFORM
+; 概  述：模拟 PRINTFORM 制表语法的 HTML 版本
+; 参  数：HTML_STR     - 要格式化的内容
+;         WIDTH_CHAR   - 目标宽度 (半角字符数)
+;         ALIGN        - "LEFT" 或 "RIGHT"
+;-------------------------------------------------
+@HTML_PRINTFORM(HTML_STR, WIDTH_CHAR, ALIGN = "RIGHT")
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIMS DYNAMIC HTML_STR
+#DIM  DYNAMIC WIDTH_CHAR
+#DIMS DYNAMIC ALIGN
+RETURNF HTML_FILL_LINE(HTML_STR, " ", TO_PXWIDTH(WIDTH_CHAR), ALIGN)
+
+;-------------------------------------------------
 ; 单行填充制表工具
 ; 将输入的字符串使用指定的字符补齐宽度
 ; 参  数：
@@ -295,11 +311,12 @@ HTML_PRINT HTML_FILL_LINE(STYLED_STR, FILL_CHAR)
 ; 返回值：		补全填充满整行的HTML字符串
 ; 备  注：		不修改传入的字符串，只生成与当前样式匹配的填充部分
 ;-------------------------------------------------
-@HTML_FILL_LINE(HTML_STR, FILL_CHAR = "-", TARGET_PX = -1)
+@HTML_FILL_LINE(HTML_STR, FILL_CHAR = " ", TARGET_PX = -1, ALIGN = "LEFT")
 #FUNCTIONS
 #DIMS DYNAMIC HTML_STR
 #DIMS DYNAMIC FILL_CHAR
 #DIM  DYNAMIC TARGET_PX
+#DIMS DYNAMIC ALIGN
 #DIM  DYNAMIC HTML_STR_LEN
 #DIM  DYNAMIC STYLED_CHAR_PX
 #DIM  DYNAMIC FILL_NUM
@@ -314,10 +331,17 @@ FILL_NUM = MAX((TARGET_PX - HTML_STR_LEN) / STYLED_CHAR_PX, 0)
 
 SIF FILL_NUM == 0
 	RETURNF HTML_STR
+IF FILL_CHAR == " "
+	FILLER_STR '= @"<shape type='space' param='{TARGET_PX - HTML_STR_LEN}px'>"
+ELSE
+	FILLER_STR '= HTMLWRAP(FILL_CHAR * FILL_NUM)
+ENDIF
 
-FILLER_STR '= FILL_CHAR * FILL_NUM
-STYLED_FILLER '= HTMLWRAP(FILLER_STR)
-RETURNF HTML_STR + STYLED_FILLER
+IF ALIGN == "LEFT"
+	RETURNF HTML_STR + FILLER_STR
+ELSE ; RIGHT
+	RETURNF FILLER_STR + HTML_STR
+ENDIF
 
 ;-------------------------------------------------
 ; HTML 属性打包器
