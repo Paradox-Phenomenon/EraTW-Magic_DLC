@@ -905,40 +905,23 @@ CHARA_LISTはプライベートで保持しているため
 	22"好感", 23"信頼", 24"欲求"
 [SKIPEND]
 @SHOW_CHARA_LIST(LIST_TYPE = "现有的角色列表", DISP_TYPE_STR = "体力气力", OP)
-#DIMS LIST_TYPE                     ;リストの種別
-#DIMS DISP_TYPE_STR                 ;Ensures it can still be called like normal
-#DIM  DISP_TYPE                      ;Handle the type as int, rather than string
-#DIMS OP                            ;機能オプション
-#DIM  GET_LIST = 1                  ;リスト更新フラグ
-#DIM  L_ID                          ;リスト上の番号（ループカウンタ）、登録番号にあらず
-#DIM  L_CLASS_ID                    ;リストのクラス内ID
-#DIM  CHARA_LIST , 人物数量上限 ;リスト本体、登録番号にて記録
-#DIM  CHARA_CNT                     ;リストに該当したキャラの数
-#DIMS INPUT_STR                     ;入力内容の一時保持
-#DIM  INPUT_INT                     ;入力内容をINT化したモノ
-#DIM  NOW_GROUP = 1                 ;表示中のキャラグループ
-#DIM  LAST_GROUP                    ;キャラグループ総数
-#DIM  SORT_TYPE                     ;キャラリストのソートタイプ
-;表示タイプの名称
-{
-#DIMS CONST DISP_NAME = 
-	"体力气力", "敏感度", "性技", "刻印", "技能", "好感", "胜利等"
-}
-
-;表示項目の名称
-{
-#DIMS CONST DISP_MEMO = 
-	"体力", "气力", 
-	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", 
-	"亲密", "顺从", "欲望", "技巧", "侍奉精神", "露出癖",
-	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "受虐", "施虐", "精液中毒",
-	"苦痛", "快乐", "顺从", "反感", "时奸", 
-	"教养", "话术", "战斗", "清扫", "料理", "音乐", "伐木", "钓鱼", "采集", "调合",
-	"好感", "信赖", "欲求",
-	"弹幕对决胜利", "斗虫对决胜利", "料理对决胜利"
-}
-#DIM CREDRAW
-#DIM FIRST_LINE
+#DIMS DYNAMIC LIST_TYPE
+#DIMS DYNAMIC DISP_TYPE_STR
+#DIM  DYNAMIC DISP_TYPE
+#DIMS DYNAMIC OP
+#DIM  DYNAMIC GET_LIST = 1
+#DIM  DYNAMIC L_ID
+#DIM  DYNAMIC L_CLASS_ID
+#DIM  DYNAMIC CHARA_LIST , 人物数量上限
+#DIM  DYNAMIC CHARA_CNT
+#DIMS DYNAMIC INPUT_STR
+#DIM  DYNAMIC INPUT_INT
+#DIM  DYNAMIC NOW_GROUP = 1
+#DIM  DYNAMIC LAST_GROUP
+#DIM  DYNAMIC SORT_TYPE
+#DIM  DYNAMIC CREDRAW
+#DIM  DYNAMIC FIRST_LINE
+#DIMS DYNAMIC DISP_NAME = "体力气力", "敏感度", "性技", "刻印", "技能", "好感", "胜利等"
 
 IF 高级列表功能
 	CALL SHOW_CHARA_LIST_DT(LIST_TYPE, DISP_TYPE_STR, OP)
@@ -946,18 +929,9 @@ IF 高级列表功能
 ENDIF
 
 ;情報表示用
-SELECTCASE DISP_TYPE_STR
-	CASE "体力气力"
-		DISP_TYPE = 0
-	CASE "敏感度"
-		DISP_TYPE = 1
-	CASE "性技"
-		DISP_TYPE = 2
-	CASE "刻印"
-		DISP_TYPE = 3
-	CASE "好感度"
-		DISP_TYPE = 5
-ENDSELECT
+DISP_TYPE = FINDELEMENT(DISP_NAME, DISP_TYPE_STR)
+SIF DISP_TYPE == -1
+	DISP_TYPE = 0
 
 FIRST_LINE = LINECOUNT
 $REPRINT
@@ -983,15 +957,15 @@ IF CHARA_CNT <= 0
 	NEXT
 ;項目あり
 ELSE
-	;現在のタイプの総グループ数を更新
+;現在のタイプの総グループ数を更新
 	LAST_GROUP = 1 + (CHARA_CNT - 1) / 40
 	PRINTFORML 　%LIST_TYPE%　（符合条件的角色：{CHARA_CNT}名　{NOW_GROUP}/{LAST_GROUP}）　名字有颜色的角色是有剧本的
 	PRINTFORM 
-	CALL CHARA_BUTTON(-1, , DISP_TYPE, SORT_TYPE)
+	CALL QOL_CHARA_BUTTON(-1, , DISP_TYPE, SORT_TYPE)
 	DRAWLINE
 	FOR L_ID, (NOW_GROUP - 1) * 40, NOW_GROUP * 40
 		IF INRANGE(L_ID, 0, CHARA_CNT - 1)
-			CALL CHARA_BUTTON(L_ID, CHARA_LIST:L_ID, DISP_TYPE, SORT_TYPE)
+			CALL QOL_CHARA_BUTTON(L_ID, CHARA_LIST:L_ID, DISP_TYPE, SORT_TYPE)
 		ELSE
 			PRINTL
 		ENDIF
@@ -1006,7 +980,6 @@ ELSE
 	PRINTBUTTON @"← %DISP_NAME:((DISP_TYPE - 1 + VARSIZE("DISP_NAME")) % VARSIZE("DISP_NAME")), 20, LEFT%", 444
 ENDIF
 
-;modded to have infinite scroll
 IF LAST_GROUP == 1
 	SETCOLOR 0x606060
 	PRINTFORM %"上一页",15,LEFT%
@@ -1073,9 +1046,9 @@ SELECTCASE RESULT
 		GET_LIST = 1
 		NOW_GROUP = 1
 		RETURN 999
-	CASE 1032 TO 1117 ;the max range after TO is DISP_MEMO-1*2?
+	CASE SORT_BTN_BASE TO (SORT_BTN_BASE + SORT_BTN_DESC_OFFSET + VARSIZE("DISP_MEMO"))
 		SORT_TYPE = RESULT
-		CALL SORT_LIST(RESULT, CHARA_LIST, CHARA_CNT)
+		CALL QOL_SORT_LIST(RESULT, CHARA_LIST, CHARA_CNT)
 		GOTO REPRINT
 	CASE 777
 		SIF FIRSTTIME("花名册警告",,0)
@@ -1096,7 +1069,7 @@ SELECTCASE RESULT
 			PRINTFORMW {RESULT}不在列表中!
 			GOTO REPRINT
 		ENDIF
-		;ここだけDO-LOOPぬけます
+;ここだけDO-LOOPぬけます
 ENDSELECT
 $RETRY
 
@@ -1106,7 +1079,7 @@ IF STRCOUNT(OP, "「情報表示」")
 		GOTO REPRINT
 	NOW_GROUP = 1
 	GET_LIST = 1
-	;一応RESULTが正になるのは「最終確認」のみだが念のために判定
+;一応RESULTが正になるのは「最終確認」のみだが念のために判定
 	SIF STRCOUNT(OP, "「最終確認」")
 		RETURN RESULT
 ELSE
@@ -1646,19 +1619,20 @@ ENDSELECT
 @SHOW_ABILITY(C_ID)
 #DIM  C_ID
 {
-#DIMS CONST DISP_NAME , 42 = 
-	"苦痛",     "亲密",     "教养", "Ｃ感觉", "指技术", "受虐属性", "自慰中毒",
-	"快乐",     "顺从", "话术技能", "Ｖ感觉", "膣技术", "施虐属性", "精液中毒",
-	"屈服",     "欲望", "战斗能力", "Ａ感觉", "Ａ技术", "百合属性", "百合中毒",
-	"反感",     "技巧", "清扫技能", "Ｂ感觉", "胸技术", "断袖属性", "断袖中毒",
-	"履历", "侍奉精神", "料理技能", "Ｍ感觉", "舌技术",         "", "膣射中毒",
-	"时奸",   "露出癖", "音乐技能",       "", "腰技术",         "", "肛射中毒",
+#DIMS CONST DISP_NAME = 
+	"苦痛",	"亲密",		"教养",		"Ｃ感觉",	"指技术",	"受虐属性",	"自慰中毒",
+	"快乐",	"顺从",		"话术技能",	"Ｖ感觉",	"膣技术",	"施虐属性",	"精液中毒",
+	"屈服",	"欲望",		"战斗能力",	"Ａ感觉",	"Ａ技术",	"百合属性",	"百合中毒",
+	"反感",	"技巧",		"清扫技能",	"Ｂ感觉",	"胸技术",	"断袖属性",	"断袖中毒",
+	"履历",	"侍奉精神",	"料理技能",	"Ｍ感觉",	"舌技术",	"",			"膣射中毒",
+	"时奸",	"露出癖",	"音乐技能",	"",			"腰技术",	"",			"肛射中毒",
+	"",		"",			"",			"",			"足技术",	"",			"",
 }
 CALL PRINTBUTTON_EX("能力", 162, TFLAG:162, , , 1)
 SIF TFLAG:能力表示
 	RETURN
 
-FOR LOCAL, 0, 42
+FOR LOCAL, 0, VARSIZE("DISP_NAME")
 	CALL PRINT_ABILITY(C_ID, DISP_NAME:LOCAL, LOCAL)
 	SIF LOCAL % 7 == 6
 		PRINTFORML 
@@ -1672,13 +1646,14 @@ NEXT
 #DIMS DISP_NAME
 #DIM  VIEW
 {
-#DIM CONST DISP_ID , 42 = 
-	0,  9, 43, 0, 50, 15, 30,
-	1, 10, 41, 1, 54, 16, 31,
-	2, 11, 42, 2, 55, 17, 32,
-	3, 12, 40, 3, 52, 18, 33,
-	4, 13, 44, 4, 51,  0, 34,
-	5, 14, 45, 0, 53,  0, 35,
+#DIM CONST DISP_ID = 
+	0,	9,	43,	0,	50,	15,	30,
+	1,	10,	41,	1,	54,	16,	31,
+	2,	11,	42,	2,	55,	17,	32,
+	3,	12,	40,	3,	52,	18,	33,
+	4,	13,	44,	4,	51,	0,	34,
+	5,	14,	45,	0,	53,	0,	35,
+	0,	0,	0,	0,	56,	0,	0,
 }
 PRINTFORM 　
 SELECTCASE DISP_NAME
@@ -1687,17 +1662,17 @@ CASE ""
 	PRINTFORM 　　　　　　　　
 CASE "苦痛", "快乐", "屈服", "反感", "履历", "时奸"
 	IF C_ID == MASTER
-		PRINTFORM %"　" * 6%
+		PRINTFORM %"　" * 8%
 	ELSEIF GROUPMATCH(DISP_NAME, "反感", "履历")
-		PRINTFORM %DISP_NAME, 4%：
+		PRINTFORM %DISP_NAME, 8%：
 		CALL COLOR_STAMP(MARK:C_ID:(DISP_ID:VIEW), 3, "×", C_RED)
 	ELSE
-		PRINTFORM %DISP_NAME, 4%：
+		PRINTFORM %DISP_NAME, 8%：
 		CALL COLOR_STAMP(MARK:C_ID:(DISP_ID:VIEW), 3, "★", 0xFFFF00)
 	ENDIF
 {
 CASE 
-	"指技术", "膣技术", "Ａ技术", "胸技术", "舌技术", "腰技术",
+	"指技术", "膣技术", "Ａ技术", "胸技术", "舌技术", "腰技术", "足技术",
 	"清扫技能", "话术技能", "战斗能力",     "教养", "料理技能", "音乐技能"
 }
 	PRINTFORM %DISP_NAME, 8%：
@@ -1714,24 +1689,13 @@ CASEELSE
 ENDSELECT
 
 
-
+[SKIPSTART]
 ;ソート用ボタン作成関数
 ;無造作に扱えるが
 ;同一列表内のB_NAMEは横幅を揃えたほうがみばえがよろしい
 @MAKE_SORT_BUTTON(SORT_TYPE, BUTTON)
 #DIM SORT_TYPE ;現在のソートタイプ
 #DIM BUTTON    ;基本のボタン名
-{
-#DIMS CONST DISP_MEMO = 
-	"体力", "气力", 
-	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", 
-	"亲密", "顺从", "欲望", "技巧", "侍奉精神", "露出癖",
-	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "受虐", "施虐", "精液中毒",
-	"苦痛", "快乐", "顺从", "反感", "时奸", 
-	"教养", "话术", "战斗", "清扫", "料理", "音乐", "伐木", "钓鱼", "采集", "调合",
-	"好感", "信赖", "欲求",
-	"弹幕对决胜利", "斗虫对决胜利", "料理对决胜利"
-}
 ;auto sort
 SortListSize = VARSIZE("DISP_MEMO")
 FOR LOCAL, 1000, 9999
@@ -1775,17 +1739,6 @@ ENDIF
 {
 #DIMS CONST DISP_NAME = 
 	"体力气力", "敏感度", "性技", "刻印", "技能", "好感", "胜利等"
-}
-{
-#DIMS CONST DISP_MEMO = 
-	"体力", "气力", 
-	"Ｃ感", "Ｖ感", "Ａ感", "Ｂ感", "Ｍ感", 
-	"亲密", "顺从", "欲望", "技巧", "侍奉精神", "露出癖",
-	"指技", "舌技", "胸技", "腰技", "膣技", "Ａ技", "受虐", "施虐", "精液中毒",
-	"苦痛", "快乐", "顺从", "反感", "时奸", 
-	"教养", "话术", "战斗", "清扫", "料理", "音乐", "伐木", "钓鱼", "采集", "调合",
-	"好感", "信赖", "欲求",
-	"弹幕对决胜利", "斗虫对决胜利", "料理对决胜利"
 }
 
 IF LABEL >= 0
@@ -2134,6 +2087,7 @@ CASE 6 ;victories&etc
 CASEELSE
 	THROW 異常なDISP_TYPE　{DISP_TYPE}
 ENDSELECT
+[SKIPEND]
 
 @陥落条件表示(ARG, EXPECTED_WIDTH) ;qol custom code, added EXPECTED_WIDTH
 #DIM 自覚絶頂

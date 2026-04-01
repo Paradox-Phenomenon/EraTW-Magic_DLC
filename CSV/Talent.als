@@ -240,9 +240,9 @@
 
 221,妻,;custom code (1=fiancé(e) 2=spouse)
 222,妾,;
-223,力持ち,;custom code,
-224,噂話者,;custom code
-225,酒造家,;custom code
+223,大力士,;custom code,
+224,爱八卦,;custom code
+225,酿酒师,;custom code
 
 
 310,PregnancyType_OLD,;no longer used, value should be converted to new format
