@@ -389,6 +389,9 @@ CASE -1
 	RETURNF "依頼発生直後"
 CASE 1
 	RETURNF "依頼未受託"
+CASE 11
+	;debug-spawned IRAI, treated as 依頼未受託 but bypass conditions
+	RETURNF "依頼未受託"
 CASE 2
 	RETURNF "依頼中"
 CASE 3
@@ -408,6 +411,16 @@ CASE 105
 CASE 106
 	RETURNF "依頼終了（失敗）"
 ENDSELECT
+
+;----------------------------------------------------------------------------------------------------
+;debug-spawned IRAI check, see DEBUG_IRAI_HAPPEN
+;----------------------------------------------------------------------------------------------------
+@IS_DEBUG_IRAI(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM CHARA
+RETURNF CFLAG:CHARA:依頼状況 == 11
 
 
 
@@ -434,7 +447,9 @@ CASE "依頼発生直後"
 	CFLAG:CHARA:依頼状況 = -1
 CASE "依頼未受託"
 	CFLAG:CHARA:依頼状況 = 1
-	;DEBUGPRINTFORML ＞依頼発生　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
+	;#;DEBUGPRINTFORML ＞依頼発生　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
+CASE "デバッグ依頼未受託"
+	CFLAG:CHARA:依頼状況 = 11
 CASE "依頼中"
 	CFLAG:CHARA:依頼状況 = 2
 CASE "依頼達成"
@@ -454,13 +469,11 @@ CASE "依頼終了（報告忘れ）"
 CASE "依頼終了（失敗）"
 	CFLAG:CHARA:依頼状況 = 106
 CASE "依頼消滅"
-	[IF DEBUG]
-		IF CFLAG:CHARA:依頼状況 == 1
-			DEBUGPRINTFORML ＞でばっぐ中につき自然消滅回避　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
-			RETURN
-			DEBUGPRINTFORML ＞依頼消滅　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
-		ENDIF
-	[ENDIF]
+	IF IS_DEBUG_IRAI(CHARA)
+		DEBUGPRINTFORML ＞デバッグ依頼につき自然消滅回避　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
+		RETURN
+	ENDIF
+	DEBUGPRINTFORML ＞依頼消滅　%CALLNAME:CHARA, 20%　{CFLAG:CHARA:依頼内容, 6}
 	CFLAG:CHARA:依頼状況 = 0
 	CFLAG:CHARA:依頼内容 = 0
 CASEELSE
