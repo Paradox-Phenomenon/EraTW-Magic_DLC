@@ -217,9 +217,12 @@ LOCAL = RAND:10
 
 ;50%の確率で風速弱体化。暖気が強い場合20%の確率で風速強化
 ;但し春第1タームは確実に強風
-IF DAY:2 == 1 && NOW_TERM == 1 && GENSOKYO_WIND_VE_SYSTEM:天系_通用 != 天气_强风
-	GENSOKYO_WIND_VE_SYSTEM:天系_通用 = 天气_强风
-	CALL qol_WEATHER_CHANGE_DIARY_PRINT("春风")
+;bugfix：春季第一天强制设定为强风。但在下一次轮询时却无法进入这一分枝，导致50%概率被改为无风。然后在下下次轮询时又被改为强风。导致不停地触发强风-写日记-风停-强风-写日记
+IF DAY:2 == 1 && NOW_TERM == 1
+	IF GENSOKYO_WIND_VE_SYSTEM:天系_通用 != 天气_强风
+		GENSOKYO_WIND_VE_SYSTEM:天系_通用 = 天气_强风
+		CALL qol_WEATHER_CHANGE_DIARY_PRINT("春风")
+	ENDIF
 ELSEIF POWER_WARM_AIR >= 4 && LOCAL >= 8 && GENSOKYO_WIND_VE_SYSTEM:天系_通用 == 天气_无风
 	GENSOKYO_WIND_VE_SYSTEM:天系_通用 = 天气_强风
 ELSEIF LOCAL >= 5 && GENSOKYO_WIND_VE_SYSTEM:天系_通用 > 天气_无风
