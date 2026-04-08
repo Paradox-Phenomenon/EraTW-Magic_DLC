@@ -310,6 +310,7 @@ RETURNF -1
 #DIM MASTER_ORIGINAL_HOME
 #DIM MASTER_ORIGINAL_HOUSEHEAD
 #DIM CHARA_ORIGINAL_HOME
+#DIM DYNAMIC R_ID
 GMF_HOME_MAP = MAIN_MAP
 MASTER_ORIGINAL_HOME = 默认初期位置
 MASTER_ORIGINAL_HOUSEHEAD = 拠点_家主
@@ -319,6 +320,44 @@ FOR LOCAL, 0, MAXHOME
 		CONTINUE
 	MAIN_MAP = LOCAL
 	TRYCCALLFORM ROOMSETTING_{MAIN_MAP}
+		FOR LOCAL:1, 1, 100
+			;補完設定
+			;MASTERの初期位置は最低限の機能を備える,飲食はできなくなる
+			IF CFLAG:MASTER:初期位置 % 100 == LOCAL
+				ROOMDATA:(LOCAL:1) |= 場所_被窝
+				ROOMDATA:(LOCAL:1) |= 場所_学习
+				ROOMDATA:(LOCAL:1) |= 場所_プライベート
+				ROOMDATA:(LOCAL:1) &= ~場所_飲食
+			ENDIF
+			;ワンルーム
+			IF ROOMDATA:(LOCAL:1) & 場所_ワンルーム
+				ROOMDATA:(LOCAL:1) |= 場所_被窝
+				ROOMDATA:(LOCAL:1) |= 場所_屋内
+				ROOMDATA:(LOCAL:1) |= 場所_厨房
+				ROOMDATA:(LOCAL:1) |= 場所_学习
+				ROOMDATA:(LOCAL:1) |= 場所_休憩
+				ROOMDATA:(LOCAL:1) |= 場所_飲食
+				ROOMDATA:(LOCAL:1) |= 場所_プライベート
+				ROOMDATA:(LOCAL:1) |= 場所_炬燵
+				ROOMDATA:(LOCAL:1) &= ~場所_過疎
+			ENDIF
+			;被窝
+			IF ROOMDATA:(LOCAL:1) & 場所_被窝
+				ROOMDATA:(LOCAL:1) |= 場所_休憩
+			ENDIF
+			;洋室
+			IF ROOMDATA:(LOCAL:1) & 場所_洋室
+				ROOMDATA:(LOCAL:1) |= 場所_屋内
+			ENDIF
+			;厨房
+			IF ROOMDATA:(LOCAL:1) & 場所_厨房
+				ROOMDATA:(LOCAL:1) |= 場所_つまみ食い
+			ENDIF
+			;施錠チェック,初期位置が変わった場合、施錠を解錠する
+			R_ID = (LOCAL:1) % 1000 + MAIN_MAP * 100
+			SIF LOCK:R_ID && !PRIVATEROOM:(LOCAL:1)
+				LOCK:R_ID = 0
+		NEXT
 		GMF_MAXROOM:LOCAL = MAXROOM
 		GMF_ENTRANCE:LOCAL = ENTRANCE
 		GMF_MAP_PAGES:LOCAL = MAP_PAGES
