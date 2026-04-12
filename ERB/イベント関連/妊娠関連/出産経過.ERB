@@ -218,11 +218,17 @@ FOR LOCAL,MAX(CFLAG:ARG:子供人数 - MAXCHILD + 1, 1),CFLAG:ARG:子供人数 +
 				CFLAG:ARG:罩杯提升 --
 			ENDIF
 		ENDIF
-	ELSEIF CFLAG:ARG:出産経過日 == 20 && CFLAG:ARG:回復速度降低
-		SIF CHILD_MULTIPLE_FIRST(ARG,CHILDNUM) == CHILDNUM
-				;only print a line for the first child of a litter.
+	ENDIF
+	IF CFLAG:ARG:出産経過日 == 20 && CFLAG:ARG:回復速度降低
+		IF CHILD_MULTIPLE_FIRST(ARG,CHILDNUM) == CHILDNUM
+				;only print for the first child of a litter.
 			DRAWLINE
-		PRINTFORMW 在平安完成产后恢复后、%CALLNAME:ARG%完全恢复了元气。
+			IF TALENT:ARG:妊娠 ;Custom code, different message while pregnant.
+				PRINTFORMW 尽管又一次怀孕，%CALLNAME:ARG%还是在平安分娩后恢复了一些精力。
+			ELSE
+				PRINTFORMW 在平安完成产后恢复后、%CALLNAME:ARG%完全恢复了元气。
+			ENDIF
+		ENDIF
 		;口上チェック
 		CALL KOJO_MESSAGE_SEND("CHILD", 0, ARG, 0, 0, "RAISING_回復")
 		IF RESULT == 2
@@ -236,8 +242,10 @@ FOR LOCAL,MAX(CFLAG:ARG:子供人数 - MAXCHILD + 1, 1),CFLAG:ARG:子供人数 +
 				MAXBASE:ARG:体力 = MAXBASE:ARG:体力 / 10 * 11
 			SIF MAXBASE:ARG:気力 / 10 * 11 <= CSVBASE(ARG, GETNUM(BASE, "気力")) * 2
 				MAXBASE:ARG:気力 = MAXBASE:ARG:気力 / 10 * 11
-			TALENT:ARG:回復速度 = CFLAG:ARG:回復速度降低 - 2
-			CFLAG:ARG:回復速度降低 = 0
+			IF !TALENT:ARG:妊娠 ;Custom code, don't unset flag while pregnant.
+				TALENT:ARG:回復速度 = CFLAG:ARG:回復速度降低 - 2
+				CFLAG:ARG:回復速度降低 = 0
+			ENDIF
 		ENDIF
 	ENDIF
 NEXT
