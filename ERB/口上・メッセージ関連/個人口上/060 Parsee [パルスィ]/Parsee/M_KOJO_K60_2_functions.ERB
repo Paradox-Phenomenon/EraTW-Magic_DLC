@@ -88,7 +88,7 @@ SELECTCASE ARG
     CASEELSE
         PRINTFORMDW 攥紧的拳头让指甲深陷掌心，从中渗出了鲜血…
 ENDSELECT
-SELECTCASE CFLAG:K60ENC_SETTING_JEALOUSY_PENALTY
+SELECTCASE CFLAG:[[帕露西]]:K60ENC_SETTING_JEALOUSY_PENALTY
     ;Hate Marks, anger, and favor loss
     CASE 0
         DEBUGPRINTFORML 反发刻印，愤怒与好感度丧失
@@ -3865,7 +3865,7 @@ CALLF FIRSTTIME("ParseeKoishiConvo")
 #DIM Jealousy
 #DIM JealousyResistance
 DEBUGPRINTFORML 态度为2或3时…
-IF !(TALENT:TARGET:恋慕 || MARK:TARGET:快楽刻印 == 3) && !IN_HEAT([[帕露西]]) && !CFLAG:[[帕露西]]:K60EN_PARSEE_TEMP_LOVE_HOTEL_PERMISSION && !THINKS_IS_VIRGIN([[帕露西]])
+IF !(TALENT:TARGET:恋慕 || MARK:TARGET:快楽刻印 == 3) && !IN_HEAT([[帕露西]]) && !GETBIT(CFLAG:[[パルスィ]]:K60EN_PARSEE_TEMP_LOVE_HOTEL_PERMISSION, 0) && !THINKS_IS_VIRGIN([[帕露西]])
     DEBUGPRINTFORML 帕露西未达恋慕或快乐刻印3，非发情期，无临时许可，且自认非处女…
     Jealousy = ((MARK:TARGET:反発刻印 * 20) + K60_JEALOUSY())
     [IF DEBUG]
@@ -3945,10 +3945,10 @@ SELECTCASE K60_ATTITUDE()
                 CALL PRINT_STRW, @"「你拥有一切，我一无所有，我@ITALIC@就是@虚无」"
                 PRINTFORMW 「我丑陋，我无能，我不喜欢别人，更不被别人喜欢…」
                 PRINTFORMDW 她嗤笑
-                IF CFLAG:[[帕露西]]:既成事実 & 合意_诶嘿嘿
+                IF K60_HAS_FUCKED_PARSEE()
                     PRINTFORMW 「你把我睡了也只是为了达成什么“睡了幻想乡所有%PRINT_MALE_CN("男人", TARGET)%”的成就吧」
                     PRINTFORMW 「我不会让你得逞的，凭什么让你如愿？我偏偏就不当你后宫」
-                    PRINTFORMW 「上次让你睡我也只是为了\@ CFLAG:K60EN_PARSEE_STARTING_VIRGINITY ? 舍弃处女 # 结束这漫长的空窗期\@罢了」
+                    PRINTFORMW 「上次让你睡我也只是为了\@ CFLAG:K60EN_PARSEE_STARTING_VIRGINITY && !THINKS_IS_VIRGIN([[パルスィ]]) ? 舍弃处女 # 结束这漫长的空窗期\@罢了」
                 ELSE
                     PRINTFORMW 「你把我睡了也只是为了达成什么“睡了幻想乡所有%PRINT_MALE_CN("男人", TARGET)%”的成就吧」
                     PRINTFORMW 「我不会让你得逞的，凭什么让你如愿？我偏要当那个你唯一征服不了的人」
@@ -4482,3 +4482,17 @@ IF CFLAG:[[帕露西]]:K60EN_PARSEE_KNOWS_ABOUT_YOUR_BTD_RELATIONSHIP && CFLAG:M
     CALL RUNOFF(60, 0)
     CFLAG:[[帕露西]]:K60EN_PARSEE_RAPE_REVENGE = 1
 ENDIF
+
+@K60_HAS_FUCKED_PARSEE
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF CFLAG:K60EN_PARSEE_STARTING_VIRGINITY && !THINKS_IS_VIRGIN([[パルスィ]])
+    RETURNF 1
+SIF CFLAG:[[パルスィ]]:ヤラせちゃった
+    RETURNF 1
+SIF GETBIT(CFLAG:[[パルスィ]]:K60EN_PARSEE_TEMP_LOVE_HOTEL_PERMISSION, 1)
+    RETURNF 1
+SIF !GETBIT(CFLAG:[[パルスィ]]:K60EN_PARSEE_TEMP_LOVE_HOTEL_PERMISSION, 0) && GETBIT(CFLAG:[[パルスィ]]:既成事実,1)
+    RETURNF 1
+RETURNF 0

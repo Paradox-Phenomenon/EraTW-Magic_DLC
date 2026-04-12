@@ -48,7 +48,7 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "一輪")
 ;こっから衣装設定
 CASE "今天的睡衣"
@@ -130,21 +130,22 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:85:差し替え適用
+IF CFLAG:85:差し替え適用 == 2
 	;替换用画像
 	IF CHECK_NUDE(CHARA)
-		;裸
-		IF FLAG:立絵種類
-			;顔絵
-		ELSE
-			;立絵
-		ENDIF
 	ELSE
-		;服
-		IF FLAG:立絵種類
-			;顔絵
-		ELSE
-			;立絵
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _バニーギャル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			RESULTS = _セーラー服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[赛车女郎套装]]
+			RESULTS = _レースクイーン
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+			RESULTS = _私服
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
 		ENDIF
 	ENDIF
 ELSE
@@ -208,12 +209,14 @@ ENDIF
 #LOCALSSIZE 1
 #DIM CHARA
 
-IF CFLAG:85:差し替え適用
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
-	ELSE
-		;立絵
+IF CFLAG:85:差し替え適用 == 2
+	IF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 > MAXBASE:CHARA:情緒 / 2 || TALENT:CHARA:恋慕
+		IF RESULTS:0 == "通常"
+			RESULTS:0 '= "微笑"
+		ENDIF
+		IF RESULTS:1 == "通常"
+			RESULTS:1 '= "微笑"
+		ENDIF
 	ENDIF
 ELSE
 	;通常画像
@@ -236,12 +239,22 @@ ENDIF
 #DIM CHARA
 #DIM 指令
 
-IF CFLAG:85:差し替え適用
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
+IF CFLAG:85:差し替え適用 == 2
+	IF CHECK_NUDE(CHARA)
 	ELSE
-		;立絵
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[赛车女郎套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+				CASE 6,12,313
+					RESULTS = 揉胸覆盖
+			ENDSELECT
+		ENDIF
 	ENDIF
 ELSE
 	;通常画像

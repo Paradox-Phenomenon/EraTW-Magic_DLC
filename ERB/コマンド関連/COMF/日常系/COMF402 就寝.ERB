@@ -5,17 +5,36 @@
 @COM402
 #DIM 労働量
 #DIM 収益
-
+#DIM chara
+#DIM index
 ;魔改睡前自动扫地
 CALL AUTO_SWEEP_BEFORE_SLEEP_ASK
-
+SIF Real_Time_Save && NEMUKE() < 720 && Setting_即时重载
+	Real_Time_Updating = 1
+IF Real_Time_Updating
+	FOR chara, 0, CHARANUM
+		FOR index, 0, 500
+			STcvar:chara:index = TCVAR:chara:index
+		NEXT
+		FOR index, 0, 250
+			STequip:chara:index = TEQUIP:chara:index
+		NEXT
+		FOR index, 0, 200
+			SPalam:chara:index = PALAM:chara:index
+		NEXT
+	NEXT
+	ARRAYCOPY "TFLAG", "STflag"
+	SaveDataInTrain = 1
+ENDIF
 IF FLAG:内職 && BASE:MASTER:気力 > 300 && BASE:MASTER:TSP > 0
 	PRINTFORML %CALLNAME:MASTER%在睡觉之前使用剩余的TSP做了些副业
 	労働量 = MIN(BASE:MASTER:気力, BASE:MASTER:TSP /2)
 	収益 = 労働量 * (5 + RAND:5) / 10
-	SIF TALENT:MASTER:黄金律 && MAGIC_DLC_魔法成就
+	IF TALENT:MASTER:黄金律 && MAGIC_DLC_魔法成就
 		CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(収益 * 3 / 10)%!", C_YELLOW)
-	MONEY += 収益 * ((10 + TALENT:MASTER:黄金律 * 3)/ 10 * MAGIC_DLC_魔法成就)
+		MONEY += 収益 * 3 / 10
+	ENDIF
+	MONEY += 収益
 	PRINTFORMW 挣了%金額表示(収益)%
 ENDIF
 IF FLAG:自動縁結び && !FLAG:祈願内容 && !CFLAG:陪睡中
@@ -60,6 +79,8 @@ RETURN 1
 
 ;就寝
 @COM_ABLE402
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;移動実行判定
 SIF !TFLAG:100
 	RETURN 0
@@ -74,14 +95,29 @@ SIF CFLAG:MASTER:現在位置 != CFLAG:MASTER:311 && CFLAG:MASTER:現在位置 !
 	RETURN 0
 ;起床後12時間以上経過してないとダメ（デバッグ中）
 IF FLAG:1005 == 0
-SIF NEMUKE() < 720
-	RETURN 0
+IF !Real_Time_Save || !Setting_即时重载
+	SIF NEMUKE() < 720
+		RETURN 0
+ENDIF
 SIF CFLAG:诶嘿嘿 == 2
 	RETURN 0
 ENDIF
 RETURN 1
 
+@COM402_DISPLAY
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+IF Real_Time_Save && NEMUKE() < 720 && Setting_即时重载
+	LOCALS = 即时重载
+ELSE
+	LOCALS = 就寝
+ENDIF
+RETURNF LOCALS
+
 @OYASUMI
+SIF IS_GAP_GUEST(MASTER)
+	CALL GAP_TO_HOME
 IF TARGET > 0
 	CFLAG:同行 = 0
 	CFLAG:陪睡中 = 0

@@ -1,177 +1,106 @@
 ﻿@神签打印(ARG)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIMS DYNAMIC MESSAGE_PRINT,50
-#DIMS DYNAMIC COL,4
-#DIM DYNAMIC 神签GID
-SIF INRANGE(ARG,1,129)
-	CALLF 生成图片,@"剧本自定义附件/东方幻存神签/神签_{ARG}.webp",@"神签_{ARG}"
+#DIMS DYNAMIC L_LINES, 100
+#DIM  DYNAMIC L_LINE_CNT
+#DIMS DYNAMIC CLEAN_LINES, 100
+#DIM  DYNAMIC VALID_CNT
+
+#DIMS DYNAMIC TITLE_STR
+#DIMS DYNAMIC FORTUNE_STR
+#DIMS DYNAMIC NAME_STR
+#DIMS DYNAMIC COL_POEM
+#DIMS DYNAMIC COL_FORTUNE
+
+#DIM  DYNAMIC 神签GID
+#DIMS DYNAMIC HTML_STR
+#DIM  DYNAMIC LINE_H
+#DIM  DYNAMIC MID_W
+#DIM  DYNAMIC DIV_H_PX
+#DIM  DYNAMIC IMG_H_PX
+#DIM  DYNAMIC IMG_W_PX
+
+; --- 配色 ---
+#DIM  DYNAMIC L_BASE_COLOR
+#DIM  DYNAMIC L_SEP_COLOR
+#DIM  DYNAMIC L_BG_COLOR
+#DIM  DYNAMIC L_TEXT_COLOR
+#DIMS DYNAMIC HTML_BASE
+#DIMS DYNAMIC HTML_SEP
+#DIMS DYNAMIC HTML_BG
+#DIMS DYNAMIC HTML_TEXT
+
+;给底层文本留出约六行
+LINE_H = GETCONFIG("一行の高さ")
+IMG_H_PX = CLIENTHEIGHT() - 8 * LINE_H
+SIF INRANGE(ARG, 1, 129)
+	CALLF 生成图片, @"剧本自定义附件/东方幻存神签/神签_{ARG}.webp", @"神签_{ARG}"
 神签GID = RESULT
+
 LOCALS '= 神签INFO(ARG)
-SPLIT LOCALS," ",MESSAGE_PRINT
-FOR count, 2, 5
-	COL:1 += MESSAGE_PRINT:count + " "
+SPLIT LOCALS, " ", L_LINES, L_LINE_CNT
+
+; 过滤空行，提取纯净的数据行
+VALID_CNT = 0
+FOR LOCAL, 0, L_LINE_CNT
+	SIF L_LINES:LOCAL == "" || L_LINES:LOCAL == " "
+		CONTINUE
+	CLEAN_LINES:VALID_CNT '= L_LINES:LOCAL
+	VALID_CNT++
 NEXT
-FOR count, 5, RESULT
-	IF STRCOUNT(MESSAGE_PRINT:count,"：")
-		COL:3 += MESSAGE_PRINT:count + " "
+
+TITLE_STR '= CONVERT_STR_TO_HTML(CLEAN_LINES:0)
+FORTUNE_STR '= CONVERT_STR_TO_HTML(CLEAN_LINES:1)
+NAME_STR '= CONVERT_STR_TO_HTML(CLEAN_LINES:2)
+FOR LOCAL, 3, VALID_CNT
+	IF STRCOUNT(CLEAN_LINES:LOCAL, "：") || STRCOUNT(CLEAN_LINES:LOCAL, ":")
+		COL_FORTUNE += CONVERT_STR_TO_HTML(CLEAN_LINES:LOCAL) + "<br>"
 	ELSE
-		COL:2 += MESSAGE_PRINT:count + " "
+		COL_POEM += CONVERT_STR_TO_HTML(CLEAN_LINES:LOCAL) + "<br>"
 	ENDIF
 NEXT
-MESSAGE_PRINT '= REPLACE(MESSAGE_PRINT,"(第|签)","")
-IF TOINT(MESSAGE_PRINT) < 10
-	LOCAL = 2
-ELSEIF TOINT(MESSAGE_PRINT) < 100
-	LOCAL = 1
-ELSE
-	LOCAL = 0
+
+SIF INRANGE(ARG, 1, 128) || (ARG == 129 && 自机立绘开关 && CFLAG:0:差し替え適用 == 1)
+	HTML_STR '= @"<nonbutton><img src='神签_{ARG}' height='{IMG_H_PX}px' ypos='0'></nonbutton>"
+
+L_BG_COLOR = 0x303030
+L_TEXT_COLOR = GETCOLOR()
+IF QOL_KOJO_COLOR:(神签TOID:ARG):0 != L_TEXT_COLOR && QOL_KOJO_COLOR:(神签TOID:ARG):0 != 0
+	; 启用角色的代表色
+	L_TEXT_COLOR = QOL_KOJO_COLOR:(神签TOID:ARG):0
 ENDIF
-{
-LOCALS '= @"/
-╔═════╦═════════════════════╗/
-║          ║                                          ║/
-║ 第%"0"*LOCAL%%MESSAGE_PRINT%签  ║  %MESSAGE_PRINT:1,40,LEFT%║/
-║          ║                                          ║/
-╠═════╩═════════════════════╣/
-║                                                      ║/
-%BREAKCOLUMN(REPLACE(COL:1,"\s+$",""),25,"NULL")%
-║                                                      ║/
-╠═══════════════════════════╣/
-║                                                      ║/
-%BREAKCOLUMN(REPLACE(COL:2,"\s+$",""),25,"[，。？！；、]")%
-║                                                      ║/
-╟───────────────────────────╢/
-║                                                      ║/
-%BREAKCOLUMN(REPLACE(COL:3,"\s+$",""),25,"NULL")%
-║                                                      ║/
-╚═══════════════════════════╝"
-}
-IF INRANGE(ARG,1,128)
-	CALL IMG_COLUMN,@"神签_{ARG}",LOCALS,,神签TOID:ARG,400
-ELSEIF ARG == 129 && 自机立绘开关 && CFLAG:0:差し替え適用 == 1
-	CALL IMG_COLUMN,@"神签_{ARG}",LOCALS,,神签TOID:ARG,400
-ELSE
-	SPLIT LOCALS,"/",MESSAGE_PRINT
-	FOR LOCAL,0,RESULT
-		SIF MESSAGE_PRINT:LOCAL != ""
-			PRINTFORML %MESSAGE_PRINT:LOCAL%
-	NEXT
-ENDIF
-RETURN 神签GID
+L_BASE_COLOR = BRIGHTCOLORF(120, L_TEXT_COLOR)
+L_SEP_COLOR = BRIGHTCOLORF(50, L_BASE_COLOR)
+; 转换为 HTML 支持的格式
+HTML_BASE = %HEX_TO_HTML_COLOR(L_BASE_COLOR)%
+HTML_SEP  = %HEX_TO_HTML_COLOR(L_SEP_COLOR)%
+HTML_BG   = %HEX_TO_HTML_COLOR(L_BG_COLOR)%
+HTML_TEXT = %HEX_TO_HTML_COLOR(L_TEXT_COLOR)%
 
-;--------------------------------------------------------
-@BREAKCOLUMN(strInput, nLength = 0, strMatch = "\s", nIndent = 0, strBreakLine = "/")
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#FUNCTIONS
-#DIMS DYNAMIC MESSAGE_PRINT,50
-#DIM LINELENGTH
-#DIM nIndent
-#DIM nLength
-#DIMS strInput
-#DIMS strBreakLine
-#DIMS strMatch
-;PRINTFORML %strInput%的strMatch是%strMatch%
-SIF !nLength
-	nLength = MAXWIDTH() - 19
-LINELENGTH = nLength - nIndent
-VARSET LOCALS
-IF LINELENGTH < 1
-	THROW @BREAKCOLUMN Usable length cannot be less than 1, strInput - %strInput%, nIndent - {nIndent}
-ELSE
-	strInput '= REPLACE(strInput, "\s", strBreakLine)
-	SPLIT strInput,"/",MESSAGE_PRINT
-	FOR LOCAL,0,RESULT
-		IF strMatch == "NULL"
-			;PRINTFORML %MESSAGE_PRINT:LOCAL%的REPLACE是%REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:|$)", " "*nIndent + "$1")%
-			MESSAGE_PRINT:LOCAL '= REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:|$)", " "*nIndent + "$1" + strBreakLine)
-		ELSE
-			;PRINTFORML %MESSAGE_PRINT:LOCAL%的REPLACE是%REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "})(?:" + strMatch + "|$)", " "*nIndent + "$1")%
-			MESSAGE_PRINT:LOCAL '= REPLACE(MESSAGE_PRINT:LOCAL, "(.{1," + TOSTR(LINELENGTH) + "}?"+ strMatch +")", " "*nIndent + "$1" + strBreakLine)
-		ENDIF
-		LOCALS += MESSAGE_PRINT:LOCAL
-	NEXT
-ENDIF
-SUBSTRING LOCALS, 0, STRLENS(LOCALS) - STRLENS(strBreakLine)
-SPLIT RESULTS,"/",MESSAGE_PRINT
-VARSET LOCALS
-FOR LOCAL,0,RESULT
-	LOCALS += @"║%MESSAGE_PRINT:LOCAL,54,LEFT%║/ "
-NEXT
-;RETURNF SUBSTRING(LOCALS, 0, STRLENS(LOCALS) - STRLENS(strBreakLine))
-RETURNF REPLACE(LOCALS,"\s+$","")
+HTML_STR += @"<div xpos='25px' ypos='0px' width='480px' height='{IMG_H_PX}px' border='5px' bcolor='%HTML_SEP%' padding='20px' radius='12px' color='%HTML_BG%'>"
 
+; 签文与标题区块
+HTML_STR += @"<shape type='rect' param='0,1px,440px,2px' color='%HTML_SEP%'><br>"
+HTML_STR += @"<font color='%HTML_BASE%'><b>  %TITLE_STR%  </b></font><shape type='rect' param='0,-{LINE_H / 2}px,2px,{LINE_H * 2}px' color='%HTML_SEP%'><font color='%HTML_BASE%'><b>  %FORTUNE_STR%  </b></font><br><br>"
+HTML_STR += @"<shape type='rect' param='0,1px,440px,2px' color='%HTML_SEP%'><br>"
+MID_W = (440 - HTML_STRINGLEN(@"<b>— %NAME_STR% —</b>",1)) / 2
+HTML_STR += @"<shape type='space' param='{MID_W}px'><font color='%HTML_BASE%'><b>— %NAME_STR% —</b></font><br>"
+HTML_STR += @"<shape type='rect' param='0,8px,440px,4px' color='%HTML_SEP%'><br><br>"
 
-;-------------------------------------------------
-;函数名:IMG_TALK
-;概　要:简单图文混排
-;引　用：SPTALK,CID,表情="",默认=0,MESSAGE,整形=0
-;K63_PRINT_FACE与SPTALK的功能融合版，为了简单图片与对话混排，默认整形
-;-------------------------------------------------
-@IMG_COLUMN(基本画像, MESSAGE, 整形=1, CID,尺寸)
-#DIMS DYNAMIC 基本画像
-#DIMS DYNAMIC MESSAGE
-#DIMS DYNAMIC MESSAGE_PRINT,50
-#DIMS DYNAMIC FONTCOLOR
-#DIM DYNAMIC TEMP_COLOR
-#DIM DYNAMIC CID
-#DIM DYNAMIC 整形
-#DIM DYNAMIC 尺寸
-#DIM DYNAMIC PATTERN
-#LOCALSIZE 1
-#LOCALSSIZE 1
-SIF !尺寸
-	尺寸 = 角色画像表示尺寸比
-TEMP_COLOR = GETCOLOR()
+; 诗文区块
+HTML_STR += @"<font color='%HTML_TEXT%'><b>%COL_POEM%</b></font><br>"
+HTML_STR += @"<shape type='rect' param='0,1px,480px,1px' color='%HTML_SEP%'><br><br>"
 
-;口上色取得判定:通常角色
-IF CID
-	CALL SET_KOJO_COLOR(CID)
-	IF GETCOLOR() == 12632256 || !FLAG:口上色
-		FONTCOLOR = 0xD5DEDF
-	ELSE
-		FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
-	ENDIF
-ELSE
-	FONTCOLOR = 0%TOSTR(GETCOLOR(), "X")% 
-ENDIF
-VARSET MESSAGE_PRINT
-IF 顔絵付きメッセージ == 1
-	IF 基本画像 == ""
-		GOTO 图形错误
-	ELSEIF !RM_RESOURCECHECK(基本画像) 
-		PRINTFORMDL 资源「%基本画像%」未设置
-		GOTO 图形错误
-	ELSE
-		CALL 画像セット(基本画像, 0, 0, 尺寸, 0)
-	ENDIF
-	;オプション指定で行送りを揃える
-	SIF 整形
-		MESSAGE = %SPTALK整形(MESSAGE, 720 / GETCONFIG("一行の高さ"))%
+; 运势明细
+HTML_STR += @"<font color='%HTML_TEXT%'>%COL_FORTUNE%</font>"
+HTML_STR += @"</div>"
 
-	SPLIT MESSAGE,"/",MESSAGE_PRINT
-	FOR LOCAL,0,MIN(RESULT,50)
-		CALL PRINT_STR, MESSAGE_PRINT:LOCAL
-		LOCALS = %HTML_POPPRINTINGSTR()%
-		SIF LOCAL != 0
-			CALL ダミーセット(0, 0, 尺寸 * RM_SPRITEWIDTH(基本画像)/RM_SPRITEHEIGHT(基本画像), LOCAL)
-		TEMP_HTML:LOCAL += @"<font color='#%FONTCOLOR%'>%LOCALS%</font>"
-	NEXT
-	CALL 画像一斉表示(0, 0, 1, -1)
+HTML_PRINT HTML_STR
+FOR LOCAL, 0, (IMG_H_PX / LINE_H)
 	PRINTL
-ELSE
-	$图形错误
-	;顔絵メッセージOFF時は通常街道に表示させる
-	SIF CID
-		PRINTFORML －%CALLNAME:CID%－
-	SPLIT MESSAGE,"/",MESSAGE_PRINT
-	FOR LOCAL,0,MIN(RESULT,50)
-		SIF MESSAGE_PRINT:LOCAL != ""
-			PRINTFORML %MESSAGE_PRINT:LOCAL%
-	NEXT
-ENDIF
-SETCOLOR TEMP_COLOR
+NEXT
+
+RETURN 神签GID
 
 @DEBUG_FORTUNE_SLIP
 #LOCALSIZE 1
@@ -1286,7 +1215,7 @@ CASE 56
 LOCALS =
 第56签 末大吉
 
-云居一轮&云山
+云居一轮＆云山
 
 人生如云，凝重泪垂。终有雾散，何复萦怀。
 运势：困厄之时，有强妖护身

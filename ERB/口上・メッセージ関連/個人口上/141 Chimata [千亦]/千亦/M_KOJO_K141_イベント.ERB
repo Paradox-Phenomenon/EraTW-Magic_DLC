@@ -19,6 +19,7 @@
 ;CFLAG:141:1001 当前千亦的语气（0=初次见面～疏远客气（好感度499为止） 1=好感度500～）
 ;CFLAG:141:1002 TEA计数（千亦觉得你泡茶的本事　～5:毫无印象　～25:还算可以　26～:很上手）
 ;CFLAG:141:1003 路易波士初体验完成
+;CFLAG:141:1051 初NORMAL以上礼物
 ;----1300番台 时间停止系标志----
 ;CFLAG:141:1301 时间停止中接吻经验完成标志
 ;----1500番台 弹幕战标志----
@@ -42,6 +43,7 @@
 ;TCVAR:141:351 当天是否喝过固有名茶
 ;TCVAR:141:360 弹幕战认真程度（0:普通　1:认真　2:放水）
 ;TCVAR:141:361 千亦愤怒的弹幕战
+;TCVAR:141:380 当天库存是否已经追加完毕
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ;### 口上存在判定 ###################################
@@ -615,8 +617,11 @@ IF LOCAL
 		IF TALENT:MASTER:性別 == 2 
 		PRINTFORMDL 千亦毫不犹豫地直接走进了浴室……
 		ELSEIF TALENT:MASTER:性別 == 3
-		PRINTFORML 「」
+		PRINTFORMDL 千亦完全没有半点犹豫的样子，直接就走进浴室了……
+		ELSE
 		ENDIF
+		CALL F_KOJO_K141_WHAT_THE_FUTACHIN
+		PRINTW
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -626,7 +631,8 @@ IF LOCAL
 	
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 4
-		PRINTFORML
+		CALL F_KOJO_K141_CFLAG_TCVAR_DAILY_UPDATE
+		PRINTFORML 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -981,7 +987,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML
+		PRINTFORML 
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -990,7 +996,7 @@ IF LOCAL
 	LOCAL:1 = 0
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML
+		PRINTFORML 她轻轻挥了挥手回应
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -1307,10 +1313,18 @@ IF LOCAL
 	;-------------------------------------------------
 	;目が合った（追い出されない）
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML
+		PRINTFORML 「哎呀，这不是%CALLNAME:MASTER%嘛」
+		IF TALENT:MASTER:性別 == 2 
+			PRINTFORMDL 千亦完全没有半点犹豫的样子，直接就走进浴室了……
+		ELSEIF TALENT:MASTER:性別 == 3
+			PRINTFORMDL 千亦完全没有半点犹豫的样子，直接就走进浴室了……
+		ELSE
+		ENDIF
+		CALL F_KOJO_K141_WHAT_THE_FUTACHIN
+		PRINTW
 		RETURN 1
 	ENDIF
 	;その他
@@ -2052,26 +2066,218 @@ RETURN 1
 ;口上主はARG
 ;--------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 IF LOCAL
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
 	;恋慕取得
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	;基本線としては誰のものでもないあなたを欲しがる
+	;あなたが既に誰かの恋人だと誰のものでもなくしてやろうか─と不穏な考えを過らせる
+	;そんなイメージです
+	;めっちゃマーキングしてきそう
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		PRINTFORML
+		CFLAG:[[千亦]]:1131 = TALENT:[[龍]]:恋慕
+		CFLAG:[[千亦]]:1132 = TALENT:[[典]]:恋慕
+		CFLAG:[[千亦]]:1133 = TALENT:[[百百世]]:恋慕
+		LOCAL:13 = TALENT:[[文]]:恋慕 || TALENT:[[はたて]]:恋慕 || TALENT:[[椛]]:恋慕
+		LOCAL:14 = TALENT:[[女苑]]:恋慕 || TALENT:[[紫苑]]:恋慕
+		PRINTFORMDL 某一天的夜晚——
+		PRINTFORML 「今天也收获颇丰呢～虽然异变的时候才是最高峰，但现在这样稳定得多了」
+		PRINTFORML 「最近信仰稳定地充盈着，日子过得舒服极了，这也多亏了各种都看在眼里的%CALLNAME:MASTER%呢」
+		PRINTFORMDL 咚。胸口突然猛地一跳。
+		PRINTFORML 「……%CALLNAME:MASTER%啊。」
+		PRINTFORMW %CALLNAME:MASTER%。每次说出口，每次在心里呼唤，心跳就更快，像擂鼓一样。
+		PRINTFORML 「哈啊……真没辙了。居然陷得这么深……」
+		PRINTFORMW %CALLNAME:MASTER%。%CALLNAME:MASTER%。一遍又一遍呼唤着，心一点点被填满……
+		PRINTFORML 到了这个地步，也只能承认了。我喜欢%CALLNAME:MASTER%。
+		PRINTFORML 一旦得出这个答案，心就再次被甜蜜的幸福感塞得满满当当。
+		CALL HPH_PRINT ,@"「%CALLNAME:MASTER%…HPH」","L"
+		PRINTW …
+		PRINTL
+
+		PRINTFORMDL 反复几次之后，终于开始冷静下来思考现实。
+		PRINTFORMDL 她是市场之神，交易的化身。绝不会涉足没有胜算的买卖。
+		PRINTFORMDW 自然而然，意识开始转向对“目标”的分析……以及那份关系的分析。
+		;1,既成事実
+		;(BIT 0=キス 1=うふふ 2=恋人 3=A 4=SM)
+		;合意_キス
+		;システム側で定義されている定数です。キスのフラグがどのビット（桁）にあるかを示しています。
+		IF !(TALENT:MASTER:性別 == 2) ;不是男人　不是男人
+		;如果要在这里插入ふたなり既知フラグ的分支
+			PRINTFORML 「说到底我们都是女孩子嘛……在幻想乡好像也不算奇怪就是了」
+		ENDIF
+
+		IF CFLAG:[[千亦]]:既成事実 & 合意_うふふ ;
+			PRINTFORML 「和%CALLNAME:MASTER%……做的事……真的好舒服呢～」
+			CALL HPH_PRINT ,@"「啊～……一想起来就心痒难耐了……HPH得再让%CALLNAME:MASTER%疼爱一次才行……HPH」","L"
+
+		ELSEIF CFLAG:[[千亦]]:ヤラせちゃった
+			PRINTFORML 「被%CALLNAME:MASTER%抱过了……不过总觉得有点稀里糊涂的……感觉怪怪的呢……」
+		ENDIF
+		SELECTCASE 1
+			;=== 龍+XXの方が先に好き ===
+			CASE CFLAG:[[千亦]]:1131 && CFLAG:[[千亦]]:1132 && CFLAG:[[千亦]]:1133 && LOCAL:13 
+				;龍＆典＆百百世＆天狗
+				PRINTFORML 「不过……龙好像也很喜欢%CALLNAME:MASTER%呢」
+				PRINTFORML 「不只龙，典也是，百百世也是，甚至连天狗那帮家伙都……」
+				PRINTFORML 「……不不不，\@ TALENT:MASTER:性別 == 2 ? 那家伙 # 那孩子 \@也太受欢迎了吧……简直是超级花心大萝卜」
+				PRINTFORML 「虽然全是劲敌……但既然已经喜欢上了也没办法嘛……」
+
+			CASE CFLAG:[[千亦]]:1131 && CFLAG:[[千亦]]:1132
+				;龍＆典
+				PRINTFORML 「不过……龙好像也很喜欢%CALLNAME:MASTER%呢」
+				SIF LOCAL:13 == 1
+					PRINTFORML 「不只龙，典和天狗那帮家伙也都在瞄准%CALLNAME:MASTER%……」
+				SIF LOCAL:13 != 1
+					PRINTFORML 「不只龙，典也在瞄准%CALLNAME:MASTER%……」
+				IF (GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 0 && GET_UWAKI_HISTORY([[千亦]], [[典]]) == 0) 
+					PRINTFORML 「不对，那主仆俩……说不定已经把%CALLNAME:MASTER%吃干抹净了……」
+					;只是想象
+				ELSEIF (GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 1 && GET_UWAKI_HISTORY([[千亦]], [[典]]) == 1 )
+					PRINTFORML 「而且，我还知道她们两个都和%CALLNAME:MASTER%有过那种关系」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 1
+					PRINTFORML 「尤其是龙……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[典]]) == 1
+					PRINTFORML 「尤其是典……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ENDIF
+
+			CASE CFLAG:[[千亦]]:1131 && CFLAG:[[千亦]]:1133
+				;龍＆百百世
+				PRINTFORML 「不过……龙好像也很喜欢%CALLNAME:MASTER%呢」
+				SIF LOCAL:13 == 1
+					PRINTFORML 「不只龙，百百世和天狗那帮家伙也都在瞄准%CALLNAME:MASTER%……」
+				SIF LOCAL:13 != 1
+					PRINTFORML 「不只龙，百百世也在瞄准%CALLNAME:MASTER%……」
+				IF (GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 0 && GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 0) 
+					PRINTFORML 「不对，那两个人……仗着力气大，说不定已经把%CALLNAME:MASTER%给……」
+					;只是想象
+				ELSEIF (GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 1 && GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 1 )
+					PRINTFORML 「而且，我还知道她们两个都和%CALLNAME:MASTER%有过那种关系」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 1
+					PRINTFORML 「尤其是龙……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 1
+					PRINTFORML 「尤其是百百世……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ENDIF
+			CASE CFLAG:[[千亦]]:1131 
+				PRINTFORML 「不过……龙好像也很喜欢%CALLNAME:MASTER%呢」
+				IF GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 0 
+					PRINTFORML 「天狗那种速度超快的种族……%CALLNAME:MASTER%肯定也……」
+					;只是想象
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[龍]]) == 1
+					PRINTFORML 「而且……我亲眼看到龙和%CALLNAME:MASTER%在做那种事……」
+				ENDIF
+				;龍のみ
+				PRINTFORML 
+
+
+			;=== 典+XXの方が先に好き ===
+			CASE CFLAG:[[千亦]]:1132 && CFLAG:[[千亦]]:1133 
+				;典＆百百世
+				PRINTFORML 「话说回来……典看%CALLNAME:MASTER%的眼神，认真得有点吓人呢」
+				PRINTFORML 「在%CALLNAME:MASTER%被那孩子彻底俘虏之前，我也得赶紧出招才行……」
+				SIF LOCAL:13 == 1
+					PRINTFORML 「而且不只典，百百世和天狗那帮家伙也都在瞄准%CALLNAME:MASTER%……」
+				SIF LOCAL:13 != 1
+					PRINTFORML 「而且不只典，百百世也在瞄准%CALLNAME:MASTER%……」
+				IF (GET_UWAKI_HISTORY([[千亦]], [[典]]) == 0 && GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 0) 
+					PRINTFORML 「如果是典的话，说不定会煽动起百百世，然后说什么大家一起分享%CALLNAME:MASTER%什么的……」
+					;只是想象
+				ELSEIF (GET_UWAKI_HISTORY([[千亦]], [[典]]) == 1 && GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 1 )
+					PRINTFORML 「而且，我还知道她们两个都和%CALLNAME:MASTER%有过那种关系」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[典]]) == 1
+					PRINTFORML 「尤其是典……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ELSEIF GET_UWAKI_HISTORY([[千亦]], [[百百世]]) == 1
+					PRINTFORML 「尤其是百百世……我亲眼看到她和%CALLNAME:MASTER%在做那种事……」
+				ENDIF
+			CASE CFLAG:[[千亦]]:1132
+				;典のみ
+				PRINTFORML 「话说回来……典看%CALLNAME:MASTER%的眼神，认真得有点吓人呢」
+				PRINTFORML 「在%CALLNAME:MASTER%被那孩子彻底俘虏之前，我也得赶紧出招才行……」
+
+			;=== 百百世+XXの方が先に好き ===
+			CASE CFLAG:[[千亦]]:1133
+				;百百世のみ
+				PRINTFORML 「百百世好像也超级中意%CALLNAME:MASTER%呢」
+				PRINTFORML 「就算曾经是合作对象，一旦成了情敌，也得把她刷下去才行」
+				SIF LOCAL:13 == 1
+					PRINTFORML 「而且不只百百世，天狗那帮家伙也都在瞄准%CALLNAME:MASTER%……」
+
+			;=== 天狗+XXの方が先に好き ===
+			CASE LOCAL:13
+				;天狗のみ
+				PRINTFORML 「话说回来，天狗们好像在搞%CALLNAME:MASTER%的偷拍黑市呢」
+				PRINTFORML 「虽然应该不至于……不过为了保险起见，要不要干脆把它们全部□□掉呢？」
+
+			;=== 依神の方が先に好き ===
+			CASE LOCAL:14
+				;他全部該当せず依神のどっちかのみ該当
+				;レアケースのオマケみたいなもの
+				PRINTFORML 「……居然被那对姐妹盯上了。居然还没把人生搞砸，真是奇迹呢……」
+				PRINTFORML 「倒不如说，这才是我的神德显现了吧？」
+
+			CASEELSE
+				PRINTFORML 「……就我所知，喜欢%CALLNAME:MASTER%的孩子应该还没有才对」
+				PRINTFORML 「……这可是大好机会呢……」
+		ENDSELECT
+		PRINTW
+		PRINTFORML 「嗯……分析了一番……应该没问题吧」
+		PRINTFORML 「想太多熬夜的话，和%CALLNAME:MASTER%相处的时间就没了，还是睡吧」
+		PRINTFORMW 「明天还能再见面就好了呢～」
+		PRINTFORMDL 经过一番不符合她风格的乐观分析，她给自己定下了胜算，就这样沉入浅眠
+		PRINTFORMDL 果然，恋爱这种东西，和她所司掌的交易完全是两码事呢
+		PRINTW
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
 	;思慕取得
 	;記入チェック（=0, 非表示、1, 表示）
-	LOCAL:1 = 0
+	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 2
-		PRINTFORML
+		PRINTFORMDL 来到幻想乡后，信仰基盘终于开始稳定了
+		PRINTFORMDL 从之前的反省中吸取教训，一直老老实实做着地推营业，结果还挺不错的
+		PRINTFORMDL 重新结成合作关系的龙那边也进展顺利
+		PRINTFORMDW 然后……
+		PRINTFORMW 「%CALLNAME:MASTER%……吗」
+		PRINTFORMDL 千亦自言自语道。确实是个对信仰有贡献的人类……
+		PRINTFORMDL 如果是同为神明或大妖怪倒也罢了，对一个人类在意成这样还是头一遭。
+		PRINTFORML 「确实是个很有潜力的家伙呢……」
+		;[フラグ依存の思い出語り:とりあえず今ある分だけ書いちまえっ]
+		;使えそう、使いそうなフラグ列挙
+		;CFLAG:[[千亦]]:1002 TEAカウンタ（ちまたんが貴方に感じてるお茶淹れの巧さ ~5:イメージ無し ~25:そこそこ 26~:上手）
+		;CFLAG:[[千亦]]:1051 初NORMAL以上プレゼント
+
+		IF CFLAG:[[千亦]]:1002 >= 26
+			PRINTFORMW 「每次泡的茶都特别好喝呢～」
+		ELSEIF CFLAG:[[千亦]]:1002 >= 6 
+			PRINTFORMW 「泡的茶也挺不错的嘛～」
+		ENDIF
+		
+		IF CFLAG:[[千亦]]:1051 >= 1
+			IF MONEY >= 500000
+				PRINTFORML 「有钱人也很不错呢～虽然不知道是从哪赚来的……」
+				PRINTFORML 「只要能让经济转起来，对我的信仰可是大有裨益，简直完美」
+				PRINTFORMW 「……不过送我礼物的时候，我真的吓了一跳呢」
+			ELSEIF MONEY <= 50000
+				PRINTFORML 「明明看起来也没什么钱，却还送了我这么贵的礼物……」
+				PRINTFORMW 「生活上没问题吧？该不会是硬撑着吧……」
+			ELSE
+				PRINTFORML 「挑东西的眼光也挺准的嘛～」
+				PRINTFORMW 「不过居然是送给我的礼物，真的吓到我了……」
+			ENDIF
+		ELSEIF MONEY >= 500000 
+			PRINTFORML 「有钱人也很不错呢～虽然不知道是从哪赚来的……」
+			PRINTFORMW 「只要能让经济转起来，对我的信仰可是大有裨益，简直完美」
+		ELSE
+		ENDIF
+		PRINTFORML 「嗯……我已经受了好多照顾呢……」
+		PRINTFORML 「……好吧。那就让我也拿出点诚意来吧」
+		PRINTFORML 「既然决定了，就得再邀他去市场逛逛才行呢」
+		PRINTW
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -3403,19 +3609,37 @@ RETURN 0
 ;デート帰りに口上主があなたに贈り物を渡す（陥落や好感度に関わらず親密5以上から発生）
 ;評価点は701～999（渡すキャラ本人の評価）
 ;--------------------------------------------------------------------------------------------------
-IF ARG == 1
+IF ARG == 1 && CFLAG:[[千亦]]:1051 > 0 ;如果没有收到过让人想一直带在身边的礼物的记忆，就不会产生送礼的想法
+	PRINTFORML 「啊，%CALLNAME:MASTER%。稍等一下……」
+	PRINTFORMD 停下脚步后，看到
+	CALL F_KOJO_K141_PRINTS_RAINBOW("用七色彩虹包装纸包好的礼物")
+	PRINTFORMDL 不知从哪里被千亦拿了出来……
+	PRINTFORMW 「这个，是送给\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@的礼物哦。要好好珍惜呢？」
+	CALL COLORMESSAGE("里面装着" + GIFT_NAME + "！",C_YELLOW,2)
+	PRINTFORMW
 	;PRINTFORMW 「%GIFT_NAME%をあげるから大事に使って」
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日貰った贈り物を大事にする（700点以上）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 2
-	;IF STRCOUNT(SENSE, "かわいい/")
-	;	PRINTFORMW 「かわいいプレゼントを貰っちゃった」
-	;ELSEIF 評価点 >= 800
-	;	PRINTFORMW 「とっても素敵なプレゼントを貰っちゃった」
-	;ELSE
-	;	PRINTFORMW 「素敵なプレゼントを貰っちゃった」
+	SELECTCASE CFLAG:[[千亦]]:1051
+	CASE IS >= 2
+		PRINTFORML 「%CALLNAME:MASTER%……果然眼光真不错呢～」 
+		PRINTFORML %TEXTR("「这东西的所有权可得好好珍惜才行」/「下次要不要让我也来帮忙进货呢」/「下次再陪你逛街购物吧」")%
+		PRINTFORML 「……呵呵♪」
+		PRINTW
+	CASE 1
+		PRINTFORML 「\@ TALENT:MASTER:性別 == 2 ? 那家伙 # 那孩子 \@送的礼物……」
+		PRINTFORML 「用我的能力的话，这东西也能干干净净地变成无主之物，重新摆上货架卖掉就是了」
+		PRINTFORMW 「不过……他说很适合我，吗」
+		PRINTFORML 「……那就好好珍惜它也不错呢」
+		PRINTW
+	CASEELSE
+	ENDSELECT
+	;彼女の能力は物の所有権を失くす能力。
+	;その力を持ってすればあなたから贈られたという所有権も消せるはずなのだ。
+	;
 	;ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
@@ -3432,13 +3656,31 @@ ELSEIF ARG == 3
 ;一日の終わりに今日貰った贈り物をとりあえず保管する（400～699点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 4
-	;PRINTFORMW 「とりあえず飾っておこう」
+	SELECTCASE CFLAG:[[千亦]]:1051
+	CASE IS >= 2
+		PRINTFORML 「%CALLNAME:MASTER%……眼光果然很毒呢～」 
+		PRINTFORML %TEXTR("「这东西的所有权可得好好珍惜才行」/「下次要不要让我也来帮忙进货呢」/「下次再和他逛街购物吧」")%
+		PRINTFORML 「……呵呵♪」
+		PRINTW
+	CASE 1
+		PRINTFORML 「\@ TALENT:MASTER:性別 == 2 ? 那家伙 # 那孩子 \@送的礼物……」
+		PRINTFORML 「用我的能力的话，这东西也能干干净净地变成无主之物，重新摆上货架卖掉就是了」
+		PRINTFORMW 「不过……他说很适合我，吗」
+		PRINTFORML 「……稍微留着自己用用也不错呢」
+		PRINTW
+	CASEELSE
+	ENDSELECT
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一日の終わりに今日貰った贈り物をこっそり質に入れる（400点未満）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 5
-	;PRINTFORMW 「私これ嫌いなのよね～」
+		PRINTFORML 「嗯～……收到是收到了啦～」
+		PRINTFORML 「不过这个……果然不太适合我呢」
+		PRINTFORML 「没办法，下次市集就拿去卖掉吧。这种时候不拖泥带水、心慈手软也是我的职责嘛」
+		PRINTFORMW
+		;龙「切换得真快」
+		;典「不愧是商业女性呢～」
 	RETURN 1
 ENDIF
 RETURN 1

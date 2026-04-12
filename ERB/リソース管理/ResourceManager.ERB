@@ -42,8 +42,11 @@
 		MAP_CREATE RM_SANIM_MAP
 	MAP_CLEAR RM_SANIM_MAP
 
+	gLineCount:1 = LINECOUNT
 	LOCAL = ENUMFILES("resources", "*.xml", 1)
 	FOR I, 0, LOCAL
+		SIF I % 3 == 0 || I == LOCAL - 1 || I == 0
+			CALL PRINT_PROGRESS_BAR(I, LOCAL - 1, @"%" "*4%少女祈祷中…" )
 		XML_DOCUMENT RM_XML_TEMP, LOADTEXT(RESULTS:I)
 		LOCAL:1 = XML_GET_BYNAME(RM_XML_TEMP, "/sprites/*")
 		FOR J, 0, LOCAL:1
@@ -317,15 +320,15 @@ MAP_SET RM_LRU_MAP, リソース名, GETMILLISECOND()  ; 用当前毫秒时间�
 ; 检查缓存上限并淘汰 LRU
 @RM_CHECK_CACHE_LIMIT
 #DIMS KEYS, RM_CACHE_MAX + 10
+#DIMS L_TIMES, LOCAL
 IF MAP_SIZE(RM_GMAP) > RM_CACHE_MAX
 	MAP_GETKEYS RM_GMAP, KEYS, 1
 	LOCAL = RESULT  ; 键数
-	VARI TIMES, LOCAL
 	FOR I, 0, LOCAL
-		TIMES:I = TOINT(MAP_GET(RM_LRU_MAP, KEYS:I))  ; 获取时间戳
+		L_TIMES:I = TOINT(MAP_GET(RM_LRU_MAP, KEYS:I))  ; 获取时间戳
 	NEXT
 	; 找到最小时间戳的索引（最久未用）
-	LOCAL:1 = MAXARRAY(TIMES)
+	LOCAL:1 = MAXARRAY(L_TIMES)
 	LOCAL:2 = KEYS:(LOCAL:1)  ; 最旧资源名
 	; 释放它
 	CALL RM_RELEASE_RESOURCE(LOCAL:2)

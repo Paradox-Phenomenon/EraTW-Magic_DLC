@@ -44,7 +44,7 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "斯塔")
 ;こっから衣装設定
 CASE "今天的睡衣"
@@ -151,7 +151,23 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:7:差し替え適用
+IF CFLAG:7:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		;服
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _バニーギャル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			RESULTS = _セーラー服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女仆装]]
+			RESULTS = _メイド
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:7:差し替え適用 == 1
 	;差し替え画像
 	IF CHECK_NUDE(CHARA)
 		;裸
@@ -164,45 +180,42 @@ IF CFLAG:7:差し替え適用
 		;服
 		IF FLAG:立絵種類
 			;顔絵
-			IF GROUPMATCH(CFLAG:7:差し替え適用, 1)
-				IF IS_BUNNY(CHARA)
-					RESULTS = _バニー
-				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
-					RESULTS = _変T
-				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
-					RESULTS = _セーラー
-				ELSEIF CHECK_CLO("bra_visible", CHARA)
-					RESULTS = _下着
-				ELSEIF DAY:2 == 2
-					RESULTS = _夏服
-				ENDIF
+			IF IS_BUNNY(CHARA)
+				RESULTS = _バニー
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+				RESULTS = _変T
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+				RESULTS = _セーラー
+			ELSEIF CHECK_CLO("bra_visible", CHARA)
+				RESULTS = _下着
+			ELSEIF DAY:2 == 2
+				RESULTS = _夏服
 			ENDIF
 		ELSE
 			;立ち絵
-			IF GROUPMATCH(CFLAG:7:差し替え適用, 1)
-				IF CHECK_CLO("bra_visible", CHARA) && EQUIP:CHARA:下半身下着２ != 0
-					RESULTS = _下着
-				ELSEIF CHECK_CLO("bra_visible", CHARA) && EQUIP:CHARA:下半身下着２ == 0
-					RESULTS = _ノーパン下着
-				{
-				ELSEIF (!EQUIP:CHARA:上半身上着１ && !EQUIP:CHARA:上半身上着２ && !EQUIP:CHARA:外搭 &&
-            			!EQUIP:CHARA:和服 && !EQUIP:CHARA:連衣裙 &&
-						!EQUIP:CHARA:レオタード && !EQUIP:CHARA:ボディースーツ) &&
-						EQUIP:CHARA:下半身内衣２ != 0
-				}
-					RESULTS = _ノーブラ下着
-				ELSEIF IS_BUNNY(CHARA)
-					RESULTS = _バニー
-				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
-					RESULTS = _変T
-				ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
-					RESULTS = _セーラー
-				ELSEIF DAY:2 == 2
-					RESULTS = _夏服
-				ENDIF
+			IF CHECK_CLO("bra_visible", CHARA) && EQUIP:CHARA:下半身下着２ != 0
+				RESULTS = _下着
+			ELSEIF CHECK_CLO("bra_visible", CHARA) && EQUIP:CHARA:下半身下着２ == 0
+				RESULTS = _ノーパン下着
+			{
+			ELSEIF (!EQUIP:CHARA:上半身上着１ && !EQUIP:CHARA:上半身上着２ && !EQUIP:CHARA:外搭 &&
+					!EQUIP:CHARA:和服 && !EQUIP:CHARA:連衣裙 &&
+					!EQUIP:CHARA:レオタード && !EQUIP:CHARA:ボディースーツ) &&
+					EQUIP:CHARA:下半身内衣２ != 0
+			}
+				RESULTS = _ノーブラ下着
+			ELSEIF IS_BUNNY(CHARA)
+				RESULTS = _バニー
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 62
+				RESULTS = _変T
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+				RESULTS = _セーラー
+			ELSEIF DAY:2 == 2
+				RESULTS = _夏服
 			ENDIF
 		ENDIF
 	ENDIF
+ELSEIF CFLAG:7:差し替え適用
 ELSE
 	;通常画像
 	IF CHECK_NUDE(CHARA)
@@ -285,11 +298,25 @@ ENDIF
 ;	RESULTS:1にマウスオーバー時の表情を格納すること
 ;	"オナニー","愛撫","性交"は本編で実装済み
 ;-------------------------------------------------------------------------------------------
-@IMAGE_I7_特殊表情COM(CHARA, コマンド)
+@IMAGE_I7_特殊表情COM(CHARA, 指令)
 #DIM CHARA
-#DIM コマンド
+#DIM 指令
 
-IF CFLAG:7:差し替え適用
+IF CFLAG:7:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女仆装]]
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+			ENDSELECT
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:7:差し替え適用
 	;差し替え画像
 	IF FLAG:立絵種類
 		;顔絵

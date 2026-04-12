@@ -46,7 +46,7 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "星")
 ;こっから衣装設定
 CASE "今天的睡衣"
@@ -132,7 +132,28 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _バニーギャル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[伊什塔尔套装]]
+			RESULTS = _イシュタル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			RESULTS = _セーラー服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[巫女装束]]
+			RESULTS = _巫女
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+			RESULTS = _着物
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+			RESULTS = _私服
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF CHECK_NUDE(CHARA)
 		;裸
@@ -207,7 +228,16 @@ ENDIF
 #LOCALSSIZE 1
 #DIM CHARA
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 > MAXBASE:CHARA:情緒 / 2 || TALENT:CHARA:恋慕
+		IF RESULTS:0 == "通常"
+			RESULTS:0 '= "微笑"
+		ENDIF
+		IF RESULTS:1 == "通常"
+			RESULTS:1 '= "微笑"
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -235,7 +265,30 @@ ENDIF
 #DIM CHARA
 #DIM 指令
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[伊什塔尔套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[巫女装束]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+				CASE 6,12,313
+					IF IS_半脱(CHARA,1) && ABL:CHARA:欲望 >= 10 && GET_TARGETNUM() == 1
+						RESULTS = 揉胸2覆盖
+					ELSE
+						RESULTS = 揉胸覆盖
+					ENDIF
+			ENDSELECT
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -453,16 +506,3 @@ ELSE
 ENDIF
 
 RETURN エフェクト数
-
-;********************************************************************************************
-@IMAGE_EX_I87_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
-#DIM CHARA
-#DIMS 表示形式
-#DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
-#DIMS 差分
-#DIMS 乳量
-
-SIF CFLAG:87:差し替え適用 == 1
-	CALL COMPOSE_SPRITE_PRESET(CHARA)

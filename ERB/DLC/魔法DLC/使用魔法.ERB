@@ -10,7 +10,17 @@
 CALL RELINE(1,1)
 $LOOP
 CALL RELINE(1)
-;重置法强
+;重置魔力
+CALL INFINITE_TSP_MANA_SET
+
+IF TALENT:MASTER:禁断的知識
+	SETCOLOR C_PINK
+	CALL PRINTBUTTON_EX("[制作符咒]",10)
+	PRINTFORM 　　
+	SETCOLOR C_PINK
+	CALL PRINTBUTTON_EX("[使用符咒]",11)
+	PRINTL
+ENDIF
 M_FLAG:法强 = MIN(2 + 3*TALENT:MASTER:禁断的知識 + ABL:MASTER:TSLv + 2 *MAX((TALENT:MASTER:神性 - 5),0) + (CFLAG:MASTER:今日の運勢-499)/100 + TFLAG:幸運補正, 40) + TALENT:MASTER:昨日重现 * (TALENT:MASTER:神性 ? 2 # 1)
 SIF M_FLAG:法强 < 0
 	M_FLAG:法强 = 0
@@ -74,17 +84,21 @@ LOCALS = %"清扫魔法熟练度",16,LEFT%：{ITEM:977}/3
 PRINTFORMLC %LOCALS, 20, LEFT%
 LOCALS = %"博识魔法熟练度",16,LEFT%：{ITEM:975}/3
 PRINTFORML %LOCALS, 20, LEFT%
-LOCALS = %"隙间魔法熟练度",16,LEFT%：{ITEM:982}/2
-PRINTFORMLC %LOCALS, 20, LEFT%
-LOCALS = %"转运魔法熟练度",16,LEFT%：{ITEM:979}/2
-PRINTFORMLC %LOCALS, 20, LEFT%
+IF ITEM:982 < 2
+	LOCALS = %"隙间魔法熟练度",16,LEFT%：{ITEM:982}/2
+	PRINTFORMLC %LOCALS, 20, LEFT%
+ENDIF
+IF ITEM:979 < 2
+	LOCALS = %"转运魔法熟练度",16,LEFT%：{ITEM:979}/2
+	PRINTFORMLC %LOCALS, 20, LEFT%
+ENDIF
 IF MONEY:1 < 50000
-	PRINTFORML 使用魔法经验：{MONEY:1}/50000（到达后时间转化魔法提升一级）
+	PRINTFORML 魔法TSP经验：{MONEY:1}/50000（到达后时间转化魔法提升一级）
 ELSE
 	PRINTFORML
 ENDIF
-SIF 全魔法检测()
-	PRINTFORML 所有魔法均已习得
+SIF !全魔法检测()
+	PRINTFORML 仍有魔法尚未习得
 PRINTL
 CALL MAGIC_LIST(对象)
 INPUT
@@ -121,6 +135,12 @@ SELECTCASE RESULT
 		SIF 神性时间影响削弱 < TALENT:MASTER:神性
 			神性时间影响削弱 += 1
 		GOTO LOOP
+	CASE 10
+		CALL RELINE(1)
+		CALL SPELL_ENGRAVE
+	CASE 11
+		CALL RELINE(1)
+		CALL SPELL_USE
 	CASE 998
 		IF 对象 != MASTER
 			对象 = MASTER  ; 如果当前不是自己，则切换回自己
@@ -138,7 +158,7 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -100, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复気力
-			CALL RECOVER(对象, 魔法知识(100, 110), "気力", "气恢复魔法的回復")
+			CALL RECOVER(对象, 魔法知识(100, 110), "気力", "气恢复魔法的回复")
 			PRINTL
 			PRINTL 魔法施放完毕！
 		ELSE
@@ -155,7 +175,7 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -200, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复気力
-			CALL RECOVER(对象, 魔法知识(200, 120), "気力", "气恢复魔法的回復")
+			CALL RECOVER(对象, 魔法知识(200, 120), "気力", "气恢复魔法的回复")
 			PRINTL
 			PRINTL 魔法施放完毕！
 		ELSE
@@ -171,7 +191,7 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -100, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复体力
-			CALL RECOVER(对象, 魔法知识(100, 110), "体力", "体恢复魔法Lv1的体力回復")
+			CALL RECOVER(对象, 魔法知识(100, 110), "体力", "体恢复魔法Lv1的体力回复")
 			PRINTL
 			PRINTL 魔法施放完毕！
 		ELSE
@@ -187,7 +207,7 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -200, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复体力
-			CALL RECOVER(对象, 魔法知识(200, 120), "体力", "体恢复魔法Lv2的体力回復")
+			CALL RECOVER(对象, 魔法知识(200, 120), "体力", "体恢复魔法Lv2的体力回复")
 			PRINTL
 			PRINTL 魔法施放完毕！
 		ELSE
@@ -210,9 +230,9 @@ SELECTCASE RESULT
 					VARSET LOCAL
 					FOR LOCAL,0,CHARANUM
 						IF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置
-							CALL RECOVER(LOCAL, 魔法知识(100, 110), "体力", "全恢复魔法Lv1的体力回復")
-							CALL RECOVER(LOCAL, 魔法知识(100, 110), "気力", "全恢复魔法Lv1的体力回復")
-							CALL RECOVER(LOCAL, 魔法知识(100, 110), "精力", "全恢复魔法Lv1的精力回復")
+							CALL RECOVER(LOCAL, 魔法知识(100, 110), "体力", "全恢复魔法Lv1的体力回复")
+							CALL RECOVER(LOCAL, 魔法知识(100, 110), "気力", "全恢复魔法Lv1的体力回复")
+							CALL RECOVER(LOCAL, 魔法知识(100, 110), "精力", "全恢复魔法Lv1的精力回复")
 							SIF HAS_PENIS(LOCAL)
 								CALL RECOVER(LOCAL,MAXBASE:LOCAL:勃起/2,"勃起")
 						ENDIF
@@ -235,11 +255,11 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -300, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复体力
-			CALL RECOVER(对象, 魔法知识(200, 120), "体力", "全恢复魔法Lv1的体力回復")
+			CALL RECOVER(对象, 魔法知识(200, 120), "体力", "全恢复魔法Lv1的体力回复")
 			; 恢复気力
-			CALL RECOVER(对象, 魔法知识(200, 120), "気力", "全恢复魔法Lv1的気力回復")
+			CALL RECOVER(对象, 魔法知识(200, 120), "気力", "全恢复魔法Lv1的気力回复")
 			; 恢复精力
-			CALL RECOVER(对象, 魔法知识(200, 120), "精力", "全恢复魔法Lv1的精力回復")
+			CALL RECOVER(对象, 魔法知识(200, 120), "精力", "全恢复魔法Lv1的精力回复")
 			SIF HAS_PENIS(对象)
 				CALL RECOVER(对象,MAXBASE:对象:勃起/2,"勃起")
 			PRINTL
@@ -264,9 +284,9 @@ SELECTCASE RESULT
 					VARSET LOCAL
 					FOR LOCAL,0,CHARANUM
 						IF CFLAG:LOCAL:現在位置 == CFLAG:MASTER:現在位置
-							CALL RECOVER(LOCAL, 魔法知识(200, 115), "体力", "全恢复魔法Lv2的体力回復")
-							CALL RECOVER(LOCAL, 魔法知识(200, 115), "気力", "全恢复魔法Lv2的体力回復")
-							CALL RECOVER(LOCAL, 魔法知识(200, 115), "精力", "全恢复魔法Lv2的精力回復")
+							CALL RECOVER(LOCAL, 魔法知识(200, 115), "体力", "全恢复魔法Lv2的体力回复")
+							CALL RECOVER(LOCAL, 魔法知识(200, 115), "気力", "全恢复魔法Lv2的体力回复")
+							CALL RECOVER(LOCAL, 魔法知识(200, 115), "精力", "全恢复魔法Lv2的精力回复")
 							SIF HAS_PENIS(LOCAL)
 								CALL RECOVER(LOCAL,MAXBASE:LOCAL:勃起,"勃起")
 						ENDIF
@@ -289,11 +309,11 @@ SELECTCASE RESULT
 			; TSP消耗
 			CALL RECOVER(MASTER, -600, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			; 恢复体力
-			CALL RECOVER(对象, 魔法知识(400, 130), "体力", "全恢复魔法Lv2的体力回復")
+			CALL RECOVER(对象, 魔法知识(400, 130), "体力", "全恢复魔法Lv2的体力回复")
 			; 恢复気力
-			CALL RECOVER(对象, 魔法知识(400, 130), "気力", "全恢复魔法Lv2的気力回復")
+			CALL RECOVER(对象, 魔法知识(400, 130), "気力", "全恢复魔法Lv2的気力回复")
 			; 恢复精力
-			CALL RECOVER(对象, 魔法知识(400, 130), "精力", "全恢复魔法Lv2的精力回復")
+			CALL RECOVER(对象, 魔法知识(400, 130), "精力", "全恢复魔法Lv2的精力回复")
 			SIF HAS_PENIS(对象)
 				CALL RECOVER(对象,MAXBASE:对象:勃起,"勃起")
 			PRINTL
@@ -383,7 +403,7 @@ SELECTCASE RESULT
 			; 恢复TSP
 			LOCAL = 魔法知识(100, 110)/50
 			CALL CHANGE_MAXBASE(MASTER, BASE_TSP, LOCAL)
-			CALL RECOVER(对象, 魔法知识(100, 110), "TSP", "时间转化Lv1的TSP回復")
+			CALL RECOVER(对象, 魔法知识(100, 110), "TSP", "时间转化Lv1的TSP回复")
 			M_TFLAG:时间因子类型 = TimeFactor_无加速
 			TIME += 30
 			TFLAG:你起床 += 30
@@ -396,7 +416,10 @@ SELECTCASE RESULT
 			PRINTL 处于过去时间的你无法将时间转化为TSP！
 		ENDIF
 		PRINTL
-		RETURN 0
+		SELECTCOM = 950
+		TFLAG:3 = SELECTCOM
+		DOTRAIN 999
+		RETURN
 	CASE 960
 		IF !M_TFLAG:往日之隙 && !M_TFLAG:时间循环
 		; 时间转化Lv2
@@ -405,7 +428,7 @@ SELECTCASE RESULT
 			; 恢复TSP
 			LOCAL = 魔法知识(200, 110)/50
 			CALL CHANGE_MAXBASE(MASTER, BASE_TSP, LOCAL)
-			CALL RECOVER(对象, 魔法知识(120, 115), "TSP", "时间转化Lv2的TSP回復")
+			CALL RECOVER(对象, 魔法知识(120, 115), "TSP", "时间转化Lv2的TSP回复")
 			M_TFLAG:时间因子类型 = TimeFactor_无加速
 			TIME += 30
 			TFLAG:你起床 += 30
@@ -418,7 +441,10 @@ SELECTCASE RESULT
 			PRINTL 处于过去时间的你无法将时间转化为TSP！
 		ENDIF
 		PRINTL
-		RETURN 0
+		SELECTCOM = 950
+		TFLAG:3 = SELECTCOM
+		DOTRAIN 999
+		RETURN
 	CASE 961
 		; 时间转化Lv3
 		DRAWLINE
@@ -432,6 +458,8 @@ SELECTCASE RESULT
 			SIF M_TFLAG:时间循环
 				PRINTL [998] 时间循环解除
 		ENDIF
+		SIF M_TFLAG:往日之隙
+			PRINTL [997] 返回现在
 		PRINTL [999] 放弃
 		INPUT
 		LOCAL = RESULT
@@ -448,9 +476,9 @@ SELECTCASE RESULT
 						PRINTFORML 将时间转化为TSP中...
 						PRINTL 神秘的能量在空气中流动，消耗大量时间回复了TSP值...
 						; 恢复TSP
-						LOCAL:1 = 魔法知识(400 * LOCAL, 110) / 50
+						LOCAL:1 = 魔法知识(400 * LOCAL, 110) / 50 + SQRT(MAXBASE:MASTER:TSP)
 						CALL CHANGE_MAXBASE(MASTER, BASE_TSP, LOCAL:1)
-						CALL RECOVER(对象, 魔法知识(150, 120)*LOCAL, "TSP", "时间转化Lv3的TSP回復")
+						CALL RECOVER(对象, 魔法知识(150, 120)*LOCAL, "TSP", "时间转化Lv3的TSP回复")
 						M_TFLAG:时间因子类型 = TimeFactor_无加速
 						TIME += 30 * LOCAL
 						TFLAG:你起床 += 30 * LOCAL
@@ -494,6 +522,11 @@ SELECTCASE RESULT
 					PRINTL 放弃使用魔法了...
 					PRINTL
 			ENDSELECT
+		ELSEIF LOCAL == 997
+			M_TFLAG:时间因子类型 = TimeFactor_无加速
+			TIME += M_TFLAG:往日之隙
+			M_TFLAG:往日之隙 = 0
+			PRINTL 从过去的时间狭缝中回到了现在
 		ELSEIF LOCAL == 998
 			IF M_TFLAG:时间循环
 				PRINTL 时间循环已解除！
@@ -505,7 +538,11 @@ SELECTCASE RESULT
 			PRINTL 放弃使用魔法了...
 			PRINTL
 		ENDIF
-		RETURN 0
+		PRINTFORMW
+		SELECTCOM = 950
+		TFLAG:3 = SELECTCOM
+		DOTRAIN 999
+		RETURN
 	CASE 970
 		; 疲劳去除魔法
 		LOCAL = 0
@@ -932,18 +969,18 @@ SELECTCASE RESULT
 				PRINTC [1] 气力上限
 			SIF TALENT:PLAYER:2 & 2
 				PRINTC [2] 精力上限
-			SIF GET_CURRENT_MPS() == "TSP"
+			SIF GET_CURRENT_MPS() == "TSP" && MAXBASE:MASTER:TSP > 0
 				PRINTC [3] TSP上限
-			SIF GET_CURRENT_MPS() == "法力"
+			SIF GET_CURRENT_MPS() == "法力" && MAXBASE:MASTER:法力 > 0
 				PRINTC [3] 法力上限
-				PRINTC [4] 战斗能力
-				PRINTL
-				PRINTL [999] 取消
+			PRINTC [4] 战斗能力
+			PRINTL
+			PRINTL [999] 取消
 			INPUT
 			SELECTCASE RESULT
 				CASE 0
 					; 提升体力上限
-					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:体力/1000
+					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:体力/300
 					CALL CHANGE_MAXBASE(MASTER, BASE_体力, 提升点数, 1)
 					CALL RECOVER(MASTER, -1000, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 					M_TFLAG:锻炼魔法CD = 360 
@@ -951,7 +988,7 @@ SELECTCASE RESULT
 					PRINTL 魔法施放完毕！
 				CASE 1
 					; 提升气力上限
-					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:気力/1000
+					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:気力/300
 					CALL CHANGE_MAXBASE(MASTER, BASE_気力, 提升点数, 1)
 					CALL RECOVER(MASTER, -1000, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 					M_TFLAG:锻炼魔法CD = 360 
@@ -959,7 +996,7 @@ SELECTCASE RESULT
 					PRINTL 魔法施放完毕！
 				CASE 2
 					; 提升精力上限
-					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:精力/1000
+					提升点数=RANDSF(魔法知识(40,110),1)+MAXBASE:MASTER:精力/300
 					CALL CHANGE_MAXBASE(MASTER, BASE_精力, 提升点数, 1)
 					CALL RECOVER(MASTER, -1000, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 					M_TFLAG:锻炼魔法CD = 360 
@@ -967,11 +1004,11 @@ SELECTCASE RESULT
 					PRINTL 魔法施放完毕！
 				CASE 3
 					; 提升TSP/法力上限
-					IF GET_CURRENT_MPS() == "TSP"
-						提升点数=RANDSF(魔法知识(20,110),3)+MAXBASE:MASTER:TSP/1000
+					IF GET_CURRENT_MPS() == "TSP" && MAXBASE:MASTER:TSP > 0
+						提升点数=RANDSF(魔法知识(20,110),3)+MAXBASE:MASTER:TSP/300
 						CALL CHANGE_MAXBASE(MASTER, BASE_TSP, 提升点数, 1)
-					ELSEIF GET_CURRENT_MPS() == "法力"
-						提升点数=RANDSF(魔法知识(20,110),3)+MAXBASE:MASTER:法力/1000
+					ELSEIF GET_CURRENT_MPS() == "法力" && MAXBASE:MASTER:法力 > 0
+						提升点数=RANDSF(魔法知识(20,110),3)+MAXBASE:MASTER:法力/300
 						CALL CHANGE_MAXBASE(MASTER, BASE_法力, 提升点数, 1)
 					ENDIF
 					CALL RECOVER(MASTER, -1000, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
@@ -1013,6 +1050,8 @@ SELECTCASE RESULT
 				EX:对象:膣内精液 = 0
 				EX:对象:肛門内精液 = 0
 				EX:对象:子宮内精液 = 0
+				EX:对象:精液残量 = 0
+				EX:对象:アナル精液残量 = 0
 				CFLAG:对象:膣内精液 = 0
 				CFLAG:对象:子宮内精子 = 0
 				CFLAG:对象:脸上精液 = 0
@@ -1049,7 +1088,7 @@ SELECTCASE RESULT
 				PRINTL [1] 自身清洁 (清除自身污垢和精液)
 				IF GETBIT (FLAG:魔法BONUS取得状况, 3) || TALENT:MASTER:神性
 					PRINTL [2] 一键清洁 (清扫房间与当前位置所有人)
-					PRINTL [3] 地图清洁 (清扫主地图所有房间)
+					PRINTL [3] 地图清洁 (清扫当前大地图所有房间)
 					SIF !M_TFLAG:无垢
 						PRINTL [4] 持续清洁 (所有人保持内裤干燥~❤)
 					SIF M_TFLAG:无垢
@@ -1061,12 +1100,15 @@ SELECTCASE RESULT
 					CASE 0
 						; 房间清洁功能
 						PRINTL 魔法开始生效，房间变得焕然一新！
-						经验获取量 = YOGORE:(CFLAG:MASTER:現在位置)/300 * ITEM:977
+						经验获取量 = YOGORE:(CFLAG:MASTER:現在位置)/100 * ITEM:977
+						EX:MASTER:今日的掃除回数 += YOGORE:(CFLAG:MASTER:現在位置)
+						SIF GMF_GETBIT("幻想乡大地图")
+							GMF_MAP_SWEEP_VALUE:(GET_MAPID(CFLAG:MASTER:現在位置)) += YOGORE:(CFLAG:MASTER:現在位置)
 						YOGORE:(CFLAG:MASTER:現在位置) = 0  ; 设置房间清洁度为最高（YOGORE值越低越干净）
 						PRINTL 房间清洁度已提升至最高！
 						
 						; 增加清扫经验
-						EXP:MASTER:清掃経験 += 经验获取量
+						EXP:MASTER:清掃経験 += 经验获取量 
 						PRINTFORML 获得了 {经验获取量} 点清扫经验！
 						
 						; TSP消耗
@@ -1118,8 +1160,11 @@ SELECTCASE RESULT
 					CASE 2
 						; 一键清洁功能
 						PRINTL 魔法开始生效，房间变得焕然一新！
-						经验获取量 = RANDSF(YOGORE:(CFLAG:MASTER:現在位置)/300 * 2,ITEM:977)
-						CFLAG:MASTER:現在位置 = 0  ; 设置房间清洁度为最高（YOGORE值越低越干净）
+						经验获取量 = RANDSF(YOGORE:(CFLAG:MASTER:現在位置)/100 * 2,ITEM:977)
+						EX:MASTER:今日的掃除回数 += YOGORE:(CFLAG:MASTER:現在位置)
+						SIF GMF_GETBIT("幻想乡大地图")
+							GMF_MAP_SWEEP_VALUE:(GET_MAPID(CFLAG:MASTER:現在位置)) += YOGORE:(CFLAG:MASTER:現在位置)
+						YOGORE:(CFLAG:MASTER:現在位置) = 0 ; 设置房间清洁度为最高（YOGORE值越低越干净）
 						PRINTL 房间清洁度已提升至最高！
 						
 						; 增加清扫经验
@@ -1134,13 +1179,14 @@ SELECTCASE RESULT
 						; 地图清洁功能
 						; 清除主地图所有房间的污垢
 						PRINTL 魔法开始生效，房间变得焕然一新！
-						FOR LOCAL, 1, 1100
-							IF LOCAL/100 == MAIN_MAP
-								经验获取量 += YOGORE:(LOCAL)/100
-								YOGORE:(LOCAL) = 0  ; 设置房间清洁度为最高（YOGORE值越低越干净）
-							ENDIF
+						FOR LOCAL, GMF_LARGE_MAP_ID() * 100, GMF_LARGE_MAP_ID() * 100 +99
+							经验获取量 += YOGORE:(LOCAL)/100
+							EX:MASTER:今日的掃除回数 += YOGORE:(LOCAL)
+							SIF GMF_GETBIT("幻想乡大地图")
+								GMF_MAP_SWEEP_VALUE:(GET_MAPID(LOCAL)) += YOGORE:(LOCAL)
+							YOGORE:(LOCAL) = 0  ; 设置房间清洁度为最高（YOGORE值越低越干净）
 						NEXT
-						PRINTL 主地图的所有房间清洁度已提升至最高！
+						PRINTL 当前大地图的所有房间清洁度已提升至最高！
 						IF ABL:MASTER:清掃技能 < 10
 							EXP:MASTER:清掃経験 += 经验获取量 * ITEM:977
 							PRINTFORML 获得了 {经验获取量 * ITEM:977} 点清扫经验！
@@ -1567,9 +1613,9 @@ SELECTCASE RESULT
 			PRINTFORML 发动转运仪式...
 			LOCAL = 0
 			LOCAL += RANDSF(魔法知识(100, 110),3 + TALENT:MASTER:幸运儿) - RANDSF(200,3) + 150
-			TFLAG:幸運補正 += TALENT:MASTER:幸运儿
+			TFLAG:幸運補正 += TALENT:MASTER:幸运儿 * (LOG10(MAXBASE:MASTER:TSP/1000 + 1) + LOG10(MAXBASE:MASTER:法力/1000 + 1)) + 无限TSP*3 + 无限法力*2
 			IF LOCAL + CFLAG:MASTER:今日の運勢 > 999
-				CFLAG:MASTER:今日の運勢 =999
+				CFLAG:MASTER:今日の運勢 = 999
 				TFLAG:幸運補正 += TALENT:MASTER:幸运儿 + 1
 			ELSEIF LOCAL + CFLAG:MASTER:今日の運勢 > 0 && LOCAL + CFLAG:MASTER:今日の運勢 < 999
 				CFLAG:MASTER:今日の運勢 += LOCAL
@@ -1650,6 +1696,7 @@ SELECTCASE RESULT
 				ENDIF
 				SIF !M_FLAG:隙间标记
 					PRINTL [3] 查看角色隙间标记
+				PRINTL [4] 隙间旅行
 				PRINTL [9] 取消
 				INPUT
 				SELECTCASE RESULT
@@ -1657,6 +1704,8 @@ SELECTCASE RESULT
 						CALL ITEM_BUY
 						CALL RECOVER(MASTER, -100, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 					CASE 2
+						SIF FLAG:70
+							RESTART
 						IF !TFLAG:约会道中 && !M_FLAG:隙间标记
 							CALL OMANEKIBEYA_GAP(对象)
 						ELSEIF TFLAG:约会道中
@@ -1675,7 +1724,11 @@ SELECTCASE RESULT
 							ENDIF
 						ENDIF
 					CASE 3
+						SIF M_FLAG:隙间标记
+							RESTART
 						CALL OMANEKIBEYA_GUEST
+					CASE 4
+						CALL GAP_TRAVEL
 					CASEELSE
 						PRINTL 已取消释放。
 				ENDSELECT
@@ -1701,3 +1754,4 @@ SELECTCASE RESULT
 		ENDIF
 		RETURN 1
 ENDSELECT
+PRINTFORMW

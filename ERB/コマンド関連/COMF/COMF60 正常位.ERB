@@ -1,8 +1,30 @@
 ﻿;-------------------------------------------------
-;正常位
-;性交系指令、レベル1
+;正常位/対面立位
+;セックス系コマンド、レベル1
 ;-------------------------------------------------
+@COM60_DEFINITION(GET_DEFAULT_DEFINITION = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIM GET_DEFAULT_DEFINITION
+
+SIF GET_DEFAULT_DEFINITION
+	RETURNF TRAINNAME:60
+SIF IS_STANDING_SEX(SELECTCOM)
+	RETURNF "対面立位"
+
+@COM60_DISPLAY
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+RETURNF COM60_DEFINITION()
+
 @COM60
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC COM_DEFINITION
+
+COM_DEFINITION '= @"%COM60_DEFINITION()%"
 ;-------------------------------------------------
 ;特殊派生処理
 ;-------------------------------------------------
@@ -12,7 +34,7 @@ IF PREVCOM == 71
 	SIF RESULT == 1
 		JUMP COM71
 ENDIF
-;ベッドがないOR浴室ルームで塑料地墊がないと立位に
+;ベッドがないORバスルームでプレイマットがないと立位に
 SIF IS_STANDING_SEX(SELECTCOM) ;addition custom code
 	TFLAG:193 = 1
 ;-------------------------------------------------
@@ -134,6 +156,9 @@ ENDIF
 RETURN 1
 
 @CAN_COM60(ARG)
+#DIMS DYNAMIC COM_DEFINITION
+
+COM_DEFINITION '= @"%COM60_DEFINITION()%"
 ;-------------------------------------------------
 ;実行判定処理
 ;-------------------------------------------------
@@ -359,6 +384,8 @@ RETURN 1
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE60
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;正常位実行判定
 SIF !TFLAG:100
 	RETURN 0
@@ -416,3 +443,20 @@ ENDIF
 SIF TEQUIP:体位 == 5
 	RETURN 0
 RETURN 1
+
+@COM60_TAGS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+LOCAL = 0
+SETBIT LOCAL, BIT_LOST_DOUTEI_MASTER
+SETBIT LOCAL, BIT_乳首吸い解除
+SETBIT LOCAL, BIT_V使用コマンド
+RETURNF LOCAL
+
+@COM60_TOUCH(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+
+CALL TOUCH_SET(SET_FROM_V,SET_P,ARG,1)
+TEQUIP:ARG:体位 = 1

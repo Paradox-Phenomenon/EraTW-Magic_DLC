@@ -2,6 +2,13 @@
 ;振動棒
 ;道具使用指令、レベル2
 ;-------------------------------------------------
+@COM44_DISPLAY
+#FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+SIF TEQUIP:バイブ
+	RETURNF TRAINNAME:44 + "解除"
+
 @COM44
 ;着脱の処理
 TEQUIP:振動棒 = !TEQUIP:振動棒
@@ -15,7 +22,9 @@ TCVAR:PLAYER:108 = 1
 
 CSTR:TARGET:10 += @"{PLAYER}/"
 ;TCVAR:2 射精部位フラグ（-1=避孕套 1=膣内 2=肛門 3=手淫 4=口淫 5=乳交 6=素股 7=足交 8=体表 9=肛門奉仕 10=道具 11=触手 12=Ａ責め 13=Ｖ責め）
-TCVAR:TARGET:2 = 13
+;因为射精和被射精的角色在使用同一个标志管理，除非彻底重构，否则扶她的射精与被射精部位互相污染的问题是不可避免的。这里是令具有射精判定的状态优先，不被被射精状态覆盖。
+SIF TCVAR:TARGET:2 == 0
+	TCVAR:TARGET:2 = 13
 ;強度
 TCVAR:TARGET:4 = 900
 
@@ -106,7 +115,8 @@ RETURN 1
 PRINTL ＜振动棒插入中＞
 
 CSTR:ARG:10 += @"{PLAYER}/"
-TCVAR:ARG:2 = 13
+SIF TCVAR:ARG:2 == 0
+	TCVAR:ARG:2 = 13
 TCVAR:ARG:4 = 450
 
 IF (FLAG:70 == 1 && CFLAG:ARG:344 == 0)
@@ -179,6 +189,8 @@ RETURN 1
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE44
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;振動棒実行判定
 SIF !TFLAG:100
 	RETURN 0
@@ -213,3 +225,17 @@ IF PALAM:潤滑 < PALAMLV:2 && ASSIPLAY
 ENDIF
 RETURN 1
 
+@COM44_TAGS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+LOCAL = 0
+SETBIT LOCAL, BIT_V使用コマンド
+RETURNF LOCAL
+
+@COM44_TOUCH(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+
+CALL TOUCH_RESET_M(SET_YUBI)
+TEQUIP:ARG:Ｖ接触部位 = 0

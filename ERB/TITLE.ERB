@@ -10,6 +10,10 @@
 ;		如果可能的话，比如修改弹幕战，催眠后弹幕战是涩涩战斗这种，就是上面提到的无知PLAY这样
 ;		————by 奶糖
 #DIM DYNAMIC check_saves
+#DIM DYNAMIC MID_W
+#DIM DYNAMIC L_MAXW
+#DIM DYNAMIC L_MAXWPX
+#DIMS DYNAMIC HTML_STR
 ;删干净警告
 CLEARLINE 1
 LOADGLOBAL
@@ -30,14 +34,16 @@ PRINTFORML 字典加载完毕 用时{GETMILLISECOND()-LOCAL}毫秒
 ;#;FORCEWAIT
 
 ;warning if screen isn't wide enough
-IF MAXWIDTH() < CHAR_PER_LINE
+L_MAXW = MAXWIDTH()
+L_MAXWPX = MAXWIDTH_PX()
+IF L_MAXW < CHAR_PER_LINE
 	CALL COLORMESSAGE("窗口宽度小于推荐行宽，显示内容可能无法正确对齐", C_YELLOW, 1)
 	CALL COLORMESSAGE("要解决此问题，请加宽窗口或使用更小的字体", C_YELLOW, 1)
 	PRINTL
 ENDIF
 
 IF GAMEBASE_VERSION == 0
-	WINDOW_TITLE = %GAMEBASE_TITLE% %eraTW_Version%
+	WINDOW_TITLE = %GAMEBASE_TITLE% %eraTW_Version% %eraTW_SubVersion%
 ELSEIF GAMEBASE_VERSION < 0
 	WINDOW_TITLE = %GAMEBASE_TITLE% 0.00
 ENDIF
@@ -55,18 +61,25 @@ $ONCEANAIN
 	ALIGNMENT CENTER
 	CUSTOMDRAWLINE ━
 	;PRINTFORML %GAMEBASE_TITLE%
-	;PRINTFORML \@ GAMEBASE_VERSION <= 0 ? %eraTW_Version% # %TOSTR(GAMEBASE_VERSION,"0,.###")% \@
+	;PRINTFORML \@ GAMEBASE_VERSION <= 0 ? %eraTW_Version% # %TOSTR(GAMEBASE_VERSION,"0,.###")% \@ %eraTW_SubVersion%
 	;PRINTFORML %GAMEBASE_YEAR%
 	CALL HTMLPRINTL(@"<b>%GAMEBASE_TITLE%</b>",,, "ＭＳ 明朝")
-	CALL HTMLPRINTL(@"<b>%eraTW_Version%</b>",,, "ＭＳ 明朝")
+	CALL HTMLPRINTL(@"<b>%eraTW_Version% - %eraTW_SubVersion%</b>",,, "ＭＳ 明朝")
 	CALL HTMLPRINTL(@"<b>(%GAMEBASE_YEAR%)</b>",,, "ＭＳ 明朝")
 	PRINTL
 	CALL HTMLPRINTL(@"汉化版仅为学习日语的交流之用，禁止对该版本的一切盗用、商用行为",,, )
 	CALL HTMLPRINTL(@"%GAMEBASE_INFO%",,, )
 	CUSTOMDRAWLINE ━
-	PRINTFORML [0] 开始游戏
-	PRINTFORML %" "*12%[1] 继续游戏    [2] DEMO
 	ALIGNMENT LEFT
+	MID_W = (L_MAXWPX - HTML_STRINGLEN(@"[0] 开始游戏",1)) / 2
+	HTML_PRINT @"<shape type='space' param='{MID_W}px'><button value='0'>[0] 开始游戏</button><br>"
+	HTML_STR '= "<button value='1'>[1] 继续游戏</button>    <button value='2'>[2] DEMO</button>"
+	;#;HTML_STR += "    <button value='3'>[3] CALL FUNC(DEBUG)</button>"
+	HTML_PRINT @"<shape type='space' param='{MID_W}px'>%HTML_STR%<br>"
+	HTML_STR '= @"<div xpos='{CLIENTWIDTH()-200}px' ypos='{-CLIENTHEIGHT()+GETCONFIG("LINE HEIGHT")}px' width='180px' height='50px' border='2px' bcolor='#a5a5a5' padding='10px' radius='4px' color='#363636'>"
+	HTML_STR += "<button value='4'>【欢落五子棋】</button>"
+	HTML_STR += @"</div>"
+	HTML_PRINT HTML_STR,1
 	REDRAW 1
 	TINPUT 20000,2,0,"开始播放DEMO"
 	CUSTOMDRAWLINE ━
@@ -100,6 +113,10 @@ $ONCEANAIN
 			CALL Real_Time_Save(1002, -1)
 		CASE 2
 			CALL BADAPPLE
+		CASE 3
+			CALL 快速测试
+		CASE 4
+			CALL PLAY_GOMOKU
 	ENDSELECT
 LOOP RESULT
 
@@ -116,10 +133,10 @@ PLAYSOUND "bad-apple-audio.MP3"
 gLineCount = LINECOUNT
 I = GETMILLISECOND()
 FOR count, 1, 6573
-	PRINTSL LOADTEXT(@"bad/bad_apple{count}.txt")
+	HTML_PRINT @"<p align='center'><font face='黑体'>%LOADTEXT(@"bad/bad_apple{count}.txt")%</font></p>"
 	CUSTOMDRAWLINE ━
 	CALL HTMLPRINTL(@"<b>%GAMEBASE_TITLE%</b>",,, "ＭＳ 明朝")
-	CALL HTMLPRINTL(@"<b>%eraTW_Version%</b>",,, "ＭＳ 明朝")
+	CALL HTMLPRINTL(@"<b>%eraTW_Version% - %eraTW_SubVersion%</b>",,, "ＭＳ 明朝")
 	CALL HTMLPRINTL(@"<b>(%GAMEBASE_YEAR%)</b>",,, "ＭＳ 明朝")
 	LOCAL = GETMILLISECOND() - I
 	IF LOCAL/1000%60 % 2

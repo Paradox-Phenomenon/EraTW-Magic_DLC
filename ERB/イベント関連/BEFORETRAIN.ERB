@@ -32,9 +32,19 @@ IF SaveDataInTrain
 		FOR index, 0, 250
 			TEQUIP:chara:index = STequip:chara:index
 		NEXT
+		IF  !Real_Time_Updating
+			FOR index, 0, 200
+				PALAM:chara:index = SPalam:chara:index
+			NEXT
+		ELSE
+			FOR index, 0, 200
+				PALAM:chara:index = 0
+			NEXT
+		ENDIF
 		;防死循环
 		IF chara % 20
-			TWAIT 1, 0
+			SIF printTimes % 5 == 0
+				TWAIT 1, 0
 			printTimes ++
 			CLEARLINE 1
 			PRINTFORML 少女折寿中%"." * (printTimes / 10 % 3 + 1), 5, LEFT% {(chara * 50 / CHARANUM) + 50}\%
@@ -42,11 +52,14 @@ IF SaveDataInTrain
 	NEXT
 	ARRAYCOPY "STflag", "TFLAG"
 	SaveDataInTrain = 0
+	Real_Time_Updating = 0
 	RETURN
 ENDIF
 ;TRAGET初期化
 VARSET TARGET
 VARSET LOCAL
+CALL M_TFLAG_CLEAR
+CALL PENIS_REFRESH
 ;幻想乡大地图，地图模式初始化，虽然按理之前早就应该是0了，但还是加上以免万一
 SIF GMF_GETBIT("幻想乡大地图")
 	GMF_MAP_MODE = 0
@@ -409,7 +422,7 @@ CALL MEMO_IRAI_DEADLINE
 FOR LOCAL,0,CHARANUM
 	CFLAG:LOCAL:每日礼物 = 0
 NEXT
-IF !TALENT:MASTER:高难开局 || TALENT:MASTER:神性 && MAGIC_DLC_宝藏袋
+IF MAGIC_DLC_宝藏袋
 	ITEM:宝藏袋 += 2 + TALENT:MASTER:黄金律
 	PRINTFORML 发放了{2 + TALENT:MASTER:黄金律}个宝藏袋（现在：{ITEM:宝藏袋}个）
 ENDIF
@@ -477,7 +490,6 @@ NEXT
 SIF CFLAG:MASTER:大掃除 > 0
 	CFLAG:MASTER:大掃除 -= 1
 
-
 FOR LOCAL, 0, CHARANUM
 	;衣装設定
 	;行動中に着る服を設定してお着替えする    设定行动中穿的衣服换衣服
@@ -532,6 +544,10 @@ FLAG:一時滞在 = 0
 FOR LOCAL,0,CHARANUM
 	CSTR:LOCAL:1 =
 NEXT
+IF TALENT:MASTER:278 <= 0 && 悟性系统开关 == 1
+	CALL EVENT_WUXING_START
+ENDIF
+
 
 ;addition custom code
 FOR LOCAL, 1, CHARANUM	
@@ -995,3 +1011,16 @@ IF ITEM:桐木床
 ENDIF
 
 RETURN 安眠補正
+
+@PENIS_REFRESH
+#LOCALSIZE 1
+#LOCALSSIZE 1
+IF HAS_PENIS(MASTER)
+	SIF !TALENT:MASTER:形状
+		TALENT:MASTER:形状 = 3
+	SIF BASE:MASTER:精力 < 1000
+		BASE:MASTER:精力 = 1000
+ELSE
+	TALENT:MASTER:形状 = 0
+	BASE:MASTER:精力 = 0
+ENDIF
