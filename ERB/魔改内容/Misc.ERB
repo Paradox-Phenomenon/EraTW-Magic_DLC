@@ -460,64 +460,212 @@ SPLIT ARGS, ARGS:1, _LIST, LOCAL
 RETURNF LOCAL
 
 ;********************************************
-;物品系
+;资源管理的逻辑与表现
 ;********************************************
 ;-------------------------------------------------
-;函数名:@QOL_SHOW_SET_ITEM(ENUM, MOD_NUM, PRINT_TYPE)
+;函数名:@GET_ITEM_D(ITEM_ID, MOD_NUM, PRINT_TYPE)
+;概　要:获得物品
+;参　数:ITEM_ID = 物品ID (如 708)
+;		PRINT_TYPE = 显示模式 (0:Wait 1:Line 2:Wait 3:Silent)
+;-------------------------------------------------
+@GET_ITEM_D(ITEM_ID, MOD_NUM, PRINT_TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC ITEM_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC PRINT_TYPE
+
+CALL QOL_SHOW_SET_ITEM(ITEM_ID, MOD_NUM, PRINT_TYPE)
+RETURN RESULT
+
+;-------------------------------------------------
+;函数名:@LOST_ITEM_D(ITEM_ID, MOD_NUM, PRINT_TYPE)
+;-------------------------------------------------
+@LOST_ITEM_D(ITEM_ID, MOD_NUM, PRINT_TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC ITEM_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC PRINT_TYPE
+
+CALL QOL_SHOW_SET_ITEM(ITEM_ID, -MOD_NUM, PRINT_TYPE)
+RETURN RESULT
+
+;-------------------------------------------------
+;函数名:@QOL_SHOW_SET_ITEM(ITEM_ID, MOD_NUM, PRINT_TYPE)
 ;概　要:处理物品增减的核心逻辑，并负责显示消息
-;参　数:ENUM = 物品的键名 (可以是ID字符串 "708" 或 名称 "好吃的鱼")
-;		MOD_NUM     = 变动数量 (正数为得，负数为失)
-;		PRINT_TYPE   = 显示模式 (0:Wait 1:Line 2:Wait 3:Silent)
+;参　数:ITEM_ID    = 物品的数组编号 (INT)
+;		MOD_NUM    = 变动数量 (正数为得，负数为失)
+;		PRINT_TYPE = 显示模式 (0:Wait 1:Line 2:Wait 3:Silent)
 ;返回值:1 = 成功, 0 = 失败
 ;备　注:包含上限判断(999)和消息文本着色逻辑，是物品获得函数系列的抽象，也是封装底层F函数的样例
 ;-------------------------------------------------
-
-;所有支持的样例如下：
-;	CALL GET_ITEM("好吃的魚", 1, 1)	;好吃的魚是ITEM.CSV内的键值 ITEMNAME:708 == "好吃的魚"
-;	CALL GET_ITEM("うまい魚", 2, 1)	;うまい魚是ITEM.ALS内的键值 标识符うまい魚能提供除了GETNUM键对反射以外同うまい魚一致的等价
-;	※已改为别名※ CALL GET_ITEM("好吃的鱼", 3, 1)	;好吃的鱼是.ERH声明的宏 #DEFINE 好吃的鱼 好吃的魚，只有在作为元素编译时才与好吃的魚等价。这说明本系列函数具有运行时编译能力。
-;	CALL GET_ITEM(708, 4, 1)	;708是好吃的鱼使用的ITEM数组编号，这里利用了编译自定义函数时允许数值向字符串型参数转换的解释器特性。
-;-------------------------------------------------
-@QOL_SHOW_SET_ITEM(ENUM, MOD_NUM, PRINT_TYPE)
+@QOL_SHOW_SET_ITEM(ITEM_ID, MOD_NUM, PRINT_TYPE)
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIMS DYNAMIC LABEL
-#DIMS VARNAME
-#DIM MOD_NUM
-#DIMS DYNAMIC ENUM
-#DIM PRINT_TYPE
-VARNAME = ITEM
+#DIM DYNAMIC ITEM_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC PRINT_TYPE
+#DIM DYNAMIC CURRENT_VAL
 
 SIF MOD_NUM == 0
-	RETURN
-
-LABEL '= QOL_GETENUMNAME(VARNAME,ENUM)
-IF LABEL == "NULL"
-	PRINTFORMW [错误]参数1 "%ENUM%" 不是合法的[%VARNAME%]类型名称或ID，请保存日志报错
-	RETURN
+	RETURN 1
+IF ITEM_ID < 0 || ITEM_ID >= VARSIZE("ITEM") || ITEMNAME:ITEM_ID == ""
+	DEBUGPRINTFORML [错误]QOL_SHOW_SET_ITEM: 传入了无效的物品ID ({ITEM_ID})
+	RETURN 0
 ENDIF
-LOCAL = QOL_GETVAR(VARNAME,ENUM)
-IF LOCAL == 安全失败值
-	DEBUGPRINTFORML [警告]尝试读取 %VARNAME%:%ENUM% 失败。
+CURRENT_VAL = ITEM:ITEM_ID
+LABEL = %NAME_TR(ITEMNAME:ITEM_ID)%
+ITEM:ITEM_ID = LIMIT(CURRENT_VAL + MOD_NUM, 0, 999)
+
+IF PRINT_TYPE != 3
+	IF MOD_NUM > 0 && CURRENT_VAL >= 999
+		CALL COLORMESSAGE(@"%LABEL%没法再多拿了", C_YELLOW, PRINT_TYPE)
+	ELSEIF MOD_NUM > 0 && CURRENT_VAL + MOD_NUM > 999
+		CALL COLORMESSAGE(@"拿不完%LABEL%，只能拿满为止", C_YELLOW, PRINT_TYPE)
+	ELSEIF MOD_NUM > 0
+		CALL COLORMESSAGE(@"得到了{MOD_NUM}个%LABEL%", C_YELLOW, PRINT_TYPE)
+	ELSEIF MOD_NUM < 0
+		CALL COLORMESSAGE(@"失去了{-MOD_NUM}个%LABEL%", C_YELLOW, PRINT_TYPE)
+	ENDIF
+ENDIF
+RETURN 1
+
+;-------------------------------------------------
+;函数名:@QOL_ADDEXP
+;概　要:处理经验增减的核心逻辑，同步更新TCVAR防重复结算，并负责显示消息
+;参　数:EXP_ID      = 经验的数组编号 (INT)
+;		C_ID        = 角色编号 (INT)
+;		MOD_NUM     = 变动数量 (正数为得，负数为失)
+;		PRINT_MODE  = 显示模式 
+;                     -1: 静默 (不显示)
+;                      0: 默认模式 [EXP名＋数值（角色名）] (原AddEXP/AddEXP_D)
+;                      1: 紧凑模式 [角色名的EXP名 ＋数值] (原AddEXPOrdered Mode 0)
+;                      2: 对齐模式 [带制表间距的对齐格式] (原AddEXPOrdered Mode 1)
+;返回值:1 = 成功, 0 = 失败
+;-------------------------------------------------
+@QOL_ADDEXP(EXP_ID, C_ID, MOD_NUM, PRINT_MODE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC EXP_ID
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC PRINT_MODE
+#DIM DYNAMIC CURRENT_VAL
+#DIM DYNAMIC ACTUAL_MOD
+#DIMS DYNAMIC LABEL
+
+SIF MOD_NUM == 0 || !INRANGE(C_ID, 0, CHARANUM - 1)
+	RETURN 0
+SIF EXP_ID < 0 || EXP_ID >= VARSIZE("EXP") || EXPNAME:EXP_ID == ""
+	RETURN 0
+
+CURRENT_VAL = EXP:C_ID:EXP_ID
+ACTUAL_MOD = MAX(CURRENT_VAL + MOD_NUM, 0) - CURRENT_VAL
+EXP:C_ID:EXP_ID += ACTUAL_MOD
+TCVAR:C_ID:(400 + EXP_ID) += ACTUAL_MOD
+
+IF PRINT_MODE != -1 && ACTUAL_MOD != 0
+	; 获取翻译后的经验名称
+	LABEL = %EXP_TR(EXP_ID)%
+	IF ACTUAL_MOD > 0
+		SELECTCASE PRINT_MODE
+			CASE 0
+				CALL COLORMESSAGE(@"%LABEL%＋{ACTUAL_MOD}（%CALLNAME:C_ID%）", C_YELLOW, 2, 1)
+			CASE 1
+				CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%LABEL% ＋{ACTUAL_MOD}", C_YELLOW, 2)
+			CASE 2
+				CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%LABEL,18,LEFT% ＋{ACTUAL_MOD}", C_YELLOW, 1)
+		ENDSELECT
+	ELSE
+		SELECTCASE PRINT_MODE
+			CASE 0
+				CALL COLORMESSAGE(@"%LABEL%－{-ACTUAL_MOD}（%CALLNAME:C_ID%）", C_RED, 2, 1)
+			CASE 1
+				CALL COLORMESSAGE(@"%CALLNAME:C_ID%的%LABEL% －{-ACTUAL_MOD}", C_RED, 2)
+			CASE 2
+				CALL COLORMESSAGE(@"%CALLNAME:C_ID+"的",14,LEFT%%LABEL,18,LEFT% －{-ACTUAL_MOD}", C_RED, 1)
+		ENDSELECT
+	ENDIF
+ENDIF
+
+RETURN 1
+
+;-------------------------------------------------
+;函数名:AddEXP_D
+;概　要:附带信息的经验值增加
+;-------------------------------------------------
+@AddEXP_D(EXP_ID, C_ID, MOD_NUM)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC EXP_ID
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC MOD_NUM
+CALL QOL_ADDEXP(EXP_ID, C_ID, MOD_NUM, 0)
+RETURN RESULT
+
+;-------------------------------------------------
+;函数名:AddEXP
+;概　要:附带消息文本的经验值增加 (支持字符串)
+;-------------------------------------------------
+@AddEXP(ENUM, C_ID, MOD_NUM)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC ENUM
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC EXP_ID
+
+IF ISNUMERIC(ENUM)
+	EXP_ID = TOINT(ENUM)
+ELSE
+	EXP_ID = GETNUM(EXP, ENUM)
+ENDIF
+
+IF EXP_ID == -1
+	PRINTFORMW [错误]AddEXP: "%ENUM%" 不是合法的EXP名称，请保存日志报错
 	RETURN 0
 ENDIF
 
-IF QOL_SETVAR(VARNAME,ENUM,LIMIT(LOCAL + MOD_NUM, 0, 999))
-	IF PRINT_TYPE != 3
-		IF MOD_NUM > 0 && LOCAL > 999
-			CALL COLORMESSAGE(@"%LABEL%没法再多拿了", C_YELLOW, PRINT_TYPE)
-		ELSEIF MOD_NUM > 0 && LOCAL + MOD_NUM > 999
-			CALL COLORMESSAGE(@"拿不完%LABEL%，只能拿满为止", C_YELLOW, PRINT_TYPE)
-		ELSEIF MOD_NUM > 0
-			CALL COLORMESSAGE(@"得到了{MOD_NUM}个%LABEL%", C_YELLOW, PRINT_TYPE)
-		ELSEIF MOD_NUM < 0
-			CALL COLORMESSAGE(@"失去了{-MOD_NUM}个%LABEL%", C_YELLOW, PRINT_TYPE)
-		ENDIF
-	ENDIF
-ELSE 
-	DEBUGPRINTFORML %VARNAME%:%ENUM%赋值失败
+CALL QOL_ADDEXP(EXP_ID, C_ID, MOD_NUM, 0)
+RETURN RESULT
+
+;----------------------------------------------------------------------
+;函数名: AddEXPOrdered
+;概　要: AddEXP的变体，消息改为开头显示名字，拥有更灵活的消息输出格式。
+;参　数: OutputMode: 1:带制表间距 0:普通模式 -1:静默
+;----------------------------------------------------------------------
+@AddEXPOrdered(ENUM, C_ID, MOD_NUM, OutputMode)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC ENUM
+#DIM DYNAMIC C_ID
+#DIM DYNAMIC MOD_NUM
+#DIM DYNAMIC OutputMode
+#DIM DYNAMIC EXP_ID
+#DIM DYNAMIC PRINT_MODE
+
+IF ISNUMERIC(ENUM)
+	EXP_ID = TOINT(ENUM)
+ELSE
+	EXP_ID = GETNUM(EXP, ENUM)
 ENDIF
 
+IF EXP_ID == -1
+	PRINTFORMW [错误]AddEXPOrdered: "%ENUM%" 不是合法的EXP名称，请保存日志报错
+	RETURN 0
+ENDIF
+IF OutputMode == -1
+	PRINT_MODE = -1
+ELSEIF OutputMode == 1
+	PRINT_MODE = 2
+ELSE
+	PRINT_MODE = 1
+ENDIF
+
+CALL QOL_ADDEXP(EXP_ID, C_ID, MOD_NUM, PRINT_MODE)
+RETURN RESULT
 
 ;-------------------------------------------------
 ;函数名:@QOL_GETVAR
