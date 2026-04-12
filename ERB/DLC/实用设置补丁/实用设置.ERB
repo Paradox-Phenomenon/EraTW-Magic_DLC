@@ -8,6 +8,7 @@ Setting_满足终了 = 0
 Setting_主动权转移禁止 = 0
 Setting_外出时可以带出去 = 0
 Setting_单独一人吃饭 = 0
+Setting_逆推口上找补 = 0
 Setting_即时重载 = 0
 
 
@@ -101,6 +102,32 @@ IF GMF_GETBIT("幻想乡大地图")
 	PRINTL
 ENDIF
 
+SELECTCASE Setting_逆推口上找补
+	CASE 0
+		LOCALS =  逆推口上找补:禁用
+	CASE 1
+		LOCALS =  逆推口上找补:启用
+ENDSELECT
+CALL PRINTBUTTON_EX(@"[%LOCALS%]", 8, !Setting_逆推口上找补)
+PRINTL
+
+IF HOUGONG
+	SELECTCASE Setting_跟随型后宫
+		CASE 0
+			LOCALS =  跟随型后宫:禁用
+		CASE 1
+			LOCALS =  跟随型后宫:启用
+	ENDSELECT
+	CALL PRINTBUTTON_EX(@"[%LOCALS%]", 9, !Setting_跟随型后宫)
+	IF Setting_跟随型后宫
+		PRINT ==
+		CALL PRINTBUTTON_EX("[清除所有人的后宫标记]", 10)
+	ENDIF
+	PRINTL
+ELSE
+	Setting_跟随型后宫 = 0
+ENDIF
+
 CALL PRINTBUTTON_EX(@"[即时设置(实验性)]", 998)
 PRINTL
 CALL PRINTBUTTON_EX(@"[确认]", 999)
@@ -130,6 +157,16 @@ ELSEIF RESULT == 6 && Real_Time_Save
 	Setting_即时重载 = !Setting_即时重载
 ELSEIF RESULT == 7
 	CALL GMF_ALL_MAP_ROOMSETTING
+ELSEIF RESULT == 8
+	Setting_逆推口上找补 = !Setting_逆推口上找补
+ELSEIF RESULT == 9 && HOUGONG
+	Setting_跟随型后宫 = !Setting_跟随型后宫
+ELSEIF RESULT == 10 && Setting_跟随型后宫
+	PRINTFORMW 确认清除所有人的后宫标记吗？
+	CALL ASK_YN, "那当然", "再想想"
+	IF !RESULT
+		CVARSET M_CFLAG, 4, 0
+	ENDIF
 ELSEIF RESULT == -100
 	INPUTS
 	TRYCALLFORM %RESULTS%
@@ -140,3 +177,46 @@ ELSEIF RESULT == 999
 	RETURN 
 ENDIF
 GOTO LOOP
+
+@逆推指令转化(ARG)
+#FUNCTION
+IF CFLAG:MASTER:诶嘿嘿 == 1
+	SELECTCASE ARG
+		CASE T3手指插入
+			RETURNF T316手指插入
+		CASE T5肛门爱抚
+			RETURNF T314肛门爱抚
+		CASE T6胸爱抚
+			RETURNF T313胸爱抚
+		CASE T15阴蒂爱抚
+			RETURNF T315阴蒂爱抚
+		CASE T20接吻
+			RETURNF T312接吻
+		CASE T60正常位
+			RETURNF T320对方主导正常位
+		CASE T61后背位
+			RETURNF T322对方主导后背位
+		CASE T63后背位肛交
+			RETURNF T323对方主导后背位Ａ
+	ENDSELECT
+ELSEIF CFLAG:MASTER:诶嘿嘿 == 2
+	SELECTCASE ARG
+		CASE 316
+			RETURNF T3手指插入
+		CASE T314肛门爱抚
+			RETURNF T5肛门爱抚
+		CASE T313胸爱抚
+			RETURNF T6胸爱抚
+		CASE T315阴蒂爱抚
+			RETURNF T15阴蒂爱抚
+		CASE T312接吻
+			RETURNF T20接吻
+		CASE T320对方主导正常位
+			RETURNF T60正常位
+		CASE T322对方主导后背位
+			RETURNF T61后背位
+		CASE T323对方主导后背位Ａ
+			RETURNF T63后背位肛交
+	ENDSELECT
+ENDIF
+RETURNF 0
