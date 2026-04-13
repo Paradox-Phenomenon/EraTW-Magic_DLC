@@ -669,61 +669,6 @@ ENDIF
 CALL FACT2(num - 1)
 PRINTFORMW FACT({num}) == {num * RESULT}
 RETURN num * RESULT
-[SKIPEND]
-
-
-;把立绘角色叫过来，自动赋予
-@立绘测试debug
-#DIM _LIST = 79,90,133,82
-FOR I, 0, VARSIZE("_LIST")
-	CFLAG:(_LIST:I):1 = 3
-	CFLAG:(_LIST:I):2 = 99999
-	CFLAG:(_LIST:I):4 = 39999
-	ABL:(_LIST:I):9 = 12
-	ABL:(_LIST:I):10 = 12
-	ABL:(_LIST:I):11 = 12
-	TALENT:(_LIST:I):3 = 1
-	CFLAG:(_LIST:I):翌日来訪 = 1
-
-NEXT
-
-@预加载_阴阳鱼
-#LOCALSIZE 1
-#LOCALSSIZE 1
-REDRAW 0
-REPEAT 24
-	GDISPOSE 3501 + COUNT
-	GCREATE 3501 + COUNT, 100, 100
-REND
-GSETPEN 3501, 0xFF8552A1, 2
-GSETFONT 3501, "Segoe UI Symbol", 90
-GDRAWTEXT 3501, "☯️", 10, -15
-REPEAT 23
-	GDRAWGWITHROTATE 3502 + COUNT, 3501, (COUNT + 1) * 15
-REND
-;REPEAT 24
-;	SPRITECREATE @"GTEXT_{3501 + COUNT}", 3501 + COUNT
-;	PRINTFORML 检查图层{3501 + COUNT}
-;	CALL PRINT_IMAGE(@"GTEXT_{3501 + COUNT}", 300)
-;REND
-;PRINTFORMW 创建完成
-SPRITEANIMECREATE "阴阳鱼", 100, 100
-REPEAT 24
-	SPRITEANIMEADDFRAME "阴阳鱼", 3501 + COUNT, 0, 0, 100, 100, 0, 0, 100
-REND
-
-;SETANIMETIMER 50
-;CALL PRINT_IMAGE("353_ROTATE", 200)
-;WAIT
-@阴阳鱼示例
-#LOCALSIZE 1
-#LOCALSSIZE 1
-CALL 预加载_阴阳鱼
-SETANIMETIMER 50
-HTML_PRINT "<p align = 'right'><img src='阴阳鱼' height='200' ypos='40'><br>少女祈祷中……    <br><br></p>"
-WAIT
-SETANIMETIMER 32627
-
 
 @TEST_XML_ATTRIBUTES
     #DIMS xml_content
@@ -861,6 +806,90 @@ SETANIMETIMER 32627
     PRINTFORML 　　结果数量: {count} (期望: 0)
 
     WAIT
+;2026年4月13日，修复XML_ADDNODE参数错误的验证函数
+@TEST_XML_ADDNODE_BUGFIX
+
+    #DIMS xml
+    
+    PRINTL --- 测试 XML_ADDNODE 批量插入 Bugfix ---
+    
+    ; 准备一个包含 3 个相同标签的 XML
+    xml '= "<root><item id='1'/><item id='2'/><item id='3'/></root>"
+    PRINTFORML [测试前] %xml%
+    
+    ; 目标：给所有 <item> 标签内部添加一个 <new>子节点</new>
+    ; 参数说明：methodType=0(追加为子节点), doSetAll=1(应用于所有匹配项)
+    LOCAL = XML_ADDNODE(xml, "/root/item", "<new>子节点</new>", 0, 1)
+    
+    PRINTFORML [匹配数] {LOCAL}
+    PRINTFORML [测试后] %xml%
+    
+    ; 验证结果
+    IF STRFIND(xml, "<item id=\"1\"><new>") >= 0 && STRFIND(xml, "<item id=\"2\"><new>") >= 0 && STRFIND(xml, "<item id=\"3\"><new>") >= 0
+        SETCOLOR 0x00FF00
+        PRINTL 测试通过：所有节点均成功插入了子节点！
+    ELSE
+        SETCOLOR 0xFF0000
+        PRINTL 测试失败：未能向所有节点插入子节点（旧版 Bug 依然存在）。
+    ENDIF
+    RESETCOLOR
+    
+    WAIT
+
+[SKIPEND]
+
+
+;把立绘角色叫过来，自动赋予
+@立绘测试debug
+#DIM _LIST = 79,90,133,82
+FOR I, 0, VARSIZE("_LIST")
+	CFLAG:(_LIST:I):1 = 3
+	CFLAG:(_LIST:I):2 = 99999
+	CFLAG:(_LIST:I):4 = 39999
+	ABL:(_LIST:I):9 = 12
+	ABL:(_LIST:I):10 = 12
+	ABL:(_LIST:I):11 = 12
+	TALENT:(_LIST:I):3 = 1
+	CFLAG:(_LIST:I):翌日来訪 = 1
+
+NEXT
+
+@预加载_阴阳鱼
+#LOCALSIZE 1
+#LOCALSSIZE 1
+REDRAW 0
+REPEAT 24
+	GDISPOSE 3501 + COUNT
+	GCREATE 3501 + COUNT, 100, 100
+REND
+GSETPEN 3501, 0xFF8552A1, 2
+GSETFONT 3501, "Segoe UI Symbol", 90
+GDRAWTEXT 3501, "☯️", 10, -15
+REPEAT 23
+	GDRAWGWITHROTATE 3502 + COUNT, 3501, (COUNT + 1) * 15
+REND
+;REPEAT 24
+;	SPRITECREATE @"GTEXT_{3501 + COUNT}", 3501 + COUNT
+;	PRINTFORML 检查图层{3501 + COUNT}
+;	CALL PRINT_IMAGE(@"GTEXT_{3501 + COUNT}", 300)
+;REND
+;PRINTFORMW 创建完成
+SPRITEANIMECREATE "阴阳鱼", 100, 100
+REPEAT 24
+	SPRITEANIMEADDFRAME "阴阳鱼", 3501 + COUNT, 0, 0, 100, 100, 0, 0, 100
+REND
+
+;SETANIMETIMER 50
+;CALL PRINT_IMAGE("353_ROTATE", 200)
+;WAIT
+@阴阳鱼示例
+#LOCALSIZE 1
+#LOCALSSIZE 1
+CALL 预加载_阴阳鱼
+SETANIMETIMER 50
+HTML_PRINT "<p align = 'right'><img src='阴阳鱼' height='200' ypos='40'><br>少女祈祷中……    <br><br></p>"
+WAIT
+SETANIMETIMER 32627
 
 @料理标签DEBUG
 #LOCALSIZE 3
