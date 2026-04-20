@@ -732,7 +732,7 @@ EMPTY_W = WIDTH - FILLED_W
 IF FILLED_W > 0
 	IF COLOR_FG == COLOR_FG2
 		; 纯色模式：直接画一个矩形
-		RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{FILLED_W},{HEIGHT}' color='%HEX_TO_HTML_COLOR(COLOR_FG)%'>"
+		RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{FILLED_W}px,{HEIGHT}' color='%HEX_TO_HTML_COLOR(COLOR_FG)%'>"
 	ELSE
 		; 渐变模式：将进度条切分为多个小矩形
 		; 为了防止 HTML 字符串过长导致引擎报错或渲染卡顿，限制最大分块数为 100
@@ -745,14 +745,14 @@ IF FILLED_W > 0
 			CUR_COLOR = COLOR_LERP_HSV(COLOR_FG, COLOR_FG2, DRAWN_W, MAX(FILLED_W, 1))
 			; 拼接 Shape 标签，X坐标相对偏移由引擎自动处理（Shape是流式布局）
 			; param='x, y, width, height'
-			RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{THIS_W},{HEIGHT}' color='%HEX_TO_HTML_COLOR(CUR_COLOR)%'>"
+			RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{THIS_W}px,{HEIGHT}' color='%HEX_TO_HTML_COLOR(CUR_COLOR)%'>"
 			DRAWN_W += THIS_W
 		WEND
 	ENDIF
 ENDIF
 
 IF EMPTY_W > 0
-	RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{EMPTY_W},{HEIGHT}' color='%HEX_TO_HTML_COLOR(COLOR_BG)%'>"
+	RES_STR += @"<shape type='rect' param='0,{Y_OFFSET},{EMPTY_W}px,{HEIGHT}' color='%HEX_TO_HTML_COLOR(COLOR_BG)%'>"
 ENDIF
 
 RETURNF RES_STR
@@ -897,9 +897,8 @@ RETURNF RES_STR
 		; 拼接图形标签。相对X轴偏移由引擎连续绘制自动处理，我们只需要给出宽度 SCALE_W - L_GAP_X
 		; 如果有 GAP_X，利用空白字符填补 (或者插入空 shape)
 		SIF L_GAP_X > 0 && LOCAL > 0
-			L_RES += @"<shape type='space' param='{L_GAP_X}'>"
-			
-		L_RES += @"<shape type='rect' param='0,{L_POS_Y},{SCALE_W - L_GAP_X},{L_HEIGHT}' color='%HEX_TO_HTML_COLOR(L_CUR_C)%'>"
+			L_RES += @"<shape type='space' param='{L_GAP_X}px'>"
+		L_RES += @"<shape type='rect' param='0,{L_POS_Y},{(SCALE_W - L_GAP_X)}px,{L_HEIGHT}' color='%HEX_TO_HTML_COLOR(L_CUR_C)%'>"
 		
 		L_RATE -= L_SCALE_RATE
 		L_RATE2 -= L_SCALE_RATE
@@ -909,10 +908,9 @@ RETURNF RES_STR
 	IF L_LIMIT_OVER
 		WHILE L_RATE > 0 || L_RATE2 > 0
 			SIF L_GAP_X > 0
-				L_RES += @"<shape type='space' param='{L_GAP_X}'>"
-			
+				L_RES += @"<shape type='space' param='{L_GAP_X}px'>"
 			L_CUR_C = (L_RATE > 0) ? L_C_R # L_C_2
-			L_RES += @"<shape type='rect' param='0,{L_POS_Y},{SCALE_W - L_GAP_X},{L_HEIGHT}' color='%HEX_TO_HTML_COLOR(L_CUR_C)%'>"
+			L_RES += @"<shape type='rect' param='0,{L_POS_Y},{(SCALE_W - L_GAP_X)}px,{L_HEIGHT}' color='%HEX_TO_HTML_COLOR(L_CUR_C)%'>"
 			
 			L_RATE -= L_SCALE_RATE
 			L_RATE2 -= L_SCALE_RATE
@@ -1489,6 +1487,9 @@ RETURNF @"<font color='%HEX_TO_HTML_COLOR(L_COLOR)%'>%L_RES%</font>"
 #DIM DYNAMIC L_CUR_H
 #DIMS DYNAMIC L_RES
 
+#DIM DYNAMIC L_STEP_W       ; 新增：动态计算每步渐变的像素宽度
+#DIM DYNAMIC L_ACTUAL_FADE_W; 新增：实际渐变区域的总宽度
+
 SIF L_TOTAL_W_PX <= 0
 	L_TOTAL_W_PX = MAXWIDTH_PX()
 SIF L_BASE_C == -1
@@ -1500,25 +1501,34 @@ L_S = (L_HSV >> 8) & 0xFF
 L_V = L_HSV & 0xFF
 
 L_FADE_STEPS = L_V / 5
+SIF L_FADE_STEPS <= 0
+	L_FADE_STEPS = 1
 
 SELECTCASE L_STYLE
 	CASE 0 ; 纯色
-		L_RES '= @"<shape type='rect' param='0,{L_Y_OFFSET},{L_TOTAL_W_PX},{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
+		L_RES '= @"<shape type='rect' param='0,{L_Y_OFFSET},{L_TOTAL_W_PX}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
 		
 	CASE 1 ; 向右淡出 (COLOR_LINE 默认)
-		L_SOLID_W = MAX(L_TOTAL_W_PX - (L_FADE_STEPS * 100), 100)
-		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W},{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
+		; 动态计算：让渐变区域最多占据总宽度的 50%
+		L_STEP_W = MAX((L_TOTAL_W_PX / 2) / L_FADE_STEPS, 2)
+		L_ACTUAL_FADE_W = L_STEP_W * L_FADE_STEPS
+		L_SOLID_W = MAX(L_TOTAL_W_PX - L_ACTUAL_FADE_W, 0)
+		
+		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
 		L_CUR_V = L_V
 		L_CUR_H = L_H
 		FOR LOCAL, 0, L_FADE_STEPS
 			L_CUR_V = MAX(L_CUR_V - 5, 0)
 			SIF LOCAL % 3 == 0
 				L_CUR_H = (L_CUR_H + 1) % 360
-			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},100,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
+			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_STEP_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
 		NEXT
 		
 	CASE 2 ; 向左淡出 / 反向淡入 (COLOR_LINE L_REV=1)
-		L_SOLID_W = MAX(L_TOTAL_W_PX - (L_FADE_STEPS * 100), 100)
+		L_STEP_W = MAX((L_TOTAL_W_PX / 2) / L_FADE_STEPS, 2)
+		L_ACTUAL_FADE_W = L_STEP_W * L_FADE_STEPS
+		L_SOLID_W = MAX(L_TOTAL_W_PX - L_ACTUAL_FADE_W, 0)
+		
 		L_CUR_V = MAX(L_V - (L_FADE_STEPS * 5), 0)
 		L_CUR_H = L_H - (L_FADE_STEPS / 3)
 		SIF L_CUR_H < 0
@@ -1527,12 +1537,16 @@ SELECTCASE L_STYLE
 			L_CUR_V = MIN(L_CUR_V + 5, L_V)
 			SIF LOCAL % 3 == 0
 				L_CUR_H = (L_CUR_H + 1) % 360
-			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},100,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
+			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_STEP_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
 		NEXT
-		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W},{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
+		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
 		
 	CASE 3 ; 向两侧淡出 (FADELINE 风格)
-		L_SOLID_W = MAX(L_TOTAL_W_PX - (L_FADE_STEPS * 200), 100)
+		; 动态计算：让左右两侧的渐变区各占总宽的 33%
+		L_STEP_W = MAX((L_TOTAL_W_PX / 3) / L_FADE_STEPS, 2)
+		L_ACTUAL_FADE_W = L_STEP_W * L_FADE_STEPS
+		L_SOLID_W = MAX(L_TOTAL_W_PX - (L_ACTUAL_FADE_W * 2), 0)
+		
 		; 左侧淡入
 		L_CUR_V = MAX(L_V - (L_FADE_STEPS * 5), 0)
 		L_CUR_H = L_H - (L_FADE_STEPS / 3)
@@ -1542,10 +1556,10 @@ SELECTCASE L_STYLE
 			L_CUR_V = MIN(L_CUR_V + 5, L_V)
 			SIF LOCAL % 3 == 0
 				L_CUR_H = (L_CUR_H + 1) % 360
-			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},100,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
+			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_STEP_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
 		NEXT
 		; 中间实线
-		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W},{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
+		L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_SOLID_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(L_BASE_C)%'>"
 		; 右侧淡出
 		L_CUR_V = L_V
 		L_CUR_H = L_H
@@ -1553,7 +1567,7 @@ SELECTCASE L_STYLE
 			L_CUR_V = MAX(L_CUR_V - 5, 0)
 			SIF LOCAL % 3 == 0
 				L_CUR_H = (L_CUR_H + 1) % 360
-			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},100,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
+			L_RES += @"<shape type='rect' param='0,{L_Y_OFFSET},{L_STEP_W}px,{L_THICK}' color='%HEX_TO_HTML_COLOR(HSV_TO_RGB((L_CUR_H << 16) | (L_S << 8) | L_CUR_V))%'>"
 		NEXT
 ENDSELECT
 
