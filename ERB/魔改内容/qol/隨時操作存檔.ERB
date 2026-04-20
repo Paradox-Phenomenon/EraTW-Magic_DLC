@@ -1,322 +1,376 @@
-﻿;随时存档，顾名思义即使在任何时候都能调用的存档功能，不过事实上是给游戏过程中用的，睡觉时候本来就有了也不需要这个，所以睡觉时不能调用（那还叫什么随时）
-;不确定tw能不能支持，如果能就好了，不能随时存档还是挺麻烦的，能用把这句话删了
-;我稍微优化了下逻辑,删掉了我感觉冗余的东西,同时加上了默认存档信息
-;见你漏写了很多PRINTFORM,不想查了,全给你换成FORM了
-@Real_Time_Save(操作模式 = 1001, qSave)
-#DIM 最大存档数量
-#DIM 存档编号
-#DIM 操作模式               ;1001为存档，1002为读档，1003为删档，默认模式为存档
-#DIM 最大页数               ;每页显示20个存档位加一个99号自动存档位
-#DIM 页码 = 1
-#DIM 行数
-#DIM 选择的存档位
-#DIM PREV_REDRAW
-#DIM qSave
+﻿;-------------------------------------------------
+; 存档管理主界面 (HTML 制表重构防呆版)
+; 操作模式: 0=防呆冗余, 1001=存档, 1002=读档, 1003=删档, 1004=注释存档
+; qSave_Mode: 不为 0 时，锁定当前操作模式，禁止玩家点击顶部的切换按钮
+;-------------------------------------------------
+@Real_Time_Save(操作模式 = 0, qSave_Mode = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 最大存档数量 = 1000
+#DIM DYNAMIC 操作模式
+#DIM DYNAMIC qSave_Mode
+#DIM DYNAMIC 最大页数
+#DIM DYNAMIC 页码 = 1
+#DIM DYNAMIC 行数
+#DIM DYNAMIC PREV_REDRAW
 
-;魔改添加非就寝时段存档执行开关
 PREV_REDRAW = CURRENTREDRAW()
 REDRAW 0
-;SAVENOS 最大存档数量
-最大存档数量 = 1000
-最大页数 = 最大存档数量 / 40
-SIF 最大存档数量 % 40
-	最大页数 ++
+
+; 计算最大页数 (向上取整)
+最大页数 = 最大存档数量 / 40 + (最大存档数量 % 40 != 0)
 行数 = LINECOUNT
-$开始位置
-CUSTOMDRAWLINE ━
-PRINT 请选择要
-SELECTCASE 操作模式
-	CASE 1001
-		PRINT 存档
-	CASE 1002
-		PRINT 读取
-	CASE 1003
-		PRINT 删除
-	CASE 1004
-		PRINT 存档并注释
-	CASEELSE
-		THROW 模式错误，无法进行对存档的操作
-ENDSELECT
-PRINTFORML 的存档位置 - 第{页码}/{最大页数}页
-DRAWLINE
-IF 操作模式 == 1001
-	SETCOLOR C_YELLOW
-	PRINT [存档]
-	RESETCOLOR
-ELSE
-	PRINTBUTTON "[存档]", 1001
-ENDIF
-IF 操作模式 == 1002
-	SETCOLOR C_YELLOW
-	PRINT [读档]
-	RESETCOLOR
-ELSE
-	PRINTBUTTON "[读档]", 1002
-ENDIF
-IF 操作模式 == 1003
-	SETCOLOR C_YELLOW
-	PRINT [删档]
-	RESETCOLOR
-ELSE
-	PRINTBUTTON "[删档]", 1003
-ENDIF
-IF 操作模式 == 1004
-	SETCOLOR C_YELLOW
-	PRINT [注释存档]
-	RESETCOLOR
-ELSE
-	PRINTBUTTON "[存档并注释]", 1004
-ENDIF
-PRINTFORML
-IF Real_Time_Save == 1
-	PRINTFORML
-	SETCOLOR C_RED
-	PRINTFORML 温馨提示：非就寢时段存档目前处于测试阶段，且非就寢时段存档的读取会有较长的读取时间，若有任何问题请反馈
-	RESETCOLOR
-ENDIF
-CUSTOMDRAWLINE ━
-FOR 存档编号, 40 * (页码 - 1), MIN(40 * 页码, 最大存档数量)
-	VARSET RESULT:0
-	RESULTS:0 = 
-	CALL saveColor(存档编号)
-	SIF STRFIND(RESULTS:0, "*自动存档*") != -1
-		SETCOLOR C_GREEN
-	SIF NEW_SAVE_MARK:存档编号 == 1
-		FONTSTYLE 1
-	PRINTFORML \@ NEW_SAVE_MARK:存档编号 == 1 ? %"[NEW!]", 6%# %" " * 6, 6%\@[{存档编号, 4}] - %RESULTS:0%
-	FONTSTYLE 0
-	RESETCOLOR
-NEXT
-;自动存档编号为99
-VARSET RESULT:0
-RESULTS:0 = 
-CALL saveColor(1000)
-SIF STRFIND(RESULTS:0, "*自动存档*") != -1
-	SETCOLOR C_GREEN
-SIF NEW_SAVE_MARK:1000 == 1
-	FONTSTYLE 1
-PRINTFORML \@ NEW_SAVE_MARK:1000 == 1 ? %"[NEW!]", 6%# %" " * 6, 6%\@[{1000, 4}] - %RESULTS:0%
-FONTSTYLE 0
-RESETCOLOR
-IF 页码 == 1
-	{
-	HTML_PRINT @"<nonbutton title = '跳转至首页'>　　［　＜＜＜　］　　</nonbutton>
-	<nonbutton title = '上十页'>　　［　＜＜　］　　</nonbutton>
-	<nonbutton title = '上一页'>　　［　＜　］　　</nonbutton>
-	<button title = '下一页' value = '9997'>　　［　＞　］　　</button>
-	<button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
-	<button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
-	}
-ELSEIF 页码 == 最大页数
-	{
-	HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
-	<button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
-	<button title = '上一页' value = '9996'>　　［　＜　］　　</button>
-	<nonbutton title = '下一页'>　　［　＞　］　　</nonbutton>
-	<nonbutton title = '下十页'>　　［　＞＞　］　　</nonbutton>
-	<nonbutton title = '跳转至尾页'>　　［　＞＞＞　］　　</nonbutton>"
-	}
-ELSEIF INRANGE(页码, 11, 最大页数 - 11)
-	{
-	HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
-	<button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
-	<button title = '上一页' value = '9996'>　　［　＜　］　　</button>
-	<button title = '下一页' value = '9997'>　　［　＞　］　　</button>
-	<button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
-	<button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
-	}
-ELSEIF INRANGE(页码, 1, 10)
-	{
-	HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
-	<nonbutton title = '上十页'>　　［　＜＜　］　　</nonbutton>
-	<button title = '上一页' value = '9996'>　　［　＜　］　　</button>
-	<button title = '下一页' value = '9997'>　　［　＞　］　　</button>
-	<button title = '下十页' value = '9998'>　　［　＞＞　］　　</button>
-	<button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
-	}
-ELSEIF INRANGE(页码, 最大页数 - 11, 最大页数)
-	{
-	HTML_PRINT @"<button title = '跳转至首页' value = '9994'>　　［　＜＜＜　］　　</button>
-	<button title = '上十页' value = '9995'>　　［　＜＜　］　　</button>
-	<button title = '上一页' value = '9996'>　　［　＜　］　　</button>
-	<button title = '下一页' value = '9997'>　　［　＞　］　　</button>
-	<nonbutton title = '下十页'>　　［　＞＞　］　　</nonbutton>
-	<button title = '跳转至尾页' value = '9999'>　　［　＞＞＞　］　　</button>"
-	}
-ENDIF
-HTML_PRINT @"<button value = '10000' title = '退出'>　　［ＥＸＩＴ］　　</button>"
-CUSTOMDRAWLINE ━
-INPUT
-SELECTCASE RESULT
-	CASE 9994
-		页码 = 1
-	CASE 9995
-		页码 -= 10
-	CASE 9996
-		页码 --
-	CASE 9997
-		页码 ++
-	CASE 9998
-		页码 += 10
-	CASE 9999
-		页码 = 最大页数
-	CASE 10000
+WHILE 1
+	CLEARLINE LINECOUNT - 行数
+	
+	CALL DRAW_SAVE_HEADER(操作模式, 页码, 最大页数, qSave_Mode)
+	CALL DRAW_SAVE_LIST(操作模式, 页码, 最大存档数量)
+	CUSTOMDRAWLINE ━
+	CALL DRAW_SAVE_PAGINATION(页码, 最大页数)
+	
+	INPUT 999999,1
+	IF RESULT:1 == 2
 		CLEARLINE LINECOUNT - 行数
 		REDRAW PREV_REDRAW
 		RETURN 1
-	CASE 1001
-		IF qSave != -1
-			SIF 操作模式 != 1001
-				操作模式 = 1001
-		ELSE
-			CALL 区
-		ENDIF
-	CASE 1002
-		SIF 操作模式 != 1002
-			操作模式 = 1002
-	CASE 1003
-		SIF 操作模式 != 1003
-			操作模式 = 1003
-	CASE 1004
-		IF qSave != -1
-			SIF 操作模式 != 1004
-				操作模式 = 1004
-		ELSE
-			CALL 区
-		ENDIF
-	CASEELSE
-		IF INRANGE(RESULT, 0, 最大存档数量)
-			选择的存档位 = RESULT
-			VARSET RESULT:0
-			RESULTS:0 = 
-			CHKDATA 选择的存档位
-			IF RESULT != 1
-				PRINTFORM 已存在存档{选择的存档位}，备注信息：
-				PRINTFORML %RESULTS:0%
-				PRINT 是否要
-				SELECTCASE 操作模式
-					CASE 1001, 1004
-						SETCOLOR 0xff5050
-						PRINTFORML 替换该存档？
-						RESETCOLOR
-						CALL ASK_YN
-						IF !RESULT
-							;两个代码都一样,应该考虑做成函数,减少篇幅,方便维护
-							;存档
-							VARSET RESULTS
-							IF 操作模式 == 1004
-								PRINTFORML 请填写您的备注（若未填入任何字符则按正常存档自动生成备注信息）
-								INPUTS
-							ENDIF
-							CALL saveManageSaveGame(选择的存档位, qSave, RESULTS)
-						ELSE
-							PRINTFORMW 未替换存档
-						ENDIF
-					CASE 1002
-						PRINTFORML 读取该存档？
-						CALL ASK_YN
-						IF !RESULT
-							REDRAW PREV_REDRAW
-							;debloat custom code, purge image resource on save file loading so eldritch horrors stop spawning
-							CALL RM_全部リリース
-							LOADDATA 选择的存档位
-						ELSE
-							PRINTFORMW 未读取存档
-						ENDIF
-					CASE 1003
-						PRINTFORML 删除该存档？
-						CALL ASK_YN
-						IF !RESULT
-							SETCOLOR C_RED
-							PRINTFORML 注意：你正在执行删除存档的操作，此操作不可逆
-							PRINTFORML 确定要删除存档{选择的存档位}吗？
-							CALL ASK_YN
-							RESETCOLOR
-							IF !RESULT
-								PRINTFORML 删除存档{选择的存档位}
-								DELDATA 选择的存档位
-								NEW_SAVE_MARK:选择的存档位 = 0
-								SAVEGLOBAL
-								PRINTFORMW 存档{选择的存档位}删除完成
-							ELSE
-								PRINTFORMW 未删除存档
-							ENDIF
-						ELSE
-							PRINTFORMW 未删除存档
-						ENDIF
-					CASEELSE
-						THROW 模式错误，无法进行存档操作
-				ENDSELECT
-			ELSE
-				SELECTCASE 操作模式
-					CASE 1001, 1004
-						PRINTFORML 要将存档存储在{选择的存档位}吗？
-						CALL ASK_YN
-						IF !RESULT
-							;存档
-							VARSET RESULTS
-							IF 操作模式 == 1004
-								PRINTFORML 请填写您的备注（若未填入任何字符则按正常存档自动生成备注信息）
-								INPUTS
-							ENDIF
-							CALL saveManageSaveGame(选择的存档位, qSave, RESULTS)
-						ELSE
-							PRINTFORMW 未存储存档
-						ENDIF
-					CASE 1002
-						PRINTFORMW 此处没有存档文件
-					CASE 1003
-						PRINTFORMW 此处没有存档文件
-				ENDSELECT
+	ENDIF
+	SELECTCASE RESULT
+		; --- 分页控制 ---
+		CASE 9994
+			页码 = 1
+		CASE 9995
+			页码 = MAX(页码 - 10, 1)
+		CASE 9996
+			页码 = MAX(页码 - 1, 1)
+		CASE 9997
+			页码 = MIN(页码 + 1, 最大页数)
+		CASE 9998
+			页码 = MIN(页码 + 10, 最大页数)
+		CASE 9999
+			页码 = 最大页数
+			
+		; --- 退出 ---
+		CASE 10000
+			CLEARLINE LINECOUNT - 行数
+			REDRAW PREV_REDRAW
+			RETURN 1
+			
+		; --- 模式切换 ---
+		CASE 1001 TO 1004
+			IF qSave_Mode == 0
+				操作模式 = RESULT
 			ENDIF
-		ELSE
-			PRINTFORMW 超出最大存档范围
-		ENDIF
-ENDSELECT
-;放到最后面处理,不仅可以减少代码数量,还可以防止漏写
-CLEARLINE LINECOUNT - 行数
-GOTO 开始位置
-
-;根据存档状况上色
-@saveColor(saveId)
-	#DIM saveId
-	SELECTCASE CHKDATA(saveId)
-		CASE 1
-			SETCOLOR C_L_GRAY
-		CASE 2
-			SETCOLOR C_RED
-		CASE 3
-			SETCOLOR C_ORANGE
-		CASE 4
-			SETCOLOR C_P_PURPLE
+			
+		; --- 点击存档位 ---
+		CASE 0 TO 最大存档数量
+			IF 操作模式 == 0
+			ELSE
+				CALL HANDLE_SAVE_SLOT_ACTION(操作模式, RESULT, qSave_Mode)
+			ENDIF
 	ENDSELECT
+WEND
+
+;-------------------------------------------------
+; 绘制：头部与模式切换按钮 (全 HTML 制表)
+;-------------------------------------------------
+@DRAW_SAVE_HEADER(操作模式, 页码, 最大页数, qSave_Mode)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 操作模式
+#DIM DYNAMIC 页码
+#DIM DYNAMIC 最大页数
+#DIM DYNAMIC qSave_Mode
+
+#DIMS DYNAMIC TITLE_STR
+#DIMS DYNAMIC MODE_NAME
+#DIMS DYNAMIC BTN_GROUP
+
+TITLE_STR '= HTMLWRAP("□ 存档管理 □", , -1, -1, 1)
+HTML_PRINT HTML_FILL_LINE(TITLE_STR, "━")
+
+; 防呆高亮提示
+IF 操作模式 == 0
+	HTML_PRINT HTMLWRAP("【请先在下方选择您要进行的操作】", , C_RED, -1, 1, "center")
+ELSE
+	SELECTCASE 操作模式
+		CASE 1001
+			MODE_NAME '= "存档"
+		CASE 1002
+			MODE_NAME '= "读取"
+		CASE 1003
+			MODE_NAME '= "删除"
+		CASE 1004
+			MODE_NAME '= "存档并注释"
+	ENDSELECT
+	HTML_PRINT HTMLWRAP(@"请选择要※%MODE_NAME%※的存档位置 - 第{页码}/{最大页数}页", , -1, -1, 0, "center")
+ENDIF
+CUSTOMDRAWLINE ─
+
+; 动态生成顶部模式按钮
+BTN_GROUP '= ""
+BTN_GROUP += RENDER_MODE_BTN(1001, "[存  档]", 操作模式, qSave_Mode) + "<shape type='space' param='30px'>"
+BTN_GROUP += RENDER_MODE_BTN(1002, "[读  档]", 操作模式, qSave_Mode) + "<shape type='space' param='30px'>"
+BTN_GROUP += RENDER_MODE_BTN(1003, "[删  档]", 操作模式, qSave_Mode) + "<shape type='space' param='30px'>"
+BTN_GROUP += RENDER_MODE_BTN(1004, "[注释存档]", 操作模式, qSave_Mode)
+
+HTML_PRINT HTMLWRAP(BTN_GROUP, , -1, -1, 0, "center")
+
+; 测试版提示
+IF GETVAR("Real_Time_Save") == 1
+	HTML_PRINT HTMLWRAP("温馨提示：非就寢时段存档目前处于测试阶段，且读取会有较长的加载时间，若有问题请反馈", , C_RED, -1, 0, "center")
+ENDIF
+CUSTOMDRAWLINE ━
+
+
+; 辅助函数：渲染单个模式按钮 (HTML)
+@RENDER_MODE_BTN(TARGET_MODE, BTN_TEXT, CURRENT_MODE, qSave_Mode)
+#FUNCTIONS
+#DIM DYNAMIC TARGET_MODE
+#DIMS DYNAMIC BTN_TEXT
+#DIM DYNAMIC CURRENT_MODE
+#DIM DYNAMIC qSave_Mode
+
+IF CURRENT_MODE == TARGET_MODE
+	RETURNF HTMLWRAP(BTN_TEXT, , C_YELLOW, -1, 1)
+ELSEIF qSave_Mode != 0
+	; 锁定时，其他选项变为灰色非按钮
+	RETURNF @"<nonbutton title='模式被锁定，无法切换'>%HTMLWRAP(BTN_TEXT, , C_L_GRAY)%</nonbutton>"
+ELSE
+	RETURNF @"<button value='{TARGET_MODE}'>%BTN_TEXT%</button>"
+ENDIF
+
+;-------------------------------------------------
+; 绘制：存档列表 (包括自动存档)
+;-------------------------------------------------
+@DRAW_SAVE_LIST(操作模式, 页码, 最大存档数量)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 操作模式
+#DIM DYNAMIC 页码
+#DIM DYNAMIC 最大存档数量
+#DIM DYNAMIC 存档编号
+
+FOR 存档编号, 40 * (页码 - 1), MIN(40 * 页码, 最大存档数量)
+	CALL RENDER_SINGLE_SAVE_SLOT(存档编号, 操作模式)
+NEXT
+CALL RENDER_SINGLE_SAVE_SLOT(1000, 操作模式)
+
+
+; 辅助函数：渲染单条存档 (整合了原版 saveColor 逻辑)
+@RENDER_SINGLE_SAVE_SLOT(SLOT_ID, 操作模式)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC SLOT_ID
+#DIM DYNAMIC 操作模式
+
+#DIM DYNAMIC CHK_RES
+#DIM DYNAMIC F_COLOR
+#DIMS DYNAMIC SAVE_STR
+#DIMS DYNAMIC L_TEXT
+#DIMS DYNAMIC SLOT_INFO
+
+VARSET RESULT:0
+RESULTS:0 = 
+CHK_RES = CHKDATA(SLOT_ID)
+SAVE_STR '= RESULTS:0
+
+; 获取当前行颜色
+F_COLOR = GETCOLOR()
+SELECTCASE CHK_RES
+	CASE 1
+		F_COLOR = C_L_GRAY
+	CASE 2
+		F_COLOR = C_RED
+	CASE 3
+		F_COLOR = C_ORANGE
+	CASE 4
+		F_COLOR = C_P_PURPLE
+ENDSELECT
+
+SIF STRFIND(SAVE_STR, "*自动存档*") != -1
+	F_COLOR = C_GREEN
+
+; 拼装 NEW 标识
+L_TEXT '= ""
+IF NEW_SAVE_MARK:SLOT_ID == 1
+	L_TEXT += HTMLWRAP("[NEW!] ", , C_YELLOW, -1, 1)
+ELSE
+	L_TEXT += @"<shape type='space' param='{HTML_STRINGLEN(HTMLWRAP("[NEW!] ", , C_YELLOW, -1, 1),1)}px'>" 
+ENDIF
+
+; 拼装存档本体
+SLOT_INFO '= @"[{SLOT_ID, 4}] - %SAVE_STR%"
+SIF NEW_SAVE_MARK:SLOT_ID == 1
+	SLOT_INFO '= HTMLWRAP(SLOT_INFO, , -1, -1, 1) ; 加粗
+
+SLOT_INFO '= HTMLWRAP(SLOT_INFO, , F_COLOR)
+L_TEXT += SLOT_INFO
+
+; 核心防呆：如果模式为 0，统统渲染成 nonbutton
+IF 操作模式 == 0
+	HTML_PRINT @"<nonbutton title='请先在上方选择操作模式'>%L_TEXT%</nonbutton>"
+ELSE
+	HTML_PRINT @"<button value='{SLOT_ID}'>%L_TEXT%</button>"
+ENDIF
+
+;-------------------------------------------------
+; 绘制：动态分页按钮 (纯 HTML 居中)
+;-------------------------------------------------
+@DRAW_SAVE_PAGINATION(页码, 最大页数)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 页码
+#DIM DYNAMIC 最大页数
+#DIMS DYNAMIC HTML_STR
+#DIMS DYNAMIC BTN_EXIT
+
+HTML_STR '= ""
+
+; --- 左侧控制 ---
+IF 页码 > 1
+	HTML_STR += @"<button title='跳转至首页' value='9994'>　　［　＜＜＜　］　　</button>"
+	HTML_STR += (页码 > 10) ? @"<button title='上十页' value='9995'>　　［　＜＜　］　　</button>" # HTMLWRAP("　　［　＜＜　］　　", , C_L_GRAY)
+	HTML_STR += @"<button title='上一页' value='9996'>　　［　＜　］　　</button>"
+ELSE
+	HTML_STR += HTMLWRAP("　　［　＜＜＜　］　　", , C_L_GRAY)
+	HTML_STR += HTMLWRAP("　　［　＜＜　］　　", , C_L_GRAY)
+	HTML_STR += HTMLWRAP("　　［　＜　］　　", , C_L_GRAY)
+ENDIF
+
+; --- 右侧控制 ---
+IF 页码 < 最大页数
+	HTML_STR += @"<button title='下一页' value='9997'>　　［　＞　］　　</button>"
+	HTML_STR += (页码 <= 最大页数 - 10) ? @"<button title='下十页' value='9998'>　　［　＞＞　］　　</button>" # HTMLWRAP("　　［　＞＞　］　　", , C_L_GRAY)
+	HTML_STR += @"<button title='跳转至尾页' value='9999'>　　［　＞＞＞　］　　</button>"
+ELSE
+	HTML_STR += HTMLWRAP("　　［　＞　］　　", , C_L_GRAY)
+	HTML_STR += HTMLWRAP("　　［　＞＞　］　　", , C_L_GRAY)
+	HTML_STR += HTMLWRAP("　　［　＞＞＞　］　　", , C_L_GRAY)
+ENDIF
+
+HTML_PRINT HTMLWRAP(HTML_STR, , -1, -1, 0, "center")
+
+BTN_EXIT '= @"<button value='10000' title='退出'>　　［ＥＸＩＴ］　　</button>"
+HTML_PRINT HTMLWRAP(BTN_EXIT, , -1, -1, 0, "center")
+CUSTOMDRAWLINE ━
+
+;-------------------------------------------------
+; 业务逻辑：处理对特定存档位的操作
+; (无界面绘制，只负责对话和业务)
+;-------------------------------------------------
+@HANDLE_SAVE_SLOT_ACTION(操作模式, 选择的存档位, qSave_Mode)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 操作模式
+#DIM DYNAMIC 选择的存档位
+#DIM DYNAMIC qSave_Mode
+
+VARSET RESULT:0
+RESULTS:0 = 
+CHKDATA 选择的存档位
+
+IF RESULT != 1
+	; === 已有存档 ===
+	PRINTFORM 已存在存档{选择的存档位}，备注信息：
+	PRINTFORML %RESULTS:0%
+	PRINT 是否要
+	
+	SELECTCASE 操作模式
+		CASE 1001, 1004
+			SETCOLOR 0xff5050
+			PRINTFORML 替换该存档？
+			RESETCOLOR
+			CALL ASK_YN
+			IF !RESULT
+				CALL EXECUTE_SAVE(选择的存档位, 操作模式, qSave_Mode)
+			ELSE
+				PRINTFORMW 未替换存档
+			ENDIF
+			
+		CASE 1002
+			PRINTFORML 读取该存档？
+			CALL ASK_YN
+			IF !RESULT
+				CALL RM_全部リリース
+				LOADDATA 选择的存档位
+			ELSE
+				PRINTFORMW 未读取存档
+			ENDIF
+			
+		CASE 1003
+			PRINTFORML 删除该存档？
+			CALL ASK_YN
+			IF !RESULT
+				SETCOLOR C_RED
+				PRINTFORML 注意：你正在执行删除存档的操作，此操作不可逆
+				PRINTFORML 确定要删除存档{选择的存档位}吗？
+				RESETCOLOR
+				CALL ASK_YN
+				IF !RESULT
+					PRINTFORML 删除存档{选择的存档位}
+					DELDATA 选择的存档位
+					NEW_SAVE_MARK:选择的存档位 = 0
+					SAVEGLOBAL
+					PRINTFORMW 存档{选择的存档位}删除完成
+				ELSE
+					PRINTFORMW 未删除存档
+				ENDIF
+			ELSE
+				PRINTFORMW 未删除存档
+			ENDIF
+	ENDSELECT
+ELSE
+	; === 目标为空 ===
+	SELECTCASE 操作模式
+		CASE 1001, 1004
+			PRINTFORML 要将存档存储在{选择的存档位}吗？
+			CALL ASK_YN
+			IF !RESULT
+				CALL EXECUTE_SAVE(选择的存档位, 操作模式, qSave_Mode)
+			ELSE
+				PRINTFORMW 未存储存档
+			ENDIF
+			
+		CASE 1002, 1003
+			PRINTFORMW 此处没有存档文件
+	ENDSELECT
+ENDIF
+
+; 辅助函数：执行保存动作
+@EXECUTE_SAVE(选择的存档位, 操作模式, qSave_Mode)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC 选择的存档位
+#DIM DYNAMIC 操作模式
+#DIM DYNAMIC qSave_Mode
+
+VARSET RESULTS
+IF 操作模式 == 1004
+	PRINTFORML 请填写您的备注（若未填入任何字符则按正常存档自动生成备注信息）
+	INPUTS
+ENDIF
+CALL saveManageSaveGame(选择的存档位, qSave_Mode, RESULTS)
+
 
 ;存档
-@saveManageSaveGame(选择的存档位, qSave, 存档备注信息)
+@saveManageSaveGame(选择的存档位, qSave_Mode, 存档备注信息)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM DYNAMIC 选择的存档位
 #DIMS DYNAMIC 存档备注信息
-#DIM qSave
-#DIM DYNAMIC MODE
+#DIM DYNAMIC qSave_Mode
+
 GETTIME
 SIF !STRLENS(存档备注信息)
-	存档备注信息 = %createSaveInfo(qSave)%
-SIF qSave == 1 && STRFIND(存档备注信息, "⭐即时存档⭐") == -1
+	存档备注信息 = %createSaveInfo(qSave_Mode)%
+	
+SIF qSave_Mode == 1 && STRFIND(存档备注信息, "⭐即时存档⭐") == -1
 	存档备注信息 += " ⭐即时存档⭐"
-SIF qSave == 2 && STRFIND(存档备注信息, "*自动存档*") == -1
+SIF qSave_Mode == 2 && STRFIND(存档备注信息, "*自动存档*") == -1
 	存档备注信息 += " *自动存档*"
-;PRINTFORML 需要添加备注信息吗？
-;CALL ASK_YN
-;IF !RESULT
-;	存档备注信息 += @"{DAY:0, 3, RIGHT}日"  
-;	INPUTS
-;	存档备注信息 += RESULTS
-;	SIF MODE == 1
-;		存档备注信息 += " ⭐即时存档⭐ "
-;ELSE
-;	存档备注信息 += createSaveInfo(MODE)
-;ENDIF
-SIF qSave == 1
+SIF qSave_Mode == 1
 	SaveDataInTrain = 1
+	
 SAVEDATA 选择的存档位, 存档备注信息
 PRINTFORMW 已存档{选择的存档位}，存档备注信息：%存档备注信息%
 IF STRFIND(存档备注信息, "⭐即时存档⭐") == -1
@@ -325,6 +379,8 @@ IF STRFIND(存档备注信息, "⭐即时存档⭐") == -1
 ENDIF
 
 @区
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE RAND:4
 	CASE 0
 		PLAYSOUND @"区/vamos!.MP3"

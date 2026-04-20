@@ -120,12 +120,20 @@ PRINTFORML 性格：%PERSONALITY_TYPE(ARG)%
 		IF CFLAG:ARG:よく行く地域 >= 0
 			PRINTFORML 常去区域：%GET_MAPNAME(CFLAG:ARG:よく行く地域)%
 		ENDIF
-		IF CFLAG:ARG:自宅位置 && !CFLAG:ARG:神社在住
-			PRINTFORML 自宅位置：%GET_MAPNAME(GET_MAPID(CFLAG:ARG:自宅位置))% 【 %NAME_FROM_PLACE(CFLAG:ARG:自宅位置)% 】
-		ELSEIF CFLAG:ARG:神社在住
-			PRINTFORML 自宅位置：%GET_MAPNAME(GET_MAPID(CFLAG:ARG:神社在住))% 【 %NAME_FROM_PLACE(CFLAG:ARG:神社在住)% 】
+		IF GMF_GETBIT("幻想乡大地图")
+			IF CFLAG:ARG:自宅位置
+				PRINTFORML 自宅位置：%GET_MAPNAME(GET_MAPID(CSVCFLAG(NO:ARG, GETNUM(CFLAG, "初期位置"))))% 【 %NAME_FROM_PLACE2(CSVCFLAG(NO:ARG, GETNUM(CFLAG, "初期位置")))% 】
+			ELSE
+				PRINTL 自宅位置：■■■■■ 【 ■■■■■ 】
+			ENDIF
 		ELSE
-			PRINTL 自宅位置：■■■■■ 【 ■■■■■ 】
+			IF CFLAG:ARG:自宅位置 && !CFLAG:ARG:神社在住
+				PRINTFORML 自宅位置：%GET_MAPNAME(GET_MAPID(CFLAG:ARG:自宅位置))% 【 %NAME_FROM_PLACE(CFLAG:ARG:自宅位置)% 】
+			ELSEIF CFLAG:ARG:神社在住
+				PRINTFORML 自宅位置：%GET_MAPNAME(GET_MAPID(CFLAG:ARG:神社在住))% 【 %NAME_FROM_PLACE(CFLAG:ARG:神社在住)% 】
+			ELSE
+				PRINTL 自宅位置：■■■■■ 【 ■■■■■ 】
+			ENDIF
 		ENDIF
 		PRINT 工作情报：
 		PRINTFORML %CSTR:ARG:工作情報%
@@ -165,31 +173,34 @@ ELSEIF MAGIC_DLC
 	CALL PRINTLINE, "角色介绍"
 	PRINTL 
 	IF TALENT:ARG:神性 >= 10
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 时空权柄的掌控者，超越了一般生命的存在。
 		PRINTFORML 顺带一提，在祂的庇护下，幻想乡进入了一个海螺小姐时空，托祂的福，所有人都不再受宿命论困扰了。
 	ELSEIF TALENT:ARG:神性 >= 9
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 掌握着根源法则的存在，能够影响现实的本质。
 		PRINTFORML 其意志可以扭曲因果，改变事物的发展轨迹，是真正意义上的神。
 	ELSEIF TALENT:ARG:神性 >= 8
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 拥有天使之王位格的存在，掌握着强大的权柄。
 		PRINTFORML 能够支配特定领域的力量，其存在本身就是规则的体现。
 	ELSEIF TALENT:ARG:神性 >= 7
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 突破了人类极限的天使，拥有超凡的力量和永恒的生命。
 		PRINTFORML 拥有穿梭于不同世界间的潜力，掌握着神秘的魔法。
 	ELSEIF TALENT:ARG:神性 >= 6
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 接近超凡领域的圣者，拥有强大的精神力和神秘力量，已经可以称之为半神。
 		PRINTFORML 能够通过仪式魔法与更高层次的存在沟通，获得超越常理的能力。
 	ELSEIF !TALENT:ARG:高难开局
-		PRINTL □ 角色介绍 □---------------------------------------------------------------------
 		PRINTFORML 拥有操纵时间/空间程度的能力
 		PRINTFORML 似乎在外面世界有二重身？
 		PRINTFORML 其力气和体力，似乎用不上吃饭，仅靠睡觉和泡温泉就会恢复，也许是个学会舍食魔法的魔法使？
 	ENDIF
+	PRINTFORML
+	SETCOLOR 0x5090FF
+	IF 旧日取得履历 != "尚未取得" && 旧日取得履历 != ""
+		PRINTFORML %旧日取得履历%
+	ELSEIF 半神取得履历 != "尚未取得" && 半神取得履历 != ""
+		PRINTFORML %半神取得履历%
+	ENDIF
+	RESETCOLOR
+	PRINTFORML
 ENDIF
 SETCOLOR C_YELLOW
 IF ARG == MASTER && FLAG:甲斐性無
@@ -235,8 +246,13 @@ ENDIF
 	
 SIF TALENT:ARG:風騷
 	PRINTFORML 是个已经觉醒的喜欢搔首弄姿的人
-SIF CFLAG:ARG:清い交際
-	PRINTFORML 通过纯洁的交往和%CALLNAME:MASTER%成为了恋人。
+IF CFLAG:ARG:清い交際
+	IF TALENT:ARG:恋人
+		PRINTFORML 通过纯洁的交往和%CALLNAME:MASTER%成为了恋人。
+	ELSE
+		PRINTFORML 在与%CALLNAME:MASTER%的纯洁交往中觉醒了恋心。
+	ENDIF
+ENDIF
 SIF CFLAG:ARG:既成事實 & 合意_接吻
 	PRINTFORML 愿意和%CALLNAME:MASTER%接吻
 IF CFLAG:ARG:既成事實 & 合意_诶嘿嘿
@@ -746,22 +762,22 @@ PRINTL
 CALL PRINTLINE, "趣味嗜好"
 PRINTL 喜好：
 IF ARG
-	CALL SHOW_TASTE(GET_STR(, "キャラデータ", ARG, "感性：好き"), "POSITIVE", ABL:ARG:親密 < 5)
+	CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", ARG, "感性：好き"), "POSITIVE", ABL:ARG:親密 < 5)
 ELSEIF IFPf
 	CALL SHOW_TASTE(WPf, "POSITIVE")
 ENDIF
 PRINTFORML 
 PRINTL 讨厌：
 IF ARG
-	CALL SHOW_TASTE(GET_STR(, "キャラデータ", ARG, "感性：嫌い"), "NEGATIVE", ABL:ARG:親密 < 5)
+	CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", ARG, "感性：嫌い"), "NEGATIVE", ABL:ARG:親密 < 5)
 ELSEIF IFPf
 	CALL SHOW_TASTE(WPf:1, "NEGATIVE")
 ENDIF
 DRAWLINE
 PRINTL 喜欢的味道：
-CALL SHOW_TASTE(GET_STR(, "キャラデータ", ARG, "料理：喜欢的味道"), "POSITIVE", ABL:ARG:親密 < 3)
+CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", ARG, "料理：喜欢的味道"), "POSITIVE", ABL:ARG:親密 < 3)
 PRINTL 讨厌的味道：
-CALL SHOW_TASTE(GET_STR(, "キャラデータ", ARG, "料理：讨厌的味道"), "NEGATIVE", ABL:ARG:親密 < 3)
+CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", ARG, "料理：讨厌的味道"), "NEGATIVE", ABL:ARG:親密 < 3)
 PRINTL 助手效果：
 CALL DISH_TASTE_FROM_CHARA(ARG, "OUTPUT")
 CALL SHOW_TASTE(RESULTS, "ASSIDATA")

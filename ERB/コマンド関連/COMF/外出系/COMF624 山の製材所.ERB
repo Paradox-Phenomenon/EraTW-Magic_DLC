@@ -262,7 +262,7 @@ SELECTCASE リザルト保管
 			CASE 1 TO 候補個数
 				CLEARLINE 2
 				売却個数 = RESULT
-				LOCALS '= @"「好嘞，所以我以%金額表示((売値 * 売却個数))%向你收购%TOKANJI(売却個数)%件%ITEMNAME_TR(候補番号)%！」"
+				LOCALS '= @"「好嘞，所以我以%金額表示((売値 * 売却個数))%向你收购%TOKANJI(売却個数,1)%件%ITEMNAME_TR(候補番号)%！」"
 				CALL COM624_KAPPASPEAK(LOCALS, "smile")
 				PRINTFORMDW 金钱：%金額表示(MONEY)% → %金額表示(MONEY + (売値 * 売却個数))%
 				MONEY += (売値 * 売却個数)
@@ -342,7 +342,7 @@ SELECTCASE リザルト保管
 				CLEARLINE 2
 				売却個数 = RESULT
 				IF リザルト保管 == 4
-					PRINTFORML 「我以%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 1))%购买%TOKANJI(売却個数)%件%WoodName%，成交吗？」
+					PRINTFORML 「我以%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 1))%购买%TOKANJI(売却個数,1)%件%WoodName%，成交吗？」
 					CALL ASK_YN
 					IF !RESULT
 						PRINTFORMDW 金钱：%金額表示(MONEY)% → %金額表示(MONEY + PLANK_BARTERPRICE(候補番号, 売却個数, 1))%
@@ -358,7 +358,7 @@ SELECTCASE リザルト保管
 					ENDIF
 				ELSE
 					IF MONEY >= PLANK_BARTERPRICE(候補番号, 売却個数, 0)
-						PRINTFORML 「是%TOKANJI(売却個数)%件%WoodName%吗？让我算算……总价是%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 0))%，成交吗？」
+						PRINTFORML 「是%TOKANJI(売却個数,1)%件%WoodName%吗？让我算算……总价是%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 0))%，成交吗？」
 						CALL ASK_YN
 						IF !RESULT
 							CALL PAY_MONEY_YEN(PLANK_BARTERPRICE(候補番号, 売却個数, 0), 1)
@@ -370,7 +370,7 @@ SELECTCASE リザルト保管
 						ENDIF
 					;钱不够哦
 					ELSE
-						PRINTFORMW 「是%TOKANJI(売却個数)%件%WoodName%吗？总共是%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 0))%……但是看起来你现金不足，对吧，盟友？」
+						PRINTFORMW 「是%TOKANJI(売却個数,1)%件%WoodName%吗？总共是%金額表示(PLANK_BARTERPRICE(候補番号, 売却個数, 0))%……但是看起来你现金不足，对吧，盟友？」
 						CLEARLINE 3
 						CALL COM623_SELL(候補個数, 0)
 						GOTO INPUT_LOOP03
@@ -430,6 +430,8 @@ GOTO LOOP_SELECT
 ;-------------------------------------------------
 ;山の製材所
 @COM_ABLE624
+#LOCALSIZE 1
+#LOCALSSIZE 1
 ;一括管理
 SIF GLOBAL_COMABLE(624)
 	RETURN RESULT
@@ -524,7 +526,29 @@ RETURNF 費用ベース
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM FLAG_L
-RETURNF 1 + FLAG_TO_LOGSIZE(FLAG_L) * 2
+#DIM LogSize
+
+IF 增强的伐木系统开关 == 0
+    ; 原始逻辑：简单线性
+    RETURNF 1 + FLAG_TO_LOGSIZE(FLAG_L) * 2
+ELSE
+    ; 修改后逻辑：基于尺寸等级大幅增加
+    LogSize = FLAG_TO_LOGSIZE(FLAG_L)
+    SELECTCASE LogSize
+        CASE 0
+            RETURNF 1      ; 普通树木
+        CASE 1
+            RETURNF 31     ; 大木
+        CASE 2
+            RETURNF 59     ; 巨木
+        CASE 3
+            RETURNF 422    ; 庞木
+        CASE 4
+            RETURNF 1199   ; 参天木
+        CASEELSE
+            RETURNF 1
+    ENDSELECT
+ENDIF
 
 ;-------------------------------------------------
 ;製材結果の表示など

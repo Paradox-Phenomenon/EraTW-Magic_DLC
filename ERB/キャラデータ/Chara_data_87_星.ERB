@@ -46,26 +46,26 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "星")
 ;こっから衣装設定
 CASE "今天的睡衣"
 	CALLF MAKE_STR(V_NAME, "睡衣（襦袢）套")
 
 CASE "便装：帽子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "帽子"))
+	CALLF MAKE_INT(V_NAME, [[頭装備_帽子]])
 CASE "便装：靴"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("靴", "鞋子"))
+	CALLF MAKE_INT(V_NAME, [[靴_鞋子]])
 CASE "便装：連衣裙"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("連衣裙", "法衣"))
+	CALLF MAKE_INT(V_NAME, [[連衣裙_法衣]])
 CASE "便装：裙子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("裙子", "裙子"))
+	CALLF MAKE_INT(V_NAME, [[裙子_裙子]])
 CASE "便装：其他１"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他１", "羽衣"))
+	CALLF MAKE_INT(V_NAME, [[其他衣装_羽衣]])
 CASE "便装：其他２"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他２", "长矛"))
+	CALLF MAKE_INT(V_NAME, [[其他衣装_长矛]])
 CASE "便装：其他３"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他３", "宝塔"))
+	CALLF MAKE_INT(V_NAME, [[其他衣装_宝塔]])
 
 CASE "固有内衣形容詞"
 	CALLF MAKE_STR(V_NAME, "和本人一致的")
@@ -132,7 +132,28 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _バニーギャル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[伊什塔尔套装]]
+			RESULTS = _イシュタル
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			RESULTS = _セーラー服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[巫女装束]]
+			RESULTS = _巫女
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+			RESULTS = _着物
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+			RESULTS = _私服
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF CHECK_NUDE(CHARA)
 		;裸
@@ -207,7 +228,16 @@ ENDIF
 #LOCALSSIZE 1
 #DIM CHARA
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 > MAXBASE:CHARA:情緒 / 2 || TALENT:CHARA:恋慕
+		IF RESULTS:0 == "通常"
+			RESULTS:0 '= "微笑"
+		ENDIF
+		IF RESULTS:1 == "通常"
+			RESULTS:1 '= "微笑"
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -235,7 +265,30 @@ ENDIF
 #DIM CHARA
 #DIM 指令
 
-IF CFLAG:87:差し替え適用
+IF CFLAG:87:差し替え適用 == 1
+	IF CHECK_NUDE(CHARA)
+	ELSE
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[伊什塔尔套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[巫女装束]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+				CASE 6,12,313
+					IF IS_半脱(CHARA,1) && ABL:CHARA:欲望 >= 10 && GET_TARGETNUM() == 1
+						RESULTS = 揉胸2覆盖
+					ELSE
+						RESULTS = 揉胸覆盖
+					ENDIF
+			ENDSELECT
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:87:差し替え適用
 	;替换用画像
 	IF FLAG:立絵種類
 		;顔絵
@@ -453,16 +506,3 @@ ELSE
 ENDIF
 
 RETURN エフェクト数
-
-;********************************************************************************************
-@IMAGE_EX_I87_PREリソースチェック(CHARA, 表示形式, 服装, 表情, 表情_マウスオーバー, 差分, 乳量)
-#DIM CHARA
-#DIMS 表示形式
-#DIMS 服装
-#DIMS 表情
-#DIMS 表情_マウスオーバー
-#DIMS 差分
-#DIMS 乳量
-
-SIF CFLAG:87:差し替え適用 == 1
-	CALL COMPOSE_SPRITE_PRESET(CHARA)

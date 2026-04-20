@@ -148,7 +148,13 @@ TARGET = ARG
 
 @MOREDATES_SOUVENIR
 #DIM CANBUY
-#DIM TEMP
+#DIM TEMP,3
+SIF SELECTCOM != 626 || NumberOfDates < 2 || !MOREDATE
+	RETURN
+TEMP:0 = TARGET
+TEMP:1 = TFLAG:97
+TEMP:2 = TFLAG:98
+$TOP
 ; Check if everyone already has something
 CANBUY = 0
 FOR LOCAL, 0, NumberOfDates
@@ -170,46 +176,48 @@ IF CANBUY
 	$INPUT_LOOP
 	INPUT
 
-	IF RESULT != 999 && (!IS_IN_GROUP_DATE(RESULT) || TCVAR:RESULT:今日の贈り物)
+	SIF (RESULT != 999 && RESULT >= CHARANUM) || RESULT < 1
 		GOTO INPUT_LOOP
-	ENDIF
+	SIF RESULT != 999 && (!IS_IN_GROUP_DATE(RESULT) || TCVAR:RESULT:今日の贈り物)
+		GOTO INPUT_LOOP
 
 	IF RESULT != 999 && IS_IN_GROUP_DATE(RESULT) && !TCVAR:RESULT:今日の贈り物
-		TEMP = RESULT ; 我们即将调用另一个函数，它会替换我们的 RESULT 值
-		; 由于我们正在切换目标，模拟回合结束，进行宝石/好感/信任和反应
-		CALL SET_KOJO_COLOR(TARGET)
-		TRYCALLFORM M_KOJO_MESSAGE_COM_K{TARGET}_626
-		RESETCOLOR
+		TARGET = RESULT
+		TFLAG:97 = 0
+		TFLAG:98 = 0
+		CALL COM626
+		CALL MESSAGE_COM626
+		SIF !nSkipKojo
+			CALL KOJO_MESSAGE_SEND("COMMAND",-1,TARGET,-1,-1)
+		; 30/10 minutes per buy seems a little harsh so let's reduce it by 80% as bulk purchases
+		TIME -= !FLAG:TIME_COMPRESSION ? 24 # 8
+		; simulate end of turn, do gems/favor/trust
 		CALL FAVOR_CALC(TARGET)
 		CALL TRUST_CALC(TARGET)
 		CALL SOURCE_歓楽(TARGET)
 		CALL SOURCE_受動(TARGET)
 		CALL SOURCE_征服(TARGET)
 		; 重置以避免无限指数增长
-		TFLAG:97 = 0 
-		TFLAG:信頼度管理 = 0
 		SOURCE:歓楽 = 0
 		SOURCE:受動 = 0
 		SOURCE:征服 = 0
-		TARGET = TEMP
-		; 每次购买 30/10 分钟似乎有点苛刻，所以我们将其批量购买减少 80%
-		TIME -= !FLAG:TIME_COMPRESSION ? 24 # 8
-		; 应该有更好的方法来调用 COM 吧？DOTRAIN 也不行，因为我们实际上还在命令执行过程中
-		CALL COM626
-		CALL MESSAGE_COM626
+		GOTO TOP
 	ENDIF
 ENDIF
+TARGET = TEMP:0
+TFLAG:97 = TEMP:1
+TFLAG:98 = TEMP:2
 
 @MOREDATES_HUD_INFO
 #DIM Date
-CALL COLORMESSAGE(@"　<与%TOKANJI(NumberOfDates)%人进行多人约会> ", 0xFF3399)
+CALL COLORMESSAGE(@"　<与%TOKANJI(NumberOfDates, 1)%人进行多人约会> ", 0xFF3399)
 FOR LOCAL, 0, NumberOfDates
 	Date = Datees:LOCAL
 	IF FLAG:守矢くじデート相手
 		CALL COLORMESSAGE(@"　<与%CALLNAME:(FLAG:守矢くじデート相手)%进行守矢神签约会>",C_YELLOW)
 	; only show visiting for focused date
 	ELSEIF CFLAG:(Date):現在位置 == OMANEKIBEYA() && Date == FLAG:デート相手
-		CALL COLORMESSAGE(@"　<\@ TFLAG:泡風呂 ? 正在 # 正在拜访 \@ %CALLNAME:Date%的房间\@ TFLAG:泡風呂 - TIME:1 > 0 ? 接受服务 剩余（%TOKANJI(TFLAG:泡風呂 - TIME:1)%分钟）#\@>", C_PINK)
+		CALL COLORMESSAGE(@"　<\@ TFLAG:泡風呂 ? 正在 # 正在拜访 \@ %CALLNAME:Date%的房间\@ TFLAG:泡風呂 - TIME:1 > 0 ? 接受服务 剩余（%TOKANJI(TFLAG:泡風呂 - TIME:1, 1)%分钟）#\@>", C_PINK)
 	ELSE
 	ENDIF
 	;don't display tired messages when in a private room

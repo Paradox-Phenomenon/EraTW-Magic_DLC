@@ -50,20 +50,20 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "夢子")
 ;こっから衣装設定
 CASE "今天的睡衣"
 	CALLF MAKE_STR(V_NAME, "睡衣（吊带睡裙）套")
 
 CASE "便装：帽子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("帽子", "女仆发箍"))
+	CALLF MAKE_INT(V_NAME, [[頭装備_女仆发箍]])
 CASE "便装：靴"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("靴", "鞋子"))
+	CALLF MAKE_INT(V_NAME, [[靴_鞋子]])
 CASE "便装：襪子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "长筒袜"))
+	CALLF MAKE_INT(V_NAME, [[襪子_长筒袜]])
 CASE "便装：連衣裙"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("連衣裙", "围裙洋装"))
+	CALLF MAKE_INT(V_NAME, [[連衣裙_围裙洋装]])
 
 CASE "固有内衣形容詞"
 	CALLF MAKE_STR(V_NAME, "有着谜之重量和冰冷感的")
@@ -135,6 +135,26 @@ SELECTCASE CFLAG:103:差し替え適用
 				RESULTS = _バニーギャル
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
 				RESULTS = _セーラー服
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[修女服]]
+				RESULTS = _シスター
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[连体紧身衣]]
+				RESULTS = _ディストッキング
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[时空管理局制服]]
+				RESULTS = _時空管理局制服
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+				RESULTS = _デンジャラス・ビースト
+			ELSEIF IS_SCHOOLUNIFORM(CHARA)
+				RESULTS = _トレセン制服
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[舞娘套装]]
+				RESULTS = _ボディチェーン
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[皇家糖霜礼装]]
+				RESULTS = _ロイヤル・アイシング
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[岛风制服]]
+				RESULTS = _島風
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+				RESULTS = _着物
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
+				RESULTS = _私服
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 33
 				RESULTS = _パジャマ
 			ELSEIF CHECK_CLO("bra_visible", CHARA)
@@ -242,9 +262,106 @@ ENDSELECT
 SELECTCASE CFLAG:103:差し替え適用
 	CASE 2
 		IF CHECK_NUDE(CHARA)
+			SELECTCASE コマンド
+				CASE 80
+					RESULTS = 手交覆盖
+				CASE 81
+					RESULTS = 口交覆盖
+				CASE 82
+					RESULTS = 乳交覆盖
+				CASE 85
+					RESULTS = 足交覆盖
+				CASE 8
+					IF EX:CHARA:膣内精液
+						RESULTS = 张开阴唇2覆盖
+					ELSE
+						RESULTS = 张开阴唇覆盖
+					ENDIF
+				CASE 13
+					IF EX:CHARA:肛門内精液
+						RESULTS = 张开菊穴2覆盖
+					ELSE
+						RESULTS = 张开菊穴覆盖
+					ENDIF
+				CASE 83
+					IF CFLAG:CHARA:妊娠経過日数 >= 40
+						RESULTS = 妊娠_素股覆盖
+					ELSE
+						RESULTS = 素股覆盖
+					ENDIF
+				CASEELSE
+					IF MASTER_POSE(SET_V,SET_P) == CHARA && CHECK_NUDE([[神绮]]) && CFLAG:[[神绮]]:诶嘿嘿
+						SELECTCASE TEQUIP:CHARA:110
+							CASE POSE_MISSIONARY
+								RESULTS = 正常位覆盖_d0
+							CASE POSE_COWGIRL,POSE_LOTUS,POSE_SUSPENDED_CONGRESS
+								RESULTS = 骑乘位覆盖_d0
+							CASE POSE_DOGGYSTYLE,POSE_REVLOTUS,POSE_REV_COWGIRL
+								RESULTS = 后入位覆盖_d0
+						ENDSELECT
+					ELSEIF MASTER_POSE(SET_A,SET_P) == CHARA && CHECK_NUDE([[神绮]]) && CFLAG:[[神绮]]:诶嘿嘿
+						SELECTCASE TEQUIP:CHARA:110
+							CASE POSE_MISSIONARY
+								RESULTS = 正常位A覆盖_d0
+							CASE POSE_COWGIRL,POSE_LOTUS,POSE_SUSPENDED_CONGRESS
+								RESULTS = 正常位A覆盖_d0
+							CASE POSE_DOGGYSTYLE,POSE_REVLOTUS,POSE_REV_COWGIRL
+						ENDSELECT
+					ELSEIF MASTER_POSE(SET_V,SET_P) == CHARA
+						SELECTCASE TEQUIP:CHARA:110
+							CASE POSE_MISSIONARY
+								RESULTS = V_正面覆盖
+							CASE POSE_COWGIRL,POSE_SUSPENDED_CONGRESS
+								RESULTS = V_骑乘位覆盖
+							CASE POSE_LOTUS
+								RESULTS = V_对面座位覆盖
+							CASE POSE_DOGGYSTYLE,POSE_REV_COWGIRL
+								RESULTS = V_后入覆盖
+							CASE POSE_STANDING_FROM_BEHIND
+								RESULTS = V_站立后入覆盖
+							CASE POSE_REVLOTUS
+								RESULTS = V_背面坐莲覆盖
+							CASE POSE_STANDING_MISSIONARY
+								RESULTS = 站立正常覆盖
+						ENDSELECT
+						IF CFLAG:CHARA:妊娠経過日数 >= 40
+							RESULTS = 妊娠_%RESULTS%
+						ENDIF
+					ELSEIF MASTER_POSE(SET_A,SET_P) == CHARA
+						SELECTCASE TEQUIP:CHARA:110
+							CASE POSE_MISSIONARY
+								RESULTS = A_正面覆盖
+							CASE POSE_COWGIRL,POSE_SUSPENDED_CONGRESS
+								RESULTS = A_骑乘位覆盖
+							CASE POSE_LOTUS
+								RESULTS = A_对面座位覆盖
+							CASE POSE_DOGGYSTYLE,POSE_REV_COWGIRL
+								RESULTS = A_后入覆盖
+							CASE POSE_STANDING_FROM_BEHIND
+								RESULTS = A_站立后入覆盖
+							CASE POSE_REVLOTUS
+								RESULTS = A_背面坐莲覆盖
+							CASE POSE_STANDING_MISSIONARY
+								RESULTS = 站立正常覆盖
+						ENDSELECT
+						IF CFLAG:CHARA:妊娠経過日数 >= 40
+							RESULTS = 妊娠_%RESULTS%
+						ENDIF
+					ENDIF
+			ENDSELECT
 		ELSE
 			IF IS_BUNNY(CHARA)
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 74
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[修女服]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[连体紧身衣]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[时空管理局制服]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+			ELSEIF IS_SCHOOLUNIFORM(CHARA)
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[舞娘套装]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[皇家糖霜礼装]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[岛风制服]]
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[浴衣穿搭]] || EQUIP:CHARA:和服 == 1
+			ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[辣妹系休闲套装]]
 			ELSEIF CURRENT_CLOTHES_SET(CHARA) == 33
 			ELSEIF CHECK_CLO("bra_visible", CHARA)
 			ELSE
@@ -262,6 +379,8 @@ SELECTCASE CFLAG:103:差し替え適用
 									RESULTS = 掀裙子1覆盖
 								ENDIF
 						ENDSELECT
+					CASE 6,12,313
+						RESULTS = 揉胸覆盖
 				ENDSELECT
 			ENDIF
 		ENDIF
@@ -282,6 +401,7 @@ SELECTCASE CFLAG:103:差し替え適用
 			ENDIF
 		ENDIF
 ENDSELECT
+DEBUGPRINTFORML 特殊表情决定: %RESULTS%
 [SKIPSTART]
 ;IMAGE_I103_差分(CHARA)-----------------------------------------------------------------------
 ;キャラクター特有の差分表示条件

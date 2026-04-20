@@ -6,8 +6,8 @@
 
 ;オブジェクト本体
 ;ここでARGで渡されるのはCLIENT_IDです
-@一般依頼17(ARG, O_DATA, V_NAME)
-#FUNCTION
+@F一般依頼17(ARG, O_DATA, V_NAME)
+#FUNCTIONS
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIMS O_DATA
@@ -17,54 +17,49 @@ CASE "依頼名"
 	;「名前忘れたけどこんな感じの料理あったよね」とは別に「こんな料理があったら食べてみたいね」みたいな形式もアリなのかな
 	;やっぱり同じ依頼の名前が複数あるの好ましくないかな？
 	;IF RAND:2
-		;CALLF MAKE_STR(V_NAME, "あれが食べたい！……なんて名前だっけ")
-		CALLF MAKE_STR(V_NAME, "我想吃那个！那个叫什么来着？")
+		;RETURNF "あれが食べたい！……なんて名前だっけ"
+		RETURNF "我想吃那个！那个叫什么来着？"
 	;ELSE
-	;	CALLF MAKE_STR(V_NAME, "こんな料理あったらいいね")
-	;	CALLF MAKE_STR(V_NAME, "如果有这样的料理就好了")
+	;	RETURNF "こんな料理あったらいいね"
+	;	RETURNF "如果有这样的料理就好了"
 	;ENDIF
 CASE "依頼内容表示"
-	;CALLF MAKE_STR(V_NAME, @"あいまいな記憶を頼りに料理を作って届ける")
-	CALLF MAKE_STR(V_NAME, @"凭借模糊的记忆做出并送上料理")
+	;RETURNF @"あいまいな記憶を頼りに料理を作って届ける"
+	RETURNF @"凭借模糊的记忆做出并送上料理"
 CASE "依頼報酬表示"
-	;CALLF MAKE_STR(V_NAME, @"\\2500＋おまけ")
-	CALLF MAKE_STR(V_NAME, @"%金額表示(2500)%＋奖金")
+	;RETURNF @"\\2500＋おまけ"
+	RETURNF @"%金額表示(2500)%＋奖金"
 CASE "依頼実行指令名"
 	;何か問題があったら変えてください
-	;IF TALENT:MASTER:性別 == 2
-	;	CALLF MAKE_STR(V_NAME, "出前漢です")
-	;ELSE 
-	;	CALLF MAKE_STR(V_NAME, "UmanEatsです")
-	;ENDIF
 	IF TALENT:MASTER:性別 == 2
-		CALLF MAKE_STR(V_NAME, "您好，外卖到了")
+		RETURNF "您好，外卖到了"
 	ELSE 
-		CALLF MAKE_STR(V_NAME, "您好，UmanEats外送")
+		RETURNF "您好，UmanEats外送"
 	ENDIF
 CASE "依頼内容"
-	CALLF MAKE_INT(V_NAME, MAKE_IRAI_DATA(0, "其他"))
+	RETURNF @"{MAKE_IRAI_DATA(0, "其他")}"
 CASE "依頼サブ"
 	;これは乱数シード
-	CALLF MAKE_INT(V_NAME, RAND:1000000)
+	RETURNF @"{RAND:1000000}"
 CASE "依頼期限"
 ;発生時ではなく受託時に確定します
-	CALLF MAKE_INT(V_NAME, 3)
+	RETURNF @"{3}"
 CASE "依頼発生率"
-	CALLF MAKE_INT(V_NAME, 5)
+	RETURNF @"{5}"
 CASE "依頼発生条件"
 ;阿求以外
 	SIF ARG != ([[阿求]])
-		CALLF MAKE_INT(V_NAME, 1)
+		RETURNF @"{1}"
 CASE "依頼受託可能条件"
-	CALLF MAKE_INT(V_NAME, 1)
+	RETURNF @"{1}"
 CASE "依頼実行可能条件"
 	SIF DISH_NAME != "" && TARGET == ARG && SHIRAHU(ARG) && !FLAG:70
-		CALLF MAKE_INT(V_NAME, 1)
+		RETURNF @"{1}"
 ;成功/失敗処理はCARRYOUTで直接書く
 ;SOURCEやITEM入手、消費が煩雑になるので
 CASE "依頼消滅条件"
 	SIF RAND:100 < 30
-		CALLF MAKE_INT(V_NAME, 1)
+		RETURNF @"{1}"
 CASE "依頼人連れ出し可能"
 ENDSELECT
 
@@ -327,6 +322,7 @@ TASTETAG_ORI =
 茄子/
 马铃薯/
 南瓜/
+大麦/
 白菜/
 胡萝卜/
 葱/

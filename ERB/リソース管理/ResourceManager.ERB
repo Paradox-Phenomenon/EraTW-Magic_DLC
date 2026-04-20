@@ -1,8 +1,9 @@
-﻿;debloat custom code
-;*******************************************************************************************************
-; 管理 resources 文件夹的图像数据，仅在需要时加载
+﻿;*******************************************************************************************************
+; 资源管理器 (已完全由 C# 引擎层接管)
 ;*******************************************************************************************************
 @RM_タイトル画像用意
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
 	SIF !GCREATED(RM_TITLE)
 		GCREATEFROMFILE RM_TITLE, "title.webp"
 	FOR I, 0, 35
@@ -10,6 +11,8 @@
 	NEXT
 
 @SYSTEM_LOADEND
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
 	CLEARMEMORY
 	; 释放标题图像
 	IF GCREATED(RM_TITLE)
@@ -19,344 +22,41 @@
 		NEXT
 	ENDIF
 
-;自定义代码，为性能优化而重写
-@RM_リソース情報初期化
-	#DIMS ELEMENT_NAME
-	#DIMS RESOURCE_NAME
-	#DIMS RESOURCE_SRC
-	#DIMS RESOURCE_PARAM
-	#DIMS RESOURCE_A_WIDTH
-	#DIMS RESOURCE_A_HEIGHT
-	#DIMS RESOURCE_MAP_STR
-	#DIMS NODE
-	#DIM ANIM_COUNT
-	#DIMS ANIM_NODE
-	#DIMS ANIM_RESOURCE_NAME
-
-	VARSET RM_GID_BITS
-
-	SIF !MAP_EXIST(RM_SINFO_MAP)
-		MAP_CREATE RM_SINFO_MAP
-	MAP_CLEAR RM_SINFO_MAP
-	SIF !MAP_EXIST(RM_SANIM_MAP)
-		MAP_CREATE RM_SANIM_MAP
-	MAP_CLEAR RM_SANIM_MAP
-
-	LOCAL = ENUMFILES("resources", "*.xml", 1)
-	FOR I, 0, LOCAL
-		XML_DOCUMENT RM_XML_TEMP, LOADTEXT(RESULTS:I)
-		LOCAL:1 = XML_GET_BYNAME(RM_XML_TEMP, "/sprites/*")
-		FOR J, 0, LOCAL:1
-			XML_GET_BYNAME RM_XML_TEMP, @"/sprites/*[{J+1}]", NODE, 3
-			XML_GET NODE, "/*", ELEMENT_NAME, 4
-
-			IF ELEMENT_NAME == "i"
-				XML_GET NODE, "*/@name", RESOURCE_NAME
-				XML_GET NODE, "*/@src", RESOURCE_SRC
-				XML_GET NODE, "*/@param", RESOURCE_PARAM
-				[IF_DEBUG]
-				;自定义代码，显示资源问题
-				IF MAP_HAS(RM_SINFO_MAP, RESOURCE_NAME)
-					PRINTFORML 名称 '%RESOURCE_NAME%' 已被使用。
-				ELSEIF STRFIND(RESOURCE_SRC, "|") >= 0
-					PRINTFORML 资源 '%RESOURCE_NAME%' 的文件名 (%RESOURCE_SRC%) 不能包含 '|'。
-				ELSEIF !EXISTFILE("resources/" + RESOURCE_SRC)
-					PRINTFORML 文件 '%RESOURCE_SRC%' 不存在。 
-				ENDIF
-				[ENDIF]
-				RESOURCE_MAP_STR '= @"i|%RESOURCE_SRC%|%RESOURCE_PARAM%"
-				MAP_SET RM_SINFO_MAP, RESOURCE_NAME, RESOURCE_MAP_STR
-			ELSEIF ELEMENT_NAME == "a"
-				XML_GET NODE, "*/@name", RESOURCE_NAME
-				XML_GET NODE, "*/@width", RESOURCE_A_WIDTH
-				XML_GET NODE, "*/@height", RESOURCE_A_HEIGHT
-				ANIM_COUNT = XML_GET(NODE, "*/f")
-
-				[IF_DEBUG]
-				;自定义代码，显示资源问题
-				IF MAP_HAS(RM_SINFO_MAP, RESOURCE_NAME)
-					PRINTFORML 名称 '%RESOURCE_NAME%' 已被使用。
-				ENDIF
-				[ENDIF]
-
-				RESOURCE_MAP_STR '= @"a|{ANIM_COUNT}|%RESOURCE_A_WIDTH%|%RESOURCE_A_HEIGHT%"
-				MAP_SET RM_SINFO_MAP, RESOURCE_NAME, RESOURCE_MAP_STR
-				FOR K, 0, ANIM_COUNT
-					XML_GET NODE, @"*/f[{K+1}]", ANIM_NODE, 3
-					XML_GET ANIM_NODE, "*/@src", RESOURCE_SRC
-					XML_GET ANIM_NODE, "*/@param", RESOURCE_PARAM
-					ANIM_RESOURCE_NAME '= @"%RESOURCE_NAME%_{K}"
-					[IF_DEBUG]
-					;自定义代码，显示资源问题
-					IF MAP_HAS(RM_SANIM_MAP, ANIM_RESOURCE_NAME)
-						PRINTFORML 名称 '%ANIM_RESOURCE_NAME%' 已被使用。
-					ELSEIF STRFIND(RESOURCE_SRC, "|") >= 0
-						PRINTFORML 资源 '%RESOURCE_NAME%' 的文件名 (%RESOURCE_SRC%) 不能包含 '|'。
-					ELSEIF !EXISTFILE("resources/" + RESOURCE_SRC)
-						PRINTFORML 文件 '%RESOURCE_SRC%' 不存在。 
-					ENDIF
-					[ENDIF]
-					RESOURCE_MAP_STR '= @"%RESOURCE_SRC%|%RESOURCE_PARAM%"
-
-					MAP_SET RM_SANIM_MAP, ANIM_RESOURCE_NAME, RESOURCE_MAP_STR
-				NEXT
-			ENDIF
-		NEXT
-		XML_RELEASE RM_XML_TEMP
-	NEXT
-
-	VARSET RESULTS    
-
-	SIF !MAP_EXIST(RM_GMAP)
-		MAP_CREATE RM_GMAP
-	MAP_CLEAR RM_GMAP
-
-	SIF !MAP_EXIST(RM_SMAP)
-		MAP_CREATE RM_SMAP
-	MAP_CLEAR RM_SMAP
-
 ;*******************************************************************************************************
-; 返回精灵的宽度
+; 返回精灵的宽度 / 高度
 ;*******************************************************************************************************
 @RM_SPRITEWIDTH(リソース名)
-    #DIMS リソース名
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
+    #DIMS DYNAMIC リソース名
     #FUNCTION
     SIF RM_RESOURCECHECK_LOAD(リソース名)
         RETURNF SPRITEWIDTH(リソース名)
     RETURNF 0
 
-;*******************************************************************************************************
-; 返回精灵的高度
-;*******************************************************************************************************
 @RM_SPRITEHEIGHT(リソース名)
-	#DIMS リソース名
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
+	#DIMS DYNAMIC リソース名
 	#FUNCTION
 	SIF RM_RESOURCECHECK_LOAD(リソース名)
 		RETURNF SPRITEHEIGHT(リソース名)
 	RETURNF 0
+
 ;*******************************************************************************************************
-; 检查精灵的索引是否存在
+; 检查精灵是否存在 (由 C# 引擎直接接管加载和 LRU 缓存)
 ;*******************************************************************************************************
 @RM_RESOURCECHECK(リソース名)
-	#DIMS リソース名
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
+	#DIMS DYNAMIC リソース名
 	#FUNCTION
-	SIF SPRITECREATED(リソース名)
-		RETURNF 1
-	RETURNF MAP_HAS(RM_SINFO_MAP, リソース名)
+	RETURNF RM_RESOURCE_EXIST(リソース名)
 
 ;*******************************************************************************************************
-; 检查精灵的索引是否存在
-; 如果存在则从图片资源创建精灵
+; 手动释放所有资源 (一般不需要调用，因为 C# 有 LRU 自动淘汰，但提供接口以防万一)
 ;*******************************************************************************************************
-;自定义代码，为性能优化而重写
-@RM_RESOURCECHECK_LOAD(リソース名)
-	#FUNCTION
-	#DIMS リソース名
-	#DIMS PARAMS, 9
-	#DIM G_ID
-	#DIM WIDTH
-	#DIM HEIGHT
-	#DIM XPOS
-	#DIM YPOS
-	#DIM DELAY
-	#DIM DESTW
-	#DIM DESTH
-	#DIM TOTAL
-	#DIMS RESOURCE_DATA
-	#DIMS RESOURCE_PARTS, 4
-	#DIMS RESOURCE_SRC
-	#DIMS ANIM_RESOURCE_DATA
-	SIF SPRITECREATED(リソース名)
-		RETURNF 1
-	SIF !MAP_HAS(RM_SINFO_MAP, リソース名)
-		RETURNF 0
-
-	RESOURCE_DATA '= MAP_GET(RM_SINFO_MAP, リソース名)
-	SPLIT RESOURCE_DATA, "|", RESOURCE_PARTS
-
-	;---------------------------------------------------------
-	; 处理静态图像 (type: i)
-	;---------------------------------------------------------
-	IF RESOURCE_PARTS:0 == "i"
-		RESOURCE_SRC '= RESOURCE_PARTS:1
-		G_ID = RM_G_ID(RESOURCE_SRC)
-		SIF !G_ID ; 图像文件加载失败
-			RETURNF 0
-			
-		SPLIT RESOURCE_PARTS:2, ",", PARAMS
-		TOTAL = RESULT
-		CALLF RM_PARSE_PARAMS(G_ID, TOTAL, PARAMS, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY, DESTW, DESTH)
-
-		SPRITECREATE リソース名, G_ID, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DESTW, DESTH
-
-	;---------------------------------------------------------
-	; 处理动画 (type: a)
-	;---------------------------------------------------------
-	ELSEIF RESOURCE_PARTS:0 == "a"
-		DESTW = TOINT(RESOURCE_PARTS:2)
-		DESTH = TOINT(RESOURCE_PARTS:3)
-		SPRITEANIMECREATE リソース名, DESTW, DESTH
-
-		TOTAL = TOINT(RESOURCE_PARTS:1)
-		FOR I, 0, TOTAL
-			IF MAP_HAS(RM_SANIM_MAP, @"%リソース名%_{I}")
-				ANIM_RESOURCE_DATA '= MAP_GET(RM_SANIM_MAP, @"%リソース名%_{I}")
-				SPLIT ANIM_RESOURCE_DATA, "|", RESOURCE_PARTS
-				RESOURCE_SRC '= RESOURCE_PARTS:0
-				G_ID = RM_G_ID(RESOURCE_SRC)
-				SIF !G_ID ; 图像文件加载失败
-					RETURNF 0
-				
-				SPLIT RESOURCE_PARTS:1, ",", PARAMS
-				CALLF RM_PARSE_PARAMS(G_ID, RESULT, PARAMS, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY, LOCAL:2, LOCAL:3)
-				SPRITEANIMEADDFRAME リソース名, G_ID, X, Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY
-			ENDIF
-		NEXT
-	ENDIF
-	MAP_SET RM_SMAP, リソース名, ""
-	RETURNF SPRITECREATED(リソース名)
-
-@RM_PARSE_PARAMS(G_ID, TOTAL, PARAMS, _X, _Y, WIDTH, HEIGHT, XPOS, YPOS, DELAY, _DW, _DH)
-	#FUNCTION
-	#DIM G_ID
-	#DIM TOTAL
-	#DIMS REF PARAMS, 0
-	#DIM REF _X
-	#DIM REF _Y
-	#DIM REF WIDTH
-	#DIM REF HEIGHT
-	#DIM REF XPOS
-	#DIM REF YPOS
-	#DIM REF DELAY
-	#DIM REF _DW ; dest width
-	#DIM REF _DH ; dest height
-
-	_X = TOTAL>=1 ? TOINT(PARAMS:0) # 0
-	_Y = TOTAL>=2 ? TOINT(PARAMS:1) # 0
-    WIDTH = TOTAL>=3 ? TOINT(PARAMS:2) # GWIDTH(G_ID)
-    HEIGHT = TOTAL>=4 ? TOINT(PARAMS:3) # GHEIGHT(G_ID)
-	XPOS = TOTAL>=5 ? TOINT(PARAMS:4) # 0
-	YPOS = TOTAL>=6 ? TOINT(PARAMS:5) # 0
-	DELAY = TOTAL>=7 ? TOINT(PARAMS:6) # 0
-	_DW = TOTAL>=8 ? TOINT(PARAMS:7) # WIDTH
-	_DH = TOTAL>=9 ? TOINT(PARAMS:8) # HEIGHT
-
-@RM_G_ID(画像パス)
-	#FUNCTION
-	#DIMS REF 画像パス
-	#DIM G_ID
-	
-	SIF MAP_HAS(RM_GMAP, 画像パス)
-		RETURNF TOINT(MAP_GET(RM_GMAP, 画像パス))
-
-	G_ID = BitIndexOfFirst(RM_GID_BITS, 0)+RM_GID_BASE
-	SIF G_ID<RM_GID_BASE
-		THROW 图像过多
-
-	GCREATEFROMFILE G_ID, 画像パス
-	IF GCREATED(G_ID)
-		CALLF BitSet(RM_GID_BITS, G_ID-RM_GID_BASE)
-		MAP_SET RM_GMAP, 画像パス, TOSTR(G_ID)
-		RETURNF G_ID
-	ENDIF
-
-	RETURNF 0
-
 @RM_全部リリース
-	#DIM G_ID
-	#DIMS KEYS, 1000
-
-	MAP_GETKEYS RM_SMAP, KEYS, 1
-	LOCAL = RESULT
-	FOR I, 0, LOCAL
-		SPRITEDISPOSE KEYS:I
-	NEXT
-	MAP_CLEAR RM_SMAP
-
-	MAP_GETKEYS RM_GMAP, KEYS, 1
-	LOCAL = RESULT
-	FOR I, 0, LOCAL
-		G_ID = TOINT(MAP_GET(RM_GMAP, KEYS:I))
-		GDISPOSE G_ID
-		CALLF BitSet(RM_GID_BITS, G_ID-RM_GID_BASE, 0)
-	NEXT
-	MAP_CLEAR RM_GMAP
-	
-	VARSET KEYS
-
-;已注释
-;RM_全部リリース 对于我们来说没有实际意义，清除图像缓存只会让游戏有更多卡顿机会（比如ANON的那个花名册）
-;同时最大的冗余部分未被触及，例如 EagloV的辉夜绘（这个已经解决）
-; 在进入 SHOP 画面前，释放所有图像
-;@EVENTTURNEND
-	;#LATER
-	;释放 TRAIN 阶段的图像内存
-	;CALL RM_全部リリース
-; 进入TRAIN画面前，释放 SHOP 阶段的图像
-;@EVENTTRAIN
-	;#PRI
-	;释放 SHOP 阶段的图像内存
-	;CALL RM_全部リリース
-
-[SKIPSTART]
-;LSU管理
-;本来就没有释放的必要，LSU作为可行的扩展
-SIF !MAP_EXIST(RM_LRU_MAP)
-	MAP_CREATE RM_LRU_MAP  ; 键=资源名, 值=最后使用时间
-
-; 在 @RM_RESOURCECHECK_LOAD 末尾添加
-SIF SPRITECREATED(リソース名)
-	CALL RM_UPDATE_LRU(リソース名)  ; 更新 LRU
-	CALL RM_CHECK_CACHE_LIMIT  ; 检查并淘汰超限
-
-; 更新 LRU 时间
-@RM_UPDATE_LRU(リソース名)
-#DIMS リソース名
-MAP_SET RM_LRU_MAP, リソース名, GETMILLISECOND()  ; 用当前毫秒时间戳标记最近使用
-
-; 检查缓存上限并淘汰 LRU
-@RM_CHECK_CACHE_LIMIT
-#DIMS KEYS, RM_CACHE_MAX + 10
-IF MAP_SIZE(RM_GMAP) > RM_CACHE_MAX
-	MAP_GETKEYS RM_GMAP, KEYS, 1
-	LOCAL = RESULT  ; 键数
-	VARI TIMES, LOCAL
-	FOR I, 0, LOCAL
-		TIMES:I = TOINT(MAP_GET(RM_LRU_MAP, KEYS:I))  ; 获取时间戳
-	NEXT
-	; 找到最小时间戳的索引（最久未用）
-	LOCAL:1 = MAXARRAY(TIMES)
-	LOCAL:2 = KEYS:(LOCAL:1)  ; 最旧资源名
-	; 释放它
-	CALL RM_RELEASE_RESOURCE(LOCAL:2)
-	PRINTFORML [RM] 淘汰 LRU 资源: %LOCAL:2%
-ENDIF
-
-; 释放单个资源（G_ID + Sprite）
-@RM_RELEASE_RESOURCE(リソース名)
-#DIMS リソース名
-#DIM G_ID
-IF MAP_HAS(RM_GMAP, リソース名)
-	G_ID = TOINT(MAP_GET(RM_GMAP, リソース名))
-	GDISPOSE G_ID
-	CALLF BitSet(RM_GID_BITS, G_ID - RM_GID_BASE, 0)
-	MAP_DEL RM_GMAP, リソース名
-ENDIF
-IF MAP_HAS(RM_SMAP, リソース名)
-	SPRITEDISPOSE リソース名
-	MAP_DEL RM_SMAP, リソース名
-ENDIF
-MAP_DEL RM_LRU_MAP, リソース名
-
-; 恢复 EVENT 触发（但可选，只清部分）
-@EVENTTURNEND
-;#LATER
-CALL RM_RELEASE_UNUSED
-
-; 类似 RM_CHECK_CACHE_LIMIT，但清到 RM_CACHE_MAX / 2
-@RM_RELEASE_UNUSED
-WHILE MAP_COUNT(RM_GMAP) > RM_CACHE_MAX / 2
-	; 重复淘汰 LRU
-	CALL RM_CHECK_CACHE_LIMIT
-WEND
-[SKIPEND]
+	#LOCALSIZE 1
+	#LOCALSSIZE 1
+	RM_RELEASE_ALL

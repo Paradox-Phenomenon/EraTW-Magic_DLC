@@ -1,0 +1,302 @@
+大家好啊，我是说的道理
+今天来点大家想看的东西啊
+
+蛇也是蒸蒸日上了，现在有了能在一定程度上修改emuera运行方式的能力，在此记录一下相关改动，为后续可能使用本版本的相关开发者及口上作者提供基本的帮助
+以下信息为EMUERA1.824+v22+EMv18+EEv53与EMUERA1.824+v22+EMv18+EEv53+Lazyloadingv2.4（蛇版使用emuera版本）的对比，输入输出的英文字符代表数据类型，括号代表可选项
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+==================================
+EXISTVAR:
+==================================
+原版：
+
+输入：string
+返回：int
+注释：
+
+如果存在与 varName 同名的变量 / 常量则返回对应的正整数，否则返回 0。
+
+为整数类型时，返回值 setbit 1
+为字符串类型时，返回值 setbit 2
+为常量类型时，返回值 setbit 3
+为二维数组时，返回值 setbit 4
+为三维数组时，返回值 setbit 5
+
+命令 / 行内函数两种写法均有效。
+==================================
+改造：
+
+输入：string,(int)
+返回：int
+注释：
+
+如果存在第二输入变量，则将string所输入的变量视为一个具体的存储单元，判断是否存在，若存在返回1，不存在返回0
+如果不存在第二输入变量，则按原版执行
+
+命令 / 行内函数两种写法均有效。
+
+例：
+
+ERB代码：
+PRINTFORML {EXISTVAR("CFLAG:0:0", 1)}
+PRINTFORML {EXISTVAR("CFLAG")}
+PRINTFORML {EXISTVAR("CFLAG:0:0")}
+
+终端输出结果：
+1
+1
+0
+==========================================================================================================
+==================================
+EXISTFUNCTION（bug修复）:
+==================================
+原版：
+
+无法读取Lazyloading包含且在一次Emuera运行周期内未运行的函数
+
+==================================
+改造：
+
+现已可读取Lazyloading包含且在一次Emuera运行周期内未运行的函数，但检测后函数将预加载进入内存，因此如果检测大量Lazyloading函数，可能会造成大量内存占用
+
+==========================================================================================================
+==================================
+.als文件（bug修复）:
+==================================
+原版：
+
+序号10后的字符串指针无法被读取
+
+==================================
+改造：
+
+现已修复，可正常读取序号10后的字符串指针
+
+==========================================================================================================
+==================================
+SPRITECREATE:
+==================================
+原版：
+
+不支持8参数和10参数写法，与csv不同，因此直接用SPRITECREATE无法完成通过.csv可完成的完整图像控制
+
+==================================
+改造：
+
+现已修复，可在无.csv的情况下进行完整图像控制
+
+==========================================================================================================
+==================================
+SoundTouch（代码库引入）：
+==================================
+原作者：
+
+https://github.com/naudio/varispeed-sample/tree/master/VarispeedDemo/SoundTouch
+
+by markheath
+
+原版：
+
+不支持音频变速
+
+==================================
+改造：
+
+现已引入SoundTouch库，用以支持音频变速
+
+==========================================================================================================
+==================================
+Sound.Naudio.cs：
+==================================
+
+原版：
+
+不支持音频长度读取、现在播放时间读取、跳转、暂停、继续播放、音频变速
+
+==================================
+改造：
+
+现已支持以上所有功能
+
+==========================================================================================================
+GETSOUNDORBGMINFO¶
+Function name           Arguments	Return
+GETSOUNDORBGMINFO	int             int
+                        int, int	int
+API
+
+1. int GETSOUNDORBGMINFO channelId
+2. int GETSOUNDORBGMINFO channelId, infoType
+用于获取指定音效通道或BGM播放信息的函数。
+
+返回当前播放音频的指定信息。
+channelId 用于指定目标：-1 代表 BGM，0 或更大值代表特定的音效通道。
+如果省略 infoType，函数将返回总长度（毫秒），并依次将所有播放数据赋值给 RESULT 数组（RESULT:0 到 RESULT:4）。
+如果指定了 infoType（从 1 到 5），则直接返回该特定值。
+如果目标音频无效或不存在，返回 0。
+
+RESULT 数组映射（省略 infoType 时）：
+RESULT:0 = 总长度（毫秒）
+RESULT:1 = 当前播放时间（毫秒）
+RESULT:2 = 播放状态（0=已暂停或停止，1=播放中）
+RESULT:3 = 通道音量（0到100）
+RESULT:4 = 播放速度（百分比，100为正常速度）
+
+infoType 参数说明：
+1 = 总长度，2 = 当前时间，3 = 播放状态，4 = 音量，5 = 播放速度。
+Hint
+
+可用作表达式中的函数。适用于制作音乐播放器或进度条。
+
+Example
+
+MAIN.ERB
+@SYSTEM_TITLE
+    #DIM channel
+    channel = -1
+    
+    PRINTFORML Total Length: {GETSOUNDORBGMINFO(channel)} ms
+    PRINTFORML Current Time: {RESULT:1} ms
+    PRINTFORML Is Playing: {RESULT:2}
+    PRINTFORML Volume: {RESULT:3}
+    PRINTFORML Speed: {RESULT:4}百分比
+    
+    PRINTFORML BGM Speed is currently: {GETSOUNDORBGMINFO(-1, 5)}百分比
+    ONEINPUT
+
+
+ISPLAYINGSOUND¶
+Function name	Arguments	Return
+ISPLAYINGSOUND	void	        int
+                int             int
+API
+
+1. int ISPLAYINGSOUND
+2. int ISPLAYINGSOUND channelId
+用于检查音效当前是否正在播放的函数。
+
+如果省略 channelId，它将扫描所有音效通道，并返回第一个正在播放的通道ID。如果没有音效正在播放，返回 -1。
+如果提供了 channelId，它将仅检查该特定通道。如果正在播放则返回 channelId，如果已停止、暂停或无效，则返回 -1。
+Hint
+
+可用作表达式中的函数。
+
+Example
+
+MAIN.ERB
+@SYSTEM_TITLE
+    IF ISPLAYINGSOUND(2) != -1
+        PRINTFORML Channel 2 is currently playing.
+    ENDIF
+
+    IF ISPLAYINGSOUND() != -1
+        PRINTFORML At least one sound is playing on channel {ISPLAYINGSOUND()}.
+    ENDIF
+
+
+SOUNDCONTROL¶
+Function name	Arguments	        Return
+SOUNDCONTROL	int, int                int
+                int, int, int           int
+                int, int, int, int      int
+API
+
+1. int SOUNDCONTROL channelId, action
+2. int SOUNDCONTROL channelId, action, speed
+3. int SOUNDCONTROL channelId, action, speed, preservePitch
+用于控制特定音效通道的播放状态和速度的函数。
+
+channelId 用于指定具体的音效通道。
+action 决定要执行的操作：
+0：暂停
+1：恢复播放
+2：停止播放
+3：改变播放速度（需要 speed 参数）。
+
+当 action 为 3 时，speed 表示速度百分比（例如，100 为正常速度，150 为 1.5 倍速）。
+preservePitch 决定改变速度时是否保持音调不变。1（或省略）保持原音调。0 允许音调随速度的改变而变高或变低。
+
+成功时返回 1，如果通道号无效则返回 -1，如果操作行为无效则返回 -2。
+Hint
+
+可用作表达式中的函数。无法用于控制 BGM（控制 BGM 请使用 BGMCONTROL）。
+
+Example
+
+MAIN.ERB
+@SYSTEM_TITLE
+    LOCAL = SOUNDCONTROL(0, 0)
+    
+    LOCAL = SOUNDCONTROL(0, 1)
+    
+    LOCAL = SOUNDCONTROL(0, 3, 150)
+    
+    LOCAL = SOUNDCONTROL(0, 3, 200, 0)
+
+
+ISPLAYINGBGM¶
+Function name	Arguments	Return
+ISPLAYINGBGM	void             int
+API
+
+1. int ISPLAYINGBGM
+用于检查背景音乐（BGM）当前是否正在播放的函数。
+
+如果 BGM 正在播放则返回 1。如果 BGM 已暂停、停止或不存在，则返回 0。
+Hint
+
+可用作表达式中的函数。无需参数。
+
+Example
+
+MAIN.ERB
+@SYSTEM_TITLE
+    IF ISPLAYINGBGM()
+        PRINTFORML The BGM is currently playing.
+    ELSE
+        PRINTFORML The BGM is silent.
+    ENDIF
+
+
+BGMCONTROL¶
+Function name	Arguments	Return
+BGMCONTROL	int	        int
+                int, int	int
+                int, int, int	int
+API
+
+1. int BGMCONTROL action
+2. int BGMCONTROL action, speed
+3. int BGMCONTROL action, speed, preservePitch
+用于控制背景音乐（BGM）播放状态和速度的函数。
+
+action 决定要执行的操作：
+0：暂停 BGM
+1：恢复 BGM
+2：停止 BGM
+3：改变 BGM 速度（需要 speed 参数）。
+
+当 action 为 3 时，speed 表示速度百分比（例如，50 为一半速度，100 为正常）。
+preservePitch 决定改变速度时是否保持音频的音调不受影响。1（或省略）保持原音调。0 会使音调随着速度改变。
+
+成功时返回 1，如果操作行为无效则返回 -2。
+Hint
+
+可用作表达式中的函数。全局应用于 BGM 通道。
+
+Example
+
+MAIN.ERB
+@SYSTEM_TITLE
+    LOCAL = BGMCONTROL(0)
+    PRINTFORML BGM Paused.
+    WAIT
+    
+    LOCAL = BGMCONTROL(1)
+    PRINTFORML BGM Resumed.
+    WAIT
+
+    LOCAL = BGMCONTROL(3, 80, 1)
+    PRINTFORML BGM Slowed Down.
+
+以上内容为本次更新内容，如有遗漏，请及时补充。

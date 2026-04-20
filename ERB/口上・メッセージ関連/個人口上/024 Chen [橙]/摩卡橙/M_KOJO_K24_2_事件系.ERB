@@ -20,8 +20,8 @@
 ;CFLAG:24:1005 橙是否知道紫为恋人（暂时未使用
 ;CFLAG:24:1006 橙是否知道阿燐为恋人（暂时未使用
 ;CFLAG:24:1007 偷胖次次数记录
-;CFLAG:24:1008 身体接触记录(普通)
-;CFLAG:24:1009 身体接触记录(浴室)
+;CFLAG:24:1008 身体接触记录(浴室)
+;CFLAG:24:1009 身体接触记录(普通)
 ;CFLAG:24:1010 接吻锻炼的总次数记录
 ;CFLAG:24:1011 恋慕相关不高兴的道歉记录
 ;CFLAG:24:1012 初次自慰相关记录
@@ -35,10 +35,11 @@
 ;CFLAG:24:1105 恋慕事件：恶作剧
 ;CFLAG:24:1106 思慕事件：尤魔
 ;CFLAG:24:1107 思慕事件：喵～
-;CFLAG:24:1108 
+;CFLAG:24:1108 猫形态进度
 ;CFLAG:24:1109 身体接触的随机化函数
 ;BIT0:当日选择随机；BIT1:关闭选单随机发生
-
+;CFLAG:24:1110 浴室身体接触的随机化函数
+;BIT0:当日选择随机 BIT1:关闭选单随机发生
 
 ;CFLAG:24:1120 演奏彩蛋1
 ;CFLAG:24:1121 演奏彩蛋2
@@ -49,7 +50,7 @@
 
 ; TCVAR:24:351 记录胖次丢失
 ; TCVAR:24:352 记录今日初次接吻
-
+; TCVAR:24:353 记录特殊节日的内容
 
 ;红色 0xff4500
 ;紫色 97,52,124
@@ -161,7 +162,8 @@ LOCAL = TARGET
 TARGET = 24
 CALL SET_KOJO_COLOR
 CALL KOJO_OPTION_ITEM(@"身体接触指令的模式切换 状态:与橙喵喵的身体接触互动设计了选择部位选单，可在此随时开关",1,"status:开启选单、手动选择:关闭选单、随机发生",GETBIT(CFLAG:1109,1))
-CALL KOJO_OPTION_ITEM(@"作者的话",2)
+CALL KOJO_OPTION_ITEM(@"浴室身体接触指令的模式切换 状态:同上、只是浴室接触的部位选单开关",2,"status:开启选单、手动选择:关闭选单、随机发生",GETBIT(CFLAG:1110,1))
+CALL KOJO_OPTION_ITEM(@"作者的话",3)
 TARGET = LOCAL
 RESETCOLOR
 ;process the input portion
@@ -173,6 +175,11 @@ INVERTBIT CFLAG:24:1109,1
 @KOJO_MOKA_OPTION_K24_RESULT_2
 #LOCALSIZE 1
 #LOCALSSIZE 1
+INVERTBIT CFLAG:24:1110,1
+
+@KOJO_MOKA_OPTION_K24_RESULT_3
+#LOCALSIZE 1
+#LOCALSSIZE 1
 CALL MOKA_UPDATE_K24
 
 @MOKA_UPDATE_K24
@@ -180,7 +187,7 @@ CALL MOKA_UPDATE_K24
 #LOCALSSIZE 1
 CALL SET_KOJO_COLOR(24)
 PRINTFORMDL	------------------------------------------------------------------------
-PRINTFORML	                摩卡橙-小小八云之梦  UPDATE VER 0.02
+PRINTFORML	                摩卡橙-小小八云之梦  UPDATE VER 0.03
 PRINTFORMDL	------------------------------------------------------------------------
 PRINTFORML 
 CALL ANIMATION_ROLL_TEXT,"应呼飞出～～～～(=^·ω·^)"
@@ -233,7 +240,8 @@ SELECTCASE RESULT
 		PRINTFORMDL 
 		PRINTFORMDL 当然、本口上的H相关还在施工当中... 
 		PRINTFORMDL 不过目前也已经完成了部分事件性的H内容、如果感兴趣的话就请自行探索吧
-		PRINTFORMDW 顺便一提、作者是自慰狂所以说...哎嘿❤ 
+		PRINTFORMDW 顺便一提、作者是自慰狂所以说...哎嘿❤
+		GOTO CHEN_UPDATE 
 	CASE 5 
 		PRINTFORMDL （摘自作者的话）
 		PRINTFORMDL 这是一篇抱着“写出一只可爱的小小式神猫妖”而写出的ooc口上
@@ -407,15 +415,10 @@ RETURN 1
 ;在一天开始时读取的函数、或者更准确地说、在来访判断之前读取的函数
 ; 在这里、您可以设置 CFLAG：24：次日访问以确保角色来访问、或者 TCVAR:24:発情 并使其一天都在发情（原文如此）
 ;但是、由于它每天早上必定会被加载、因此需要设置条件
-;重置今日接吻次数
-CFLAG:24:1010 = 0
 ; 重置今日身体接触随机化
+CLEARBIT CFLAG:24:1108,0
 CLEARBIT CFLAG:24:1109,0
-;z、这一段可以用once来触发
 
-
-;似乎有bug、暂时先停用吧
-;由SIF改为IF、再试一试吧
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
 ;"SP_EVENT"系事件
 ;※※※※※※※※※※※※※※※※※※※※※※※※※※
@@ -607,9 +610,6 @@ ENDIF
 	PRINTFORMDW 橙的心情因为表白失败变差了...
 	CFLAG:24:320 = 0 ;或者写成CFLAG:24:同行 = 0
 	CFLAG:0:320 = 0 ;同上
-	CFLAG:24:318 = 1
-	CFLAG:24:322 = 1
-	TALENT:24:15 = -1
 	CFLAG:24:300 = CFLAG:24:311
 	CFLAG:24:1001 += 1
 	CFLAG:24:1002 = 1
@@ -791,6 +791,9 @@ IF CFLAG:24:322 == 1 || MARK:3 >= 1 || TALENT:24:15 == -1;反感或生气
 		PRINTFORMW 「哼！」  
 		PRINTFORMDW 还没见人就听到了小猫妖的哼声
 		RETURN 1
+ELSEIF ((DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)) && TCVAR:24:353 == 0  
+		;特殊节日的问候（非约会遇见）	
+		CALL SPECIALDAY_EVENT_K24
 ELSEIF CFLAG:24:300 == CFLAG:24:311 ;房间里遇见了
 	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
 		PRINTFORML 「啊、是%CALLNAME:MASTER%主动来找橙玩了吗？」
@@ -888,6 +891,9 @@ IF CFLAG:24:322 == 1 || MARK:3 >= 1 || TALENT:24:15 == -1;反感或生气
 		PRINTFORMW 「哼！」  
 		PRINTFORMDW 还没见人就听到了小猫妖的哼声
 		RETURN 1
+ELSEIF ((DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)) && TCVAR:24:353 == 0  
+		;特殊节日的问候（非约会遇见）	
+		CALL SPECIALDAY_EVENT_K24
 ELSEIF CFLAG:24:300 == CFLAG:24:311 ;房间里遇见了
 	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
 		PRINTFORMW 「%CALLNAME:MASTER%、居然藏在橙的房间啊！真是的...」	
@@ -897,58 +903,6 @@ ELSEIF CFLAG:24:300 == CFLAG:24:311 ;房间里遇见了
 		PRINTFORMW	「%CALLNAME:MASTER%、待在橙的房间干嘛呢？」
 		PRINTFORMDW	%CALLNAME:MASTER%看见了小猫妖有些困惑的眼神
 		PRINTFORMW 「没有事情的话、就赶紧出来吧？」
-	ENDIF
-ELSEIF CFLAG:24:300 == CFLAG:25:311 ;蓝大人的房间里遇见了
-	IF CFLAG:25:300 == CFLAG:25:311 ;蓝大人也在
-		IF TALENT:24:3 && TALENT:25:3 ;两人都是恋慕
-			PRINTFORMDL %CALLNAME:MASTER%一进房门、就与蓝和橙的目光对视上了
-			PRINTFORML 「%CALLNAME:MASTER%也来了呢！嘿嘿～！」
-			PRINTFORML 「专门给%CALLNAME:MASTER%留了位置哦！快点坐过来吧！」
-			PRINTFORMDW 被橙扯着袖子拉了过来、坐进了式神们温柔的包围圈之中  
-		ELSE
-			PRINTFORMDL %CALLNAME:MASTER%一进房门、立马就看见了躺在九尾式神膝枕上的小猫妖
-			PRINTFORML 「啊...有人来了...是%CALLNAME:MASTER%啊」
-			PRINTFORMDL 橙有些仓促地从蓝的膝盖上撑起身子、坐了起来
-			PRINTFORMW 「\@ TALENT:24:8 ? 是来找橙玩的吗？ # 是来打扫卫生的吗？ \@」
-
-		ENDIF
-	ELSE
-		IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
-			PRINTFORMDL 进入蓝的房间、没看见蓝的身影、%CALLNAME:MASTER%却突然被橙从身后抱住了
-			PRINTFORML 「%CALLNAME:MASTER%跑到蓝大人的房间、是要做什么呢？」
-			PRINTFORML 「蓝大人说不定等一下就回来了呢...在那之前先陪陪橙嘛！好不好嘛！」
-			PRINTFORMDW 小猫妖贴着%CALLNAME:MASTER%的后背、用头蹭着撒娇
-		ELSE
-		
-			PRINTFORMDL 进入蓝的房间、%CALLNAME:MASTER%却只看见了橙趴在房间里 
-			PRINTFORML 「嗯？是来找蓝大人的吗？」
-			PRINTFORMW 「蓝大人很忙、橙也不知道蓝大人在哪啦...\@ TALENT:24:8 ? 在那之前先陪橙玩一玩吧！ # 去别的地方找找吧？ \@」 
-		ENDIF
-	ENDIF
-ELSEIF CFLAG:24:300 == CFLAG:26:311 ;紫的房间里遇见了
-	IF CFLAG:26:300 == CFLAG:26:311 ;紫也在
-		IF TALENT:24:3 && TALENT:25:3 ;两人都是恋慕
-			PRINTFORMDL %CALLNAME:MASTER%一进入紫的房间、就看见了紫和橙对坐着交谈
-			PRINTFORML 「哇啊！%CALLNAME:MASTER%怎么突然进来了啊！」
-			PRINTFORMDL 突然注意到%CALLNAME:MASTER%的小猫妖、有些慌张的样子...
-			PRINTFORMDW 好奇的%CALLNAME:MASTER%试着询问两人交谈的内容、却只得到了橙的支支吾吾和紫莫名其妙的笑容 
-		ELSE 
-			PRINTFORML 「嗯？是谁来了？」
-			PRINTFORMDL %CALLNAME:MASTER%刚踏进了紫的房间、立马就对上了紫和橙的目光
-			PRINTFORML 「啊、是%CALLNAME:MASTER%啊、橙还以为是蓝大人呢...」
-			PRINTFORMDW \@ TALENT:24:8 ? 小猫妖看着%CALLNAME:MASTER%走近二人 # 小猫妖立马把目光移开了 \@ 
-		ENDIF
-	ELSE
-		IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
-			PRINTFORMDL 踏入紫的房间、%CALLNAME:MASTER%却只遇见了橙	
-			PRINTFORML 「%CALLNAME:MASTER%是来找紫大人的吧？她现在不在这里哦」
-			PRINTFORML 「在这里等一下、说不定紫大人就会回来的...在那之前、先跟橙待一会吧！呼呼～」
-			PRINTFORMDW %CALLNAME:MASTER%被小猫妖拉住坐下、自己则顺势躺在了%CALLNAME:MASTER%的大腿上
- 		ELSE
-			PRINTFORMDL %CALLNAME:MASTER%进入紫的房间、却只看见了橙在里面
-			PRINTFORML 「嗯？找紫大人有什么事情呀？」
-			PRINTFORMW 「紫大人神出鬼没的、橙也不知道在哪啦...\@ TALENT:24:8 ? 没有要紧事情的话、在这里等着也可以啦！ # 去其他地方找一下吧？ \@」
-		ENDIF
 	ENDIF
 ELSEIF TALENT:24:3 ;恋慕后
 		IF TALENT:24:7 ;恋慕恋人
@@ -966,12 +920,10 @@ ELSEIF TALENT:24:8	;思慕
 			PRINTFORMDL 橙非常兴奋地跳到了%CALLNAME:MASTER%的面前
 			PRINTFORML 「今天也要陪橙一起玩吧？对不对？」
 			PRINTFORMDL 花了好一会功夫才让吵闹的小猫妖安静下来
-
 ELSE ;陌生人
 			PRINTFORML 「啊嘞、%CALLNAME:MASTER%也在这里啊」
 			PRINTFORMDL 发现%CALLNAME:MASTER%的橙打了个招呼
 ENDIF
-	
 	RETURN 1
 ENDIF
 	;-------------------------------------------------
@@ -1099,7 +1051,13 @@ ENDIF
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 6
-	IF TALENT:7 ;恋人
+		IF CFLAG:24:322 == 1 || MARK:3 >= 1 || TALENT:24:15 == -1 ;反感或生气
+			PRINTFORMW 「...哼！」
+			PRINTFORMDW 看见了%CALLNAME:MASTER%的橙故意扭开了脑袋、装作没有看见%CALLNAME:MASTER%的样子
+		ELSEIF ((DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)) && TCVAR:24:353 == 0  
+		;特殊节日的问候（外出遇见）	
+		CALL SPECIALDAY_EVENT_K24
+		ELSEIF TALENT:7 ;恋人
 		PRINTFORML 「%CALLNAME:MASTER%！」
 		PRINTFORMDL 橙直接扑到了%CALLNAME:MASTER%的身上、环抱住%CALLNAME:MASTER%的腰身
 		PRINTFORML 「要去哪啊？一起去嘛！」
@@ -1124,7 +1082,10 @@ ENDIF
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 7
-	IF ARG:1 == 25 ;蓝
+	IF ((DAY:2 == 1 && DAY:3 == 1 && DAY:0 != 1) || (DAY:2 == 4 && DAY:3 == 14 && CFLAG:2 >= 1000) || (DAY:2 == 3 && DAY:3 == 30) || (DAY:2 == 4 && DAY:3 == 25)) && TCVAR:24:353 == 0  
+		;特殊节日的问候（外出遇见）	
+		CALL SPECIALDAY_EVENT_K24
+	ELSEIF ARG:1 == 25 ;蓝
 		IF TALENT:24:7 == 1 && TALENT:25:3 ;橙是恋人、同时蓝也是恋慕
 			PRINTFORML 「是%CALLNAME:MASTER%...还有蓝大人？！」
 			PRINTFORML 「呜呜～～！%CALLNAME:MASTER%可真是个贪心的家伙啊！」
@@ -1302,7 +1263,7 @@ IF LOCAL
 		;笨啊、那么多方式为什么只执着于插进去呢？（	
 		;再三思考还是决定让这样十分主动的涩涩来得慢一点...
 		;在那之前先写些普通的发情早安、男女通用吧（普通在哪
-		
+		;修复、非做爱状态外增加V经验会破处（
 				SELECTCASE RAND:5
 				CASE 0
 					IF TCVAR:24:142 == 1 || CFLAG:24:340 >= 700 ;想要了
@@ -1334,8 +1295,7 @@ IF LOCAL
 									PRINTFORMDW ......
 									PRINTFORML
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
-								EXP:24:0 += 3
-								EXP:24:1 += 3   
+								EXP:24:0 += 3  
 								EXP:24:10 += 3
 								EXP:24:41 += 5   
 								EXP:24:51 += 5
@@ -1435,7 +1395,6 @@ IF LOCAL
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:4 += 3   
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
@@ -1520,7 +1479,7 @@ IF LOCAL
 									PRINTFORMDW 时强时弱的刺激让%CALLNAME:MASTER%不禁发出了甜美的呻吟、下意识推着对方额头的手也一下子没了力气
 									PRINTFORML 「噗呼呼❤ %CALLNAME:MASTER%看起来好舒服的样子❤...橙很高兴呢❤ 呼呼～❤」
 									PRINTFORML 「得让%CALLNAME:MASTER%更高兴才行...❤呼嗯～❤」
-									PRINTFORMDW 小猫妖伸出双手、\@ TALENT:MASTER:胸围 < 1 ? 托起了%CALLNAME:MASTER%丰满的巨乳 # 揉搓玩弄起%CALLNAME:MASTER%柔软的美乳 \@、用灵活的手指轻轻抚弄起另一侧的乳头
+									PRINTFORMDW 小猫妖伸出双手、\@ TALENT:MASTER:胸圍 >= 1 ? 托起了%CALLNAME:MASTER%丰满的巨乳 # 揉搓玩弄起%CALLNAME:MASTER%柔软的美乳 \@、用灵活的手指轻轻抚弄起另一侧的乳头
 									PRINTFORMDW 还含在口中的乳头也没有被放过、被柔软的小舌头稍稍用力地按住、上下来回舔弄起来...
 									PRINTFORML 「吸溜溜❤ 嘬嘬❤ 嗯呼❤ 啾呼～❤」
 									PRINTFORML 「%CALLNAME:MASTER%❤ 发出了超级可爱的声音呢❤ 呼呼呼❤ 吸吸——❤」
@@ -1650,7 +1609,6 @@ IF LOCAL
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
 									EXP:24:51 += 5
@@ -1737,13 +1695,12 @@ IF LOCAL
 									PRINTFORMDW 橙像是恳求地在%CALLNAME:MASTER%脸旁耳语着、而那灵活的尾巴却自顾自地加快了动作、磨蹭着已经抽动起来的穴口
 									PRINTFORMDW 已经完全沉溺于快感中的%CALLNAME:MASTER%立马遵循着那甘美的耳语点下了头、随即便被贯穿的快感刺激到了顶峰、发出了高昂的娇喊...
 									PRINTFORML 「哇啊啊❤ 呼啊❤ 喵啊❤ %CALLNAME:MASTER%看起来、好满足的样子呢、呼呼～❤」
-									PRINTFORML 「但是、橙还没有呢...❤所以说、嘿嘿...❤请让橙继续吧？❤」
+									PRINTFORMW 「但是、橙还没有呢...❤所以说、嘿嘿...❤请让橙继续吧？❤」
 									PRINTL
 									PRINTFORMDW ......
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
 									EXP:24:51 += 5
@@ -1883,8 +1840,7 @@ IF LOCAL
 									PRINTFORMDW ......
 									PRINTFORML
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
-								EXP:24:0 += 3
-								EXP:24:1 += 3   
+								EXP:24:0 += 3  
 								EXP:24:10 += 3
 								EXP:24:41 += 5   
 								EXP:24:51 += 5
@@ -1984,7 +1940,6 @@ IF LOCAL
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:4 += 3   
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
@@ -2069,7 +2024,7 @@ IF LOCAL
 									PRINTFORMDW 时强时弱的刺激让%CALLNAME:MASTER%不禁发出了甜美的呻吟、下意识推着对方额头的手也一下子没了力气
 									PRINTFORML 「噗呼呼❤ %CALLNAME:MASTER%看起来好舒服的样子❤...橙很高兴呢❤ 呼呼～❤」
 									PRINTFORML 「得让%CALLNAME:MASTER%更高兴才行...❤呼嗯～❤」
-									PRINTFORMDW 小猫妖伸出双手、\@ TALENT:MASTER:胸围 < 1 ? 托起了%CALLNAME:MASTER%丰满的巨乳 # 揉搓玩弄起%CALLNAME:MASTER%柔软的美乳 \@、用灵活的手指轻轻抚弄起另一侧的乳头
+									PRINTFORMDW 小猫妖伸出双手、\@ TALENT:MASTER:胸圍 < 1 ? 托起了%CALLNAME:MASTER%丰满的巨乳 # 揉搓玩弄起%CALLNAME:MASTER%柔软的美乳 \@、用灵活的手指轻轻抚弄起另一侧的乳头
 									PRINTFORMDW 还含在口中的乳头也没有被放过、被柔软的小舌头稍稍用力地按住、上下来回舔弄起来...
 									PRINTFORML 「吸溜溜❤ 嘬嘬❤ 嗯呼❤ 啾呼～❤」
 									PRINTFORML 「%CALLNAME:MASTER%❤ 发出了超级可爱的声音呢❤ 呼呼呼❤ 吸吸——❤」
@@ -2199,7 +2154,6 @@ IF LOCAL
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
 									EXP:24:51 += 5
@@ -2292,7 +2246,6 @@ IF LOCAL
 									PRINTL
 									PRINTFORMDW 收拾完杂乱的晨间战场、橙红着脸、向%CALLNAME:MASTER%重新说了一遍早安
 									EXP:24:0 += 3
-									EXP:24:1 += 3
 									EXP:24:10 += 3
 									EXP:24:41 += 5   
 									EXP:24:51 += 5
@@ -2693,7 +2646,7 @@ IF LOCAL
 					PRINTFORMDW %CALLNAME:MASTER%像照顾小孩一样、帮橙换好衣服、塞进了被窝里
 				ENDIF	
 			ELSE
-				IF CFLAG:24:313 == 1 ;未同居、但是在橙房间里睡着了
+				IF CFLAG:0:313 == 1 ;未同居、但是在橙房间里睡着了
 					PRINTFORML 「唉？%CALLNAME:MASTER%怎么会在这里？」
 					PRINTFORMDL 看着在自己床上躺着的%CALLNAME:MASTER%、橙有些惊讶
 					PRINTFORML 「...」 
@@ -2933,6 +2886,9 @@ IF LOCAL
 	IF LOCAL:1 && ARG == 2
 		IF FLAG:70 ;时停
 			PRINTFORMDW ...等等、时停怎么打招呼？ 
+		ELSEIF CFLAG:24:1002 >= 1 ;恋慕相关不高兴已触发
+			PRINTFORMDL 橙背对着%CALLNAME:MASTER%、完全没有打招呼的意思...
+			PRINTFORMDW %CALLNAME:MASTER%只好自顾自地打完招呼、然后继续前进 
 		ELSEIF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
 			PRINTFORML 「%CALLNAME:MASTER%好！嘿嘿～」
 			PRINTFORML 「一看见%CALLNAME:MASTER%、橙就很高兴了呢！」
@@ -2988,7 +2944,7 @@ IF LOCAL
 			PRINTFORML 「♪～♪～～」
 			PRINTFORMDW 低着头照顾小猫的橙完全无视了路过的%CALLNAME:MASTER%
 		ENDIF
-
+ 
 		RETURN 1
 	ENDIF
 	;其他情况
@@ -3009,6 +2965,8 @@ LOCAL = 1
 ;-------------
 
 IF LOCAL
+	SIF CFLAG:317 ;诶嘿嘿时不显示
+	RETURN 1
 	;-------------------------------------------------
 	;小分岐
 	;-------------------------------------------------
@@ -3261,7 +3219,81 @@ IF LOCAL
 		LOCAL:1 = 1
 		;-------------------------------------------------
 		IF LOCAL:1 && ARG:1 == 1
-			PRINTFORML
+			IF FIRSTTIME ("初次抱住")  ;抱抱取得合意
+				PRINTFORML 「喵呜————！！！」
+				PRINTFORMDW %CALLNAME:MASTER%突然被橙扑倒了！
+				PRINTFORML 「嘿嘿～%CALLNAME:MASTER%～喜欢%CALLNAME:MASTER%哦～♪呼噜呼噜呼噜～～♪」
+				PRINTFORMDW 小猫妖一边发出愉悦的呼噜声、一边不停蹭着%CALLNAME:MASTER%的身体...
+				PRINTFORML 「橙喜欢%CALLNAME:MASTER%、所以突然就抱过来了哦！呼呼～♪」
+				PRINTFORMW 「嗯、虽然力气使得是有点太大了啦...%CALLNAME:MASTER%不介意吧？嘿嘿～♪」
+				PRINTFORML
+				PRINTFORMDW 橙环抱住%CALLNAME:MASTER%的腰、用小脸不停磨蹭着胸口、似乎完全没有意识到二人之间过分亲昵的样子...
+				PRINTFORMDW 若是趁着这个机会、对眼前这只毫无防备的小猫妖做些什么出格事情的话、她大概也会接受的吧？
+				PRINTFORMDW 想象着可能场景的%CALLNAME:MASTER%、不由得咽了口口水...
+			ELSE
+				IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+				SELECTCASE RAND:5
+					CASE 0
+						PRINTFORML 「%CALLNAME:MASTER%～～让橙稍微抱一抱好不好嘛～～」
+						PRINTFORMDL 从背后把头放在%CALLNAME:MASTER%肩上的橙、一边用自己的脸蛋蹭着%CALLNAME:MASTER%的脖子、一边用娇滴滴的声音不停恳求着
+						PRINTFORMDL 就算说不同意、这种情况也跟抱着没区别了吧...%CALLNAME:MASTER%回应着小猫妖的请求、轻轻地朝后倒下、靠在了橙的身上
+						PRINTFORMW 「诶嘿嘿～❤橙一定会让%CALLNAME:MASTER%舒舒服服的呢！乖乖地被橙抱住吧～❤」
+					CASE 1
+						PRINTFORML 「平时总是橙要%CALLNAME:MASTER%来抱一抱...%CALLNAME:MASTER%有没有想过主动要求橙来抱一抱呢？」
+						PRINTFORMDL 看着橙充满期待、朝着%CALLNAME:MASTER%张开双臂的样子、%CALLNAME:MASTER%毫不犹豫地扑进了小猫妖的怀抱之中
+						PRINTFORML 「嘿嘿～❤%CALLNAME:MASTER%真是可爱呢～❤乖、乖～❤」
+						PRINTFORMDW 小猫妖一边用小手温柔地抚摸着%CALLNAME:MASTER%紧贴胸口的脑袋、一边用尾巴勾住%CALLNAME:MASTER%、把二人牢牢贴在了一起
+					CASE 2
+						PRINTFORML 「嘿——抓住%CALLNAME:MASTER%了哦～！看招看招！呜呼呼～❤」
+						PRINTFORMDL 突然扑在%CALLNAME:MASTER%身上的橙、不由分说地挠起了%CALLNAME:MASTER%腰上的痒痒肉！
+						PRINTFORMDL 大笑着倒下去的%CALLNAME:MASTER%、被小猫妖顺势搂住腰身、扑倒在了地上...
+						PRINTFORML 「诶...是不是做得有些太过分了啊？！呜、%CALLNAME:MASTER%对不起...」
+						PRINTFORMW 「作为赔偿、就让橙好好地抱一抱%CALLNAME:MASTER%吧！嘿嘿～❤」   
+					CASE 3
+						PRINTFORMDL 用手臂和尾巴缠住了%CALLNAME:MASTER%的橙、把小脸紧紧贴在了%CALLNAME:MASTER%的胸口上
+						PRINTFORML 「嘿嘿～%CALLNAME:MASTER%的胸口里面、扑通扑通地跳着、好开心呢～❤」
+						PRINTFORML 「只是因为想到橙要抱住%CALLNAME:MASTER%、%CALLNAME:MASTER%就已经这么开心了吗？%CALLNAME:MASTER%真可爱～❤」
+						PRINTFORMW 「那么、就让橙好好地抱抱%CALLNAME:MASTER%吧？喵呼呼～❤」 		
+					CASE 4
+						PRINTFORML 「嗅嗅、嗅嗅...喵哈啊～❤%CALLNAME:MASTER%的身上的味道...感觉真好闻啊～」
+						PRINTFORMDL 趴在%CALLNAME:MASTER%后背上的橙把脸蛋深深埋进了%CALLNAME:MASTER%的发丝中、大口大口地呼吸嗅闻着、发出了满足似的叹息声
+						PRINTFORMDW 不知为何、%CALLNAME:MASTER%想起了自己平时吸橙的样子...
+						PRINTFORML 「呜哈～❤感觉、只是吸%CALLNAME:MASTER%的话完全满足不了呢～❤」
+						PRINTFORML 「必须要把%CALLNAME:MASTER%牢牢地抱在怀里、享受一番才可以呢～嘿嘿～❤」
+						PRINTFORMDW 小猫妖一边贴近%CALLNAME:MASTER%耳边吐出娇柔耳语、一边加大了环抱住对方的力度、把两人的身体紧紧地贴在了一起  
+				ENDSELECT
+				ELSEIF TALENT:24:3 ;恋慕 
+				SELECTCASE RAND:3
+					CASE 0
+						PRINTFORML 「嗯、唔...这、这个是、给平时总是随便凑过来摸橙的%CALLNAME:MASTER%的惩罚！」
+						PRINTFORMDL 一边说着要给予惩罚的小猫妖、一边却顶着通红的小脸不停磨蹭着%CALLNAME:MASTER%的胸膛、怎么看说服力都不足呢...  
+						PRINTFORMW 「诶、啊...反、反正就是惩罚啦！%CALLNAME:MASTER%乖乖被橙抱着就好啦！」 
+					CASE 1
+						PRINTFORML 「呐、%CALLNAME:MASTER%...橙想要抱一抱%CALLNAME:MASTER%、可以吗？」
+						PRINTFORMDL 几乎要把小脸凑到%CALLNAME:MASTER%跟前的橙瞪大了棕色眼睛、像是恳求一般注视着%CALLNAME:MASTER%
+						PRINTFORMDL 这样子感觉完全没有办法拒绝啊...%CALLNAME:MASTER%点了点头
+						PRINTFORMW 「同意了吗？！嘿嘿～%CALLNAME:MASTER%真好～❤」
+					CASE 2
+						PRINTFORMDL 突然感觉到自己的腰间似乎被什么温暖的东西缠住了...
+						PRINTFORMDL 伸出手试图去抓住那腰间的物体、却转而被那毛茸茸的东西紧紧缠住了手腕
+						PRINTFORML 「姆～%CALLNAME:MASTER%就那么讨厌橙的尾巴吗...」
+						PRINTFORML 「只是想稍微用尾巴抱一抱%CALLNAME:MASTER%都不行嘛？哼～！」
+						PRINTFORMW 「既然那么讨厌尾巴的话、橙干脆就自己抱过来好了！」   
+				ENDSELECT
+				ELSE ;思慕及以下
+				SELECTCASE RAND:2
+					CASE 0
+						PRINTFORML 「呜～让橙好好地抱一抱%CALLNAME:MASTER%嘛～求求%CALLNAME:MASTER%了啦～～」
+						PRINTFORMDL 小猫妖拖着长音恳求着%CALLNAME:MASTER%...
+						PRINTFORMDL 感觉实在没办法拒绝的%CALLNAME:MASTER%只好顺从了橙的请求
+						PRINTFORML 「哇！嘿嘿～谢谢%CALLNAME:MASTER%！嗯～%CALLNAME:MASTER%的身上真暖和啊～♪」					 				
+					CASE 1
+						PRINTFORML 「%CALLNAME:MASTER%看招！喵呜——！」
+						PRINTFORMDL 在身后发动突袭的橙扑在了%CALLNAME:MASTER%的后背上、紧紧抱住了%CALLNAME:MASTER%
+						PRINTFORMW 「诶嘿嘿～抓住%CALLNAME:MASTER%了哦！作为惩罚就让橙好好地抱一抱吧～♪」 
+				ENDSELECT
+				ENDIF
+			ENDIF
 			RETURN 1
 		ENDIF
 		PRINTFORML
@@ -3417,7 +3449,7 @@ IF LOCAL
 			PRINTFORMDL %CALLNAME:MASTER%一进浴室、就看见正泡在浴池里、只露出了一颗头的橙 
 			PRINTFORML 「%CALLNAME:MASTER%也来一起洗了吗？好耶！！！」
 			PRINTFORML 「嘿嘿～%CALLNAME:MASTER%要帮橙洗的干干净净的哦？」
-			PRINTFORMDW 高兴的小猫妖拉着%CALLNAME:MASTER%手一起泡进了浴池、紧紧地挨在一起 
+			PRINTFORMDW 高兴的小猫妖拉着%CALLNAME:MASTER%的手一起泡进了浴池、紧紧地挨在一起 
 			ENDIF
 		ELSE  ;只是恋慕
 			IF CFLAG:24:1003 == 0
@@ -4508,7 +4540,8 @@ IF LOCAL
 			PRINTFORMDW 毫无预兆地迎来了第一次绝顶、橙浑身无力地瘫在了床上
 			PRINTFORMW 「呼❤～这到底是、什么啊...感觉、好厉害❤...」
 			PRINTFORMW 「被子都弄湿了啦...但是橙已经、没有力气管了啦❤...呼...呼...」
-			PRINTFORMDW 已经没有任何力气的小猫妖、就这样沉沉地睡了过去...  
+			PRINTFORMDW 已经没有任何力气的小猫妖、就这样沉沉地睡了过去...
+			CFLAG:24:1012 += 1   
 		ELSEIF CFLAG:24:1012 == 1 ;第二次自慰
 			PRINTFORMW 「呜、好像又来了...」
 			PRINTL
@@ -4540,6 +4573,7 @@ IF LOCAL
 			PRINTFORMW 「啊❤ 哈啊❤ 好、厉害❤...不行了啦❤...」
 			PRINTFORMW 「至少、没弄脏被子...呼❤...」
 			PRINTFORMDW 从快感之中渐渐恢复的小猫妖、用最后一丝力气钻进床里、沉沉睡去
+			CFLAG:24:1012 += 1
 		ELSEIF CFLAG:24:1002 >= 1 ;恋慕不高兴已经触发时的负罪自慰（）
 			IF CFLAG:24:0 == 1 && GETBIT(CFLAG:24:1,1) ;差分：处女、已经做过
 				PRINTFORMW 「喵啊❤ 哈啊❤ 嗯嗯～❤」
@@ -4616,91 +4650,91 @@ IF LOCAL
 				PRINTFORMDW 低声埋怨着不愿接受爱意的%CALLNAME:MASTER%、橙在不知不觉中、慢慢沉入了梦乡之中...
 			ENDIF 
 		ELSE
-			; 常规自慰
-			; 我是自慰狂（
-			PRINTFORML 「啊...呼哈...好像、又来了...」
-			PRINTFORMDL 感受到了小腹中那股躁动感、橙一下子就脸红了 
-			IF TALENT:24:3 && GETBIT(CFLAG:24:1,1) ;已经做过
-				PRINTFORMW 「呜呜...可惜%CALLNAME:MASTER%不在嘛...橙只能自己来了啦...」
-			ELSE 
-				PRINTFORMW 「呜...又要做那样羞羞的事情了...」
-			ENDIF
-			PRINTL
-			SELECTCASE RAND:5		
-				CASE 0
-					;桌角战神、出来！
-					PRINTFORMW 「嗯...这样子的话没问题嘛...」
-					PRINTFORMDL 橙用双手撑着桌案、把身体稍稍撑离了地面、让胯间的秘所压在了桌角上
-					PRINTFORMDW 然后慢慢地放松着手臂、让身体的重量慢慢地压在了与自己细小的密缝接触着的桌角上面
-					PRINTFORML 「唔喵❤...嗯❤...」
-					PRINTFORMDW 只是挤压着的快感、就让小猫妖发出了颤抖着的轻呼声、双腿不自觉地夹在了一起
-					PRINTFORML 「要慢慢地...呼啊❤...嗯❤...喵呀❤...」
-					PRINTFORMDW 带着迷离眼神的小猫妖、十分小心地挪动起了身体、让桌角与密缝摩擦起来
-					PRINTFORML 「啊❤ 喵呀❤ 呼嗯❤ 唔咕❤ 啊❤...好、好奇怪的感觉❤...但是、好舒服❤...」
-					PRINTFORMDL 橙通红着脸、发出着娇柔的喘息声、渐渐地加快了来回挪动身体的节奏
-					PRINTFORMDW 不知不觉中、那从密缝之中渗出的爱液已经顺着腿间的细流、沾湿了桌角...
-					PRINTFORML 「呀❤ 啊❤ 哈啊❤ 呼啊❤...咿喵啊❤——！」
-					PRINTFORMDL 渐渐激烈的动作、让桌角突然剥开了密缝、直接压住了那粉嫩的小豆豆
-					PRINTFORMDW 伴随着一声高昂的娇声、橙紧紧闭上了眼睛、身体伴随着剧烈的快感而颤抖起来、尾巴也高高地翘了上去
-					PRINTFORMW 「呜咕❤...只是碰到那里就❤...呜❤... 」
-					PRINTFORMDW 待到高潮退去、小猫妖才睁开眼睛、发出了不甘心一样的模糊呜咽声、拖着疲惫而发软的身体收拾着桌子... 
-				CASE 1
-					;枕头自慰
-					PRINTFORML 「呼啊...这样子...橙很喜欢呢...」
-					PRINTFORMDL 橙抱着自己床上的枕头、压在了身下、用柔软的枕头边沿来回摩擦着胯间的幼小密缝
-					PRINTFORMDW 出于某种连自己都说不清道不明的原因、小猫妖意外地喜欢这样子的自慰
-					PRINTFORML 「嗯❤ 呼啊❤ 喵哈❤ \@ TALENT:24:3 ? %CALLNAME:MASTER%❤...啊❤... # 咿呀❤...啊❤... \@」
-					IF TALENT:24:3
-						PRINTFORMDW 橙一边呼唤着%CALLNAME:MASTER%的名字、一边带着迷离的眼神加快着身下的动作...
-					ELSE
-						PRINTFORMDW 橙一边发出断断续续的娇喘、一边带着迷离的眼神加快着身下的动作... 
-					ENDIF
-					PRINTFORML 「呜喵啊❤ 哈啊❤ 热热的❤ 要来了❤...」
-					PRINTFORML 「\@ TALENT:24:3 ? %CALLNAME:MASTER%❤...%CALLNAME:MASTER%❤...喵呀啊啊❤—— # 呼呀❤...啊❤...呜喵啊啊❤—— \@」
-					PRINTFORML 「呼❤...呼❤...嗯...果然每回都是一样的舒服呢❤...」
-					PRINTFORMDW 从高潮中舒缓过来的小猫妖、红着脸整理好了被弄得乱七八糟的床铺、枕着沾上了爱液气味的枕头、安心地闭上了眼... 
-				CASE 2
-					;笔自慰
-					PRINTFORML 「呜...明明不是拿来做这种事情的...」
-					PRINTFORMDW 坐在桌案前的橙羞红了脸、拿着毛笔朝着自己的身下伸了过去
-					PRINTFORML 「呜喵哈哈...！呀哈哈...！喵呼呀...！」
-					PRINTFORMDW 小猫妖用笔尖轻轻地搔弄着自己腿间的密缝前端、瘙痒感让她不由自主地发出了笑声
-					PRINTFORML 「哈啊哈...呼啊❤...嗯❤...呀❤...呼呀❤...」
-					PRINTFORMDL 比起平时那不算激烈也算得上刺激的自慰、这样子做的反应就称得上温柔了
-					PRINTFORMDW 但是慢慢积蓄起来的、混合着痒意的奇妙快感、还是让橙渐渐发出了甜美的喘息声...
-					PRINTFORML 「呜啊❤...不行了❤...喵哈❤...啊啊❤...哈啊❤...」
-					PRINTFORML 「呜❤——呀啊❤——啊❤——」
-					PRINTFORMDL 快感渐渐到达了顶点、小猫妖把头埋进搁在桌子上的手臂里、浑身发软地颤抖起来、发出了沉闷的娇声
-					PRINTFORMDW 连拿在手里的毛笔都随着手指发软而“啪嗒”一声掉在了地上、笔尖沾满了透明的、冒着丝丝热气的爱液...
-					PRINTFORML 「呜❤...哇啊❤...太、太厉害了啦❤...橙平时绝对不能多想❤...呜❤...」
-					PRINTFORMDW 还在微微喘息着的小猫妖、挂着红得快滴出血来的小脸清洗着被弄脏的笔...  
-				CASE 3
-					;尾巴自慰
-					;在破处后也许该考虑插入式...
-					;把尾巴想象成那啥的话......鸡巴！.jpg
-					PRINTFORML 「呼...这样子穿过来就刚好能够到呢...」
-					PRINTFORMDW 橙身后的黑色尾巴从两腿之间穿出、细长的尾巴轻轻地贴上了腿间的密缝
-					PRINTFORML 「咕噜...」
-					PRINTFORMDL 看着在前方露出的尾巴尖、小猫妖不自觉地咽了口口水
-					PRINTFORMDW 然后、像是下定决心一样、抓住自己的尾巴尖、轻轻地拉动起来...
-					PRINTFORML 「喵呀❤ 啊❤ 哇呀❤...呼啊啊❤...喵呼❤...」
-					PRINTFORMDL 两个对橙而言都算得上敏感的地方互相接触着、给她带来了十分特别的快感
-					PRINTFORMDW 不觉间双腿无力、小猫妖躺倒在了床上、张着小嘴沉浸在自慰当中...
-					PRINTFORML 「呜呀❤ 喵❤ 哈啊❤ 要来了❤...呼呀❤...」
-					PRINTFORML 「嗯❤ 哈啊❤ 喵呀啊啊❤——」
-					PRINTFORMDW 绝顶的快感如期而至、橙发出了高昂的娇喊声、涌出的爱液浸湿了毛茸茸的黑色尾巴
-					PRINTFORML 「呼啊❤...呀❤...好、好舒服呀❤...没力气了啦❤...」
-					PRINTFORMDW 捂着眼睛大口喘气的橙、连周围都没有整理、就一转身卷起被子、沉沉地睡了过去...
-				CASE 4
-					;常规自慰
-					PRINTFORML 「呼啊...又要这样做了呢...」
-					PRINTFORMDL 看着自己的手指轻轻地在腿间揉搓的样子、橙露出了迷离的表情
-					PRINTFORMDW 随着逐渐地熟练、橙浅浅地将手指伸进密缝、用手指玩弄起粉红色的小小阴蒂
-					PRINTFORML 「喵啊❤ 呼啊❤ 呀❤ 呼❤ 哇啊❤...」
-					PRINTFORML 「啊❤ 呀❤ 哈啊❤ 热热的❤...又要出来了❤...」
-					PRINTFORMDW 渐渐地加快动作、小猫妖沉浸在快感之中...
-					PRINTFORML 「呜喵啊啊❤——去了啦❤...」
-					PRINTFORMW 「啊❤...呼啊❤...继续这样的话❤...感觉橙除了自慰❤...什么都不会想了啦❤...」
+		; 常规自慰
+		; 我是自慰狂（
+		PRINTFORML 「啊...呼哈...好像、又来了...」
+		PRINTFORMDL 感受到了小腹中那股躁动感、橙一下子就脸红了 
+		IF TALENT:24:3 && GETBIT(CFLAG:24:1,1) ;已经做过
+			PRINTFORMW 「呜呜...可惜%CALLNAME:MASTER%不在嘛...橙只能自己来了啦...」
+		ELSE 
+			PRINTFORMW 「呜...又要做那样羞羞的事情了...」
+		ENDIF
+		PRINTL
+		SELECTCASE RAND:5		
+			CASE 0
+				;桌角战神、出来！
+				PRINTFORMW 「嗯...这样子的话没问题嘛...」
+				PRINTFORMDL 橙用双手撑着桌案、把身体稍稍撑离了地面、让胯间的秘所压在了桌角上
+				PRINTFORMDW 然后慢慢地放松着手臂、让身体的重量慢慢地压在了与自己细小的密缝接触着的桌角上面
+				PRINTFORML 「唔喵❤...嗯❤...」
+				PRINTFORMDW 只是挤压着的快感、就让小猫妖发出了颤抖着的轻呼声、双腿不自觉地夹在了一起
+				PRINTFORML 「要慢慢地...呼啊❤...嗯❤...喵呀❤...」
+				PRINTFORMDW 带着迷离眼神的小猫妖、十分小心地挪动起了身体、让桌角与密缝摩擦起来
+				PRINTFORML 「啊❤ 喵呀❤ 呼嗯❤ 唔咕❤ 啊❤...好、好奇怪的感觉❤...但是、好舒服❤...」
+				PRINTFORMDL 橙通红着脸、发出着娇柔的喘息声、渐渐地加快了来回挪动身体的节奏
+				PRINTFORMDW 不知不觉中、那从密缝之中渗出的爱液已经顺着腿间的细流、沾湿了桌角...
+				PRINTFORML 「呀❤ 啊❤ 哈啊❤ 呼啊❤...咿喵啊❤——！」
+				PRINTFORMDL 渐渐激烈的动作、让桌角突然剥开了密缝、直接压住了那粉嫩的小豆豆
+				PRINTFORMDW 伴随着一声高昂的娇声、橙紧紧闭上了眼睛、身体伴随着剧烈的快感而颤抖起来、尾巴也高高地翘了上去
+				PRINTFORMW 「呜咕❤...只是碰到那里就❤...呜❤... 」
+				PRINTFORMDW 待到高潮退去、小猫妖才睁开眼睛、发出了不甘心一样的模糊呜咽声、拖着疲惫而发软的身体收拾着桌子... 
+			CASE 1
+				;枕头自慰
+				PRINTFORML 「呼啊...这样子...橙很喜欢呢...」
+				PRINTFORMDL 橙抱着自己床上的枕头、压在了身下、用柔软的枕头边沿来回摩擦着胯间的幼小密缝
+				PRINTFORMDW 出于某种连自己都说不清道不明的原因、小猫妖意外地喜欢这样子的自慰
+				PRINTFORML 「嗯❤ 呼啊❤ 喵哈❤ \@ TALENT:24:3 ? %CALLNAME:MASTER%❤...啊❤... # 咿呀❤...啊❤... \@」
+				IF TALENT:24:3
+					PRINTFORMDW 橙一边呼唤着%CALLNAME:MASTER%的名字、一边带着迷离的眼神加快着身下的动作...
+				ELSE
+					PRINTFORMDW 橙一边发出断断续续的娇喘、一边带着迷离的眼神加快着身下的动作... 
+				ENDIF
+				PRINTFORML 「呜喵啊❤ 哈啊❤ 热热的❤ 要来了❤...」
+				PRINTFORML 「\@ TALENT:24:3 ? %CALLNAME:MASTER%❤...%CALLNAME:MASTER%❤...喵呀啊啊❤—— # 呼呀❤...啊❤...呜喵啊啊❤—— \@」
+				PRINTFORML 「呼❤...呼❤...嗯...果然每回都是一样的舒服呢❤...」
+				PRINTFORMDW 从高潮中舒缓过来的小猫妖、红着脸整理好了被弄得乱七八糟的床铺、枕着沾上了爱液气味的枕头、安心地闭上了眼... 
+			CASE 2
+				;笔自慰
+				PRINTFORML 「呜...明明不是拿来做这种事情的...」
+				PRINTFORMDW 坐在桌案前的橙羞红了脸、拿着毛笔朝着自己的身下伸了过去
+				PRINTFORML 「呜喵哈哈...！呀哈哈...！喵呼呀...！」
+				PRINTFORMDW 小猫妖用笔尖轻轻地搔弄着自己腿间的密缝前端、瘙痒感让她不由自主地发出了笑声
+				PRINTFORML 「哈啊哈...呼啊❤...嗯❤...呀❤...呼呀❤...」
+				PRINTFORMDL 比起平时那不算激烈也算得上刺激的自慰、这样子做的反应就称得上温柔了
+				PRINTFORMDW 但是慢慢积蓄起来的、混合着痒意的奇妙快感、还是让橙渐渐发出了甜美的喘息声...
+				PRINTFORML 「呜啊❤...不行了❤...喵哈❤...啊啊❤...哈啊❤...」
+				PRINTFORML 「呜❤——呀啊❤——啊❤——」
+				PRINTFORMDL 快感渐渐到达了顶点、小猫妖把头埋进搁在桌子上的手臂里、浑身发软地颤抖起来、发出了沉闷的娇声
+				PRINTFORMDW 连拿在手里的毛笔都随着手指发软而“啪嗒”一声掉在了地上、笔尖沾满了透明的、冒着丝丝热气的爱液...
+				PRINTFORML 「呜❤...哇啊❤...太、太厉害了啦❤...橙平时绝对不能多想❤...呜❤...」
+				PRINTFORMDW 还在微微喘息着的小猫妖、挂着红得快滴出血来的小脸清洗着被弄脏的笔...  
+			CASE 3
+				;尾巴自慰
+				;在破处后也许该考虑插入式...
+				;把尾巴想象成那啥的话......鸡巴！.jpg
+				PRINTFORML 「呼...这样子穿过来就刚好能够到呢...」
+				PRINTFORMDW 橙身后的黑色尾巴从两腿之间穿出、细长的尾巴轻轻地贴上了腿间的密缝
+				PRINTFORML 「咕噜...」
+				PRINTFORMDL 看着在前方露出的尾巴尖、小猫妖不自觉地咽了口口水
+				PRINTFORMDW 然后、像是下定决心一样、抓住自己的尾巴尖、轻轻地拉动起来...
+				PRINTFORML 「喵呀❤ 啊❤ 哇呀❤...呼啊啊❤...喵呼❤...」
+				PRINTFORMDL 两个对橙而言都算得上敏感的地方互相接触着、给她带来了十分特别的快感
+				PRINTFORMDW 不觉间双腿无力、小猫妖躺倒在了床上、张着小嘴沉浸在自慰当中...
+				PRINTFORML 「呜呀❤ 喵❤ 哈啊❤ 要来了❤...呼呀❤...」
+				PRINTFORML 「嗯❤ 哈啊❤ 喵呀啊啊❤——」
+				PRINTFORMDW 绝顶的快感如期而至、橙发出了高昂的娇喊声、涌出的爱液浸湿了毛茸茸的黑色尾巴
+				PRINTFORML 「呼啊❤...呀❤...好、好舒服呀❤...没力气了啦❤...」
+				PRINTFORMDW 捂着眼睛大口喘气的橙、连周围都没有整理、就一转身卷起被子、沉沉地睡了过去...
+			CASE 4
+				;常规自慰
+				PRINTFORML 「呼啊...又要这样做了呢...」
+				PRINTFORMDL 看着自己的手指轻轻地在腿间揉搓的样子、橙露出了迷离的表情
+				PRINTFORMDW 随着逐渐地熟练、橙浅浅地将手指伸进密缝、用手指玩弄起粉红色的小小阴蒂
+				PRINTFORML 「喵啊❤ 呼啊❤ 呀❤ 呼❤ 哇啊❤...」
+				PRINTFORML 「啊❤ 呀❤ 哈啊❤ 热热的❤...又要出来了❤...」
+				PRINTFORMDW 渐渐地加快动作、小猫妖沉浸在快感之中...
+				PRINTFORML 「呜喵啊啊❤——去了啦❤...」
+				PRINTFORMW 「啊❤...呼啊❤...继续这样的话❤...感觉橙除了自慰❤...什么都不会想了啦❤...」
 			ENDSELECT  
 		ENDIF
 		RETURN 1
@@ -5303,15 +5337,45 @@ IF LOCAL
 	LOCAL:1 = 1
 	;-------------------------------------------------
 	IF LOCAL:1 && ARG == 1
-		IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
-		
+		IF MARK:24:3 >= 2 ;反发2以上
+				PRINTFORML 「呜呜呜呜呜...哈！！！」
+				PRINTFORMDW 一看见%CALLNAME:MASTER%、小猫妖就弓起后背、发出了十分不妙的、威吓似的低沉吼声...
+		ELSEIF CFLAG:24:1002 >= 1 ;恋慕不高兴状态
+			PRINTFORML 「......」
+			PRINTFORMDW 一言不发的橙保持着和%CALLNAME:MASTER%的距离...
 		ELSEIF TALENT:24:3 ;恋慕 
-		
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「%CALLNAME:MASTER%...难道很喜欢橙生气的样子吗？」
+					PRINTFORML 「可是、因为%CALLNAME:MASTER%而生气...这种事情、会让橙很难受的啊...」
+					PRINTFORML 「...所、所以！%CALLNAME:MASTER%赶紧道歉啦！哼！真是的、笨蛋...」
+					PRINTFORMDW 还没听清小猫妖的话、%CALLNAME:MASTER%的后脑勺就被尾巴轻轻抽打了一下
+				CASE 1
+					PRINTFORML 「姆～做得太过分了啦！」
+					PRINTFORML 「就算是%CALLNAME:MASTER%、这样子做的话、橙也是会生气的！」
+					PRINTFORMDW 橙顶着气呼呼的小脸蛋、埋怨似的紧紧盯着%CALLNAME:MASTER%的脸 
+				CASE 2
+					PRINTFORML 「...哼！不想理%CALLNAME:MASTER%！」
+					PRINTFORMDL 撅起小嘴抱住身子的橙、看起来完全不想搭理%CALLNAME:MASTER%的样子...
+					PRINTFORMDW 然而头顶那对似乎期待什么而不停抖动着的耳朵、似乎说明小猫妖心里完全想的不一样呢
+			ENDSELECT
 		ELSEIF TALENT:24:8 ;思慕
-		
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「哼！橙不理你了！快走开！」
+					PRINTFORMDW 小猫妖用力推开了试图凑近的%CALLNAME:MASTER%、顶着气鼓鼓的小脸转身背对着对方
+				CASE 1
+					PRINTFORML 「再这样子不要脸的凑过来、信不信橙咬你啊？！」
+					PRINTFORMDW 生气的橙朝着%CALLNAME:MASTER%露出了尖尖的爪子和牙齿、仿佛随时都会扑上来狠狠咬住手指的样子...
+				CASE 2
+					PRINTFORML 「就算是朋友、这样子做也太过分了啦！」
+					PRINTFORML 「不道歉的话就别想和橙一起玩了！哼！」
+					PRINTFORMDW 小猫妖完全不想搭理%CALLNAME:MASTER%的样子...
+			ENDSELECT
 		ELSE
-			PRINTFORML 「呜呜...！！好烦人的家伙...！！」
-		ENDIF
+				PRINTFORML 「呜呜...！！！好烦人的家伙...！！！」
+				PRINTFORMDW 带着明显嫌恶眼神的小猫妖迅速挪开了和%CALLNAME:MASTER%的距离
+		ENDIF	
 		RETURN 1
 	ENDIF
 	;-------------------------------------------------
@@ -5434,7 +5498,7 @@ IF LOCAL
 					PRINTFORML 「嗯...呼啊～」
 					PRINTFORMDL 托着下巴思考的橙突然打了个哈欠
 				CASE 1
-					PRINTFORML 「嗯...那样子真的好吗？」
+					PRINTFORML 「嗯...那样子真的好吗...？」
 					PRINTFORMDL 自言自语的橙发出了疑问...
 				CASE 2
 					PRINTFORML 「呜啊、好麻烦...但是必须自己想办法才行！」
@@ -5450,10 +5514,25 @@ IF LOCAL
 		;※[幼稚]限定
 		IF !ARG:1
 			;行動中
-			PRINTFORML 
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「喵喵、喵喵喵～♪」
+					PRINTFORML 「喵喵——喵喵喵——♪」
+					PRINTFORML 「喵喵、喵喵喵～♪」   
+					PRINTFORML 「喵喵——喵喵喵——♪」
+					PRINTFORMDL 橙似乎在和身边的小猫一起唱歌...
+				CASE 1
+					PRINTFORML 「呜～不要乱跑啦！真是的！」  	
+					PRINTFORML 「看橙把你们一个个都抓起来哦！」
+					PRINTFORMDL 橙似乎在和小猫们玩捉迷藏...	
+				CASE 2
+					PRINTFORML 「喵呼呼～」
+					PRINTFORMDL 玩耍着的橙露出了天真的笑容 
+			ENDSELECT 
 		ELSE
 			;结束时
-			PRINTFORML 
+			PRINTFORML 「嗯...玩得也差不多了呢」
+			PRINTFORMDL 似乎玩累了、橙有些疲惫地耷拉着耳朵 
 		ENDIF
 	CASE 2
 		;▼食事,（~正在吃饭。）
@@ -5542,7 +5621,7 @@ IF LOCAL
 		IF !ARG:1
 			;行動中
 			IF Activity_Duration:TARGET > 30
-				;料理中（～轻快地做着菜…）
+				;料理中（～轻快地做着菜。。）
 				PRINTFORML 
 			ELSE
 				;食事中（～吃着自己做的菜。）
@@ -5566,7 +5645,7 @@ IF LOCAL
 			PRINTFORML 
 		ENDIF
 	CASE 9
-		;▼採集,（～在寻找可以使用的素材…）
+		;▼採集,（～在寻找可以使用的素材。。）
 		IF !ARG:1
 			;行動中
 			SELECTCASE RAND:3
@@ -5606,7 +5685,7 @@ IF LOCAL
 			PRINTFORMDL 橙伸了个懒腰、收起了鱼竿
 		ENDIF
 	CASE 11
-		;▼実験,（～正在进行奇怪的实验…）
+		;▼実験,（～正在进行奇怪的实验。。）
 		IF !ARG:1
 			;行動中
 			PRINTFORML 
@@ -5688,10 +5767,22 @@ IF LOCAL
 		;▼悠闲地缩进被炉（～躲进暖桌里焐着）
 		IF !ARG:1
 			;行動中
-			PRINTFORML 
+			SELECTCASE RAND:3
+				CASE 0
+					PRINTFORML 「呜喵...好暖和喵～呼呼～」
+					PRINTFORML 「果然冬天就应该待在这种地方喵...」
+					PRINTFORMDL 眯着眼睛坐在被炉里的橙、似乎都快要睡着了... 
+				CASE 1
+					PRINTFORML 「唔嗯...稍微让一下啊！都没地方放脚了啦！哼...」
+					PRINTFORMDL 小猫妖把身子埋进了被炉里面、试图挪走围着挤在暖炉旁的小猫们
+				CASE 2
+					PRINTFORML 「脚也要塞进去、手要塞进去、尾巴也要塞进去！」
+					PRINTFORMDL 橙不停朝着被炉里面钻、几乎要把身体全部塞进去似的  
+			ENDSELECT 
 		ELSE
 			;结束时
-			PRINTFORML 
+			PRINTFORML 「呜喵啊啊...头晕掉了啦...」
+			PRINTFORMDL 带着十分不情愿的表情、橙从被炉里挪了出来 
 		ENDIF
 	ENDSELECT
 ENDIF
@@ -5707,7 +5798,74 @@ RETURN 1
 LOCAL = 1
 ;-------------
 IF LOCAL
-	PRINTFORMW 
+	IF FIRSTTIME("初次度过新年")
+		PRINTFORMW 「嘿嘿...马上就要放烟花了呢！」
+		PRINTFORMDW 瞪着大大的眼睛望着即将变得热闹的夜空、橙仿佛在因为兴奋而微微摇晃着身体
+		PRINTFORMDW 被眼前小猫妖的热情感染、%CALLNAME:MASTER%也坐在了橙的身旁、充满期待地望向天空、直到第一颗烟花升起、“砰”地一下照亮沉寂的黑夜...
+		PRINTFORML 
+		PRINTFORMDW ......
+		PRINTFORML
+		PRINTFORMW 「嘿嘿～真漂亮呢...橙很喜欢看这样的东西哦！」
+		PRINTFORMDW 不知何时、手臂上传来了被小猫妖压住的触感、转过头去、就看见了在那闪烁光芒照耀下露出的可爱笑脸
+		PRINTFORMDW 和正在兴头上的小猫妖如同平常相处般闲谈交流着、即便是最琐碎的事情、在如此气氛下也变得不再枯燥了...
+		PRINTFORML
+		PRINTFORMDW ......
+		PRINTFORML
+		IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+			PRINTFORMW 「以前橙还会被烟花吓到的时候、就会不自觉地抓住蓝大人的手臂...」
+			PRINTFORMW 「但是现在...橙虽然不害怕烟花、但还是想抱住%CALLNAME:MASTER%呢...嘿嘿嘿...❤」
+			PRINTFORMDW 像是确认一样将%CALLNAME:MASTER%的手臂抱得更紧了一点、小猫妖转过头来、与%CALLNAME:MASTER%的眼睛对视在一起
+			PRINTFORMW 「唔嗯...总觉得实在是不可思议呢...一开始明明对橙来说只是个陌生人...」
+			PRINTFORMW 「但是现在、橙已经变成了完全离不开%CALLNAME:MASTER%的粘人小猫了呢...呼噜噜～❤」
+			PRINTFORMDW 露出幸福笑容的橙握住了%CALLNAME:MASTER%的手腕、尾巴也慢慢勾住了%CALLNAME:MASTER%的腰、仿佛要将%CALLNAME:MASTER%牢牢黏在自己身上一样不断拉近着距离...
+			PRINTFORMDW 一边摸着眼前惹人怜爱的小猫妖的脑袋、一边将她拥入怀中紧紧抱住、用行动回应着橙的依赖、就这样静静地享受着亲昵的时光...
+			PRINTFORML
+			PRINTFORMDW ......
+			PRINTFORML
+			PRINTFORMW 「...呐、%CALLNAME:MASTER%？」
+			PRINTFORMW 「橙有个小小的要求、不知道能不能实现啊...」
+			PRINTFORMDW 直到灿烂的焰火接近尾声、小猫妖才满足了似的抬起了脑袋、在%CALLNAME:MASTER%的耳边轻声呢喃着
+			PRINTFORMW 「橙...想和%CALLNAME:MASTER%继续这样子、迎接每一个新年呢...」
+			PRINTFORMW 「不管是十年、还是二十年、甚至更久...橙都希望%CALLNAME:MASTER%能一直想今天一样度过呢...」
+			PRINTFORMW 「如果可以的话...就...答应橙吧？」
+			PRINTFORMDW 毫不犹豫地轻轻托起橙的小脸、轻轻吻住那期待着的嘴唇、无声但切实地表达着自己的意愿
+			PRINTFORMW 「啾嗯❤...嘿嘿❤...太好了❤...谢谢%CALLNAME:MASTER%❤...最喜欢了❤...」
+			PRINTFORML
+			PRINTFORMW ......
+			PRINTFORML
+		ENDIF
+		PRINTFORMW 「啊...烟花放完了...呜...橙都还没看够嘛...」
+		PRINTFORMDW 看着最后一颗焰火在空中消散、夜幕重归黑暗、小猫妖才不舍地松开了手臂、带着一开始的兴奋笑容转向了%CALLNAME:MASTER%
+		PRINTFORMW 「%CALLNAME:MASTER%新年快乐！新的一年、也请多多关照哦！嘿嘿～♪」
+		PRINTFORML	  
+	ELSEIF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+		PRINTFORMW 「又是和%CALLNAME:MASTER%一起度过的、新的一年呢...诶嘿嘿～❤」
+		PRINTFORMDW 将可爱小猫搂在怀中、二人一边感受着彼此的温暖、一边期待着新年的烟花升空
+		PRINTFORMW 「答应过橙的事情、%CALLNAME:MASTER%没有忘记...真是太好了呢...嘿嘿❤...」
+		PRINTFORMW 「橙也一样、不管多少年之后都会一直一直地爱着%CALLNAME:MASTER%哦...呼呼❤...」
+		PRINTFORMDW 望着%CALLNAME:MASTER%的脸庞、仿佛在回忆着共度美好时光的小猫妖、露出了发自内心的幸福笑容
+		PRINTFORMW 「%CALLNAME:MASTER%、新年快乐❤...」
+		PRINTFORMW 「请让橙继续陪在%CALLNAME:MASTER%的身边、直到永远...呼呼～❤」
+	ELSEIF TALENT:24:3 ;恋慕 
+		PRINTFORMW 「%CALLNAME:MASTER%...又过了一年了呢...嘿嘿～❤」
+		PRINTFORMDW 在%CALLNAME:MASTER%肩上依偎着的小猫妖、不知为何看起来很高兴的样子
+		PRINTFORMW 「嗯？橙看起来很高兴吗？呜...应该也没有那么明显的吧...」
+		PRINTFORMW 「...只、只是因为要过年了才很高兴的啦！不要想多了哦！」  
+		PRINTFORMDW 试着询问橙高兴的原因、她却突然涨红了脸蛋、转头急忙辩解起来、完全不想告诉%CALLNAME:MASTER%的样子...
+		PRINTFORMW 「呜...总、总之、%CALLNAME:MASTER%新年快乐啦！」
+		PRINTFORMW 「然后可以的话、下一次也——当橙没说！」
+		PRINTFORMDW 急急忙忙说完新年问候、小猫妖就捂住了通红小脸、怎么也不肯再说话了... 
+	ELSEIF TALENT:24:8 ;思慕
+		PRINTFORMW 「%CALLNAME:MASTER%！新的一年到了哦！嘿嘿～♪」
+		PRINTFORMDW 坐在%CALLNAME:MASTER%身边看着烟花的橙露出笑容、看向了%CALLNAME:MASTER%
+		PRINTFORMW 「说到新年的话、肯定就是许愿了吧？%CALLNAME:MASTER%许了什么愿望呢？」
+		PRINTFORMW 「橙的话...第一个是蓝大人的、第二个是紫大人的、然后就是%CALLNAME:MASTER%的哦！」 
+	ELSE
+		PRINTFORMW 「新的一年又来了呢！又可以看烟花了哦！」
+		PRINTFORMDW 看向夜空焰火的橙、似乎在闭着眼睛许着愿...
+		PRINTFORMDW 好奇的%CALLNAME:MASTER%凑近了小猫妖、似乎听到了%TEXTR("希望自己快点长大/希望蓝大人多陪陪自己/希望小猫们听自己话/希望认识新朋友")%的内容...
+		PRINTFORMW 「...嗯嗯！就这些！一定要实现哦！」	
+	ENDIF
 ENDIF
 RETURN 1
 
@@ -5724,22 +5882,119 @@ IF LOCAL
 	SELECTCASE ARG
 	CASE 1
 		;戦闘技能
-		PRINTFORMW 
+		SELECTCASE ABL:24:42
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 一百万匹力量、橙喵喵爆破拳！！！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 2
 		;話術技能
-		PRINTFORMW 
+		SELECTCASE ABL:24:41
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 橙已经进化到连说话都不需要就可以让人臣服了
+				PRINTFORMDW be one with cheeeeeen～～
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 3
 		;清掃技能
-		PRINTFORMW 
+		SELECTCASE ABL:24:40
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 如此热爱清扫的橙居然也解锁了时停能力！！！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 4
 		;教養
-		PRINTFORMW 
+		SELECTCASE ABL:24:43
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 掌握了终极知识的橙、已经飞升至另一维度...
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 5
 		;料理技能
-		PRINTFORMW 
+		SELECTCASE ABL:24:44
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 请自主播放《中华小当家》BGM...
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 6
 		;採集Lv
-		PRINTFORMW 
+		SELECTCASE TALENT:24:48
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 现在只要橙往那一站、材料就自己跑进了背包哦！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 7
 		IF ARG:1 == 0
 			;音楽技能
@@ -5753,24 +6008,72 @@ IF LOCAL
 		ENDIF
 	CASE 8
 		;钓鱼Lv
-		PRINTFORMW 
+		SELECTCASE TALENT:24:47
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 现在的橙能用初始钓竿一口气钓上400只春季鱼王！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 	CASE 9
 		IF ARG:1 == 0
 			;調合Lv
-			PRINTFORMW 
+			SELECTCASE ABL:24:49
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 现在的橙可以随意调出BABY BLUE的猫薄荷提取物了！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT
 		ELSEIF ARG:1 == 1
 			;【調合知識】取得
 			PRINTFORMW 
 		ENDIF
 	CASE 10
 		;伐採Lv
-		PRINTFORMW 
+		SELECTCASE TALENT:24:46
+			CASE 1
+				PRINTFORMW
+			CASE 2
+				PRINTFORMW
+			CASE 3
+				PRINTFORMW
+			CASE 4
+				PRINTFORMW
+			CASE 5
+				PRINTFORMW
+			CASE 6
+				PRINTFORMW
+			CASEELSE
+				PRINTFORMDW 橙现在能空手撸倒整片魔法之森！
+				PRINTFORMDW ...开个玩笑、如果意外触发了请联系我 
+		ENDSELECT 
 	CASE 11
 		IF ARG:1 == 0
 			;指
 			PRINTFORMW 
 		ELSEIF ARG:1 == 1
-			;【器用な指】取得
+			;【靈活手指】取得
 			PRINTFORMW 
 		ENDIF
 	CASE 12
@@ -5778,7 +6081,7 @@ IF LOCAL
 			;舌
 			PRINTFORMW 
 		ELSEIF ARG:1 == 1
-			;【舌使い】取得
+			;【舌頭靈活】取得
 			PRINTFORMW 
 		ENDIF
 	CASE 13
@@ -6027,10 +6330,12 @@ RETURN 0
 ;口上角色对私室的描写。
 ;填写的时候请去掉注释符号
 ;-------------------------------------------------
-@K24_ROOM_DESCRIPTION
+@K24_MOKA_ROOM_DESCRIPTION
 IF CFLAG:TARGET:317
+	PRINTFORML
 	PRINTFORMDL 猫咪们在看不见的地方%TEXTR("好奇地/疑惑地/惊讶地/大胆地/悄悄地")%窥视着里面的光景...
-ELSEIF CFLAG:0:311 == CFLAG:24:311 ;同居
+ELSEIF CFLAG:24:311 == CFLAG:0:311 ;同居
+	PRINTFORML
 	PRINTFORMDL 与八云邸设计一致的和式房间、被某位居家式神特意收拾过、腾出了同居的空间
 	SELECTCASE RAND:10
 	CASE 0
@@ -6054,7 +6359,8 @@ ELSEIF CFLAG:0:311 == CFLAG:24:311 ;同居
 	CASE 9
 		PRINTFORMDL 有些杂乱的床铺上、明显提示着二人同居的成对枕头摆在床头
 	ENDSELECT
-ELSE 
+ELSE
+	PRINTFORML
 	PRINTFORMDL 与八云邸设计一致的和式房间、看起来还没使用多少时间的样子
 	SELECTCASE RAND:8
 	CASE 0
@@ -6086,6 +6392,7 @@ ELSE
 	CASE 7
 		PRINTFORMDL 床铺上随意翻开的被子卷在了一起、已经有小猫在里面睡觉了...
 	ENDSELECT
+	PRINTFORML
 ENDIF
 ;-------------------------------------------------
 
@@ -6114,41 +6421,129 @@ ENDIF
 ;评价分数为701 ~ 999(角色本人评价)
 ;--------------------------------------------------------------------------------------------------
 IF ARG == 1
-	;PRINTFORMW 「%GIFT_NAME%给你、好好用」
+	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+		PRINTFORML 「%CALLNAME:MASTER%！稍微闭一下眼睛哦、橙有个惊喜要给你！」
+		PRINTFORML 「...不准偷看哦！偷看就不给你了！哼！」
+		PRINTFORMDW 遵守小猫妖的要求、%CALLNAME:MASTER%闭上了双眼、只能察觉到贴近的奶油香气、以及凑近唇边的炽热吐息
+		PRINTFORMDW 还在好奇橙打算准备怎样的惊喜的%CALLNAME:MASTER%、突然感到手中被塞进了什么东西...
+		PRINTFORML 「嘿嘿...好了！%CALLNAME:MASTER%可以睁开眼睛了哦！」
+		PRINTFORMDW 一睁开眼、%CALLNAME:MASTER%就看见了贴在面前的小猫妖、还有放在自己手中、还带着橙掌心温热的精美礼物盒
+		PRINTFORML 「橙的礼物、%CALLNAME:MASTER%肯定会高高兴兴地收下来的吧？」
+		PRINTFORMW 「不过啦、想让%CALLNAME:MASTER%也给橙一点回礼嘛！嘿嘿～♪」
+		PRINTFORMDW 露出高兴笑容的橙伸出手指、提示似的指了指自己的嘴唇...
+		PRINTFORMDW %CALLNAME:MASTER%立马回应了小猫妖、夺取了那满怀期待的樱桃小嘴、进行着充满爱意的温柔接吻
+		PRINTFORML 「嗯❤...啾❤...呼呼❤...%CALLNAME:MASTER%❤...谢谢❤...」
+		PRINTFORMDW 分开嘴唇、橙就倒进了%CALLNAME:MASTER%怀里、露出了满怀幸福的温暖笑容
+		PRINTFORMDW %CALLNAME:MASTER%干脆抱起了小猫妖、一路上就这样和橙腻在一起、把亲昵的气氛洒满了途经的每一处地方...
+		CFLAG:24:1010 += 3 ;三倍进度
+	ELSEIF TALENT:24:3 ;恋慕 
+		PRINTFORML 「%CALLNAME:MASTER%、可以稍微等一下下吗...」
+		PRINTFORMDW 正打算回去的%CALLNAME:MASTER%、突然被橙拉住了手掌
+		PRINTFORML 「嗯...谢谢%CALLNAME:MASTER%带橙出来约会...橙很开心...」
+		PRINTFORML 「所以说...橙给%CALLNAME:MASTER%准备了礼物、希望%CALLNAME:MASTER%会喜欢...」
+		PRINTFORMDW 忐忑不安的小猫妖取出了被精美包装过的小小礼盒、伸出手臂递给了%CALLNAME:MASTER%
+		PRINTFORMDW 就像是害怕看见%CALLNAME:MASTER%拒绝一样、橙紧紧闭着眼睛、连耳朵都耷拉下来、紧紧贴住头顶、连托着礼物的手臂都颤抖起来
+		PRINTFORMDW 直到%CALLNAME:MASTER%伸出手接过礼物、小猫妖才如释重负似的慢慢睁开了眼睛、观察着%CALLNAME:MASTER%的反应
+		PRINTFORML 「%CALLNAME:MASTER%喜欢橙的礼物吗？谢谢%CALLNAME:MASTER%！」
+		PRINTFORML 「%CALLNAME:MASTER%真好...嘿嘿～♪」
+		PRINTFORMDW 看见%CALLNAME:MASTER%满意的微笑、小猫妖的脸上也一下子浮现出笑容、张开双臂紧紧抱住了%CALLNAME:MASTER%、不停地磨蹭起来
+		PRINTFORMDW 直到%CALLNAME:MASTER%出言提醒、橙才依依不舍地松开怀抱、转而挽住了%CALLNAME:MASTER%的手臂、紧紧地并排贴着踏上归途
+	ELSEIF TALENT:24:8 ;思慕	
+		PRINTFORML 「呜呼呼～玩的很开心呢！谢谢%CALLNAME:MASTER%！」
+		PRINTFORML 「所以说、橙要给%CALLNAME:MASTER%一个惊喜哦！」
+		PRINTFORMDW 小猫妖双手托着一个简单包装过的盒子、把礼物塞给了%CALLNAME:MASTER%
+		PRINTFORML 「这可是橙挑了很久才选出来的哦！%CALLNAME:MASTER%喜欢就好！」
+		PRINTFORML 「呜哇！突然就把手伸过来了...诶嘿嘿～♪看来%CALLNAME:MASTER%很喜欢橙的礼物呢、嘿嘿～♪」
+		PRINTFORMDW 为了表达感谢而摸起了小猫妖的头、那张可爱的小脸上立马绽放出了灿烂的笑容  
+	ELSE ;虽然无陷落可能性很小吧...
+		PRINTFORML 「%CALLNAME:MASTER%！稍微等一下嘛！」
+		PRINTFORMDW 回去的路上、橙突然喊住了%CALLNAME:MASTER%
+		PRINTFORMDW 还在好奇小猫妖要做些什么的%CALLNAME:MASTER%、立马感受到手里被塞进了什么东西...
+		PRINTFORML 「这是橙在路上捡到的哦！因为觉得%CALLNAME:MASTER%会喜欢所以就给%CALLNAME:MASTER%拿着好了！」
+		PRINTFORMDW 这样珍贵的东西也是能随地捡到的吗...%CALLNAME:MASTER%不可置信地盯着手中完全没有包装过的精美礼物
+	ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;在一天即将结束的时候、珍惜今天收到的礼物（700点以上）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 2
-	;IF STRCOUNT(SENSE, "かわいい/")
-	;	PRINTFORMW 「收到了一份可爱的礼物」
-	;ELSEIF 評価点 >= 800
-	;	PRINTFORMW 「收到了一份非常漂亮的礼物」
-	;ELSE
-	;	PRINTFORMW 「收到了很漂亮的礼物」
-	;ENDIF
+	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+		PRINTFORMW 「呼呼...」
+		PRINTFORMDW 露出傻笑的橙、痴痴地盯着手中紧紧攥着的%GIFT_NAME%
+		PRINTFORMW 「%CALLNAME:MASTER%...真是、特别地喜欢橙呐...」
+		PRINTFORMW 「总是送给橙这样子珍贵的礼物...总感觉要还不清%CALLNAME:MASTER%了啦...」
+		PRINTFORMW 「呼啊啊...要是真的是这样的话...说不定就只有“那个”、才能够算得上小小的补偿了吧...❤」
+		PRINTFORMDW 红着小脸的小猫妖把%GIFT_NAME%紧紧贴在胸前、就像对%CALLNAME:MASTER%说话一样轻声呢喃着...
+	ELSEIF TALENT:24:3 ;恋慕 
+		PRINTFORMW 「诶嘿嘿～♪%CALLNAME:MASTER%送的礼物、真可爱呢...」
+		PRINTFORMDW 趴在被窝里的橙把%GIFT_NAME%托在手中、细细地端详着
+		PRINTFORMW 「能送给橙这样子的礼物...说明%CALLNAME:MASTER%心里肯定在想着橙的吧！」
+		PRINTFORML 「如果真的是这样的话...嘿嘿嘿～」
+		PRINTFORMW 「谢谢%CALLNAME:MASTER%...最喜欢%CALLNAME:MASTER%了哦...」
+		PRINTFORMDW 把%GIFT_NAME%紧紧贴在自己跳动着的胸口上、小猫妖带着洋溢幸福的笑容、抱着%GIFT_NAME%安心地睡着了 
+	ELSE ;思慕及以下
+		PRINTFORMW 「嗯...今天%CALLNAME:MASTER%送的东西、感觉好好看呢！」
+		PRINTFORMDW 盯着桌子上的%GIFT_NAME%、橙的脸上不自觉地露出了笑容
+		PRINTFORMW 「呼呼～感觉越看越好看呢！橙要好好地收藏起来才行呢！」
+		PRINTFORMW 「之后的话、要不要考虑给%CALLNAME:MASTER%送些什么呢...嗯...呼...」
+		PRINTFORMDW 躺在床上的小猫妖、看着放在桌上的%GIFT_NAME%、一边思考着一边缓缓睡去... 
+	ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;在一天即将结束的时候、把今天收到的礼物收藏起来。(橙会珍藏的、继续)（700点以上、且是所有礼物中的最高得点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 3
-	;IF STRCOUNT(SENSE, "身につける/")
-	;	PRINTFORMW 「橙打算从明天开始戴上这个。」
-	;ELSE
-	;	PRINTFORMW 「橙打算从明天开始带这个去。」
-	;ENDIF
+		PRINTFORMW 「实在是太好看了啦！感觉怎么看都看不腻呢！」
+		PRINTFORMW 「呜...干脆随身带上好了！」
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一天结束时、先把今天收到的礼物保管起来（400～699点）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 4
-	;PRINTFORMW 「とりあえず飾っておこう」
+	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+		PRINTFORMDW 准备睡觉的橙、看着手中的%GIFT_NAME%思考着什么...
+		PRINTFORMW 「嗯、确实是还不错的礼物啦...」
+		PRINTFORMW 「虽然感觉%CALLNAME:MASTER%没搞懂橙喜欢的东西...」
+		PRINTFORMW 「但是心意到了就足够了啦！嘿嘿～必须得好好地收藏起来才可以呢！」
+		PRINTFORMDW 带着灿烂笑容的小猫妖用双手捧着%GIFT_NAME%、放在了柜子里十分显眼的位置 
+	ELSEIF TALENT:24:3 ;恋慕 
+		PRINTFORMW 「呼呼～%CALLNAME:MASTER%送给橙的礼物...」
+		PRINTFORMDW 橙带着微笑、目不转睛地盯着手中的%GIFT_NAME%
+		PRINTFORMW 「虽然感觉有些奇怪...不管怎么说、橙都得好好保管才行！」
+		PRINTFORMW 「%CALLNAME:MASTER%的心意、橙一定要全部留住才可以呢！」
+		PRINTFORMDW 小猫妖把%GIFT_NAME%展示一般摆在了高高的架子上 
+	ELSE ;思慕以下 
+		PRINTFORML 「嘛、这个东西...虽然算不上很喜欢吧...」
+		PRINTFORMW 「但毕竟是%CALLNAME:MASTER%送给橙的礼物、还是好好收着比较好呢！」
+		PRINTFORMDW 橙把%GIFT_NAME%随意地放在了房间里  	
+	ENDIF
 	RETURN 1
 ;--------------------------------------------------------------------------------------------------
 ;一天快结束的时候、把今天收到的礼物偷偷典当（400点未満）
 ;--------------------------------------------------------------------------------------------------
 ELSEIF ARG == 5
-	;PRINTFORMW 「橙不喜欢这个～」
+	IF TALENT:24:3 && TALENT:24:7 ;恋慕恋人
+		PRINTFORMDW 准备睡觉的橙、带着微妙的表情端详着手里的%GIFT_NAME%
+		PRINTFORMW 「呼嗯～明明是%CALLNAME:MASTER%送给橙的礼物、为什么会橙觉得不高兴呢？」
+		PRINTFORMW 「但是、不管怎么看、橙都实在没办法喜欢上这样的礼物...真是的、都这样亲近了还是搞不清楚橙喜欢什么嘛！」
+		PRINTFORMW 「姆呜呜～～！笨蛋笨蛋笨蛋！下回再买这么差的礼物、就直接甩到笨蛋%CALLNAME:MASTER%脸上好了！」
+		PRINTFORMDW 突然生起气来的小猫妖把%GIFT_NAME%随意地放进了柜子的最深处、重重地关上了柜门   
+	ELSEIF TALENT:24:3 ;恋慕 
+		PRINTFORMW 「唉...为什么呢...」
+		PRINTFORMDW 坐在桌前的橙、看着%GIFT_NAME%发出了叹息
+		PRINTFORML 「...%CALLNAME:MASTER%为什么要给橙送这样的东西啊！」
+		PRINTFORMW 「明明就应该知道橙喜欢什么的、却还送这样子的礼物...难道说是想这样子来跟橙说...“讨厌你”嘛？」
+		PRINTFORMDW 刚刚冒出这样想法的小猫妖、突然想起了%CALLNAME:MASTER%送出礼物时真诚的表情、赶紧摇了摇头、把那不快的想法抖了出去
+		PRINTFORMW 「嗯...不会的！橙明明就还有机会的...！才不是那样子的吧...？」
+		PRINTFORMW 「应该只是%CALLNAME:MASTER%自己喜欢吧？嗯...一定是这样的...！」
+		PRINTFORMW 「...呜～为了不这样想、还是赶紧把这个东西藏到橙看不见的地方吧...！」		 
+	ELSE ;思慕以下
+		PRINTFORML 「嗯...这个东西...」
+		PRINTFORMDW 橙有些迟疑地盯着被放在一旁冷落着的%GIFT_NAME%
+		PRINTFORMW 「虽然说是%CALLNAME:MASTER%送的...但这样的礼物也实在不喜欢啊！」
+		PRINTFORMW 「嗯...要不要送给%TEXTR("紫大人/蓝大人/燐姐姐/小家伙们")%呢？」
+		PRINTFORMDW 小猫妖考虑着把%CALLNAME:MASTER%送的礼物再送给其他人...
+	ENDIF
 	RETURN 1
 ENDIF
 RETURN 1

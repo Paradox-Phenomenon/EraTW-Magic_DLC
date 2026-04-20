@@ -17,7 +17,7 @@ IF SELF_PREGNANCY && GROUPMATCH(SELECTCOM, 64, 130, 131, 132, 133)
 		ELSE
 			{
 			CALL ASK_M("放弃",1,@"给%CALLNAME:TARGET%使用避孕套（剩余{ITEM:45}枚）",ITEM:45,@"喝避孕药（剩余{ITEM:49}颗）",ITEM:49,@"给避孕药（假）（剩余{ITEM:49}颗）",ITEM:49,
-			@"想要怀上%CALLNAME:TARGET%的孩子", !TCVAR:懇願, "老娘就是要定了你的种", (TEQUIP:TARGET:縄 || TEQUIP:TARGET:拘束 || CFLAG:TARGET:败犬), @"使用避孕魔法", ITEM:971)
+			@"想要怀上%CALLNAME:TARGET%的孩子", !TCVAR:懇願, "老娘就是要定了你的种", (TEQUIP:TARGET:縄 || TEQUIP:TARGET:拘束 || CFLAG:TARGET:败犬), @"使用避孕魔法", MAGIC_AVALIABLE(ITEM_避孕魔法) || M_SPELL:避孕符咒:数量 > 0)
 			}
 		ENDIF
 	
@@ -33,7 +33,7 @@ ELSE
 		ELSE
 			{
 			CALL ASK_M("放弃",1,@"使用避孕套（剩余{ITEM:45}枚）",ITEM:45,@"给避孕药（剩余{ITEM:49}颗）",ITEM:49,@"给避孕药（假）（剩余{ITEM:49}颗）",ITEM:49,
-			"请求不戴套做", !TCVAR:懇願, "不、绝对要让你怀孕", (TEQUIP:ARG:縄 || TEQUIP:ARG:拘束 || CFLAG:ARG:败犬), @"使用避孕魔法", ITEM:971, "请让我不戴套,我会拔出来的", 1)
+			"请求不戴套做", !TCVAR:懇願, "不、绝对要让你怀孕", (TEQUIP:ARG:縄 || TEQUIP:ARG:拘束 || CFLAG:ARG:败犬), @"使用避孕魔法", MAGIC_AVALIABLE(ITEM_避孕魔法) || M_SPELL:避孕符咒:数量 > 0, "请让我不戴套,我会拔出来的", 1)
 			}
 		ENDIF
 ENDIF
@@ -104,14 +104,22 @@ ELSE
 		TCVAR:ARG:强行 = 1
 	ELSEIF RESULT == 6
 		IF SELF_PREGNANCY && GROUPMATCH(SELECTCOM, 64, 130, 131, 132, 133)
+			IF MAGIC_AVALIABLE(ITEM_避孕魔法)
+				CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
+			ELSEIF  M_SPELL:避孕符咒:数量 > 0
+				M_SPELL:避孕符咒:数量 --
+			ENDIF
 			SIF !TCVAR:MASTER:避孕魔法
 				TCVAR:MASTER:避孕魔法 = 1
-			CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 			PRINTFORML 对自己施放了避孕魔法
 		ELSE
+			IF MAGIC_AVALIABLE(ITEM_避孕魔法)
+				CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
+			ELSEIF  M_SPELL:避孕符咒:数量 > 0
+				M_SPELL:避孕符咒:数量 --
+			ENDIF
 			TCVAR:ARG:避孕魔法 = 1
-			CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
-			PRINTFORML 对自己施放了避孕魔法
+			PRINTFORML 对%CALLNAME:ARG%施放了避孕魔法
 		ENDIF
 	ELSEIF RESULT == 7
 		CALL OGAMITAOSHI2(ARG)
@@ -224,7 +232,7 @@ IF SELF_PREGNANCY && GROUPMATCH(SELECTCOM, 64, 130, 131, 132, 133)
 				RETURN -1
 		ENDSELECT
 	ELSE
-		CALL ASK_M(@"给%CALLNAME:TARGET%戴避孕套",ITEM:避孕套,"喝口服避孕药",ITEM:口服避孕薬,"使用避孕魔法",ITEM:971,"放弃",1)
+		CALL ASK_M(@"给%CALLNAME:TARGET%戴避孕套",ITEM:避孕套,"喝口服避孕药",ITEM:口服避孕薬,"使用避孕魔法",MAGIC_AVALIABLE(ITEM_避孕魔法),"放弃",1)
 		SELECTCASE RESULT
 			CASE 0
 				ITEM:避孕套 --
@@ -237,9 +245,13 @@ IF SELF_PREGNANCY && GROUPMATCH(SELECTCOM, 64, 130, 131, 132, 133)
 				PRINTFORML 喝了避孕药 
 				RETURN 1
 			CASE 2
+				IF MAGIC_AVALIABLE(ITEM_避孕魔法)
+					CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
+				ELSEIF  M_SPELL:避孕符咒:数量 > 0
+					M_SPELL:避孕符咒:数量 --
+				ENDIF
 				SIF !TCVAR:PLAYER:避孕魔法
 					TCVAR:PLAYER:避孕魔法 = 1
-				CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 				PRINTFORML 使用了避孕魔法
 				RETURN 1
 			CASE 3
@@ -267,7 +279,7 @@ ELSE
 				RETURN -1
 		ENDSELECT
 	ELSE
-		CALL ASK_M("戴避孕套",ITEM:避孕套,@"给%CALLNAME:TARGET%喝口服避孕药",ITEM:口服避孕薬,"使用避孕魔法",ITEM:971,"放弃",1)
+		CALL ASK_M("戴避孕套",ITEM:避孕套,@"给%CALLNAME:TARGET%喝口服避孕药",ITEM:口服避孕薬,"使用避孕魔法",MAGIC_AVALIABLE(ITEM_避孕魔法),"放弃",1)
 		SELECTCASE RESULT
 			CASE 0
 				ITEM:避孕套 --
@@ -280,8 +292,12 @@ ELSE
 				PRINTFORML 给%CALLNAME:ARG%喝了避孕药 
 				RETURN 1
 			CASE 2
+				IF MAGIC_AVALIABLE(ITEM_避孕魔法)
+					CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
+				ELSEIF  M_SPELL:避孕符咒:数量 > 0
+					M_SPELL:避孕符咒:数量 --
+				ENDIF
 				TCVAR:ARG:避孕魔法 = 1
-				CALL RECOVER(MASTER, -50, GET_CURRENT_MPS(), "使用魔法的魔力消耗")
 				PRINTFORML 使用了避孕魔法
 				RETURN 1
 			CASE 3

@@ -40,24 +40,24 @@ ENDSELECT
 #DIMS O_DATA
 #DIMS V_NAME
 SELECTCASE O_DATA
-CASE "稱呼"
+CASE "名前"
 	CALLF MAKE_STR(V_NAME, "小悪魔")
 ;こっから衣装設定
 CASE "今天的睡衣"
 	CALLF MAKE_STR(V_NAME, "睡衣（裤子）套")
 
 CASE "便装：靴"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("靴", "鞋子"))
+	CALLF MAKE_INT(V_NAME, [[靴_鞋子]])
 CASE "便装：襪子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("襪子", "长筒袜"))
+	CALLF MAKE_INT(V_NAME, [[襪子_长筒袜]])
 CASE "便装：裙子"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("裙子", "长裙"))
+	CALLF MAKE_INT(V_NAME, [[裙子_长裙]])
 CASE "便装：上身衣服２"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("上身衣服２", "女式衬衫"))
+	CALLF MAKE_INT(V_NAME, [[上身衣服_はだけ可能_女式衬衫]])
 CASE "便装：外搭"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("外搭", "背心"))
+	CALLF MAKE_INT(V_NAME, [[外搭_背心]])
 CASE "便装：其他１"
-	CALLF MAKE_INT(V_NAME, CLOTHES_ID("其他１", "领带"))
+	CALLF MAKE_INT(V_NAME, [[其他衣装_领带]])
 
 CASE "固有内衣形容詞"
 	CALLF MAKE_STR(V_NAME, "挑逗的")
@@ -167,7 +167,47 @@ RETURN 1
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:59:差し替え適用 == 1
+IF CFLAG:59:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+		IF GROUPMATCH(1, TEQUIP:CHARA:新妻PLAY)
+			RESULTS = _裸エプロン
+		ENDIF
+	ELSE
+		IF CFLAG:CHARA:睡眠 || CFLAG:CHARA:陪睡中 || 睡眠時間(CHARA)
+			RESULTS = _下着
+		ELSEIF IS_BUNNY(CHARA)
+			RESULTS = _逆バニー
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 61
+			RESULTS = _ウェディングドレス
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[迦勒底制服]]
+			RESULTS = _カルデア制服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[修女服]]
+			RESULTS = _シスター
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+			RESULTS = _デンジャラス・ビースト
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[不给治就捣蛋礼装]]
+			RESULTS = _トリック・オア・トリートメント
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[白衣天使套]]
+			RESULTS = _ナース
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[晚宴礼服套装]]
+			RESULTS = _フォーマルドレス
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[魅魔套装]]
+			RESULTS = _ミッドナイトサキュバス
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女仆装]]
+			RESULTS = _メイド
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[皇家糖霜礼装]]
+			RESULTS = _ロイヤル・アイシング
+		ELSEIF IS_SCHOOLUNIFORM(CHARA)
+			RESULTS = _制服
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[魔法少女变装]]
+			RESULTS = _魔法少女
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[Y字泳衣]] || TEQUIP:CHARA:SWIMMING
+			RESULTS = _水着
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+			RESULTS = _下着
+		ENDIF
+	ENDIF
+ELSEIF CFLAG:59:差し替え適用 == 1
 	;替换用画像
 	;这里是两个KOJO_IMAGE接口示例的原始功能实现，用于不修改本体而通过剧本接口设定CHARADATA可以实现的全部立绘设定
 	;对比@M_KOJO_長短髪_IMAGE_K59_特殊服装(ARGS,ARG,ARG:1)可了解该接口的具体用法
@@ -221,7 +261,7 @@ ENDIF
 #DIM CHARA
 VARSET RESULTS
 
-IF CFLAG:59:差し替え適用
+IF CFLAG:59:差し替え適用 == 1
 	;妊娠時(40日目～)替换用画像
 	SIF TALENT:CHARA:妊娠 && CFLAG:CHARA:妊娠経過日数 >= 40
 		RESULTS = 妊娠
@@ -247,13 +287,16 @@ ENDIF
 #LOCALSSIZE 1
 #DIM CHARA
 
-IF CFLAG:59:差し替え適用
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
-	ELSE
-		;立絵
+IF CFLAG:59:差し替え適用 == 3
+	IF TALENT:CHARA:心情 == 1 || BASE:CHARA:情緒 > MAXBASE:CHARA:情緒 / 2 || TALENT:CHARA:恋慕
+		IF RESULTS:0 == "通常"
+			RESULTS:0 '= "微笑"
+		ENDIF
+		IF RESULTS:1 == "通常"
+			RESULTS:1 '= "微笑"
+		ENDIF
 	ENDIF
+ELSEIF CFLAG:59:差し替え適用
 ELSE
 	;通常画像
 	IF FLAG:立絵種類
@@ -275,12 +318,44 @@ ENDIF
 #DIM CHARA
 #DIM 指令
 
-IF CFLAG:59:差し替え適用
-	;替换用画像
-	IF FLAG:立絵種類
-		;顔絵
+IF CFLAG:59:差し替え適用 == 3
+	IF CHECK_NUDE(CHARA)
+		IF GROUPMATCH(1, TEQUIP:CHARA:新妻PLAY)
+		ENDIF
 	ELSE
-		;立絵
+		IF IS_BUNNY(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == 61
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[迦勒底制服]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[修女服]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[危险野兽礼装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[不给治就捣蛋礼装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[白衣天使套]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[晚宴礼服套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[魅魔套装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[女仆装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[皇家糖霜礼装]]
+		ELSEIF IS_SCHOOLUNIFORM(CHARA)
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[魔法少女变装]]
+		ELSEIF CURRENT_CLOTHES_SET(CHARA) == [[Y字泳衣]] || TEQUIP:CHARA:SWIMMING
+		ELSEIF CHECK_CLO("bra_visible", CHARA)
+		ELSE
+			SELECTCASE 指令
+				CASE 305
+					RESULTS = 膝枕覆盖
+				CASE 6,12,313
+					IF IS_半脱(CHARA,1) && ABL:CHARA:欲望 >= 10 && GET_TARGETNUM() == 1
+						RESULTS = 揉胸2覆盖
+					ELSE
+						RESULTS = 揉胸覆盖
+					ENDIF
+				CASE 330
+					IF EQUIP:CHARA:下半身下着２ != 0
+						RESULTS = 掀裙子1覆盖
+					ELSE
+						RESULTS = 掀裙子2覆盖
+					ENDIF
+			ENDSELECT
+		ENDIF
 	ENDIF
 ELSE
 	;通常画像

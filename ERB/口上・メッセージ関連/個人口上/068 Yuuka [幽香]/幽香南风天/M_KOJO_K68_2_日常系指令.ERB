@@ -40,7 +40,19 @@ IF LOCAL
 			RETURN
 	ENDIF
 	CALL yuka_sw_event5
-	CALL yuka_sw_event7
+	CFLAG:68:1001+=5
+	RETURN CFLAG:68:1001
+	IF CFLAG:68:1002>=15&&CFLAG:68:1207==1
+		CALL yuka_sw_event7
+		RETURN
+	ELSEIF CFLAG:68:1002>=10&&firsttime("好心提醒你时停")
+		PRINTFORML 「%CALLNAME:MASTER%好像没和我说过你的能力吧」
+		PRINTFORML 「普通人？才不是吧！%CALLNAME:MASTER%明明能做到突然把地面打扫干净，凭空泡出茶之类的魔法」
+		PRINTFORML 「要是怕被人察觉，就好好的隐藏好啊、还是说把我当做了可以信赖的人呢？」
+		PRINTFORMDL
+		PRINTFORMW
+	ELSE
+	ENDIF
 
 	IF TALENT:TARGET:15 <= -1 ||CFLAG:318>=1
 	;愤怒
@@ -54,7 +66,11 @@ IF LOCAL
 		PRINTFORMDL 你和幽香喝茶赏景
 		SELECTCASE RAND:7
 			CASE 0
-				CALL yuka_sw_anytalk
+				IF CFLAG:68:1206==1&&RAND:20==1&&CFLAG:68:1001==20
+					CALL yuka_sw_event6
+				ELSE
+					CALL yuka_sw_anytalk
+				ENDIF
 			CASE 1
 				PRINTFORML 「邀请加入茶会的标准？」
 				PRINTFORML 「有教养不会胡闹」
@@ -98,6 +114,9 @@ IF LOCAL
 		ELSEIF TALENT:恋慕||TALENT:愛欲
 			PRINTFORMDL 脸色扑红扑红的幽香抱住了你
 			PRINTFORML 「%CALLNAME:MASTER%……再抱紧一些」
+		ELSEIF  TALENT:恋人!=1&&CFLAG:68:1001>10
+			PRINTFORML 「话说…为什么%CALLNAME:MASTER%还不向我告白？（嗝）」
+			CALL yuka_sw_event11
 		ELSEIF CFLAG:68>=10
 			PRINTFORML 「呵呵……今天喝的真尽兴」
 			PRINTFORMDL 幽香左手扶脸蛋，盯着你的眼睛能拉丝
@@ -217,7 +236,11 @@ IF LOCAL
 		SELECTCASE RAND:5
 			CASE 0
 			 IF CFLAG:68:1001==20
-			 	CALL yuka_sw_thirdtalk1
+			 	IF CFLAG:68:1206==1&&RAND:20==1
+					CALL yuka_sw_event6
+				ELSE
+			 		CALL yuka_sw_thirdtalk1
+				ENDIF
 			 ELSE
 				CALL yuka_sw_anytalk
 			 ENDIF
@@ -348,7 +371,7 @@ IF LOCAL
 						PRINTFORML 「除了这几种还用了蜂蜜调和，不错的比例」
 						PRINTFORML 「%CALLNAME:MASTER%你这杯茶水平不在我之下了」
 				ENDSELECT
-				CALL yuka_AA("饮茶")
+				CALL yuka_AA("饮茶1")
 			CASE 1
 				;改进
 				SELECTCASE RAND:3
@@ -383,7 +406,7 @@ IF LOCAL
 					CASE 2
 						PRINTFORMDL 幽香摆弄着茶具，虽不是行云流水也堪称流畅
 						PRINTFORML 「请喝，专门学习你手法做的20年份糯米黑茶」
-						IF  ABL:0:43>=3
+						IF  abl:0:43>=3
 							PRINTFORMDL 糯米黑茶，指炒制黑茶时加入制备过的糯米增加风味
 						ENDIF
 						PRINTFORMDL 在幽香期待的眼神里你抿上第一口 
@@ -612,7 +635,7 @@ IF LOCAL
 			PRINTFORMDL 『真的假的，不会吧』
 			PRINTFORML 「茶叶放太多了，浓得都苦了」
 		ENDIF
-			CALL yuka_AA("饮茶")
+			CALL yuka_AA("饮茶1")
 
 	ENDIF
 	;降低对话积攒度补丁
@@ -1132,7 +1155,7 @@ IF LOCAL
 					PRINTFORMDL 噗……通……
 					PRINTFORML 「我带你过河跨山还留你住宿不是为了让你骂我王八和老！」
 					PRINTFORMDL 『那你原谅我了吗？』
-					PRINTFORML 「哼…下不为例，除非你能再讲一个同水平的故事」
+					PRINTFORML 「哼…下不为例，除非你能再讲一个同水平的的故事」
 				CASE 1
 					PRINTFORMDL 你穿上了最正式的衣物，时停去酒屋购买了幽香喜欢的好酒
 					PRINTFORMDL 『幽香，能和你单独谈谈吗？』
@@ -1251,10 +1274,6 @@ IF LOCAL
 			IF TIME:5 >= 4&&CFLAG:68:1511==1
 					TIME:5 = 0
 					WIND_VELOCITY = 0
-				;天气重修，强行设定对应天气系统
-				CALL qol_FORCESET_REGION_WEATHER_SYSTEM
-				CALL qol_FORCESET_REGION_RAINBOW_SYSTEM
-				CALL qol_FORCESET_REGION_WIND_VE_SYSTEM
 			ENDIF
 			PRINTFORMDL 特意略高一筹的土台作为场地，品茶聊天的同时美不胜收的花田景色收入眼帘
 			CALL yuka_sw_event10
@@ -2402,7 +2421,7 @@ RETURN RESULT
 LOCAL=1
 ;-------------------------------------------------
 IF LOCAL
-	IF !ABL:露出癖 + TALENT:羞恥心 < 3 ||CFLAG:68:1103==1
+	IF ABL:露出癖 + TALENT:羞恥心 < 3 ||CFLAG:68:1103==1
 		IF TCVAR:発情
 			PRINTFORML 「不……不要」
 			PRINTFORMDL 幽香想回到梦幻馆解决需求
@@ -2786,17 +2805,18 @@ IF LOCAL
 			ELSE
 				IF CFLAG:68:1001<10
 					PRINTFORML 「想一起吃饭？」
-					PRINTFORMDL 听到你的想法幽香脸色凶狠起来
+					PRINTFORMDL 听到你的想法幽香脸色不善起来
 					PRINTFORMDL 是了，自己是什么人啊，什么身份什么地位凑上来和她同食
+					PRINTFORMDL 朋友间也需一句邀请，自己如此逾越实在不该
 					PRINTFORMDL 但………
 					CALL ask_m("多个人多双筷子嘛",1,"那啥，刚刚我说错了",1,)
 						SELECTCASE RESULT
 							CASE 0
-								PRINTFORMDL 『抱歉，只是腹中实在饥饿，幽香小姐的饭菜如此可口实在诱人』
+								PRINTFORMDL 『抱歉，只是腹中实在饥饿，幽香小姐的饭菜光从色香看便让在下无法拒绝』
 								PRINTFORML 「食可是修习本义之一，既饥饿那便上桌吧」
 								PRINTFORMDL 凶恶的乌云烟消云散
 								PRINTFORMDL 『打扰了』
-								PRINTFORMDL 你得以坐在客位上，幽香默默地把菜往你的方向挪了挪
+								PRINTFORMDL 你得以坐在客位上，幽香默默地把菜盘往你的方向挪了挪
 								SIF RAND:2==1
 									CALL yuka_sw_1001jia
 							CASE 1
@@ -3059,7 +3079,7 @@ IF LOCAL
 							PRINTFORMDL 你的到来没有让慵懒的幽香抬起眼皮
 							PRINTFORMDL 『唔……咳，好的』
 							PRINTFORMDL 哈哈，你在幽香开口前就嘴塞满糕点了
-							CALL yuka_饮茶
+							CALL yuka_AA,"饮茶1"
 					ENDSELECT
 					
 				ELSE
@@ -3072,7 +3092,7 @@ IF LOCAL
 						CASE 1
 							PRINTFORMDL 幽香用茶壶给自己倒了一杯，享受着美味的茶水
 							PRINTFORMDL 时不时拿起边上的茶点送入嘴中
-							CALL yuka_饮茶
+							CALL yuka_AA,"饮茶1"
 					ENDSELECT
 					PRINTFORMDL 『幽香！』
 					PRINTFORML 「来了？一起休息着吧」
@@ -3512,7 +3532,7 @@ IF LOCAL
 		SELECTCASE RAND:3
 			CASE 0
 				PRINTFORML 「%CALLNAME:MASTER%还真是爱干净……」
-				IF TALENT:愛欲||CFLAG:68:1001==20
+				IF TALENT:TARGET:愛欲||CFLAG:68:1001==20
 					PRINTFORML 「话说我的房间最近还挺乱的……」
 					PRINTFORML 「下次和我一起打扫如何？」
 				ENDIF

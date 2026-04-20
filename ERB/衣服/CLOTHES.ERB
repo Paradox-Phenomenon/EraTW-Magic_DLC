@@ -313,14 +313,19 @@ CASE "推荐：各种装备部位", "固定：各种装备部位"
 ;ARG:1の衣装の名前を返す
 ;ARG:2是C_ID
 @CLOTHNAME(ARG,ARG:1,ARG:2)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
-RETURNF CLOTHES_TR(GET_STR(ARG:2, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:(ARG:0)), ARG:1, "名前"))
+;RETURNF CLOTHES_TR(GET_STR(ARG:2, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:(ARG:0)), ARG:1, "名前"))
+RETURNF CLOTHES_TR(GETMETH_STR(ARG:2, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:(ARG:0)), ARG:1, "名前"))
 
 
 
 ;装備部位から該当する衣装カテゴリを返す
 @CLOTHES_PARTS_TO_CATEGORY(ARGS)
 #FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SELECTCASE ARGS
 [SKIPSTART]
 ;衣装の統合化
@@ -362,9 +367,17 @@ THROW 不明な部位%ARGS%
 ;装備部位と衣装名から各衣装のカテゴリ内IDを返す
 @CLOTHES_ID(PARTS, C_NAME)
 #FUNCTION
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIMS PARTS
 #DIMS C_NAME
 #DIM  C_ID
+#DIMS DYNAMIC L_MAP
+L_MAP '= CLOTHES_PARTS_TO_CATEGORY(PARTS) + "_NAME2ID"
+IF MAP_HAS(L_MAP, C_NAME)
+	DEBUGPRINTL MAP返回CLOTHES_ID
+	RETURNF TOINT(MAP_GET(L_MAP, C_NAME))
+ENDIF
 C_ID = OBJNAME_TO_ID(, "GET", CLOTHES_PARTS_TO_CATEGORY(PARTS), C_NAME)
 ;SIF C_ID == -1
 ;	THROW %C_NAME%は%CLOTHES_PARTS_TO_CATEGORY(PARTS)%には存在しません
@@ -386,11 +399,13 @@ RETURNF C_ID
 ;COUNTER_MESSAGE.ERB内の@DATUI_MESSAGEが使用例になってるのでピンとこない人は見てね
 ;-------------------------------------------------
 @SHOW_BOTTOM(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 5 = "", "裙子", "ずらし可", "ずらし不可", "下身衣服ずらし不可"
 #DIMS PARTS
 #DIM EQUIP_TARGET
-
+RETURNF QOL_视觉优先度服装描写(ARG, @"下半身服装描写_qol")
 ;引数1とTEQUIP:0を照らし合わせて表示するものを選ぶ
 IF ARG:1
 	EQUIP_TARGET = ARG:1 & TEQUIP:ARG:0
@@ -415,9 +430,16 @@ ELSE
 ENDIF
 PARTS '= COVER_CLOTHES(ARG, @"下半身服装描写_%TYPE:LOCAL%")
 SIF STRLENS(PARTS)
-	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
+	RETURNF CLOTHES_TR(GETMETH_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
-
+@SHOW_DRESS(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIMS PARTS
+PARTS '= COVER_CLOTHES(ARG, @"裙子描写_qol")
+SIF STRLENS(PARTS)
+	RETURNF CLOTHES_TR(GETMETH_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
 ;-------------------------------------------------
 ;関数名:SHOW_下半身内衣
@@ -433,11 +455,13 @@ SIF STRLENS(PARTS)
 ;COUNTER_MESSAGE.ERB内の@DATUI_MESSAGEが使用例になってるのでピンとこない人は見てね
 ;-------------------------------------------------
 @SHOW_下半身内衣(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 5 = "", "裙子", "ずらし可", "ずらし不可", "下身衣服ずらし不可"
 #DIMS PARTS
 #DIM EQUIP_TARGET
-
+RETURNF QOL_视觉优先度服装描写(ARG, @"下半身内衣描写_qol")
 ;引数1とTEQUIP:0を照らし合わせて表示するものを選ぶ
 IF ARG:1
 	EQUIP_TARGET = ARG:1 & TEQUIP:ARG:0
@@ -462,7 +486,7 @@ ELSE
 ENDIF
 PARTS '= COVER_CLOTHES(ARG, @"下半身内衣描写_%TYPE:LOCAL%")
 SIF STRLENS(PARTS)
-	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
+	RETURNF CLOTHES_TR(GETMETH_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
 
 
@@ -476,9 +500,12 @@ SIF STRLENS(PARTS)
 ;TEQUIP:1に対応して一番上に着ている衣装の種類を返す
 ;-------------------------------------------------
 @SHOW_TOP(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 3 = "", "はだけ可", "はだけ不可"
 #DIMS PARTS
+RETURNF QOL_视觉优先度服装描写(ARG, @"上半身服装描写_qol")
 IF ARG:1
 	LOCAL = ARG:1
 ELSEIF TEQUIP:ARG:1 & 2
@@ -488,7 +515,7 @@ ELSEIF TEQUIP:ARG:1 & 1
 ENDIF
 PARTS '= COVER_CLOTHES(ARG, @"上半身服装描写_%TYPE:LOCAL%")
 SIF STRLENS(PARTS)
-	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
+	RETURNF CLOTHES_TR(GETMETH_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
 
 
@@ -502,9 +529,12 @@ SIF STRLENS(PARTS)
 ;TEQUIP:1に対応して一番上に着ている衣装の種類を返す
 ;-------------------------------------------------
 @SHOW_上半身内衣(ARG, ARG:1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS CONST TYPE, 3 = "", "はだけ可", "はだけ不可"
 #DIMS PARTS
+RETURNF QOL_视觉优先度服装描写(ARG, @"上半身内衣描写_qol")
 LOCAL = 0
 IF ARG:1
 	LOCAL = ARG:1
@@ -515,17 +545,46 @@ ELSEIF TEQUIP:ARG:1 & 1
 ENDIF
 PARTS '= COVER_CLOTHES(ARG, @"上半身内衣描写_%TYPE:LOCAL%")
 SIF STRLENS(PARTS)
-	RETURNF CLOTHES_TR(GET_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
+	RETURNF CLOTHES_TR(GETMETH_STR(ARG, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:ARG:PARTS, "名前"))
 
 
 
 
 ;最も露出を妨げている衣装の装備部位を返す
 ;@SHOW_装備系の判定が煩わしかったので簡略化用に
+@QOL_视觉优先度服装描写(CID,TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIMS DYNAMIC TYPE
+#DIM DYNAMIC CID
+#DIMS PARTS
+#FUNCTIONS
+PARTS '= COVER_CLOTHES(CID, TYPE)
+SIF STRLENS(PARTS)
+	RETURNF CLOTHES_TR(GETMETH_STR(CID, CLOTHES_PARTS_TO_CATEGORY(PARTS), EQUIP:CID:PARTS, "名前"))
+
 @COVER_CLOTHES(ARG, TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIMS TYPE
+#DIM CONST 上半身服装描写顺序 = EQUIP_外衣, EQUIP_上身衣服２, EQUIP_和服, EQUIP_ボディースーツ,EQUIP_上身衣服１,EQUIP_ワンピース,EQUIP_レオタード,EQUIP_上半身下着１,EQUIP_上半身下着２
+#DIM CONST 下半身服装描写顺序 = EQUIP_裤子, EQUIP_ボディースーツ, EQUIP_和服, EQUIP_裙子,EQUIP_ワンピース,EQUIP_レオタード,EQUIP_下半身内衣１,EQUIP_下半身内衣２
+#DIM CONST 裙子描写顺序 = EQUIP_裙子,EQUIP_和服, EQUIP_ワンピース
+#DIM CONST 上半身内衣描写顺序 = EQUIP_レオタード,EQUIP_上半身下着１,EQUIP_上半身下着２,EQUIP_ボディースーツ
+#DIM CONST 下半身内衣描写顺序 = EQUIP_ボディースーツ,EQUIP_レオタード,EQUIP_下半身内衣１,EQUIP_下半身内衣２
+
 SELECTCASE TYPE
+CASE "上半身服装描写_qol"
+	FOR LOCAL, 0, VARSIZE("上半身服装描写顺序")
+		SIF EQUIP:ARG:(上半身服装描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(上半身服装描写顺序:LOCAL)
+	NEXT
+CASE "裙子描写_qol"
+	FOR LOCAL, 0, VARSIZE("裙子描写顺序")
+		SIF EQUIP:ARG:(裙子描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(裙子描写顺序:LOCAL)
+	NEXT
 CASE "上半身服装描写_はだけ不可"
 	SIF EQUIP:ARG:上身衣服１
 		RETURNF "上身衣服１"
@@ -547,7 +606,11 @@ CASE "上半身服装描写_はだけ可"
 		RETURNF "上半身内衣２"
 	RETURNF
 
-
+CASE "上半身内衣描写_qol"
+	FOR LOCAL, 0, VARSIZE("上半身内衣描写顺序")
+		SIF EQUIP:ARG:(上半身内衣描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(上半身内衣描写顺序:LOCAL)
+	NEXT
 CASE "上半身内衣描写_はだけ不可"
 	SIF EQUIP:ARG:レオタード
 		RETURNF "レオタード"
@@ -562,6 +625,11 @@ CASE "上半身内衣描写_はだけ可"
 	RETURNF
 
 
+CASE "下半身内衣描写_qol"
+	FOR LOCAL, 0, VARSIZE("下半身内衣描写顺序")
+		SIF EQUIP:ARG:(下半身内衣描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(下半身内衣描写顺序:LOCAL)
+	NEXT
 CASE "下半身内衣描写_下身衣服ずらし不可"
 	SIF EQUIP:ARG:ボディースーツ
 		RETURNF "ボディースーツ"
@@ -592,12 +660,11 @@ CASE "下半身内衣描写_裙子"
 	RETURNF
 
 
-CASE "下半身服装描写_全身衣"
-	SIF EQUIP:ARG:ボディースーツ
-		RETURNF "ボディースーツ"
-	SIF EQUIP:ARG:レオタード
-		RETURNF "レオタード"
-	RETURNF
+CASE "下半身服装描写_qol"
+	FOR LOCAL, 0, VARSIZE("下半身服装描写顺序")
+		SIF EQUIP:ARG:(下半身服装描写顺序:LOCAL)
+			RETURNF EQUIPNAME:(下半身服装描写顺序:LOCAL)
+	NEXT
 CASE "下半身服装描写_下身衣服ずらし不可"
 	SIF EQUIP:ARG:裤子
 		RETURNF "裤子"
@@ -631,8 +698,6 @@ CASE "下半身服装描写_裙子"
 		RETURNF "連衣裙"
 	SIF EQUIP:ARG:和服
 		RETURNF "和服"
-	SIF EQUIP:ARG:連衣裙
-		RETURNF "連衣裙"
 	RETURNF
 ENDSELECT
 
@@ -640,6 +705,8 @@ ENDSELECT
 
 ;全キャラの衣装を默认に戻す
 @RESET_ALL_CLOTHES
+#LOCALSIZE 1
+#LOCALSSIZE 1
 FOR LOCAL, 0, CHARANUM
 	CFLAG:LOCAL:基本服装セット = 0
 	CALL SELECT_CLOTHES(LOCAL, "今日の衣装")
@@ -655,6 +722,8 @@ NEXT
 ;EQUIPからTEQUIPに変換
 ;このタイミングで靴脱ぎと全裸チェック
 @CLOTHES_SETTING_TRAIN(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 TEQUIP:ARG:0 = 0
 TEQUIP:ARG:1 = 0
 
@@ -762,20 +831,26 @@ SIF TEQUIP:ARG:4
 ;とりあえず衣装セットにあるやつ・もしくは他角色の便装だけ
 ;着替えたらRESULT==1
 @EX_COSTUME(C_ID, TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIM  EX_COS
 #DIMS TYPE
-EX_COS = GET_INT(C_ID, "キャラデータ", NO:C_ID, @"%TYPE%衣装")
-;#; PRINTFORML {C_ID}特殊衣装変更%TYPE% {EX_COS}
+EX_COS = GETMETH_INT(C_ID, "キャラデータ", NO:C_ID, @"%TYPE%衣装")
+SIF 服装系统DEBUG
+	DEBUGPRINTFORML {C_ID}特殊衣装変更%TYPE% {EX_COS}
 SIF !EX_COS
 	RETURN
 CALL OKIGAE(C_ID, EX_COS)
-;#; CALL SHOW_CLOTHES(C_ID, "現在的衣装")
+SIF 服装系统DEBUG
+	CALL SHOW_CLOTHES(C_ID, "現在的衣装")
 RETURN 1
 
 
 ;一時お着替え関数
 @OKIGAE(C_ID, COS_ID, COS_TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM C_ID      ;着せ替えを行うキャラクター
 #DIM COS_ID    ;衣装セットのID、101以上だとキャラ衣装だとみなされる（キャラ衣装を指定したい時はNO + 100にすること）
 #DIMS COS_TYPE ;参照衣装文字列、キャラデータに記載があるのが前提なので、未実装だと真っ裸になる
@@ -785,7 +860,8 @@ CFLAG:C_ID:基本服装セット = COS_ID
 
 IF STRLENS(COS_TYPE)
 ;文字列指定で便装以外も指定できるように
-	;#; PRINTFORML {COS_ID}特殊衣装変更%COS_TYPE%
+	SIF 服装系统DEBUG
+		DEBUGPRINTFORML {COS_ID}特殊衣装変更%COS_TYPE%
 	CALL CTRL_CLOTHES_SET(C_ID, "便装の変更_角色衣装", COS_ID, COS_TYPE)
 	CALL CLOTHES_SETTING_TRAIN(C_ID)
 	RETURN
@@ -809,6 +885,8 @@ CALL CLOTHES_SETTING_TRAIN(C_ID)
 
 
 @SET_UNDERWEAR(C_ID, TIME_TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM DYNAMIC TOP_OVERRIDDEN
@@ -817,32 +895,32 @@ CALL CLOTHES_SETTING_TRAIN(C_ID)
 
 
 IF TIME_TYPE != "今天的睡衣"
-	LOCAL:10 = CFLAG:C_ID:基本服装セット
+	LOCAL:0 = CFLAG:C_ID:基本服装セット
 
 	IF CHECK_CLO("bra_overridden", C_ID)
 		TOP_OVERRIDDEN = 1
-		IF LOCAL:10 == 100
+		IF LOCAL:0 == 100
 			CFLAG:C_ID:207 = CFLAG:C_ID:607
 			CFLAG:C_ID:208 = CFLAG:C_ID:608
-		ELSEIF LOCAL:10 > 套装范围 ;shouldn't be possible, but covered regardless
-			CFLAG:C_ID:207 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 套装范围, @"便装：上半身内衣１")
-			CFLAG:C_ID:208 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 套装范围, @"便装：上半身内衣２")
+		ELSEIF LOCAL:0 > 套装范围 ;shouldn't be possible, but covered regardless
+			CFLAG:C_ID:207 = GETMETH_INT(C_ID, "キャラデータ", LOCAL:0 - 套装范围, @"便装：上半身内衣１")
+			CFLAG:C_ID:208 = GETMETH_INT(C_ID, "キャラデータ", LOCAL:0 - 套装范围, @"便装：上半身内衣２")
 		ELSE
-			CFLAG:C_ID:207 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"上半身内衣１")
-			CFLAG:C_ID:208 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"上半身内衣２")
+			CFLAG:C_ID:207 = GETMETH_INT(C_ID, "衣装セット", LOCAL:0, @"上半身内衣１")
+			CFLAG:C_ID:208 = GETMETH_INT(C_ID, "衣装セット", LOCAL:0, @"上半身内衣２")
 		ENDIF
 	ENDIF
 	IF CHECK_CLO("panties_overridden", C_ID)
 		TOP_OVERRIDDEN = 1
-		IF LOCAL:10 == 100
+		IF LOCAL:0 == 100
 			CFLAG:C_ID:205 = CFLAG:C_ID:605
 			CFLAG:C_ID:206 = CFLAG:C_ID:606
-		ELSEIF LOCAL:10 > 套装范围 ;shouldn't be possible, but covered regardless
-			CFLAG:C_ID:205 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 套装范围, @"便装：下半身内衣１")
-			CFLAG:C_ID:206 = GET_INT(C_ID, "キャラデータ", LOCAL:10 - 套装范围, @"便装：下半身内衣２")
+		ELSEIF LOCAL:0 > 套装范围 ;shouldn't be possible, but covered regardless
+			CFLAG:C_ID:205 = GETMETH_INT(C_ID, "キャラデータ", LOCAL:0 - 套装范围, @"便装：下半身内衣１")
+			CFLAG:C_ID:206 = GETMETH_INT(C_ID, "キャラデータ", LOCAL:0 - 套装范围, @"便装：下半身内衣２")
 		ELSE
-			CFLAG:C_ID:205 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"下半身内衣１")
-			CFLAG:C_ID:206 = GET_INT(C_ID, "衣装セット", LOCAL:10, @"下半身内衣２")
+			CFLAG:C_ID:205 = GETMETH_INT(C_ID, "衣装セット", LOCAL:0, @"下半身内衣１")
+			CFLAG:C_ID:206 = GETMETH_INT(C_ID, "衣装セット", LOCAL:0, @"下半身内衣２")
 		ENDIF
 	ENDIF
 ENDIF
@@ -855,6 +933,8 @@ CALL SET_BRA(C_ID, TIME_TYPE, TOP_OVERRIDDEN)
 ;有胖次指定时，解除下半身内衣1
 ;指定了下半身内衣1时，优先于胖次
 @SET_PANTS(C_ID, TIME_TYPE, OVERRIDDEN)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM  P_ID
@@ -874,7 +954,7 @@ IF TIME_TYPE == "今天的睡衣"
 		; CFLAG:C_ID:睡衣胖次 = CFLAG:C_ID:246
 		RETURN
 	ELSEIF !GETBIT(TALENT:C_ID:2, 0)
-		P_ID = CLOTHES_ID("下半身内衣２", "四角裤")
+		P_ID = [[下半身内衣_ずらし可能_四角裤]]
 	ELSEIF !CFLAG:C_ID:245 && WEIGHTED_SELECTION_OF_PANTS
 		P_ID = 加权随机角色内裤(C_ID)
 	ELSEIF !CFLAG:C_ID:245
@@ -914,7 +994,7 @@ ELSEIF CFLAG:C_ID:206
 	RETURN
 ELSEIF !GETBIT(TALENT:C_ID:2, 0)
 ;男人ならとりあえず四角裤で
-	P_ID = CLOTHES_ID("下半身内衣２", "四角裤")
+	P_ID = [[下半身内衣_ずらし可能_四角裤]]
 ELSEIF !CFLAG:C_ID:245 && WEIGHTED_SELECTION_OF_PANTS
 	P_ID = 加权随机角色内裤(C_ID)
 ELSEIF !CFLAG:C_ID:205
@@ -925,6 +1005,8 @@ CFLAG:C_ID:きょうのぱんつ = P_ID
 CFLAG:C_ID:206 = P_ID
 
 @SET_BRA(C_ID, TIME_TYPE, OVERRIDDEN)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM  DYNAMIC B_ID
@@ -935,7 +1017,7 @@ IF TIME_TYPE == "今天的睡衣"
 		B_ID = CFLAG:C_ID:247
 	ELSEIF CFLAG:C_ID:248
 	ELSEIF !GETBIT(TALENT:C_ID:2, 0)
-		B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衫")
+		B_ID = [[上半身内衣_はだけ不可_Ｔ恤衫]]
 	ELSE
 		B_ID = 今日の文胸(C_ID, CFLAG:C_ID:246)
 	ENDIF
@@ -954,7 +1036,7 @@ ELSEIF CFLAG:C_ID:207
 	B_ID = CFLAG:C_ID:207
 ELSEIF CFLAG:C_ID:208
 ELSEIF !GETBIT(TALENT:C_ID:2, 0)
-	B_ID = CLOTHES_ID("上半身内衣１", "Ｔ恤衫")
+	B_ID = [[上半身内衣_はだけ不可_Ｔ恤衫]]
 ELSE
 	B_ID = 今日の文胸(C_ID, CFLAG:C_ID:きょうのぱんつ)
 ENDIF
@@ -965,6 +1047,8 @@ CFLAG:C_ID:207 = B_ID
 ;今日の衣装決定関数
 ;必ず衣装→睡衣でセットで使用こと
 @SELECT_CLOTHES(C_ID, TIME_TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TIME_TYPE
 #DIM  衣装C_ID
@@ -992,15 +1076,15 @@ IF TIME_TYPE == "今天的睡衣"
 		衣装TYPE '= "全裸"
 	CASE 1 TO 99
 	;衣装セットの指定
-		衣装TYPE '= GET_STR(C_ID, "衣装セット", CFLAG:C_ID:睡衣指定, "名前")
+		衣装TYPE '= GETMETH_STR(C_ID, "衣装セット", CFLAG:C_ID:睡衣指定, "名前")
 	CASE 0
 	;默认服装による設定
 		IF !(C_ID == MASTER)
 			衣装C_ID = NO:C_ID
-			衣装TYPE '= GET_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
+			衣装TYPE '= GETMETH_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
 		ELSEIF FLAG:扮演
 			衣装C_ID = FLAG:扮演
-			衣装TYPE '= GET_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
+			衣装TYPE '= GETMETH_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
 		ENDIF
 	ENDSELECT
 	;未設定なら睡裤
@@ -1026,7 +1110,7 @@ CASE 100
 	CALL SET_UNDERWEAR(C_ID, TIME_TYPE)
 CASE 1 TO 套装范围
 ;衣装セットの指定
-	衣装TYPE '= GET_STR(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, "名前")
+	衣装TYPE '= GETMETH_STR(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, "名前")
 	;念のため
 	SIF !STRLENS(衣装TYPE)
 		GOTO DEFAULT
@@ -1042,10 +1126,10 @@ CASE 0
 	$DEFAULT
 	IF !(C_ID == MASTER)
 		衣装C_ID = NO:C_ID
-		衣装TYPE '= GET_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
+		衣装TYPE '= GETMETH_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
 	ELSEIF FLAG:扮演
 		衣装C_ID = FLAG:扮演
-		衣装TYPE '= GET_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
+		衣装TYPE '= GETMETH_STR(C_ID, "キャラデータ", 衣装C_ID, TIME_TYPE)
 	ELSEIF GETBIT(TALENT:C_ID:2, 0)
 	;まんまんがあるときは女装を基本とする
 		衣装TYPE '= "一套女装"
@@ -1064,6 +1148,8 @@ CALL SET_UNDERWEAR(C_ID, TIME_TYPE)
 
 ;衣装更新関数
 @CHANGE_CLOTHES(C_ID, TYPE, 衣装C_ID, 衣装TYPE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TYPE
 #DIM  衣装C_ID
@@ -1092,8 +1178,10 @@ CASE "今日の衣装", "明日の衣装"
 		CALL CTRL_CLOTHES_SET(C_ID, "便装の変更_角色衣装", 衣装C_ID, 衣装TYPE)
 	ENDIF
 CASE "复原衣服","衣装リセット"
-	;#;SIF C_ID == TARGET
-	;#;	PRINTFORML TARGET复原衣服
+	IF 服装系统DEBUG
+		SIF C_ID == TARGET
+		PRINTFORML TARGET复原衣服
+	ENDIF
 	IF 睡眠時間(C_ID)
 		CALL CTRL_CLOTHES_SET(C_ID, "現在衣装の変更_睡衣")
 		CFLAG:C_ID:睡衣 = 1
@@ -1102,11 +1190,11 @@ CASE "复原衣服","衣装リセット"
 			SELECTCASE TCVAR:C_ID:EVENT_CLOTHING_SET
 				CASE IS < 套装范围
 					FOR LOCAL, 1, 23
-						EQUIP:C_ID:LOCAL = GET_INT(C_ID, "衣装セット", TCVAR:C_ID:EVENT_CLOTHING_SET, EQUIPNAME:LOCAL)
+						EQUIP:C_ID:LOCAL = GETMETH_INT(C_ID, "衣装セット", TCVAR:C_ID:EVENT_CLOTHING_SET, EQUIPNAME:LOCAL)
 					NEXT
 				CASE 套装范围 + 1 TO 套装范围 + 人物数量上限
 					FOR LOCAL, 1, 23
-						EQUIP:C_ID:LOCAL = GET_INT(C_ID, "キャラデータ", TCVAR:C_ID:EVENT_CLOTHING_SET - 套装范围, @"便装：%EQUIPNAME:LOCAL%")
+						EQUIP:C_ID:LOCAL = GETMETH_INT(C_ID, "キャラデータ", TCVAR:C_ID:EVENT_CLOTHING_SET - 套装范围, @"便装：%EQUIPNAME:LOCAL%")
 					NEXT
 			ENDSELECT
 		ELSE
@@ -1116,7 +1204,7 @@ CASE "复原衣服","衣装リセット"
 						CASE IS < 100
 							FOR LOCAL, 1, 23
 								SIF !GROUPMATCH(LOCAL, 6, 7)							
-									CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, EQUIPNAME:LOCAL)
+									CFLAG:C_ID:(200 + LOCAL) = GETMETH_INT(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, EQUIPNAME:LOCAL)
 							NEXT
 						CASE 100
 							FOR LOCAL, 1, 23
@@ -1126,7 +1214,7 @@ CASE "复原衣服","衣装リセット"
 						CASE 套装范围 + 1 TO 套装范围 + 人物数量上限
 							FOR LOCAL, 1, 23
 								SIF !GROUPMATCH(LOCAL, 6, 7)		
-									CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "キャラデータ", CFLAG:C_ID:基本服装セット - 套装范围, @"便装：%EQUIPNAME:LOCAL%")
+									CFLAG:C_ID:(200 + LOCAL) = GETMETH_INT(C_ID, "キャラデータ", CFLAG:C_ID:基本服装セット - 套装范围, @"便装：%EQUIPNAME:LOCAL%")
 							NEXT
 					ENDSELECT
 
@@ -1155,6 +1243,8 @@ EQUIP:0の扱いとしては
 これでだいたいいいと思う
 [SKIPEND]
 @CTRL_CLOTHES_SET(C_ID, TYPE, ARG, ARGS)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TYPE
 SELECTCASE TYPE
@@ -1176,7 +1266,7 @@ CASE "現在衣装の保存_おきにいり"
 
 	LOCAL = CURRENT_CLOTHES_SET(C_ID)
 	IF INRANGE(LOCAL, 0, 99)
-		CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = GET_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_TOP") || GET_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_BOTTOM")
+		CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = GETMETH_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_TOP") || GETMETH_INT(C_ID, "衣装セット", LOCAL, "OVERRIDE_UNDERWEAR_BOTTOM")
 	ELSE
 		CFLAG:C_ID:FAVORITE_OVERRIDE_UNDERWEAR = 0
 	ENDIF
@@ -1254,7 +1344,7 @@ CASE "現在衣装の変更_角色衣装"
 ;ARGで指定された角色の衣装を参照する
 	CFLAG:C_ID:衣装一時変更 = 套装范围 + ARG
 	FOR LOCAL, 1, 23
-		EQUIP:C_ID:LOCAL = GET_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
+		EQUIP:C_ID:LOCAL = GETMETH_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
 	NEXT
 	CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
 
@@ -1265,13 +1355,13 @@ CASE "現在衣装の変更_衣装セット"
         PRINTFORML ＊WARNING＊: Clothing set {ARG} does not exist. %CALLNAME:C_ID% will be nude.
 	CFLAG:C_ID:衣装一時変更 = ARG
 	FOR LOCAL, 1, 23
-		EQUIP:C_ID:LOCAL = GET_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
+		EQUIP:C_ID:LOCAL = GETMETH_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
 	NEXT
 	CALL CTRL_CLOTHES_SET(C_ID, "内衣一括設定")
 CASE "内衣一括設定"
-	SIF !GET_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_BOTTOM")
+	SIF !GETMETH_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_BOTTOM")
 	CALL CTRL_CLOTHES_SET(C_ID, "胖次一括設定")
-	SIF !GET_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_TOP")
+	SIF !GETMETH_INT(C_ID, "衣装セット", CURRENT_CLOTHES_SET(C_ID), "OVERRIDE_UNDERWEAR_TOP")
 	CALL CTRL_CLOTHES_SET(C_ID, "ブラ一括設定")
 CASE "胖次一括設定"
 	IF !CFLAG:C_ID:睡衣
@@ -1335,14 +1425,14 @@ CASE "便装の変更_角色衣装","現在衣装の変更_キャラ衣装"
 ;ARGで指定された角色のARGSで指定された衣装を参照する
 	CFLAG:C_ID:基本服装セット = 套装范围 + ARG
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
+		CFLAG:C_ID:(200 + LOCAL) = GETMETH_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
 	NEXT
 
 CASE "便装の変更_衣装セット"
 ;ARGで指定されたIDの衣装セットを参照する
 	CFLAG:C_ID:基本服装セット = ARG
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(200 + LOCAL) = GET_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
+		CFLAG:C_ID:(200 + LOCAL) = GETMETH_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
 	NEXT
 CASE "便装の変更_套装"
 	CFLAG:C_ID:基本服装セット = 100
@@ -1354,12 +1444,12 @@ CASE "睡衣的变更_角色衣装"
 ;ARGで指定された角色のARGSで指定された衣装を参照する
 	CFLAG:C_ID:睡衣指定 = 套装范围 + ARG
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(240 + LOCAL) = GET_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
+		CFLAG:C_ID:(240 + LOCAL) = GETMETH_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
 	NEXT
 CASE "睡衣的变更_衣装セット"
 	CFLAG:C_ID:睡衣指定 = ARG
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(240 + LOCAL) = GET_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
+		CFLAG:C_ID:(240 + LOCAL) = GETMETH_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
 	NEXT
 CASE "睡衣的变更_套装"
 	CFLAG:C_ID:睡衣指定 = 300
@@ -1384,13 +1474,13 @@ CASE "睡衣的变更_全裸"
 
 CASE "套装の変更_角色衣装"
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(600 + LOCAL) = GET_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
+		CFLAG:C_ID:(600 + LOCAL) = GETMETH_INT(C_ID, "キャラデータ", ARG, @"%ARGS%：%EQUIPNAME:LOCAL%")
 	NEXT
 	;CFLAG:C_ID:套装 = 1
 
 CASE "套装の変更_衣装セット"
 	FOR LOCAL, 1, 23
-		CFLAG:C_ID:(600 + LOCAL) = GET_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
+		CFLAG:C_ID:(600 + LOCAL) = GETMETH_INT(C_ID, "衣装セット", ARG, EQUIPNAME:LOCAL)
 	NEXT
 	;CFLAG:C_ID:套装 = 1
 ENDSELECT
@@ -1404,6 +1494,8 @@ ENDCATCH
 
 ;特定角色の衣装設定の内容を表示する
 @SHOW_CHARA_CLOTHES(C_ID, PAGE = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS CONST 表示衣装, 4 = "現在的衣装", "今日の衣装", "今天的睡衣", "套装"
 #DIMS CONST 表示标签, 4 = "现在的服装", "今天的服装", "今天的睡衣", "套装"
@@ -1415,7 +1507,7 @@ CASE 0
 CASE 100
 	PRINTFORML 　现在的胖次设定：指定不穿内裤
 CASEELSE
-	PRINTFORML 　现在的胖次设定：%GET_STR(C_ID, "下半身内衣_ずらし可能", CFLAG:C_ID:指定胖次, "名前")%
+	PRINTFORML 　现在的胖次设定：%GETMETH_STR(C_ID, "下半身内衣_ずらし可能", CFLAG:C_ID:指定胖次, "名前")%
 ENDSELECT
 PRINTFORML 
 CALL SHOW_CLOTHES(C_ID, 表示衣装:PAGE)
@@ -1444,6 +1536,8 @@ LOOP 1
 
 ;衣装系の表示関数
 @SHOW_CLOTHES(C_ID, TYPE, ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM  C_ID
 #DIMS TYPE
 #DIM  ID
@@ -1568,7 +1662,7 @@ CASE "今日の衣装", "便装"
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
 		CLOTHES:LOCAL = CFLAG:C_ID:(200 + GETNUM(EQUIP, 表示部位:LOCAL))
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		IF (表示部位:LOCAL == "上半身内衣１"  && C_ID != MASTER && !上半身内衣表示(C_ID)) || (表示部位:LOCAL == "下半身内衣１" && C_ID != MASTER && !下半身内衣表示(C_ID))
 			PRINTFORML %表示ラベル:LOCAL%[？？？？？]
 			LOCAL += 1
@@ -1602,7 +1696,7 @@ CASE "今天的睡衣"
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
 		CLOTHES:LOCAL = CFLAG:C_ID:(240 + GETNUM(EQUIP, 表示部位:LOCAL))
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		IF (表示部位:LOCAL == "上半身内衣１"  && C_ID != MASTER && !上半身内衣表示(C_ID)) || (表示部位:LOCAL == "下半身内衣１" && C_ID != MASTER && !下半身内衣表示(C_ID))
 			PRINTFORML %表示ラベル:LOCAL%[？？？？？]
 			LOCAL += 1
@@ -1636,7 +1730,7 @@ CASE "套装"
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
 		CLOTHES:LOCAL = CFLAG:C_ID:(600 + GETNUM(EQUIP, 表示部位:LOCAL))
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		IF (表示部位:LOCAL == "上半身内衣１"  && C_ID != MASTER && !上半身内衣表示(C_ID)) || (表示部位:LOCAL == "下半身内衣１" && C_ID != MASTER && !下半身内衣表示(C_ID))
 			PRINTFORML %表示ラベル:LOCAL%[？？？？？]
 			LOCAL += 1
@@ -1675,8 +1769,8 @@ CASE "角色便装"
 			CONTINUE
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
-		CLOTHES:LOCAL = GET_INT(C_ID, "キャラデータ", ID, @"便装：%表示部位:LOCAL%")
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		CLOTHES:LOCAL = GETMETH_INT(C_ID, "キャラデータ", ID, @"便装：%表示部位:LOCAL%")
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		IF (表示部位:LOCAL == "上半身内衣１"  && C_ID != MASTER && !上半身内衣表示(C_ID)) || (表示部位:LOCAL == "下半身内衣１" && C_ID != MASTER && !下半身内衣表示(C_ID))
 			PRINTFORML %表示ラベル:LOCAL%[？？？？？]
 			LOCAL += 1
@@ -1703,11 +1797,11 @@ CASE "角色便装"
 
 CASE "衣装セット"
 ;衣装セットIDの内容を表示する
-	IF GET_STR(C_ID, "衣装セット" , ID, "名前") == ""
+	IF GETMETH_STR(C_ID, "衣装セット" , ID, "名前") == ""
 		PRINTFORML 不存在可以参照的衣装
 		RETURN
 	ENDIF
-	PRINTFORML %GET_STR(C_ID, "衣装セット" , ID, "名前")%
+	PRINTFORML %GETMETH_STR(C_ID, "衣装セット" , ID, "名前")%
 	FOR LOCAL, 1, 23
 		;装備部位のID取得
 		;装備部位 = FINDELEMENT(EQUIPNAME, 表示部位:LOCAL)
@@ -1715,8 +1809,8 @@ CASE "衣装セット"
 			CONTINUE
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
-		CLOTHES:LOCAL = GET_INT(C_ID, "衣装セット", ID, 表示部位:LOCAL)
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		CLOTHES:LOCAL = GETMETH_INT(C_ID, "衣装セット", ID, 表示部位:LOCAL)
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		IF (表示部位:LOCAL == "上半身内衣１"  && C_ID != MASTER && !上半身内衣表示(C_ID)) || (表示部位:LOCAL == "下半身内衣１" && C_ID != MASTER && !下半身内衣表示(C_ID))
 			PRINTFORML %表示ラベル:LOCAL%[？？？？？]
 			LOCAL += 1
@@ -1746,7 +1840,7 @@ CASE "暂存状态"
 		SIF GETNUM(EQUIP, 表示部位:LOCAL) < 0
 			THROW 不存在的装備部位%表示部位:LOCAL%
 		CLOTHES:LOCAL = TEMP_CLOTHES:C_ID:(GETNUM(EQUIP, 表示部位:LOCAL))
-		表示内容 '= GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
+		表示内容 '= GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(表示部位:LOCAL), CLOTHES:LOCAL, "名前")
 		SIF !CLOTHES:LOCAL
 			表示内容 = 无
 
@@ -1755,6 +1849,8 @@ CASE "暂存状态"
 ENDSELECT
 
 @SPECIAL_OUTFIT(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
 IF FESTIVAL() == "兔子之日"
@@ -1762,97 +1858,133 @@ IF FESTIVAL() == "兔子之日"
 ELSEIF FLAG:ファッション
 	RETURNF FLAG:ファッション
 ENDIF
-RETURNF GET_INT(0, "キャラデータ", CHARA, "特殊衣装着用")
+;RETURNF GET_INT(0, "キャラデータ", CHARA, "特殊衣装着用")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "特殊衣装着用")
 
 
 @UNIQUE_UNDERWARE_TOP(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有上半身内衣名")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有上半身内衣名")
 
 @UNIQUE_UNDERWARE_BOTTOM(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-SIF GET_STR(0, "キャラデータ", CHARA, "固有下半身内衣名") == ""
+LOCALS '= GETMETH_STR(0, "キャラデータ", CHARA, "固有下半身内衣名")
+SIF  LOCALS== ""
 	RETURNF "崭新的胖次"
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有下半身内衣名")
+RETURNF LOCALS
 
 @UNIQUE_UNDERWARE_ADJ(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有内衣形容詞")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有内衣形容詞")
 
 @UNIQUE_UNDERWARE_ABLE(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有内衣着用条件")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有内衣着用条件")
 
 @UNIQUE_UNDERWARE_TRANSPARENCY_FRONT(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有内衣半透明(前)")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有内衣半透明(前)")
 
 @UNIQUE_UNDERWARE_TRANSPARENCY_BACK(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有内衣半透明(後)")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有内衣半透明(後)")
 
 @UNIQUE_UNDERWARE_TOP_THICK(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有内衣布料厚度")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有内衣布料厚度")
 
 
 
 
 @UNIQUE_UNDERWARE_SWIMMING(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有泳装名")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有泳装名")
 
 @UNIQUE_UNDERWARE_SWIMMING_ADJ(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有泳衣形容詞")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有泳衣形容詞")
 
 @UNIQUE_UNDERWARE_SWIMMING_ABLE(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有泳衣着用条件")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有泳衣着用条件")
 
 @UNIQUE_UNDERWARE_SWIMMING_TRANSPARENCY_FRONT(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有泳衣半透明(前)")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有泳衣半透明(前)")
 
 @UNIQUE_UNDERWARE_SWIMMING_TRANSPARENCY_BACK(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有泳衣半透明(後)")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有泳衣半透明(後)")
 
 @UNIQUE_UNDERWARE_SWIMMING_TOP_THICK(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM CHARA
-RETURNF GET_INT(0, "キャラデータ", CHARA, "固有泳衣布料厚度")
+RETURNF GETMETH_INT(0, "キャラデータ", CHARA, "固有泳衣布料厚度")
 
 @UNIQUE_UNDERWARE_SWIMMING_CONNECT(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有连身泳衣名")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有连身泳衣名")
 
 @UNIQUE_UNDERWARE_SWIMMING_TOP(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有上半身泳衣名")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有上半身泳衣名")
 
 @UNIQUE_UNDERWARE_SWIMMING_BOTTOM(CHARA)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTIONS
 #DIM CHARA
-SIF GET_STR(0, "キャラデータ", CHARA, "固有下半身泳衣名") == ""
+SIF GETMETH_STR(0, "キャラデータ", CHARA, "固有下半身泳衣名") == ""
 	RETURNF "崭新的比基尼内裤"
-RETURNF GET_STR(0, "キャラデータ", CHARA, "固有下半身泳衣名")
+RETURNF GETMETH_STR(0, "キャラデータ", CHARA, "固有下半身泳衣名")
 
 @上半身内衣表示(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM C_ID
 
@@ -1863,6 +1995,8 @@ SIF CFLAG:C_ID:睡眠 && CFLAG:C_ID:睡衣上半身内衣確認
 RETURNF 0
 
 @下半身内衣表示(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM C_ID
 
@@ -1873,6 +2007,8 @@ SIF CFLAG:C_ID:睡眠 && CFLAG:C_ID:睡衣下半身内衣確認
 RETURNF 0
 
 @上半身内衣チェック(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM C_ID
 
@@ -1883,6 +2019,8 @@ ELSE
 ENDIF
 
 @下半身内衣チェック(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #FUNCTION
 #DIM C_ID
 
@@ -1893,6 +2031,8 @@ ELSE
 ENDIF
 
 @内衣確認リセット(C_ID)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM C_ID
 
 CFLAG:C_ID:上半身内衣確認 = 0
@@ -1904,6 +2044,8 @@ RETURN
 
 ;蛇版魔改重做函数
 @衣服选择列表(换装选择, C_ID, PAGE, 部位选择屏蔽)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM DYNAMIC 换装选择
 #DIM C_ID
 #DIM REF PAGE
@@ -1939,9 +2081,9 @@ IF 换装选择 == 23
 		; 	PAGE -= 1
 		; 	LOCAL = 20 * PAGE + 1
 		; ENDIF
-		IF GET_EXIST("衣装セット", LOCAL) && STRLENS(GET_STR(C_ID, "衣装セット", LOCAL, "名前")) != 1
+		IF GET_EXIST("衣装セット", LOCAL) && GETMETH_STR(C_ID, "衣装セット", LOCAL, "名前") != ""
 			CALL 套装立绘映射(LOCAL,C_ID)
-			PRINTFORML [{LOCAL, 2}] - %CLOTHES_TR(GET_STR(C_ID, "衣装セット", LOCAL, "名前"))%
+			PRINTFORML [{LOCAL, 2}] - %CLOTHES_TR(GETMETH_STR(C_ID, "衣装セット", LOCAL, "名前"))%
 			RESETCOLOR
 		ELSE
 			SETCOLOR C_GRAY
@@ -1969,9 +2111,9 @@ ELSE
 		; 	PAGE -= 1
 		; 	LOCAL = 20 * PAGE + 1
 		; ENDIF
-		IF GET_EXIST(CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL) && STRLENS(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前")) != 1
+		IF GET_EXIST(CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL) && GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前") != ""
 			CALL 装备立绘映射(换装选择,LOCAL,C_ID)
-			PRINTFORML [{LOCAL, 2}] - %CLOTHES_TR(GET_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前"))%
+			PRINTFORML [{LOCAL, 2}] - %CLOTHES_TR(GETMETH_STR(C_ID, CLOTHES_PARTS_TO_CATEGORY(EQUIPNAME:换装选择), LOCAL, "名前"))%
 			RESETCOLOR
 		ELSE
 			SETCOLOR C_GRAY

@@ -126,9 +126,11 @@
 102,Ｖ感度,;-1=鈍感 1=敏感
 103,Ａ感度,;-1=鈍感 1=敏感
 104,Ｂ感度,;-1=鈍感 1=敏感
-105,バストサイズ,;-2=絶壁 -1 = 貧乳 0=並乳 1=巨乳 2=爆乳
+105,バストサイズ
+105,胸圍
 106,Ｍ感度,;-1=鈍感 1=敏感
-108,ヒップサイズ,;added, ass size
+108,臀围
+108,臀圍
 120,浓厚精液,
 121,酒耐性,;-2=下戸 -1=お酒に弱い 1=お酒に強い 2=酒豪 3=うわばみ
 122,精愛味覚
@@ -238,9 +240,9 @@
 
 221,妻,;custom code (1=fiancé(e) 2=spouse)
 222,妾,;
-223,力持ち,;custom code,
-224,噂話者,;custom code
-225,酒造家,;custom code
+223,大力士,;custom code,
+224,爱八卦,;custom code
+225,酿酒师,;custom code
 
 
 310,PregnancyType_OLD,;no longer used, value should be converted to new format

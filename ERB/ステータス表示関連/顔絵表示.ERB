@@ -1,18 +1,30 @@
-﻿;CIDが0の時別途定義のMOB角色を表示するように
+﻿;-------------------------------------------------
+; 业务级调用：立绘/颜绘事件打印 (带特效覆写控制)
+; 参  数：...
+;         エフェクト : 逗号分隔的特效字符串，例如 "照れ,汗,魔法阵"
+;         EFFECT_OVERRIDE : 0 = 保留原有特效并叠加；1 = 强行清除所有特效只显示指定的
+;CIDが0の時別途定義のMOB角色を表示するように
 ;例）CALL PRINT_FACE, 0, "通常", "服", "6" でMOB僵尸妖精を表示
-@PRINT_FACE,CID,表情="",服装="",差分="",エフェクト="",立绘选择 = -1
+; 概  述：兼容原版 PRINT_FACE 的私有规则约定
+; 备  注：CID = 0 时视为路人，此时 [差分] 参数代表 [路人类型ID]-------------------------------------------------
+@PRINT_FACE(CID, 表情="", 服装="", 差分="", エフェクト="", 立绘选择 = -1, EFFECT_OVERRIDE = 0)
 #LOCALSIZE 1
 #LOCALSSIZE 1
+#DIM  DYNAMIC CID
 #DIMS DYNAMIC 表情
 #DIMS DYNAMIC 服装
 #DIMS DYNAMIC 差分
 #DIMS DYNAMIC エフェクト
-#DIMS DYNAMIC ツールチップ
-#DIM DYNAMIC CID
-#DIM DYNAMIC 立绘选择
+#DIM  DYNAMIC 立绘选择
+#DIM  DYNAMIC EFFECT_OVERRIDE
 #DIM DYNAMIC PREV_立ち絵種類
-CALL PRINT_FIGURE,CID,表情,服装,差分,エフェクト,"顔絵",立绘选择
-	RETURN
+#DIMS DYNAMIC ツールチップ
+;重构跳转，私家规则CID = 0为路人转义为编号-1
+SIF CID == 0
+	CID = -1
+CALL PRINT_FIGURE(CID, 表情, 服装, 差分, エフェクト, "顔絵", 立绘选择, EFFECT_OVERRIDE)
+RETURN
+
 SIF !顔絵付きメッセージ || !FLAG:画像表示
 	RETURN
 角色画像表示尺寸比 = 100
@@ -63,23 +75,29 @@ ENDIF
 CALL 画像一斉表示(0, 0, 1, -1)
 FLAG:立ち絵種類 = PREV_立ち絵種類
 
+;已分离为图片名索引函数和图文混排模块，图文混排部分重构为HTML实现。
+;IMG_TALK处理图片与HTML格式字符串的排版，支持任意图片与文字混排，QOL_SPTALK是集成立绘索引功能、专门调用立绘的混排
+;本功能的示例函数是@神签打印(ARG)，这两处优化是一起完成的，也就是说通过QOL_SPTALK或IMG_TALK就可以做到神签打印的效果
 @SPTALK,CID,表情="",デフォルト=0,MESSAGE,整形=0,CUSTOMFONTCOLOR
 ;CIDが0の時別途定義のMOB角色を表示するように
 ;例）CALL SPTALK, 0, "笑顔", 1, @"「この記述で」/「路人が喋ります」",1
-#DIM CID
-#DIMS 表情
-#DIM デフォルト
-#DIMS MESSAGE
-#DIM 整形
-#DIMS 服装
-#DIMS MESSAGE_PRINT,50
-#DIMS FONTCOLOR
-#DIMS ツールチップ
-#DIM TEMP_COLOR
-#DIM DYNAMIC PREV_立ち絵種類
+#DIM  DYNAMIC CID
+#DIMS DYNAMIC 表情
+#DIM  DYNAMIC デフォルト
+#DIMS DYNAMIC MESSAGE
+#DIM  DYNAMIC 整形
+;#DIMS 服装
+;#DIMS MESSAGE_PRINT,50
+;#DIMS FONTCOLOR
+;#DIMS ツールチップ
+;#DIM TEMP_COLOR
+;#DIM DYNAMIC PREV_立ち絵種類
 
-#DIMS CUSTOMFONTCOLOR
+#DIMS DYNAMIC CUSTOMFONTCOLOR
 
+CALL QOL_SPTALK(CID, 表情, デフォルト, CONVERT_STR_TO_HTML(MESSAGE), 整形, CUSTOMFONTCOLOR)
+RETURN
+[SKIPSTART]
 角色画像表示尺寸比 = 100
 TEMP_COLOR = GETCOLOR()
 
@@ -212,6 +230,7 @@ ELSE
 	RESETCOLOR
 ENDIF
 SETCOLOR TEMP_COLOR
+[SKIPEND]
 
 ;SPTALKに渡す文を整形
 @SPTALK整形(ARGS,画像行幅 = 0)
@@ -301,87 +320,4 @@ FOR LOCAL,0,100
     ENDIF
 NEXT
 
-@PRINT_BODY,CID,表情="",服装="",差分="",エフェクト="",立绘选择 = -1
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIMS DYNAMIC 表情
-#DIMS DYNAMIC 服装
-#DIMS DYNAMIC 差分
-#DIMS DYNAMIC エフェクト
-#DIM DYNAMIC CID
-#DIM DYNAMIC 立绘选择
-CALL PRINT_FIGURE,CID,表情,服装,差分,エフェクト,"立絵",立绘选择
 
-@PRINT_FIGURE,CID,表情="",服装="",差分="",エフェクト="",立绘种类 = "",立绘选择 = -1
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIMS DYNAMIC 表情
-#DIMS DYNAMIC 服装
-#DIMS DYNAMIC 差分
-#DIMS DYNAMIC エフェクト
-#DIMS DYNAMIC ツールチップ
-#DIM DYNAMIC CID
-#DIMS DYNAMIC 立绘种类
-#DIM DYNAMIC 立绘选择
-#DIM DYNAMIC PREV_立ち絵種類
-#DIM DYNAMIC PREV_立绘选择
-SIF !顔絵付きメッセージ || !FLAG:画像表示
-	RETURN
-角色画像表示尺寸比 = 100
-
-SIF 表情 == ""
-	表情 = 通常
-PREV_立ち絵種類 = FLAG:立ち絵種類
-IF 立绘种类 == "顔絵"
-	FLAG:立ち絵種類 = 1
-ELSEIF 立绘种类 == "立絵"
-	FLAG:立ち絵種類 = 0
-ELSE
-	立绘种类 = %GET_BASESTYLE(CID)%
-ENDIF
-PREV_立绘选择 = CFLAG:CID:差し替え適用
-SIF 立绘选择 != -1
-	CFLAG:CID:差し替え適用 = LIMIT(立绘选择,0,CFLAG:CID:別顔有)
-IF CID
-	;custom code
-	TRYCALLFORM IMAGE_EX_I{NO:CID}_PREリソースチェック(CID, 立绘种类, 服装, 表情, "", 差分, "")
-	CALL GET_BASE_RESOURCE(CID, 立绘种类, 服装, 表情, "", 差分)
-	SIF !RESULT
-		RESULTS = %立绘种类%_服_通常_{CID}
-	ツールチップ '= CALLNAME:CID
-ELSE
-	IF FLAG:立ち絵種類
-		RESULTS = 顔絵_%服装%_%表情%_MOB_%差分%
-	ELSE
-		RESULTS = 立絵_%服装%_%表情%_MOB_%差分%
-	ENDIF
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_RESOURCECHECK(RESULTS)
-		CALL 路人店員画像作成(TOINT(差分))
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_RESOURCECHECK(RESULTS)
-		RESULTS = 顔絵_服_通常_MOB_%差分%
-	;SIF !SPRITECREATED(RESULTS) ;debloat custom code
-	SIF !RM_RESOURCECHECK(RESULTS)
-		RETURN
-	ツールチップ = 路人子
-ENDIF
-
-SIF FLAG:多尺寸
-	默认角色画像横幅 = RM_SPRITEHEIGHT(RESULTS)
-
-;-------------------------
-DEBUGPRINTFORML PRINT_FACEで%RESULTS%を表示
-;-------------------------
-
-CALL 画像セット(RESULTS, 0, 0, 角色画像表示尺寸比, 0, 1, "100", ツールチップ)
-
-IF エフェクト != ""
-	CALL GET_EFFECT_RESOURCE(CID, エフェクト, , , 服装)
-	FOR LOCAL, 0, RESULT
-		CALL 画像セット(RESULTS:LOCAL, 0, 0, 角色画像表示尺寸比, LOCAL + 1)
-	NEXT
-ENDIF
-CALL 画像一斉表示(0, 0, 1, -1)
-FLAG:立ち絵種類 = PREV_立ち絵種類
-CFLAG:CID:差し替え適用 = PREV_立绘选择

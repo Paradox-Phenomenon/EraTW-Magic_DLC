@@ -28,12 +28,35 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_310_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-	IF FLAG:70
+	IF FLAG:70;時間停止
 	ELSEIF CFLAG:睡眠
-	ELSE
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;フキゲン時
+		IF TALENT:[[千亦]]:思慕 || TALENT:[[千亦]]:恋慕
+			PRINTFORML 「……真是的」
+			PRINTFORMDW 千亦一脸无奈地瞥了%CALLNAME:MASTER%一眼……
+		ELSE
+			PRINTFORMDL 千亦朝这边瞥了一眼，叹了口气，突然就挥出了反拳！！
+			;呀——！好危险！
+			PRINTFORMDL 千钧一发之际停住时间躲开了……真是千钧一发……
+			;后空翻闪避！
+			PRINTFORML 「啧……算了。小心神明那看不见的手吧」
+			PRINTW 
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕
+		PRINTFORML 「嗯……怎么了？」
+		SIF CFLAG:[[千亦]]:既成事実 & 合意_うふふ
+			PRINTFORML 「该不会……是又想要了吧？」
+
+	ELSEIF TALENT:[[千亦]]:思慕 
+		CALL HPH_PRINT ,@"「啊……HPH」","L"
+		PRINTFORML 「啊、不是不是！才不是那样！别误会成什么奇怪的反应啊！」
+
+	ELSE 
+		PRINTFORML 「喂喂！你摸哪里啊！变态！」
+		PRINTFORMDW 千亦明显拉开和%CALLNAME:MASTER%的距离，用披风严严实实护住了自己……
 	ENDIF
 ENDIF
 RETURN 1
@@ -62,15 +85,45 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_311_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	IF FLAG:70
 	ELSEIF CHK_DATENOW(CFLAG:LOCAL:デート中)
 	ELSEIF CFLAG:睡眠
-	ELSE
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:恋慕
+			PRINTFORML 「……太狡猾了哦」
+			PRINTFORMDW 千亦一脸复杂的神情……
+		ELSEIF TALENT:[[千亦]]:思慕 
+			PRINTFORML 「……你到底想干什么啊」
+			PRINTFORMDW 千亦一脸呆滞……
+		ELSE
+			PRINTFORMDL 千亦一把抓住这边的领口，果断来了个巴投！！咕哇——！
+			PRINTFORMDL 突如其来的袭击，只能勉强停住时间接住……好痛
+			PRINTFORML 「突然抱上来，你到底在想什么啊？真是的……」
+			PRINTW 
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕 
+		IF TALENT:MASTER:性別 == 2
+			PRINTFORML %TEXTR("（好有力的……好棒的拥抱……）/「嗯……不用抱那么紧啦，我又不会跑掉……」")%
+		ELSE
+			CALL HPH_PRINT, TEXTR(@"（拼命抱过来……%CALLNAME:MASTER%……好可爱……HPH）/「嗯……不用那么拼命啦，我又不会跑掉……」"), "L"
+		ENDIF
+		CALL HPH_PRINT ,@"「……HPH」","L"
+		IF CFLAG:[[千亦]]:既成事実 & 合意_キス && BASE:10 > 250
+			PRINTFORMDL 她用渴望的眼神指着自己的嘴唇……
+			PRINTFORML 「呐……这里也给我好吗？」
+		ENDIF
+		PRINTW
+	ELSEIF TALENT:[[千亦]]:思慕 
+		PRINTFORML 「真是的，突然干什么呀」
+		PRINTFORML 「……不过倒也不讨厌就是了」
+		PRINTW
+	ELSE 
+		PRINTFORML 「喂、喂！突然干什么！？」
+		PRINTFORMDW 吓了一跳的千亦把%CALLNAME:MASTER%甩开了……
 	ENDIF
-
 ENDIF
 RETURN 1
 ;==================================================
@@ -83,7 +136,13 @@ RETURN 1
 @M_KOJO_ARIMA_SUCCESS_COM_K141_312
 ;成否判定
 ;TFLAG:192(-2=コマンド終了、-1＝強制失敗、0=COM依存、1=強制成功or大成功
-TFLAG:192 =0
+
+IF TALENT:[[千亦]]:キス未経験 && !(TALENT:[[千亦]]:思慕 || TALENT:[[千亦]]:恋慕)
+	TFLAG:192 = -1
+ELSE
+	TFLAG:192 = 0
+ENDIF
+
 
 ;==================================================
 ;Optional: Determines if the standard description should be skipped.
@@ -99,14 +158,69 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_312_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	IF FLAG:70
 	ELSEIF CFLAG:睡眠
-	ELSE
-	ENDIF
+	ELSEIF CFLAG:193 == 99 ;失敗時
+		IF TALENT:[[千亦]]:恋慕 || TALENT:[[千亦]]:思慕 ;あるの？
+			PRINTFORML 「等、等等！现在不行！」
+			PRINTW
+		ELSE 
+			PRINTFORML 「那、那种事要按顺序来啊！」
+			PRINTFORMDW 千亦把%CALLNAME:MASTER%甩开了……
+		ENDIF
+	
+	ELSEIF TALENT:[[千亦]]:キス未経験
+		;初キス用
+		IF TALENT:[[千亦]]:恋慕
+			PRINTFORMDL 轻轻覆上千亦的唇，又分开……
+			PRINTFORML 「嗯……就结束了？」
+			PRINTFORMW 「虽然是第一次……不过试过也就这样嘛」
+			PRINTFORMW 「……%CALLNAME:MASTER%」
+			PRINTFORML 「谢谢你，愿意收下我的第一次」
+		ELSEIF TALENT:[[千亦]]:思慕
+			PRINTFORMDL 趁着空隙，轻轻吻上了千亦的唇……
+			PRINTFORML 「……！？」
+			PRINTFORML 慌乱的千亦轻轻推开了%CALLNAME:MASTER%
+			PRINTFORML 「啊、对、对不起！不、不是……突然就吻过来的%CALLNAME:MASTER%才不对吧……」
+			PRINTFORML 「呜呜……到底怎么回事啊……突然就……那可是我的初吻哦……」
+			PRINTFORML （……总觉得心里怪怪的……）
+		ELSE ;必ず失敗します、多分
+			PRINTFORML 「……呐。你也太随便了吧」
+			PRINTFORML 「我可不是那么随便的女人哦」
+		ENDIF 
+		PRINTW
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:恋慕
+			PRINTFORML 「真是的……想用这个蒙混过去吗……」
+			PRINTFORML 「……要不要再来一次？」
+			PRINTW
+		ELSEIF TALENT:[[千亦]]:思慕 
+			PRINTFORML 「嗯……你也太强势了……」
+			PRINTFORMDW 千亦一脸无奈的表情……
+		ELSE
+			PRINTFORMDL 千亦抓住这边的身体，直接来了个裂颅摔！！ 
+			PRINTFORMDL 面对突如其来的必杀技，就算停住时间也只能勉强护住自己……好痛……
+			PRINTFORML 「突然就吻上来也太胡闹了吧，真是的……」
+			PRINTW 
+		ENDIF
 
+
+	ELSE ;初キス后思慕恋慕以降
+		IF TALENT:[[千亦]]:恋慕 
+			PRINTFORML 「呼……和%CALLNAME:MASTER%的吻……感觉心都被填满了呢」
+			CALL HPH_PRINT ,@"「要不要……再来一次……HPH」","L"
+			PRINTW
+		ELSEIF TALENT:[[千亦]]:思慕 
+			PRINTFORML 「嗯……真是拿你没办法呢……\@ TALENT:MASTER:性別 == 2 ? 你这家伙 # 你这孩子 \@……」
+			CALL HPH_PRINT ,@"（……HPH）","L"
+			PRINTW
+		ELSE
+
+		ENDIF
+	ENDIF
 ENDIF
 RETURN 1
 ;==================================================
@@ -135,14 +249,37 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_313_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	IF FLAG:70
 	ELSEIF CFLAG:睡眠
-	ELSE
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:恋慕
+			PRINTFORML 「……怎么只有你一个人在享受啊」
+			PRINTFORMDW 千亦撅着嘴……
+		ELSEIF TALENT:[[千亦]]:思慕 
+			PRINTFORML 「……哈。很好玩吗？」
+			PRINTW 
+		ELSE
+			PRINTFORMDL 「……算了」
+			PRINTW 
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕 
+		IF TALENT:MASTER:性別 == 2
+			CALL HPH_PRINT, TEXTR(@"「啊嗯……果然男人最喜欢胸部了呢……HPH」/「真是的……这么贪心……HPH」"), "L"
+		ELSE
+			CALL HPH_PRINT, TEXTR(@"「嗯……女孩子里也有喜欢胸部的啊……HPH」/「我的胸部……HPH……揉起来那么舒服吗？%CALLNAME:MASTER%自己也有啊」"), "L"
+		ENDIF
+		PRINTW
+	ELSEIF TALENT:[[千亦]]:思慕 
+		PRINTFORML 「嗯……喂……」
+		PRINTFORML 「稍微克制一点嘛……」
+		PRINTW
+	ELSE 
+		PRINTFORML 「……这只手是想干嘛」
+		PRINTFORMDW 抓住想要揉捏胸部的%CALLNAME:MASTER%的手，直接甩开了……
 	ENDIF
-
 ENDIF
 RETURN 1
 ;==================================================
@@ -171,10 +308,37 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_314_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
-
+	IF FLAG:70
+	ELSEIF CFLAG:睡眠
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:恋慕
+			PRINTFORML 「什、什么！？那种脏地方……！」
+			PRINTFORML 「啊、我道歉啦！承认自己闹别扭了，快停手啦～！」
+			PRINTW 
+		ELSEIF TALENT:[[千亦]]:思慕 
+			PRINTFORML 「！！？你、你想干什么！？！」
+			PRINTFORML 「现在立刻停手！！」
+			PRINTW 
+		ELSE
+			PRINTFORML 「——！！！」
+			PRINTFORMDL 玩过头了……她大概已经不想搭理我了……
+			PRINTW 
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕 
+		CALL HPH_PRINT, TEXTR(@"「呀、住手……那里不行……」/「不、不行っ！」/「住手、快住手！」"), "L"
+		PRINTW
+	ELSEIF TALENT:[[千亦]]:思慕 
+		PRINTFORML 「住、住手！！那种脏地方！！」
+		PRINTFORML 「啊，\@ TALENT:MASTER:性別 == 2 ? 你 # 你 \@是完全没有常识吗！？」
+		PRINTW
+	ELSE 
+		PRINTFORMDW 
+		PRINTFORML 「……我说啊。玩『千年杀』这种事，可是小孩子才做的哦……？」
+		PRINTFORMDW 回过头的千亦，用冰冷的眼神看着\@ TALENT:MASTER:性別 == 2 ? 自己 # 我 \@……
+	ENDIF
 ENDIF
 RETURN 1
 ;==================================================
@@ -202,14 +366,43 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_315_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
 IF LOCAL
 	IF FLAG:70
 	ELSEIF CFLAG:睡眠
-	ELSE
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:恋慕
+			CALL HPH_PRINT,@"「嗯……喂……HPH」","L"
+			CALL HPH_PRINT,@"「……不行啦，不会做的……HPH就算像哄我开心一样爱抚，也不行的事……就是不行……HPH」","L"
+			PRINTW 
+		ELSEIF TALENT:[[千亦]]:思慕 
+			CALL HPH_PRINT,@"「……那个，现在完全没那种心情啦」","L"
+			CALL HPH_PRINT,@"「嗯……HPH你这是想蒙混过去吧」","L"
+			PRINTW
+		ELSE
+			PRINTFORML 「——！！！」
+			PRINTFORMDL 玩过头了……她大概已经不想跟我说话了……
+			PRINTW 
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕 || TALENT:[[千亦]]:思慕 
+		SELECTCASE ABL:Ｃ感覚
+			CASE 0 TO 3
+			CALL HPH_PRINT,@"「……喂喂，突然就做那种事，我也很为难啦」","L"
+			CALL HPH_PRINT,@"「还……不太懂……啊嗯HPH，从……」","L"
+			PRINTFORMDL 看来她还不是很明白……
+			CASE 4 TO 5
+			CALL HPH_PRINT,@"「嗯……只是有点痒而已……啊HPH」" , "L"
+			CALL HPH_PRINT,@"「不行HPH那里别碰啦呀HPH」" , "L"
+			PRINTFORMDL 反应渐渐变得敏感起来了……
+			CASE IS >= 6
+			CALL HPH_PRINT,@"「啊HPH好舒服HPH那里好喜欢HPH」" , "L"
+			CALL HPH_PRINT,@"「小豆豆被玩弄超喜欢HPH」" , "L"
+			PRINTFORMDL 多亏调教的成果，她现在反应超级棒……
+		ENDSELECT
+		PRINTW 
+	ELSE 
 	ENDIF
-
 ENDIF
 RETURN 1
 ;==================================================
@@ -359,11 +552,30 @@ RETURN RESULT
 @M_KOJO_ARIMA_MESSAGE_COM_K141_330_1
 ;-------------------------------------------------
 ;記入チェック（=0, 非表示、1, 表示）
-LOCAL = 0
+LOCAL = 1
 ;-------------------------------------------------
+
 IF LOCAL
-	IF FLAG:70
-	ELSE
+	IF FLAG:70;時間停止
+	ELSEIF CFLAG:睡眠
+	ELSEIF CFLAG:318 == 1 || TALENT:機嫌 == -1 ;不高兴的时候
+		IF TALENT:[[千亦]]:思慕 || TALENT:[[千亦]]:恋慕
+			PRINTFORML 「……哈啊」
+			PRINTFORMDL 千亦一脸无奈地低头俯视着%CALLNAME:MASTER%……
+		ELSE
+			PRINTFORML 「……现在立刻把手拿开。这可不是开玩笑的事哦」
+			PRINTFORMDL 散发着平时完全无法想象的杀气……只好老老实实把手放开了
+
+		ENDIF
+	ELSEIF TALENT:[[千亦]]:恋慕 || TALENT:[[千亦]]:思慕
+		PRINTFORML 「……你在干什么呀？」
+		PRINTFORML 「那个……总之先把手从裙子上拿开好吗……拜托了」
+
+	ELSE 
+		PRINTFORML 「喂喂！突然干什么啊！！」
+		PRINTFORMDL 千亦明显拉开和%CALLNAME:MASTER%的距离，用披风严严实实护住了自己……
 	ENDIF
 ENDIF
+PRINTW
 RETURN 1
+;==================================================

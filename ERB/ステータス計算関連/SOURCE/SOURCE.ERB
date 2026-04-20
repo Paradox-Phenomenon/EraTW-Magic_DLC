@@ -1,4 +1,4 @@
-﻿@SOURCE_CHECK
+@SOURCE_CHECK
 #DIM 接吻マーク反感
 #DIM 欲求不満度上昇
 #DIM 経験増加量
@@ -33,11 +33,12 @@ nTrainMessageCalled = 0
 ;-------------------------------------------------
 ;身体接触の継続、解除
 ;-------------------------------------------------
-CALL TOUCH_SUCCESSION(TARGET)
-
-;-------------------------------------------------
-;TRYCALLFORM TOUCH_SUCCESSION_{SELECTCOM}(TARGET)
-;TOUCH_SUCCESSIONで行っている処理を各指令ファイルに分散させることで、指令追加を容易にしたい
+CALL ADD_TOUCH_SUCCESSION_TR(TARGET) ;addition custom code
+;TRYCCALLFORM COM{SELECTCOM}_TOUCH(TARGET)
+;CATCH
+;	SIF !INRANGE(SELECTCOM, 300, 500)
+;		CALL TOUCH_SET(0,0,0,1)
+;ENDCATCH
 ;-------------------------------------------------
 ;剧本接口补丁
 RESULT = 0
@@ -67,6 +68,8 @@ FOR LOCAL,0,CHARANUM
 		CONTINUE
 	SIF CFLAG:LOCAL:現在位置 != CFLAG:MASTER:現在位置
 		CONTINUE
+	SIF !CFLAG:LOCAL:うふふ
+		CONTINUE
 	;性交フラグの設定
 	;addition custom code, rewrite
 	TEQUIP:LOCAL:50 = ADD_CHARA_WHO_INSERTED_IN(LOCAL, SET_V)
@@ -74,24 +77,24 @@ FOR LOCAL,0,CHARANUM
 
 	[SKIPSTART]
 	IF TEQUIP:LOCAL:Ｖ接触部位 == 1
-		TEQUIP:LOCAL:50 = MASTER
+		TEQUIP:LOCAL:Ｖセックス = MASTER
 	ELSE
-		TEQUIP:LOCAL:50 = -1
+		TEQUIP:LOCAL:Ｖセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ａ接触部位 == 1
-		TEQUIP:LOCAL:51 = MASTER
+		TEQUIP:LOCAL:Ａセックス = MASTER
 	ELSE
-		TEQUIP:LOCAL:51 = -1
+		TEQUIP:LOCAL:Ａセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ｐ接触部位 == 6
-		TEQUIP:PLAYER:50 = LOCAL
+		TEQUIP:PLAYER:Ｖセックス = LOCAL
 	ELSE
-		TEQUIP:PLAYER:50 = -1
+		TEQUIP:PLAYER:Ｖセックス = -1
 	ENDIF
 	IF TEQUIP:LOCAL:Ｐ接触部位 == 7
-		TEQUIP:PLAYER:51 = LOCAL
+		TEQUIP:PLAYER:Ａセックス = LOCAL
 	ELSE
-		TEQUIP:PLAYER:51 = -1
+		TEQUIP:PLAYER:Ａセックス = -1
 	ENDIF
 	[SKIPEND]
 NEXT
@@ -99,15 +102,17 @@ NEXT
 FOR LOCAL,0,CHARANUM
 	SIF CFLAG:LOCAL:現在位置 != CFLAG:MASTER:現在位置
 		CONTINUE
+	SIF !CFLAG:LOCAL:うふふ
+		CONTINUE
 	;Ｐが入ってないなら体位リセット
-	IF TEQUIP:LOCAL:50 < 0 && TEQUIP:LOCAL:51 < 0
+	IF TEQUIP:LOCAL:Ｖセックス < 0 && TEQUIP:LOCAL:Ａセックス < 0
 		TEQUIP:LOCAL:体位 = 0
 	;Ｖ性交中かつ前回Ｖ性交ならTEQUIPは復帰
-	ELSEIF TEQUIP:LOCAL:50 >= 0 && TEQUIP:LOCAL:116
+	ELSEIF TEQUIP:LOCAL:Ｖセックス >= 0 && TEQUIP:LOCAL:116
 		SIF TEQUIP:LOCAL:116 != 3	;指挿入でない場合のみ適用
 			TEQUIP:LOCAL:106 = TEQUIP:LOCAL:116
 	;Ａ性交中かつ前回Ａ性交ならTEQUIPは復帰
-	ELSEIF TEQUIP:LOCAL:51 >= 0 && TEQUIP:LOCAL:117
+	ELSEIF TEQUIP:LOCAL:Ａセックス >= 0 && TEQUIP:LOCAL:117
 		SIF TEQUIP:LOCAL:117 != 3	;指挿入でない場合のみ適用
 			TEQUIP:LOCAL:107 = TEQUIP:LOCAL:117
 	ENDIF
@@ -323,6 +328,9 @@ IF TCVAR:TARGET:烂醉
 ENDIF
 
 FOR LOCAL,0,CHARANUM
+	SIF CFLAG:LOCAL:出禁
+		CONTINUE
+	CALL UPDATE_ORGASM_AFTERGLOW(LOCAL)
 	;装着系は後で考える
 	SIF LOCAL > 0 && !CFLAG:LOCAL:同室
 		CONTINUE
@@ -540,7 +548,9 @@ IF !nSkipKojo
 	SIF !TFLAG:SKIPASSIKOJO
 		CALL SEND_ASSISTANT_KOJO
 ENDIF
-nSkipKojo = 0
+CALL MOREDATES_SOUVENIR() ;Custom code, handle Souvenir Shop on group dates.
+nSkipKojo = 0 ;com custom code
+;bugfix custom code, in some cases, such as COM337 (child interaction), a TARGET can be set that is not present. We reset it here right after the KOJO dialogue is triggered.
 SIF !IS_HERE(TARGET)
 	TARGET = IN_ROOM_MEMBER(, CFLAG:MASTER:現在位置, "RAND")
 
@@ -1254,6 +1264,10 @@ SIF GETBIT(FLAG:潜伏,0)
 	CALL 潜伏率増減処理
 	
 ;-------------------------------------------------
+;精液の漏出処理
+;-------------------------------------------------
+CALL SEMEN_LEAK_END_OF_TURN
+
 ;睡眠深度0による覚醒処理
 ;-------------------------------------------------
 FOR LOCAL,1,CHARANUM
@@ -1359,4 +1373,141 @@ SELECTCASE TCVAR:ARG:20
 		SIF SELECTCOM != 323
 			RETURNF 1
 ENDSELECT
+RETURNF 0
+
+@SEMEN_LEAK_GET_AMOUNT(CHARA, ITERATION = "PASSIVE", HOLE)
+#LOCALSIZE 2
+#LOCALSSIZE 1
+#DIM CHARA
+#DIMS ITERATION
+#DIM HOLE
+#DIM ELAPSED
+#DIM DYNAMIC DO_V
+#DIM DYNAMIC DO_A
+#DIM DYNAMIC V_SPILLABLE_AMOUNT
+#DIM DYNAMIC A_SPILLABLE_AMOUNT
+
+SIF CHARA <= 0 || CHARA >= CHARANUM
+	RETURN
+
+V_SPILLABLE_AMOUNT = EX:CHARA:精液残量 - TCVAR:CHARA:Ｖ精液漏出量
+A_SPILLABLE_AMOUNT = EX:CHARA:アナル精液残量 - TCVAR:CHARA:Ａ精液漏出量
+
+SELECTCASE ITERATION
+	CASE "PASSIVE"
+		ELAPSED = TIME_PROGRESS(TIME:1)
+		SIF !ELAPSED
+			RETURN
+
+		IF V_SPILLABLE_AMOUNT >= 30 && !CFLAG:CHARA:Ｖ漏出阻止 && ELAPSED >= 2
+			;floor (2) + amount / 80 to simulate pressure
+			LOCAL:1 = 2 + V_SPILLABLE_AMOUNT / 80
+			;some 2-min intervals are dry
+			LOCAL = MAX(ELAPSED / 2 - RAND:(ELAPSED / 5 + 1), 1)
+			TCVAR:CHARA:Ｖ精液漏出量 += LOCAL * LOCAL:1 + RAND:(LOCAL:1 + 1)
+		ENDIF
+		IF A_SPILLABLE_AMOUNT >= 30 && !CFLAG:CHARA:Ａ漏出阻止 && ELAPSED >= 2
+			LOCAL:1 = 2 + A_SPILLABLE_AMOUNT / 80
+			LOCAL = MAX(ELAPSED / 2 - RAND:(ELAPSED / 5 + 1), 1)
+			TCVAR:CHARA:Ａ精液漏出量 += LOCAL * LOCAL:1 + RAND:(LOCAL:1 + 1)
+		ENDIF
+	CASE "PULLOUT"
+		IF HOLE >= 1
+			DO_A = 1
+		ELSE
+			DO_V = 1
+		ENDIF
+
+		IF DO_V && EX:CHARA:精液残量 > 0 && (CFLAG:CHARA:Ｖ漏出阻止 <= 0 && !TEQUIP:CHARA:バイブ)
+			LOCAL = EX:CHARA:精液残量 * (10 + RAND:11) / 100
+			;apply soft cap
+			IF LOCAL > 60
+				LOCAL:1 = LOCAL - 60
+				LOCAL = 60
+				TIMES LOCAL:1, 0.2
+			ENDIF
+			TCVAR:CHARA:Ｖ精液漏出量 = LOCAL + LOCAL:1
+		ENDIF
+		IF DO_A && EX:CHARA:アナル精液残量 > 0 && (CFLAG:CHARA:Ａ漏出阻止 <= 0 && (!TEQUIP:CHARA:アナルバイブ && !TEQUIP:CHARA:アナルビーズ))
+			LOCAL = EX:CHARA:アナル精液残量 * (10 + RAND:11) / 100
+			IF LOCAL > 60
+				LOCAL:1 = LOCAL - 60
+				LOCAL = 60
+				TIMES LOCAL:1, 0.2
+			ENDIF
+			TCVAR:CHARA:Ａ精液漏出量 = LOCAL + LOCAL:1
+		ENDIF
+	CASEELSE
+		THROW Invalid iteration for @SEMEN_LEAK_GET_AMOUNT.  ITERATION = %ITERATION%
+ENDSELECT
+
+;calculate pullout, passive leak, then apply all amounts, reset
+;called after KOJO messages
+@SEMEN_LEAK_END_OF_TURN()
+#LOCALSIZE 1
+#LOCALSSIZE 1
+FOR LOCAL, 0, CHARANUM
+	SIF CFLAG:LOCAL:出禁
+		CONTINUE
+	;refresh blockage state if not manually set by dialogues
+	SIF INRANGE(CFLAG:LOCAL:Ｖ漏出阻止, 0, 1)
+		CFLAG:LOCAL:Ｖ漏出阻止 = IS_GAPPAGE_BLOCKED(LOCAL, 0)
+	SIF INRANGE(CFLAG:LOCAL:Ａ漏出阻止, 0, 1)
+		CFLAG:LOCAL:Ａ漏出阻止 = IS_GAPPAGE_BLOCKED(LOCAL, 1)
+	;detect pullouts by comparing current TEQUIP vs previous turn (膣２/アナル２/体位２)
+	;count as withdrawal when:
+	;previously inserted hole (膣２ or アナル２ == SET_P) no longer has touch value (接触部位) set to SET_P(1)
+	;no insertion status changes, but 体位(position) has changed in this round
+	;TODO doesn't count unequipping dildos i can't fucking bear working on this for another minute right now
+	;KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL KILL
+	IF TEQUIP:LOCAL:膣２ == SET_P
+		IF TEQUIP:LOCAL:Ｖ接触部位 != SET_P
+			CALL SEMEN_LEAK_GET_AMOUNT(LOCAL, "PULLOUT", 0)
+		ELSEIF TEQUIP:LOCAL:体位２ && TEQUIP:LOCAL:体位 != TEQUIP:LOCAL:体位２
+			CALL SEMEN_LEAK_GET_AMOUNT(LOCAL, "PULLOUT", 0)
+		ENDIF
+	ENDIF
+	IF TEQUIP:LOCAL:アナル２ == SET_P
+		IF TEQUIP:LOCAL:Ａ接触部位 != SET_P
+			CALL SEMEN_LEAK_GET_AMOUNT(LOCAL, "PULLOUT", 1)
+		ELSEIF TEQUIP:LOCAL:体位２ && TEQUIP:LOCAL:体位 != TEQUIP:LOCAL:体位２
+			CALL SEMEN_LEAK_GET_AMOUNT(LOCAL, "PULLOUT", 1)
+		ENDIF
+	ENDIF
+	CALL SEMEN_LEAK_GET_AMOUNT(LOCAL, "PASSIVE")
+	;apply pending TCVAR:Ｖ精液漏出量/Ａ精液漏出量 to EX
+	IF TCVAR:LOCAL:Ｖ精液漏出量 > 0
+		EX:LOCAL:精液残量 = MAX(EX:LOCAL:精液残量 - TCVAR:LOCAL:Ｖ精液漏出量, 0)
+		SIF EX:LOCAL:精液残量 <= 12
+			EX:LOCAL:精液残量 = 0
+	ENDIF
+	IF TCVAR:LOCAL:Ａ精液漏出量 > 0
+		EX:LOCAL:アナル精液残量 = MAX(EX:LOCAL:アナル精液残量 - TCVAR:LOCAL:Ａ精液漏出量, 0)
+		SIF EX:LOCAL:アナル精液残量 <= 12
+			EX:LOCAL:アナル精液残量 = 0
+	ENDIF
+	;reset for next turn
+	TCVAR:LOCAL:Ｖ精液漏出量 = 0
+	TCVAR:LOCAL:Ａ精液漏出量 = 0
+NEXT
+
+;checks if a cavity is being blocked by insertion or toy
+@IS_GAPPAGE_BLOCKED(ARG, HOLE)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM HOLE
+IF !HOLE
+	SIF TEQUIP:ARG:Ｖ接触部位 == SET_P
+		RETURNF 1
+	SIF TEQUIP:ARG:バイブ
+		RETURNF 1
+ELSE
+	SIF TEQUIP:ARG:Ａ接触部位 == SET_P
+		RETURNF 1
+	SIF TEQUIP:ARG:アナルバイブ
+		RETURNF 1
+	SIF TEQUIP:ARG:アナルビーズ
+		RETURNF 1
+ENDIF
 RETURNF 0

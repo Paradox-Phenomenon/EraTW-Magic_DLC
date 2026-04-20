@@ -418,13 +418,13 @@ FOR C_ID, 1, CHARANUM - 1
 	FOR LOCAL:1, 1, CHARANUM
 		RELATION:C_ID:(LOCAL:1) = CSVRELATION(NO:C_ID, LOCAL:1)
 	NEXT
-	IF modding_version < 20251230 && !UPDATE_EXPANDED_AFFINITIES
+	IF modding_version < 20251230 && !UPDATE_EXPANDED_AFFINITIES && FIRSTTIME("关系性扩展", , -1)
 		PRINTFORML 你想启用为每个角色重新设计过的关系性扩展补丁吗？
 		CALL ASK_YN
 		UPDATE_EXPANDED_AFFINITIES = !RESULT	
-		SIF UPDATE_EXPANDED_AFFINITIES
-			CALL ADD_SET_RELATION_PROC(C_ID)
 	ENDIF
+	SIF UPDATE_EXPANDED_AFFINITIES
+		CALL ADD_SET_RELATION_PROC(C_ID)
 
 	;setting several flags according to CSV values
 	;大家フラグ
@@ -474,7 +474,7 @@ FOR C_ID, 1, CHARANUM - 1
 
 	;パンツ種類非存在時消去 remove panty types that don't exist from the collection
 	FOR LOCAL:1, 2, MAXPANTS
-		SIF CFLAG:C_ID:(LOCAL:1 + 胖次管理) && GET_STR(C_ID, "下半身内衣_ずらし可能", LOCAL:1, "名前") == ""
+		SIF CFLAG:C_ID:(LOCAL:1 + 胖次管理) && GETMETH_STR(C_ID, "下半身内衣_ずらし可能", LOCAL:1, "名前") == ""
 			CFLAG:C_ID:(LOCAL:1 + 胖次管理) = 0
 	NEXT
 	;子供の性別と生年月日 set child gender and date of birth if missing
@@ -584,7 +584,7 @@ FOR C_ID, 1, CHARANUM - 1
 	ENDIF
 
 	;fix outfits
-	IF !INRANGE(CFLAG:C_ID:基本服装セット, 套装范围 + 1, 套装范围 + CHARANUM-1) && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, "名前") == ""
+	IF !INRANGE(CFLAG:C_ID:基本服装セット, 套装范围 + 1, 套装范围 + CHARANUM-1) && GETMETH_STR(C_ID, "衣装セット", CFLAG:C_ID:基本服装セット, "名前") == ""
 		;PRINTFORMDL Resetting casual wear for %NAME:C_ID%.
 		IF C_ID == MASTER
 			CFLAG:C_ID:基本服装セット = IS_MALE(C_ID) ? 1 # 2
@@ -592,17 +592,17 @@ FOR C_ID, 1, CHARANUM - 1
 			CFLAG:C_ID:基本服装セット = 套装范围 + C_ID
 		ENDIF
 	ENDIF
-	IF !GROUPMATCH(CFLAG:C_ID:睡衣指定, 301, 302) && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:睡衣指定, "名前") == ""
+	IF !GROUPMATCH(CFLAG:C_ID:睡衣指定, 301, 302) && GETMETH_STR(C_ID, "衣装セット", CFLAG:C_ID:睡衣指定, "名前") == ""
 		;PRINTFORMDL Resetting sleepwear for %NAME:C_ID%.
 		IF C_ID != MASTER
-			CFLAG:C_ID:睡衣指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GET_STR(C_ID, "キャラデータ", NO:C_ID, "今天的睡衣"))
+			CFLAG:C_ID:睡衣指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GETMETH_STR(C_ID, "キャラデータ", NO:C_ID, "今天的睡衣"))
 		ELSEIF FLAG:扮演
-			CFLAG:C_ID:睡衣指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GET_STR(C_ID, "キャラデータ", NO:(FLAG:扮演), "今天的睡衣"))
+			CFLAG:C_ID:睡衣指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", GETMETH_STR(C_ID, "キャラデータ", NO:(FLAG:扮演), "今天的睡衣"))
 		ENDIF
 		SIF !CFLAG:C_ID:睡衣指定
-			CFLAG:C_ID:睡衣指定 = OBJNAME_TO_ID(C_ID, "GET", "衣装セット", "パジャマ（襦袢）セット")
+			CFLAG:C_ID:睡衣指定 = [[睡衣（襦袢）套]]
 	ENDIF
-	IF !INRANGE(CFLAG:C_ID:衣装一時変更, 套装范围 + 1, 套装范围 + CHARANUM-1) && CFLAG:C_ID:衣装一時変更 != 0 && GET_STR(C_ID, "衣装セット", CFLAG:C_ID:衣装一時変更, "名前") == ""
+	IF !INRANGE(CFLAG:C_ID:衣装一時変更, 套装范围 + 1, 套装范围 + CHARANUM-1) && CFLAG:C_ID:衣装一時変更 != 0 && GETMETH_STR(C_ID, "衣装セット", CFLAG:C_ID:衣装一時変更, "名前") == ""
 		;PRINTFORMDL Resetting temporary outfit for %NAME:C_ID%.
 		CFLAG:C_ID:衣装一時変更 = 0
 	ENDIF
@@ -842,9 +842,7 @@ SELECTCASE UPDATE_TYPE
 			NEXT
 			CALL KOJO_COUNT_CHECK(C_ID, 1)
 			C_DIALOGUE_COUNT = RESULT
-			IF 0;modding_version < 20251017
-				;第一次初始化，不要把所有剧本都打一遍			
-			ELSEIF C_DIALOGUE_COUNT != C_PREV_DIALOGUE_COUNT
+			IF C_DIALOGUE_COUNT != C_PREV_DIALOGUE_COUNT
 				CALL PRINT_FACE(C_ID, "通常", "服")
 				IF C_DIALOGUE_COUNT > C_PREV_DIALOGUE_COUNT
 					PRINTFORMDL %CALLNAME:C_ID%的剧本增加了
@@ -897,9 +895,7 @@ SELECTCASE UPDATE_TYPE
 			NEXT
 			CALL KOJO_COUNT_CHECK(C_ID, 1)
 			C_DIALOGUE_COUNT = RESULT
-			IF 0;modding_version < 20251017
-				;第一次初始化，不要把所有剧本都打一遍			
-			ELSEIF C_DIALOGUE_COUNT != C_PREV_DIALOGUE_COUNT
+			IF C_DIALOGUE_COUNT != C_PREV_DIALOGUE_COUNT
 				IF C_DIALOGUE_COUNT > C_PREV_DIALOGUE_COUNT
 					CALL CHARA_TEXT,C_ID ,@"%CALLNAME:C_ID%的剧本增加了","L"
 				ELSEIF C_DIALOGUE_COUNT < C_PREV_DIALOGUE_COUNT
@@ -929,7 +925,7 @@ NEXT
 @RESET_KOJO_CHARA(ARG, ARG:1)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-CALL RESET_CHARA(ARG)
+CALL RESET_CHARA(ARG, ARG:1)
 
 PRINTFORMW %CALLNAME:ARG%重置了。
 
@@ -1110,6 +1106,8 @@ RETURN EXISTFUNCTION(@"KOJO%RESULTS%_OPTION_K{NO:ARG}")
 #DIM nLineCnt_Head
 #DIM PREV_TARGET
 VARSET KojoUpdateFlags
+LOCAL = TARGET
+TARGET = ARG
 
 nLineCnt_Head = LINECOUNT
 PRINTFORML
@@ -1130,8 +1128,11 @@ IF RESULT
 ENDIF
 
 CALL EQUATE_LINE, (nLineCnt_Head + 20)
+TARGET = LOCAL
 
 @KOJO_OPTION_RESULT(ARG, nInput)
+#LOCALSIZE 1
+#LOCALSSIZE 1
 #DIM nInput
 nInput -= 7000 ;normalize
 SIF !INRANGE(nInput, 0, 50)
@@ -1158,15 +1159,18 @@ IF GETBIT(KojoUpdateFlags:nInput, 0)
 		RETURN
 ENDIF
 
+LOCAL = TARGET
+TARGET = ARG
 CALL KOJO_ACTIVE_INFO(ARG)
 TRYCCALLFORM KOJO%RESULTS%_OPTION_K{NO:ARG}_RESULT_{nInput}
 	SIF MESSKIP()
 		FORCEWAIT
+	TARGET = LOCAL
 	RETURN RESULT
 CATCH
+	TARGET = LOCAL
 	RETURN -1
 ENDCATCH
-RESETCOLOR
 
 ;-------------------------------------------------
 ;函数名：KOJO_OPTION_ITEM
@@ -1229,7 +1233,7 @@ IF STRCOUNT(ARGS, ":")
 		BUTTON_COLOR = %SPLIT_SINGLE(ARGS, 2)%
 	ARGS = %SPLIT_SINGLE(ARGS, 0)%
 ENDIF
-BUTTON_COLOR '= HTMLCCHK(BUTTON_COLOR) ? BUTTON_COLOR # HTMLCOLOR(GETCOLOR())
+BUTTON_COLOR '= HTMLCCHK(BUTTON_COLOR) ? BUTTON_COLOR # HEX_TO_HTML_COLOR(GETCOLOR())
 
 LOCAL = FINDELEMENT(strExtra, "status")
 IF LOCAL >= 0

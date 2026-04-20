@@ -309,7 +309,8 @@ SELECTCASE SCENARIO
 ENDSELECT
 
 @DAYEVENT_EXECUTE_EVENT()
-#DIM DYNAMIC nExp, 58
+#DIM DYNAMIC nExp, 100
+#DIM DYNAMIC mExp, 100
 #DIM DYNAMIC nSexCount
 #DIM PREVTARGET
 SIF !DAYEVENT_TARGET || !DAYEVENT_SCENARIO
@@ -386,8 +387,8 @@ SELECTCASE DAYEVENT_SCENARIO
 			LOCAL = MAX((ABL:膣 + 1) * 20 + BASE:MASTER:精力 / 25, 1)
 			nExp:20 += 3 + nSexCount ;v sex exp
 			nExp:16 += 1 + nSexCount ;v creampie
-			EXP:MASTER:挿入経験 += 3 + nSexCount
-			EXP:MASTER:射精経験 += 1 + nSexCount
+			mEXP:EXP_挿入経験 += 3 + nSexCount
+			mEXP:EXP_射精経験 += 1 + nSexCount
 			IF nSexCount > 0
 				FOR LOCAL:1,1,nSexCount
 					LOCAL:2 += LOCAL + RAND:(LOCAL)
@@ -502,9 +503,9 @@ SELECTCASE DAYEVENT_SCENARIO
 
 			LOCAL:2 = MIN(LOCAL:2, BASE:MASTER:精力)
 			
-			EXP:MASTER:挿入経験 += nSexCount
-			EXP:MASTER:射精経験 += nSexCount
-			EXP:MASTER:絶頂経験 += nSexCount
+			mEXP:EXP_挿入経験 += nSexCount
+			mEXP:EXP_射精経験 += nSexCount
+			mEXP:EXP_絶頂経験 += nSexCount
 			
 			CALL ADD_SAMEN_V(TARGET, LOCAL:2)
 
@@ -518,11 +519,11 @@ SELECTCASE DAYEVENT_SCENARIO
 			nExp:11 += 2 * nSexCount ;ejaculation
 			
 			LOCAL = MAX((ABL:MASTER:膣 + 1) * 20 + BASE:精力 / 25, 1)
-			EXP:MASTER:Ｖ経験 += nSexCount
-			EXP:MASTER:Ｖ絶頂経験 += nSexCount
-			EXP:MASTER:Ｖ性交経験 += nSexCount
-			EXP:MASTER:膣射経験 += nSexCount
-			EXP:MASTER:絶頂経験 += nSexCount
+			mEXP:EXP_Ｖ経験 += nSexCount
+			mEXP:EXP_Ｖ絶頂経験 += nSexCount
+			mEXP:EXP_Ｖ性交経験 += nSexCount
+			mEXP:EXP_膣射経験 += nSexCount
+			mEXP:EXP_絶頂経験 += nSexCount
 			FOR LOCAL:1,1,nSexCount
 				LOCAL:2 += LOCAL + RAND:(LOCAL)
 			NEXT
@@ -549,12 +550,12 @@ SELECTCASE DAYEVENT_SCENARIO
 			nExp:5 += 2 * nSexCount ;c orgasm
 			nExp:0 += 2 * nSexCount ;c exp
 			
-			EXP:MASTER:絶頂経験 += nSexCount
-			EXP:MASTER:Ｃ絶頂経験 += nSexCount
-			EXP:MASTER:Ｃ経験 += nSexCount
+			mEXP:EXP_絶頂経験 += nSexCount
+			mEXP:EXP_Ｃ絶頂経験 += nSexCount
+			mEXP:EXP_Ｃ経験 += nSexCount
 			
 			SIF HAS_PENIS(MASTER)
-				EXP:MASTER:射精経験 += nSexCount
+				mEXP:EXP_射精経験 += nSexCount
 			SIF HAS_PENIS(TARGET)
 				nExp:11 += nSexCount
 		
@@ -576,10 +577,18 @@ SELECTCASE DAYEVENT_SCENARIO
 		CFLAG:溜まってる度 = 0 ;nullify horny
 		
 		SETCOLOR C_YELLOW
-		FOR LOCAL,0,58
+		FOR LOCAL,0,VARSIZE("nExp")
 			IF nExp:LOCAL
-				PRINTFORML %EXP_TR(LOCAL)% ＋{nExp:LOCAL}
+				PRINTFORML %EXP_TR(LOCAL)% +{nExp:LOCAL}(%CALLNAME:TARGET%)
 				EXP:LOCAL += nExp:LOCAL
+				TCVAR:(400 + LOCAL) += nExp:LOCAL
+			ENDIF
+		NEXT
+		FOR LOCAL,0,VARSIZE("nExp")
+			IF mExp:LOCAL
+				PRINTFORML %EXP_TR(LOCAL)% +{mExp:LOCAL}(%CALLNAME:MASTER%)
+				EXP:MASTER:LOCAL += mExp:LOCAL
+				TCVAR:MASTER:(400 + LOCAL) += mExp:LOCAL
 			ENDIF
 		NEXT
 		RESETCOLOR
@@ -613,20 +622,28 @@ IF INRANGE(DAYEVENT_SCENARIO, DAYEVENT_ORAL, DAYEVENT_COWGIRL)
 	DOWNBASE:MASTER:気力 = 150
 
 	IF HAS_PENIS(MASTER) && !LOCAL:9 ;ignore sex event since it's already handled there
-		EXP:MASTER:射精経験 ++
+		mEXP:EXP_射精経験 ++
 		DOWNBASE:MASTER:精力 = LOCAL
 		BASE:MASTER:勃起 = 0
 	ENDIF
-	EXP:MASTER:絶頂経験 ++
+	mEXP:EXP_絶頂経験 ++
 
 	CALL JUEL_UP_SPECIAL(TARGET,"欲情","欲望",20,1)
 	CALL ADD_EXP_LESNIAN(5, TARGET, "PRINT")
 		
 	SETCOLOR C_YELLOW
-	FOR LOCAL,0,58
+	FOR LOCAL,0,VARSIZE("nExp")
 		IF nExp:LOCAL
-			PRINTFORML %EXP_TR(LOCAL)% ＋{nExp:LOCAL}
+			PRINTFORML %EXP_TR(LOCAL)% +{nExp:LOCAL}(%CALLNAME:TARGET%)
 			EXP:LOCAL += nExp:LOCAL
+			TCVAR:(400 + LOCAL) += mExp:LOCAL
+		ENDIF
+	NEXT
+	FOR LOCAL,0,VARSIZE("nExp")
+		IF mExp:LOCAL
+			PRINTFORML %EXP_TR(LOCAL)% +{mExp:LOCAL}(%CALLNAME:MASTER%)
+			EXP:MASTER:LOCAL += mExp:LOCAL
+			TCVAR:MASTER:(400 + LOCAL) += mExp:LOCAL
 		ENDIF
 	NEXT
 	RESETCOLOR

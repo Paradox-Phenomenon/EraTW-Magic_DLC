@@ -434,10 +434,10 @@ IF ABL:MASTER:教養 >= 3 && ABL:親密 >= 5
 	IF ABL:親密 >= 10 ;show a hint right here when intimacy is very high, spoonfeed
 		CALL PRINTLINE, @"%CALLNAME:TARGET%'s Preferences"
 		PRINTL Like:
-		CALL SHOW_TASTE(GET_STR(, "キャラデータ", TARGET, "感性：好き"), "POSITIVE")
+		CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", TARGET, "感性：好き"), "POSITIVE")
 		PRINTFORML 
 		PRINTL Hate:
-		CALL SHOW_TASTE(GET_STR(, "キャラデータ", TARGET, "感性：嫌い"), "NEGATIVE")
+		CALL SHOW_TASTE(GETMETH_STR(, "キャラデータ", TARGET, "感性：嫌い"), "NEGATIVE")
 		DRAWLINE 
 	ENDIF
 ENDIF
@@ -1105,35 +1105,56 @@ RETURNF LOCAL:1
 ;-------------------------------
 ;Custom config section
 ;-------------------------------
-@CUSTOM_OPTION_0
-PRINTFORML [  0] - Always allow intercourse during pregnancy：\@ FLAG:STABLEBYPASS ? Yes # No \@
+@CUSTOM_OPTION_202
+PRINTFORML [202] - Always allow intercourse during pregnancy：\@ FLAG:STABLEBYPASS ? Yes # No \@
 
-@CUSTOM_OPTION_RESULT_0
+@CUSTOM_OPTION_RESULT_202
+CALL LS_RESTRICT_PRINT("Stable bypass") ;Restrict during Lunatic Survival.
+SIF RESULT
+	RETURN
 FLAG:STABLEBYPASS = !FLAG:STABLEBYPASS
 
-;1 harem
-@CUSTOM_OPTION_2
-PRINTFORML [  2] - Always show Favor/Trust gain：\@ nShowFavorTrustGain ? Yes # No \@
+@CUSTOM_OPTION_300
+PRINTFORML [300] - Always show Favor/Trust gain：\@ nShowFavorTrustGain ? Yes # No \@
 
-@CUSTOM_OPTION_RESULT_2
+@CUSTOM_OPTION_RESULT_300
 nShowFavorTrustGain = !nShowFavorTrustGain
 
-;3, 6 - reserved by qol 4 5 reserved by addition
+@CUSTOM_OPTION_102
+PRINTFORML [102] - Go Out events trigger only once per day：\@ !nGoOutEventLimit ? Yes # No \@
 
-@CUSTOM_OPTION_11
-PRINTFORML [ 11] - Go Out events trigger only once per day：\@ !nGoOutEventLimit ? Yes # No \@
-
-@CUSTOM_OPTION_RESULT_11
+@CUSTOM_OPTION_RESULT_102
 nGoOutEventLimit = !nGoOutEventLimit
 
-@CUSTOM_OPTION_14
-PRINTFORML [ 14] - Abbreviate large numbers for values like Stamina and Energy：\@ nBaseValuesDisplayMethod ? Yes # No \@
+@CUSTOM_OPTION_305
+PRINTFORML [305] - Abbreviate large numbers for values like Stamina and Energy：\@ nBaseValuesDisplayMethod ? Yes # No \@
 
-@CUSTOM_OPTION_RESULT_14
+@CUSTOM_OPTION_RESULT_305
 nBaseValuesDisplayMethod = !nBaseValuesDisplayMethod
 
-@CUSTOM_OPTION_15
-PRINTFORM [ 15] - Automatically undress when initiating sex：
+@CUSTOM_OPTION_203
+PRINTFORML [203] - Disable forced contraception during childcare：\@ FLAG:CHILD_LIMIT_BYPASS ? Yes # No \@
+
+@CUSTOM_OPTION_RESULT_203
+CALL LS_RESTRICT_PRINT("Child limit bypass") ;Restrict during Lunatic Survival.
+SIF RESULT
+	RETURN
+FLAG:CHILD_LIMIT_BYPASS = !FLAG:CHILD_LIMIT_BYPASS
+
+@CUSTOM_OPTION_103
+PRINTFORML [103] - Stop the Tennis Club event from spawning：\@ TENNIS_HATE ? Yes # No \@
+
+@CUSTOM_OPTION_RESULT_103
+TENNIS_HATE = !TENNIS_HATE
+
+@CUSTOM_OPTION_310
+PRINTFORML [310] - Display number of children and fertility in info bar：\@ HideChildrenAndFertility ? Yes # No \@
+
+@CUSTOM_OPTION_RESULT_310
+HideChildrenAndFertility = !HideChildrenAndFertility
+
+@CUSTOM_OPTION_207
+PRINTFORM [207] - Automatically undress when initiating sex：
 SELECTCASE nAutomaticUndress
 	CASE 0
 		PRINTFORML Disabled
@@ -1144,9 +1165,9 @@ SELECTCASE nAutomaticUndress
 	CASE 3
 		PRINTFORML Player and other characters
 ENDSELECT
-PRINTFORMDL 　＊This can also be set for individual characters in their character settings
+PRINTFORMDL          ＊This can also be set for individual characters in their character settings.
 
-@CUSTOM_OPTION_RESULT_15
+@CUSTOM_OPTION_RESULT_207
 nAutomaticUndress = (nAutomaticUndress + 3) % 4
 
 ;allows player to check for a mob girl's stats without actually summoning her, mostly frankeistein'd from existing code
@@ -1656,7 +1677,7 @@ PRINTFORM ] {GETPERCENT(ARG, ARG:1)}\%
 
 @QOL_STAY_AWAKE(ARG)
 #FUNCTION
-SIF ADD_BANQUET_CHARA_STATE(ARG) && GET_INT(0, "ADD_BANQUET", CFLAG:ARG:BANQUET, "KEEP_AWAKE")
+SIF ADD_BANQUET_CHARA_STATE(ARG) && GETMETH_INT(0, "ADD_BANQUET", CFLAG:ARG:BANQUET, "KEEP_AWAKE")
 	RETURNF 1
 SIF TCVAR:ARG:STAY_AWAKE
 	RETURNF 1
@@ -1697,10 +1718,10 @@ RESETCOLOR
 #FUNCTION
 RETURNF ARG * 9 / 5 + 320
 
-@CUSTOM_OPTION_15
-PRINTFORML [ 15] - Temperature unit：\@ !useFahrenheit ? Celsius # Fahrenheit \@
+@CUSTOM_OPTION_306
+PRINTFORML [306] - Temperature unit：\@ !useFahrenheit ? Celsius # Fahrenheit \@
 
-@CUSTOM_OPTION_RESULT_15
+@CUSTOM_OPTION_RESULT_306
 useFahrenheit = !useFahrenheit
 [SKIPEND]
 @QOL_GET_YEAR(ARG)
@@ -1874,7 +1895,7 @@ NEXT
 #DIM DRINK_ID
 WHILE 1
     DRINK_ID = RAND:100
-	SIF GET_INT(0, "酒データ", DRINK_ID, "酒気増加量") > 0
+	SIF GETMETH_INT(0, "酒データ", DRINK_ID, "酒気増加量") > 0
 		RETURNF DRINK_ID
 WEND
 
@@ -1992,25 +2013,25 @@ SIF !QOL_CAN_WHITE_DAY_HOME_DELIVERY(CHARA)
 	RETURN 0
 
 ;copied from @COM491
-PRINTFORML 要给什么？（曾收到的是：%Valentine_Chocolate(TARGET)%）
+PRINTFORML 要给什么？（曾收到的是：%Valentine_Chocolate(CHARA)%）
 {
 CALL ASK_M("放弃",1,"黑雷神巧克力",ITEM:黑雷神巧克力,"跳蛋巧克力",ITEM:跳蛋巧克力,"WD巧克力",ITEM:WD巧克力,
 "手制巧克力曲奇",ITEM:手制巧克力曲奇,"WD布丁",ITEM:WD布丁,
-"手制布丁",ITEM:手制布丁,"装饰蛋糕",ITEM:装饰蛋糕 && CFLAG:TARGET:バレンタイン == 4)
+"手制布丁",ITEM:手制布丁,"装饰蛋糕",ITEM:装饰蛋糕 && CFLAG:CHARA:バレンタイン == 4)
 }
 SELECTCASE RESULT
 	CASE 0
 		RETURN -1
 	CASE 1
 		WD_GIFT = 黑雷神巧克力
-		SIF CFLAG:バレンタイン > 1
-			PRINTFORMW %CALLNAME:TARGET%露出了难以释怀的表情……
+		SIF CFLAG:CHARA:バレンタイン > 1
+			PRINTFORMW %CALLNAME:CHARA%露出了难以释怀的表情……
 		親密係数 = 5
 	CASE 2
 		WD_GIFT = 跳蛋巧克力
 		親密係数 = 10
-		SOURCE:快Ｃ += 3000
-		SOURCE:反感 += 300
+		SOURCE:CHARA:快Ｃ += 3000
+		SOURCE:CHARA:反感 += 300
 	CASE 3
 		WD_GIFT = WD巧克力
 		親密係数 = 25
@@ -2018,28 +2039,28 @@ SELECTCASE RESULT
 	CASE 4
 		WD_GIFT = 手制巧克力曲奇
 		親密係数 = 50
-		EXP:愛情経験 += 1
+		EXP:CHARA:愛情経験 += 1
 		WD_BUFF = 100
 	CASE 5
 		WD_GIFT = WD布丁
 		親密係数 = 70
-		EXP:愛情経験 += 3
+		EXP:CHARA:愛情経験 += 3
 		WD_BUFF = 100
 	CASE 6
 		WD_GIFT = 手制布丁
 		親密係数 = 80
-		EXP:愛情経験 += 5
+		EXP:CHARA:愛情経験 += 5
 		WD_BUFF = 200
 	CASE 7
 		WD_GIFT = 装饰蛋糕
 		親密係数 = 200
-		EXP:愛情経験 += 30
+		EXP:CHARA:愛情経験 += 30
 		WD_BUFF = 1000
 ENDSELECT
 TFLAG:193 = RESULT
 SIF RESULT >= 5
-	TALENT:心情 = 1
-PRINTFORMW 向%CALLNAME:TARGET%赠送了%WD_GIFT%
+	TALENT:CHARA:心情 = 1
+PRINTFORMW 向%CALLNAME:CHARA%赠送了%WD_GIFT%
 CALL LOST_ITEM(WD_GIFT, 1, 1)
 CALL JUEL_UP_SPECIAL(CHARA,"好意","親密",親密係数,1)
 CALL CHANGE_CFLAG(4,CHARA,親密係数)
@@ -2158,8 +2179,6 @@ IF TARGET != MASTER
 	LOCAL += 15 ;length of [Standing] + 5
 ENDIF
 
-LOCAL:1 = MAXWIDTH() - LOCAL
-PRINTFORM %"=" * LOCAL:1%
 
 CALL PRINTBUTTON_EX("[Pushdown Guard]", -9200, !FLAG:押し倒し)
 PRINTPLAIN =
@@ -2168,9 +2187,11 @@ IF TARGET != MASTER
 	PRINTPLAIN =
 	CALL PRINTBUTTON_EX(@"[%LOCALS%]",4000,!CFLAG:オート喘ぎ)
 	PRINTPLAIN =
-	CALL PRINTBUTTON_EX("[Standing]",-9112,!CFLAG:STANDING_TOGGLE)
-	PRINTPLAIN =====
+	CALL PRINTBUTTON_EX("[Standing]",-9122,!CFLAG:STANDING_TOGGLE)
+	PRINTPLAIN ======
 ENDIF
+LOCAL:1 = MAXWIDTH() - LOCAL
+PRINTFORM %"=" * LOCAL:1%
 PRINTL
 
 ;similar to 複数押し倒され
@@ -2406,7 +2427,7 @@ ENDIF
 #DIMS TYPE
 SIF !TCVAR:C_ID:本来的服装
 	RETURN
-EX_COS = GET_INT(C_ID, "キャラデータ", NO:C_ID, @"%TYPE%衣装")
+EX_COS = GETMETH_INT(C_ID, "キャラデータ", NO:C_ID, @"%TYPE%衣装")
 SIF !EX_COS
 	RETURN 0
 
@@ -2702,7 +2723,7 @@ FOR LOCAL, 0, CHARANUM - 1
 	C_ID = SHAFFLE_ARRAY:LOCAL
 	SIF C_ID == MASTER
 		CONTINUE
-	SIF STRCOUNT(GET_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), THEME)
+	SIF STRCOUNT(GETMETH_STR(, "キャラデータ", C_ID, "料理：讨厌的味道"), THEME)
 		CONTINUE
 	SIF C_ID == TARGET
 		CONTINUE

@@ -44,10 +44,13 @@ IF SaveDataInTrain
 		FOR index, 0, 250
 			STequip:chara:index = TEQUIP:chara:index
 		NEXT
-		;防死循环
+		FOR index, 0, 200
+			SPalam:chara:index = PALAM:chara:index
+		NEXT
 		;防死循环
 		IF chara % 20
-			TWAIT 1, 0
+			SIF printTimes % 5 == 0
+				TWAIT 1, 0
 			printTimes ++
 			CLEARLINE 1
 			PRINTFORML 少女折寿中%"." * (printTimes / 10 % 3 + 1), 5, LEFT% {chara * 50 / CHARANUM}\%
@@ -79,20 +82,23 @@ FOR LOCAL,1,CHARANUM
 		BREAK
 	ENDIF
 NEXT
-SIF SAVESTR:本体バージョン != eraTW_Version
+SIF SAVESTR:本体バージョン != eraTW_Version || NOW_VERSION != modding_version
 	CALL UPDATE_MAIN("init")
+modding_version = NOW_VERSION
 
 ;需要初始化的数据放在一起
 @INIT_NG_OR_LOAD
 #LOCALSIZE 1
 #LOCALSSIZE 1
 ;OBJ
-CALL MAKE_ALL_CLASS_LIST
+;CALL MAKE_ALL_CLASS_LIST
+CALL MAKE_ALL_OOP_MAP
 ;字典
-MAP_CREATE CSV_MAP
-MAP_CREATE TASTE_MAP
-MAP_FROMXML CSV_MAP,LOADTEXT("plugins/tw_csv_chs.xml")
-MAP_FROMXML TASTE_MAP,LOADTEXT("plugins/tw_taste_chs.xml")
+SQL_CONNECT "TR_DB"
+SQL_IMPORT_MAP_XML "TR_DB", "CSV_MAP", "plugins/tw_csv_chs.xml"
+;#;PRINTFORML [DEBUG] CSV_MAP 成功导入了 {SQL_EXECUTE_SCALAR_LONG("TR_DB", "SELECT COUNT(*) FROM CSV_MAP;")} 条数据！
+SQL_IMPORT_MAP_XML "TR_DB", "TASTE_MAP", "plugins/tw_taste_chs.xml"
+;#;PRINTFORML [DEBUG] TASTE_MAP 成功导入了 {SQL_EXECUTE_SCALAR_LONG("TR_DB", "SELECT COUNT(*) FROM TASTE_MAP;")} 条数据！
 BREWING_LIST_CHECKED = 0
 CALL BREWING_GUIDE_CHECK_EXISTING
 ;依頼：手紙の宛先処理
@@ -104,3 +110,4 @@ CALL WoodData
 CALL 初始化邻接表
 CALL CREATE_BBAS_DATABASE()
 CALL INIT_UFUFU_LOG
+CALL INIT_KOJO_COLOR

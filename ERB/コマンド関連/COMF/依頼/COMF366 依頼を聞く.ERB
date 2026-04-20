@@ -1,7 +1,9 @@
-﻿;-------------------------------------------------
+;-------------------------------------------------
 ;実行判定
 ;-------------------------------------------------
 @COM_ABLE366
+#LOCALSIZE 1
+#LOCALSSIZE 1
 SIF !TFLAG:100
 	RETURN 0
 SIF TARGET <= 0
@@ -18,9 +20,11 @@ CASE "依頼未受託"
 ;空きスロットが無いなら不可
 	SIF !SEARCH_IRAI_EMPTY()
 		RETURN 0
-;个々に指定された条件をみたさない時
-	SIF !INT_DATA_IRAI(CFLAG:TARGET:依頼内容, "依頼受託可能条件", TARGET)
-		RETURN 0
+;個々に指定された条件をみたさない時
+	IF !IS_DEBUG_IRAI(TARGET)
+		SIF !INT_DATA_IRAI(CFLAG:TARGET:依頼内容, "依頼受託可能条件", TARGET)
+			RETURN 0
+	ENDIF
 CASE "依頼中"
 ;依頼確認/破棄が可能
 CASE "依頼達成"
@@ -39,6 +43,19 @@ CASEELSE
 ENDSELECT
 RETURN 1
 
+@COM366_DISPLAY
+#FUNCTIONS
+#LOCALSIZE 1
+#LOCALSSIZE 1
+;魔改功能，诱导逆推
+IF (GROUPMATCH(IRAI_CHARA_TO_PROGRESS(TARGET), "依頼達成", "依頼失敗") || (CFLAG:TARGET:依頼状況 == 0 && GETBIT(诱导逆推_进程:TARGET:0, 10) && 诱导逆推_目前不可进行(TARGET) && 诱导逆推_开关))
+	TEMP_COM_DISPLAY_COLOR = C_GREEN
+	RETURNF "依頼の報告"
+;魔改功能，诱导逆推
+ELSEIF (GROUPMATCH(IRAI_CHARA_TO_PROGRESS(TARGET), "依頼未受託") || (CFLAG:TARGET:依頼状況 == 0 && GETBIT(诱导逆推_进程:TARGET:0, 0) && 诱导逆推_开关))
+	TEMP_COM_DISPLAY_COLOR = C_GREEN
+	RETURNF "依頼を聞く"
+ENDIF
 
 @COM366
 ;魔改内容，诱导逆推

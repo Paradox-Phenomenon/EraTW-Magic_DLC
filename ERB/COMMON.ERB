@@ -58,10 +58,10 @@ GOTO INPUT_LOOP
 ;戻り値は選択した選択肢の番号
 ;set any ARG to -1 to hide option entirely
 ;-------------------------------------------------
-@ASK_M(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8)
+@ASK_M(ARGS:0, ARG:0, ARGS:1, ARG:1, ARGS:2, ARG:2, ARGS:3, ARG:3, ARGS:4, ARG:4, ARGS:5, ARG:5, ARGS:6, ARG:6, ARGS:7, ARG:7, ARGS:8, ARG:8, ARGS:9, ARG:9)
 #LOCALSIZE 3
 #LOCALSSIZE 1
-#DIM CONST 選択肢上限 = 8
+#DIM CONST 選択肢上限 = 9
 #DIM PREV_REDRAW
 PREV_REDRAW = CURRENTREDRAW()
 LOCAL:2 = GETCOLOR()
@@ -172,7 +172,7 @@ RETURNF num
 ;10000, 50, 100, 200なら124
 
 
-
+[SKIPSTART]
 ;-------------------------------------------------
 ;関数名:PRINT_BASE
 ;概　要:汎用補正値取得関数
@@ -211,13 +211,14 @@ IF ARGS =="Info"
 	TFLAG:Info表示中 = 1
 ENDIF
 SIF !ARG:1
-	LOCAL = 150
+	LOCAL = MAXWIDTH()
 IF ARG == 1
 	PRINTSINGLEFORMS "-- %ARGS% " + "%(MINUS * MAX((LOCAL - STRLENS(ARGS)),0))%"
 ELSE
-	PRINTSINGLEFORMS "== %ARGS% " + "%(EQUAL * 150)%"
+	PRINTSINGLEFORMS "== %ARGS% " + "%(EQUAL * LOCAL)%"
 ENDIF
-;-------------------------------------------------
+[SKIPEND]
+ ;-------------------------------------------------
 ;絶頂時など、ＡとＢとＤと…みたいな感じで「と」でつないで列挙するための関数
 ;引数に表示する文字列と条件(0で無効、非0で有効)を指定。最大5个まで
 ;-------------------------------------------------
@@ -553,7 +554,7 @@ SIF !TFLAG:現在的TARGET
 CALL MAKE_CHARA_LIST("TARGET列表", L_ID, TARGET, TARGET_CNT)
 SIF !TARGET_CNT
 	RETURN
-CALL SORT_LIST(37, TARGET, TARGET_CNT)
+CALL QOL_SORT_LIST(FINDELEMENT(DISP_MEMO, "好感") + SORT_BTN_BASE + SORT_BTN_DESC_OFFSET, TARGET, TARGET_CNT)
 
 LOCAL:1 = TARGET
 IF TFLAG:現在的TARGET > 0
@@ -565,15 +566,7 @@ IF TFLAG:現在的TARGET > 0
 	LOCAL:1 = TARGET:(LOCAL:1)
 ENDIF
 ARRAYSHIFT TARGET, 1, LOCAL:1
-[SKIPSTART]
-SIF STRCOUNT(OP, "「同室更新無し」")
-	RETURN
 
-;同室確認は列表側でやっているのでここでは必要ない
-FOR LOCAL, 1, 1 + TARGET_CNT
-	CFLAG:(TARGET:LOCAL):同室 = 1
-NEXT
-[SKIPEND]
 @TARGETSET_CHACK(ARGS)
 #LOCALSIZE 1
 #LOCALSSIZE 1
@@ -607,12 +600,16 @@ SIF 回復量 == 0 || !CHECK_BASE(ARG, ARGS)
 ;回復処理
 IF MAGIC_DLC 
 	IF (ARGS == "TSP" || ARGS == "法力") && 回復量 < 0 
-		SIF ARGS == "TSP"
+		SIF ARGS == "TSP" || (ARGS == "法力" && M_TFLAG:时之蠹)
 			MONEY:1 -= 回復量
 		SIF TALENT:ARG:大魔法师
 			回復量 = 回復量 * 7 / 10
 		SIF TALENT:ARG:昨日重现
 			回復量 = 回復量 * (20 - TALENT:ARG:昨日重现) / 20
+		SIF 无限TSP && ARGS == "TSP"
+			回復量 = 0
+		SIF 无限法力 && ARGS == "法力"
+			回復量 = 0
 	ENDIF
 ENDIF
 BASE:ARG:(ARGS) = LIMIT(BASE:ARG:(ARGS) + 回復量, 0, MAXBASE:ARG:(ARGS))
@@ -728,9 +725,9 @@ ENDIF
 #DIM 変動値
 #DIM 強化能力
 #DIM メッセージ
-SIF MAXBASE:ARG:強化能力 <= 0
-	RETURN
 IF !MAGIC_DLC
+	SIF MAXBASE:ARG:強化能力 <= 0
+		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 
@@ -743,6 +740,14 @@ IF !MAGIC_DLC
 	SIF メッセージ
 		CALL COLORMESSAGE(@"%CALLNAME:ARG%的%BASE_TR(BASENAME:強化能力)%暂时\@ 変動値 > 0? 上升了# 下降了\@{ABS(変動値)}",C_YELLOW,1)
 ELSE
+	SIF 強化能力 == BASE_TSP && 无限TSP
+		RETURN
+	SIF 強化能力 == BASE_法力 && 无限法力
+		RETURN
+	SIF MAXBASE:ARG:強化能力 <= 0 && ARG != MASTER
+		RETURN
+	SIF (強化能力 == BASE_TSP || 強化能力 == BASE_法力) && TALENT:MASTER:高难开局 && !M_TFLAG:BUFF标记 && !TALENT:MASTER:神性
+		RETURN
 	SIF 変動値 < 0 && ABS(変動値) > MAXBASE:ARG:強化能力
 		変動値 = (MAXBASE:ARG:強化能力 -1) * -1
 	SIF (MAXBASE:ARG:強化能力 + 変動値) > 9999999
@@ -797,45 +802,23 @@ ELSEIF 変動数 < 0 ;don't show if zero
 	CALL COLORMESSAGE(@"%CFLAGNAME_TR(CFLAGNAME:変動フラグ)%−{-変動数}（%CALLNAME:対象%）%COND_STR(@"（%DESCRIPTION%）", DESCRIPTION != "")%",C_RED,DISPLAY_TYPE,1)
 ENDIF
 
-;-------------------------------------------------
-;函数名:AddEXP
-;概　要:附带消息文本的经验值增加
-;-------------------------------------------------
-@AddEXP(ENUM,C_ID,MOD_NUM)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIMS DYNAMIC LABEL
-#DIMS ENUM
-#DIMS VARNAME
-#DIM C_ID
-#DIM MOD_NUM
-VARNAME = EXP
-
-SIF MOD_NUM == 0 || !INRANGE(C_ID,0,CHARANUM)
-	RETURN
-
-LABEL '= QOL_GETENUMNAME(VARNAME,ENUM)
-IF LABEL == "NULL"
-	PRINTFORMW [错误]参数1 "%ENUM%" 不是合法的[%VARNAME%]类型名称或ID，请保存日志报错
-	RETURN
-ENDIF
-LOCAL = QOL_GETVAR(VARNAME,ENUM,C_ID)
-IF LOCAL == 安全失败值
-	DEBUGPRINTFORML [警告]尝试读取 %VARNAME%:%ENUM% 失败。
-	RETURN 0
-ENDIF
-IF MOD_NUM > 0
-	CALL COLORMESSAGE(@"%LABEL%＋{MOD_NUM}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
-ELSE
-	CALL COLORMESSAGE(@"%LABEL%－{-MOD_NUM}（%CALLNAME:C_ID%）",C_RED,2,1)
-ENDIF
-
-IF QOL_SETVAR(VARNAME,ENUM,MAX(LOCAL + MOD_NUM, 0),C_ID)
-	RETURN 1
-ELSE 
-	DEBUGPRINTFORML %VARNAME%:%ENUM%赋值失败
-ENDIF
-
+;;-------------------------------------------------
+;;関数名:AddEXP 已重构
+;;概　要:メッセージ付きEXP加算
+;;マイナスにはならないようになってるので注意
+;;-------------------------------------------------
+;@AddEXP(VAR_NAME,C_ID,変動数)
+;#DIMS VAR_NAME
+;#DIM VAR_ID
+;#DIM C_ID
+;#DIM 変動数
+;
+;SIF 変動数 == 0
+;	RETURN
+;
+;VAR_ID = FINDELEMENT(EXPNAME, VAR_NAME)
+;EXP:C_ID:VAR_ID += 変動数
+;CALL COLORMESSAGE(@"%VAR_NAME%＋{変動数}（%CALLNAME:C_ID%）",C_YELLOW,2,1)
 
 ;-------------------------------------------------
 ;関数名:SHIRAHU
@@ -1126,6 +1109,11 @@ CALL TOUCH_SET(0, 0, 0, 1)
 ;TEQUIP:ARG:10-TEQUIP:ARG:149を初期化する
 VARSET TEQUIP:ARG:0, 0, 10, 150
 
+;魔法DLC的魅惑发情解除
+IF TCVAR:ARG:魅惑发情 && MAGIC_DLC
+	TCVAR:ARG:発情 = 0
+	TCVAR:ARG:魅惑发情 = 0
+ENDIF
 ;射精関係リセット
 IF TFLAG:102 < 2
 	BASE:ARG:射精 = 0
@@ -1143,8 +1131,8 @@ TCVAR:ARG:强行 = 0
 TCVAR:ARG:随便 = 0
 TCVAR:ARG:次回Counter = 0
 ;一応MASTERも初期化（しとかないと、終了後も○○装着中が表示される可能性があるので
-IF CFLAG:MASTER:诶嘿嘿
-	CFLAG:MASTER:诶嘿嘿 = 0
+IF ARG == 0 || (CFLAG:MASTER:うふふ && CMATCH(CFLAG:うふふ, 0, 1, CHARANUM) >= CHARANUM - 1) ;qol custom code
+	CFLAG:MASTER:うふふ = 0
 	CALL CHANGE_CLOTHES(MASTER, "复原衣服")
 	CALL CLOTHES_SETTING_TRAIN(MASTER)
 	VARSET TEQUIP:MASTER:0, 0, 10, 150
@@ -1225,8 +1213,8 @@ ENDIF
 
 CALL ADD_TOUCH_CLEAR_CHARA(ARG) ;addition custom code
 ;潜伏モード解除
-	SIF GETBIT(CFLAG:ARG:潜伏状態,0)
-		CLEARBIT CFLAG:ARG:潜伏状態,0
+SIF GETBIT(CFLAG:ARG:潜伏状態,0)
+	CLEARBIT CFLAG:ARG:潜伏状態,0
 
 ;-------------------------------------------------
 ;関数名:ENDUFUFU_ALL
@@ -1243,11 +1231,6 @@ FOR LOCAL, 0, CHARANUM
 	IF CFLAG:LOCAL:诶嘿嘿
 		CALL ENDUFUFU(LOCAL)
 		LOCAL:1 ++
-	ENDIF
-;魔法DLC的魅惑发情解除
-	IF TCVAR:LOCAL:魅惑发情 && MAGIC_DLC
-		TCVAR:LOCAL:発情 = 0
-		TCVAR:LOCAL:魅惑发情 = 0
 	ENDIF
 NEXT
 ;潜伏モード解除
@@ -1450,6 +1433,8 @@ ENDIF
 REDRAW PREV_REDRAW
 SETCOLOR LOCAL:1
 RETURN RESULT
+
+[SKIPSTART]
 ;-------------------------------------------------
 ;特殊な機能を持つボタンを作成する関数
 ;ARGは入力される数字、ARG:1に1を設定すると灰色に、
@@ -1499,6 +1484,7 @@ ELSE
 	PRINTBUTTONC @"%ARGS:0%", ARG
 ENDIF
 RESETCOLOR
+[SKIPEND]
 ;-------------------------------------------------
 ;Fisher-Yatesアルゴリズムによるシャッフル配列の作成
 ;専用配列SHAFFLE_ARRAYを使用
@@ -1795,9 +1781,9 @@ CASEELSE
 ENDSELECT
 
 
-
+[SKIPSTART]
 ;-------------------------------------------------
-;角色比較関数
+;角色比較関数（已禁用）
 ;-------------------------------------------------
 ;全引数必须
 ;スマートとは程遠いコピペゴリ押しである
@@ -1975,24 +1961,22 @@ CASEELSE
 	THROW 不明なVAR_NAME　%VAR_NAME%
 ENDSELECT
 
-[SKIPSTART]
-コレをコピペして置換すれば項目をふやせる
-CASE "CVAR"
-	SELECTCASE TYPE
-	CASE "=="
-		RETURNF CVAR:CHARA_A:VAR_ID == CVAR:CHARA_B:VAR_ID
-	CASE ">"
-		RETURNF CVAR:CHARA_A:VAR_ID > CVAR:CHARA_B:VAR_ID
-	CASE ">="
-		RETURNF CVAR:CHARA_A:VAR_ID >= CVAR:CHARA_B:VAR_ID
-	CASE "<"
-		RETURNF CVAR:CHARA_A:VAR_ID < CVAR:CHARA_B:VAR_ID
-	CASE "<="
-		RETURNF CVAR:CHARA_A:VAR_ID <= CVAR:CHARA_B:VAR_ID
-	CASEELSE
-		THROW 不明なTYPE　%TYPE%
-	ENDSELECT
-[SKIPEND]
+;コレをコピペして置換すれば項目をふやせる
+;CASE "CVAR"
+;	SELECTCASE TYPE
+;	CASE "=="
+;		RETURNF CVAR:CHARA_A:VAR_ID == CVAR:CHARA_B:VAR_ID
+;	CASE ">"
+;		RETURNF CVAR:CHARA_A:VAR_ID > CVAR:CHARA_B:VAR_ID
+;	CASE ">="
+;		RETURNF CVAR:CHARA_A:VAR_ID >= CVAR:CHARA_B:VAR_ID
+;	CASE "<"
+;		RETURNF CVAR:CHARA_A:VAR_ID < CVAR:CHARA_B:VAR_ID
+;	CASE "<="
+;		RETURNF CVAR:CHARA_A:VAR_ID <= CVAR:CHARA_B:VAR_ID
+;	CASEELSE
+;		THROW 不明なTYPE　%TYPE%
+;	ENDSELECT
 
 
 
@@ -2012,7 +1996,7 @@ CASE "CVAR"
 #DIM  RANK_NUM   ;評価尺度に含まれる評価の種数
 CALL CALC_RANK(VAR_VALUE, RANK_SCALE, RANK, RANK_NUM)
 CALL PRINT_ALPHABET(RANK, RANK_NUM)
-
+[SKIPEND]
 
 
 ;-------------------------------------------------
@@ -2022,6 +2006,7 @@ CALL PRINT_ALPHABET(RANK, RANK_NUM)
 ;REFによりRANK/RANK_NUMとして渡された引数の数値を直接書き換える
 ;-------------------------------------------------
 @CALC_RANK(VAR_VALUE, RANK_SCALE, RANK, RANK_NUM)
+#FUNCTION
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM      VAR_VALUE  ;評価対象数値
@@ -2137,9 +2122,9 @@ CASE "MAX_6"
 CASEELSE
 	THROW 不明なRANK_SCALE %RANK_SCALE%
 ENDSELECT
+RETURNF RANK
 
-
-
+[SKIPSTART]
 ;-------------------------------------------------
 ;ランク評価表示関数
 ;-------------------------------------------------
@@ -2222,7 +2207,6 @@ CASEELSE
 ENDSELECT
 PRINTFORM %ARGS, STR_NUM%
 RESETCOLOR
-
 
 
 ;-------------------------------------------------
@@ -2314,7 +2298,12 @@ ENDIF
 IF !MAGIC_DLC
 	PRINTFORM ({BASE:C_ID:BASE_ID, 5})
 ELSE
-	PRINTFORM ({BASE:C_ID:BASE_ID, 7})
+	IF BASE:C_ID:BASE_ID > 100000
+		LOCALS = {BASE:C_ID:BASE_ID/1000}k
+	ELSE
+		LOCALS = {BASE:C_ID:BASE_ID}
+	ENDIF
+	PRINTFORM (%LOCALS, 5%)
 ENDIF
 RESETCOLOR
 
@@ -2339,9 +2328,10 @@ SIF !STAMP_LENGTH
 SIF STAMP_COLOR
 	SETCOLOR STAMP_COLOR
 SIF !ARG
-	PRINTFORM %" " * (MAX_NUM - STAMP_NUM) * STAMP_LENGTH%
+	PRINTFORM %" " * MAX((MAX_NUM - STAMP_NUM),0) * STAMP_LENGTH%
 PRINTFORM %STAMP_STR * STAMP_NUM%
 RESETCOLOR
+[SKIPEND]
 
 ;-------------------------------------------------
 ;角色抽選関数
@@ -2353,9 +2343,9 @@ RESETCOLOR
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIMS L_TYPE                       ;抽選対象タイプ
-#DIM  L_ID                         ;列表のクラスID
-#DIM  CHARA_LIST, 人物数量上限 ;作成する列表
-#DIM  CHARA_CNT                    ;角色カウンタ
+#DIM  DYNAMIC L_ID                         ;列表のクラスID
+#DIM  DYNAMIC CHARA_LIST, 人物数量上限 ;作成する列表
+#DIM  DYNAMIC CHARA_CNT                    ;角色カウンタ
 CALL MAKE_CHARA_LIST("主人公以外的角色列表", L_ID, CHARA_LIST, CHARA_CNT)
 SIF !CHARA_CNT
 	RETURN -1
@@ -2805,12 +2795,21 @@ RETURNF MAXROOM % 100
 @GET_ITEM(ITEM_NAME, ITEM_NUM, PRINT_TYPE)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIMS ITEM_NAME
-#DIM ITEM_ID
-#DIM ITEM_NUM
-#DIM PRINT_TYPE;表示形式　0=通常　1=L　2=W 3=Silent
-CALL QOL_SHOW_SET_ITEM(ITEM_NAME, ITEM_NUM, PRINT_TYPE)
-	RETURN
+#DIMS DYNAMIC ITEM_NAME
+#DIM DYNAMIC ITEM_ID
+#DIM DYNAMIC ITEM_NUM
+#DIM DYNAMIC PRINT_TYPE;表示形式　0=通常　1=L　2=W 3=Silent
+IF ISNUMERIC(ITEM_NAME)
+	ITEM_ID = TOINT(ITEM_NAME)
+ELSE
+	ITEM_ID = GETNUM(ITEM, ITEM_NAME)
+ENDIF
+IF ITEM_ID == -1
+	PRINTFORMW [错误]GET_ITEM: "%ITEM_NAME%" 不是合法的物品名称
+	RETURN 0
+ENDIF
+CALL QOL_SHOW_SET_ITEM(ITEM_ID, ITEM_NUM, PRINT_TYPE)
+RETURN RESULT
 
 ;SIF ITEM_NUM <= 0
 ;	RETURN
@@ -2835,12 +2834,21 @@ CALL QOL_SHOW_SET_ITEM(ITEM_NAME, ITEM_NUM, PRINT_TYPE)
 @LOST_ITEM(ITEM_NAME, ITEM_NUM, PRINT_TYPE)
 #LOCALSIZE 1
 #LOCALSSIZE 1
-#DIMS ITEM_NAME
-#DIM ITEM_ID
-#DIM ITEM_NUM
-#DIM PRINT_TYPE;表示形式　0=通常　1=L　2=W
-CALL QOL_SHOW_SET_ITEM(ITEM_NAME, -ITEM_NUM, PRINT_TYPE)
-	RETURN
+#DIMS DYNAMIC ITEM_NAME
+#DIM DYNAMIC ITEM_ID
+#DIM DYNAMIC ITEM_NUM
+#DIM DYNAMIC PRINT_TYPE;表示形式　0=通常　1=L　2=W
+IF ISNUMERIC(ITEM_NAME)
+	ITEM_ID = TOINT(ITEM_NAME)
+ELSE
+	ITEM_ID = GETNUM(ITEM, ITEM_NAME)
+ENDIF
+IF ITEM_ID == -1
+	PRINTFORMW [错误]LOST_ITEM: "%ITEM_NAME%" 不是合法的物品名称
+	RETURN 0
+ENDIF
+CALL QOL_SHOW_SET_ITEM(ITEM_ID, -ITEM_NUM, PRINT_TYPE)
+RETURN RESULT
 
 ;ITEM_ID = GETNUM(ITEM, ITEM_NAME)
 ;IF ITEM_ID < 0
@@ -2859,9 +2867,9 @@ CALL QOL_SHOW_SET_ITEM(ITEM_NAME, -ITEM_NUM, PRINT_TYPE)
 SIF VALUE <= 0
 	RETURN
 CALL COLORMESSAGE(@"得到了%金額表示(VALUE)%", C_YELLOW, PRINT_TYPE)
-IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && VALUE > 4
-	VALUE *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+IF TALENT:MASTER:黄金律 && MAGIC_DLC_魔法成就 && VALUE > 4
 	CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(VALUE * 3 / 10)%!", C_YELLOW, PRINT_TYPE)
+	MONEY += VALUE * 3 / 10
 ENDIF
 MONEY += VALUE
 
@@ -2875,9 +2883,9 @@ CALL COLORMESSAGE(@"SpEll ", 0xC8FFFF, 0)
 CALL COLORMESSAGE(@"CARd ", 0x64FFDC, 0)
 CALL COLORMESSAGE(@"BONUS!!", 0x00FFB4, 1)
 CALL COLORMESSAGE(@"        %金額表示(VALUE)%", C_YELLOW, PRINT_TYPE)
-IF TALENT:MASTER:黄金律 * MAGIC_DLC_魔法成就 && VALUE > 4
-	VALUE *= (100 + TALENT:MASTER:黄金律 * 30 * MAGIC_DLC_魔法成就) / 100
+IF TALENT:MASTER:黄金律 && MAGIC_DLC_魔法成就 && VALUE > 4
 	CALL COLORMESSAGE(@"黄金律使你获得的金钱凭空增加了%金額表示(VALUE * 3 / 10)%!", C_YELLOW, PRINT_TYPE)
+	MONEY += VALUE * 3 / 10
 ENDIF
 MONEY += VALUE
 
@@ -3199,9 +3207,9 @@ IF CFLAG:ARG:回復速度降低
 	;TALENT:ARG:回復速度 = CFLAG:ARG:回復速度降低 - 2
 	CFLAG:ARG:回復速度降低 = 0
 ENDIF
-IF CFLAG:ARG:乳品质提升 ;&& TALENT:ARG:胸围 > -2
-	;TALENT:ARG:胸围 -= CFLAG:ARG:乳品质提升
-	CFLAG:ARG:乳品质提升 = 0
+IF CFLAG:ARG:罩杯提升 ;&& TALENT:ARG:胸围 > -2
+	;TALENT:ARG:胸围 -= CFLAG:ARG:罩杯提升
+	CFLAG:ARG:罩杯提升 = 0
 ENDIF
 
 ;reset custom dialogue CFLAG:1000～1999 TCVAR:350～400
@@ -3225,7 +3233,8 @@ ENDIF
 ;EX:ARG:膣内精液 = 0
 ;EX:ARG:肛門内精液 = 0
 ;EX:ARG:子宮内精液 = 0
-
+;EX:ARG:精液残量 = 0
+;EX:ARG:アナル精液残量 = 0
 
 MASTERNAME:ARG =
 
@@ -3500,6 +3509,17 @@ SIF ARG == -1
 	ARG = TARGET
 CALL ADD_KISS(ARG, ARG:1, ARG:2)
 
+;性交中判定
+@IS_SEXING(ARG)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+SIF !ARG
+	ARG = TARGET
+SIF TEQUIP:ARG:Ｖ性交 == MASTER || TEQUIP:ARG:Ａ性交 == MASTER || TEQUIP:MASTER:Ｖ性交 == ARG || TEQUIP:MASTER:Ａ性交 == ARG
+	RETURNF 1
+RETURNF 0
+
 ;==================================================================
 ;Return 1 if the target is under the effect of an aphrodisiac or in heat
 ;Borrowed from Kaguya's dialogue
@@ -3743,30 +3763,26 @@ RETURNF iNumOfPeople
 [ENDIF]
 RETURNF 0
 
+[SKIPSTART]
 ;-------------------------------------------------
 ;最大幅の定義関数
 ;-------------------------------------------------
 @MAXWIDTH
-#LOCALSIZE 1
-#LOCALSSIZE 1
 #FUNCTION
 RETURNF STRLENS(DRAWLINESTR)
 
 ;-------------------------------------------------
 ;Make a start of a section (non-button)
 ;-------------------------------------------------
-@PRINTLINE, ARGS, ARGS:1 = "-",ARG
-#LOCALSIZE 1
-#LOCALSSIZE 1
-LOCALS '= ARGS
-SIF !ARG
-	LOCALS '= @"□ %ARGS:0% □"
+@PRINTLINE, ARGS, ARGS:1 = "-"
+LOCALS '= @"□ %ARGS:0% □"
 PRINTFORM %LOCALS%
 IF GETBIT(GETSTYLE(), 0) ;assume bold font allows for ~10.5% less characters on a line (currenly only used by Scouter)
 	PRINTFORML %ARGS:1*((MAXWIDTH()-STRLENS(LOCALS)) * 895 / 1000)%
 ELSE
 	PRINTFORML %ARGS:1*(MAXWIDTH()-STRLENS(LOCALS))%
 ENDIF
+[SKIPEND]
 
 @PALAM_NUM(ARG, ARG:1)
 #LOCALSIZE 1
@@ -4014,6 +4030,7 @@ RETURNF ARGS
 #DIMS strLast
 ;clear off the last part
 ARGS '= REPLACE(ARGS, strSplit + " $", "")
+ARGS '= REPLACE(ARGS, strSplit + "$", "")
 ;use negative lookahead to replace comma before the last item with "AND"
 ARGS '= REPLACE(ARGS, "(" + strSplit + ")(?!.*" + strSplit + ")", strLast)
 ;finally place commas in case splitter wasn't a comma
@@ -4300,3 +4317,39 @@ FOR nLoop, 0, LOCAL
 	SIF PREVCOM:ARG == TNUM(LOCALS:nLoop)
 		RETURNF PREVCOM:ARG == TNUM(LOCALS:nLoop)
 NEXT
+
+@COM_TAGS_CHECK(COM_ID = 0, TAG = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM COM_ID
+#DIM TAG
+
+RETURNF GETBIT(GETMETH(@"COM{COM_ID}_TAGS", 0), TAG)
+
+@GET_COM_TAGS(COM_ID = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM COM_ID
+#DIM TAG
+
+RETURNF GETMETH(@"COM{COM_ID}_TAGS", 0)
+
+@ACTIVITY_TAGS_CHECK(ACTIVITY_ID = 0, TAG = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM ACTIVITY_ID
+#DIM TAG
+
+RETURNF GETBIT(GETMETH(@"ACTIVITY{ACTIVITY_ID}_TAGS", 0), TAG)
+
+@GET_ACTIVITY_TAGS(ACTIVITY_ID = 0)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTION
+#DIM ACTIVITY_ID
+#DIM TAG
+
+RETURNF GETMETH(@"ACTIVITY{ACTIVITY_ID}_TAGS", 0)

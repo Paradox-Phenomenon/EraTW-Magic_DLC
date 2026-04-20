@@ -98,7 +98,7 @@ ENDIF
 ; @QOL_GET_DISTANCE(目的地, 出发地, 地图ID)
 ; 概  要:使用预先生成的邻接表和BFS算法计算最短距离
 ; 参  数:参照@SKIP_MOVE_{地图ID}(目的地, 出发地)的规格
-; 返回值:从“出发地”到“目的地”的最短步数(如果无法到达则返回0)
+; 返回值:从“出发地”到“目的地”的最短步数(如果无法到达则返回-1)
 ;-----------------------------------------------------------
 @QOL_GET_DISTANCE(ARG, ARG:1, map_id)
 #LOCALSIZE 1
@@ -125,7 +125,7 @@ SIF GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1
 ;异常处理保持一致
 IF P_AdjList:(ARG:1) == "" && !(GETMETH(@"CAN_MOVE_{map_id}", 0, ARG:1, ARG) & 1)
 	PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，请汇报错误
-	RETURNF 1
+	RETURNF -1
 ENDIF
 IF ARG:1 / 100 != map_id || ARG / 100 != map_id
 	THROW [警告] 错误的寻路，请汇报错误（map_id：{map_id} 路径：从{ARG:1}到{ARG}）
@@ -162,4 +162,21 @@ WEND
 ;队列空了也没找到
 PRINTFORML [警告] 未找到从{ARG:1}到{ARG}的寻路，请汇报错误
 ;THROW [警告] 错误的寻路，请汇报错误（map_id：{map_id} 路径：从{ARG:1}到{ARG}）
-RETURNF 1
+RETURNF -1
+
+@连通性遍历
+#LOCALSIZE 3
+#LOCALSSIZE 1
+FOR LOCAL:0, MAIN_MAP*100, MAXROOM
+	SIF NAME_FROM_PLACE(LOCAL:0) == ""
+		CONTINUE
+	FOR LOCAL:1, LOCAL:0 + 1, MAXROOM
+		SIF NAME_FROM_PLACE(LOCAL:1) == ""
+			CONTINUE
+		LOCAL:2 = QOL_GET_DISTANCE(LOCAL:0,LOCAL:1,MAIN_MAP)
+		PRINTFORML %NAME_FROM_PLACE(LOCAL:1)%{LOCAL:1}到%NAME_FROM_PLACE(LOCAL:0)%{LOCAL:0}的距离是{LOCAL:2}
+		SIF LOCAL:2 < 1
+			WAIT
+		AWAIT
+	NEXT
+NEXT
