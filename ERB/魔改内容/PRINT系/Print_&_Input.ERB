@@ -124,26 +124,34 @@ RETURNF RES_STR
 ;SETCOLOR LOCAL
 
 ;-------------------------------------------------
+;函数名:GET_HEARTMARK_HTML
+;概　要:生成粉色爱心的HTML字符串
+;参　数:L_COUNT   - 爱心数量
+;       USE_COLOR - 是否使用粉色（否则继承当前颜色）
+;返回值:包含HTML标签和特殊字体样式的字符串
+;备　注:使用Times New Roman字体渲染
+;-------------------------------------------------
+@GET_HEARTMARK_HTML(L_COUNT = 1, USE_COLOR = 1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIM DYNAMIC L_COUNT
+#DIM DYNAMIC USE_COLOR
+RETURNF HTMLFONT("❤" * L_COUNT, "Times New Roman", USE_COLOR ? C_H_PINK # -1)
+
+;-------------------------------------------------
 ; 函数名：HEARTMARK
 ; 概  述：以特定颜色和字体输出心形符号
+; 参  数：L_COUNT - 爱心数量
+;         L_MODE  - 模式（PLAIN时不用粉色）
+; 返回值：无（直接HTML_PRINT输出）
 ;-------------------------------------------------
 @HEARTMARK(L_COUNT = 1, L_MODE = "")
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM DYNAMIC L_COUNT
 #DIMS DYNAMIC L_MODE
-
-LOCAL = GETCOLOR()
-LOCALS '= GETFONT()
-
-SIF L_MODE != "PLAIN"
-	SETCOLOR C_H_PINK 
-
-SETFONT "Times New Roman"
-PRINTFORM %"❤" * L_COUNT%
-
-SETFONT LOCALS
-SETCOLOR LOCAL
+HTML_PRINT GET_HEARTMARK_HTML(L_COUNT, L_MODE != "PLAIN"), 1
 
 ; 兼容旧的 HEART
 @HEART(L_COUNT = 1, L_MODE = "")
@@ -154,26 +162,34 @@ SETCOLOR LOCAL
 CALL HEARTMARK(L_COUNT, L_MODE)
 
 ;-------------------------------------------------
+;函数名:GET_SHYMARK_HTML
+;概　要:生成害羞斜杠的HTML字符串
+;参　数:L_COUNT   - 斜杠组数
+;       USE_COLOR - 是否使用粉色（否则继承当前颜色）
+;返回值:包含HTML标签和特殊字体样式的字符串
+;备　注:使用MS Gothic字体渲染
+;-------------------------------------------------
+@GET_SHYMARK_HTML(L_COUNT = 1, USE_COLOR = 1)
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#FUNCTIONS
+#DIM DYNAMIC L_COUNT
+#DIM DYNAMIC USE_COLOR
+RETURNF HTMLFONT("///" * L_COUNT, "MS Gothic", USE_COLOR ? C_H_PINK # -1)
+
+;-------------------------------------------------
 ; 函数名：SHYMARK
 ; 概  述：以特定颜色和字体输出三连斜杠
+; 参  数：L_COUNT - 斜杠组数
+;         L_MODE  - 模式（PLAIN时不用粉色）
+; 返回值：无（直接HTML_PRINT输出）
 ;-------------------------------------------------
 @SHYMARK(L_COUNT = 1, L_MODE = "")
 #LOCALSIZE 1
 #LOCALSSIZE 1
 #DIM DYNAMIC L_COUNT
 #DIMS DYNAMIC L_MODE
-
-LOCAL = GETCOLOR()
-LOCALS '= GETFONT()
-
-SIF L_MODE != "PLAIN"
-	SETCOLOR C_H_PINK 
-
-SETFONT "MS Gothic"
-PRINTFORM %"///" * L_COUNT%
-
-SETFONT LOCALS
-SETCOLOR LOCAL
+HTML_PRINT GET_SHYMARK_HTML(L_COUNT, L_MODE != "PLAIN"), 1
 
 ;这个函数没有使用意义了，最开始他是调用UNICODE(0x2665)的语法封装。但是现在支持明文心形，所以直接复制粘贴需要的符号即可
 @GET_HEART()
@@ -190,17 +206,23 @@ RETURNF "♥"
 RETURNF "♥" + L_STR + "♥"
 
 ;-------------------------------------------------
+;函数名:GET_MSG_CODE_HTML
+;概　要:使用微软哥特字体渲染符号的HTML字符串
+;参　数:ARGS - 符号文本
+;返回值:包含HTML标签的字符串
+;备　注:继承当前控制台颜色
+;-------------------------------------------------
+@GET_MSG_CODE_HTML(ARGS)
+#FUNCTIONS
+RETURNF HTMLFONT(ARGS, "MS Gothic", -1)
+
+;-------------------------------------------------
 ;函数名:MSG_CODE
-;概　要:使用微软哥特字体的符号
+;概　要:使用微软哥特字体的符号（封装版本）
 ;主要是为了控制制表符号显示
 ;-------------------------------------------------
 @MSG_CODE(ARGS)
-#LOCALSIZE 1
-#LOCALSSIZE 1
-LOCALS = %GETFONT()%
-SETFONT "MS Gothic"
-PRINTS ARGS
-SETFONT LOCALS
+HTML_PRINT GET_MSG_CODE_HTML(ARGS), 1
 
 ;==============================================================================
 ;文本打印
