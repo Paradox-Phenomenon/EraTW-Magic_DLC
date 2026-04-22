@@ -10,11 +10,14 @@ SIF CFLAG:TARGET:350 == 46
 	RETURNF "遊びに参加する"
 
 @COM304
-#DIM JOBTYPE
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC JOBTYPE
+#DIM DYNAMIC L_扫除
 
 JOBTYPE = CFLAG:TARGET:職種
 
-SIF FLAG:70 && JOBTYPE == JOB_会話
+SIF FLAG:70 && GROUPMATCH(JOBTYPE ,JOB_会話, JOB_遊び)
 	RETURN 0
 
 CALL JOB_EFFICIENCY(JOBTYPE)
@@ -184,27 +187,30 @@ ENDIF
 ;do actual cleaning
 IF GROUPMATCH(JOBTYPE, 40, 50) && AT_HOME(MASTER)
 	;cleaning power
-    LOCAL:10 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
+	L_扫除 = (2 + ABL:MASTER:清掃技能 + 3 * TALENT:MASTER:清掃中毒)
 	SELECTCASE ITEM:特制竹箒
 		CASE 1
-			LOCAL:10 += 2
+			L_扫除 += 2
 		CASE 2
-			LOCAL:10 += 3
+			L_扫除 += 3
 		CASE 3
-			LOCAL:10 += 4
+			L_扫除 += 4
 	ENDSELECT
 	
-	LOCAL:10 = LOCAL:10 * (5 - TALENT:MASTER:汚臭耐性) / 5
-	YOGORE:(CFLAG:MASTER:現在位置) /= LOCAL:10
+	L_扫除 = L_扫除 * (5 - TALENT:MASTER:汚臭耐性) / 5
+	YOGORE:(CFLAG:MASTER:現在位置) /= L_扫除
 ENDIF
 RETURN 1
 
 
 @JOB_EFFICIENCY(ARG)
-#DIM ABILITY
-#DIM WorkP
+#LOCALSIZE 3
+#LOCALSSIZE 1
+#DIM DYNAMIC ABILITY
+#DIM DYNAMIC WorkP
+#DIM DYNAMIC L_工资
+#DIM DYNAMIC L_帮忙
 
-WorkP = 0
 IF GROUPMATCH(ARG, JOB_清掃, JOB_会話, JOB_戦闘, JOB_教養, JOB_料理, JOB_音楽, JOB_商売, JOB_お酒, JOB_家事, JOB_採集, JOB_釣り, JOB_調合)
 	SELECTCASE ARG
 	CASE JOB_清掃, JOB_家事
@@ -382,16 +388,16 @@ SELECTCASE ARG
 ENDSELECT
 
 ;報酬倍率
-LOCAL:4 = TCVAR:TARGET:工资
+L_工资 = TCVAR:TARGET:工资
 
 ;働いた分工作量減少
-LOCAL:3 = (WorkP + RAND:80 + RAND:80 + 10)
+L_帮忙 = (WorkP + RAND:80 + RAND:80 + 10)
 
 ;当然時間停止中は会話系の手伝いはできない
 SIF FLAG:70 && GROUPMATCH(ARG, 41)
-	LOCAL:3 = 0
+	L_帮忙 = 0
 SIF TCVAR:TARGET:沒法幫忙 == 2 && FLAG:70
-	LOCAL:3 /= 5
+	L_帮忙 /= 5
 ;調合知識
 IF TARGET == [[鈴仙]] && YOUBI_MATCH(DAY, "木")
 	EXP:MASTER:調合経験 += 2
@@ -401,16 +407,16 @@ ENDIF
 
 ;呼び込みは工作量少なめ（艾伦）
 SIF TARGET == [[艾伦]] && CFLAG:職種 == JOB_商売
-	LOCAL:3 /= 2
+	L_帮忙 /= 2
 ;みすちーは料理経験におまけ
 SIF TARGET == [[米斯蒂亜]]
 	EXP:MASTER:料理経験 ++
 ;half assistance for cleaning due to it taking less time
 SIF GROUPMATCH(ARG, 40, 50)
-	LOCAL:3 /= 2
+	L_帮忙 /= 2
 ;TCVAR:315が2じゃなければ工作量減る
 IF TCVAR:TARGET:沒法幫忙 != 2
-	BASE:工作量 = BASE:工作量 - LOCAL:3
+	BASE:工作量 = BASE:工作量 - L_帮忙
 ENDIF
 IF BASE:工作量 < 0 && CFLAG:TARGET:20 > 0
 	BASE:工作量 = 1
@@ -418,10 +424,10 @@ ELSEIF BASE:工作量 < 0
 	BASE:工作量 = 0
 ENDIF
 ;働いた分アナタの工作量を増加（報酬に影響）
-TCVAR:MASTER:帮忙工作量 += LOCAL:3 * LOCAL:4
-TCVAR:TARGET:帮忙工作量 += LOCAL:3
-IF ARG != 46
-	PRINTFORML 这次帮忙完成的工作量{LOCAL:3}
+TCVAR:MASTER:帮忙工作量 += L_帮忙 * L_工资
+TCVAR:TARGET:帮忙工作量 += L_帮忙
+IF ARG != JOB_遊び
+	PRINTFORML 这次帮忙完成的工作量{L_帮忙}
 ENDIF
 
 ;-------------------------------------------------
