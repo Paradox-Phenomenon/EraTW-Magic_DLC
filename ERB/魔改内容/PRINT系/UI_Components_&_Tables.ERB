@@ -686,7 +686,7 @@ RETURNF RES_STR
 ;概  述：生成基于 <shape> 标签的像素级平滑进度条（支持HSV渐变）
 ;参  数：VAL      - 当前数值
 ;        MAX_VAL      - 最大数值
-;        WIDTH    - 进度条总宽度（单位：Emuera绘图坐标，100 = 1个全角字符宽）
+;        WIDTH    - 进度条总宽度
 ;        HEIGHT   - 进度条高度（单位同上，推荐 25~50）
 ;        COLOR_FG     - 前景填充色
 ;        COLOR_BG     - 背景空白色
@@ -765,7 +765,7 @@ RETURNF RES_STR
 ;参  数：VAL       - 主当前数值（第一层填充）
 ;        MAX_VAL   - 最大数值（计算填充比率用）
 ;        SCALE_NUM - 分段数量（每段绘制一个矩形块）
-;        SCALE_W   - 每段宽度（Emuera绘图坐标，100=1个全角字符宽）
+;        SCALE_W   - 每段宽度
 ;        L_C_L     - 渐变起始色（左/低值颜色）
 ;        L_C_R     - 渐变结束色（右/高值颜色）
 ;        L_C_EMPTY - 空值/未填充颜色
@@ -1056,8 +1056,10 @@ IF !STRCOUNT(OP, "「種類表記無し」")
 		RES_HTML += @"<font color='%HEX_TO_HTML_COLOR(TEXT_COLOR)%'>%DISPLAY_NAME%</font>"
 	ENDIF
 ENDIF
-RES_HTML += @"<shape type='space' param='2px'>%QOL_HTML_BARSTR(BASE:C_ID:BASE_ID, MAXBASE:C_ID:BASE_ID, BAR_LENGTH, BARCOLORSET(COLOR_NAME), RESULT:1, UNICODE(0x2585), UNICODE(0x2585))%<shape type='space' param='2px'>"
-
+;字符实现
+;RES_HTML += @"<shape type='space' param='2px'>%QOL_HTML_BARSTR(BASE:C_ID:BASE_ID, MAXBASE:C_ID:BASE_ID, BAR_LENGTH, BARCOLORSET(COLOR_NAME), RESULT:1, UNICODE(0x2585), UNICODE(0x2585))%<shape type='space' param='2px'>"
+;RECT实现
+RES_HTML += @"<shape type='space' param='2px'>%HTML_RECT_BAR(BASE:C_ID:BASE_ID, MAXBASE:C_ID:BASE_ID, TO_PXWIDTH(BAR_LENGTH), 63, BARCOLORSET(COLOR_NAME), RESULT:1, BARCOLORSET(COLOR_NAME), 37)%<shape type='space' param='2px'>"
 IF !STRCOUNT(OP, "「数字表記無し」")
 	NUM_COLOR = GETCOLOR()
 	IF BUFF:C_ID:BASE_ID > 0
@@ -1162,8 +1164,10 @@ L_GR_LEN = L_LEN * VAL / MAX_VAL / L_GR_FREQ
 L_FG_C1 = RGB_TO_HEX(LIMIT(L_R, 0, 255), LIMIT(L_G, 0, 255), LIMIT(L_B, 0, 255))
 L_BG_C = RGB_TO_HEX(LIMIT(L_R + L_BG_DIFF, 0, 255), LIMIT(L_G + L_BG_DIFF, 0, 255), LIMIT(L_B + L_BG_DIFF, 0, 255))
 L_FG_C2 = RGB_TO_HEX(LIMIT(L_R + L_GR_R * L_GR_LEN, 0, 255), LIMIT(L_G + L_GR_G * L_GR_LEN, 0, 255), LIMIT(L_B + L_GR_B * L_GR_LEN, 0, 255))
-
-HTML_PRINT QOL_HTML_BARSTR(VAL, MAX_VAL, L_LEN, L_FG_C1, L_BG_C, COLOR_FG, COLOR_BG, L_FG_C2), 1
+; 字符实现
+;HTML_PRINT QOL_HTML_BARSTR(VAL, MAX_VAL, L_LEN, L_FG_C1, L_BG_C, COLOR_FG, COLOR_BG, L_FG_C2), 1
+; RECT实现
+HTML_PRINT HTML_RECT_BAR(VAL, MAX_VAL, TO_PXWIDTH(L_LEN), 63, L_FG_C1, L_BG_C, L_FG_C2, 37), 1
 RETURN 1
 
 ;-------------------------------------------------

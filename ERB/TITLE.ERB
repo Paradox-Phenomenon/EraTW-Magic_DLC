@@ -27,7 +27,13 @@ RESETBGCOLOR
 LOCAL = GETMILLISECOND()
 ;Moved lazy loading images up so any errors can be caught by the LINECOUNT check
 CALL RM_タイトル画像用意 ;debloat custom code
+;字典
 CALL MAKE_TALENT_MAP
+SQL_CONNECT "TR_DB"
+SQL_IMPORT_MAP_XML "TR_DB", "CSV_MAP", "plugins/tw_csv_chs.xml"
+;#;PRINTFORML [DEBUG] CSV_MAP 成功导入了 {SQL_EXECUTE_SCALAR_LONG("TR_DB", "SELECT COUNT(*) FROM CSV_MAP;")} 条数据！
+SQL_IMPORT_MAP_XML "TR_DB", "TASTE_MAP", "plugins/tw_taste_chs.xml"
+;#;PRINTFORML [DEBUG] TASTE_MAP 成功导入了 {SQL_EXECUTE_SCALAR_LONG("TR_DB", "SELECT COUNT(*) FROM TASTE_MAP;")} 条数据！
 ;debug模式下看报错
 PRINTFORML 字典加载完毕 用时{GETMILLISECOND()-LOCAL}毫秒
 ;#;FORCEWAIT
@@ -136,9 +142,9 @@ I = GETMILLISECOND()
 FOR count, 1, 6573
 	HTML_PRINT @"<p align='center'><font face='黑体'>%LOADTEXT(@"bad/bad_apple{count}.txt")%</font></p>"
 	CUSTOMDRAWLINE ━
-	CALL HTMLPRINTL(@"<b>%GAMEBASE_TITLE%</b>",,, "ＭＳ 明朝")
-	CALL HTMLPRINTL(@"<b>%eraTW_Version% - %eraTW_SubVersion%</b>",,, "ＭＳ 明朝")
-	CALL HTMLPRINTL(@"<b>(%GAMEBASE_YEAR%)</b>",,, "ＭＳ 明朝")
+	CALL HTMLPRINTL(@"<b>%GAMEBASE_TITLE%</b>")
+	CALL HTMLPRINTL(@"<b>%eraTW_Version% - %eraTW_SubVersion%</b>")
+	CALL HTMLPRINTL(@"<b>(%GAMEBASE_YEAR%)</b>")
 	LOCAL = GETMILLISECOND() - I
 	IF LOCAL/1000%60 % 2
 		PRINTFORMDL %" "*40%{LOCAL/1000/60}:\@ LOCAL/1000%60<10 ? 0 # \@{LOCAL/1000%60} / 3:37         >>>>>>>>PRESS ANY BUTTON<<<<<<<
@@ -164,3 +170,14 @@ FOR count, 1, 6573
 NEXT
 VARSET I
 RETURN 1
+
+@RM_タイトル画像用意
+#LOCALSIZE 1
+#LOCALSSIZE 1
+#DIM DYNAMIC RM_TITLE = 100000
+SIF !GCREATED(RM_TITLE)
+	GCREATEFROMFILE RM_TITLE, "title.webp"
+FOR LOCAL, 0, 35
+	SPRITECREATE "TW_title"+TOSTR(LOCAL, "D3"), RM_TITLE, 0, LOCAL*16, 1041, 16
+NEXT
+
