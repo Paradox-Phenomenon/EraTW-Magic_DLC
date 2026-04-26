@@ -382,7 +382,7 @@ HTMLFONT("文本", "", GETCOLOR())         → 指定当前系统色
 | 函数 | 说明 |
 |------|------|
 | `GET_PRINTBUTTON_EXC_HTML(...)` | 生成内联按钮HTML字符串 |
-| `HTML_PRINTBUTTON_EXC(...)` | 打印内联按钮（调用HTML_PRINTC_MANAGER） |
+| `HTML_PRINTBUTTON_EXC(...)` | 打印内联按钮（封装HTML_PRINTBUTTONC） |
 
 #### 通用按钮构建
 
@@ -392,18 +392,12 @@ HTMLFONT("文本", "", GETCOLOR())         → 指定当前系统色
 
 ### 3.5 制表系统
 
-#### 核心制表管理器
-
-| 函数 | 说明 |
-|------|------|
-| `HTML_PRINTC_MANAGER(ADD_HTML, FLUSH, L_ALIGN)` | Buffer-Pop-Draw 模式 |
-
 #### 制表打印
 
 | 函数 | 说明 |
 |------|------|
-| `HTML_PRINTC(L_TEXT, L_VAL, L_COLOR, L_ALIGN, IS_DISABLED)` | 取代PRINTC/PRINTC，直接送入制表缓存池 |
-| `HTML_PRINTC_FLUSH` | 强制清空并输出当前制表缓存 |
+| `HTML_PRINTBUTTONC(L_TEXT, L_VAL, L_COLOR, L_ALIGN, IS_DISABLED)` | 封装内置HTML_PRINTC/HTML_PRINTLC，自动管理制表与换行 |
+| `HTML_PRINTBUTTONC_FLUSH` | 强制换行（内置HTML_PRINTC自动管理换行，此函数仅用于主动换行） |
 
 #### 行装饰
 

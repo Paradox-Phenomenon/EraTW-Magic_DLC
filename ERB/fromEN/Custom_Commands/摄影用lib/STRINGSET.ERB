@@ -1,8 +1,86 @@
 ﻿;本文件用于存放集合相关的方法
 ;为了避免混淆，集合表示为STRINGSET（所有的基本运算都是与字符串有关的）
 ;集合中的元素不允许出现斜杠（/），因为它被用于分隔元素
-;这里，集合的本质就是一个满足特定格式的字符串（例如“1/2/3/4/”，或者“一/二/三/四/”）
+;这里，集合的本质就是一个满足特定格式的字符串（例如"1/2/3/4/"，或者"一/二/三/四/"）
 ;特别提醒：空字符串（""）就是空集，清空集合直接赋值即可
+
+;-------------------------------------------------
+; 内置MAP函数等价实现
+; 本库使用字符串拼接模拟集合，可用内置MAP函数替代。
+; 用MAP的key表示集合元素，value留空即可实现集合语义。
+; MAP基于C# Dictionary<string,string>，性能远优于字符串操作。
+;
+; 初始化：MAP_CREATE "setName"（仅需一次，之后用名称引用）
+;         添加元素：MAP_SET "setName", element, ""
+;
+; STRINGSET_ISSET(set)        → 无直接等价（MAP始终为合法集合，无需校验格式）
+; STRINGSET_FIND(set, elem)   → MAP_HAS("setName", elem)
+; STRINGSET_ADD(set, elem)    → MAP_SET "setName", elem, ""
+; STRINGSET_DISCARD(set, elem)→ MAP_REMOVE "setName", elem
+; STRINGSET_LEN(set)          → MAP_SIZE("setName")
+; STRINGSET_RANDGET(set)      → MAP_GETKEYS "setName", 1
+;                                 RESULTS:(RAND:RESULT)（随机取一个key）
+; STRINGSET_RANDPOP(set)      → MAP_GETKEYS "setName", 1
+;                                 LOCALS = RESULTS:(RAND:RESULT)
+;                                 MAP_REMOVE "setName", LOCALS
+; STRINGSET_UNION(setA, setB) → MAP_MERGE "setA", "setB"（setA会被修改）
+; STRINGSET_INTERSECTION(A,B) → MAP_GETKEYS "setA", 1
+;                                 FOR i, 0, RESULT
+;                                     IF !MAP_HAS("setB", RESULTS:i)
+;                                         MAP_REMOVE "setA", RESULTS:i
+;                                     ENDIF
+;                                 NEXT
+; STRINGSET_DIFF(setA, setB)  → MAP_GETKEYS "setA", 1
+;                                 FOR i, 0, RESULT
+;                                     IF MAP_HAS("setB", RESULTS:i)
+;                                         MAP_REMOVE "setA", RESULTS:i
+;                                     ENDIF
+;                                 NEXT
+; STRINGSET_SYMDIFF(A, B)     → 先UNION再移除INTERSECTION的元素
+;
+; 注意：STRINGSET_* 以字符串为数据载体（值语义），MAP_* 以名称引用全局字典（引用语义）。
+;       STRINGSET_* 的数据可随字符串变量存档/传递，MAP_* 的数据需通过 MAP_TOXML/MAP_TOSTRING 序列化。
+;-------------------------------------------------
+
+;-------------------------------------------------
+; 内置SQL函数等价实现
+; 也可用SQLite表替代，适合数据量大或需要集合运算的场景。
+; 表结构：CREATE TABLE setName (elem TEXT PRIMARY KEY)
+;         elem列即集合元素，PRIMARY KEY保证唯一性。
+;
+; 初始化：SQL_CONNECT "db"
+;         SQL_EXECUTE_NONQUERY "db", "CREATE TABLE IF NOT EXISTS setName (elem TEXT PRIMARY KEY)"
+;
+; STRINGSET_ISSET(set)        → 无直接等价（SQL表始终为合法集合，无需校验格式）
+; STRINGSET_FIND(set, elem)   → SQL_P_EXECUTE_SCALAR_LONG("db",
+;                                     "SELECT COUNT(*) FROM setName WHERE elem = @0", elem)
+; STRINGSET_ADD(set, elem)    → SQL_P_EXECUTE_NONQUERY "db",
+;                                     "INSERT OR IGNORE INTO setName (elem) VALUES (@0)", elem
+; STRINGSET_DISCARD(set, elem)→ SQL_P_EXECUTE_NONQUERY "db",
+;                                     "DELETE FROM setName WHERE elem = @0", elem
+; STRINGSET_LEN(set)          → SQL_EXECUTE_SCALAR_LONG("db",
+;                                     "SELECT COUNT(*) FROM setName")
+; STRINGSET_RANDGET(set)      → SQL_EXECUTE_SCALAR_STRING("db",
+;                                     "SELECT elem FROM setName ORDER BY RANDOM() LIMIT 1")
+; STRINGSET_RANDPOP(set)      → LOCALS = SQL_EXECUTE_SCALAR_STRING("db",
+;                                     "SELECT elem FROM setName ORDER BY RANDOM() LIMIT 1")
+;                                 SQL_P_EXECUTE_NONQUERY "db",
+;                                     "DELETE FROM setName WHERE elem = @0", LOCALS
+; STRINGSET_UNION(setA, setB) → SQL_EXECUTE_NONQUERY "db",
+;                                     "INSERT OR IGNORE INTO setA (elem) SELECT elem FROM setB"
+; STRINGSET_INTERSECTION(A,B) → SQL_EXECUTE_NONQUERY "db",
+;                                     "DELETE FROM setA WHERE elem NOT IN (SELECT elem FROM setB)"
+; STRINGSET_DIFF(setA, setB)  → SQL_EXECUTE_NONQUERY "db",
+;                                     "DELETE FROM setA WHERE elem IN (SELECT elem FROM setB)"
+; STRINGSET_SYMDIFF(A, B)     → 需临时表：
+;                                 CREATE TABLE tmp AS SELECT elem FROM setA
+;                                 INSERT OR IGNORE INTO setA (elem) SELECT elem FROM setB
+;                                 DELETE FROM setA WHERE elem IN (SELECT elem FROM tmp)
+;                                 DROP TABLE tmp
+;
+; 注意：SQL表天然保证元素唯一性（PRIMARY KEY），集合运算可用子查询一行完成。
+;       SQL还支持LIKE、范围、聚合等复杂查询，远超STRINGSET_*的能力。
+;-------------------------------------------------
 
 ;判断一个字符串是否符合集合的格式
 @STRINGSET_ISSET(ARGS)
