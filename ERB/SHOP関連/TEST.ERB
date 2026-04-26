@@ -7,8 +7,6 @@ CALL D_LINE
 PRINTL
 PRINTFORML 输入函数※注意※控制台输入时，半角括号需要'\\'转义
 PRINTBUTTON "快速测试","快速测试"
-HTML_PRINT @"<button value = '快速测试'><img src='钟表_02_10' width='100px' height='100px'></button>"
-PRINTFORML %"\n"*8%
 INPUTS
 RESULT = 0
 DEBUGPRINTFORML %RESULTS%
@@ -20,13 +18,9 @@ ENDCATCH
 RETURN RESULT
 
 @快速测试
-HTML_PRINT "<font face='MS Mincho'>⚰</font><font face='MS Mincho'>嗯嗯</font>"
-HTML_PRINT "<font face='MS Mincho'>⚰</font><font render='skia' face='MS Mincho'  edging='alias' hinting='full'>嗯嗯</font>"
-HTML_PRINT "<font face='MS Mincho'>⚰️</font><font face='MS Mincho'>嗯嗯</font>"
-HTML_PRINT "<font face='MS Mincho'>⚰️</font><font render='skia' face='MS Mincho'  edging='alias' hinting='full'>嗯嗯</font>"
-HTML_PRINT "<font face='MS Mincho'>🎭</font><font face='MS Mincho'>嗯嗯</font>"
-HTML_PRINT "<font face='MS Mincho'>🎭</font><font render='skia' face='MS Mincho'  edging='alias' hinting='full'>嗯嗯</font>"
-
+HTML_PRINT "aaa<br>bbb<br>ccc"
+HTML_PRINT "aaa<br>bbb<br>ccc"
+;CALL DRAW_COLOREDMAP_GD
 ;CALL PRINT_ANIME,"output"
 ;CALL PRINT_ANIME,"老吴2"
 ;CALL PRINT_ANIME,"老吴2改"
@@ -1592,3 +1586,34 @@ WAIT
 ;
 	;; 5. 嵌套组合：外层像素风格，内层大段落继承但hinting不同
 	;HTML_PRINT "<font edging='alias' hinting='normal'>像素风格段落<font hinting='full'>内层文字更锐利</font></font>"
+
+@TEST_FONT_SCALE
+#DIM LCOUNT
+#DIM BASE_SIZE
+#DIM CURRENT_SIZE
+#DIMS HTML_BUFFER
+#DIMS HTML_BUFFER2
+
+BASE_SIZE = GETCONFIG("FONT SIZE")
+
+PRINTL === 字体动态缩放测试 (50% -> 200%) ===
+PRINTFORML 全局默认字号: {BASE_SIZE}px
+PRINTL
+
+; 从 50% 增加到 200%，每次增加 25%
+FOR LCOUNT, 50, 225, 25
+    CURRENT_SIZE = BASE_SIZE * LCOUNT / 100
+        
+    ; 1. 测试 SkiaSharp 管线 (默认抗锯齿)
+    HTML_BUFFER += @"<font render='skia' size='{CURRENT_SIZE}'>啊</font>"
+    
+    ; 2. 测试 GDI+ 管线 (TextRenderer)
+    HTML_BUFFER2 += @"<font render='gdi' size='{CURRENT_SIZE}'>啊</font>"
+    
+NEXT
+HTML_BUFFER += @" <font color='#888888' size='{BASE_SIZE}'>[SkiaSharp管线]</font>"
+HTML_BUFFER2 += @" <font color='#888888' size='{BASE_SIZE}'>[GDI+管线]</font>"
+HTML_PRINT HTML_BUFFER
+PRINTL
+HTML_PRINT HTML_BUFFER2
+PRINTW
