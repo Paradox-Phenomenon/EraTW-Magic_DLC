@@ -320,72 +320,73 @@ ELSEIF 检测最新输出内容(LINECOUNT-LINE_RECORD) && 逆推指令转化(COM
 ENDIF
 RETURN RESULT
 
-@位置归类(ARG)
-#FUNCTION
-#LOCALSIZE 1
-#LOCALSSIZE 1
-#DIM 対象Map
-#DIM OUTID
-対象Map = GET_MAPID(ARG)
-SELECTCASE 対象Map
-	CASE 0
-		OUTID = MAP_SEARCH_REPLACEMENT_0(ARG)
-	CASE 1
-		OUTID = MAP_SEARCH_REPLACEMENT_1(ARG)
-	CASE 2
-		OUTID = MAP_SEARCH_REPLACEMENT_2(ARG)
-	CASE 3
-		OUTID = MAP_SEARCH_REPLACEMENT_3(ARG)
-	CASE 4
-		OUTID = MAP_SEARCH_REPLACEMENT_4(ARG)
-	CASE 5
-		OUTID = MAP_SEARCH_REPLACEMENT_5(ARG)
-	CASE 6
-		OUTID = MAP_SEARCH_REPLACEMENT_6(ARG)
-	CASE 7
-		OUTID = MAP_SEARCH_REPLACEMENT_7(ARG)
-	CASE 8
-		OUTID = MAP_SEARCH_REPLACEMENT_8(ARG)
-	CASE 9
-		OUTID = MAP_SEARCH_REPLACEMENT_9(ARG)
-	CASE 10
-		OUTID = MAP_SEARCH_REPLACEMENT_10(ARG)
-	CASE 11
-		OUTID = MAP_SEARCH_REPLACEMENT_11(ARG)
-	CASEELSE
-		OUTID = ARG
-ENDSELECT
-RETURNF OUTID
-
-
 @背景展示
 #DIMS 地点名
 #DIM 季节编号
 #DIM 时间编号
 #DIMS 背景名
+#DIM 无季节差分
+#DIM 无时间差分
 背景名 =
 地点名 = 
-IF GMF_AT_LARGE_MAP(MASTER)
-	IF 位置归类(CFLAG:MASTER:現在位置) == 神社境内
-		地点名 '= "神社境内"
-	ELSEIF GROUPMATCH(位置归类(CFLAG:MASTER:現在位置), 斜角的竹林, 兎的洞穴, 迷失的小道, 竹林入口)
-		地点名 '= "竹林"
-	ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 正門
-		地点名 '= "红魔馆正门"
-	ELSE
-	ENDIF
+无季节差分 = 0
+无时间差分 = 0
+IF IS_GAP_GUEST(MASTER)
 ELSE
-	IF CFLAG:MASTER:現在位置 == 神社境内
-		地点名 '= "神社境内"
-	ELSEIF GROUPMATCH(CFLAG:MASTER:現在位置, 斜角的竹林, 兎的洞穴, 迷失的小道, 竹林入口)
-		地点名 '= "竹林"
-	ELSEIF CFLAG:MASTER:現在位置 == 正門
-		地点名 '= "红魔馆正门"
+	IF GMF_AT_LARGE_MAP(MASTER)
+		IF 位置归类(CFLAG:MASTER:現在位置) == 神社境内
+			地点名 '= "神社境内"
+		ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 神社本堂
+			地点名 '= "神社本殿"
+		ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 桜花道的鳥居
+			地点名 '= "参道"
+		ELSEIF CFLAG:MASTER:現在位置 == P36夢幻遺跡前
+			地点名 '= "梦幻遗迹前"
+		ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 神社走廊
+			地点名 '= "神社走廊"
+		ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 夢幻遺跡
+			地点名 '= "梦幻遗迹内部"
+			无时间差分 ++
+			无季节差分 ++
+		ELSEIF GROUPMATCH(位置归类(CFLAG:MASTER:現在位置), 斜角的竹林, 兎的洞穴, 迷失的小道, 竹林入口)
+			地点名 '= "竹林"
+		ELSEIF GROUPMATCH(位置归类(CFLAG:MASTER:現在位置), 永遠亭, 永遠亭的内院)
+			地点名 '= "永远亭"
+		ELSEIF 位置归类(CFLAG:MASTER:現在位置) == 正門
+			地点名 '= "红魔馆正门"
+		ELSE
+		ENDIF
 	ELSE
+		IF CFLAG:MASTER:現在位置 == 神社境内
+			地点名 '= "神社境内"
+		ELSEIF CFLAG:MASTER:現在位置 == 神社本堂
+			地点名 '= "神社本殿"
+		ELSEIF CFLAG:MASTER:現在位置 == 桜花道的鳥居
+			地点名 '= "参道"
+		ELSEIF CFLAG:MASTER:現在位置 == 夢幻遺跡
+			地点名 '= "梦幻遗迹前"
+		ELSEIF CFLAG:MASTER:現在位置 == 神社走廊
+			地点名 '= "神社走廊"
+		ELSEIF GROUPMATCH(CFLAG:MASTER:現在位置, 斜角的竹林, 兎的洞穴, 迷失的小道, 竹林入口)
+			地点名 '= "竹林"
+		ELSEIF GROUPMATCH(CFLAG:MASTER:現在位置, 永遠亭, 永遠亭的内院)
+			地点名 '= "永远亭"
+		ELSEIF CFLAG:MASTER:現在位置 == 正門
+			地点名 '= "红魔馆正门"
+		ELSE
+		ENDIF
 	ENDIF
 ENDIF
-季节编号 = DAY:季節
-时间编号 = TIME >= 360 && TIME < 1080 ? 0 # 1
+IF !无季节差分
+	季节编号 = DAY:季節
+ELSE
+	季节编号 = 0
+ENDIF
+IF !无时间差分
+	时间编号 = TIME >= 360 && TIME < 1080 ? 0 # 1
+ELSE
+	时间编号 = 0
+ENDIF
 背景名 += @"%地点名%_{季节编号}_{时间编号}"
 ;PRINTFORMW 背景名 = %背景名% 地点名 = %地点名%
 IF 地点名 != ""
